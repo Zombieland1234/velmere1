@@ -1,0 +1,2066 @@
+import type {
+  RiskAgentAssessment,
+  RiskAgentId,
+  RiskAgentScore,
+  RiskLevel,
+  RiskMetaModel,
+  RiskSignalId,
+  TokenRiskInput,
+  TokenRiskResult,
+  TokenRiskSignal,
+} from "./risk-types";
+import { validateTokenRiskInput } from "./data-backbone";
+
+type AssetMode = "standard" | "stablecoin" | "rwa";
+
+type AssetProfile = {
+  mode: AssetMode;
+  volatilityWeight: number;
+  volumeAnomalyWeight: number;
+  expectedPegUsd?: number;
+  reviewFocus: string;
+  isPeggedAsset: boolean;
+};
+
+type DataConsistency = {
+  hasImpossibleValue: boolean;
+  hasSupplyConflict: boolean;
+};
+
+type CoreRiskAgentId = Exclude<RiskAgentId, "data">;
+
+type RiskGroup = {
+  id: CoreRiskAgentId;
+  label: string;
+  weight: number;
+  ids: RiskSignalId[];
+};
+
+type RiskMetaModelWithFinalVerdict = RiskMetaModel & {
+  finalVerdict: string;
+};
+
+const LEVEL_RANK: Record<RiskLevel, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
+
+const VELOCITY_SIGNAL_IDS: RiskSignalId[] = [
+  "rapid_intraday_move",
+  "parabolic_24h_gain",
+  "parabolic_7d_gain",
+  "parabolic_30d_gain",
+  "multi_timeframe_pump",
+  "new_ath_repricing",
+  "extreme_drawdown",
+  "major_drawdown",
+  "severe_24h_drop",
+  "high_24h_drop",
+];
+
+const LIQUIDITY_SIGNAL_IDS: RiskSignalId[] = [
+  "thin_liquidity",
+  "very_thin_liquidity",
+  "low_dex_liquidity",
+  "market_volume_stress",
+  "wash_trading_risk",
+  "volume_spike",
+];
+
+const MICROSTRUCTURE_SIGNAL_IDS: RiskSignalId[] = [
+  "orderbook_depth_collapse",
+  "orderbook_slippage_risk",
+  "orderbook_imbalance",
+  "sell_pressure_imbalance",
+];
+
+const HOLDER_SIGNAL_IDS: RiskSignalId[] = [
+  "holder_concentration",
+  "supply_overhang",
+  "fdv_marketcap_gap",
+  "rebrand_after_crash",
+  "exchange_deposit_anomaly",
+];
+
+const CONTRACT_SIGNAL_IDS: RiskSignalId[] = [
+  "contract_privileges",
+  "honeypot_risk",
+  "high_sell_tax",
+  "mint_risk",
+  "blacklist_risk",
+];
+
+const CORE_RISK_GROUPS: RiskGroup[] = [
+  {
+    id: "velocity",
+    label: "Velocity / pump",
+    weight: 0.2,
+    ids: VELOCITY_SIGNAL_IDS,
+  },
+  {
+    id: "liquidity",
+    label: "Liquidity / volume",
+    weight: 0.26,
+    ids: LIQUIDITY_SIGNAL_IDS,
+  },
+  {
+    id: "microstructure",
+    label: "Order book / microstructure",
+    weight: 0.18,
+    ids: MICROSTRUCTURE_SIGNAL_IDS,
+  },
+  {
+    id: "holders",
+    label: "Holders / supply",
+    weight: 0.2,
+    ids: HOLDER_SIGNAL_IDS,
+  },
+  {
+    id: "contract",
+    label: "Contract / permissions",
+    weight: 0.16,
+    ids: CONTRACT_SIGNAL_IDS,
+  },
+];
+
+function clamp(value: number, min = 0, max = 100) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export function levelFromScore(score: number): RiskLevel {
+  if (score >= 85) return "critical";
+  if (score >= 65) return "high";
+  if (score >= 35) return "medium";
+  return "low";
+}
+
+export function badgeFromLevel(level: RiskLevel): TokenRiskResult["badge"] {
+  if (level === "critical") return "critical_market_integrity_risk";
+  if (level === "high") return "possible_manipulation_risk";
+  if (level === "medium") return "elevated_risk";
+  return "low_detected_risk";
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function hasFiniteNumber(value: unknown) {
+  return finiteNumber(value) !== undefined;
+}
+
+function hasBoolean(value: unknown) {
+  return typeof value === "boolean";
+}
+
+function rounded(value: number, digits = 2) {
+  return Number(value.toFixed(digits));
+}
+
+function addSignal(signals: TokenRiskSignal[], signal: TokenRiskSignal) {
+  const existing = signals.find((item) => item.id === signal.id);
+  if (!existing) {
+    signals.push(signal);
+    return;
+  }
+
+  existing.metrics = {
+    ...(existing.metrics ?? {}),
+    ...(signal.metrics ?? {}),
+  };
+
+  if (
+    signal.points > existing.points ||
+    (signal.points === existing.points &&
+      LEVEL_RANK[signal.severity] > LEVEL_RANK[existing.severity])
+  ) {
+    existing.points = signal.points;
+    existing.severity = signal.severity;
+  }
+}
+
+function uniqueDataSources(input: TokenRiskInput) {
+  const normalized = (input.dataSources ?? [])
+    .map((source) => source.trim())
+    .filter((source) => source.length > 0);
+  return Array.from(new Set(normalized));
+}
+
+function sourceMode(input: TokenRiskInput, dataQuality: TokenRiskResult["dataQuality"]) {
+  const count = uniqueDataSources(input).length;
+  return `${dataQuality}; ${count} attached source${count === 1 ? "" : "s"}`;
+}
+
+function detectAssetProfile(input: TokenRiskInput): AssetProfile {
+  const label = `${input.symbol} ${input.name}`.toLowerCase();
+  const usdPegPattern =
+    /(^|[^a-z0-9])(usdt|usdc|dai|busd|tusd|usde|fdusd|pyusd|rlusd|usdp|usds|usdl|usdg|usd0|usdx|frax|lusd|gusd|crvusd|usdd|gho|usd coin|tether|stable usd)([^a-z0-9]|$)/;
+  const stablecoinPattern =
+    /stablecoin|stable coin|(^|[^a-z0-9])(eurc|eurt|eurs|euroc|ageur|eurd|xsgd|stable eur|stable euro)([^a-z0-9]|$)/;
+  const rwaPattern =
+    /tokeni[sz]ed|real[- ]world|\brwa\b|treasury|treasury bill|t-bill|tbill|money market|government bond|government securities|tokeni[sz]ed stock|tokeni[sz]ed fund|bond fund|on-chain treasury|short[- ]term bond|blackrock|\bbuidl\b|\busdy\b|\bondo\b|\bousg\b|\bbenji\b|superstate/;
+
+  if (usdPegPattern.test(label)) {
+    return {
+      mode: "stablecoin",
+      volatilityWeight: 0.45,
+      volumeAnomalyWeight: 0.45,
+      expectedPegUsd: 1,
+      reviewFocus: "peg, issuer and reserve proof",
+      isPeggedAsset: true,
+    };
+  }
+  if (stablecoinPattern.test(label)) {
+    return {
+      mode: "stablecoin",
+      volatilityWeight: 0.45,
+      volumeAnomalyWeight: 0.45,
+      reviewFocus: "issuer, reserve and redemption proof",
+      isPeggedAsset: true,
+    };
+  }
+  if (rwaPattern.test(label)) {
+    return {
+      mode: "rwa",
+      volatilityWeight: 0.65,
+      volumeAnomalyWeight: 0.65,
+      reviewFocus: "issuer, redemption and custody proof",
+      isPeggedAsset: false,
+    };
+  }
+  return {
+    mode: "standard",
+    volatilityWeight: 1,
+    volumeAnomalyWeight: 1,
+    reviewFocus: "market-integrity evidence",
+    isPeggedAsset: false,
+  };
+}
+
+function adjustedPoints(points: number, weight: number) {
+  return Math.max(1, Math.round(points * weight));
+}
+
+function hasContractCoverage(input: TokenRiskInput) {
+  return [
+    input.suspiciousContractPrivileges,
+    input.isHoneypot,
+    input.canMintNewTokens,
+    input.canPauseTrading,
+    input.canBlacklist,
+  ].some(hasBoolean);
+}
+
+function hasOrderbookCoverage(input: TokenRiskInput) {
+  return [
+    input.simulatedSlippage10k,
+    input.bidAskImbalancePercent,
+    input.orderBookDepthDropPercent,
+  ].some(hasFiniteNumber);
+}
+
+function hasHolderCoverage(input: TokenRiskInput) {
+  return [input.top10HolderPercent, input.holderCount].some(hasFiniteNumber);
+}
+
+function hasSupplyCoverage(input: TokenRiskInput) {
+  const circulatingSupply = finiteNumber(input.circulatingSupply);
+  const totalSupply = finiteNumber(input.totalSupply);
+  const maxSupply = finiteNumber(input.maxSupply);
+  return (
+    circulatingSupply !== undefined &&
+    ((maxSupply !== undefined && maxSupply > 0) ||
+      (totalSupply !== undefined && totalSupply > 0))
+  );
+}
+
+function inspectDataConsistency(input: TokenRiskInput): DataConsistency {
+  const circulatingSupply = finiteNumber(input.circulatingSupply);
+  const totalSupply = finiteNumber(input.totalSupply);
+  const maxSupply = finiteNumber(input.maxSupply);
+  const hasImpossibleValue = [
+    input.currentPrice,
+    input.marketCap,
+    input.fdv,
+    input.liquidityUsd,
+    input.volume24h,
+    input.averageVolume7d,
+    input.circulatingSupply,
+    input.totalSupply,
+    input.maxSupply,
+    input.holderCount,
+  ].some((value) => {
+    const number = finiteNumber(value);
+    return number !== undefined && number < 0;
+  });
+  const hasImpossiblePercent = [
+    input.top10HolderPercent,
+    input.buyTaxPercentage,
+    input.sellTaxPercentage,
+  ].some((value) => {
+    const number = finiteNumber(value);
+    return number !== undefined && (number < 0 || number > 100);
+  });
+  const hasSupplyConflict =
+    (circulatingSupply !== undefined &&
+      totalSupply !== undefined &&
+      circulatingSupply > totalSupply) ||
+    (circulatingSupply !== undefined &&
+      maxSupply !== undefined &&
+      circulatingSupply > maxSupply) ||
+    (totalSupply !== undefined &&
+      maxSupply !== undefined &&
+      totalSupply > maxSupply);
+
+  return {
+    hasImpossibleValue: hasImpossibleValue || hasImpossiblePercent,
+    hasSupplyConflict,
+  };
+}
+
+function hasHistoryCoverage(input: TokenRiskInput) {
+  return (
+    (input.sparkline7d?.length ?? 0) >= 2 ||
+    [
+      input.priceChange1h,
+      input.priceChange6h,
+      input.priceChange24h,
+      input.priceChange7d,
+      input.priceChange14d,
+      input.priceChange30d,
+    ].filter(hasFiniteNumber).length >= 3
+  );
+}
+
+function missingCoreFieldNames(input: TokenRiskInput) {
+  const names: string[] = [];
+  if (!hasFiniteNumber(input.currentPrice)) names.push("price");
+  if (!hasFiniteNumber(input.marketCap) && !hasFiniteNumber(input.fdv))
+    names.push("market cap or FDV");
+  if (!hasFiniteNumber(input.volume24h)) names.push("24h volume");
+  if (!hasFiniteNumber(input.liquidityUsd)) names.push("liquidity depth");
+  if (!hasSupplyCoverage(input)) names.push("supply float");
+  if (!hasHolderCoverage(input)) names.push("holder concentration");
+  if (!hasContractCoverage(input)) names.push("contract permissions");
+  if (!hasOrderbookCoverage(input)) names.push("orderbook depth");
+  if (uniqueDataSources(input).length === 0) names.push("source ledger");
+  return names;
+}
+
+function computeDataConfidence(
+  input: TokenRiskInput,
+  dataQuality: TokenRiskResult["dataQuality"],
+  profile: AssetProfile,
+) {
+  const sourceCount = uniqueDataSources(input).length;
+  const consistency = inspectDataConsistency(input);
+  const missingCoreCount = missingCoreFieldNames(input).length;
+  let confidence =
+    dataQuality === "live" ? 0.42 : dataQuality === "partial" ? 0.25 : 0.14;
+
+  if (hasFiniteNumber(input.currentPrice)) confidence += 0.08;
+  if (hasFiniteNumber(input.marketCap) || hasFiniteNumber(input.fdv))
+    confidence += 0.08;
+  if (hasFiniteNumber(input.volume24h)) confidence += 0.06;
+  if (hasFiniteNumber(input.averageVolume7d)) confidence += 0.03;
+  if (hasFiniteNumber(input.liquidityUsd)) confidence += 0.08;
+  if (hasSupplyCoverage(input)) confidence += 0.1;
+  else if (hasFiniteNumber(input.circulatingSupply)) confidence += 0.04;
+  if (hasHolderCoverage(input)) confidence += 0.07;
+  if (hasContractCoverage(input)) confidence += 0.07;
+  if (hasOrderbookCoverage(input)) confidence += 0.07;
+  if (hasHistoryCoverage(input)) confidence += 0.04;
+
+  confidence += Math.min(0.14, sourceCount * 0.045);
+  if (sourceCount === 0) confidence -= 0.1;
+  if (sourceCount === 1) confidence -= 0.03;
+  if (!hasFiniteNumber(input.currentPrice)) confidence -= 0.05;
+  if (!hasSupplyCoverage(input)) confidence -= 0.05;
+  if (!hasFiniteNumber(input.liquidityUsd)) confidence -= 0.04;
+  if (!hasHolderCoverage(input)) confidence -= 0.04;
+  if (!hasContractCoverage(input)) confidence -= 0.04;
+  if (!hasOrderbookCoverage(input)) confidence -= 0.04;
+  if (profile.mode !== "standard") confidence -= 0.1;
+  if (consistency.hasImpossibleValue) confidence -= 0.12;
+  if (consistency.hasSupplyConflict) confidence -= 0.14;
+
+  const profileConfidenceCap =
+    profile.mode === "stablecoin" ? 0.88 : profile.mode === "rwa" ? 0.86 : 0.96;
+  const consistencyConfidenceCap = consistency.hasSupplyConflict
+    ? 0.68
+    : consistency.hasImpossibleValue
+      ? 0.74
+      : 0.96;
+  const missingDataCap =
+    missingCoreCount >= 7
+      ? 0.34
+      : missingCoreCount >= 5
+        ? 0.44
+        : missingCoreCount >= 3
+          ? 0.64
+          : 0.96;
+  const confidenceCap = Math.min(
+    profileConfidenceCap,
+    consistencyConfidenceCap,
+    missingDataCap,
+  );
+  return rounded(clamp(confidence, 0.1, confidenceCap), 2);
+}
+
+function buildLimitations(
+  input: TokenRiskInput,
+  profile: AssetProfile,
+  validationOk: boolean,
+  confidence: number,
+) {
+  const limitations = [
+    "This output is an anomaly screen, not a legal finding or accusation.",
+  ];
+  const consistency = inspectDataConsistency(input);
+  const circulatingSupply = finiteNumber(input.circulatingSupply);
+  const totalSupply = finiteNumber(input.totalSupply);
+  const maxSupply = finiteNumber(input.maxSupply);
+
+  if (circulatingSupply === undefined) {
+    limitations.push("circulating supply missing");
+  } else if (
+    !(
+      (maxSupply !== undefined && maxSupply > 0) ||
+      (totalSupply !== undefined && totalSupply > 0)
+    )
+  ) {
+    limitations.push("total/max supply missing; circulating float ratio unavailable");
+  }
+
+  limitations.push("vesting/unlock schedule not verified");
+
+  if (!hasHolderCoverage(input)) {
+    limitations.push("holder concentration unavailable");
+    limitations.push("holder labels unavailable");
+  } else {
+    limitations.push("holder labels for CEX/team/LP/unknown wallets not verified");
+  }
+
+  if (!input.tokenAddress) limitations.push("contract address missing");
+  if (!hasContractCoverage(input))
+    limitations.push("contract permissions unavailable");
+  if (!hasOrderbookCoverage(input))
+    limitations.push("orderbook depth unavailable");
+  if (!hasHistoryCoverage(input))
+    limitations.push("price history coverage incomplete");
+  if (!hasFiniteNumber(input.liquidityUsd))
+    limitations.push("liquidity depth unavailable");
+  if (!input.pairAddress && !input.dexId)
+    limitations.push("DEX pair/source routing not verified");
+  if (!hasFiniteNumber(input.buyTaxPercentage) && !hasFiniteNumber(input.sellTaxPercentage))
+    limitations.push("tax settings unavailable");
+  if (!hasFiniteNumber(input.buys24h) || !hasFiniteNumber(input.sells24h))
+    limitations.push("bid/ask flow counts unavailable");
+  if (uniqueDataSources(input).length === 0)
+    limitations.push("OSINT source ledger not attached");
+  else if (uniqueDataSources(input).length < 2)
+    limitations.push("source ledger has limited corroboration");
+  limitations.push("KOL/social disclosure data missing");
+  if (!validationOk) limitations.push("input validation failed; source fields require review");
+  if (consistency.hasImpossibleValue)
+    limitations.push("impossible numeric input requires source review");
+  if (consistency.hasSupplyConflict)
+    limitations.push("supply fields conflict; float ratio requires review");
+  if (confidence < 0.4)
+    limitations.push("confidence too low; prescreen only");
+
+  if (profile.mode === "stablecoin") {
+    limitations.push("issuer proof missing for stablecoin");
+    limitations.push("reserve proof missing for stablecoin");
+    limitations.push("redemption proof missing for stablecoin");
+  } else if (profile.mode === "rwa") {
+    limitations.push("issuer proof missing for RWA");
+    limitations.push("redemption proof missing for RWA");
+    limitations.push("custody/source proof missing for RWA");
+  }
+
+  limitations.push("manual review required before escalation");
+  return limitations;
+}
+
+function signalScore(signals: TokenRiskSignal[], ids: RiskSignalId[]) {
+  const points = signals
+    .filter((signal) => ids.includes(signal.id))
+    .map((signal) => signal.points)
+    .sort((a, b) => b - a);
+  const diminishingWeights = [1, 0.62, 0.38, 0.22, 0.12];
+  return Math.min(
+    100,
+    Math.round(
+      points.reduce(
+        (sum, point, index) =>
+          sum + point * (diminishingWeights[index] ?? 0.08),
+        0,
+      ),
+    ),
+  );
+}
+
+function signalCount(signals: TokenRiskSignal[], ids: RiskSignalId[]) {
+  return signals.filter((signal) => ids.includes(signal.id)).length;
+}
+
+function hasSignal(signals: TokenRiskSignal[], id: RiskSignalId) {
+  return signals.some((signal) => signal.id === id);
+}
+
+function hasAnySignal(signals: TokenRiskSignal[], ids: RiskSignalId[]) {
+  return ids.some((id) => hasSignal(signals, id));
+}
+
+function buildScoreBreakdown(
+  signals: TokenRiskSignal[],
+  confidence: number,
+): RiskAgentScore[] {
+  const rows: RiskAgentScore[] = CORE_RISK_GROUPS.map((group) => ({
+    id: group.id,
+    label: group.label,
+    score: signalScore(signals, group.ids),
+    weight: group.weight,
+    confidence,
+    evidenceCount: signalCount(signals, group.ids),
+  }));
+  rows.push({
+    id: "data",
+    label: "Data uncertainty",
+    score: Math.round((1 - confidence) * 100),
+    weight: 0,
+    confidence,
+    evidenceCount: signalCount(signals, ["insufficient_data"]),
+  });
+  return rows;
+}
+
+function computeFusedRiskScore(
+  signals: TokenRiskSignal[],
+  scoreBreakdown: RiskAgentScore[],
+  confidence: number,
+) {
+  const coreRows = scoreBreakdown.filter((row) => row.id !== "data");
+  const dataRow = scoreBreakdown.find((row) => row.id === "data");
+  const weightedScore = coreRows.reduce(
+    (sum, row) => sum + row.score * row.weight,
+    0,
+  );
+  const elevatedGroupCount = coreRows.filter((row) => row.score >= 35).length;
+  const highGroupCount = coreRows.filter((row) => row.score >= 60).length;
+  const corroboratedGroupCount = coreRows.filter((row) => row.score >= 40).length;
+  const criticalSignalCount = signals.filter(
+    (signal) => signal.severity === "critical",
+  ).length;
+  const confidenceMultiplier = 0.82 + confidence * 0.18;
+  let score =
+    weightedScore * confidenceMultiplier +
+    (elevatedGroupCount >= 3 ? 6 : elevatedGroupCount === 2 ? 3 : 0) +
+    (highGroupCount >= 3 ? 8 : highGroupCount === 2 ? 5 : 0);
+
+  const hasThinExitDepth = hasAnySignal(signals, [
+    "very_thin_liquidity",
+    "thin_liquidity",
+    "low_dex_liquidity",
+  ]);
+  const hasParabolicRepricing = hasAnySignal(signals, [
+    "multi_timeframe_pump",
+    "parabolic_24h_gain",
+    "parabolic_7d_gain",
+    "parabolic_30d_gain",
+    "new_ath_repricing",
+  ]);
+  const hasDrawdownStress = hasAnySignal(signals, [
+    "extreme_drawdown",
+    "major_drawdown",
+    "severe_24h_drop",
+    "high_24h_drop",
+  ]);
+  const hasSupplyOverhang = hasAnySignal(signals, [
+    "supply_overhang",
+    "fdv_marketcap_gap",
+  ]);
+  const dataUncertaintyScore = dataRow?.score ?? 0;
+
+  if (hasSignal(signals, "honeypot_risk")) score = Math.max(score, 92);
+  if (
+    signals.some(
+      (signal) =>
+        signal.id === "high_sell_tax" && signal.severity === "critical",
+    )
+  )
+    score = Math.max(score, 80);
+  if (
+    hasSignal(signals, "high_sell_tax") &&
+    hasSignal(signals, "blacklist_risk")
+  )
+    score = Math.max(score, 84);
+  if (
+    hasSignal(signals, "blacklist_risk") &&
+    hasSignal(signals, "mint_risk")
+  )
+    score = Math.max(score, 76);
+  if (
+    hasSignal(signals, "contract_privileges") &&
+    hasSignal(signals, "mint_risk") &&
+    hasSignal(signals, "high_sell_tax")
+  )
+    score = Math.max(score, 82);
+  if (
+    hasSignal(signals, "contract_privileges") &&
+    hasSignal(signals, "blacklist_risk") &&
+    hasSignal(signals, "mint_risk")
+  )
+    score = Math.max(score, 86);
+  if (
+    hasSignal(signals, "orderbook_slippage_risk") &&
+    hasThinExitDepth
+  )
+    score = Math.max(score, 68);
+  if (
+    signals.some(
+      (signal) =>
+        signal.id === "orderbook_slippage_risk" &&
+        signal.severity === "critical",
+    )
+  )
+    score = Math.max(score, 58);
+  if (
+    signals.some(
+      (signal) =>
+        signal.id === "orderbook_depth_collapse" &&
+        signal.severity === "critical",
+    )
+  )
+    score = Math.max(score, 56);
+  if (
+    hasSignal(signals, "multi_timeframe_pump") &&
+    (hasThinExitDepth || hasSignal(signals, "market_volume_stress"))
+  )
+    score = Math.max(score, 70);
+  if (
+    hasSignal(signals, "multi_timeframe_pump") &&
+    hasSignal(signals, "volume_spike")
+  )
+    score = Math.max(score, 68);
+  if (hasParabolicRepricing && hasThinExitDepth && hasSupplyOverhang)
+    score = Math.max(score, 84);
+  if (
+    hasParabolicRepricing &&
+    hasThinExitDepth &&
+    hasSignal(signals, "volume_spike")
+  )
+    score = Math.max(score, 72);
+  if (
+    hasParabolicRepricing &&
+    hasSignal(signals, "very_thin_liquidity") &&
+    hasSignal(signals, "wash_trading_risk")
+  )
+    score = Math.max(score, 78);
+  if (
+    hasSignal(signals, "multi_timeframe_pump") &&
+    hasSignal(signals, "volume_spike") &&
+    hasThinExitDepth &&
+    (hasSignal(signals, "holder_concentration") ||
+      hasSignal(signals, "insufficient_data"))
+  )
+    score = Math.max(score, 82);
+  if (
+    hasSignal(signals, "supply_overhang") &&
+    hasSignal(signals, "fdv_marketcap_gap")
+  )
+    score = Math.max(score, 65);
+  if (
+    hasSignal(signals, "fdv_marketcap_gap") &&
+    signals.some(
+      (signal) =>
+        signal.id === "supply_overhang" && signal.severity === "critical",
+    )
+  )
+    score = Math.max(score, 72);
+  if (
+    hasSignal(signals, "supply_overhang") &&
+    hasSignal(signals, "fdv_marketcap_gap") &&
+    hasSignal(signals, "multi_timeframe_pump")
+  )
+    score = Math.max(score, 78);
+  const staleExitDepthSignal = signals.find(
+    (signal) =>
+      signal.id === "market_volume_stress" &&
+      (signal.metrics?.thinExitDepthReview === "required" ||
+        signal.metrics?.redemptionDepthReview === "required"),
+  );
+  if (staleExitDepthSignal?.severity === "high") score = Math.max(score, 42);
+  if (hasDrawdownStress && hasThinExitDepth)
+    score = Math.max(score, hasSignal(signals, "extreme_drawdown") ? 68 : 58);
+  if (
+    hasDrawdownStress &&
+    (hasSignal(signals, "orderbook_depth_collapse") ||
+      hasSignal(signals, "market_volume_stress"))
+  )
+    score = Math.max(score, 64);
+  if (corroboratedGroupCount >= 4 && criticalSignalCount >= 3)
+    score = Math.max(score, 85);
+  else if (corroboratedGroupCount >= 3 && criticalSignalCount >= 2)
+    score = Math.max(score, 75);
+  if (
+    hasSignal(signals, "insufficient_data") &&
+    confidence < 0.25 &&
+    dataUncertaintyScore >= 65
+  )
+    score = Math.max(score, 42);
+  else if (
+    hasSignal(signals, "insufficient_data") &&
+    confidence < 0.4 &&
+    dataUncertaintyScore >= 50
+  )
+    score = Math.max(score, 35);
+
+  const stablecoinDepegSignal = signals.find(
+    (signal) =>
+      signal.id === "rapid_intraday_move" &&
+      signal.metrics?.stablecoinDepegReview === "required",
+  );
+  const pegDeviationPercent = finiteNumber(
+    stablecoinDepegSignal?.metrics?.pegDeviationPercent,
+  );
+  if (pegDeviationPercent !== undefined) {
+    score = Math.max(
+      score,
+      pegDeviationPercent >= 20 ? 80 : pegDeviationPercent >= 10 ? 65 : 42,
+    );
+  }
+
+  return Math.round(clamp(score));
+}
+
+function statusFromAgentScore(score: number): RiskLevel {
+  return levelFromScore(clamp(score));
+}
+
+function verdictFromAgentScore(
+  score: number,
+  confidence: number,
+): RiskAgentAssessment["verdict"] {
+  if (confidence < 0.35) return "insufficient_data";
+  if (score >= 85) return "critical";
+  if (score >= 65) return "warning";
+  if (score >= 35) return "watch";
+  return "clear";
+}
+
+function buildAgentAssessments(
+  signals: TokenRiskSignal[],
+  input: TokenRiskInput,
+  dataQuality: TokenRiskResult["dataQuality"],
+  globalConfidence: number,
+  profile: AssetProfile,
+): RiskAgentAssessment[] {
+  const sources = uniqueDataSources(input);
+  const sourceDescription = `${sourceMode(input, dataQuality)}; ${profile.mode} profile`;
+  const countObserved = (values: unknown[]) =>
+    values.filter((value) => value !== undefined && value !== null).length;
+  const agentConfidence = (observed: number, required: number, evidence: number) =>
+    rounded(
+      clamp(
+        0.14 +
+          (observed / Math.max(1, required)) * 0.44 +
+          Math.min(0.16, evidence * 0.035) +
+          globalConfidence * 0.24,
+        0.12,
+        0.98,
+      ),
+      2,
+    );
+  const idsFor = (ids: RiskSignalId[]) =>
+    signals.filter((signal) => ids.includes(signal.id)).map((signal) => signal.id);
+
+  const definitions: Array<{
+    id: RiskAgentId;
+    label: string;
+    ids: RiskSignalId[];
+    observed: number;
+    required: number;
+    score: number;
+    reasoning: string;
+    nextAction: string;
+    extraEvidence?: number;
+  }> = [
+    {
+      id: "velocity",
+      label: "Velocity / pump agent",
+      ids: VELOCITY_SIGNAL_IDS,
+      observed: countObserved([
+        input.priceChange1h,
+        input.priceChange6h,
+        input.priceChange24h,
+        input.priceChange7d,
+        input.priceChange14d,
+        input.priceChange30d,
+        input.athPrice,
+        input.currentPrice,
+      ]),
+      required: 8,
+      score: signalScore(signals, VELOCITY_SIGNAL_IDS),
+      reasoning: `Checks repricing, drawdown and multi-timeframe momentum against ${profile.reviewFocus}. Source mode: ${sourceDescription}.`,
+      nextAction: "Compare repricing with exit depth and source ledger before interpreting momentum.",
+    },
+    {
+      id: "liquidity",
+      label: "Liquidity / exit agent",
+      ids: LIQUIDITY_SIGNAL_IDS,
+      observed: countObserved([
+        input.liquidityUsd,
+        input.marketCap,
+        input.fdv,
+        input.volume24h,
+        input.averageVolume7d,
+      ]),
+      required: 5,
+      score: signalScore(signals, LIQUIDITY_SIGNAL_IDS),
+      reasoning: `Checks thin exit depth and turnover quality against visible liquidity. Source mode: ${sourceDescription}.`,
+      nextAction: "Inspect exit depth across DEX pool, CEX orderbook and slippage snapshot.",
+    },
+    {
+      id: "microstructure",
+      label: "Orderbook / microstructure agent",
+      ids: MICROSTRUCTURE_SIGNAL_IDS,
+      observed: countObserved([
+        input.simulatedSlippage10k,
+        input.bidAskImbalancePercent,
+        input.orderBookDepthDropPercent,
+        input.buys24h,
+        input.sells24h,
+      ]),
+      required: 5,
+      score: signalScore(signals, MICROSTRUCTURE_SIGNAL_IDS),
+      reasoning: `Checks slippage, imbalance and orderbook depth collapse without treating proxies as proof. Source mode: ${sourceDescription}.`,
+      nextAction: "Rerun after a live orderbook snapshot and inspect exit depth.",
+    },
+    {
+      id: "holders",
+      label: "Holder / insider agent",
+      ids: HOLDER_SIGNAL_IDS,
+      observed: countObserved([
+        input.top10HolderPercent,
+        input.holderCount,
+        input.circulatingSupply,
+        input.totalSupply,
+        input.maxSupply,
+        input.fdv,
+        input.marketCap,
+      ]),
+      required: 7,
+      score: signalScore(signals, HOLDER_SIGNAL_IDS),
+      reasoning: `Checks float, unlock overhang and concentration proxies without assuming wallet ownership. Source mode: ${sourceDescription}.`,
+      nextAction: "Verify unlock schedule, supply source and CEX/team/LP/unknown wallet labels.",
+    },
+    {
+      id: "contract",
+      label: "Contract / permissions agent",
+      ids: CONTRACT_SIGNAL_IDS,
+      observed: countObserved([
+        input.tokenAddress,
+        input.buyTaxPercentage,
+        input.sellTaxPercentage,
+        input.suspiciousContractPrivileges,
+        input.isHoneypot,
+        input.canMintNewTokens,
+        input.canPauseTrading,
+        input.canBlacklist,
+      ]),
+      required: 8,
+      score: signalScore(signals, CONTRACT_SIGNAL_IDS),
+      reasoning: `Checks reported mint, pause, blacklist, honeypot and tax fields. Source mode: ${sourceDescription}.`,
+      nextAction: "Review contract admin controls against explorer, verified bytecode and audit source.",
+    },
+    {
+      id: "data",
+      label: "Data quality agent",
+      ids: ["insufficient_data"],
+      observed: countObserved([
+        input.currentPrice,
+        input.marketCap,
+        input.fdv,
+        input.volume24h,
+        input.liquidityUsd,
+        input.circulatingSupply,
+        input.top10HolderPercent,
+        input.tokenAddress,
+      ]),
+      required: 8,
+      score: Math.max(
+        signalScore(signals, ["insufficient_data"]),
+        Math.round((1 - globalConfidence) * 100),
+        sources.length === 0
+          ? 48
+          : sources.length === 1
+            ? 28
+            : sources.length === 2
+              ? 14
+              : 6,
+      ),
+      reasoning: `Treats missing fields and missing evidence ledger as uncertainty, not evidence of misconduct. Source mode: ${sourceDescription}.`,
+      nextAction: "Attach OSINT source ledger, verify KOL/social disclosures and rerun before escalation.",
+      extraEvidence: sources.length,
+    },
+  ];
+
+  return definitions.map((definition) => {
+    const evidenceSignalIds = idsFor(definition.ids);
+    const evidenceCount = evidenceSignalIds.length + (definition.extraEvidence ?? 0);
+    const confidence = agentConfidence(
+      definition.observed,
+      definition.required,
+      evidenceCount,
+    );
+    return {
+      id: definition.id,
+      label: definition.label,
+      score: Math.round(clamp(definition.score)),
+      weight:
+        CORE_RISK_GROUPS.find((group) => group.id === definition.id)?.weight ?? 0,
+      confidence,
+      evidenceCount,
+      status: statusFromAgentScore(definition.score),
+      verdict: verdictFromAgentScore(definition.score, confidence),
+      evidenceSignalIds,
+      reasoning: definition.reasoning,
+      nextAction: definition.nextAction,
+    };
+  });
+}
+
+function buildMetaModel(
+  symbol: string,
+  score: number,
+  level: RiskLevel,
+  confidence: number,
+  agents: RiskAgentAssessment[],
+  signals: TokenRiskSignal[],
+  limitations: string[],
+  profile: AssetProfile,
+): RiskMetaModelWithFinalVerdict {
+  const dominantRiskAgent = agents
+    .filter((agent) => agent.id !== "data")
+    .slice()
+    .sort((a, b) => b.score * b.weight - a.score * a.weight)[0];
+  const dataAgent = agents.find((agent) => agent.id === "data");
+  const dominant =
+    confidence < 0.4 &&
+    dataAgent !== undefined &&
+    dataAgent.score >= (dominantRiskAgent?.score ?? 0)
+      ? dataAgent
+      : dominantRiskAgent;
+  const riskAgents = agents.filter((agent) => agent.id !== "data");
+  const highAgents = riskAgents.filter((agent) => agent.score >= 65).length;
+  const clearAgents = riskAgents.filter(
+    (agent) => agent.score < 20 && agent.confidence >= 0.55,
+  ).length;
+  const dataConflict =
+    (dataAgent?.score ?? 0) >= 65 && highAgents === 0 && clearAgents >= 3;
+  const conflictLevel: RiskMetaModel["conflictLevel"] =
+    dataConflict
+      ? "medium"
+      : highAgents >= 2 && clearAgents >= 2
+      ? "high"
+      : highAgents >= 1 && clearAgents >= 2
+        ? "medium"
+        : highAgents >= 1
+          ? "low"
+          : "none";
+  const verdict: RiskMetaModel["verdict"] =
+    level === "critical"
+      ? "critical"
+      : confidence < 0.35
+        ? "insufficient_data"
+        : level === "high"
+          ? "warning"
+          : level === "medium"
+            ? "watch"
+            : "clear";
+  const confidenceState =
+    confidence < 0.35
+      ? "confidence too low; prescreen only"
+      : confidence < 0.6
+        ? "confidence limited by missing sources"
+        : "confidence supported by attached fields";
+  const reviewState =
+    verdict === "clear" ? "monitor unresolved limitations" : "manual review required";
+  const operatorAction = dominant?.nextAction ?? "Attach source ledger and rerun.";
+  const finalVerdict =
+    verdict === "critical"
+      ? "Critical review: hard-floor signal or multiple corroborated lanes require manual escalation."
+      : verdict === "warning"
+        ? "Review required: corroborated anomaly lanes need source-ledger confirmation."
+        : verdict === "watch"
+          ? "Watch: limited anomaly pattern; rerun after missing evidence is resolved."
+          : verdict === "insufficient_data"
+            ? "Prescreen only: evidence is too incomplete for a stronger conclusion."
+            : "Monitor: no high-severity anomaly in attached fields; unresolved limitations remain.";
+  const profileNote =
+    profile.mode === "stablecoin"
+      ? ` Stablecoin interpretation requires ${profile.reviewFocus}.`
+      : profile.mode === "rwa"
+        ? ` RWA interpretation requires ${profile.reviewFocus}.`
+        : "";
+  const dominantText = dominant
+    ? ` Dominant lane: ${dominant.label} (${dominant.score}/100).`
+    : "";
+  const blockedBy = limitations
+    .filter(
+      (limitation) =>
+        !limitation.startsWith("This output") &&
+        limitation !== "manual review required before escalation",
+    )
+    .slice(0, 4)
+    .join(", ");
+  const limitationText = blockedBy ? ` Blocked by: ${blockedBy}.` : "";
+
+  return {
+    version: "velmere-shield-deterministic-fusion-v5",
+    verdict,
+    finalVerdict,
+    dominantAgent: dominant?.id,
+    dataFusionScore: score,
+    conflictLevel,
+    requiredReview:
+      verdict !== "clear" || signals.length > 0 || limitations.length > 1,
+    summary:
+      verdict === "critical"
+        ? `${symbol}: critical market-integrity risk; ${reviewState}.${dominantText}${limitationText} Confidence state: ${confidenceState}.${profileNote}`
+        : verdict === "warning"
+          ? `${symbol}: anomaly pattern requires review before relying on visible market depth.${dominantText}${limitationText} Confidence state: ${confidenceState}.${profileNote}`
+          : verdict === "watch"
+            ? `${symbol}: detected anomalies require review; current evidence does not support a stronger claim.${dominantText}${limitationText} Confidence state: ${confidenceState}.${profileNote}`
+            : verdict === "insufficient_data"
+              ? `${symbol}: confidence too low. Treat score as prescreen only.${dominantText}${limitationText} Missing data is not evidence of misconduct.${profileNote}`
+              : `${symbol}: no high-severity anomaly in attached fields. ${reviewState}.${dominantText}${limitationText}${profileNote}`,
+    escalation:
+      score >= 85
+        ? `Escalate: manual forensic review, orderbook depth, holder labels and contract admin review. Next action: ${operatorAction}`
+        : score >= 65
+          ? `Review: verify thin exit depth, unlock overhang and source ledger. Next action: ${operatorAction}`
+          : score >= 35
+            ? `Watch: rerun on the next snapshot and resolve missing sources. Next action: ${operatorAction}`
+            : `Monitor: keep automated scan active and resolve missing evidence before stronger conclusions. Next action: ${operatorAction}`,
+    limitations,
+  };
+}
+
+/*
+ * Dev calibration invariants:
+ * - BTC-like depth and coverage remain low unless anomaly fields are present.
+ * - SOL-like volatility alone does not become critical.
+ * - Low float + FDV gap + parabolic repricing escalates to manual review.
+ * - Honeypot, or tax controls combined with blacklist controls, gets a hard floor.
+ * - Stablecoin depeg is reviewed even when normal volatility weights are reduced.
+ * - RWA low volume remains an exit/redemption concern, not a low-risk signal.
+ * - Dead markets combine drawdown with thin depth instead of relying on price alone.
+ */
+export function analyzeTokenRisk(
+  input: TokenRiskInput,
+  dataQuality: TokenRiskResult["dataQuality"] = "partial",
+): TokenRiskResult {
+  const validation = validateTokenRiskInput(input);
+  const validationWarnings = validation.warnings;
+  const safeInput = validation.ok ? validation.data : input;
+  const signals: TokenRiskSignal[] = [];
+  const profile = detectAssetProfile(safeInput);
+  const currentPrice = finiteNumber(safeInput.currentPrice);
+  const athPrice = finiteNumber(safeInput.athPrice);
+  const marketCap = finiteNumber(safeInput.marketCap);
+  const fdv = finiteNumber(safeInput.fdv);
+  const liquidityUsd = finiteNumber(safeInput.liquidityUsd);
+  const volume24h = finiteNumber(safeInput.volume24h);
+  const averageVolume7d = finiteNumber(safeInput.averageVolume7d);
+  const priceChange1h = finiteNumber(safeInput.priceChange1h);
+  const priceChange6h = finiteNumber(safeInput.priceChange6h);
+  const priceChange24h = finiteNumber(safeInput.priceChange24h);
+  const priceChange7d = finiteNumber(safeInput.priceChange7d);
+  const priceChange14d = finiteNumber(safeInput.priceChange14d);
+  const priceChange30d = finiteNumber(safeInput.priceChange30d);
+  const buys24h = finiteNumber(safeInput.buys24h);
+  const sells24h = finiteNumber(safeInput.sells24h);
+  const circulatingSupply = finiteNumber(safeInput.circulatingSupply);
+  const totalSupply = finiteNumber(safeInput.totalSupply);
+  const maxSupply = finiteNumber(safeInput.maxSupply);
+  const consistency = inspectDataConsistency(safeInput);
+  const supplyReference =
+    maxSupply !== undefined && maxSupply > 0
+      ? maxSupply
+      : totalSupply !== undefined && totalSupply > 0
+        ? totalSupply
+        : undefined;
+
+  if (!validation.ok) {
+    addSignal(signals, {
+      id: "insufficient_data",
+      severity: "high",
+      points: 12,
+      metrics: { validation: "failed" },
+    });
+  } else if (validationWarnings.length > 0) {
+    addSignal(signals, {
+      id: "insufficient_data",
+      severity: "medium",
+      points: Math.min(10, 3 + validationWarnings.length * 2),
+      metrics: { warnings: validationWarnings.length },
+    });
+  }
+  if (consistency.hasImpossibleValue || consistency.hasSupplyConflict) {
+    addSignal(signals, {
+      id: "insufficient_data",
+      severity: "high",
+      points: 14,
+      metrics: {
+        impossibleNumericInput: consistency.hasImpossibleValue,
+        supplyConflict: consistency.hasSupplyConflict,
+        sourceReview: "required",
+      },
+    });
+  }
+
+  const missingCoreFields = missingCoreFieldNames(safeInput);
+  const missingCoreCount = missingCoreFields.length;
+
+  if (missingCoreCount > 0) {
+    addSignal(signals, {
+      id: "insufficient_data",
+      severity: missingCoreCount >= 5 ? "high" : "medium",
+      points: Math.min(20, 3 + missingCoreCount * 2),
+      metrics: {
+        missingCoreCount,
+        missingFields: missingCoreFields.slice(0, 4).join(", "),
+        uncertaintyReview: "required",
+      },
+    });
+  }
+
+  let drawdownPercent: number | undefined;
+  if (
+    athPrice !== undefined &&
+    currentPrice !== undefined &&
+    athPrice > 0 &&
+    currentPrice > 0
+  ) {
+    drawdownPercent = ((athPrice - currentPrice) / athPrice) * 100;
+    if (drawdownPercent >= 90) {
+      addSignal(signals, {
+        id: "extreme_drawdown",
+        severity: "critical",
+        points: adjustedPoints(30, profile.volatilityWeight),
+        metrics: { drawdownPercent: rounded(drawdownPercent) },
+      });
+    } else if (drawdownPercent >= 70) {
+      addSignal(signals, {
+        id: "major_drawdown",
+        severity: "high",
+        points: adjustedPoints(20, profile.volatilityWeight),
+        metrics: { drawdownPercent: rounded(drawdownPercent) },
+      });
+    }
+  }
+
+  if (priceChange1h !== undefined && Math.abs(priceChange1h) >= 18) {
+    addSignal(signals, {
+      id: "rapid_intraday_move",
+      severity: Math.abs(priceChange1h) >= 35 ? "high" : "medium",
+      points: adjustedPoints(
+        Math.abs(priceChange1h) >= 35 ? 18 : 10,
+        profile.volatilityWeight,
+      ),
+      metrics: { priceChange1h: rounded(priceChange1h) },
+    });
+  }
+  if (priceChange6h !== undefined && Math.abs(priceChange6h) >= 30) {
+    addSignal(signals, {
+      id: "rapid_intraday_move",
+      severity: Math.abs(priceChange6h) >= 60 ? "high" : "medium",
+      points: adjustedPoints(
+        Math.abs(priceChange6h) >= 60 ? 18 : 11,
+        profile.volatilityWeight,
+      ),
+      metrics: { priceChange6h: rounded(priceChange6h) },
+    });
+  }
+  if (priceChange24h !== undefined) {
+    if (priceChange24h <= -80) {
+      addSignal(signals, {
+        id: "severe_24h_drop",
+        severity: "critical",
+        points: adjustedPoints(27, profile.volatilityWeight),
+        metrics: { priceChange24h: rounded(priceChange24h) },
+      });
+    } else if (priceChange24h <= -45) {
+      addSignal(signals, {
+        id: "high_24h_drop",
+        severity: "high",
+        points: adjustedPoints(17, profile.volatilityWeight),
+        metrics: { priceChange24h: rounded(priceChange24h) },
+      });
+    } else if (priceChange24h >= 120) {
+      addSignal(signals, {
+        id: "parabolic_24h_gain",
+        severity: "critical",
+        points: adjustedPoints(38, profile.volatilityWeight),
+        metrics: { priceChange24h: rounded(priceChange24h) },
+      });
+    } else if (priceChange24h >= 45) {
+      addSignal(signals, {
+        id: "parabolic_24h_gain",
+        severity: "high",
+        points: adjustedPoints(
+          priceChange24h >= 80 ? 31 : 23,
+          profile.volatilityWeight,
+        ),
+        metrics: { priceChange24h: rounded(priceChange24h) },
+      });
+    }
+  }
+  if (priceChange7d !== undefined) {
+    if (priceChange7d <= -80) {
+      addSignal(signals, {
+        id: "extreme_drawdown",
+        severity: "critical",
+        points: adjustedPoints(20, profile.volatilityWeight),
+        metrics: { priceChange7d: rounded(priceChange7d) },
+      });
+    } else if (priceChange7d <= -50) {
+      addSignal(signals, {
+        id: "major_drawdown",
+        severity: "high",
+        points: adjustedPoints(13, profile.volatilityWeight),
+        metrics: { priceChange7d: rounded(priceChange7d) },
+      });
+    } else if (priceChange7d >= 300) {
+      addSignal(signals, {
+        id: "parabolic_7d_gain",
+        severity: "critical",
+        points: adjustedPoints(42, profile.volatilityWeight),
+        metrics: { priceChange7d: rounded(priceChange7d) },
+      });
+    } else if (priceChange7d >= 100) {
+      addSignal(signals, {
+        id: "parabolic_7d_gain",
+        severity: "high",
+        points: adjustedPoints(
+          priceChange7d >= 200 ? 36 : 27,
+          profile.volatilityWeight,
+        ),
+        metrics: { priceChange7d: rounded(priceChange7d) },
+      });
+    } else if (priceChange7d >= 55) {
+      addSignal(signals, {
+        id: "parabolic_7d_gain",
+        severity: "medium",
+        points: adjustedPoints(15, profile.volatilityWeight),
+        metrics: { priceChange7d: rounded(priceChange7d) },
+      });
+    }
+  }
+  if (priceChange30d !== undefined) {
+    if (priceChange30d >= 1000) {
+      addSignal(signals, {
+        id: "parabolic_30d_gain",
+        severity: "critical",
+        points: adjustedPoints(44, profile.volatilityWeight),
+        metrics: { priceChange30d: rounded(priceChange30d) },
+      });
+    } else if (priceChange30d >= 300) {
+      addSignal(signals, {
+        id: "parabolic_30d_gain",
+        severity: "critical",
+        points: adjustedPoints(34, profile.volatilityWeight),
+        metrics: { priceChange30d: rounded(priceChange30d) },
+      });
+    } else if (priceChange30d >= 150) {
+      addSignal(signals, {
+        id: "parabolic_30d_gain",
+        severity: "high",
+        points: adjustedPoints(24, profile.volatilityWeight),
+        metrics: { priceChange30d: rounded(priceChange30d) },
+      });
+    } else if (priceChange30d <= -80) {
+      addSignal(signals, {
+        id: "extreme_drawdown",
+        severity: "critical",
+        points: adjustedPoints(22, profile.volatilityWeight),
+        metrics: { priceChange30d: rounded(priceChange30d) },
+      });
+    }
+  }
+  if (
+    priceChange24h !== undefined &&
+    priceChange7d !== undefined &&
+    priceChange24h >= 45 &&
+    priceChange7d >= 150
+  ) {
+    addSignal(signals, {
+      id: "multi_timeframe_pump",
+      severity: "critical",
+      points: adjustedPoints(36, profile.volatilityWeight),
+      metrics: {
+        priceChange24h: rounded(priceChange24h),
+        priceChange7d: rounded(priceChange7d),
+      },
+    });
+  }
+  if (
+    priceChange7d !== undefined &&
+    priceChange30d !== undefined &&
+    priceChange7d >= 180 &&
+    priceChange30d >= 250
+  ) {
+    addSignal(signals, {
+      id: "multi_timeframe_pump",
+      severity: "critical",
+      points: adjustedPoints(42, profile.volatilityWeight),
+      metrics: {
+        priceChange7d: rounded(priceChange7d),
+        priceChange30d: rounded(priceChange30d),
+      },
+    });
+  }
+  if (
+    priceChange7d !== undefined &&
+    priceChange7d >= 180 &&
+    (drawdownPercent === undefined || drawdownPercent < 15)
+  ) {
+    addSignal(signals, {
+      id: "new_ath_repricing",
+      severity: "high",
+      points: adjustedPoints(18, profile.volatilityWeight),
+      metrics: {
+        priceChange7d: rounded(priceChange7d),
+        drawdownPercent:
+          drawdownPercent !== undefined ? rounded(drawdownPercent) : null,
+      },
+    });
+  }
+
+  if (
+    profile.expectedPegUsd !== undefined &&
+    currentPrice !== undefined &&
+    currentPrice > 0
+  ) {
+    const pegDeviationPercent =
+      (Math.abs(currentPrice - profile.expectedPegUsd) / profile.expectedPegUsd) *
+      100;
+    if (pegDeviationPercent >= 3) {
+      addSignal(signals, {
+        id: "rapid_intraday_move",
+        severity: pegDeviationPercent >= 10 ? "high" : "medium",
+        points: pegDeviationPercent >= 10 ? 26 : 14,
+        metrics: {
+          pegDeviationPercent: rounded(pegDeviationPercent),
+          stablecoinDepegReview: "required",
+        },
+      });
+    }
+  }
+  if (profile.isPeggedAsset && profile.expectedPegUsd === undefined) {
+    const stablecoinMove24h =
+      priceChange24h !== undefined ? Math.abs(priceChange24h) : undefined;
+    const stablecoinMove7d =
+      priceChange7d !== undefined ? Math.abs(priceChange7d) : undefined;
+    const stablecoinMove30d =
+      priceChange30d !== undefined ? Math.abs(priceChange30d) : undefined;
+    const peggedAssetMove = Math.max(
+      stablecoinMove24h ?? 0,
+      stablecoinMove7d ?? 0,
+      stablecoinMove30d ?? 0,
+    );
+
+    if (
+      (stablecoinMove24h !== undefined && stablecoinMove24h >= 5) ||
+      (stablecoinMove7d !== undefined && stablecoinMove7d >= 10) ||
+      (stablecoinMove30d !== undefined && stablecoinMove30d >= 15)
+    ) {
+      addSignal(signals, {
+        id: "rapid_intraday_move",
+        severity:
+          peggedAssetMove >= 20
+            ? "high"
+            : peggedAssetMove >= 10
+              ? "high"
+              : "medium",
+        points: peggedAssetMove >= 20 ? 26 : peggedAssetMove >= 10 ? 20 : 12,
+        metrics: {
+          peggedAssetMovePercent: rounded(peggedAssetMove),
+          stablecoinPegPathReview: "required",
+        },
+      });
+    }
+  }
+
+  let liquidityToMarketCapPercent: number | undefined;
+  if (
+    marketCap !== undefined &&
+    marketCap > 0 &&
+    liquidityUsd !== undefined &&
+    liquidityUsd >= 0
+  ) {
+    liquidityToMarketCapPercent = (liquidityUsd / marketCap) * 100;
+    const materialDepthThreshold =
+      profile.mode === "stablecoin"
+        ? 10_000_000
+        : profile.mode === "rwa"
+          ? 5_000_000
+          : marketCap >= 100_000_000_000
+            ? 100_000_000
+            : marketCap >= 10_000_000_000
+              ? 25_000_000
+              : marketCap >= 1_000_000_000
+                ? 10_000_000
+                : 0;
+    const hasMaterialAbsoluteDepth =
+      materialDepthThreshold > 0 && liquidityUsd >= materialDepthThreshold;
+    const veryThinRatioThreshold =
+      profile.mode === "stablecoin" ? 0.05 : profile.mode === "rwa" ? 0.1 : 0.25;
+    const thinRatioThreshold =
+      profile.mode === "stablecoin" ? 0.2 : profile.mode === "rwa" ? 0.5 : 1;
+    const reviewRatioThreshold =
+      profile.mode === "stablecoin" ? 0.6 : profile.mode === "rwa" ? 1 : 3;
+
+    if (
+      !hasMaterialAbsoluteDepth &&
+      liquidityToMarketCapPercent < veryThinRatioThreshold
+    ) {
+      addSignal(signals, {
+        id: "very_thin_liquidity",
+        severity: profile.mode === "standard" ? "critical" : "high",
+        points: profile.mode === "standard" ? 25 : 18,
+        metrics: {
+          liquidityToMarketCapPercent: rounded(liquidityToMarketCapPercent, 4),
+          liquidityUsd: Math.round(liquidityUsd),
+          exitDepthReview: "required",
+        },
+      });
+    } else if (
+      !hasMaterialAbsoluteDepth &&
+      liquidityToMarketCapPercent < thinRatioThreshold
+    ) {
+      addSignal(signals, {
+        id: "thin_liquidity",
+        severity: "high",
+        points: profile.mode === "standard" ? 18 : 13,
+        metrics: {
+          liquidityToMarketCapPercent: rounded(liquidityToMarketCapPercent, 4),
+          liquidityUsd: Math.round(liquidityUsd),
+          exitDepthReview: "required",
+        },
+      });
+    } else if (
+      !hasMaterialAbsoluteDepth &&
+      liquidityToMarketCapPercent < reviewRatioThreshold
+    ) {
+      addSignal(signals, {
+        id: "thin_liquidity",
+        severity: "medium",
+        points: profile.mode === "standard" ? 10 : 8,
+        metrics: {
+          liquidityToMarketCapPercent: rounded(liquidityToMarketCapPercent, 4),
+          liquidityUsd: Math.round(liquidityUsd),
+          exitDepthReview: "required",
+        },
+      });
+    }
+    if (liquidityUsd < 25_000) {
+      addSignal(signals, {
+        id: "low_dex_liquidity",
+        severity: "high",
+        points: 14,
+        metrics: { liquidityUsd: Math.round(liquidityUsd) },
+      });
+    } else if (liquidityUsd < 100_000) {
+      addSignal(signals, {
+        id: "low_dex_liquidity",
+        severity: "medium",
+        points: 10,
+        metrics: { liquidityUsd: Math.round(liquidityUsd) },
+      });
+    }
+  } else if (liquidityUsd !== undefined && liquidityUsd < 100_000) {
+    addSignal(signals, {
+      id: "low_dex_liquidity",
+      severity: liquidityUsd < 25_000 ? "high" : "medium",
+      points: liquidityUsd < 25_000 ? 14 : 10,
+      metrics: { liquidityUsd: Math.round(liquidityUsd) },
+    });
+  }
+
+  let volumeToLiquidityRatio: number | undefined;
+  if (
+    volume24h !== undefined &&
+    liquidityUsd !== undefined &&
+    liquidityUsd > 0
+  ) {
+    volumeToLiquidityRatio = volume24h / liquidityUsd;
+    const threshold = profile.mode === "stablecoin" ? 45 : 20;
+    if (volumeToLiquidityRatio >= threshold) {
+      addSignal(signals, {
+        id: "volume_spike",
+        severity: "high",
+        points: adjustedPoints(16, profile.volumeAnomalyWeight),
+        metrics: {
+          volumeToLiquidityRatio: rounded(volumeToLiquidityRatio),
+          turnoverReview: "required",
+        },
+      });
+    }
+  }
+
+  let volumeToMarketCapRatio: number | undefined;
+  if (
+    marketCap !== undefined &&
+    marketCap > 0 &&
+    volume24h !== undefined &&
+    volume24h >= 0
+  ) {
+    volumeToMarketCapRatio = volume24h / marketCap;
+    const highTurnoverThreshold =
+      profile.mode === "stablecoin" ? 6 : profile.mode === "rwa" ? 3 : 2;
+    const elevatedTurnoverThreshold =
+      profile.mode === "stablecoin" ? 2.5 : profile.mode === "rwa" ? 1 : 0.75;
+
+    if (volumeToMarketCapRatio >= highTurnoverThreshold) {
+      addSignal(signals, {
+        id: "wash_trading_risk",
+        severity: "high",
+        points: adjustedPoints(20, profile.volumeAnomalyWeight),
+        metrics: {
+          volumeToMarketCapRatio: rounded(volumeToMarketCapRatio),
+          volumeQualityReview: "required",
+        },
+      });
+    } else if (volumeToMarketCapRatio >= elevatedTurnoverThreshold) {
+      addSignal(signals, {
+        id: "market_volume_stress",
+        severity: "medium",
+        points: adjustedPoints(12, profile.volumeAnomalyWeight),
+        metrics: {
+          volumeToMarketCapRatio: rounded(volumeToMarketCapRatio),
+          volumeQualityReview: "required",
+        },
+      });
+    } else if (marketCap >= 50_000_000 && volumeToMarketCapRatio < 0.001) {
+      addSignal(signals, {
+        id: "market_volume_stress",
+        severity: "high",
+        points: 14,
+        metrics: {
+          volumeToMarketCapRatio: rounded(volumeToMarketCapRatio, 6),
+          thinExitDepthReview: "required",
+        },
+      });
+    } else if (marketCap >= 50_000_000 && volumeToMarketCapRatio < 0.005) {
+      addSignal(signals, {
+        id: "market_volume_stress",
+        severity: "medium",
+        points: 8,
+        metrics: {
+          volumeToMarketCapRatio: rounded(volumeToMarketCapRatio, 6),
+          thinExitDepthReview: "required",
+        },
+      });
+    }
+    if (
+      profile.mode === "rwa" &&
+      marketCap >= 1_000_000 &&
+      volumeToMarketCapRatio < 0.001
+    ) {
+      addSignal(signals, {
+        id: "market_volume_stress",
+        severity: "high",
+        points: 14,
+        metrics: {
+          volumeToMarketCapRatio: rounded(volumeToMarketCapRatio, 6),
+          redemptionDepthReview: "required",
+        },
+      });
+    }
+  }
+
+  if (
+    volume24h !== undefined &&
+    averageVolume7d !== undefined &&
+    averageVolume7d > 0
+  ) {
+    const volumeToAverageRatio = volume24h / averageVolume7d;
+    const threshold = profile.mode === "stablecoin" ? 18 : 10;
+    if (volumeToAverageRatio >= threshold) {
+      addSignal(signals, {
+        id: "volume_spike",
+        severity: "high",
+        points: adjustedPoints(15, profile.volumeAnomalyWeight),
+        metrics: { volumeToAverageRatio: rounded(volumeToAverageRatio) },
+      });
+    }
+  }
+  if (
+    profile.mode !== "stablecoin" &&
+    priceChange24h !== undefined &&
+    priceChange24h >= 45 &&
+    volumeToMarketCapRatio !== undefined &&
+    volumeToMarketCapRatio >= 0.5
+  ) {
+    addSignal(signals, {
+      id: "volume_spike",
+      severity: "high",
+      points: adjustedPoints(18, profile.volumeAnomalyWeight),
+      metrics: {
+        repricingWithTurnover: true,
+        volumeToMarketCapRatio: rounded(volumeToMarketCapRatio),
+      },
+    });
+  }
+
+  let fdvToMarketCapRatio: number | undefined;
+  if (
+    fdv !== undefined &&
+    marketCap !== undefined &&
+    marketCap > 0 &&
+    fdv > marketCap
+  ) {
+    fdvToMarketCapRatio = fdv / marketCap;
+    if (fdvToMarketCapRatio >= 10) {
+      addSignal(signals, {
+        id: "fdv_marketcap_gap",
+        severity: "high",
+        points: 18,
+        metrics: {
+          fdvToMarketCapRatio: rounded(fdvToMarketCapRatio),
+          unlockOverhangReview: "required",
+        },
+      });
+    } else if (fdvToMarketCapRatio >= 5) {
+      addSignal(signals, {
+        id: "fdv_marketcap_gap",
+        severity: "high",
+        points: 13,
+        metrics: {
+          fdvToMarketCapRatio: rounded(fdvToMarketCapRatio),
+          unlockOverhangReview: "required",
+        },
+      });
+    } else if (fdvToMarketCapRatio >= 2.5) {
+      addSignal(signals, {
+        id: "fdv_marketcap_gap",
+        severity: "medium",
+        points: 8,
+        metrics: {
+          fdvToMarketCapRatio: rounded(fdvToMarketCapRatio),
+          unlockOverhangReview: "required",
+        },
+      });
+    }
+  }
+  if (
+    fdvToMarketCapRatio !== undefined &&
+    fdvToMarketCapRatio >= 2.5 &&
+    supplyReference === undefined
+  ) {
+    addSignal(signals, {
+      id: "insufficient_data",
+      severity: fdvToMarketCapRatio >= 5 ? "high" : "medium",
+      points: fdvToMarketCapRatio >= 5 ? 12 : 8,
+      metrics: {
+        fdvToMarketCapRatio: rounded(fdvToMarketCapRatio),
+        unlockScheduleMissing: true,
+        sourceReview: "required",
+      },
+    });
+  }
+
+  if (
+    circulatingSupply !== undefined &&
+    circulatingSupply >= 0 &&
+    supplyReference !== undefined
+  ) {
+    const circulatingPercent = (circulatingSupply / supplyReference) * 100;
+    if (circulatingPercent < 5) {
+      addSignal(signals, {
+        id: "supply_overhang",
+        severity: "critical",
+        points: 28,
+        metrics: {
+          circulatingPercent: rounded(circulatingPercent),
+          floatOpacityReview: "required",
+        },
+      });
+    } else if (circulatingPercent < 10) {
+      addSignal(signals, {
+        id: "supply_overhang",
+        severity: "high",
+        points: 20,
+        metrics: {
+          circulatingPercent: rounded(circulatingPercent),
+          floatOpacityReview: "required",
+        },
+      });
+    } else if (circulatingPercent < 20) {
+      addSignal(signals, {
+        id: "supply_overhang",
+        severity: "high",
+        points: 14,
+        metrics: {
+          circulatingPercent: rounded(circulatingPercent),
+          floatOpacityReview: "required",
+        },
+      });
+    } else if (circulatingPercent < 35) {
+      addSignal(signals, {
+        id: "supply_overhang",
+        severity: "medium",
+        points: 8,
+        metrics: {
+          circulatingPercent: rounded(circulatingPercent),
+          floatOpacityReview: "required",
+        },
+      });
+    }
+    if (
+      circulatingPercent < 20 &&
+      fdvToMarketCapRatio !== undefined &&
+      fdvToMarketCapRatio >= 5
+    ) {
+      addSignal(signals, {
+        id: "supply_overhang",
+        severity:
+          circulatingPercent < 10 && fdvToMarketCapRatio >= 10
+            ? "critical"
+            : "high",
+        points:
+          circulatingPercent < 10 && fdvToMarketCapRatio >= 10 ? 34 : 23,
+        metrics: {
+          circulatingPercent: rounded(circulatingPercent),
+          fdvToMarketCapRatio: rounded(fdvToMarketCapRatio),
+          unlockOverhangReview: "required",
+        },
+      });
+    }
+  }
+
+  const orderBookDepthDropPercent = finiteNumber(
+    safeInput.orderBookDepthDropPercent,
+  );
+  if (
+    orderBookDepthDropPercent !== undefined &&
+    orderBookDepthDropPercent >= 45
+  ) {
+    addSignal(signals, {
+      id: "orderbook_depth_collapse",
+      severity:
+        orderBookDepthDropPercent >= 85
+          ? "critical"
+          : orderBookDepthDropPercent >= 70
+            ? "high"
+            : "medium",
+      points:
+        orderBookDepthDropPercent >= 85
+          ? 30
+          : orderBookDepthDropPercent >= 70
+            ? 22
+            : 12,
+      metrics: { orderBookDepthDropPercent: rounded(orderBookDepthDropPercent) },
+    });
+  }
+
+  const simulatedSlippage10k = finiteNumber(safeInput.simulatedSlippage10k);
+  if (simulatedSlippage10k !== undefined && simulatedSlippage10k >= 4) {
+    addSignal(signals, {
+      id: "orderbook_slippage_risk",
+      severity:
+        simulatedSlippage10k >= 30
+          ? "critical"
+          : simulatedSlippage10k >= 10
+            ? "high"
+            : "medium",
+      points:
+        simulatedSlippage10k >= 30 ? 30 : simulatedSlippage10k >= 10 ? 18 : 10,
+      metrics: { simulatedSlippage10k: rounded(simulatedSlippage10k) },
+    });
+  }
+
+  const bidAskImbalancePercent = finiteNumber(safeInput.bidAskImbalancePercent);
+  if (
+    bidAskImbalancePercent !== undefined &&
+    Math.abs(bidAskImbalancePercent) >= 45
+  ) {
+    addSignal(signals, {
+      id: "orderbook_imbalance",
+      severity: Math.abs(bidAskImbalancePercent) >= 65 ? "high" : "medium",
+      points: Math.abs(bidAskImbalancePercent) >= 65 ? 12 : 8,
+      metrics: { bidAskImbalancePercent: rounded(bidAskImbalancePercent) },
+    });
+  }
+
+  const top10HolderPercent = finiteNumber(safeInput.top10HolderPercent);
+  if (top10HolderPercent !== undefined && top10HolderPercent >= 40) {
+    addSignal(signals, {
+      id: "holder_concentration",
+      severity:
+        top10HolderPercent >= 85
+          ? "critical"
+          : top10HolderPercent >= 65
+            ? "high"
+            : "medium",
+      points:
+        top10HolderPercent >= 85 ? 32 : top10HolderPercent >= 65 ? 20 : 11,
+      metrics: {
+        top10HolderPercent: rounded(top10HolderPercent),
+        walletLabeling: "required",
+      },
+    });
+  }
+  const holderCount = finiteNumber(safeInput.holderCount);
+  if (holderCount !== undefined && holderCount >= 0 && holderCount < 1_000) {
+    addSignal(signals, {
+      id: "holder_concentration",
+      severity: holderCount < 200 ? "high" : "medium",
+      points: holderCount < 200 ? 12 : 8,
+      metrics: { holderCount: Math.round(holderCount), walletLabeling: "required" },
+    });
+  }
+
+  if (safeInput.hadRebrandAfterCrash) {
+    addSignal(signals, {
+      id: "rebrand_after_crash",
+      severity: "medium",
+      points: 10,
+      metrics: { rebrandAfterCrash: true },
+    });
+  }
+  if (safeInput.abnormalExchangeDeposits) {
+    addSignal(signals, {
+      id: "exchange_deposit_anomaly",
+      severity: "high",
+      points: 20,
+      metrics: { exchangeDepositAnomaly: true },
+    });
+  }
+  if (safeInput.suspiciousContractPrivileges || safeInput.canPauseTrading) {
+    const combinedAdminControls =
+      safeInput.suspiciousContractPrivileges === true &&
+      safeInput.canPauseTrading === true;
+    addSignal(signals, {
+      id: "contract_privileges",
+      severity: "high",
+      points: combinedAdminControls ? 24 : 18,
+      metrics: {
+        suspiciousContractPrivileges:
+          safeInput.suspiciousContractPrivileges === true,
+        canPauseTrading: safeInput.canPauseTrading === true,
+        contractAdminReview: "required",
+      },
+    });
+  }
+  if (safeInput.isHoneypot) {
+    addSignal(signals, {
+      id: "honeypot_risk",
+      severity: "critical",
+      points: 48,
+      metrics: { isHoneypot: true, contractAdminReview: "required" },
+    });
+  }
+
+  const buyTaxPercentage = finiteNumber(safeInput.buyTaxPercentage);
+  const sellTaxPercentage = finiteNumber(safeInput.sellTaxPercentage);
+  const highestTransferTax = Math.max(
+    buyTaxPercentage ?? 0,
+    sellTaxPercentage ?? 0,
+  );
+  if (
+    (sellTaxPercentage !== undefined && sellTaxPercentage >= 8) ||
+    (sellTaxPercentage === undefined &&
+      buyTaxPercentage !== undefined &&
+      buyTaxPercentage >= 12)
+  ) {
+    const taxSeverity: RiskLevel =
+      sellTaxPercentage !== undefined && sellTaxPercentage >= 50
+        ? "critical"
+        : highestTransferTax >= 25
+          ? "high"
+          : highestTransferTax >= 12
+            ? "high"
+            : "medium";
+    const taxPoints =
+      taxSeverity === "critical"
+        ? 35
+        : highestTransferTax >= 25
+          ? 24
+          : highestTransferTax >= 12
+            ? 18
+            : 10;
+    const taxAsymmetryPercent =
+      buyTaxPercentage !== undefined && sellTaxPercentage !== undefined
+        ? Math.abs(sellTaxPercentage - buyTaxPercentage)
+        : undefined;
+
+    addSignal(signals, {
+      id: "high_sell_tax",
+      severity: taxSeverity,
+      points: taxPoints,
+      metrics: {
+        buyTaxPercentage:
+          buyTaxPercentage !== undefined ? rounded(buyTaxPercentage) : null,
+        sellTaxPercentage:
+          sellTaxPercentage !== undefined ? rounded(sellTaxPercentage) : null,
+        highestTransferTax: rounded(highestTransferTax),
+        taxAsymmetryPercent:
+          taxAsymmetryPercent !== undefined
+            ? rounded(taxAsymmetryPercent)
+            : null,
+        transferTaxReview: "required",
+      },
+    });
+  }
+  if (safeInput.canMintNewTokens) {
+    addSignal(signals, {
+      id: "mint_risk",
+      severity: "high",
+      points: 18,
+      metrics: { canMintNewTokens: true, contractAdminReview: "required" },
+    });
+  }
+  if (safeInput.canBlacklist) {
+    addSignal(signals, {
+      id: "blacklist_risk",
+      severity: "high",
+      points: 18,
+      metrics: { canBlacklist: true, contractAdminReview: "required" },
+    });
+  }
+
+  let buySellImbalancePercent: number | undefined;
+  if (
+    buys24h !== undefined &&
+    sells24h !== undefined &&
+    buys24h + sells24h > 0
+  ) {
+    buySellImbalancePercent =
+      (Math.abs(buys24h - sells24h) / (buys24h + sells24h)) * 100;
+    if (buySellImbalancePercent >= 70 && buys24h + sells24h >= 50) {
+      addSignal(signals, {
+        id: "sell_pressure_imbalance",
+        severity: "medium",
+        points: 10,
+        metrics: {
+          bidSideTrades24h: buys24h,
+          askSideTrades24h: sells24h,
+          buySellImbalancePercent: rounded(buySellImbalancePercent),
+          dominantFlow:
+            sells24h > buys24h ? "ask_side_pressure" : "bid_side_pressure",
+        },
+      });
+    }
+  }
+
+  const confidence = computeDataConfidence(safeInput, dataQuality, profile);
+  const scoreBreakdown = buildScoreBreakdown(signals, confidence);
+  const score = computeFusedRiskScore(signals, scoreBreakdown, confidence);
+  const level = levelFromScore(score);
+  const agentAssessments = buildAgentAssessments(
+    signals,
+    safeInput,
+    dataQuality,
+    confidence,
+    profile,
+  );
+  const limitations = buildLimitations(
+    safeInput,
+    profile,
+    validation.ok,
+    confidence,
+  );
+  const metaModel = buildMetaModel(
+    safeInput.symbol,
+    score,
+    level,
+    confidence,
+    agentAssessments,
+    signals,
+    limitations,
+    profile,
+  );
+
+  return {
+    token: {
+      marketId: safeInput.marketId,
+      symbol: safeInput.symbol,
+      name: safeInput.name,
+      image: safeInput.image,
+      rank: safeInput.rank,
+      chainId: safeInput.chainId,
+      tokenAddress: safeInput.tokenAddress,
+      pairAddress: safeInput.pairAddress,
+      dexId: safeInput.dexId,
+      url: safeInput.url,
+    },
+    score,
+    scoreFormula: "deterministic_weighted_multi_agent_fusion_v5",
+    confidence,
+    scoreBreakdown,
+    agentAssessments,
+    metaModel,
+    level,
+    badge: badgeFromLevel(level),
+    signals,
+    metrics: {
+      currentPrice,
+      athPrice,
+      drawdownPercent:
+        drawdownPercent !== undefined ? rounded(drawdownPercent) : undefined,
+      marketCap,
+      fdv,
+      fdvToMarketCapRatio:
+        fdvToMarketCapRatio !== undefined
+          ? rounded(fdvToMarketCapRatio)
+          : undefined,
+      liquidityUsd,
+      liquidityToMarketCapPercent:
+        liquidityToMarketCapPercent !== undefined
+          ? rounded(liquidityToMarketCapPercent, 4)
+          : undefined,
+      volume24h,
+      volumeToLiquidityRatio:
+        volumeToLiquidityRatio !== undefined
+          ? rounded(volumeToLiquidityRatio)
+          : undefined,
+      volumeToMarketCapRatio:
+        volumeToMarketCapRatio !== undefined
+          ? rounded(volumeToMarketCapRatio)
+          : undefined,
+      priceChange1h,
+      priceChange6h,
+      priceChange24h,
+      priceChange7d,
+      priceChange14d,
+      priceChange30d,
+      buySellImbalancePercent:
+        buySellImbalancePercent !== undefined
+          ? rounded(buySellImbalancePercent)
+          : undefined,
+      top10HolderPercent,
+      holderCount,
+      buyTaxPercentage,
+      sellTaxPercentage,
+      simulatedSlippage10k,
+      bidAskImbalancePercent,
+      circulatingSupply,
+      totalSupply,
+      maxSupply,
+    },
+    dataQuality,
+    chart: { sevenDay: safeInput.sparkline7d },
+    aiSummary: metaModel.summary,
+    dataSources: safeInput.dataSources ?? [],
+    generatedAt: new Date().toISOString(),
+  };
+}

@@ -1,0 +1,40 @@
+Kontynuujemy od PASS363. Weź najnowszy ZIP velmere_pass363_real_markets_deepening.zip.
+
+Styl pracy: krótkie raporty, realny kod, guard i ZIP. Nie rób ścian opisów w publicznym UI. Najpierw error sweep, potem implementacja.
+
+Stan po PASS363:
+- Real Markets dostało Browser-style suggestions zamiast filtrowania tabeli podczas pisania.
+- Dodano wiele instrumentów w Stocki / Waluty / ETF / Surowce / Real estate / Giełdy.
+- Ikony są deterministyczne i widoczne, nie zależą od pustych remote logo.
+- Modal Real Markets jest nad headerem i ma Shield-style advanced candle chart.
+- Usunięto długie teksty spod Risk / Second / Focus / Proof.
+- Shield Map dropdown zamyka się przy scrollu strony, więc nie lata po viewportcie.
+
+Następne passy:
+PASS364 — Real Markets modes
+- Basic / Pro / Advanced nie mogą być martwymi przyciskami.
+- Klik Basic pokazuje krótki clean scan.
+- Klik Pro pokazuje source/second-source/proof checklist bez ściany tekstu.
+- Klik Advanced pokazuje chart + source ledger + risk tree.
+- Wszystko bez porad inwestycyjnych i bez tekstowego dumpa.
+
+PASS365 — Shared Search Component
+- Wyciągnij jeden reusable search: Browser / Shield / Real Markets.
+- Exact symbol > exact name > prefix > word prefix > safe fuzzy.
+- ETH nie może zwracać Tethera jako top.
+- Real Markets ma korzystać z tego samego search core.
+
+PASS366 — Shield main search migration
+- MarketIntegrityClient ma dostać panel i ranking z Browser/Real Markets.
+- Zlikwidować lag i przeskoki przy scrollu.
+- Podpowiedzi mają być nad layoutem i zamykać się przy scrollu strony.
+
+PASS367 — Provider logo resolver
+- Wprowadzić asset-logo-resolver: verified provider image/cache -> local curated badge -> premium glyph.
+- Każdy asset class ma mieć swój resolver.
+- Nie pokazywać pustych kółek.
+
+PASS368 — Real data provider contracts
+- Przygotuj adapter contracts dla stocks/FX/ETF/commodities/REIT.
+- UI ma jasno pokazywać provider_required/fallback/timestamp.
+- Nie udawać live ceny bez źródła.

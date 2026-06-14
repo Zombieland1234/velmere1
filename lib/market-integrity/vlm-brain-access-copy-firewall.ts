@@ -1,0 +1,12 @@
+import type { VlmBrainCustomerCopySanitizer } from "./vlm-brain-customer-copy-sanitizer";
+import type { VlmBrainWalletAccessGateMatrix } from "./vlm-brain-wallet-access-gate-matrix";
+export type VlmBrainAccessCopyFirewall = { schemaVersion:"vlm-brain-access-copy-firewall-v1-pass235"; firewallMode:"access_copy_no_seed_preview"; firewallId:string; createdAt:string; token:{symbol:string;name:string}; firewallDecision:"blocked"|"review_required"; walletConnectReady:false; seedPhraseAllowed:false; publicSaleClaimAllowed:false; lanes:Array<{id:string;label:string;state:"blocked"|"review"|"preview"; nextAction:string}>; operatorSummary:string; customerBoundary:string; };
+const SCHEMA="vlm-brain-access-copy-firewall-v1-pass235" as const;
+function c(v:unknown,f="access copy firewall review required",l=260){return String(v??f).replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,l)||f}
+function id(v:string){return c(v,"VLM-ACCESS-COPY",230).toUpperCase().replace(/[^A-Z0-9-]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")}
+export function buildVlmBrainAccessCopyFirewall(wallet:VlmBrainWalletAccessGateMatrix,copy:VlmBrainCustomerCopySanitizer): VlmBrainAccessCopyFirewall{
+ const createdAt=wallet.createdAt??copy.createdAt??new Date().toISOString();
+ const lanes=[...wallet.lanes.map(l=>({id:`access_${l.id}`,label:l.label,state:l.state,nextAction:l.nextAction})),{id:"copy_sanitizer",label:"Customer copy sanitizer",state:copy.copyDecision==="blocked"?"blocked" as const:"review" as const,nextAction:"Keep customer copy in anomaly/review/source-confidence language."},{id:"public_sale",label:"Public sale claim gate",state:"blocked" as const,nextAction:"Do not present public sale, ROI, safe access or profit framing until legal and product gates exist."}];
+ return {schemaVersion:SCHEMA,firewallMode:"access_copy_no_seed_preview",firewallId:id(`VLM-ACCESS-COPY-${wallet.token.symbol}-${wallet.gateId}-${createdAt}`),createdAt,token:wallet.token,firewallDecision:lanes.some(l=>l.state==="blocked")?"blocked":"review_required",walletConnectReady:false,seedPhraseAllowed:false,publicSaleClaimAllowed:false,lanes,operatorSummary:"Access copy firewall keeps wallet/session and copy claims locked until entitlement and legal-safe copy are real.",customerBoundary:"VLM access is utility/intelligence access only, with no ROI promise and no private-key or recovery-phrase request."};
+}
+export const PASS235_VLM_BRAIN_ACCESS_COPY_FIREWALL_CONTRACT = true;

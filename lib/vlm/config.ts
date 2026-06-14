@@ -1,0 +1,46 @@
+/** Single source of truth for VLM interface facts. */
+
+export const VLM_CONFIG = {
+  tokenName: "Velmère Access Token",
+  symbol: "VLM",
+  networkModel: "EVM-first",
+  supply: 1_000_000_000,
+  supplyLabel: "1,000,000,000 VLM",
+  minting: "disabled-post-deploy",
+  indicativePriceEur: 0.0004,
+  quotePerEurBeforeFees: 2500,
+  buyFeePercent: 1,
+  sellFeePercent: 2.5,
+  transferFeePercent: 0,
+  buyFeeMultiplier: 0.99,
+  initialLpEur: 400,
+  initialLpVlm: 1_000_000,
+  accessUseCases: ["Private drops", "Archive unlocking", "Exclusive brand privileges"],
+  registryRequired: true,
+  noOwnerMint: true,
+  noBlacklist: true,
+  noHoneypot: true,
+  noHiddenSellLock: true,
+} as const;
+
+export const VLM_TOKEN = {
+  name: VLM_CONFIG.tokenName,
+  symbol: VLM_CONFIG.symbol,
+  network: VLM_CONFIG.networkModel,
+  supply: VLM_CONFIG.supply,
+  supplyLabel: VLM_CONFIG.supplyLabel,
+  mintingDisabledPostDeploy: true,
+  securityTarget: {
+    noOwnerMint: true,
+    noBlacklist: true,
+    noHoneypot: true,
+    noHiddenSellLock: true,
+    fixedSupply: true,
+    openZeppelinStyle: true,
+    multisigRequired: true,
+    testnetRequired: true,
+    staticAnalysisRequired: true,
+    independentAuditRequired: true,
+    officialRegistryRequired: true,
+  },
+} as const;

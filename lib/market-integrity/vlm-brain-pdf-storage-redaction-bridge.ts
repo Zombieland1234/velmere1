@@ -1,0 +1,12 @@
+import type { VlmBrainLedgerPersistenceAdapterPlan } from "./vlm-brain-ledger-persistence-adapter-plan";
+import type { VlmBrainPdfRouteContract } from "./vlm-brain-pdf-route-contract";
+export type VlmBrainPdfStorageRedactionBridge = { schemaVersion:"vlm-brain-pdf-storage-redaction-bridge-v1-pass236"; bridgeMode:"pdf_storage_redaction_bridge_preview"; bridgeId:string; createdAt:string; token:{symbol:string;name:string}; bridgeDecision:"blocked"|"review_required"; binaryPdfReady:false; redactionEnvelopeRequired:true; durableStorageRequired:true; checks:Array<{id:string;label:string;state:"blocked"|"review"; nextAction:string}>; operatorSummary:string; customerBoundary:string; };
+const SCHEMA="vlm-brain-pdf-storage-redaction-bridge-v1-pass236" as const;
+function c(v:unknown,f="PDF storage redaction bridge review required",l=260){return String(v??f).replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,l)||f}
+function id(v:string){return c(v,"VLM-PDF-STORAGE",230).toUpperCase().replace(/[^A-Z0-9-]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")}
+export function buildVlmBrainPdfStorageRedactionBridge(pdf:VlmBrainPdfRouteContract,persistence:VlmBrainLedgerPersistenceAdapterPlan): VlmBrainPdfStorageRedactionBridge{
+ const createdAt=pdf.createdAt??persistence.createdAt??new Date().toISOString();
+ const checks=[...pdf.routeChecks.map(r=>({id:`route_${r.id}`,label:r.label,state:r.state==="blocked"?"blocked" as const:"review" as const,nextAction:r.nextAction})),...persistence.adapters.slice(0,4).map(a=>({id:`store_${a.id}`,label:a.label,state:a.state==="blocked"?"blocked" as const:"review" as const,nextAction:a.nextAction})),{id:"redaction_envelope",label:"Redaction envelope",state:"blocked" as const,nextAction:"Implement export redaction envelope before any binary customer artifact."}];
+ return {schemaVersion:SCHEMA,bridgeMode:"pdf_storage_redaction_bridge_preview",bridgeId:id(`VLM-PDF-STORAGE-${pdf.token.symbol}-${pdf.routeId}-${createdAt}`),createdAt,token:pdf.token,bridgeDecision:checks.some(c=>c.state==="blocked")?"blocked":"review_required",binaryPdfReady:false,redactionEnvelopeRequired:true,durableStorageRequired:true,checks,operatorSummary:"PDF bridge keeps download disabled until generator, durable storage and redaction envelope are connected.",customerBoundary:"PDF preview is not a guarantee, certificate or investment recommendation."};
+}
+export const PASS236_VLM_BRAIN_PDF_STORAGE_REDACTION_BRIDGE_CONTRACT = true;

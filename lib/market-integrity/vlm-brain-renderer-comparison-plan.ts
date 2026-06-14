@@ -1,0 +1,13 @@
+import type { VlmBrainBrowserQaRunbook } from "./vlm-brain-browser-qa-runbook";
+import type { VlmBrainQaTraceBundle } from "./vlm-brain-qa-trace-bundle";
+export type VlmBrainRendererComparisonPlan = { schemaVersion:"vlm-brain-renderer-comparison-plan-v1-pass238"; rendererMode:"dom_vs_webgl_qa_preview"; planId:string; createdAt:string; token:{symbol:string;name:string}; comparisonDecision:"qa_required"|"blocked"; customerRendererSwitchReady:false; qaHudRequired:true; measurements:Array<{id:"dom_orbit"|"webgl_prototype"|"mobile_reduced"|"input_latency";label:string;state:"required"|"blocked"|"review";nextAction:string}>; operatorSummary:string; customerBoundary:string; };
+const SCHEMA="vlm-brain-renderer-comparison-plan-v1-pass238" as const;
+function c(v:unknown,f="renderer comparison review required",l=260){return String(v??f).replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,l)||f}
+function id(v:string){return c(v,"VLM-RENDERER-COMPARE",240).toUpperCase().replace(/[^A-Z0-9-]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")}
+export function buildVlmBrainRendererComparisonPlan(runbook:VlmBrainBrowserQaRunbook,trace:VlmBrainQaTraceBundle): VlmBrainRendererComparisonPlan{
+ const createdAt=trace.createdAt??runbook.createdAt??new Date().toISOString();
+ const blocked=trace.traceDecision==="blocked"||runbook.qaDecision==="blocked";
+ const measurements=[{id:"dom_orbit" as const,label:"DOM Orbit baseline",state:"required" as const,nextAction:"Capture FPS and frame-drop trace with QA HUD enabled."},{id:"webgl_prototype" as const,label:"WebGL prototype compare",state:blocked?"blocked" as const:"review" as const,nextAction:"Enable WebGL prototype only in QA and compare input latency."},{id:"mobile_reduced" as const,label:"Mobile/reduced-motion fallback",state:"required" as const,nextAction:"Confirm static/reduced-motion fallback before customer launch."},{id:"input_latency" as const,label:"Pointer/input latency",state:"review" as const,nextAction:"Record click, drawer open and ESC/arrow response time in browser QA."}];
+ return {schemaVersion:SCHEMA,rendererMode:"dom_vs_webgl_qa_preview",planId:id(`VLM-RENDERER-COMPARE-${trace.token.symbol}-${trace.traceBundleId}-${createdAt}`),createdAt,token:trace.token,comparisonDecision:blocked?"blocked":"qa_required",customerRendererSwitchReady:false,qaHudRequired:true,measurements,operatorSummary:"Renderer comparison keeps WebGL as QA prototype until measurable browser traces prove it is better than DOM Orbit.",customerBoundary:"Renderer choice is a performance implementation detail, not a market or safety claim."};
+}
+export const PASS238_VLM_BRAIN_RENDERER_COMPARISON_PLAN_CONTRACT = true;

@@ -1,0 +1,52 @@
+export const pass270MarketPressureAntiFomoDelta = {
+  id: "PASS270",
+  title: "Market-pressure anti-FOMO rail for pump / low-float behavior",
+  touched: [
+    {
+      id: "C10",
+      area: "Pump / low-float behavior",
+      previous: 41,
+      current: 50,
+      change: 9,
+      note: "A compact pressure rail now explains float, unlock, depth, hype and source-trust pressure in the token modal without buy/sell pressure.",
+    },
+    {
+      id: "L02",
+      area: "Orderbook feed",
+      previous: 22,
+      current: 24,
+      change: 2,
+      note: "Depth pressure is now visible as a dedicated rail and remains marked as source-gated until real orderbook adapters are attached.",
+    },
+    {
+      id: "L04",
+      area: "Unlock / vesting feed",
+      previous: 20,
+      current: 22,
+      change: 2,
+      note: "FDV gap and missing vesting sources now drive a visible unlock pressure cue while keeping real unlock adapters as the next blocker.",
+    },
+    {
+      id: "D15",
+      area: "Risk driver mapping",
+      previous: 82,
+      current: 83,
+      change: 1,
+      note: "Low-float, unlock, depth and social pressure are mapped into separate review cues instead of one generic risk label.",
+    },
+    {
+      id: "M04",
+      area: "Safe export wording",
+      previous: 83,
+      current: 84,
+      change: 1,
+      note: "The rail explicitly treats FOMO as a risk-control trigger and never as a conversion or investment promise.",
+    },
+  ],
+  guardMarkers: [
+    "data-pass270-market-pressure-rail",
+    "velmere_market_pressure_v1_pass270",
+    "anti_fomo_gate",
+    "shield-pass270-pressure-rail",
+  ],
+} as const;

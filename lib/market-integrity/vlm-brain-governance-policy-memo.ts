@@ -1,0 +1,12 @@
+import type { VlmBrainReleaseBlockerResolver } from "./vlm-brain-release-blocker-resolver";
+import type { VlmBrainSourcePolicyGate } from "./vlm-brain-source-policy-gate";
+export type VlmBrainGovernancePolicyMemo = { schemaVersion:"vlm-brain-governance-policy-memo-v1-pass239"; memoMode:"operator_governance_policy_preview"; memoId:string; createdAt:string; token:{symbol:string;name:string}; memoDecision:"blocked"|"lead_review_required"; publicCopyAllowed:false; forbiddenClaimGate:true; lanes:Array<{id:string;label:string;state:"blocked"|"review";nextAction:string}>; operatorSummary:string; customerBoundary:string; };
+const SCHEMA="vlm-brain-governance-policy-memo-v1-pass239" as const;
+function c(v:unknown,f="governance policy review required",l=260){return String(v??f).replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,l)||f}
+function id(v:string){return c(v,"VLM-GOVERNANCE-MEMO",230).toUpperCase().replace(/[^A-Z0-9-]+/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")}
+export function buildVlmBrainGovernancePolicyMemo(resolver:VlmBrainReleaseBlockerResolver,policy:VlmBrainSourcePolicyGate): VlmBrainGovernancePolicyMemo{
+ const createdAt=resolver.createdAt??policy.createdAt??new Date().toISOString();
+ const lanes=[{id:"policy",label:"Source policy gate",state:policy.policyDecision==="blocked"?"blocked" as const:"review" as const,nextAction:"Apply allowlist, reviewer and second-source policy before public copy."},{id:"blockers",label:"Release blocker resolver",state:resolver.resolverDecision==="blocked"?"blocked" as const:"review" as const,nextAction:"Close P0/P1 blockers before export routes."},{id:"claims",label:"Forbidden claim gate",state:"blocked" as const,nextAction:"Block profit, safety, buy/sell, public-sale and final-verdict wording."}];
+ return {schemaVersion:SCHEMA,memoMode:"operator_governance_policy_preview",memoId:id(`VLM-GOVERNANCE-${resolver.token.symbol}-${resolver.resolverId}-${createdAt}`),createdAt,token:resolver.token,memoDecision:lanes.some(l=>l.state==="blocked")?"blocked":"lead_review_required",publicCopyAllowed:false,forbiddenClaimGate:true,lanes,operatorSummary:"Governance memo keeps release language and source policy under operator/lead review.",customerBoundary:"Public copy can discuss anomaly and review context only; it cannot promise safety, profit or final clearance."};
+}
+export const PASS239_VLM_BRAIN_GOVERNANCE_POLICY_MEMO_CONTRACT = true;

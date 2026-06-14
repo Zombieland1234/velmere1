@@ -1,0 +1,27 @@
+import fs from 'node:fs';
+const read=(p)=>fs.readFileSync(p,'utf8');
+const checks=[];
+const add=(name, ok)=>checks.push({name,ok:!!ok});
+const navbar=read('components/Navbar.tsx');
+const cart=read('components/CartDrawer.tsx');
+const overlay=read('components/ui/OverlayPrimitives.tsx');
+const css=read('app/globals.css');
+const mi=read('components/market-integrity/MarketIntegrityClient.tsx');
+const lens=read('components/search/VelmereIntelligenceSearchClient.tsx');
+add('language renders inline anchored menu under trigger', navbar.includes('data-surface="language-selector-inline"') && navbar.includes('languagePanelRef'));
+add('wallet renders inline anchored panel under connect button', navbar.includes('data-surface="header-wallet-panel-inline"') && navbar.includes('walletPanelRef'));
+add('outside click closes language/wallet inline panels', navbar.includes('document.addEventListener("pointerdown", onPointerDown, true)'));
+add('cart drawer is bottom preset', cart.includes('motionPreset="bottom"'));
+add('DrawerRoot exposes motion preset data attr', overlay.includes('data-velmere-motion-preset={motionPreset}'));
+add('bottom drawer CSS overrides global left/top drawer rules', css.includes('.velmere-side-drawer-panel[data-velmere-motion-preset="bottom"]'));
+add('dropdown layers are above header', read('lib/ui/pass628-overlay-constitution.ts').includes('listbox: 120'));
+add('Lens search has rounded focus shell class', lens.includes('velmere-lens-search-shell'));
+add('Shield table section is wide', mi.includes('luxury-section-wide shield-no-overlap pb-16 pt-5'));
+add('Shield tri-sort function exists desc asc neutral', mi.includes('if (sortDirection === "desc")') && mi.includes('setSortKey(null)'));
+add('Shield table has chart header', mi.includes('sort="change30d"') && mi.includes('Sparkline'));
+add('continuous VLM slow turn exists', css.includes('@keyframes velmere-vlm-slow-turn') && css.includes('72s linear infinite'));
+add('Shield/Map/Lens search focus stays rounded', css.includes('.shield-map-search-shell:focus-within') && css.includes('border-radius: 999px'));
+const failed=checks.filter(c=>!c.ok);
+for(const c of checks) console.log(`${c.ok?'PASS':'FAIL'} ${c.name}`);
+if(failed.length){ console.error(`FAILED ${failed.length}/${checks.length}`); process.exit(1); }
+console.log(`PASS ${checks.length}/${checks.length}`);

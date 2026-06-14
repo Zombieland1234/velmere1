@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VLM AI Neural Crypto Popup Prototype</title>
+  <style>
+    :root {
+      --bg: #030406;
+      --panel: rgba(13, 15, 20, 0.78);
+      --line: rgba(255, 255, 255, 0.1);
+      --text: rgba(255, 255, 255, 0.9);
+      --muted: rgba(255, 255, 255, 0.48);
+      --gold: #d8b76a;
+      --cyan: #22d3ee;
+      --green: #34d399;
+      --red: #fb7185;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(34,211,238,.16), transparent 30%),
+        radial-gradient(circle at 84% 82%, rgba(216,183,106,.16), transparent 30%),
+        linear-gradient(135deg, #020305, #08090d 48%, #030405);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    .ambient-grid {
+      position: fixed;
+      inset: 0;
+      opacity: .34;
+      background-image:
+        linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 58px 58px;
+      mask-image: radial-gradient(circle at center, black, transparent 72%);
+      pointer-events: none;
+    }
+
+    .popup {
+      position: relative;
+      width: min(1120px, calc(100vw - 28px));
+      height: min(680px, calc(100vh - 28px));
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(216,183,106,.12), transparent 38%),
+        linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.025)),
+        var(--panel);
+      box-shadow: 0 40px 140px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(24px);
+    }
+
+    .shell {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 315px;
+      gap: 18px;
+      padding: 22px;
+      transition: opacity .55s ease, filter .55s ease, transform .55s ease;
+    }
+    .shell.hidden-ui { opacity: .08; filter: blur(12px); transform: scale(.985); pointer-events: none; }
+
+    .chart-card, .side-card {
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.095);
+      border-radius: 26px;
+      background: rgba(0,0,0,.27);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.045);
+    }
+
+    .chart-card { padding: 18px; display: flex; flex-direction: column; }
+    .top-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .kicker { font: 700 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .18em; color: var(--gold); }
+    .title { margin: 8px 0 0; font-size: clamp(30px, 4vw, 54px); letter-spacing: -.065em; line-height: .92; }
+    .tf { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tf button, .action, .ghost {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.56);
+      padding: 10px 13px;
+      font: 700 10px/1 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: .25s ease;
+    }
+    .tf button.active, .tf button:hover, .ghost:hover { border-color: rgba(216,183,106,.42); color: var(--gold); background: rgba(216,183,106,.075); }
+
+    .chart {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 24px;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
+        radial-gradient(circle at 72% 18%, rgba(34,211,238,.12), transparent 31%),
+        #06070a;
+      background-size: 42px 42px, 42px 42px, auto, auto;
+    }
+    .candle { position: absolute; bottom: 64px; width: 7px; border-radius: 8px; opacity: .92; box-shadow: 0 0 18px currentColor; }
+    .candle::before { content: ""; position: absolute; left: 3px; width: 1px; top: -18px; bottom: -18px; background: currentColor; opacity: .55; }
+    .green { color: var(--green); background: currentColor; }
+    .red { color: var(--red); background: currentColor; }
+    .price-line { position: absolute; left: 0; right: 0; bottom: 48%; height: 1px; background: linear-gradient(90deg, transparent, rgba(216,183,106,.55), transparent); }
+    .price-pill { position: absolute; right: 16px; top: 16px; border: 1px solid rgba(216,183,106,.22); border-radius: 999px; background: rgba(216,183,106,.08); color: var(--gold); padding: 8px 11px; font: 700 11px/1 var(--mono); }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+    .kpi { border: 1px solid rgba(255,255,255,.075); border-radius: 18px; background: rgba(0,0,0,.22); padding: 12px; min-width: 0; }
+    .kpi span { display: block; color: rgba(255,255,255,.33); font: 700 9px/1 var(--mono); text-transform: uppercase; letter-spacing: .15em; }
+    .kpi strong { display: block; margin-top: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 700 14px/1 var(--mono); }
+
+    .side-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .token-orb { width: 92px; height: 92px; margin: 0 auto 8px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(216,183,106,.32); background: radial-gradient(circle, rgba(216,183,106,.22), rgba(0,0,0,.18) 62%); box-shadow: 0 0 70px rgba(216,183,106,.18); font: 900 26px/1 var(--mono); letter-spacing: -.05em; }
+    .side-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .action { width: 100%; padding: 15px 16px; border-color: rgba(216,183,106,.25); color: var(--gold); background: rgba(216,183,106,.085); }
+    .action:hover { transform: translateY(-1px); box-shadow: 0 18px 55px rgba(216,183,106,.12); }
+    .action.advanced { border-color: rgba(34,211,238,.25); color: var(--cyan); background: rgba(34,211,238,.07); }
+    .mode-note { border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 13px; background: rgba(255,255,255,.025); font: 12px/1.7 var(--mono); color: rgba(255,255,255,.42); }
+
+    .sequence { position: absolute; inset: 0; z-index: 5; display: none; overflow: hidden; background: rgba(2,3,6,.74); }
+    .sequence.active { display: block; }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .sequence-copy { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 26px; text-align: center; pointer-events: none; }
+    .glitch { position: relative; border: 1px solid rgba(216,183,106,.22); border-radius: 999px; background: rgba(0,0,0,.45); padding: 12px 16px; color: var(--gold); font: 900 10px/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; animation: glitch 1.05s steps(2,end) infinite; backdrop-filter: blur(18px); }
+    .sequence-card { max-width: 650px; border: 1px solid rgba(255,255,255,.11); border-radius: 28px; background: rgba(0,0,0,.42); padding: 20px; box-shadow: 0 26px 80px rgba(0,0,0,.45); backdrop-filter: blur(18px); }
+    .sequence-card h2 { margin: 0; font-size: clamp(34px, 5vw, 72px); line-height: .9; letter-spacing: -.075em; }
+    .sequence-card p { margin: 14px 0 0; color: rgba(255,255,255,.58); line-height: 1.75; }
+    .sequence-actions { position: relative; z-index: 3; display: flex; gap: 10px; pointer-events: auto; }
+
+    @keyframes glitch {
+      0%,100% { transform: translate(0); text-shadow: 0 0 18px rgba(216,183,106,.42); }
+      20% { transform: translate(1px,-1px); text-shadow: -2px 0 rgba(34,211,238,.6), 2px 0 rgba(52,211,153,.45); }
+      24% { transform: translate(-1px,1px); }
+      60% { transform: translate(0); }
+    }
+
+    @media (max-width: 820px) {
+      body { overflow: auto; padding: 14px 0; }
+      .popup { height: auto; min-height: calc(100vh - 28px); }
+      .shell { position: relative; grid-template-columns: 1fr; }
+      .chart { min-height: 360px; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-grid"></div>
+  <main class="popup" id="popup">
+    <section class="shell" id="shell">
+      <div class="chart-card">
+        <div class="top-row">
+          <div>
+            <div class="kicker">Velmère Shield · public/basic</div>
+            <h1 class="title">BTC risk popup</h1>
+          </div>
+          <div class="tf" id="timeframes">
+            <button class="active">1H</button><button>4H</button><button>1D</button><button>1W</button>
+          </div>
+        </div>
+        <div class="chart" id="chart"><div class="price-line"></div><div class="price-pill">$104,820 · RISK 12%</div></div>
+        <div class="kpis">
+          <div class="kpi"><span>price</span><strong>$104,820</strong></div>
+          <div class="kpi"><span>24h</span><strong style="color:var(--green)">+1.82%</strong></div>
+          <div class="kpi"><span>volume</span><strong>$38.4B</strong></div>
+          <div class="kpi"><span>risk</span><strong>12/100</strong></div>
+        </div>
+      </div>
+      <aside class="side-card">
+        <div class="token-orb">BTC</div>
+        <div><div class="kicker">Control panel</div><p>Basic zostawia ekran czysty. Advanced odpala pełny VLM neural tree z masą połączeń i szybkimi transmiterami danych.</p></div>
+        <button class="action" data-mode="basic">Basic Analysis</button>
+        <button class="action advanced" data-mode="advanced">Advanced Analysis</button>
+        <div class="mode-note" id="modeNote">Ready · choose analysis mode</div>
+      </aside>
+    </section>
+    <section class="sequence" id="sequence">
+      <canvas id="neuralCanvas"></canvas>
+      <div class="sequence-copy">
+        <div class="glitch" id="loadingText">VLM AI Loading...</div>
+        <div class="sequence-card">
+          <h2 id="sequenceTitle">VLM neural risk tree</h2>
+          <p id="sequenceBody">Orb booting from random edge. Neural transmitters will map the token risk layers.</p>
+        </div>
+        <div class="sequence-actions"><button class="ghost" id="skipBtn">skip animation</button></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const chart = document.getElementById('chart');
+    for (let i = 0; i < 84; i++) {
+      const c = document.createElement('span');
+      const up = Math.random() > 0.45;
+      c.className = `candle ${up ? 'green' : 'red'}`;
+      c.style.left = `${18 + i * 10}px`;
+      c.style.height = `${26 + Math.random() * 150}px`;
+      c.style.bottom = `${48 + Math.sin(i * .24) * 58 + Math.random() * 54}px`;
+      chart.appendChild(c);
+    }
+
+    document.querySelectorAll('#timeframes button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#timeframes button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    const shell = document.getElementById('shell');
+    const sequence = document.getElementById('sequence');
+    const canvas = document.getElementById('neuralCanvas');
+    const ctx = canvas.getContext('2d');
+    const loadingText = document.getElementById('loadingText');
+    const sequenceTitle = document.getElementById('sequenceTitle');
+    const sequenceBody = document.getElementById('sequenceBody');
+    const modeNote = document.getElementById('modeNote');
+    let raf = 0;
+    let activeMode = 'basic';
+    let completeTimer = 0;
+
+    function run(mode) {
+      activeMode = mode;
+      shell.classList.add('hidden-ui');
+      sequence.classList.add('active');
+      loadingText.textContent = mode === 'advanced' ? 'VLM AI Loading... deep neural expansion' : 'VLM AI Loading... basic signal trace';
+      sequenceTitle.textContent = mode === 'advanced' ? 'Advanced VLM neural map' : 'Basic VLM signal tree';
+      sequenceBody.textContent = mode === 'advanced'
+        ? 'Massive graph: source ledger, liquidity, holders, order book, evidence and SOC feed connect into one aggressive VLM core.'
+        : 'Small graph: price, volume, candle direction and a calm risk flag without flooding the user with data.';
+      modeNote.textContent = `Running ${mode.toUpperCase()} analysis · BTC · RISK 12%`;
+      animate(mode);
+      clearTimeout(completeTimer);
+      completeTimer = setTimeout(() => finish(mode), mode === 'advanced' ? 6900 : 5600);
+    }
+
+    function finish(mode) {
+      cancelAnimationFrame(raf);
+      sequence.classList.remove('active');
+      shell.classList.remove('hidden-ui');
+      modeNote.textContent = mode === 'advanced'
+        ? 'Advanced finished · full VLM neural console would open now'
+        : 'Basic finished · short AI summary would open now';
+    }
+
+    document.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => run(btn.dataset.mode)));
+    document.getElementById('skipBtn').addEventListener('click', () => finish(activeMode));
+
+    function resize() {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const r = sequence.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(r.width * dpr));
+      canvas.height = Math.max(1, Math.floor(r.height * dpr));
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return { w: r.width, h: r.height };
+    }
+
+    function animate(mode) {
+      cancelAnimationFrame(raf);
+      const advanced = mode === 'advanced';
+      const edge = Math.floor(Math.random() * 4);
+      const startAt = performance.now();
+      const size = resize();
+      const start = edge === 0 ? {x: Math.random()*size.w, y:-100} : edge === 1 ? {x:size.w+100,y:Math.random()*size.h} : edge === 2 ? {x:Math.random()*size.w,y:size.h+100} : {x:-100,y:Math.random()*size.h};
+      const cx = size.w / 2, cy = size.h / 2;
+      const nodes = [{x:cx,y:cy,parent:-1,layer:0,r:18}];
+      const rings = advanced ? [10,16,18,12] : [5,3];
+      let prevStart = 0, prevEnd = 0;
+      rings.forEach((count, li) => {
+        const layer = li + 1;
+        const ringStart = nodes.length;
+        for (let i=0;i<count;i++) {
+          const angle = Math.PI*2*(i/count) + layer*.46 + (Math.random()-.5)*(advanced ? .52 : .18);
+          const dist = Math.min(size.w,size.h) * (advanced ? .42 : .30) * (layer/rings.length) * (.75+Math.random()*.25);
+          nodes.push({x:cx+Math.cos(angle)*dist, y:cy+Math.sin(angle)*dist, parent: layer===1?0:prevStart+Math.floor(Math.random()*Math.max(1, prevEnd-prevStart)), layer, r: advanced ? 2+Math.random()*3 : 4+Math.random()*4});
+        }
+        prevStart = ringStart; prevEnd = nodes.length;
+      });
+      const packets = Array.from({length: advanced?220:26}, (_,i)=>({edge:1+(i%(nodes.length-1)),p:Math.random(),s:(advanced ? .012 : .004)+Math.random()*(advanced ? .026 : .007)}));
+      const fly = advanced ? 900 : 1200;
+      const spawn = advanced ? 1450 : 1850;
+      const ease = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
+
+      function frame(now) {
+        const t = now - startAt;
+        const fp = ease(t/fly);
+        const sp = ease((t-fly)/spawn);
+        const ox = start.x + (cx-start.x)*fp;
+        const oy = start.y + (cy-start.y)*fp;
+        ctx.clearRect(0,0,size.w,size.h);
+        ctx.fillStyle = 'rgba(2,3,6,.44)'; ctx.fillRect(0,0,size.w,size.h);
+        for (let x=0;x<size.w;x+=42){ ctx.strokeStyle='rgba(255,255,255,.028)'; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,size.h); ctx.stroke(); }
+        for (let y=0;y<size.h;y+=42){ ctx.strokeStyle='rgba(255,255,255,.024)'; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(size.w,y); ctx.stroke(); }
+
+        if (t > fly*.7) {
+          nodes.slice(1).forEach((n,i)=>{
+            const p = nodes[n.parent]; const local = Math.max(0, Math.min(1, sp - i*(advanced ? .004 : .055))); if(!local) return;
+            const ex = p.x + (n.x-p.x)*local, ey = p.y+(n.y-p.y)*local;
+            const g = ctx.createLinearGradient(p.x,p.y,ex,ey); g.addColorStop(0,'rgba(216,183,106,.42)'); g.addColorStop(.55,'rgba(34,211,238,.30)'); g.addColorStop(1,'rgba(52,211,153,.22)');
+            ctx.strokeStyle=g; ctx.lineWidth=advanced ? .75 : 1.1; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(ex,ey); ctx.stroke();
+          });
+          packets.forEach(pk=>{
+            const n=nodes[pk.edge%nodes.length], p=nodes[n.parent]; pk.p=(pk.p+pk.s)%1; if(!p) return;
+            const x=p.x+(n.x-p.x)*pk.p, y=p.y+(n.y-p.y)*pk.p; ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.shadowBlur=advanced?20:12; ctx.shadowColor='rgba(34,211,238,.7)'; ctx.fillStyle=Math.random()>.5?'rgba(34,211,238,.82)':'rgba(216,183,106,.86)'; ctx.beginPath(); ctx.arc(x,y,advanced?1+Math.random()*1.7:2.2,0,Math.PI*2); ctx.fill(); ctx.restore();
+          });
+          nodes.slice(1).forEach(n=>{ ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.shadowBlur=18; ctx.shadowColor='rgba(216,183,106,.65)'; ctx.fillStyle=n.layer>2?'rgba(34,211,238,.70)':'rgba(216,183,106,.82)'; ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill(); ctx.restore(); });
+        }
+        const glow = ctx.createRadialGradient(ox,oy,4,ox,oy,advanced?130:92); glow.addColorStop(0,'rgba(255,255,255,.98)'); glow.addColorStop(.22,'rgba(216,183,106,.90)'); glow.addColorStop(.52,advanced?'rgba(34,211,238,.38)':'rgba(52,211,153,.26)'); glow.addColorStop(1,'rgba(216,183,106,0)');
+        ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(ox,oy,advanced?128:92,0,Math.PI*2); ctx.fill(); ctx.restore();
+        ctx.fillStyle='rgba(5,6,10,.76)'; ctx.strokeStyle='rgba(216,183,106,.62)'; ctx.beginPath(); ctx.arc(ox,oy,advanced?44:36,0,Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.textAlign='center'; ctx.fillStyle='white'; ctx.font='900 20px ui-monospace,monospace'; ctx.fillText('VLM',ox,oy-2); ctx.fillStyle='rgba(216,183,106,.95)'; ctx.font='700 10px ui-monospace,monospace'; ctx.fillText('BTC · RISK 12%',ox,oy+17);
+        raf = requestAnimationFrame(frame);
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    addEventListener('resize', () => { if (sequence.classList.contains('active')) animate(activeMode); });
+  </script>
+</body>
+</html>
