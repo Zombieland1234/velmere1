@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:i18n && npm run vercel:preflight && next build --webpack",
+    "build": "npm run check:i18n && npm run typecheck && npm run vercel:preflight && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -544,7 +544,8 @@
     "verify:pass2010-route-canonical-community-sweep": "node scripts/verify-pass2010-route-canonical-community-sweep.mjs",
     "verify:pass2011-modal-menu-lag-visual-sweep": "node scripts/verify-pass2011-modal-menu-lag-visual-sweep.mjs",
     "verify:pass2012-header-dropdown-perfection-sweep": "node scripts/verify-pass2012-header-dropdown-perfection-sweep.mjs",
-    "verify:pass2028-visual-stability": "node scripts/verify-pass2028-visual-stability.mjs"
+    "verify:pass2028-visual-stability": "node scripts/verify-pass2028-visual-stability.mjs",
+    "verify:pass2029-vercel-ui-sweep": "node scripts/verify-pass2029-vercel-ui-sweep.mjs"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.9.0",
@@ -582,8 +583,8 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=24.15.0 <25",
-    "npm": ">=11.12.1 <12"
+    "node": ">=24.16.0 <25",
+    "npm": ">=11.13.0 <12"
   },
   "packageManager": "npm@11.16.0",
   "volta": {
