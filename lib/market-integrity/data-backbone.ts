@@ -5,18 +5,19 @@ export const velmereDataBackboneVersion = "velmere_data_backbone_v1_pass104";
 
 const finiteNumber = z.number().finite();
 const optionalFiniteNumber = finiteNumber.optional();
+const optionalUrlString = z.union([z.string().url(), z.literal(""), z.undefined()]).transform((value) => value || undefined);
 
 export const tokenRiskInputSchema = z.object({
   marketId: z.string().min(1).max(140).optional(),
   symbol: z.string().min(1).max(32).transform((value: string) => value.trim().toUpperCase()),
   name: z.string().min(1).max(160).transform((value: string) => value.trim()),
-  image: z.string().url().optional().or(z.literal("")).transform((value: string) => value || undefined),
+  image: optionalUrlString,
   rank: optionalFiniteNumber,
   chainId: z.string().min(1).max(64).optional(),
   tokenAddress: z.string().min(1).max(140).optional(),
   pairAddress: z.string().min(1).max(140).optional(),
   dexId: z.string().min(1).max(64).optional(),
-  url: z.string().url().optional().or(z.literal("")).transform((value: string) => value || undefined),
+  url: optionalUrlString,
   currentPrice: optionalFiniteNumber,
   athPrice: optionalFiniteNumber,
   marketCap: optionalFiniteNumber,

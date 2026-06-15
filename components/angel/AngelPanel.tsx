@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, X } from "lucide-react";
+import { Send, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { DrawerRoot } from "@/components/ui/OverlayPrimitives";
 
 type AngelPanelProps = {
   open: boolean;
   onClose: () => void;
+  handoffMessage?: string | null;
 };
 
 type ChatMessage = {
@@ -15,7 +16,7 @@ type ChatMessage = {
   content: string;
 };
 
-export default function AngelPanel({ open, onClose }: AngelPanelProps) {
+export default function AngelPanel({ open, onClose, handoffMessage = null }: AngelPanelProps) {
   const t = useTranslations("Angel");
   const locale = useLocale();
   const [input, setInput] = useState("");
@@ -26,6 +27,7 @@ export default function AngelPanel({ open, onClose }: AngelPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const lastHandoffRef = useRef<string | null>(null);
 
   useEffect(() => {
     try {
@@ -44,6 +46,19 @@ export default function AngelPanel({ open, onClose }: AngelPanelProps) {
       setSessionId("");
     }
   }, []);
+
+
+  useEffect(() => {
+    if (!open || !handoffMessage || lastHandoffRef.current === handoffMessage) return;
+    lastHandoffRef.current = handoffMessage;
+    setMessages((current) => [
+      ...current,
+      {
+        role: "assistant",
+        content: handoffMessage,
+      },
+    ]);
+  }, [handoffMessage, open]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -74,7 +89,10 @@ export default function AngelPanel({ open, onClose }: AngelPanelProps) {
           sessionId,
         }),
       });
-      const data = await response.json();
+      const [data] = await Promise.all([
+        response.json(),
+        new Promise((resolve) => window.setTimeout(resolve, 650)),
+      ]);
       if (!response.ok || !data.reply)
         throw new Error(data.error ?? t("neuralError"));
       setMessages((current) => [
@@ -148,10 +166,10 @@ export default function AngelPanel({ open, onClose }: AngelPanelProps) {
             </p>
           ))}
           {loading ? (
-            <p className="flex items-center gap-2 font-sans text-xs uppercase tracking-[0.16em] text-white/[0.42]">
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Angel is thinking...
-            </p>
+            <div className="angel-thinking-row flex items-center gap-3 rounded-2xl border border-cyan-200/[0.12] bg-cyan-300/[0.045] px-4 py-3 font-sans text-xs uppercase tracking-[0.16em] text-white/[0.48]">
+              <span className="angel-thinking-orb" aria-hidden="true">V</span>
+              <span>Angel is thinking...</span>
+            </div>
           ) : null}
           <div ref={messagesEndRef} />
         </div>

@@ -10,13 +10,16 @@ export default function AngelTeaser() {
   const t = useTranslations("Angel");
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
   const { closeCart } = useCart();
 
   useEffect(() => {
     const closeAngel = () => setOpen(false);
-    const openAngelFromCommand = () => {
+    const openAngelFromCommand = (event?: Event) => {
       closeCart();
       window.dispatchEvent(new Event("velmere:close-square-panels"));
+      const detail = event instanceof CustomEvent ? event.detail as { handoffMessage?: string } | null : null;
+      if (detail?.handoffMessage) setHandoffMessage(detail.handoffMessage);
       setOpen(true);
     };
     window.addEventListener("velmere:close-angel", closeAngel);
@@ -57,7 +60,7 @@ export default function AngelTeaser() {
           </span>
         </button>
       ) : null}
-      <AngelPanel open={open && !hidden} onClose={() => setOpen(false)} />
+      <AngelPanel open={open && !hidden} handoffMessage={handoffMessage} onClose={() => setOpen(false)} />
     </>
   );
 }

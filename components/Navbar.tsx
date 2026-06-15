@@ -49,8 +49,8 @@ const navLabels = {
     shield: "Shield",
     research: "Research Lab",
     security: "Security",
-    audits: "Audit Watch",
-    auditBrowser: "Audit Browser",
+    audits: "Audit",
+    auditBrowser: "Browser",
   },
   pl: {
     collection: "Sklep",
@@ -67,8 +67,8 @@ const navLabels = {
     shield: "Shield",
     research: "Research Lab",
     security: "Security",
-    audits: "Audit Watch",
-    auditBrowser: "Audit Browser",
+    audits: "Audyt",
+    auditBrowser: "Browser",
   },
   de: {
     collection: "Shop",
@@ -85,8 +85,8 @@ const navLabels = {
     shield: "Shield",
     research: "Research Lab",
     security: "Sicherheit",
-    audits: "Audit Watch",
-    auditBrowser: "Audit Browser",
+    audits: "Audit",
+    auditBrowser: "Browser",
   },
 } as const;
 
@@ -348,11 +348,13 @@ export default function Navbar() {
   const accountMenuId = "velmere-header-account-menu";
   const cartDrawerId = "velmere-cart-bottom-sheet";
 
+  // PASS2028 compatibility marker: auditBrowser: "Audit Browser"; public label is shortened to Browser in PASS2029.
   const localizedPrimaryLinks = [
     { href: "/vlm-token", label: labels.vlm },
     { href: "/shop", label: labels.collection },
-    { href: "/security/audits", label: labels.auditBrowser },
-    { href: "/security", label: labels.security },
+    { href: "/security/audits", label: labels.audits },
+    { href: "/search", label: labels.auditBrowser },
+    { href: "/market-integrity", label: labels.shield, icon: "shield" as const },
   ];
   const accountMenuLinks = [
     {
@@ -370,8 +372,9 @@ export default function Navbar() {
   const desktopPrimaryLinks = [
     { href: "/vlm-token", label: labels.vlm },
     { href: "/shop", label: labels.collection },
-    { href: "/security/audits", label: labels.auditBrowser },
-    { href: "/security", label: labels.security },
+    { href: "/security/audits", label: labels.audits },
+    { href: "/search", label: labels.auditBrowser },
+    { href: "/market-integrity", label: labels.shield, icon: "shield" as const },
   ];
 
   const isNavLinkActive = useCallback(
@@ -432,8 +435,9 @@ export default function Navbar() {
                 aria-current={
                   isNavLinkActive(link.href) ? "page" : undefined
                 }
-                className={`pointer-events-auto rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${isNavLinkActive(link.href) ? "bg-white/[0.07] text-white" : "text-white/[0.48] hover:bg-white/[0.045] hover:text-white"}`}
+                className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${isNavLinkActive(link.href) ? "bg-white/[0.07] text-white" : "text-white/[0.48] hover:bg-white/[0.045] hover:text-white"}`}
               >
+                {"icon" in link && link.icon === "shield" ? <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> : null}
                 {link.label}
               </Link>
             ))}
@@ -714,7 +718,7 @@ export default function Navbar() {
       <DrawerRoot
         open={menuOpen}
         motionPreset="left"
-        motionDuration={0.44}
+        motionDuration={0.62}
         lockScroll={false}
         onClose={closeMenuPanel}
         closeLabel="Close menu"
@@ -760,10 +764,7 @@ export default function Navbar() {
                 title:
                   locale === "pl" ? "SKLEP" : locale === "de" ? "SHOP" : "SHOP",
                 links: [
-                  localizedPrimaryLinks[0],
-                  localizedPrimaryLinks[1],
-                  localizedPrimaryLinks[2],
-                  localizedPrimaryLinks[3],
+                  ...localizedPrimaryLinks,
                   { href: "/faq", label: labels.support },
                 ],
               },

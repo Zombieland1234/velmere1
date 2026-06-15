@@ -7,12 +7,22 @@ import {
   type VelmereAssetLogoInput,
 } from "@/lib/market-integrity/asset-logo-resolver";
 
+type AssetLogoProps = VelmereAssetLogoInput & {
+  asset?: Partial<VelmereAssetLogoInput> & Record<string, unknown>;
+  className?: string;
+  compact?: boolean;
+  large?: boolean;
+};
+
 export default function AssetLogo({
+  asset,
   className = "",
   compact = false,
+  large = false,
   ...input
-}: VelmereAssetLogoInput & { className?: string; compact?: boolean }) {
-  const { assetClass, id, imageUrl, name, symbol, venue } = input;
+}: AssetLogoProps) {
+  const mergedInput = { ...asset, ...input } as VelmereAssetLogoInput;
+  const { assetClass, id, imageUrl, name, symbol, venue } = mergedInput;
   const resolution = useMemo(
     () =>
       resolveVelmereAssetLogo({
@@ -38,7 +48,7 @@ export default function AssetLogo({
 
   return (
     <span
-      className={`velmere-asset-logo velmere-asset-logo-${resolution.tone} ${compact ? "velmere-asset-logo-compact" : ""} relative overflow-hidden ${className}`}
+      className={`velmere-asset-logo velmere-asset-logo-${resolution.tone} ${compact ? "velmere-asset-logo-compact" : ""} ${large ? "velmere-asset-logo-large" : ""} relative overflow-hidden ${className}`}
       role="img"
       aria-label={`${resolution.label} logo`}
       data-logo-source={src ? (candidateIndex === 0 ? "provider" : "fallback") : "badge"}

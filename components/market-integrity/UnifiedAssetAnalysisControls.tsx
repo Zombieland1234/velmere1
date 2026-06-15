@@ -336,7 +336,7 @@ export function UnifiedTimeframeTabs<T extends string>({
           data-testid={
             testIdPrefix ? `${testIdPrefix}-${option.value}` : undefined
           }
-          className={`velmere-interaction-pulse rounded-full border px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.14em] transition ${
+          className={`velmere-interaction-pulse rounded-full border px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.14em] transition focus-visible:outline-none focus-visible:ring-0 ${
             value === option.value
               ? "border-cyan-200/[0.34] bg-cyan-300/[0.095] text-cyan-50"
               : "border-white/[0.10] bg-white/[0.035] text-white/[0.48] hover:border-cyan-200/[0.22] hover:text-white"
@@ -442,24 +442,22 @@ export function UnifiedAnalysisDepthDock<
           data-pass2000-action-window="large-click-target-calm-hover"
           data-pass2011-action="compact-terminal-row"
           onPointerDown={(event) => event.stopPropagation()}
-          className={`unified-asset-depth-button group min-h-16 rounded-xl border p-3 text-left transition ${
+          className={`unified-asset-depth-button group min-h-16 rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-0 ${
             value === option.value
               ? "is-active border-cyan-200/[0.34] bg-cyan-300/[0.10]"
               : "border-white/[0.10] bg-white/[0.025] hover:border-cyan-200/[0.24] hover:bg-cyan-300/[0.055]"
           }`}
         >
-          <span className="flex items-center justify-between gap-3">
-            <strong className="min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.78]">
+          <span className="flex items-start justify-between gap-3">
+            <strong className="min-w-0 font-serif text-2xl leading-none tracking-[-0.045em] text-white/[0.90] md:text-[1.7rem]">
               {option.label}
             </strong>
-            {option.icon ? (
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-cyan-200/[0.12] bg-cyan-300/[0.06] text-cyan-100/[0.78]">
-                {option.icon}
-              </span>
-            ) : null}
+            <span className="unified-asset-depth-arrow mt-1 shrink-0 font-mono text-sm text-white/[0.34] transition group-hover:text-cyan-100" aria-hidden="true">
+              →
+            </span>
           </span>
           {option.meta ? (
-            <span className="mt-2 block text-xs leading-5 text-white/[0.44]" data-pass1995-action-meta="short-readable">
+            <span className="mt-3 block text-xs leading-5 text-white/[0.48]" data-pass1995-action-meta="short-readable">
               {option.meta}
             </span>
           ) : null}

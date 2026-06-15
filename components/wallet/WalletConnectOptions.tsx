@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -135,9 +136,11 @@ function WalletMark({ icon }: { icon: string }) {
   const common = "h-7 w-7";
   if (icon === "metamask") {
     return (
-      <img
+      <Image
         src="/wallets/metamask.svg"
         alt=""
+        width={28}
+        height={28}
         className={`${common} object-contain`}
         aria-hidden="true"
         data-pass2028-wallet-real-icon="metamask"
@@ -180,9 +183,11 @@ function WalletMark({ icon }: { icon: string }) {
   }
   if (icon === "phantom") {
     return (
-      <img
+      <Image
         src="/wallets/phantom.svg"
         alt=""
+        width={28}
+        height={28}
         className={`${common} object-contain`}
         aria-hidden="true"
         data-pass2028-wallet-real-icon="phantom"

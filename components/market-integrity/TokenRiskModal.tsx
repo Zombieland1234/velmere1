@@ -18834,7 +18834,7 @@ export default function TokenRiskModal({
   const [history, setHistory] = useState<HistorySnapshot[]>([]);
   const [mounted, setMounted] = useState(false);
   const modalRootRef = useRef<HTMLDivElement | null>(null);
-  const modalShellRef = useRef<HTMLElement | null>(null);
+  const modalShellRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [viewportGovernor, setViewportGovernor] =
     useState<Pass613ModalViewportGovernor>(() =>

@@ -454,6 +454,8 @@ export default function AdvancedMarketChart({
   const dragRef = useRef<DragState | null>(null);
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const pinchRef = useRef<PinchState | null>(null);
+  const pendingPanOffsetRef = useRef<number | null>(null);
+  const panFrameRef = useRef<number | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const [inspectedIndex, setInspectedIndex] = useState<number | null>(null);
   const [panOffset, setPanOffset] = useState(0);
@@ -476,6 +478,27 @@ export default function AdvancedMarketChart({
     state: string;
     source: string;
   } | null>(null);
+
+
+  useEffect(() => {
+    return () => {
+      if (panFrameRef.current !== null) {
+        window.cancelAnimationFrame(panFrameRef.current);
+        panFrameRef.current = null;
+      }
+    };
+  }, []);
+
+  function commitPanOffset(nextOffset: number) {
+    pendingPanOffsetRef.current = nextOffset;
+    if (panFrameRef.current !== null) return;
+    panFrameRef.current = window.requestAnimationFrame(() => {
+      panFrameRef.current = null;
+      const pending = pendingPanOffsetRef.current;
+      pendingPanOffsetRef.current = null;
+      if (pending !== null) setPanOffset(pending);
+    });
+  }
 
   const primaryContinuity = useMemo(
     () => buildPass590CandleContinuityLedger(candles, range),
@@ -989,7 +1012,7 @@ export default function AdvancedMarketChart({
       (deltaX / Math.max(bounds.width, 1)) * safeWindowSize,
     );
     // Direct manipulation: the rendered history follows the hand/cursor.
-    setPanOffset(clamp(drag.startOffset + deltaBars, 0, maxOffset));
+    commitPanOffset(clamp(drag.startOffset + deltaBars, 0, maxOffset));
   }
 
   function endPointer(event: PointerEvent<SVGSVGElement>) {

@@ -372,6 +372,13 @@ export default function VlmAuditCommandClient({ page }: { page: VlmAuditProductP
       </section>
 
       {selectedDemoProject ? (
+        <>
+        <button
+          type="button"
+          className="fixed inset-0 z-[155] cursor-default bg-transparent"
+          aria-label="Close VLM Brain audit chat"
+          onClick={() => setSelectedDemoProject(null)}
+        />
         <aside
           className="velmere-audit-brain-chat-drawer fixed right-4 top-[5.8rem] z-[160] flex max-h-[calc(100dvh-7rem)] w-[min(30rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[1.6rem] border border-cyan-200/[0.16] bg-[#070b0e]/[0.98] text-left text-white shadow-[0_34px_120px_rgba(0,0,0,0.78)]"
           aria-label="VLM Brain audit chat"
@@ -412,8 +419,23 @@ export default function VlmAuditCommandClient({ page }: { page: VlmAuditProductP
                 </span>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("velmere:angel:open", {
+                  detail: {
+                    handoffMessage: `Przeniosłem kontekst audytu ${selectedDemoProject.asset}. VLM Brain wskazał: ${selectedDemoProject.vlmStatus}. Mogę pomóc spokojnie przejść przez scope, dowody i disclosure bez publikowania exploita.`,
+                  },
+                }));
+                setSelectedDemoProject(null);
+              }}
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-velmere-gold/[0.24] bg-velmere-gold/[0.08] px-4 font-mono text-[9px] font-black uppercase tracking-[0.14em] text-velmere-gold transition hover:bg-velmere-gold/[0.13]"
+            >
+              Kontynuuj w Angel
+            </button>
           </div>
         </aside>
+        </>
       ) : null}
 
       {preview || status === "error" ? (
