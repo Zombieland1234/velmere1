@@ -22,6 +22,17 @@ const nextConfig = {
     qualities: [75, 85, 90, 100],
     unoptimized: true,
   },
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}),
+        ws: false,
+      };
+    }
+
+    return config;
+  },
   async headers() {
     return [{ source: "/:path*", headers: buildSecurityHeaders({ isDev }) }];
   },
