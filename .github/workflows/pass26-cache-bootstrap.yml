@@ -63,6 +63,15 @@ jobs:
           rm -rf node_modules
           printf '%s\n' "$CACHE_DIR" > npm-cache-path.txt
 
+      - name: Add exact PASS26 pinned tarballs
+        run: |
+          while IFS= read -r spec; do
+            test -n "$spec" || continue
+            echo "Caching $spec"
+            npm cache add "$spec" --ignore-scripts
+          done < pass26-exact-missing-packages.txt
+          npm cache verify
+
       - name: Download and verify official Node archive
         run: |
           mkdir -p runtime
@@ -77,7 +86,7 @@ jobs:
           mkdir -p bundle/npm-cache bundle/runtime bundle/meta
           cp -a "$CACHE_DIR/." bundle/npm-cache/
           cp "runtime/${NODE_ARCHIVE}" bundle/runtime/
-          cp package.json package-lock.json generated-lockfile.sha256 bundle/meta/
+          cp package.json package-lock.json generated-lockfile.sha256 pass26-exact-missing-packages.txt bundle/meta/
           find bundle -type f -print0 | sort -z | xargs -0 sha256sum > bundle/meta/files.sha256
           tar -czf PASS26_BOOTSTRAP_RUNTIME_CACHE_BUNDLE.tar.gz bundle
 
