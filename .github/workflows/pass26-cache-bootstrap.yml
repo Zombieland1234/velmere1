@@ -1,0 +1,87 @@
+name: PASS26 Runtime Cache Bootstrap
+
+on:
+  push:
+    branches:
+      - pass26-runtime-cache-bridge
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pass26-cache-bootstrap-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NODE_ARCHIVE: node-v24.18.0-linux-x64.tar.xz
+  NODE_ARCHIVE_SHA256: 55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742
+
+jobs:
+  build-cache:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: pass26-cache-bridge
+    steps:
+      - name: Checkout bridge branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+
+      - name: Verify exact toolchain
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+
+      - name: Generate deterministic bootstrap lockfile
+        run: |
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --engine-strict=true --no-audit --no-fund --progress=false
+          sha256sum package-lock.json | tee generated-lockfile.sha256
+
+      - name: Populate cache and verify clean reinstall
+        run: |
+          npm ci --ignore-scripts --engine-strict=true --no-audit --no-fund --progress=false
+          npm ls --all
+          CACHE_DIR="$(npm config get cache)"
+          npm cache verify
+          rm -rf node_modules
+          npm ci --offline --ignore-scripts --engine-strict=true --no-audit --no-fund --progress=false
+          npm ls --all
+          rm -rf node_modules
+          printf '%s\n' "$CACHE_DIR" > npm-cache-path.txt
+
+      - name: Download and verify official Node archive
+        run: |
+          mkdir -p runtime
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://nodejs.org/download/release/v24.18.0/${NODE_ARCHIVE}" \
+            --output "runtime/${NODE_ARCHIVE}"
+          echo "${NODE_ARCHIVE_SHA256}  runtime/${NODE_ARCHIVE}" | sha256sum --check --strict
+
+      - name: Package runtime and npm cache
+        run: |
+          CACHE_DIR="$(cat npm-cache-path.txt)"
+          mkdir -p bundle/npm-cache bundle/runtime bundle/meta
+          cp -a "$CACHE_DIR/." bundle/npm-cache/
+          cp "runtime/${NODE_ARCHIVE}" bundle/runtime/
+          cp package.json package-lock.json generated-lockfile.sha256 bundle/meta/
+          find bundle -type f -print0 | sort -z | xargs -0 sha256sum > bundle/meta/files.sha256
+          tar -czf PASS26_BOOTSTRAP_RUNTIME_CACHE_BUNDLE.tar.gz bundle
+
+      - name: Upload bootstrap bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pass26-bootstrap-runtime-cache-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 7
+          path: pass26-cache-bridge/PASS26_BOOTSTRAP_RUNTIME_CACHE_BUNDLE.tar.gz
