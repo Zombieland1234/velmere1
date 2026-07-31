@@ -24,6 +24,30 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .velmere-ci/a102r36/evidence
+          cat > /tmp/chunk-manifest.tsv <<'EOF'
+          part-01.txt	20000	175cfc5ab64862b6ab96567c418011ee216733e0
+          part-02.txt	20000	f8b5c06e9dbabeb70711f8b47e8212c11b664ec9
+          part-030.txt	5000	a3e774b50821dc8f14bccf625a9b0cd4abadffc7
+          part-031.txt	5000	bf9f5174bdec4bb728b456d219c49793d1c57a42
+          part-032.txt	5000	06b97ec0c82b62d96b6d1ecf67d9b314975ca01c
+          part-033.txt	5000	f7adf937d9802164ecd627bebbfed9d716997062
+          part-040.txt	5000	f2beefb2bbef20fec941370bab6836690b44fbe3
+          part-041.txt	5000	3363c657d7a8af09881930bb0a0f50c8ff20259a
+          part-042.txt	5000	c8f2809d711fd9ba780833bccc693a8a393652dd
+          part-043.txt	5000	a8a38f6014c554046f95beda54d7d53a25f863c6
+          part-050.txt	5000	91422031f544f3425714aa301298e7f5a886458a
+          part-051.txt	5000	1b1dc7b57d25d7a1ab6db4f35de2d76d76e1e8c6
+          part-052.txt	5000	872f549559291bec9e11dd24f1609b8e2f13ceb6
+          part-053.txt	2324	2899985525416ab2ae4f63c20d261e6622326f4d
+          EOF
+          while IFS=$'\t' read -r name expected_bytes expected_blob; do
+            path=".velmere-ci/a102r36/lock-b64/$name"
+            actual_bytes="$(wc -c < "$path" | tr -d ' ')"
+            actual_blob="$(git hash-object "$path")"
+            printf '%s bytes=%s blob=%s\n' "$name" "$actual_bytes" "$actual_blob"
+            test "$actual_bytes" = "$expected_bytes"
+            test "$actual_blob" = "$expected_blob"
+          done < /tmp/chunk-manifest.tsv
           cat \
             .velmere-ci/a102r36/lock-b64/part-01.txt \
             .velmere-ci/a102r36/lock-b64/part-02.txt \
