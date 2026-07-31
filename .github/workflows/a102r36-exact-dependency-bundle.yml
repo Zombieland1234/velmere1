@@ -1,0 +1,130 @@
+name: A102R36 exact dependency bundle
+
+on:
+  push:
+    branches:
+      - velmere-a102r36-exact-deps-20260731
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  exact-dependency-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Materialize exact lockfile inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .velmere-ci/a102r36/evidence
+          cat \
+            .velmere-ci/a102r36/lock-b64/part-01.txt \
+            .velmere-ci/a102r36/lock-b64/part-02.txt \
+            .velmere-ci/a102r36/lock-b64/part-03.txt \
+            .velmere-ci/a102r36/lock-b64/part-040.txt \
+            .velmere-ci/a102r36/lock-b64/part-041.txt \
+            .velmere-ci/a102r36/lock-b64/part-042.txt \
+            .velmere-ci/a102r36/lock-b64/part-043.txt \
+            .velmere-ci/a102r36/lock-b64/part-050.txt \
+            .velmere-ci/a102r36/lock-b64/part-051.txt \
+            .velmere-ci/a102r36/lock-b64/part-052.txt \
+            .velmere-ci/a102r36/lock-b64/part-053.txt \
+            > /tmp/package-lock.json.gz.b64
+          base64 -d /tmp/package-lock.json.gz.b64 | gzip -d > .velmere-ci/a102r36/package-lock.json
+          base64 -d .velmere-ci/a102r36/package.json.gz.b64 | gzip -d > .velmere-ci/a102r36/package.json
+          printf '%s  %s\n' '03e0f07a0da9be378e9f0cb75f25afd619530b9f3ee5f1b9ce4d8b6083408219' '.velmere-ci/a102r36/package-lock.json' | sha256sum -c -
+          printf '%s  %s\n' 'e95fdd37f846ae2dd6503a8ff0dcebf2b3d1f23fed461fca61724236219a5aaf' '.velmere-ci/a102r36/package.json' | sha256sum -c -
+
+      - name: Install exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+
+      - name: Record exact environment
+        working-directory: .velmere-ci/a102r36
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -v)" = 'v24.18.0'
+          test "$(npm -v)" = '11.16.0'
+          node -v | tee evidence/node-version.txt
+          npm -v | tee evidence/npm-version.txt
+          sha256sum package.json package-lock.json | tee evidence/input-sha256.txt
+          npm config get registry | tee evidence/npm-registry.txt
+
+      - name: Genuine lockfile install
+        working-directory: .velmere-ci/a102r36
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --fund=false --audit=false 2>&1 | tee evidence/npm-ci.log
+
+      - name: Verify dependency tree and audit
+        working-directory: .velmere-ci/a102r36
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ls --all --json > evidence/npm-ls-all.json
+          npm audit --json > evidence/npm-audit.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const audit = JSON.parse(fs.readFileSync('evidence/npm-audit.json', 'utf8'));
+          const counts = audit.metadata?.vulnerabilities ?? {};
+          const total = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+          if (total !== 0) throw new Error(`npm audit vulnerabilities=${total}`);
+          NODE
+          npm cache verify 2>&1 | tee evidence/npm-cache-verify.log
+
+      - name: Build exact tree manifest and transfer bundles
+        working-directory: .velmere-ci/a102r36
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, stat
+          root = pathlib.Path('node_modules')
+          rows = []
+          for path in sorted(root.rglob('*'), key=lambda p: p.as_posix().encode()):
+              rel = path.as_posix()
+              st = path.lstat()
+              mode = stat.S_IMODE(st.st_mode)
+              if stat.S_ISREG(st.st_mode):
+                  data = path.read_bytes()
+                  rows.append({'path': rel, 'type': 'file', 'mode': mode, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+              elif stat.S_ISDIR(st.st_mode):
+                  rows.append({'path': rel, 'type': 'directory', 'mode': mode})
+              elif stat.S_ISLNK(st.st_mode):
+                  rows.append({'path': rel, 'type': 'symlink', 'mode': mode, 'target': os.readlink(path)})
+              else:
+                  raise SystemExit(f'unsupported node_modules entry: {rel}')
+          encoded = json.dumps(rows, sort_keys=True, separators=(',', ':')).encode()
+          out = {'entries': len(rows), 'aggregateSha256': hashlib.sha256(encoded).hexdigest(), 'rows': rows}
+          pathlib.Path('evidence/node-modules-tree.json').write_text(json.dumps(out, sort_keys=True, separators=(',', ':')), encoding='utf-8')
+          PY
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - node_modules | gzip -n -9 > dependency-node_modules.tar.gz
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - -C "$HOME/.npm" _cacache | gzip -n -9 > dependency-npm-cache.tar.gz
+          sha256sum dependency-node_modules.tar.gz dependency-npm-cache.tar.gz | tee evidence/bundle-sha256.txt
+          printf 'node_modules_entries=' > evidence/counts.txt
+          find node_modules -mindepth 1 | wc -l >> evidence/counts.txt
+
+      - name: Upload exact dependency evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-a102r36-exact-dependency-bundle
+          path: |
+            .velmere-ci/a102r36/dependency-node_modules.tar.gz
+            .velmere-ci/a102r36/dependency-npm-cache.tar.gz
+            .velmere-ci/a102r36/evidence/
+            .velmere-ci/a102r36/package.json
+            .velmere-ci/a102r36/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
