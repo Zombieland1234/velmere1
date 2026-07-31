@@ -1,0 +1,126 @@
+name: A102R37 lucide React19 repair
+
+on:
+  push:
+    branches: [velmere-a102r36-exact-deps-20260731]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lucide-react19-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Reconstruct exact A102R36 package inputs
+        shell: bash
+        run: bash .velmere-ci/a102r37/reconstruct-exact-inputs.sh .velmere-ci/a102r37/work
+
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Generate minimal peer-compatible lock update
+        working-directory: .velmere-ci/a102r37/work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -v)" = 'v24.18.0'
+          test "$(npm -v)" = '11.16.0'
+          cp package.json evidence/package.before.json
+          cp package-lock.json evidence/package-lock.before.json
+          npm install lucide-react@0.475.0 --save-exact --package-lock-only --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-lock-repair.log
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          if(pkg.dependencies?.['lucide-react']!=='0.475.0') throw new Error('package lucide version mismatch');
+          const row=lock.packages?.['node_modules/lucide-react'];
+          if(row?.version!=='0.475.0') throw new Error('lock lucide version mismatch');
+          if(!String(row.peerDependencies?.react||'').includes('19')) throw new Error('lock lucide React19 peer missing');
+          NODE
+          diff -u evidence/package.before.json package.json > evidence/package.diff || test "$?" = 1
+          diff -u evidence/package-lock.before.json package-lock.json > evidence/package-lock.diff || test "$?" = 1
+          sha256sum package.json package-lock.json | tee evidence/repaired-input-sha256.txt
+
+      - name: Genuine npm ci, dependency tree and security audit
+        working-directory: .velmere-ci/a102r37/work
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf node_modules
+          npm ci --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-ci-repaired.log
+          npm ls --all --json > evidence/npm-ls-all.json
+          npm audit --json > evidence/npm-audit.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const ls=JSON.parse(fs.readFileSync('evidence/npm-ls-all.json','utf8'));
+          if(ls.problems?.length) throw new Error(`npm ls problems=${ls.problems.length}`);
+          const audit=JSON.parse(fs.readFileSync('evidence/npm-audit.json','utf8'));
+          const total=Object.values(audit.metadata?.vulnerabilities??{}).reduce((a,b)=>a+Number(b||0),0);
+          if(total!==0) throw new Error(`npm audit vulnerabilities=${total}`);
+          const lucide=JSON.parse(fs.readFileSync('node_modules/lucide-react/package.json','utf8'));
+          if(lucide.version!=='0.475.0') throw new Error('installed lucide mismatch');
+          if(!String(lucide.peerDependencies?.react||'').includes('19')) throw new Error('installed React19 peer missing');
+          NODE
+          npm cache verify 2>&1 | tee evidence/npm-cache-verify.log
+
+      - name: Verify all used Lucide exports
+        working-directory: .velmere-ci/a102r37/work
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp ../lucide-required-exports.json evidence/lucide-required-exports.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const required=JSON.parse(fs.readFileSync('evidence/lucide-required-exports.json','utf8')).exports;
+          const runtime=require('lucide-react');
+          const typeOnly=new Set(['LucideIcon']);
+          const missing=required.filter(name=>!typeOnly.has(name) && !(name in runtime));
+          fs.writeFileSync('evidence/lucide-export-check.json',JSON.stringify({required:required.length,typeOnly:[...typeOnly],runtimeChecked:required.length-typeOnly.size,missing},null,2));
+          if(missing.length) throw new Error(`missing lucide exports: ${missing.join(',')}`);
+          NODE
+
+      - name: Build deterministic dependency transfer bundles
+        working-directory: .velmere-ci/a102r37/work
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,stat
+          rows=[]; root=pathlib.Path('node_modules')
+          for p in sorted(root.rglob('*'),key=lambda x:x.as_posix().encode()):
+            s=p.lstat(); r=p.as_posix(); m=stat.S_IMODE(s.st_mode)
+            if stat.S_ISREG(s.st_mode):
+              d=p.read_bytes(); rows.append({'path':r,'type':'file','mode':m,'bytes':len(d),'sha256':hashlib.sha256(d).hexdigest()})
+            elif stat.S_ISDIR(s.st_mode): rows.append({'path':r,'type':'directory','mode':m})
+            elif stat.S_ISLNK(s.st_mode): rows.append({'path':r,'type':'symlink','mode':m,'target':os.readlink(p)})
+            else: raise SystemExit(f'unsupported entry {r}')
+          enc=json.dumps(rows,sort_keys=True,separators=(',',':')).encode()
+          pathlib.Path('evidence/node-modules-tree.json').write_text(json.dumps({'entries':len(rows),'aggregateSha256':hashlib.sha256(enc).hexdigest(),'rows':rows},sort_keys=True,separators=(',',':')),encoding='utf-8')
+          PY
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - node_modules | gzip -n -9 > dependency-node_modules.tar.gz
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - -C "$HOME/.npm" _cacache | gzip -n -9 > dependency-npm-cache.tar.gz
+          sha256sum dependency-node_modules.tar.gz dependency-npm-cache.tar.gz | tee evidence/bundle-sha256.txt
+
+      - name: Upload A102R37 repair evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-a102r37-lucide-react19-repair
+          path: |
+            .velmere-ci/a102r37/work/dependency-node_modules.tar.gz
+            .velmere-ci/a102r37/work/dependency-npm-cache.tar.gz
+            .velmere-ci/a102r37/work/evidence/
+            .velmere-ci/a102r37/work/package.json
+            .velmere-ci/a102r37/work/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
