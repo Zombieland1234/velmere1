@@ -1,0 +1,23 @@
+name: A102R36 root lock probe
+
+on:
+  push:
+    branches:
+      - velmere-a102r36-exact-deps-20260731
+
+permissions:
+  contents: read
+
+jobs:
+  root-lock-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: Exact root fingerprints
+        shell: bash
+        run: |
+          set -euo pipefail
+          wc -c package.json package-lock.json
+          sha256sum package.json package-lock.json
+          git hash-object package.json package-lock.json
+          node -e "const l=require('./package-lock.json'); console.log(JSON.stringify({name:l.name,version:l.version,lockfileVersion:l.lockfileVersion,packages:Object.keys(l.packages||{}).length-1}))"
