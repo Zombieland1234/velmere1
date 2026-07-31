@@ -1,0 +1,193 @@
+name: A102R37 full source Lucide repair
+
+on:
+  push:
+    branches: [velmere-a102r36-exact-deps-20260731]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  full-source-lucide-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Reconstruct exact A102R36 full package and lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=.velmere-ci/a102r37/full-work
+          mkdir -p "$OUT/evidence"
+          cat > /tmp/full-package-chunks.tsv <<'EOF'
+          part-00.txt	8000	abb85a71c1134d4784dafdebff8a649a6bc25d22
+          part-01.txt	8000	fdbf052407b8736d058550c85b0f8be9c1fc272c
+          part-02.txt	6276	eaf2c7052c7961b3317b5de605d6fcd6eb32ae85
+          EOF
+          : > /tmp/full-package.json.gz.b64
+          while IFS=$'\t' read -r name expected_bytes expected_blob; do
+            path=".velmere-ci/a102r37/full-package-b64/$name"
+            actual_bytes="$(wc -c < "$path" | tr -d ' ')"
+            actual_blob="$(git hash-object "$path")"
+            printf '%s bytes=%s blob=%s\n' "$name" "$actual_bytes" "$actual_blob" | tee -a "$OUT/evidence/full-package-chunk-verification.log"
+            test "$actual_bytes" = "$expected_bytes"
+            test "$actual_blob" = "$expected_blob"
+            cat "$path" >> /tmp/full-package.json.gz.b64
+          done < /tmp/full-package-chunks.tsv
+          base64 -d /tmp/full-package.json.gz.b64 | gzip -d > "$OUT/package.json"
+          printf '%s  %s\n' '13d9f54e361f3a60445cc1beb3745222e94e5b97fbaacc57a0e24c9e0dcac581' "$OUT/package.json" | sha256sum -c -
+          bash .velmere-ci/a102r37/reconstruct-exact-inputs.sh /tmp/a102r36-exact-inputs
+          cp /tmp/a102r36-exact-inputs/package-lock.json "$OUT/package-lock.json"
+          printf '%s  %s\n' '03e0f07a0da9be378e9f0cb75f25afd619530b9f3ee5f1b9ce4d8b6083408219' "$OUT/package-lock.json" | sha256sum -c -
+          sha256sum "$OUT/package.json" "$OUT/package-lock.json" | tee "$OUT/evidence/source-input-sha256.txt"
+
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Generate minimal Lucide peer repair
+        working-directory: .velmere-ci/a102r37/full-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -v)" = 'v24.18.0'
+          test "$(npm -v)" = '11.16.0'
+          cp package.json evidence/package.before.json
+          cp package-lock.json evidence/package-lock.before.json
+          npm install lucide-react@0.475.0 --save-exact --package-lock-only --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-lock-repair.log
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const before=JSON.parse(fs.readFileSync('evidence/package.before.json','utf8'));
+          const after=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const clean=(value)=>JSON.stringify(value,Object.keys(value).sort());
+          const b=structuredClone(before); const a=structuredClone(after);
+          const beforeLucide=b.dependencies?.['lucide-react'];
+          const afterLucide=a.dependencies?.['lucide-react'];
+          if(beforeLucide!=='0.378.0') throw new Error(`unexpected before lucide ${beforeLucide}`);
+          if(afterLucide!=='0.475.0') throw new Error(`unexpected after lucide ${afterLucide}`);
+          delete b.dependencies['lucide-react']; delete a.dependencies['lucide-react'];
+          if(JSON.stringify(b)!==JSON.stringify(a)) throw new Error('package.json changed outside lucide-react');
+          const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const row=lock.packages?.['node_modules/lucide-react'];
+          if(lock.packages?.['']?.dependencies?.['lucide-react']!=='0.475.0') throw new Error('root lock lucide mismatch');
+          if(row?.version!=='0.475.0') throw new Error('lock lucide version mismatch');
+          if(!String(row.peerDependencies?.react||'').includes('19')) throw new Error('React 19 peer missing');
+          NODE
+          diff -u evidence/package.before.json package.json > evidence/package.diff || test "$?" = 1
+          diff -u evidence/package-lock.before.json package-lock.json > evidence/package-lock.diff || test "$?" = 1
+          sha256sum package.json package-lock.json | tee evidence/repaired-input-sha256.txt
+
+      - name: Genuine npm ci and diagnostics
+        working-directory: .velmere-ci/a102r37/full-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf node_modules
+          npm ci --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-ci.log
+          set +e
+          npm ls --all --json > evidence/npm-ls-all.json 2> evidence/npm-ls-all.stderr.txt
+          LS_EXIT=$?
+          npm audit --json > evidence/npm-audit.json 2> evidence/npm-audit.stderr.txt
+          AUDIT_EXIT=$?
+          npm cache verify > evidence/npm-cache-verify.log 2>&1
+          CACHE_EXIT=$?
+          set -e
+          printf '%s\n' "$LS_EXIT" > evidence/npm-ls-exit-code.txt
+          printf '%s\n' "$AUDIT_EXIT" > evidence/npm-audit-exit-code.txt
+          printf '%s\n' "$CACHE_EXIT" > evidence/npm-cache-verify-exit-code.txt
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const readJson=(p)=>JSON.parse(fs.readFileSync(p,'utf8'));
+          const ls=readJson('evidence/npm-ls-all.json');
+          const audit=readJson('evidence/npm-audit.json');
+          const lucide=readJson('node_modules/lucide-react/package.json');
+          const summary={
+            npmLsExit:Number(fs.readFileSync('evidence/npm-ls-exit-code.txt','utf8').trim()),
+            npmLsProblems:Array.isArray(ls.problems)?ls.problems:[],
+            npmAuditExit:Number(fs.readFileSync('evidence/npm-audit-exit-code.txt','utf8').trim()),
+            vulnerabilities:audit.metadata?.vulnerabilities??null,
+            cacheExit:Number(fs.readFileSync('evidence/npm-cache-verify-exit-code.txt','utf8').trim()),
+            lucideVersion:lucide.version,
+            lucideReactPeer:lucide.peerDependencies?.react,
+          };
+          fs.writeFileSync('evidence/diagnostic-summary.json',JSON.stringify(summary,null,2));
+          console.log(JSON.stringify(summary,null,2));
+          NODE
+
+      - name: Verify all source-used Lucide exports through ESM
+        working-directory: .velmere-ci/a102r37/full-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp ../../a102r37/lucide-required-exports.json evidence/lucide-required-exports.json
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const required=JSON.parse(fs.readFileSync('evidence/lucide-required-exports.json','utf8')).exports;
+          const runtime=await import('lucide-react');
+          const typeOnly=new Set(['LucideIcon']);
+          const missing=required.filter(name=>!typeOnly.has(name)&&!(name in runtime));
+          const result={required:required.length,typeOnly:[...typeOnly],runtimeChecked:required.length-typeOnly.size,namespaceExports:Object.keys(runtime).length,missing};
+          fs.writeFileSync('evidence/lucide-export-check.json',JSON.stringify(result,null,2));
+          console.log(JSON.stringify(result,null,2));
+          NODE
+
+      - name: Build deterministic transfer bundles
+        working-directory: .velmere-ci/a102r37/full-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,stat
+          rows=[]; root=pathlib.Path('node_modules')
+          for p in sorted(root.rglob('*'),key=lambda x:x.as_posix().encode()):
+            s=p.lstat(); r=p.as_posix(); m=stat.S_IMODE(s.st_mode)
+            if stat.S_ISREG(s.st_mode):
+              d=p.read_bytes(); rows.append({'path':r,'type':'file','mode':m,'bytes':len(d),'sha256':hashlib.sha256(d).hexdigest()})
+            elif stat.S_ISDIR(s.st_mode): rows.append({'path':r,'type':'directory','mode':m})
+            elif stat.S_ISLNK(s.st_mode): rows.append({'path':r,'type':'symlink','mode':m,'target':os.readlink(p)})
+            else: raise SystemExit(f'unsupported entry {r}')
+          enc=json.dumps(rows,sort_keys=True,separators=(',',':')).encode()
+          pathlib.Path('evidence/node-modules-tree.json').write_text(json.dumps({'entries':len(rows),'aggregateSha256':hashlib.sha256(enc).hexdigest(),'rows':rows},sort_keys=True,separators=(',',':')),encoding='utf-8')
+          PY
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - node_modules | gzip -n -9 > dependency-node_modules.tar.gz
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - -C "$HOME/.npm" _cacache | gzip -n -9 > dependency-npm-cache.tar.gz
+          sha256sum dependency-node_modules.tar.gz dependency-npm-cache.tar.gz | tee evidence/bundle-sha256.txt
+
+      - name: Upload complete repair evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-a102r37-full-source-lucide-repair
+          path: |
+            .velmere-ci/a102r37/full-work/dependency-node_modules.tar.gz
+            .velmere-ci/a102r37/full-work/dependency-npm-cache.tar.gz
+            .velmere-ci/a102r37/full-work/evidence/
+            .velmere-ci/a102r37/full-work/package.json
+            .velmere-ci/a102r37/full-work/package-lock.json
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0
+
+      - name: Enforce all dependency gates
+        working-directory: .velmere-ci/a102r37/full-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const summary=JSON.parse(fs.readFileSync('evidence/diagnostic-summary.json','utf8'));
+          const exportsResult=JSON.parse(fs.readFileSync('evidence/lucide-export-check.json','utf8'));
+          const total=Object.values(summary.vulnerabilities??{}).reduce((a,b)=>a+Number(b||0),0);
+          if(summary.npmLsExit!==0||summary.npmLsProblems.length!==0) throw new Error(`npm ls gate failed exit=${summary.npmLsExit} problems=${summary.npmLsProblems.length}`);
+          if(summary.npmAuditExit!==0||total!==0) throw new Error(`npm audit gate failed exit=${summary.npmAuditExit} vulnerabilities=${total}`);
+          if(summary.cacheExit!==0) throw new Error(`cache gate failed exit=${summary.cacheExit}`);
+          if(summary.lucideVersion!=='0.475.0'||!String(summary.lucideReactPeer).includes('19')) throw new Error('Lucide peer gate failed');
+          if(exportsResult.missing.length!==0) throw new Error(`missing exports ${exportsResult.missing.join(',')}`);
+          NODE
