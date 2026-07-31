@@ -1,0 +1,134 @@
+name: A102R36 exact dependency bundle v3
+
+on:
+  push:
+    branches: [velmere-a102r36-exact-deps-20260731]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  exact-dependency-bundle-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Verify and reconstruct exact package inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=.velmere-ci/a102r36-v3
+          SRC=.velmere-ci/a102r36/lock-b64
+          mkdir -p "$OUT/evidence"
+          cat > /tmp/chunks.tsv <<'EOF'
+          part-01.txt	20000	175cfc5ab64862b6ab96567c418011ee216733e0
+          part-02.txt	20000	f8b5c06e9dbabeb70711f8b47e8212c11b664ec9
+          part-0300.txt	1000	2ac1563a5c173986696720abb7ca1debf648d562
+          part-0301.txt	1000	5726e460d9af354293ed8ffec7b2551c3c965986
+          part-0302.txt	1000	72ccaaa4e1cfe696c939cc286bac2bf31b06e1d1
+          part-0303.txt	1000	da66e79ad3d5cffae586b908fc760881607b03ec
+          part-0304.txt	1000	f5e152301794b129d8dc1d6ca9073b8026673be9
+          part-031.txt	5000	bf9f5174bdec4bb728b456d219c49793d1c57a42
+          part-032.txt	5000	06b97ec0c82b62d96b6d1ecf67d9b314975ca01c
+          part-033.txt	5000	f7adf937d9802164ecd627bebbfed9d716997062
+          part-040.txt	5000	f2beefb2bbef20fec941370bab6836690b44fbe3
+          part-041.txt	5000	3363c657d7a8af09881930bb0a0f50c8ff20259a
+          part-042.txt	5000	c8f2809d711fd9ba780833bccc693a8a393652dd
+          part-043.txt	5000	a8a38f6014c554046f95beda54d7d53a25f863c6
+          part-050.txt	5000	91422031f544f3425714aa301298e7f5a886458a
+          part-0510.txt	1000	a58b7f1e04043668828d2fda2c28b94bbdebe37d
+          part-0511.txt	1000	0ecff07faa38fb0ea8f1f24b876521a93956f3ae
+          part-0512.txt	1000	e90e7fa5745558668e4aa685274eaf910f6fb870
+          part-0513.txt	1000	3eec4a8cffaee585e5e61d23684354d0a6382b5b
+          part-0514.txt	1000	52d2baa7d685349cce3ffb67e8c72ff625adff3f
+          part-052	5000	872f549559291bec9e11dd24f1609b8e2f13ceb6
+          part-053	2324	2899985525416ab2ae4f63c20d261e6622326f4d
+          EOF
+          : > /tmp/package-lock.json.gz.b64
+          while IFS=$'\t' read -r name expected_bytes expected_blob; do
+            path="$SRC/$name"
+            actual_bytes="$(wc -c < "$path" | tr -d ' ')"
+            actual_blob="$(git hash-object "$path")"
+            printf '%s bytes=%s blob=%s\n' "$name" "$actual_bytes" "$actual_blob" | tee -a "$OUT/evidence/chunk-verification.log"
+            test "$actual_bytes" = "$expected_bytes"
+            test "$actual_blob" = "$expected_blob"
+            cat "$path" >> /tmp/package-lock.json.gz.b64
+          done < /tmp/chunks.tsv
+          pkg=.velmere-ci/a102r36/package.json.gz.b64
+          test "$(wc -c < "$pkg" | tr -d ' ')" = '776'
+          test "$(git hash-object "$pkg")" = 'c1e2d1f4ce111b2614b061919e52dd3766ea6735'
+          base64 -d /tmp/package-lock.json.gz.b64 | gzip -d > "$OUT/package-lock.json"
+          base64 -d "$pkg" | gzip -d > "$OUT/package.json"
+          printf '%s  %s\n' '03e0f07a0da9be378e9f0cb75f25afd619530b9f3ee5f1b9ce4d8b6083408219' "$OUT/package-lock.json" | sha256sum -c -
+          printf '%s  %s\n' 'e95fdd37f846ae2dd6503a8ff0dcebf2b3d1f23fed461fca61724236219a5aaf' "$OUT/package.json" | sha256sum -c -
+          sha256sum "$OUT/package.json" "$OUT/package-lock.json" | tee "$OUT/evidence/input-sha256.txt"
+
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+
+      - name: Genuine exact npm install and verification
+        working-directory: .velmere-ci/a102r36-v3
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -v)" = 'v24.18.0'
+          test "$(npm -v)" = '11.16.0'
+          node -v | tee evidence/node-version.txt
+          npm -v | tee evidence/npm-version.txt
+          npm config get registry | tee evidence/npm-registry.txt
+          npm ci --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-ci-ignore-scripts.log
+          npm ls --all --json > evidence/npm-ls-all.json
+          npm audit --json > evidence/npm-audit.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const ls = JSON.parse(fs.readFileSync('evidence/npm-ls-all.json','utf8'));
+          if (ls.problems?.length) throw new Error(`npm ls problems=${ls.problems.length}`);
+          const audit = JSON.parse(fs.readFileSync('evidence/npm-audit.json','utf8'));
+          const total = Object.values(audit.metadata?.vulnerabilities ?? {}).reduce((a,b)=>a+Number(b||0),0);
+          if (total !== 0) throw new Error(`npm audit vulnerabilities=${total}`);
+          NODE
+          npm cache verify 2>&1 | tee evidence/npm-cache-verify.log
+
+      - name: Build deterministic transfer bundles
+        working-directory: .velmere-ci/a102r36-v3
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,stat
+          rows=[]; root=pathlib.Path('node_modules')
+          for p in sorted(root.rglob('*'),key=lambda x:x.as_posix().encode()):
+            s=p.lstat(); r=p.as_posix(); m=stat.S_IMODE(s.st_mode)
+            if stat.S_ISREG(s.st_mode):
+              d=p.read_bytes(); rows.append({'path':r,'type':'file','mode':m,'bytes':len(d),'sha256':hashlib.sha256(d).hexdigest()})
+            elif stat.S_ISDIR(s.st_mode): rows.append({'path':r,'type':'directory','mode':m})
+            elif stat.S_ISLNK(s.st_mode): rows.append({'path':r,'type':'symlink','mode':m,'target':os.readlink(p)})
+            else: raise SystemExit(f'unsupported entry {r}')
+          enc=json.dumps(rows,sort_keys=True,separators=(',',':')).encode()
+          out={'entries':len(rows),'aggregateSha256':hashlib.sha256(enc).hexdigest(),'rows':rows}
+          pathlib.Path('evidence/node-modules-tree.json').write_text(json.dumps(out,sort_keys=True,separators=(',',':')),encoding='utf-8')
+          PY
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - node_modules | gzip -n -9 > dependency-node_modules.tar.gz
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - -C "$HOME/.npm" _cacache | gzip -n -9 > dependency-npm-cache.tar.gz
+          sha256sum dependency-node_modules.tar.gz dependency-npm-cache.tar.gz | tee evidence/bundle-sha256.txt
+
+      - name: Upload exact dependency evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-a102r36-exact-dependency-bundle-v3
+          path: |
+            .velmere-ci/a102r36-v3/dependency-node_modules.tar.gz
+            .velmere-ci/a102r36-v3/dependency-npm-cache.tar.gz
+            .velmere-ci/a102r36-v3/evidence/
+            .velmere-ci/a102r36-v3/package.json
+            .velmere-ci/a102r36-v3/package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
