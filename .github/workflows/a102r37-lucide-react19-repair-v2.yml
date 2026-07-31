@@ -1,0 +1,151 @@
+name: A102R37 lucide React19 repair v2
+
+on:
+  push:
+    branches: [velmere-a102r36-exact-deps-20260731]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lucide-react19-repair-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Reconstruct exact A102R36 package inputs
+        shell: bash
+        run: bash .velmere-ci/a102r37/reconstruct-exact-inputs.sh .velmere-ci/a102r37/work-v2
+
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Generate minimal peer-compatible lock update
+        working-directory: .velmere-ci/a102r37/work-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -v)" = 'v24.18.0'
+          test "$(npm -v)" = '11.16.0'
+          cp package.json evidence/package.before.json
+          cp package-lock.json evidence/package-lock.before.json
+          npm install lucide-react@0.475.0 --save-exact --package-lock-only --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-lock-repair.log
+          diff -u evidence/package.before.json package.json > evidence/package.diff || test "$?" = 1
+          diff -u evidence/package-lock.before.json package-lock.json > evidence/package-lock.diff || test "$?" = 1
+          sha256sum package.json package-lock.json | tee evidence/repaired-input-sha256.txt
+
+      - name: Genuine npm ci and diagnostic capture
+        working-directory: .velmere-ci/a102r37/work-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf node_modules
+          npm ci --ignore-scripts --fund=false --audit=false 2>&1 | tee evidence/npm-ci-repaired.log
+          set +e
+          npm ls --all --json > evidence/npm-ls-all.json 2> evidence/npm-ls-all.stderr.txt
+          LS_EXIT=$?
+          npm audit --json > evidence/npm-audit.json 2> evidence/npm-audit.stderr.txt
+          AUDIT_EXIT=$?
+          npm cache verify > evidence/npm-cache-verify.log 2>&1
+          CACHE_EXIT=$?
+          set -e
+          printf '%s\n' "$LS_EXIT" > evidence/npm-ls-exit-code.txt
+          printf '%s\n' "$AUDIT_EXIT" > evidence/npm-audit-exit-code.txt
+          printf '%s\n' "$CACHE_EXIT" > evidence/npm-cache-verify-exit-code.txt
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const readJson=(p)=>{try{return JSON.parse(fs.readFileSync(p,'utf8'))}catch(error){return {parseError:String(error)}}};
+          const ls=readJson('evidence/npm-ls-all.json');
+          const audit=readJson('evidence/npm-audit.json');
+          const lucide=readJson('node_modules/lucide-react/package.json');
+          const summary={
+            npmLsExit:Number(fs.readFileSync('evidence/npm-ls-exit-code.txt','utf8').trim()),
+            npmLsProblems:Array.isArray(ls.problems)?ls.problems:[],
+            npmAuditExit:Number(fs.readFileSync('evidence/npm-audit-exit-code.txt','utf8').trim()),
+            vulnerabilities:audit.metadata?.vulnerabilities??null,
+            cacheExit:Number(fs.readFileSync('evidence/npm-cache-verify-exit-code.txt','utf8').trim()),
+            lucideVersion:lucide.version??null,
+            lucideReactPeer:lucide.peerDependencies?.react??null,
+          };
+          fs.writeFileSync('evidence/diagnostic-summary.json',JSON.stringify(summary,null,2));
+          console.log(JSON.stringify(summary,null,2));
+          NODE
+
+      - name: Verify all used Lucide exports
+        working-directory: .velmere-ci/a102r37/work-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp ../lucide-required-exports.json evidence/lucide-required-exports.json
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const required=JSON.parse(fs.readFileSync('evidence/lucide-required-exports.json','utf8')).exports;
+          const runtime=require('lucide-react');
+          const typeOnly=new Set(['LucideIcon']);
+          const missing=required.filter(name=>!typeOnly.has(name)&&!(name in runtime));
+          const result={required:required.length,typeOnly:[...typeOnly],runtimeChecked:required.length-typeOnly.size,missing};
+          fs.writeFileSync('evidence/lucide-export-check.json',JSON.stringify(result,null,2));
+          console.log(JSON.stringify(result,null,2));
+          NODE
+
+      - name: Build diagnostic transfer bundles
+        working-directory: .velmere-ci/a102r37/work-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,stat
+          rows=[]; root=pathlib.Path('node_modules')
+          for p in sorted(root.rglob('*'),key=lambda x:x.as_posix().encode()):
+            s=p.lstat(); r=p.as_posix(); m=stat.S_IMODE(s.st_mode)
+            if stat.S_ISREG(s.st_mode):
+              d=p.read_bytes(); rows.append({'path':r,'type':'file','mode':m,'bytes':len(d),'sha256':hashlib.sha256(d).hexdigest()})
+            elif stat.S_ISDIR(s.st_mode): rows.append({'path':r,'type':'directory','mode':m})
+            elif stat.S_ISLNK(s.st_mode): rows.append({'path':r,'type':'symlink','mode':m,'target':os.readlink(p)})
+            else: raise SystemExit(f'unsupported entry {r}')
+          enc=json.dumps(rows,sort_keys=True,separators=(',',':')).encode()
+          pathlib.Path('evidence/node-modules-tree.json').write_text(json.dumps({'entries':len(rows),'aggregateSha256':hashlib.sha256(enc).hexdigest(),'rows':rows},sort_keys=True,separators=(',',':')),encoding='utf-8')
+          PY
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - node_modules | gzip -n -9 > dependency-node_modules.tar.gz
+          tar --sort=name --mtime='UTC 2000-01-01' --owner=0 --group=0 --numeric-owner -cf - -C "$HOME/.npm" _cacache | gzip -n -9 > dependency-npm-cache.tar.gz
+          sha256sum dependency-node_modules.tar.gz dependency-npm-cache.tar.gz | tee evidence/bundle-sha256.txt
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-a102r37-lucide-react19-repair-v2
+          path: |
+            .velmere-ci/a102r37/work-v2/dependency-node_modules.tar.gz
+            .velmere-ci/a102r37/work-v2/dependency-npm-cache.tar.gz
+            .velmere-ci/a102r37/work-v2/evidence/
+            .velmere-ci/a102r37/work-v2/package.json
+            .velmere-ci/a102r37/work-v2/package-lock.json
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0
+
+      - name: Enforce repaired dependency gates
+        working-directory: .velmere-ci/a102r37/work-v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const summary=JSON.parse(fs.readFileSync('evidence/diagnostic-summary.json','utf8'));
+          const exportsResult=JSON.parse(fs.readFileSync('evidence/lucide-export-check.json','utf8'));
+          const total=summary.vulnerabilities?Object.values(summary.vulnerabilities).reduce((a,b)=>a+Number(b||0),0):Infinity;
+          if(summary.npmLsExit!==0||summary.npmLsProblems.length!==0) throw new Error(`npm ls gate failed: exit=${summary.npmLsExit}, problems=${summary.npmLsProblems.length}`);
+          if(summary.npmAuditExit!==0||total!==0) throw new Error(`npm audit gate failed: exit=${summary.npmAuditExit}, vulnerabilities=${total}`);
+          if(summary.cacheExit!==0) throw new Error(`npm cache verify failed: ${summary.cacheExit}`);
+          if(summary.lucideVersion!=='0.475.0'||!String(summary.lucideReactPeer).includes('19')) throw new Error('lucide peer gate failed');
+          if(exportsResult.missing.length!==0) throw new Error(`missing Lucide exports: ${exportsResult.missing.join(',')}`);
+          NODE
