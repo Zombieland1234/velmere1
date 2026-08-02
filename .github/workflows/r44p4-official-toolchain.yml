@@ -29,14 +29,12 @@ jobs:
           set -euo pipefail
           python -m pip install --upgrade 'pip==25.1.1'
           python -m pip install \
-            'solc-select==1.1.0' \
             'slither-analyzer==0.11.5' \
             'semgrep==1.130.0'
           python - <<'PY'
           import importlib.metadata as m
           expected = {
               'pip': '25.1.1',
-              'solc-select': '1.1.0',
               'slither-analyzer': '0.11.5',
               'semgrep': '1.130.0',
           }
@@ -44,9 +42,11 @@ jobs:
           assert actual == expected, (actual, expected)
           print('PYTHON_TOOL_VERSIONS_OK', actual)
           PY
-          solc-select install 0.8.24
-          solc-select use 0.8.24
-          SOLC_BINARY="$HOME/.solc-select/artifacts/solc-0.8.24/solc-0.8.24"
+          SOLC_BINARY="$RUNNER_TEMP/solc-linux-amd64-v0.8.24+commit.e11b9ed9"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$SOLC_BINARY" \
+            'https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-v0.8.24%2Bcommit.e11b9ed9'
+          chmod 0755 "$SOLC_BINARY"
           test -x "$SOLC_BINARY"
           echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
           ACTUAL_SOLC_SHA256="$(sha256sum "$SOLC_BINARY" | awk '{print $1}')"
@@ -55,7 +55,7 @@ jobs:
           slither --version
           semgrep --version
           python -m pip freeze --all | LC_ALL=C sort > r44p4-official-toolchain/pip-freeze.txt
-          python -m pip show solc-select slither-analyzer semgrep > r44p4-official-toolchain/pip-show.txt
+          python -m pip show slither-analyzer semgrep > r44p4-official-toolchain/pip-show.txt
 
       - name: Install Foundry 1.2.3
         uses: foundry-rs/foundry-toolchain@v1
@@ -119,8 +119,10 @@ jobs:
                   b=p.read_bytes(); files.append({'path':str(p.relative_to(root)),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
           Path('EVIDENCE_FILE_MANIFEST.json').write_text(json.dumps({'fileCount':len(files),'files':files},indent=2,sort_keys=True)+'\n')
           PY
-          tar -czf r44p4-official-tool-evidence.tar.gz evidence EVIDENCE_FILE_MANIFEST.json execution-summary.log || true
-          sha256sum r44p4-official-tool-evidence.tar.gz > r44p4-official-tool-evidence.sha256 || true
+          tar_inputs=(evidence EVIDENCE_FILE_MANIFEST.json)
+          test -f execution-summary.log && tar_inputs+=(execution-summary.log)
+          tar -czf r44p4-official-tool-evidence.tar.gz "${tar_inputs[@]}"
+          sha256sum r44p4-official-tool-evidence.tar.gz > r44p4-official-tool-evidence.sha256
 
       - name: Upload evidence
         if: always()
