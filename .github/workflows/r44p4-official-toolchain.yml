@@ -1,0 +1,137 @@
+name: R44P4 Official Toolchain 200 Executions
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p4-official-toolchain/**'
+      - '.github/workflows/r44p4-official-toolchain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  official-tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      EXPECTED_SOLC_SHA256: fb03a29a517452b9f12bcf459ef37d0a543765bb3bbc911e70a87d6a37c30d5f
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install exact Python tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade 'pip==25.1.1'
+          python -m pip install \
+            'solc-select==1.1.0' \
+            'slither-analyzer==0.11.5' \
+            'semgrep==1.130.0'
+          python - <<'PY'
+          import importlib.metadata as m
+          expected = {
+              'pip': '25.1.1',
+              'solc-select': '1.1.0',
+              'slither-analyzer': '0.11.5',
+              'semgrep': '1.130.0',
+          }
+          actual = {name: m.version(name) for name in expected}
+          assert actual == expected, (actual, expected)
+          print('PYTHON_TOOL_VERSIONS_OK', actual)
+          PY
+          solc-select install 0.8.24
+          solc-select use 0.8.24
+          SOLC_BINARY="$HOME/.solc-select/artifacts/solc-0.8.24/solc-0.8.24"
+          test -x "$SOLC_BINARY"
+          echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
+          ACTUAL_SOLC_SHA256="$(sha256sum "$SOLC_BINARY" | awk '{print $1}')"
+          test "$ACTUAL_SOLC_SHA256" = "$EXPECTED_SOLC_SHA256"
+          "$SOLC_BINARY" --version
+          slither --version
+          semgrep --version
+          python -m pip freeze --all | LC_ALL=C sort > r44p4-official-toolchain/pip-freeze.txt
+          python -m pip show solc-select slither-analyzer semgrep > r44p4-official-toolchain/pip-show.txt
+
+      - name: Install Foundry 1.2.3
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.2.3
+
+      - name: Verify Forge
+        shell: bash
+        run: |
+          set -euo pipefail
+          forge --version | tee r44p4-official-toolchain/forge-version.txt
+          forge --version | grep -F '1.2.3'
+          command -v forge
+          sha256sum "$(command -v forge)" | tee r44p4-official-toolchain/forge-sha256.txt
+
+      - name: Reconstruct corpus and runner
+        working-directory: r44p4-official-toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat run_official_tools.py.part* > run_official_tools.py
+          python -m py_compile run_official_tools.py
+          python - <<'PY'
+          import glob,json
+          cases=[]
+          for path in sorted(glob.glob('contracts-batch-*.json')):
+              cases.extend(json.load(open(path,encoding='utf-8')))
+          assert len(cases)==50
+          assert len({x['case_id'] for x in cases})==50
+          assert len({x['filename'] for x in cases})==50
+          json.dump({'schemaVersion':'velmere.r44p4.official-tool-corpus.v1','caseCount':50,'cases':cases},open('contracts.json','w',encoding='utf-8'),separators=(',',':'),ensure_ascii=False)
+          print('CORPUS_OK',len(cases))
+          PY
+
+      - name: Execute 50 cases x 4 official tools
+        working-directory: r44p4-official-toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_official_tools.py | tee execution-summary.log
+
+      - name: Package evidence
+        if: always()
+        working-directory: r44p4-official-toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/environment
+          cp -f pip-freeze.txt pip-show.txt forge-version.txt forge-sha256.txt evidence/environment/ 2>/dev/null || true
+          if test -n "${VELMERE_SOLC_BINARY:-}" && test -f "$VELMERE_SOLC_BINARY"; then
+            sha256sum "$VELMERE_SOLC_BINARY" > evidence/environment/solc-binary-sha256.txt
+            "$VELMERE_SOLC_BINARY" --version > evidence/environment/solc-version.txt 2>&1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          root=Path('evidence')
+          files=[]
+          if root.exists():
+              for p in sorted(x for x in root.rglob('*') if x.is_file()):
+                  b=p.read_bytes(); files.append({'path':str(p.relative_to(root)),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          Path('EVIDENCE_FILE_MANIFEST.json').write_text(json.dumps({'fileCount':len(files),'files':files},indent=2,sort_keys=True)+'\n')
+          PY
+          tar -czf r44p4-official-tool-evidence.tar.gz evidence EVIDENCE_FILE_MANIFEST.json execution-summary.log || true
+          sha256sum r44p4-official-tool-evidence.tar.gz > r44p4-official-tool-evidence.sha256 || true
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p4-official-tool-evidence
+          path: |
+            r44p4-official-toolchain/evidence
+            r44p4-official-toolchain/EVIDENCE_FILE_MANIFEST.json
+            r44p4-official-toolchain/execution-summary.log
+            r44p4-official-toolchain/r44p4-official-tool-evidence.tar.gz
+            r44p4-official-toolchain/r44p4-official-tool-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
