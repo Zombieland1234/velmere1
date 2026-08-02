@@ -1,0 +1,101 @@
+ / "forge-out")
+    else:
+        raise AssertionError(tool)
+
+    result = run(cmd, case_dir, timeout=240)
+    stdout_path, stderr_path = write_raw(tool, case_id, result)
+    outputs: list[dict[str, Any]] = []
+    for p in output_files:
+        if p.is_file():
+            outputs.append({"path": str(p.relative_to(ROOT)), "type": "file", "bytes": p.stat().st_size, "sha256": sha256_file(p)})
+        elif p.is_dir():
+            manifest = []
+            for f in sorted(x for x in p.rglob("*") if x.is_file()):
+                manifest.append({"path": str(f.relative_to(p)), "bytes": f.stat().st_size, "sha256": sha256_file(f)})
+            encoded = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+            outputs.append({"path": str(p.relative_to(ROOT)), "type": "directory", "fileCount": len(manifest), "manifestSha256": sha256_bytes(encoded)})
+    receipt = {
+        "schemaVersion": "velmere.r44p4.official-tool-execution.v1",
+        "executionId": f"{tool}-{case_id}",
+        "tool": tool,
+        "caseId": case_id,
+        "sourceFilename": case["filename"],
+        "sourceSha256": case["sha256"],
+        "inputClass": case["input_class"],
+        "rightsBasis": case["rights_basis"],
+        "command": cmd,
+        "startedAt": result["startedAt"],
+        "durationMs": result["durationMs"],
+        "exitCode": result["exitCode"],
+        "timedOut": result["timedOut"],
+        "stdout": {"path": str(stdout_path.relative_to(ROOT)), "bytes": stdout_path.stat().st_size, "sha256": sha256_file(stdout_path)},
+        "stderr": {"path": str(stderr_path.relative_to(ROOT)), "bytes": stderr_path.stat().st_size, "sha256": sha256_file(stderr_path)},
+        "outputs": outputs,
+        "toolIdentity": tool_meta,
+        "terminalStatus": "EXECUTED_SUCCESS" if result["exitCode"] == 0 and not result["timedOut"] else "EXECUTED_TOOL_ERROR",
+        "realAuditCredit": False,
+        "customerCredit": False,
+        "liveCredit": False,
+    }
+    RECEIPTS.mkdir(parents=True, exist_ok=True)
+    rp = RECEIPTS / f"{tool}-{case_id}.json"
+    rp.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    receipt["receiptPath"] = str(rp.relative_to(ROOT))
+    receipt["receiptSha256"] = sha256_file(rp)
+    return receipt
+
+
+def main() -> int:
+    OUT.mkdir(parents=True, exist_ok=True)
+    cases = prepare_cases()
+    tool_meta = {
+        "solc": tool_metadata("solc", ["solc", "--version"]),
+        "slither": tool_metadata("slither", ["slither", "--version"]),
+        "semgrep": tool_metadata("semgrep", ["semgrep", "--version"]),
+        "forge": tool_metadata("forge", ["forge", "--version"]),
+    }
+    solc_path = tool_meta["solc"]["realPath"]
+    (OUT / "tool-identities.json").write_text(json.dumps(tool_meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    ledger: list[dict[str, Any]] = []
+    for tool in TOOLS:
+        for i, case in enumerate(cases, 1):
+            print(f"[{tool} {i:02d}/50] {case['filename']}", flush=True)
+            ledger.append(execute_one(tool, case, tool_meta[tool], solc_path))
+    unique = {(r["tool"], r["caseId"]) for r in ledger}
+    by_tool = {tool: {"executed": 0, "success": 0, "toolError": 0} for tool in TOOLS}
+    for r in ledger:
+        d = by_tool[r["tool"]]
+        d["executed"] += 1
+        if r["terminalStatus"] == "EXECUTED_SUCCESS":
+            d["success"] += 1
+        else:
+            d["toolError"] += 1
+    summary = {
+        "schemaVersion": "velmere.r44p4.official-tool-ledger.v1",
+        "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "caseCount": len(cases),
+        "toolCount": len(TOOLS),
+        "requiredExecutions": 200,
+        "executed": len(ledger),
+        "uniqueExecutionKeys": len(unique),
+        "successful": sum(1 for r in ledger if r["terminalStatus"] == "EXECUTED_SUCCESS"),
+        "toolErrors": sum(1 for r in ledger if r["terminalStatus"] != "EXECUTED_SUCCESS"),
+        "byTool": by_tool,
+        "realAuditCredit": 0,
+        "customerCredit": 0,
+        "liveCredit": 0,
+        "rows": ledger,
+    }
+    (OUT / "OFFICIAL_TOOL_EXECUTION_LEDGER.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    corpus_manifest = {
+        "schemaVersion": CORPUS["schemaVersion"],
+        "caseCount": len(cases),
+        "cases": [{k: c[k] for k in ("case_id", "filename", "sha256", "input_class", "rights_basis")} for c in cases],
+    }
+    (OUT / "CORPUS_MANIFEST.json").write_text(json.dumps(corpus_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps({k: summary[k] for k in ("executed", "uniqueExecutionKeys", "successful", "toolErrors", "byTool")}, indent=2))
+    return 0 if len(ledger) == 200 and len(unique) == 200 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
