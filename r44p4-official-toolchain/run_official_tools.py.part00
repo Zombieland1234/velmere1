@@ -154,6 +154,7 @@ def execute_one(tool: str, case: dict[str, Any], tool_meta: dict[str, Any], solc
         out_dir = case_dir / "solc-out"
         out_dir.mkdir(exist_ok=True)
         cmd = [solc_path, "--optimize", "--bin", "--abi", "--overwrite", "-o", str(out_dir), str(source_path)]
+        output_files.append(out_dir)
     elif tool == "slither":
         out_json = case_dir / "slither.json"
         cmd = ["slither", str(source_path), "--solc", solc_path, "--json", str(out_json), "--disable-color"]
@@ -165,5 +166,4 @@ def execute_one(tool: str, case: dict[str, Any], tool_meta: dict[str, Any], solc
     elif tool == "forge":
         foundry_toml = case_dir / "foundry.toml"
         foundry_toml.write_text(
-            "[profile.default]\n"
-            "sr
+            
