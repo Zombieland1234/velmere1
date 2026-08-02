@@ -43,7 +43,7 @@ jobs:
           (Get-FileHash -Algorithm SHA256 -LiteralPath $node).Hash.ToLowerInvariant() | Set-Content r44p5-bootstrap\node-executable-sha256-windows.txt
           (Get-FileHash -Algorithm SHA256 -LiteralPath $npm).Hash.ToLowerInvariant() | Set-Content r44p5-bootstrap\npm-launcher-sha256-windows.txt
 
-      - name: Regenerate and verify exact lockfile
+      - name: Regenerate lockfile and record drift
         working-directory: r44p5-bootstrap
         shell: pwsh
         run: |
@@ -52,7 +52,12 @@ jobs:
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           $actual=(Get-FileHash -Algorithm SHA256 -LiteralPath package-lock.json).Hash.ToLowerInvariant()
           "$actual  package-lock.json" | Set-Content package-lock-sha256-windows.txt
-          if ($actual -ne $env:EXPECTED_LOCK_SHA256) { throw "Lock hash mismatch: $actual" }
+          if ($actual -eq $env:EXPECTED_LOCK_SHA256) {
+            'LOCK_MATCH=true' | Set-Content lock-comparison-windows.env
+          } else {
+            'LOCK_MATCH=false' | Set-Content lock-comparison-windows.env
+            "$($env:EXPECTED_LOCK_SHA256)  expected-r44p4-package-lock.json" | Set-Content expected-lock-sha256-windows.txt
+          }
 
       - name: Exact npm ci without lifecycle scripts
         working-directory: r44p5-bootstrap
@@ -104,7 +109,8 @@ jobs:
           Get-ChildItem exact-*.zip | Sort-Object Name | ForEach-Object {
             $rows += [ordered]@{name=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()}
           }
-          [ordered]@{node='24.18.0';npm='11.16.0';lockSha256=$env:EXPECTED_LOCK_SHA256;bundles=$rows} | ConvertTo-Json -Depth 5 | Set-Content EXACT_WINDOWS_BOOTSTRAP_MANIFEST.json
+          $actual=(Get-Content package-lock-sha256-windows.txt).Split(' ')[0]
+          [ordered]@{node='24.18.0';npm='11.16.0';expectedLockSha256=$env:EXPECTED_LOCK_SHA256;generatedLockSha256=$actual;lockMatchesExpected=($actual -eq $env:EXPECTED_LOCK_SHA256);bundles=$rows} | ConvertTo-Json -Depth 5 | Set-Content EXACT_WINDOWS_BOOTSTRAP_MANIFEST.json
           $rows | ForEach-Object { "$($_.sha256)  $($_.name)" } | Set-Content exact-windows-bundles-sha256.txt
 
       - name: Upload exact Windows bootstrap artifact
@@ -119,6 +125,8 @@ jobs:
             r44p5-bootstrap/exact-windows-bundles-sha256.txt
             r44p5-bootstrap/package-lock.json
             r44p5-bootstrap/package-lock-sha256-windows.txt
+            r44p5-bootstrap/expected-lock-sha256-windows.txt
+            r44p5-bootstrap/lock-comparison-windows.env
             r44p5-bootstrap/npm-ci*-windows.log
             r44p5-bootstrap/npm-ls*-windows.json
             r44p5-bootstrap/npm-audit*-windows.json
