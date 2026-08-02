@@ -1,4 +1,14 @@
- / "forge-out")
+c = 'src'\n"
+            "out = 'forge-out'\n"
+            "cache_path = 'forge-cache'\n"
+            f"solc = '{solc_path}'\n"
+            "optimizer = true\n"
+            "optimizer_runs = 200\n"
+            "offline = true\n",
+            encoding="utf-8",
+        )
+        cmd = ["forge", "build", "--root", str(case_dir), "--force"]
+        output_files.append(case_dir / "forge-out")
     else:
         raise AssertionError(tool)
 
@@ -48,12 +58,16 @@
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     cases = prepare_cases()
+    solc_binary = os.environ.get("VELMERE_SOLC_BINARY", "solc")
     tool_meta = {
-        "solc": tool_metadata("solc", ["solc", "--version"]),
+        "solc": tool_metadata("solc", [solc_binary, "--version"]),
         "slither": tool_metadata("slither", ["slither", "--version"]),
         "semgrep": tool_metadata("semgrep", ["semgrep", "--version"]),
         "forge": tool_metadata("forge", ["forge", "--version"]),
     }
+    for name, meta in tool_meta.items():
+        if meta["versionExitCode"] != 0 or not meta["versionMatched"]:
+            raise SystemExit(f"tool version mismatch: {name}")
     solc_path = tool_meta["solc"]["realPath"]
     (OUT / "tool-identities.json").write_text(json.dumps(tool_meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     ledger: list[dict[str, Any]] = []
