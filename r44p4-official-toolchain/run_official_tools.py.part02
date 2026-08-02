@@ -1,0 +1,37 @@
+   d["completed"] += 1
+        else:
+            d["toolError"] += 1
+        if r["terminalStatus"] == "EXECUTED_FINDINGS":
+            d["findings"] += 1
+    summary = {
+        "schemaVersion": "velmere.r44p4.official-tool-ledger.v2",
+        "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "caseCount": len(cases),
+        "toolCount": len(TOOLS),
+        "requiredExecutions": 200,
+        "executed": len(ledger),
+        "uniqueExecutionKeys": len(unique),
+        "completedOfficialExecutions": sum(1 for r in ledger if r["officialExecutionCredit"]),
+        "successful": sum(1 for r in ledger if r["officialExecutionCredit"]),
+        "findingsExecutions": sum(1 for r in ledger if r["terminalStatus"] == "EXECUTED_FINDINGS"),
+        "rawZeroExitExecutions": sum(1 for r in ledger if r["exitCode"] == 0),
+        "toolErrors": sum(1 for r in ledger if not r["officialExecutionCredit"]),
+        "byTool": by_tool,
+        "realAuditCredit": 0,
+        "customerCredit": 0,
+        "liveCredit": 0,
+        "rows": ledger,
+    }
+    (OUT / "OFFICIAL_TOOL_EXECUTION_LEDGER.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    corpus_manifest = {
+        "schemaVersion": CORPUS["schemaVersion"],
+        "caseCount": len(cases),
+        "cases": [{k: c[k] for k in ("case_id", "filename", "sha256", "input_class", "rights_basis")} for c in cases],
+    }
+    (OUT / "CORPUS_MANIFEST.json").write_text(json.dumps(corpus_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps({k: summary[k] for k in ("executed", "uniqueExecutionKeys", "completedOfficialExecutions", "findingsExecutions", "rawZeroExitExecutions", "toolErrors", "byTool")}, indent=2))
+    return 0 if len(ledger) == 200 and len(unique) == 200 and summary["completedOfficialExecutions"] == 200 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
