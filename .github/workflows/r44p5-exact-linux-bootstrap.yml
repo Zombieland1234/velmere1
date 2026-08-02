@@ -18,6 +18,7 @@ jobs:
       EXPECTED_LOCK_SHA256: 6269b250e484780187c9378b52c69898fa533cf1c39cc21122ce8ef053387a6b
       EXPECTED_NODE: v24.18.0
       EXPECTED_NPM: 11.16.0
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
     steps:
       - uses: actions/checkout@v4
 
@@ -33,14 +34,14 @@ jobs:
           npm install --global 'npm@11.16.0'
           test "$(node --version)" = "$EXPECTED_NODE"
           test "$(npm --version)" = "$EXPECTED_NPM"
-          node --version | tee r44p5-bootstrap/node-version.txt
-          npm --version | tee r44p5-bootstrap/npm-version.txt
-          command -v node | tee r44p5-bootstrap/node-path.txt
-          command -v npm | tee r44p5-bootstrap/npm-path.txt
-          sha256sum "$(command -v node)" | tee r44p5-bootstrap/node-executable-sha256.txt
-          sha256sum "$(command -v npm)" | tee r44p5-bootstrap/npm-launcher-sha256.txt
+          node --version > r44p5-bootstrap/node-version.txt
+          npm --version > r44p5-bootstrap/npm-version.txt
+          command -v node > r44p5-bootstrap/node-path.txt
+          command -v npm > r44p5-bootstrap/npm-path.txt
+          sha256sum "$(command -v node)" > r44p5-bootstrap/node-executable-sha256.txt
+          sha256sum "$(command -v npm)" > r44p5-bootstrap/npm-launcher-sha256.txt
 
-      - name: Regenerate lockfile and record drift
+      - name: Generate current lock and exact dependency tree
         working-directory: r44p5-bootstrap
         shell: bash
         run: |
@@ -48,83 +49,48 @@ jobs:
           rm -f package-lock.json
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           ACTUAL="$(sha256sum package-lock.json | awk '{print $1}')"
-          echo "$ACTUAL  package-lock.json" | tee package-lock-sha256.txt
+          printf '%s  package-lock.json\n' "$ACTUAL" > package-lock-sha256.txt
           if test "$ACTUAL" = "$EXPECTED_LOCK_SHA256"; then
-            echo 'LOCK_MATCH=true' | tee lock-comparison.env
+            echo 'LOCK_MATCH=true' > lock-comparison.env
           else
-            echo 'LOCK_MATCH=false' | tee lock-comparison.env
-            printf '%s\n' "$EXPECTED_LOCK_SHA256  expected-r44p4-package-lock.json" > expected-lock-sha256.txt
+            echo 'LOCK_MATCH=false' > lock-comparison.env
+            printf '%s  expected-r44p4-package-lock.json\n' "$EXPECTED_LOCK_SHA256" > expected-lock-sha256.txt
           fi
-
-      - name: Review lifecycle surface
-        working-directory: r44p5-bootstrap
-        shell: bash
-        run: |
-          set -euo pipefail
-          node - <<'NODE'
-          const fs = require('node:fs');
-          const lock = JSON.parse(fs.readFileSync('package-lock.json','utf8'));
-          const rows = [];
-          for (const [path, meta] of Object.entries(lock.packages || {})) {
-            if (!path || !meta) continue;
-            if (meta.hasInstallScript) rows.push({path, version: meta.version || null, resolved: meta.resolved || null, integrity: meta.integrity || null});
-          }
-          rows.sort((a,b)=>a.path.localeCompare(b.path));
-          fs.writeFileSync('lifecycle-script-packages.json', JSON.stringify({count:rows.length,rows},null,2)+'\n');
-          console.log('LIFECYCLE_PACKAGES', rows.length);
-          NODE
-
-      - name: Exact npm ci without lifecycle scripts
-        working-directory: r44p5-bootstrap
-        shell: bash
-        run: |
-          set -euo pipefail
           rm -rf node_modules
           npm ci --ignore-scripts --no-audit --no-fund 2>npm-ci-ignore-scripts.stderr.log | tee npm-ci-ignore-scripts.stdout.log
           npm ls --all --json > npm-ls-ignore-scripts.json
-          node -e "const x=require('./npm-ls-ignore-scripts.json'); if(x.problems?.length){console.error(x.problems);process.exit(1)}"
-
-      - name: Exact npm ci with reviewed lifecycle scripts
-        working-directory: r44p5-bootstrap
-        shell: bash
-        run: |
-          set -euo pipefail
+          node -e "const x=require('./npm-ls-ignore-scripts.json');if(x.problems?.length){console.error(x.problems);process.exit(1)}"
           rm -rf node_modules
           npm ci --no-audit --no-fund 2>npm-ci.stderr.log | tee npm-ci.stdout.log
           npm ls --all --json > npm-ls.json
-          node -e "const x=require('./npm-ls.json'); if(x.problems?.length){console.error(x.problems);process.exit(1)}"
+          node -e "const x=require('./npm-ls.json');if(x.problems?.length){console.error(x.problems);process.exit(1)}"
           npm audit --omit=dev --json > npm-audit-production.json || true
           npm audit --json > npm-audit-all.json || true
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          const rows=[];
+          for(const [path,meta] of Object.entries(lock.packages||{})) if(path&&meta?.hasInstallScript) rows.push({path,version:meta.version||null,resolved:meta.resolved||null,integrity:meta.integrity||null});
+          rows.sort((a,b)=>a.path.localeCompare(b.path));
+          fs.writeFileSync('lifecycle-script-packages.json',JSON.stringify({count:rows.length,rows},null,2)+'\n');
+          NODE
 
-      - name: Install exact Playwright Chromium
+      - name: Install and verify Playwright Chromium
         working-directory: r44p5-bootstrap
         shell: bash
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         run: |
           set -euo pipefail
           npx playwright install chromium
           node - <<'NODE'
-          const fs = require('node:fs');
-          const crypto = require('node:crypto');
-          const { chromium } = require('playwright');
-          (async()=>{
-            const exe = chromium.executablePath();
-            const b = fs.readFileSync(exe);
-            const browser = await chromium.launch({headless:true});
-            const version = browser.version();
-            await browser.close();
-            const out={playwrightVersion:require('playwright/package.json').version,executablePath:exe,executableSha256:crypto.createHash('sha256').update(b).digest('hex'),browserVersion:version};
-            fs.writeFileSync('chromium-identity.json',JSON.stringify(out,null,2)+'\n');
-            console.log(out);
-          })().catch(e=>{console.error(e);process.exit(1)});
+          const fs=require('node:fs');
+          const crypto=require('node:crypto');
+          const {chromium}=require('playwright');
+          (async()=>{const exe=chromium.executablePath();const b=fs.readFileSync(exe);const browser=await chromium.launch({headless:true});const version=browser.version();await browser.close();fs.writeFileSync('chromium-identity.json',JSON.stringify({playwrightVersion:require('playwright/package.json').version,executablePath:exe,executableSha256:crypto.createHash('sha256').update(b).digest('hex'),browserVersion:version},null,2)+'\n');})().catch(e=>{console.error(e);process.exit(1)});
           NODE
 
-      - name: Package exact runtime dependencies and browser
+      - name: Build deterministic split bundles
         working-directory: r44p5-bootstrap
         shell: bash
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
         run: |
           set -euo pipefail
           RUNTIME_ROOT="$(dirname "$(dirname "$(readlink -f "$(command -v node)")")")"
@@ -144,14 +110,35 @@ jobs:
           Path('EXACT_BOOTSTRAP_MANIFEST.json').write_text(json.dumps({'node':'24.18.0','npm':'11.16.0','expectedLockSha256':expected,'generatedLockSha256':actual,'lockMatchesExpected':actual==expected,'bundles':rows},indent=2,sort_keys=True)+'\n')
           PY
 
-      - name: Upload exact bootstrap artifact
+      - name: Upload exact Node runtime
         uses: actions/upload-artifact@v4
         with:
-          name: r44p5-exact-linux-bootstrap
+          name: r44p5-exact-linux-node
+          path: r44p5-bootstrap/exact-node-24.18.0-npm-11.16.0-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload exact node_modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-node-modules
+          path: r44p5-bootstrap/exact-node-modules-r44p4-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload exact Chromium
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-chromium
+          path: r44p5-bootstrap/exact-playwright-chromium-1.60.0-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload bootstrap receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-receipts
           path: |
-            r44p5-bootstrap/exact-node-24.18.0-npm-11.16.0-linux-x64.tar.gz
-            r44p5-bootstrap/exact-node-modules-r44p4-linux-x64.tar.gz
-            r44p5-bootstrap/exact-playwright-chromium-1.60.0-linux-x64.tar.gz
             r44p5-bootstrap/EXACT_BOOTSTRAP_MANIFEST.json
             r44p5-bootstrap/exact-bundles-sha256.txt
             r44p5-bootstrap/package-lock.json
