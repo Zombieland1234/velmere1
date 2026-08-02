@@ -44,12 +44,25 @@ jobs:
           anvil --version | grep -F '1.2.3'
           echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
 
-      - name: Prepare exact 50-case corpus
+      - name: Prepare exact 50-case corpus and patched verifier
         working-directory: r44p8-local-deployment
         shell: bash
         run: |
           set -euo pipefail
           cp ../r44p4-official-toolchain/contracts-batch-*.json .
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('run_local_deployment_reproduction.py')
+          s=p.read_text(encoding='utf-8')
+          old_a='creation_hex = artifact["bytecode"]["object"]'
+          new_a='creation_hex = artifact["bytecode"]["object"].removeprefix("0x")'
+          old_b='expected_runtime_hex = artifact["deployedBytecode"]["object"]'
+          new_b='expected_runtime_hex = artifact["deployedBytecode"]["object"].removeprefix("0x")'
+          assert s.count(old_a)==1 and s.count(old_b)==1
+          s=s.replace(old_a,new_a).replace(old_b,new_b)
+          p.write_text(s,encoding='utf-8',newline='\n')
+          print('RUNNER_HEX_PREFIX_FIX_APPLIED')
+          PY
           python -m py_compile run_local_deployment_reproduction.py
           python - <<'PY'
           import glob, json
