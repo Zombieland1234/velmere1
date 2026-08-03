@@ -1,0 +1,56 @@
+len(checks), "passed": len(checks)-len(failed), "failed": len(failed), "rows": checks})
+        if failed: raise RuntimeError(f"AST checks failed {transform}: {failed}")
+
+    forge_cmd = ["forge", "test", "--root", str(PROJECT), "-vvv"]
+    started = dt.datetime.now(dt.timezone.utc)
+    t0 = time.monotonic()
+    forge = run(forge_cmd, PROJECT, 1200)
+    duration = round((time.monotonic() - t0) * 1000, 3)
+    RAW.mkdir(parents=True, exist_ok=True)
+    (RAW / "forge-test.stdout.log").write_bytes(forge.stdout)
+    (RAW / "forge-test.stderr.log").write_bytes(forge.stderr)
+    text = (forge.stdout + b"\n" + forge.stderr).decode("utf-8", "replace")
+    pass_names = sorted(set(re.findall(r"\[PASS\]\s+([A-Za-z0-9_]+)", text)))
+    fuzz_names = [x for x in pass_names if "Fuzz" in x]
+    invariant_names = [x for x in pass_names if x.startswith("invariant_")]
+    if forge.returncode != 0: raise RuntimeError(f"forge failed: {text[-5000:]}")
+    if len(pass_names) < 16 or len(fuzz_names) < 3 or len(invariant_names) < 4:
+        raise RuntimeError(f"unexpected forge denominator: pass={len(pass_names)} fuzz={len(fuzz_names)} invariant={len(invariant_names)} names={pass_names}")
+
+    source_manifest = []
+    for p in sorted(x for x in PROJECT.rglob("*") if x.is_file() and "/out/" not in str(x) and "/cache/" not in str(x)):
+        source_manifest.append({"path": str(p.relative_to(PROJECT)), "bytes": p.stat().st_size, "sha256": sha256_file(p)})
+    artifact_manifest = []
+    for p in sorted(x for x in (PROJECT / "out").rglob("*") if x.is_file()):
+        artifact_manifest.append({"path": str(p.relative_to(PROJECT)), "bytes": p.stat().st_size, "sha256": sha256_file(p)})
+
+    ledger = {
+        "schemaVersion": "velmere.pass36.a102r44p11.compiler-ast-dynamic-protocol-ledger.v1",
+        "status": "PASS_LOCAL_COMPILER_AST_MULTIFILE_FUZZ_INVARIANT",
+        "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "analyzerClass": "SOLC_0_8_24_COMPILER_AST_AND_STORAGE_LAYOUT",
+        "protocolPairs": 6,
+        "protocolVariants": 12,
+        "sourceFiles": len([x for x in SOURCES if x.startswith("src/")]),
+        "metamorphicCompilerRuns": len(transformations),
+        "astAssertionsPerRun": len(ast_runs[0]["rows"]),
+        "astAssertions": sum(r["checks"] for r in ast_runs),
+        "astPassed": sum(r["passed"] for r in ast_runs),
+        "astFailed": sum(r["failed"] for r in ast_runs),
+        "forgeCommand": forge_cmd,
+        "forgeStartedAt": started.isoformat(),
+        "forgeDurationMs": duration,
+        "forgeExitCode": forge.returncode,
+        "forgePassedTests": len(pass_names),
+        "forgeFuzzTests": len(fuzz_names),
+        "forgeInvariantCampaigns": len(invariant_names),
+        "passedTestNames": pass_names,
+        "fuzzTestNames": fuzz_names,
+        "invariantNames": invariant_names,
+        "toolIdentities": identities,
+        "astRuns": ast_runs,
+        "sourceManifest": source_manifest,
+        "artifactFileCount": len(artifact_manifest),
+        "artifactManifestSha256": sha256_bytes(json.dumps(artifact_manifest, sort_keys=True, separators=(",", ":")).encode()),
+        "creditBoundary": {
+            "localCompilerAstCr
