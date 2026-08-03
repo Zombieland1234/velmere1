@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 120
     env:
       EXPECTED_SOLC_SHA256: fb03a29a517452b9f12bcf459ef37d0a543765bb3bbc911e70a87d6a37c30d5f
+      EXPECTED_RUNNER_SHA256: d52cd741f1743e71d9da72856eafa4fb3b0cad1d9a4feb8afe9e6e0507259af7
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,13 +37,8 @@ jobs:
           test "$(sha256sum "$SOLC_BINARY" | awk '{print $1}')" = "$EXPECTED_SOLC_SHA256"
           "$SOLC_BINARY" --version | grep -F '0.8.24'
           echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
-          cat r44p11-evidence/run_r44p11.py.gz.b64.part* > "$RUNNER_TEMP/run_r44p11.py.gz.b64"
-          python - <<'PY'
-          import base64,gzip,pathlib,os
-          temp=pathlib.Path(os.environ['RUNNER_TEMP'])
-          root=pathlib.Path('r44p11-evidence')
-          (root/'run_r44p11.py').write_bytes(gzip.decompress(base64.b64decode((temp/'run_r44p11.py.gz.b64').read_text().strip())))
-          PY
+          cat r44p11-evidence/run_r44p11.py.part* > r44p11-evidence/run_r44p11.py
+          test "$(sha256sum r44p11-evidence/run_r44p11.py | awk '{print $1}')" = "$EXPECTED_RUNNER_SHA256"
           python -m py_compile r44p11-evidence/run_r44p11.py
       - name: Execute compiler AST and dynamic protocol campaigns
         working-directory: r44p11-evidence
@@ -72,7 +68,9 @@ jobs:
         run: |
           set -euo pipefail
           if test -d evidence; then
-            tar -czf r44p11-compiler-ast-dynamic-evidence.tar.gz evidence execution-summary.log
+            tar --sort=name --mtime='UTC 2026-08-03' --owner=0 --group=0 --numeric-owner \
+              -czf r44p11-compiler-ast-dynamic-evidence.tar.gz evidence execution-summary.log
+            sha256sum r44p11-compiler-ast-dynamic-evidence.tar.gz > r44p11-compiler-ast-dynamic-evidence.sha256
           fi
       - name: Upload evidence
         if: always()
@@ -83,5 +81,6 @@ jobs:
             r44p11-evidence/evidence
             r44p11-evidence/execution-summary.log
             r44p11-evidence/r44p11-compiler-ast-dynamic-evidence.tar.gz
+            r44p11-evidence/r44p11-compiler-ast-dynamic-evidence.sha256
           if-no-files-found: warn
           retention-days: 14
