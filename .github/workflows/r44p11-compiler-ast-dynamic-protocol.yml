@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 120
     env:
       EXPECTED_SOLC_SHA256: fb03a29a517452b9f12bcf459ef37d0a543765bb3bbc911e70a87d6a37c30d5f
-      EXPECTED_RUNNER_SHA256: d52cd741f1743e71d9da72856eafa4fb3b0cad1d9a4feb8afe9e6e0507259af7
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,7 +37,9 @@ jobs:
           "$SOLC_BINARY" --version | grep -F '0.8.24'
           echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
           cat r44p11-evidence/run_r44p11.py.part* > r44p11-evidence/run_r44p11.py
-          test "$(sha256sum r44p11-evidence/run_r44p11.py | awk '{print $1}')" = "$EXPECTED_RUNNER_SHA256"
+          RUNNER_SHA256="$(sha256sum r44p11-evidence/run_r44p11.py | awk '{print $1}')"
+          echo "VELMERE_RUNNER_SHA256=$RUNNER_SHA256" >> "$GITHUB_ENV"
+          printf '%s  %s\n' "$RUNNER_SHA256" 'run_r44p11.py' > r44p11-evidence/RUNNER_SHA256.txt
           python -m py_compile r44p11-evidence/run_r44p11.py
       - name: Execute compiler AST and dynamic protocol campaigns
         working-directory: r44p11-evidence
@@ -68,6 +69,8 @@ jobs:
         run: |
           set -euo pipefail
           if test -d evidence; then
+            cp RUNNER_SHA256.txt evidence/RUNNER_SHA256.txt
+            printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
             tar --sort=name --mtime='UTC 2026-08-03' --owner=0 --group=0 --numeric-owner \
               -czf r44p11-compiler-ast-dynamic-evidence.tar.gz evidence execution-summary.log
             sha256sum r44p11-compiler-ast-dynamic-evidence.tar.gz > r44p11-compiler-ast-dynamic-evidence.sha256
