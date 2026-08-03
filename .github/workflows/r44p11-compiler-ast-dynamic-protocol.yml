@@ -14,6 +14,8 @@ jobs:
   compiler-ast-dynamic:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    env:
+      EXPECTED_SOLC_SHA256: fb03a29a517452b9f12bcf459ef37d0a543765bb3bbc911e70a87d6a37c30d5f
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,10 +28,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install 'solc-select==1.1.0'
-          solc-select install 0.8.24
-          solc-select use 0.8.24
-          echo "VELMERE_SOLC_BINARY=$(command -v solc)" >> "$GITHUB_ENV"
+          SOLC_BINARY="$RUNNER_TEMP/solc-linux-amd64-v0.8.24+commit.e11b9ed9"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$SOLC_BINARY" \
+            'https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-v0.8.24%2Bcommit.e11b9ed9'
+          chmod 0755 "$SOLC_BINARY"
+          test "$(sha256sum "$SOLC_BINARY" | awk '{print $1}')" = "$EXPECTED_SOLC_SHA256"
+          "$SOLC_BINARY" --version | grep -F '0.8.24'
+          echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
           python - <<'PY'
           import base64,gzip,pathlib
           root=pathlib.Path('r44p11-evidence')
