@@ -1,0 +1,79 @@
+name: R44P11 Compiler AST Dynamic Protocol Closure
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p11-evidence/**'
+      - '.github/workflows/r44p11-compiler-ast-dynamic-protocol.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compiler-ast-dynamic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.2.3
+      - name: Prepare exact compiler and runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'solc-select==1.1.0'
+          solc-select install 0.8.24
+          solc-select use 0.8.24
+          echo "VELMERE_SOLC_BINARY=$(command -v solc)" >> "$GITHUB_ENV"
+          python - <<'PY'
+          import base64,gzip,pathlib
+          root=pathlib.Path('r44p11-evidence')
+          (root/'run_r44p11.py').write_bytes(gzip.decompress(base64.b64decode((root/'run_r44p11.py.gz.b64').read_text().strip())))
+          PY
+          python -m py_compile r44p11-evidence/run_r44p11.py
+      - name: Execute compiler AST and dynamic protocol campaigns
+        working-directory: r44p11-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_r44p11.py | tee execution-summary.log
+      - name: Verify ledger
+        working-directory: r44p11-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          x=json.load(open('evidence/R44P11_COMPILER_AST_DYNAMIC_PROTOCOL_LEDGER.json'))
+          assert x['status']=='PASS_LOCAL_COMPILER_AST_MULTIFILE_FUZZ_INVARIANT'
+          assert x['protocolPairs']==6 and x['protocolVariants']==12
+          assert x['astAssertions']==64 and x['astPassed']==64 and x['astFailed']==0
+          assert x['forgePassedTests']>=16 and x['forgeFuzzTests']>=3 and x['forgeInvariantCampaigns']>=4
+          assert x['creditBoundary']['realExternalProtocolAccuracyCredit'] is False
+          assert x['creditBoundary']['saleCredit'] is False and x['creditBoundary']['liveCredit'] is False
+          PY
+      - name: Package evidence
+        if: always()
+        working-directory: r44p11-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -d evidence; then
+            tar -czf r44p11-compiler-ast-dynamic-evidence.tar.gz evidence execution-summary.log
+          fi
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p11-compiler-ast-dynamic-evidence
+          path: |
+            r44p11-evidence/evidence
+            r44p11-evidence/execution-summary.log
+            r44p11-evidence/r44p11-compiler-ast-dynamic-evidence.tar.gz
+          if-no-files-found: warn
+          retention-days: 14
