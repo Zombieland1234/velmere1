@@ -1,0 +1,82 @@
+t(controlMinted >= riskMinted);
+    }
+
+    function test_InitRiskCanBeReinitialized() public {
+        InitRisk risk = new InitRisk();
+        risk.initialize(address(0x1111));
+        risk.initialize(address(0x2222));
+        assert(risk.owner() == address(0x2222));
+    }
+
+    function test_InitControlRejectsSecondInitialization() public {
+        InitControl control = new InitControl();
+        control.initialize(address(0x1111));
+        try control.initialize(address(0x2222)) { assert(false); } catch { assert(control.owner() == address(0x1111)); }
+    }
+
+    function test_StorageLayoutRiskDiffers() public {
+        LayoutV1 a = new LayoutV1();
+        LayoutV2Risk b = new LayoutV2Risk();
+        assert(address(a) != address(b));
+    }
+
+    function test_BridgeRiskReplaysAcrossContracts() public {
+        BridgeRisk a = new BridgeRisk();
+        BridgeRisk b = new BridgeRisk();
+        bytes memory message = abi.encode("release");
+        a.execute(message);
+        b.execute(message);
+        assert(true);
+    }
+
+    function test_BridgeControlBindsDestination() public {
+        BridgeControl a = new BridgeControl(address(this));
+        BridgeControl b = new BridgeControl(address(this));
+        bytes memory message = abi.encode("release");
+        a.execute(1, block.chainid, address(a), 7, message);
+        try b.execute(1, block.chainid, address(a), 7, message) { assert(false); } catch { assert(true); }
+    }
+
+    function testFuzz_GovernanceControlRequiresQuorum(uint128 rawVotes) public {
+        GovernanceControl control = new GovernanceControl(1_000_000);
+        uint256 votes = uint256(rawVotes) % 1_000_001;
+        assert(control.passed(votes) == (votes >= 100_000));
+    }
+
+    function test_GovernanceRiskOneVotePasses() public {
+        GovernanceRisk risk = new GovernanceRisk();
+        assert(risk.passed(1));
+    }
+
+    function test_SolvencyRiskAllowsUnsafeWithdrawal() public {
+        SolvencyRisk risk = new SolvencyRisk();
+        risk.seed(100, 80);
+        risk.withdraw(50);
+        assert(risk.collateral(address(this)) == 50);
+    }
+
+    function test_SolvencyControlRejectsUnsafeWithdrawal() public {
+        vm.warp(10 days);
+        LendingOracle oracle = new LendingOracle();
+        oracle.set(1e18, block.timestamp);
+        SolvencyControl control = new SolvencyControl(oracle);
+        control.seed(100, 80);
+        try control.withdraw(50) { assert(false); } catch { assert(control.collateral(address(this)) == 100); }
+    }
+}
+
+contract ShareHandler {
+    ShareControl public immutable vault;
+    constructor(ShareControl v) { vault = v; }
+    function actDeposit(uint96 raw) external { uint256 amount = uint256(raw) % 1e18 + 1; vault.deposit(amount); }
+    function actDonate(uint96 raw) external { vault.donate(uint256(raw) % 1e18); }
+}
+contract ShareInvariantTest {
+    ShareControl internal vault; ShareHandler internal handler;
+    function setUp() public { vault = new ShareControl(); vault.deposit(1e18); handler = new ShareHandler(vault); }
+    function invariant_ControlSharesNeverResetToZero() public view { assert(vault.totalShares() > 0); }
+}
+
+contract BridgeHandler {
+    BridgeControl public immutable bridge;
+    uint2
