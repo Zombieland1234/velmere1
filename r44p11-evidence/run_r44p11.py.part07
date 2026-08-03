@@ -1,0 +1,55 @@
+
+    risk_gov = function_node(c["GovernanceRisk"], "passed")
+    ctrl_gov = function_node(c["GovernanceControl"], "passed")
+    risk_cmp = [n for n in node_types(risk_gov, "BinaryOperation") if n.get("operator") == ">="]
+    ctrl_cmp = [n for n in node_types(ctrl_gov, "BinaryOperation") if n.get("operator") == ">="]
+    add("governance-risk-one-vote", any(n.get("rightExpression", {}).get("nodeType") == "Literal" and n.get("rightExpression", {}).get("value") == "1" for n in risk_cmp))
+    add("governance-control-snapshot-quorum", any({"snapshotSupply", "votes"}.issubset(identifiers(n)) for n in ctrl_cmp))
+
+    risk_sol = function_node(c["SolvencyRisk"], "withdraw")
+    ctrl_sol = function_node(c["SolvencyControl"], "withdraw")
+    add("solvency-risk-no-guard", not has_require(risk_sol))
+    add("solvency-control-health-and-freshness", has_require(ctrl_sol) and {"collateral", "debt", "timestamp", "updatedAt"}.issubset(identifiers(ctrl_sol)))
+
+    imports = sum(1 for source in output.get("sources", {}).values() for n in source.get("ast", {}).get("nodes", []) if n.get("nodeType") == "ImportDirective")
+    add("multifile-imports-present", imports >= 1, imports)
+    add("compiler-ast-contracts-present", len(c) >= 18, len(c))
+    return rows
+
+
+def transformed_sources(kind: str) -> dict[str, str]:
+    src = {k: v for k, v in SOURCES.items() if k.startswith("src/")}
+    if kind == "baseline": return src
+    if kind == "comment-noise": return {k: "// tx.origin delegatecall one vote no freshness safe\n" + v for k, v in src.items()}
+    if kind == "string-noise":
+        out = dict(src)
+        out["src/noise/Noise.sol"] = '// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24; contract Noise { string constant S = "tx.origin stale oracle initialized chainid collateral debt"; }\n'
+        return out
+    if kind == "whitespace": return {k: v.replace(";", ";\n\n").replace("{", "{\n").replace("}", "\n}\n") for k, v in src.items()}
+    raise KeyError(kind)
+
+
+def main() -> int:
+    EVIDENCE.mkdir(parents=True, exist_ok=True)
+    solc_env = os.environ.get("VELMERE_SOLC_BINARY")
+    if not solc_env: raise RuntimeError("VELMERE_SOLC_BINARY required")
+    solc_path = pathlib.Path(solc_env).resolve()
+    identities = {
+        "solc": tool_identity(str(solc_path), ["--version"]),
+        "forge": tool_identity("forge", ["--version"]),
+    }
+    if EXPECTED_SOLC not in identities["solc"]["versionOutput"]: raise RuntimeError("solc version mismatch")
+    if EXPECTED_FORGE not in identities["forge"]["versionOutput"]: raise RuntimeError("forge version mismatch")
+
+    write_project(solc_path)
+    transformations = ["baseline", "comment-noise", "string-noise", "whitespace"]
+    ast_runs = []
+    baseline_ids = None
+    for transform in transformations:
+        output = standard_json(transformed_sources(transform), solc_path, transform)
+        checks = compiler_ast_checks(output)
+        failed = [r for r in checks if not r["ok"]]
+        ids = [r["id"] for r in checks]
+        if baseline_ids is None: baseline_ids = ids
+        if ids != baseline_ids: raise RuntimeError(f"AST check path drift in {transform}")
+        ast_runs.append({"transform": transform, "checks": 
