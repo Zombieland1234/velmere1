@@ -36,10 +36,12 @@ jobs:
           test "$(sha256sum "$SOLC_BINARY" | awk '{print $1}')" = "$EXPECTED_SOLC_SHA256"
           "$SOLC_BINARY" --version | grep -F '0.8.24'
           echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
+          cat r44p11-evidence/run_r44p11.py.gz.b64.part* > "$RUNNER_TEMP/run_r44p11.py.gz.b64"
           python - <<'PY'
-          import base64,gzip,pathlib
+          import base64,gzip,pathlib,os
+          temp=pathlib.Path(os.environ['RUNNER_TEMP'])
           root=pathlib.Path('r44p11-evidence')
-          (root/'run_r44p11.py').write_bytes(gzip.decompress(base64.b64decode((root/'run_r44p11.py.gz.b64').read_text().strip())))
+          (root/'run_r44p11.py').write_bytes(gzip.decompress(base64.b64decode((temp/'run_r44p11.py.gz.b64').read_text().strip())))
           PY
           python -m py_compile r44p11-evidence/run_r44p11.py
       - name: Execute compiler AST and dynamic protocol campaigns
