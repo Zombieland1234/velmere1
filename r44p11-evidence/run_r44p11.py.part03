@@ -60,8 +60,8 @@ t(controlMinted >= riskMinted);
         LendingOracle oracle = new LendingOracle();
         oracle.set(1e18, block.timestamp);
         SolvencyControl control = new SolvencyControl(oracle);
-        control.seed(100, 80);
-        try control.withdraw(50) { assert(false); } catch { assert(control.collateral(address(this)) == 100); }
+        control.seed(200, 80);
+        try control.withdraw(50) { assert(false); } catch { assert(control.collateral(address(this)) == 200); }
     }
 }
 
