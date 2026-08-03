@@ -1,0 +1,77 @@
+ath_or_name}")
+    resolved = resolved.resolve()
+    cp = run([str(resolved), *args], ROOT, 60)
+    text = (cp.stdout + b"\n" + cp.stderr).decode("utf-8", "replace")
+    return {"path": str(resolved), "sha256": sha256_file(resolved), "versionOutput": text[:4096], "exitCode": cp.returncode}
+
+
+def write_project(solc_path: pathlib.Path) -> None:
+    if PROJECT.exists(): shutil.rmtree(PROJECT)
+    for rel, source in SOURCES.items():
+        p = PROJECT / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(source, encoding="utf-8", newline="\n")
+    (PROJECT / "foundry.toml").write_text(
+        "[profile.default]\n"
+        "src = 'src'\n"
+        "test = 'test'\n"
+        "out = 'out'\n"
+        "cache_path = 'cache'\n"
+        f"solc = '{solc_path.as_posix()}'\n"
+        "optimizer = true\n"
+        "optimizer_runs = 200\n"
+        "evm_version = 'cancun'\n"
+        "[fuzz]\nruns = 256\n"
+        "[invariant]\nruns = 128\ndepth = 32\nfail_on_revert = false\n",
+        encoding="utf-8",
+    )
+
+
+def standard_json(sources: dict[str, str], solc_path: pathlib.Path, label: str) -> dict[str, Any]:
+    payload = {
+        "language": "Solidity",
+        "sources": {name: {"content": source} for name, source in sources.items() if name.startswith("src/")},
+        "settings": {
+            "optimizer": {"enabled": True, "runs": 200},
+            "evmVersion": "cancun",
+            "outputSelection": {"*": {"": ["ast"], "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "storageLayout"]}},
+        },
+    }
+    cp = run([str(solc_path), "--standard-json"], ROOT, 240, None)
+    # subprocess input is needed; rerun directly with payload
+    cp = subprocess.run([str(solc_path), "--standard-json"], input=json.dumps(payload).encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=240, check=False)
+    RAW.mkdir(parents=True, exist_ok=True)
+    (RAW / f"solc-{label}.stdout.json").write_bytes(cp.stdout)
+    (RAW / f"solc-{label}.stderr.log").write_bytes(cp.stderr)
+    if cp.returncode != 0: raise RuntimeError(f"solc failed for {label}: {cp.stderr[-4000:]!r}")
+    output = json.loads(cp.stdout)
+    errors = [e for e in output.get("errors", []) if e.get("severity") == "error"]
+    if errors: raise RuntimeError(f"solc errors for {label}: {errors[:3]}")
+    return output
+
+
+def walk(node: Any):
+    if isinstance(node, dict):
+        yield node
+        for value in node.values():
+            yield from walk(value)
+    elif isinstance(node, list):
+        for value in node:
+            yield from walk(value)
+
+
+def contract_nodes(output: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result = {}
+    for source in output.get("sources", {}).values():
+        for node in walk(source.get("ast", {})):
+            if node.get("nodeType") == "ContractDefinition": result[node.get("name")] = node
+    return result
+
+
+def function_node(contract: dict[str, Any], name: str) -> dict[str, Any]:
+    for node in contract.get("nodes", []):
+        if node.get("nodeType") == "FunctionDefinition" and node.get("name") == name: return node
+    raise KeyError(f"function {name} missing in {contract.get('name')}")
+
+
+def node_types(node: dict[s
