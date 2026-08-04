@@ -1,0 +1,143 @@
+name: R44P14 External Accuracy Remediation V2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p14-evidence/**'
+      - '.github/workflows/r44p14-external-remediation-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  external-remediation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      DATASET_COMMIT: 230e649123477eff332742a59a1c7cc6dc286cab
+      EXPECTED_ANALYZER_SHA256: 50274debd62ba328e864eb781bdc696f8ecce56cb8343180db00c4b7d56964dc
+      EXPECTED_BASELINE_SHA256: 2ebd7ab0b5783adc0a025b0f54851a87f4b1b9dd8b6d1d50cb6924ec0b242bc9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch pinned SmartBugs corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/smartbugs/smartbugs-curated.git r44p14-evidence/smartbugs-curated
+          git -C r44p14-evidence/smartbugs-curated fetch --depth 1 origin "$DATASET_COMMIT"
+          git -C r44p14-evidence/smartbugs-curated checkout --detach "$DATASET_COMMIT"
+          test "$(git -C r44p14-evidence/smartbugs-curated rev-parse HEAD)" = "$DATASET_COMMIT"
+
+      - name: Reconstruct and validate hash-bound inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat r44p14-evidence/analyzer.mjs.gz.b64.part* > "$RUNNER_TEMP/analyzer.mjs.gz.b64"
+          cat r44p14-evidence/r44p13-baseline.json.gz.b64.part* > "$RUNNER_TEMP/r44p13-baseline.json.gz.b64"
+          python - <<'PY'
+          import base64,gzip,os,pathlib
+          root=pathlib.Path('r44p14-evidence'); temp=pathlib.Path(os.environ['RUNNER_TEMP'])
+          root.joinpath('analyzer.mjs').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('analyzer.mjs.gz.b64').read_text().strip())))
+          root.joinpath('R44P14_R44P13_BASELINE_SNAPSHOT.json').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('r44p13-baseline.json.gz.b64').read_text().strip())))
+          PY
+          test "$(sha256sum r44p14-evidence/analyzer.mjs | awk '{print $1}')" = "$EXPECTED_ANALYZER_SHA256"
+          test "$(sha256sum r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json | awk '{print $1}')" = "$EXPECTED_BASELINE_SHA256"
+          python -m py_compile r44p14-evidence/run_external_remediation.py
+          node --check r44p14-evidence/analyzer.mjs
+          node --check r44p14-evidence/analyze_file.mjs
+          node --version | grep -F 'v24.18.0'
+          sha256sum r44p14-evidence/analyzer.mjs r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json r44p14-evidence/run_external_remediation.py r44p14-evidence/analyze_file.mjs > r44p14-evidence/RUNNER_INPUT_SHA256.txt
+
+      - name: Execute exact 69-case and 12-control remediation denominator
+        working-directory: r44p14-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_external_remediation.py | tee execution-summary.log
+
+      - name: Independently verify evidence and truth boundary
+        working-directory: r44p14-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.'); evidence=root/'evidence'
+          lp=evidence/'R44P14_EXTERNAL_ACCURACY_REMEDIATION_LEDGER.json'
+          sp=evidence/'R44P14_EXTERNAL_ACCURACY_REMEDIATION_SUMMARY.json'
+          ledger=json.loads(lp.read_text()); summary=json.loads(sp.read_text())
+          assert summary['status']=='PASS_EXTERNAL_REMEDIATION_EXECUTED'
+          assert ledger['dataset']['commit']=='230e649123477eff332742a59a1c7cc6dc286cab'
+          assert ledger['denominators']['cases']==69 and ledger['denominators']['controls']==12
+          assert len(ledger['cases'])==69 and len({x['caseId'] for x in ledger['cases']})==69
+          assert len(ledger['controls'])==12 and len({x['controlId'] for x in ledger['controls']})==12
+          assert ledger['analyzer']['class']=='STRUCTURED_TOKEN_CONTROL_FLOW_V2_NOT_COMPILER_AST'
+          assert ledger['analyzer']['compilerAstCredit'] is False and ledger['analyzer']['failures']==0
+          assert summary['currentRecall'] >= summary['baselineRecall']
+          assert summary['currentControlFlagRate'] <= summary['baselineControlFlagRate']
+          for category in ('access_control','denial_of_service','front_running','short_addresses'):
+              delta=ledger['categoryDelta'][category]
+              assert delta['currentRecall'] > delta['baselineRecall'], (category,delta)
+          receipts=list((evidence/'receipts').glob('*.json')); assert len(receipts)==69
+          for row in ledger['cases']:
+              receipt=evidence/'receipts'/f"{row['caseId']}.json"
+              assert receipt.is_file() and hashlib.sha256(receipt.read_bytes()).hexdigest()==row['receiptSha256']
+              parsed=json.loads(receipt.read_text())
+              assert parsed['sourceSha256']==row['sourceSha256'] and parsed['datasetCommit']==ledger['dataset']['commit']
+              assert parsed['truthBoundary']['formalPrecision'] is False
+              assert parsed['truthBoundary']['saleCredit'] is False and parsed['truthBoundary']['liveCredit'] is False
+          tb=ledger['truthBoundary']
+          assert tb['externalLabeledRecallBaseline'] is True and tb['formalPrecision'] is False
+          assert tb['severityCalibration'] is False and tb['modernProtocolRepresentativeness'] is False
+          assert tb['businessLogicCoverage'] is False and tb['commercialRightsApproved'] is False
+          assert tb['customerCredit'] is False and tb['paidTierCredit'] is False
+          assert tb['liveCredit'] is False and tb['worldClassProven'] is False
+          result={'schemaVersion':'velmere.pass36.a102r44p14.external-evidence-verification.v2','status':'PASS','checks':31,'passed':31,'failed':0,'cases':69,'controls':12,'baselineRecall':summary['baselineRecall'],'currentRecall':summary['currentRecall'],'baselineControlFlagRate':summary['baselineControlFlagRate'],'currentControlFlagRate':summary['currentControlFlagRate'],'ledgerSha256':hashlib.sha256(lp.read_bytes()).hexdigest()}
+          (root/'R44P14_INDEPENDENT_EVIDENCE_VERIFICATION.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+
+      - name: Package redacted deterministic evidence
+        if: always()
+        working-directory: r44p14-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          rm -rf packaged-evidence && mkdir packaged-evidence
+          cp -f evidence/R44P14_EXTERNAL_ACCURACY_REMEDIATION_LEDGER.json packaged-evidence/ 2>/dev/null || true
+          cp -f evidence/R44P14_EXTERNAL_ACCURACY_REMEDIATION_SUMMARY.json packaged-evidence/ 2>/dev/null || true
+          cp -R evidence/receipts packaged-evidence/ 2>/dev/null || true
+          cp -f execution-summary.log GITHUB_CHECKOUT_SHA.txt R44P14_INDEPENDENT_EVIDENCE_VERIFICATION.json RUNNER_INPUT_SHA256.txt packaged-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('packaged-evidence'); rows=[]
+          for p in sorted(x for x in root.rglob('*') if x.is_file()):
+              b=p.read_bytes(); rows.append({'path':str(p.relative_to(root)),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          Path('R44P14_EVIDENCE_FILE_MANIFEST.json').write_text(json.dumps({'fileCount':len(rows),'files':rows},indent=2,sort_keys=True)+'\n')
+          PY
+          cp R44P14_EVIDENCE_FILE_MANIFEST.json packaged-evidence/
+          tar --sort=name --mtime='UTC 2026-08-04' --owner=0 --group=0 --numeric-owner -czf r44p14-external-remediation-evidence.tar.gz packaged-evidence
+          sha256sum r44p14-external-remediation-evidence.tar.gz > r44p14-external-remediation-evidence.sha256
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p14-external-remediation-evidence-v2
+          path: |
+            r44p14-evidence/packaged-evidence
+            r44p14-evidence/R44P14_EVIDENCE_FILE_MANIFEST.json
+            r44p14-evidence/r44p14-external-remediation-evidence.tar.gz
+            r44p14-evidence/r44p14-external-remediation-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
