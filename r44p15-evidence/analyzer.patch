@@ -1,0 +1,146 @@
+--- analyzer.mjs.old
++++ analyzer.mjs
+@@ -166,6 +166,31 @@
+   return rows;
+ }
+ 
++function extractModifiers(contract, code) {
++  const rows = [];
++  const local = code.slice(contract.open + 1, contract.close);
++  const pattern = /\bmodifier\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(([^)]*)\))?\s*([^;{]*)\{/g;
++  for (const match of local.matchAll(pattern)) {
++    const relative = match.index ?? 0;
++    const absolute = contract.open + 1 + relative;
++    const open = absolute + match[0].lastIndexOf("{");
++    const close = matchingBrace(code, open);
++    if (close < 0 || close > contract.close) continue;
++    rows.push({
++      contractName: contract.name,
++      name: match[1],
++      params: match[2] ?? "",
++      tail: match[3] ?? "",
++      body: code.slice(open + 1, close),
++      start: absolute,
++      open,
++      close,
++      line: lineForOffset(code, absolute),
++    });
++  }
++  return rows;
++}
++
+ function functionBody(code, name) {
+   const start = code.search(new RegExp(`\\bfunction\\s+${name}\\b`, "i"));
+   if (start < 0) return "";
+@@ -212,14 +237,68 @@
+   return params.split(",").map((value) => value.trim()).filter(Boolean);
+ }
+ 
++function interactionRows(body, { includeTypedCallbacks = false } = {}) {
++  const rows = [];
++  const patterns = [
++    ["legacy-call-value", /\.\s*(?:call|callcode)\s*\.\s*value\s*\([^)]*\)\s*\(/g],
++    ["low-level-call", /\.\s*(?:call|callcode|delegatecall)\s*(?:\{[^{}]*\})?\s*\(/g],
++    ["ether-transfer", /\.\s*(?:send|transfer)\s*\(/g],
++    ["token-transfer", /\.\s*(?:safeTransfer|safeTransferFrom|transferFrom|transfer)\s*\(/g],
++  ];
++  if (includeTypedCallbacks) {
++    patterns.push(["typed-callback", /\b[A-Z][A-Za-z0-9_]*\s*\([^;{}]*\)\s*\.\s*[A-Za-z_][A-Za-z0-9_]*\s*\(/g]);
++  }
++  for (const [kind, pattern] of patterns) {
++    for (const match of body.matchAll(pattern)) {
++      rows.push({ kind, index: match.index ?? -1, text: match[0] });
++    }
++  }
++  return rows.filter((row) => row.index >= 0).sort((a, b) => a.index - b.index);
++}
++
++function stateEffectRows(body) {
++  const rows = [];
++  const patterns = [
++    ["delete", /\bdelete\s+[A-Za-z_][A-Za-z0-9_]*(?:\s*\[[^\]]+\])?(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)*/g],
++    ["indexed-write", /\b[A-Za-z_][A-Za-z0-9_]*(?:\s*\[[^\]]+\])+(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)*\s*(?:=|\+=|-=|\*=|\/=|\+\+|--)/g],
++    ["member-write", /\b[A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)+\s*(?:=|\+=|-=|\*=|\/=|\+\+|--)/g],
++  ];
++  for (const [kind, pattern] of patterns) {
++    for (const match of body.matchAll(pattern)) {
++      const text = match[0];
++      if (/\b(?:locked|_locked|entered|_entered|_status)\b/i.test(text)) continue;
++      rows.push({ kind, index: match.index ?? -1, text });
++    }
++  }
++  return rows.filter((row) => row.index >= 0).sort((a, b) => a.index - b.index);
++}
++
++function hasReentrancyGuard(fn) {
++  if (/\b(?:nonReentrant|noReentrancy|reentrancyGuard|mutex|lockGuard)\b/i.test(fn.tail)) return true;
++  const body = fn.body;
++  const guardCheck = /\b(?:require|assert)\s*\([^)]*(?:locked|_locked|entered|_entered|_status)[^)]*\)/i.test(body);
++  const guardEnter = /\b(?:locked|_locked|entered|_entered|_status)\s*=\s*(?:true|1|_ENTERED)\b/i.test(body);
++  const guardExit = /\b(?:locked|_locked|entered|_entered|_status)\s*=\s*(?:false|0|_NOT_ENTERED)\b/i.test(body);
++  return guardCheck && guardEnter && guardExit;
++}
++
++function isReentrancySensitiveFunctionName(name) {
++  return /(?:withdraw|claim|refund|release|payout|redeem|unstake|exit|settle|timeout|close)/i.test(name);
++}
++
++function modifierIsUsed(fn, modifierName) {
++  return new RegExp(`(?:^|\\s)${modifierName}(?:\\s*\\([^)]*\\))?(?:\\s|$)`).test(fn.tail);
++}
++
+ export function analyzeSolidityStructuredSignals(source) {
+   const preserved = stripCommentsAndStrings(source).replace(/\r\n?/g, "\n");
+-  const code = preserved.replace(/\s+/g, " ").trim();
++  const code = compact(source);
+   const version = versionTuple(source);
+   const legacyDefaultPublic = versionLessThan(version, 0, 5, 0);
+   const signals = new Map();
+   const contracts = extractContracts(preserved);
+   const functions = contracts.flatMap((contract) => extractFunctions(contract, preserved, legacyDefaultPublic));
++  const modifiers = contracts.flatMap((contract) => extractModifiers(contract, preserved));
+ 
+   if (/\btx\s*\.\s*origin\b/.test(code)) addSignal(signals, "tx_origin_auth", { category: "access_control" });
+   if (/\.delegatecall\s*\(/.test(code)) addSignal(signals, "delegatecall", { category: "access_control" });
+@@ -237,10 +316,37 @@
+       if (!sendChecked) addSignal(signals, "unchecked_call", { category: "unchecked_low_level_calls", line });
+     }
+ 
+-    const callIndex = body.search(/\.(?:call|send|transfer)\s*(?:\{|\()/);
+-    const writeIndex = body.search(/\b[A-Za-z_]\w*\s*\[[^\]]+\]\s*(?:=|-=|\+=)/i);
+-    if (/withdraw/i.test(fn.name) && callIndex >= 0 && (writeIndex < 0 || callIndex < writeIndex)) {
+-      addSignal(signals, "reentrancy_order", { category: "reentrancy", line });
++    const interactions = interactionRows(body);
++    const effects = stateEffectRows(body);
++    const firstInteraction = interactions[0];
++    const postInteractionEffect = firstInteraction
++      ? effects.find((effect) => effect.index > firstInteraction.index)
++      : null;
++    if (firstInteraction && postInteractionEffect && isReentrancySensitiveFunctionName(fn.name) && !hasReentrancyGuard(fn)) {
++      addSignal(signals, "reentrancy_order", {
++        category: "reentrancy",
++        line,
++        interactionKind: firstInteraction.kind,
++        effectKind: postInteractionEffect.kind,
++      });
++    }
++
++    if (!hasReentrancyGuard(fn) && stateEffectRows(body).length > 0) {
++      const contractModifiers = modifiers.filter((modifier) => modifier.contractName === fn.contractName);
++      for (const modifier of contractModifiers) {
++        if (!modifierIsUsed(fn, modifier.name)) continue;
++        const placeholderIndex = modifier.body.search(/(?:^|[;{}])\s*_\s*;/m);
++        if (placeholderIndex < 0) continue;
++        const callbackBeforeBody = interactionRows(modifier.body, { includeTypedCallbacks: true })
++          .some((interaction) => interaction.index < placeholderIndex);
++        if (callbackBeforeBody) {
++          addSignal(signals, "reentrancy_modifier_callback", {
++            category: "reentrancy",
++            line: modifier.line,
++            modifier: modifier.name,
++          });
++        }
++      }
+     }
+ 
+     if (/^mint$/i.test(fn.name) && !hasAuthorization(fn)) {
