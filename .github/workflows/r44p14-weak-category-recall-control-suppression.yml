@@ -44,11 +44,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cat r44p14-evidence/analyzer.mjs.gz.b64.part* > "$RUNNER_TEMP/analyzer.mjs.gz.b64"
+          cat r44p14-evidence/r44p13-baseline.json.gz.b64.part* > "$RUNNER_TEMP/r44p13-baseline.json.gz.b64"
           python - <<'PY'
-          import base64,gzip,pathlib
+          import base64,gzip,os,pathlib
           root=pathlib.Path('r44p14-evidence')
-          root.joinpath('analyzer.mjs').write_bytes(gzip.decompress(base64.b64decode(root.joinpath('analyzer.mjs.gz.b64').read_text().strip())))
-          root.joinpath('R44P14_R44P13_BASELINE_SNAPSHOT.json').write_bytes(gzip.decompress(base64.b64decode(root.joinpath('r44p13-baseline.json.gz.b64').read_text().strip())))
+          temp=pathlib.Path(os.environ['RUNNER_TEMP'])
+          root.joinpath('analyzer.mjs').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('analyzer.mjs.gz.b64').read_text().strip())))
+          root.joinpath('R44P14_R44P13_BASELINE_SNAPSHOT.json').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('r44p13-baseline.json.gz.b64').read_text().strip())))
           PY
           test "$(sha256sum r44p14-evidence/analyzer.mjs | awk '{print $1}')" = "$EXPECTED_ANALYZER_SHA256"
           test "$(sha256sum r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json | awk '{print $1}')" = "$EXPECTED_BASELINE_SHA256"
@@ -58,6 +61,12 @@ jobs:
           node --check r44p14-evidence/analyzer.mjs
           node --check r44p14-evidence/analyze_file.mjs
           node --version | grep -F 'v24.18.0'
+          sha256sum \
+            r44p14-evidence/analyzer.mjs \
+            r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json \
+            r44p14-evidence/run_external_remediation.py \
+            r44p14-evidence/analyze_file.mjs \
+            > r44p14-evidence/RUNNER_INPUT_SHA256.txt
 
       - name: Execute external recall and false-alert remediation
         working-directory: r44p14-evidence
@@ -145,12 +154,12 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          rm -rf packaged-evidence
           mkdir -p packaged-evidence
           cp -f evidence/R44P14_EXTERNAL_ACCURACY_REMEDIATION_LEDGER.json packaged-evidence/ 2>/dev/null || true
           cp -f evidence/R44P14_EXTERNAL_ACCURACY_REMEDIATION_SUMMARY.json packaged-evidence/ 2>/dev/null || true
           cp -R evidence/receipts packaged-evidence/ 2>/dev/null || true
-          cp -f execution-summary.log GITHUB_CHECKOUT_SHA.txt R44P14_INDEPENDENT_EVIDENCE_VERIFICATION.json packaged-evidence/ 2>/dev/null || true
-          sha256sum analyzer.mjs R44P14_R44P13_BASELINE_SNAPSHOT.json run_external_remediation.py analyze_file.mjs > packaged-evidence/RUNNER_INPUT_SHA256.txt
+          cp -f execution-summary.log GITHUB_CHECKOUT_SHA.txt R44P14_INDEPENDENT_EVIDENCE_VERIFICATION.json RUNNER_INPUT_SHA256.txt packaged-evidence/ 2>/dev/null || true
           python - <<'PY'
           from pathlib import Path
           import hashlib,json
