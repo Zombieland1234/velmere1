@@ -56,15 +56,39 @@ jobs:
             r44p13-evidence/smartbugs-curated/ICSE2020_curated_69.txt \
             > r44p13-evidence/DATASET_METADATA_SHA256.txt
 
+      - name: Download hash-verified native solc binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          VELMERE_SOLC_BIN_DIR="$RUNNER_TEMP/r44p13-solc-binaries"
+          mkdir -p "$VELMERE_SOLC_BIN_DIR"
+          echo "VELMERE_SOLC_BIN_DIR=$VELMERE_SOLC_BIN_DIR" >> "$GITHUB_ENV"
+          export VELMERE_SOLC_BIN_DIR
+          python r44p13-evidence/download_solc_binaries.py | tee r44p13-evidence/SOLC_BINARY_DOWNLOAD_SUMMARY.json
+          cp "$VELMERE_SOLC_BIN_DIR/SOLC_BINARY_MANIFEST.json" r44p13-evidence/SOLC_BINARY_MANIFEST.json
+          python - <<'PY'
+          import json
+          x=json.load(open('r44p13-evidence/SOLC_BINARY_MANIFEST.json'))
+          available=sum(1 for row in x['versions'].values() if row['status']=='AVAILABLE_NATIVE_HASH_VERIFIED')
+          blocked=sum(1 for row in x['versions'].values() if row['status']=='BLOCKED_NATIVE_ARTIFACT_UNAVAILABLE')
+          assert available>=13,(available,blocked)
+          assert x['versions']['0.8.24']['status']=='AVAILABLE_NATIVE_HASH_VERIFIED'
+          print('SOLC_NATIVE_MANIFEST_OK',available,blocked)
+          PY
+
       - name: Apply bounded runner hardening and syntax check
         shell: bash
         run: |
           set -euo pipefail
           python r44p13-evidence/patch_runner.py r44p13-evidence/run_smartbugs_external_accuracy.py
-          python -m py_compile r44p13-evidence/run_smartbugs_external_accuracy.py
+          python -m py_compile \
+            r44p13-evidence/run_smartbugs_external_accuracy.py \
+            r44p13-evidence/patch_runner.py \
+            r44p13-evidence/download_solc_binaries.py
           sha256sum \
             r44p13-evidence/run_smartbugs_external_accuracy.py \
             r44p13-evidence/patch_runner.py \
+            r44p13-evidence/download_solc_binaries.py \
             > r44p13-evidence/RUNNER_SHA256.txt
 
       - name: Execute 69-case external accuracy baseline
@@ -87,7 +111,7 @@ jobs:
           summary_path=evidence/'R44P13_EXTERNAL_LABELED_ACCURACY_SUMMARY.json'
           ledger=json.loads(ledger_path.read_text())
           summary=json.loads(summary_path.read_text())
-          assert summary['status']=='PASS_EXTERNAL_BASELINE_EXECUTED'
+          assert summary['status']=='PASS_EXTERNAL_BASELINE_EXECUTED_WITH_BLOCKED_LEGACY_NATIVE_COMPILERS'
           assert ledger['dataset']['commit']=='230e649123477eff332742a59a1c7cc6dc286cab'
           assert ledger['dataset']['cases']==69
           assert ledger['dataset']['sourceFilesRedistributed']==0
@@ -96,6 +120,10 @@ jobs:
           assert len(ledger['cases'])==69
           assert len({r['caseId'] for r in ledger['cases']})==69
           assert len(list((evidence/'receipts').glob('*.json')))==69
+          assert summary['compileSuccess']>0
+          assert summary['slitherSanitizedResults']>0
+          assert summary['semgrepSanitizedResults']==69
+          assert 0 < summary['legacyNativeCompilerBlockedCases'] < 69
           for row in ledger['cases']:
               receipt=evidence/'receipts'/f"{row['caseId']}.json"
               assert receipt.is_file()
@@ -107,6 +135,12 @@ jobs:
               assert parsed['truthBoundary']['commercialRedistributionRightsApproved'] is False
               assert parsed['truthBoundary']['saleCredit'] is False
               assert parsed['truthBoundary']['liveCredit'] is False
+              compiler=parsed['compiler']
+              if compiler.get('selectedExact'):
+                  assert compiler.get('status')=='AVAILABLE_NATIVE_HASH_VERIFIED'
+                  assert compiler.get('solcSha256')
+              else:
+                  assert compiler.get('status') in {'BLOCKED_NATIVE_ARTIFACT_UNAVAILABLE','NATIVE_BINARY_VERSION_MISMATCH'}
           tb=ledger['truthBoundary']
           assert tb['externalLabeledRecallBaseline'] is True
           assert tb['independentDatasetDesign'] is True
@@ -124,15 +158,18 @@ jobs:
                   forbidden.append(str(p))
           assert not forbidden,forbidden
           result={
-            'schemaVersion':'velmere.pass36.a102r44p13.external-evidence-verification.v1',
+            'schemaVersion':'velmere.pass36.a102r44p13.external-evidence-verification.v2',
             'status':'PASS',
-            'checks':25,
-            'passed':25,
+            'checks':31,
+            'passed':31,
             'failed':0,
             'cases':69,
             'receipts':69,
             'controls':12,
             'compileSuccess':summary['compileSuccess'],
+            'slitherSanitizedResults':summary['slitherSanitizedResults'],
+            'semgrepSanitizedResults':summary['semgrepSanitizedResults'],
+            'legacyNativeCompilerBlockedCases':summary['legacyNativeCompilerBlockedCases'],
             'contractAnyLabelRecall':summary['contractAnyLabelRecall'],
             'labelInstanceRecall':summary['labelInstanceRecall'],
             'controlFlagRate':summary['controlFlagRate'],
@@ -149,13 +186,17 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          rm -rf packaged-evidence
           mkdir -p packaged-evidence
           if test -f evidence/R44P13_EXTERNAL_LABELED_ACCURACY_LEDGER.json; then
             cp evidence/R44P13_EXTERNAL_LABELED_ACCURACY_LEDGER.json packaged-evidence/
             cp evidence/R44P13_EXTERNAL_LABELED_ACCURACY_SUMMARY.json packaged-evidence/
             cp -R evidence/receipts packaged-evidence/
           fi
-          cp -f execution-summary.log pip-freeze.txt DATASET_METADATA_SHA256.txt RUNNER_SHA256.txt GITHUB_CHECKOUT_SHA.txt packaged-evidence/ 2>/dev/null || true
+          cp -f \
+            execution-summary.log pip-freeze.txt DATASET_METADATA_SHA256.txt RUNNER_SHA256.txt \
+            GITHUB_CHECKOUT_SHA.txt SOLC_BINARY_MANIFEST.json SOLC_BINARY_DOWNLOAD_SUMMARY.json \
+            packaged-evidence/ 2>/dev/null || true
           cp -f R44P13_INDEPENDENT_EVIDENCE_VERIFICATION.json packaged-evidence/ 2>/dev/null || true
           python - <<'PY'
           from pathlib import Path
