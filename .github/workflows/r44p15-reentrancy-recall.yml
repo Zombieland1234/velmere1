@@ -52,6 +52,7 @@ jobs:
           root.joinpath('analyze_file.mjs').write_text(pathlib.Path('r44p14-evidence/analyze_file.mjs').read_text())
           runner=pathlib.Path('r44p14-evidence/run_external_remediation.py').read_text()
           runner=runner.replace('R44P14','R44P15').replace('a102r44p14','a102r44p15')
+          runner=runner.replace('STRUCTURED_TOKEN_CONTROL_FLOW_V2_NOT_COMPILER_AST','STRUCTURED_TOKEN_CONTROL_FLOW_V3_STATE_AWARE_NOT_COMPILER_AST')
           root.joinpath('run_external_remediation.py').write_text(runner)
           PY
           test "$(sha256sum r44p15-evidence/analyzer.mjs | awk '{print $1}')" = "$EXPECTED_CURRENT_ANALYZER_SHA256"
