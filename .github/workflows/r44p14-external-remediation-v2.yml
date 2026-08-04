@@ -50,11 +50,12 @@ jobs:
           PY
           test "$(sha256sum r44p14-evidence/analyzer.mjs | awk '{print $1}')" = "$EXPECTED_ANALYZER_SHA256"
           test "$(sha256sum r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json | awk '{print $1}')" = "$EXPECTED_BASELINE_SHA256"
-          python -m py_compile r44p14-evidence/run_external_remediation.py
+          python r44p14-evidence/patch_runner_legacy_preservation.py r44p14-evidence/run_external_remediation.py
+          python -m py_compile r44p14-evidence/run_external_remediation.py r44p14-evidence/patch_runner_legacy_preservation.py
           node --check r44p14-evidence/analyzer.mjs
           node --check r44p14-evidence/analyze_file.mjs
           node --version | grep -F 'v24.18.0'
-          sha256sum r44p14-evidence/analyzer.mjs r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json r44p14-evidence/run_external_remediation.py r44p14-evidence/analyze_file.mjs > r44p14-evidence/RUNNER_INPUT_SHA256.txt
+          sha256sum r44p14-evidence/analyzer.mjs r44p14-evidence/R44P14_R44P13_BASELINE_SNAPSHOT.json r44p14-evidence/run_external_remediation.py r44p14-evidence/patch_runner_legacy_preservation.py r44p14-evidence/analyze_file.mjs > r44p14-evidence/RUNNER_INPUT_SHA256.txt
 
       - name: Execute exact 69-case and 12-control remediation denominator
         working-directory: r44p14-evidence
@@ -83,6 +84,8 @@ jobs:
           assert ledger['analyzer']['compilerAstCredit'] is False and ledger['analyzer']['failures']==0
           assert summary['currentRecall'] >= summary['baselineRecall']
           assert summary['currentControlFlagRate'] <= summary['baselineControlFlagRate']
+          for category, delta in ledger['categoryDelta'].items():
+              assert delta['currentRecall'] >= delta['baselineRecall'], (category,delta)
           for category in ('access_control','denial_of_service','front_running','short_addresses'):
               delta=ledger['categoryDelta'][category]
               assert delta['currentRecall'] > delta['baselineRecall'], (category,delta)
@@ -100,7 +103,7 @@ jobs:
           assert tb['businessLogicCoverage'] is False and tb['commercialRightsApproved'] is False
           assert tb['customerCredit'] is False and tb['paidTierCredit'] is False
           assert tb['liveCredit'] is False and tb['worldClassProven'] is False
-          result={'schemaVersion':'velmere.pass36.a102r44p14.external-evidence-verification.v2','status':'PASS','checks':31,'passed':31,'failed':0,'cases':69,'controls':12,'baselineRecall':summary['baselineRecall'],'currentRecall':summary['currentRecall'],'baselineControlFlagRate':summary['baselineControlFlagRate'],'currentControlFlagRate':summary['currentControlFlagRate'],'ledgerSha256':hashlib.sha256(lp.read_bytes()).hexdigest()}
+          result={'schemaVersion':'velmere.pass36.a102r44p14.external-evidence-verification.v3','status':'PASS','checks':32,'passed':32,'failed':0,'cases':69,'controls':12,'baselineRecall':summary['baselineRecall'],'currentRecall':summary['currentRecall'],'baselineControlFlagRate':summary['baselineControlFlagRate'],'currentControlFlagRate':summary['currentControlFlagRate'],'ledgerSha256':hashlib.sha256(lp.read_bytes()).hexdigest()}
           (root/'R44P14_INDEPENDENT_EVIDENCE_VERIFICATION.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
           print(json.dumps(result,indent=2))
           PY
