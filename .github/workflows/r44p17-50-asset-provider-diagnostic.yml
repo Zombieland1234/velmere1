@@ -1,0 +1,89 @@
+name: R44P17 50 Asset Public Provider Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p17-evidence/**'
+      - '.github/workflows/r44p17-50-asset-provider-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run bounded 50-asset diagnostic
+        working-directory: r44p17-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile run_50_asset_diagnostic.py
+          sha256sum run_50_asset_diagnostic.py > RUNNER_SHA256.txt
+          python run_50_asset_diagnostic.py | tee execution-summary.log
+      - name: Independently verify denominator, raw receipts and truth boundary
+        working-directory: r44p17-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.')
+          ledger_path=root/'evidence/R44P17_50_ASSET_PUBLIC_DIAGNOSTIC_LEDGER.json'
+          summary_path=root/'evidence/R44P17_50_ASSET_PUBLIC_DIAGNOSTIC_SUMMARY.json'
+          ledger=json.loads(ledger_path.read_text()); summary=json.loads(summary_path.read_text())
+          assert ledger['denominator']['assets']==50 and ledger['denominator']['providerRows']==100
+          assert len(ledger['observations'])==50 and len({x['assetId'] for x in ledger['observations']})==50
+          assert all(len(x['providers'])==2 for x in ledger['observations'])
+          assert all(x['terminalState'] in {'AVAILABLE','PARTIAL','CONFLICTED','RATE_LIMITED','FAILED'} for x in ledger['observations'])
+          assert summary['status']=='PASS_DIAGNOSTIC' and summary['availableProviderRows']>=50
+          tb=ledger['truthBoundary']
+          for key in ('rightsApprovedCommercialUse','displayRightsApproved','cacheRightsApproved','pdfRedistributionRightsApproved','aiRagRightsApproved','customerCredit','paidTierCredit','liveCredit','productionApproved'):
+              assert tb[key] is False, key
+          assert tb['realNetworkDiagnostic'] is True and tb['nonCherryPickedSeededSample'] is True
+          for req in ledger['requests']:
+              body=root/req['bodyPath']; headers=root/req['headersPath']
+              assert body.is_file() and headers.is_file()
+              assert body.stat().st_size==req['bodyBytes']
+              assert hashlib.sha256(body.read_bytes()).hexdigest()==req['bodySha256']
+          rows=[p for x in ledger['observations'] for p in x['providers']]
+          for p in rows:
+              assert p['state'] in {'AVAILABLE','UNAVAILABLE','RATE_LIMITED','FAILED','SCHEMA_REJECTED'}
+              if p['state']=='AVAILABLE':
+                  assert p['identityValid'] is True and isinstance(p['priceUsd'],(int,float)) and p['priceUsd']>0
+          result={'schemaVersion':'velmere.pass36.a102r44p17.real-50-asset-verification.v1','status':'PASS','checks':24,'passed':24,'failed':0,'assets':50,'providerRows':100,'availableProviderRows':summary['availableProviderRows'],'ledgerSha256':hashlib.sha256(ledger_path.read_bytes()).hexdigest()}
+          pathlib.Path('R44P17_INDEPENDENT_EVIDENCE_VERIFICATION.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+      - name: Package deterministic evidence
+        if: always()
+        working-directory: r44p17-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          if test -d evidence; then
+            tar --sort=name --mtime='UTC 2026-08-05' --owner=0 --group=0 --numeric-owner -czf r44p17-50-asset-public-diagnostic-evidence.tar.gz evidence execution-summary.log RUNNER_SHA256.txt GITHUB_CHECKOUT_SHA.txt R44P17_INDEPENDENT_EVIDENCE_VERIFICATION.json
+            sha256sum r44p17-50-asset-public-diagnostic-evidence.tar.gz > r44p17-50-asset-public-diagnostic-evidence.sha256
+          fi
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p17-50-asset-public-diagnostic-evidence
+          path: |
+            r44p17-evidence/evidence
+            r44p17-evidence/execution-summary.log
+            r44p17-evidence/RUNNER_SHA256.txt
+            r44p17-evidence/GITHUB_CHECKOUT_SHA.txt
+            r44p17-evidence/R44P17_INDEPENDENT_EVIDENCE_VERIFICATION.json
+            r44p17-evidence/r44p17-50-asset-public-diagnostic-evidence.tar.gz
+            r44p17-evidence/r44p17-50-asset-public-diagnostic-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
