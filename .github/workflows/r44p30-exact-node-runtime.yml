@@ -1,4 +1,4 @@
-name: R44P30 Exact Node 24.18.0 Runtime Artifact
+name: R44P30 Exact Node 24.18.0 Runtime and Dependency Artifact
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   exact-node-runtime:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout workflow branch
         uses: actions/checkout@v4
@@ -25,11 +25,21 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Download and verify exact Node distribution
+      - name: Verify package inputs match canonical R44P29
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p r44p30-runtime/evidence
+          sha256sum package.json package-lock.json .npmrc \
+            | sort > r44p30-runtime/evidence/REPOSITORY_PACKAGE_INPUT_SHA256SUMS.txt
+          test "$(sha256sum package.json | cut -d' ' -f1)" = '7797fcccd5d21ae533c2e8b4b1a221b525c1ad0c7710886d1bacfdab14af7955'
+          test "$(sha256sum package-lock.json | cut -d' ' -f1)" = 'abd75eb78ca1570c0b8c13717d128ae439c0ddd4c02c196e3ec03a877258258f'
+          test "$(sha256sum .npmrc | cut -d' ' -f1)" = 'a134d45fb2d7291fcd19f4283fe737fe4193bf0085f63ef295ddabbc27fa88a3'
+
+      - name: Download and verify exact Node distribution
+        shell: bash
+        run: |
+          set -euo pipefail
           cd r44p30-runtime
           curl --fail --location --retry 4 --retry-all-errors \
             --output node-v24.18.0-linux-x64.tar.xz \
@@ -43,17 +53,44 @@ jobs:
           test "$(./node-v24.18.0-linux-x64/bin/npm --version)" = '11.16.0'
           sha256sum node-v24.18.0-linux-x64.tar.xz > evidence/NODE_ARCHIVE_SHA256SUMS.txt
           ./node-v24.18.0-linux-x64/bin/node -p \
-            'JSON.stringify({node:process.version,npm:process.env.npm_config_user_agent||null,platform:process.platform,arch:process.arch,versions:process.versions},null,2)' \
+            'JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,versions:process.versions},null,2)' \
             > evidence/NODE_RUNTIME_IDENTITY.json
           ./node-v24.18.0-linux-x64/bin/npm --version > evidence/NPM_VERSION.txt
           printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
 
-      - name: Upload exact runtime archive
+      - name: Install exact dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$PWD/r44p30-runtime/node-v24.18.0-linux-x64/bin:$PATH"
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          npm ci --ignore-scripts --no-audit --no-fund --progress=false
+          npm ls --all --json > r44p30-runtime/evidence/NPM_LS_ALL.json
+          node -e "const p=require('./node_modules/typescript/package.json'); if(p.version!=='5.9.3') process.exit(1); console.log(p.version)" \
+            > r44p30-runtime/evidence/TYPESCRIPT_VERSION.txt
+          node -e "const p=require('./node_modules/next/package.json'); if(p.version!=='16.2.12') process.exit(1); console.log(p.version)" \
+            > r44p30-runtime/evidence/NEXT_VERSION.txt
+
+      - name: Build deterministic dependency bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --sort=name \
+            --mtime='UTC 2026-08-07 00:00:00' \
+            --owner=0 --group=0 --numeric-owner \
+            -czf r44p30-runtime/r44p30-node_modules-linux-x64.tar.gz \
+            node_modules
+          sha256sum r44p30-runtime/r44p30-node_modules-linux-x64.tar.gz \
+            > r44p30-runtime/evidence/NODE_MODULES_BUNDLE_SHA256SUMS.txt
+
+      - name: Upload exact runtime and dependencies
         uses: actions/upload-artifact@v4
         with:
-          name: r44p30-node-v24.18.0-linux-x64
+          name: r44p30-exact-runtime-and-node-modules
           path: |
             r44p30-runtime/node-v24.18.0-linux-x64.tar.xz
+            r44p30-runtime/r44p30-node_modules-linux-x64.tar.gz
             r44p30-runtime/evidence
           if-no-files-found: error
           retention-days: 14
