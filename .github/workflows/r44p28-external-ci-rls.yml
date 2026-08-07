@@ -187,9 +187,8 @@ jobs:
             --bundle r44p28-external-ci-postgres-rls-evidence.sigstore.json \
             --certificate-identity-regexp '^https://github.com/Zombieland1234/velmere1/.github/workflows/r44p28-external-ci-rls.yml@refs/(heads/r44p28-external-ci-rls-sigstore-20260807|pull/[0-9]+/merge)$' \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-            --output json \
             r44p28-external-ci-postgres-rls-evidence.tar.gz \
-            > R44P28_SIGSTORE_VERIFICATION.json
+            > R44P28_SIGSTORE_VERIFICATION.txt
 
       - name: Upload immutable external evidence
         if: always()
@@ -199,7 +198,7 @@ jobs:
           path: |
             r44p28-evidence/evidence
             r44p28-evidence/R44P28_INDEPENDENT_EXTERNAL_CI_VERIFICATION.json
-            r44p28-evidence/R44P28_SIGSTORE_VERIFICATION.json
+            r44p28-evidence/R44P28_SIGSTORE_VERIFICATION.txt
             r44p28-evidence/COSIGN_VERSION.txt
             r44p28-evidence/r44p28-external-ci-postgres-rls-evidence.tar.gz
             r44p28-evidence/r44p28-external-ci-postgres-rls-evidence.sha256
