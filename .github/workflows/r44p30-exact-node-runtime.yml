@@ -25,16 +25,27 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Reconstruct and semantically verify canonical tarball URL set
+      - name: Reconstruct and verify canonical tarball URL set
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p r44p30-runtime/evidence r44p30-runtime/npm-cache
-          base64 -d r44p30-runtime/npm-resolved-urls.txt.gz.b64 \
+          cat r44p30-runtime/npm-resolved-urls.txt.gz.b64.part* \
+            > r44p30-runtime/npm-resolved-urls.reconstructed.b64
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz.b64.part00 | cut -d' ' -f1)" = '5381233d7b47a1779bded58699012756cc5de6410ab79cb0d15549b033373347'
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz.b64.part01 | cut -d' ' -f1)" = '53a3e42012e1fb5dfec0b3deb1baa09f57a6dafafe412ec4f4b365d65e82f872'
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz.b64.part02 | cut -d' ' -f1)" = 'cf951af53ac6b7b52ad7c423b922203a23060efe8613e80453da857fe04f8172'
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz.b64.part03 | cut -d' ' -f1)" = 'dec4195f5a728a3558c989d7e5752b4946f9e1465af55e941ecbbfb9a5f718eb'
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz.b64.part04 | cut -d' ' -f1)" = '0cb699e74a14c25669ee7c8270c2e43c3f5433c5c896ea46abd2413705a8cab2'
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz.b64.part05 | cut -d' ' -f1)" = '023c8aba93b8a667c5fe271bc0195c703915999dea3fe0272866fd4f42745f7d'
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.reconstructed.b64 | cut -d' ' -f1)" = 'e9f8bace896f4c0233648da3cbbfbca12a3d812d639f5ba359e3c66a91695443'
+          base64 -d r44p30-runtime/npm-resolved-urls.reconstructed.b64 \
             > r44p30-runtime/npm-resolved-urls.txt.gz
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz | cut -d' ' -f1)" = '2366cff70ef7e1baf1c738167cb0ad7a78107d11ca098e2fc1a7f1cdde7efed0'
           gzip -t r44p30-runtime/npm-resolved-urls.txt.gz
           gzip -dc r44p30-runtime/npm-resolved-urls.txt.gz \
             > r44p30-runtime/npm-resolved-urls.txt
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt | cut -d' ' -f1)" = '575fcd7475265d40599c747259df62eb82032a1794917baab7f3ace7de47c6c9'
           test "$(wc -l < r44p30-runtime/npm-resolved-urls.txt)" = '618'
           LC_ALL=C sort -u r44p30-runtime/npm-resolved-urls.txt \
             > /tmp/sorted-unique-urls.txt
@@ -43,10 +54,8 @@ jobs:
             r44p30-runtime/npm-resolved-urls.txt
           grep -Fx 'https://registry.npmjs.org/zustand/-/zustand-4.5.7.tgz' \
             r44p30-runtime/npm-resolved-urls.txt
-          sha256sum r44p30-runtime/npm-resolved-urls.txt* \
+          sha256sum r44p30-runtime/npm-resolved-urls* \
             | sort > r44p30-runtime/evidence/CANONICAL_URL_SET_SHA256SUMS.txt
-          wc -c r44p30-runtime/npm-resolved-urls.txt* \
-            > r44p30-runtime/evidence/CANONICAL_URL_SET_SIZES.txt
 
       - name: Download and verify exact Node distribution
         shell: bash
@@ -111,14 +120,12 @@ jobs:
             > r44p30-runtime/R44P30_RUNTIME_CACHE_BUNDLE_SHA256SUMS.txt
 
       - name: Upload exact runtime/cache bundle
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: r44p30-exact-node-and-canonical-npm-cache
           path: |
             r44p30-runtime/r44p30-exact-node-and-npm-cache.tar.xz
             r44p30-runtime/R44P30_RUNTIME_CACHE_BUNDLE_SHA256SUMS.txt
-            r44p30-runtime/evidence
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
