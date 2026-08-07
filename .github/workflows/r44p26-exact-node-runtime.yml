@@ -1,0 +1,96 @@
+name: R44P26 Exact Node 24.18 Runtime Intake
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p26-exact-node-runtime.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_VERSION: '24.18.0'
+      EXPECTED_ARCHIVE_SHA256: 'efced36c041a7a43e8b4a4b35cb929bef7747c1c7442e693901a0b4f06467e1d'
+      EXPECTED_NPM_VERSION: '11.16.0'
+      SOURCE_RELEASE_TAG: '24.18.0-28070977815'
+      SOURCE_RELEASE_ASSET_ID: '456200824'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact runtime from actions/node-versions release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p26-runtime
+          ARCHIVE="r44p26-runtime/node-${NODE_VERSION}-linux-x64.tar.gz"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$ARCHIVE" \
+            "https://github.com/actions/node-versions/releases/download/${SOURCE_RELEASE_TAG}/node-${NODE_VERSION}-linux-x64.tar.gz"
+          test "$(sha256sum "$ARCHIVE" | awk '{print $1}')" = "$EXPECTED_ARCHIVE_SHA256"
+          tar -xzf "$ARCHIVE" -C r44p26-runtime
+          ROOT="r44p26-runtime/node-${NODE_VERSION}-linux-x64"
+          test -x "$ROOT/bin/node"
+          test "$($ROOT/bin/node --version)" = "v${NODE_VERSION}"
+          test "$($ROOT/bin/node "$ROOT/lib/node_modules/npm/bin/npm-cli.js" --version)" = "$EXPECTED_NPM_VERSION"
+          "$ROOT/bin/node" -e 'const x=process.versions; if(process.version!=="v24.18.0"||x.v8!=="13.6.233.17-node.37") process.exit(1); console.log(JSON.stringify({node:process.version,v8:x.v8,openssl:x.openssl,modules:x.modules,napi:x.napi},null,2))' > r44p26-runtime/runtime-versions.json
+          sha256sum "$ROOT/bin/node" > r44p26-runtime/node-binary.sha256
+          sha256sum "$ARCHIVE" > r44p26-runtime/archive.sha256
+      - name: Write provenance receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib,subprocess,os,datetime
+          root=pathlib.Path('r44p26-runtime')
+          archive=root/f"node-{os.environ['NODE_VERSION']}-linux-x64.tar.gz"
+          runtime=root/f"node-{os.environ['NODE_VERSION']}-linux-x64"
+          def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+          node=runtime/'bin/node'
+          npm=runtime/'lib/node_modules/npm/bin/npm-cli.js'
+          receipt={
+            'schemaVersion':'velmere.pass36.a102r44p26.exact-node-runtime-intake.v1',
+            'status':'PASS_EXACT_NODE_RUNTIME_INTAKE',
+            'generatedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'source':{
+              'repository':'actions/node-versions',
+              'releaseTag':os.environ['SOURCE_RELEASE_TAG'],
+              'releaseAssetId':int(os.environ['SOURCE_RELEASE_ASSET_ID']),
+              'releaseAssetName':archive.name,
+              'releaseAssetSha256':sha(archive),
+              'githubCheckoutSha':os.environ.get('GITHUB_SHA'),
+            },
+            'runtime':{
+              'nodeVersion':subprocess.check_output([node,'--version'],text=True).strip(),
+              'npmVersion':subprocess.check_output([node,npm,'--version'],text=True).strip(),
+              'nodeBinarySha256':sha(node),
+              'archiveBytes':archive.stat().st_size,
+            },
+            'truthBoundary':{
+              'exactRuntimeIdentity':True,
+              'projectDependencyCredit':False,
+              'projectBuildCredit':False,
+              'browserCredit':False,
+              'stagingCredit':False,
+              'saleCredit':False,
+              'liveCredit':False,
+            }
+          }
+          (root/'R44P26_EXACT_NODE_RUNTIME_INTAKE.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(receipt,indent=2,sort_keys=True))
+          PY
+      - name: Upload exact runtime intake
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-exact-node-runtime
+          path: |
+            r44p26-runtime/node-24.18.0-linux-x64.tar.gz
+            r44p26-runtime/archive.sha256
+            r44p26-runtime/node-binary.sha256
+            r44p26-runtime/runtime-versions.json
+            r44p26-runtime/R44P26_EXACT_NODE_RUNTIME_INTAKE.json
+          if-no-files-found: error
+          retention-days: 14
