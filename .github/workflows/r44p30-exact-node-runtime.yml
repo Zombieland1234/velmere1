@@ -1,4 +1,4 @@
-name: R44P30 Exact Node 24.18.0 Runtime and Dependency Artifact
+name: R44P30 Exact Node 24.18.0 and Canonical npm Cache
 
 on:
   pull_request:
@@ -15,32 +15,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  exact-node-runtime:
+  exact-runtime-cache:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
-      - name: Checkout workflow branch
+      - name: Checkout evidence branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Record repository package inputs and comparison
+      - name: Reconstruct and verify canonical tarball URL set
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p r44p30-runtime/evidence r44p30-runtime/repo-inputs
-          cp package.json package-lock.json .npmrc r44p30-runtime/repo-inputs/
-          sha256sum package.json package-lock.json .npmrc \
-            | sort > r44p30-runtime/evidence/REPOSITORY_PACKAGE_INPUT_SHA256SUMS.txt
-          {
-            printf 'expected_package_json=%s\n' '7797fcccd5d21ae533c2e8b4b1a221b525c1ad0c7710886d1bacfdab14af7955'
-            printf 'actual_package_json=%s\n' "$(sha256sum package.json | cut -d' ' -f1)"
-            printf 'expected_package_lock=%s\n' 'abd75eb78ca1570c0b8c13717d128ae439c0ddd4c02c196e3ec03a877258258f'
-            printf 'actual_package_lock=%s\n' "$(sha256sum package-lock.json | cut -d' ' -f1)"
-            printf 'expected_npmrc=%s\n' 'a134d45fb2d7291fcd19f4283fe737fe4193bf0085f63ef295ddabbc27fa88a3'
-            printf 'actual_npmrc=%s\n' "$(sha256sum .npmrc | cut -d' ' -f1)"
-          } > r44p30-runtime/evidence/PACKAGE_INPUT_COMPARISON.txt
+          mkdir -p r44p30-runtime/evidence r44p30-runtime/npm-cache
+          base64 -d r44p30-runtime/npm-resolved-urls.txt.gz.b64 \
+            > r44p30-runtime/npm-resolved-urls.txt.gz
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt.gz | cut -d' ' -f1)" = \
+            '2366cff70ef7e1baf1c738167cb0ad7a78107d11ca098e2fc1a7f1cdde7efed0'
+          gzip -dc r44p30-runtime/npm-resolved-urls.txt.gz \
+            > r44p30-runtime/npm-resolved-urls.txt
+          test "$(sha256sum r44p30-runtime/npm-resolved-urls.txt | cut -d' ' -f1)" = \
+            '575fcd7475265d40599c747259df62eb82032a1794917baab7f3ace7de47c6c9'
+          test "$(wc -l < r44p30-runtime/npm-resolved-urls.txt)" = '618'
+          grep -E '^https://registry\.npmjs\.org/.+\.tgz$' \
+            r44p30-runtime/npm-resolved-urls.txt > /tmp/validated-urls.txt
+          cmp /tmp/validated-urls.txt r44p30-runtime/npm-resolved-urls.txt
+          sha256sum r44p30-runtime/npm-resolved-urls.txt* \
+            | sort > r44p30-runtime/evidence/CANONICAL_URL_SET_SHA256SUMS.txt
 
       - name: Download and verify exact Node distribution
         shell: bash
@@ -64,42 +67,53 @@ jobs:
           ./node-v24.18.0-linux-x64/bin/npm --version > evidence/NPM_VERSION.txt
           printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
 
-      - name: Install exact dependencies from repository inputs
+      - name: Populate exact npm cache from canonical URL set
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$PWD/r44p30-runtime/node-v24.18.0-linux-x64/bin:$PATH"
           test "$(node --version)" = 'v24.18.0'
           test "$(npm --version)" = '11.16.0'
-          npm ci --ignore-scripts --no-audit --no-fund --progress=false
-          npm ls --all --json > r44p30-runtime/evidence/NPM_LS_ALL.json
-          node -e "const p=require('./node_modules/typescript/package.json'); console.log(p.version)" \
-            > r44p30-runtime/evidence/TYPESCRIPT_VERSION.txt
-          node -e "const p=require('./node_modules/next/package.json'); console.log(p.version)" \
-            > r44p30-runtime/evidence/NEXT_VERSION.txt
+          split -l 30 r44p30-runtime/npm-resolved-urls.txt /tmp/npm-url-batch-
+          for batch in /tmp/npm-url-batch-*; do
+            mapfile -t urls < "$batch"
+            npm cache add \
+              --cache "$PWD/r44p30-runtime/npm-cache" \
+              --prefer-online \
+              --no-audit --no-fund \
+              "${urls[@]}"
+          done
+          npm cache verify --cache "$PWD/r44p30-runtime/npm-cache" \
+            > r44p30-runtime/evidence/NPM_CACHE_VERIFY.txt
+          test -d r44p30-runtime/npm-cache/_cacache/content-v2
+          find r44p30-runtime/npm-cache -type f -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > r44p30-runtime/evidence/NPM_CACHE_FILE_SHA256SUMS.txt
 
-      - name: Build deterministic dependency bundle
+      - name: Build deterministic runtime/cache bundle
         shell: bash
         run: |
           set -euo pipefail
           tar --sort=name \
             --mtime='UTC 2026-08-07 00:00:00' \
             --owner=0 --group=0 --numeric-owner \
-            -czf r44p30-runtime/r44p30-node_modules-linux-x64.tar.gz \
-            node_modules
-          sha256sum r44p30-runtime/r44p30-node_modules-linux-x64.tar.gz \
-            > r44p30-runtime/evidence/NODE_MODULES_BUNDLE_SHA256SUMS.txt
+            -cJf r44p30-runtime/r44p30-exact-node-and-npm-cache.tar.xz \
+            -C r44p30-runtime \
+            node-v24.18.0-linux-x64.tar.xz \
+            npm-cache \
+            npm-resolved-urls.txt \
+            evidence
+          sha256sum r44p30-runtime/r44p30-exact-node-and-npm-cache.tar.xz \
+            > r44p30-runtime/R44P30_RUNTIME_CACHE_BUNDLE_SHA256SUMS.txt
 
-      - name: Upload exact runtime, dependencies, and inputs
-        if: always()
+      - name: Upload exact runtime/cache bundle
         uses: actions/upload-artifact@v4
         with:
-          name: r44p30-exact-runtime-and-node-modules
+          name: r44p30-exact-node-and-canonical-npm-cache
           path: |
-            r44p30-runtime/node-v24.18.0-linux-x64.tar.xz
-            r44p30-runtime/r44p30-node_modules-linux-x64.tar.gz
-            r44p30-runtime/repo-inputs
-            r44p30-runtime/evidence
+            r44p30-runtime/r44p30-exact-node-and-npm-cache.tar.xz
+            r44p30-runtime/R44P30_RUNTIME_CACHE_BUNDLE_SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
