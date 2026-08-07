@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/r44p26-exact-node-runtime.yml'
+      - 'r44p26-runtime/missing-current-lock-tarballs.txt'
 
 permissions:
   contents: read
@@ -12,7 +13,7 @@ permissions:
 jobs:
   exact-runtime:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       NODE_VERSION: '24.18.0'
       EXPECTED_ARCHIVE_SHA256: 'efced36c041a7a43e8b4a4b35cb929bef7747c1c7442e693901a0b4f06467e1d'
@@ -98,7 +99,27 @@ jobs:
           (root/'R44P26_EXACT_NODE_RUNTIME_INTAKE.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n')
           print(json.dumps(receipt,indent=2,sort_keys=True))
           PY
-      - name: Upload exact runtime intake or failure evidence
+      - name: Build exact current-lock cache supplement
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE="$PWD/r44p26-runtime/bin/node"
+          NPM="$PWD/r44p26-runtime/lib/node_modules/npm/bin/npm-cli.js"
+          CACHE="$PWD/r44p26-supplement-cache"
+          mkdir -p "$CACHE"
+          total=0
+          while IFS= read -r url; do
+            test -n "$url" || continue
+            total=$((total+1))
+            "$NODE" "$NPM" cache add "$url" --cache "$CACHE" --registry=https://registry.npmjs.org/ --prefer-online --no-audit --no-fund
+          done < r44p26-runtime/missing-current-lock-tarballs.txt
+          test "$total" = "137"
+          "$NODE" "$NPM" cache verify --cache "$CACHE" | tee r44p26-runtime/supplement-cache-verify.txt
+          tar --sort=name --mtime='UTC 2026-08-07' --owner=0 --group=0 --numeric-owner \
+            -czf r44p26-runtime/current-lock-supplement-cache.tar.gz -C "$CACHE" .
+          sha256sum r44p26-runtime/current-lock-supplement-cache.tar.gz > r44p26-runtime/current-lock-supplement-cache.sha256
+          printf '{"requested":137,"status":"PASS_SUPPLEMENT_CACHE"}\n' > r44p26-runtime/supplement-cache-summary.json
+      - name: Upload exact runtime and cache supplement
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -113,5 +134,9 @@ jobs:
             r44p26-runtime/node-binary.sha256
             r44p26-runtime/runtime-versions.json
             r44p26-runtime/R44P26_EXACT_NODE_RUNTIME_INTAKE.json
+            r44p26-runtime/current-lock-supplement-cache.tar.gz
+            r44p26-runtime/current-lock-supplement-cache.sha256
+            r44p26-runtime/supplement-cache-verify.txt
+            r44p26-runtime/supplement-cache-summary.json
           if-no-files-found: warn
           retention-days: 14
