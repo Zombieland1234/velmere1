@@ -1,0 +1,208 @@
+name: R44P28 External CI Postgres RLS + Sigstore
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p28-evidence/**'
+      - '.github/workflows/r44p28-external-ci-rls.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r44p28-external-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  external-ci-postgres-rls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16.4-bookworm
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+      VELMERE_SOURCE_REVISION_ID: VELMERE_PASS36_A102R44P27_ACTION_REQUIRED_DURABLE_EXTERNAL_EVIDENCE_REPLAY_JOURNAL_ATOMIC_ADMISSION_AND_ENVELOPE_TIME_HARDENING_NO_LIVE_CREDIT
+      VELMERE_SOURCE_MANIFEST_SHA256: 2fbae8adc5d2c1e22c4ca0feedd8a03de2e62eaa5081c2ab805edd2d755472af
+      VELMERE_SOURCE_AGGREGATE_SHA256: 3643fce7cdd54b9f2e0180356f0677c6e4b66856138ae0c3216fdf6440b30287
+
+    steps:
+      - name: Checkout evidence runner
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.9'
+          cache: 'pip'
+          cache-dependency-path: r44p28-evidence/requirements.txt
+
+      - name: Reconstruct immutable evidence runners
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat r44p28-evidence/run_external_rls.py.gz.b64.part* | base64 -d | gzip -dc > r44p28-evidence/run_external_rls.py
+          cat r44p28-evidence/verify_external_rls.py.gz.b64.part* | base64 -d | gzip -dc > r44p28-evidence/verify_external_rls.py
+          chmod 0755 r44p28-evidence/run_external_rls.py r44p28-evidence/verify_external_rls.py
+
+      - name: Install exact Python dependency and record bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p28-evidence/wheelhouse r44p28-evidence/evidence
+          python -m pip download --disable-pip-version-check --no-deps \
+            --dest r44p28-evidence/wheelhouse \
+            -r r44p28-evidence/requirements.txt
+          sha256sum r44p28-evidence/wheelhouse/* \
+            | sort > r44p28-evidence/evidence/PYTHON_DEPENDENCY_SHA256SUMS.txt
+          python -m pip install --disable-pip-version-check --no-index \
+            --find-links r44p28-evidence/wheelhouse \
+            -r r44p28-evidence/requirements.txt
+          python -m pip freeze --all \
+            | sort > r44p28-evidence/evidence/PYTHON_ENVIRONMENT_FREEZE.txt
+
+      - name: Syntax check immutable runner sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            r44p28-evidence/run_external_rls.py \
+            r44p28-evidence/verify_external_rls.py
+          sha256sum \
+            r44p28-evidence/run_external_rls.py \
+            r44p28-evidence/verify_external_rls.py \
+            r44p28-evidence/requirements.txt \
+            .github/workflows/r44p28-external-ci-rls.yml \
+            | sort > r44p28-evidence/evidence/RUNNER_SOURCE_SHA256SUMS.txt
+
+      - name: Execute actual PostgreSQL RLS denominator
+        working-directory: r44p28-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_external_rls.py \
+            > evidence/R44P28_EXTERNAL_CI_EXECUTION.stdout.json \
+            2> evidence/R44P28_EXTERNAL_CI_EXECUTION.stderr.log
+          test ! -s evidence/R44P28_EXTERNAL_CI_EXECUTION.stderr.log
+
+      - name: Independently verify semantic cases and physical artifacts
+        working-directory: r44p28-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_external_rls.py \
+            > evidence/R44P28_INDEPENDENT_VERIFIER.stdout.json \
+            2> evidence/R44P28_INDEPENDENT_VERIFIER.stderr.log
+          test ! -s evidence/R44P28_INDEPENDENT_VERIFIER.stderr.log
+
+      - name: Record external runner and database container identity
+        working-directory: r44p28-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path('evidence')
+          ps = subprocess.run(['docker','ps','--no-trunc','--format','{{json .}}'], check=True, capture_output=True, text=True)
+          rows = [json.loads(line) for line in ps.stdout.splitlines() if line.strip()]
+          pg = [x for x in rows if 'postgres' in (x.get('Image') or '').lower()]
+          inspect = None
+          if pg:
+              cid = pg[0]['ID']
+              inspect = json.loads(subprocess.run(['docker','inspect',cid], check=True, capture_output=True, text=True).stdout)[0]
+          def scrub(value):
+              if isinstance(value, dict):
+                  return {k: scrub(v) for k,v in value.items() if k not in {'Env','Config','Mounts'}}
+              if isinstance(value, list):
+                  return [scrub(v) for v in value]
+              return value
+          out = {
+              'schemaVersion': 'velmere.pass36.a102r44p28.external-runner-identity.v1',
+              'github': {
+                  'repository': os.environ.get('GITHUB_REPOSITORY'),
+                  'sha': os.environ.get('GITHUB_SHA'),
+                  'ref': os.environ.get('GITHUB_REF'),
+                  'workflow': os.environ.get('GITHUB_WORKFLOW'),
+                  'workflowRef': os.environ.get('GITHUB_WORKFLOW_REF'),
+                  'runId': os.environ.get('GITHUB_RUN_ID'),
+                  'runAttempt': os.environ.get('GITHUB_RUN_ATTEMPT'),
+              },
+              'postgresContainer': scrub(inspect),
+          }
+          data=(json.dumps(out,sort_keys=True,separators=(',',':'))+'\n').encode()
+          (root/'R44P28_EXTERNAL_RUNNER_IDENTITY.json').write_bytes(data)
+          (root/'R44P28_EXTERNAL_RUNNER_IDENTITY.sha256').write_text(hashlib.sha256(data).hexdigest()+'\n')
+          PY
+
+      - name: Build deterministic evidence blob
+        working-directory: r44p28-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
+          find evidence -type f -print0 \
+            | sort -z \
+            | tar --null --files-from=- --sort=name \
+              --mtime='UTC 2026-08-07 00:00:00' \
+              --owner=0 --group=0 --numeric-owner \
+              -czf r44p28-external-ci-postgres-rls-evidence.tar.gz
+          sha256sum r44p28-external-ci-postgres-rls-evidence.tar.gz \
+            > r44p28-external-ci-postgres-rls-evidence.sha256
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: 'v3.0.6'
+
+      - name: Keyless-sign external evidence with GitHub OIDC
+        working-directory: r44p28-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cosign version > COSIGN_VERSION.txt
+          cosign sign-blob --yes \
+            --bundle r44p28-external-ci-postgres-rls-evidence.sigstore.json \
+            r44p28-external-ci-postgres-rls-evidence.tar.gz
+          cosign verify-blob \
+            --bundle r44p28-external-ci-postgres-rls-evidence.sigstore.json \
+            --certificate-identity-regexp '^https://github.com/Zombieland1234/velmere1/.github/workflows/r44p28-external-ci-rls.yml@refs/(heads/r44p28-external-ci-rls-sigstore-20260807|pull/[0-9]+/merge)$' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            --output json \
+            r44p28-external-ci-postgres-rls-evidence.tar.gz \
+            > R44P28_SIGSTORE_VERIFICATION.json
+
+      - name: Upload immutable external evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p28-external-ci-postgres-rls-sigstore-evidence
+          path: |
+            r44p28-evidence/evidence
+            r44p28-evidence/R44P28_INDEPENDENT_EXTERNAL_CI_VERIFICATION.json
+            r44p28-evidence/R44P28_SIGSTORE_VERIFICATION.json
+            r44p28-evidence/COSIGN_VERSION.txt
+            r44p28-evidence/r44p28-external-ci-postgres-rls-evidence.tar.gz
+            r44p28-evidence/r44p28-external-ci-postgres-rls-evidence.sha256
+            r44p28-evidence/r44p28-external-ci-postgres-rls-evidence.sigstore.json
+          if-no-files-found: error
+          retention-days: 14
