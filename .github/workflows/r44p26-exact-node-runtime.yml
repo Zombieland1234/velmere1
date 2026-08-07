@@ -37,19 +37,20 @@ jobs:
           test "$ACTUAL_SHA" = "$EXPECTED_ARCHIVE_SHA256" || exit 11
           tar -tzf "$ARCHIVE" | sed -n '1,25p' > r44p26-runtime/archive-head.txt || exit 12
           tar -xzf "$ARCHIVE" -C r44p26-runtime || exit 13
-          ROOT="$(find r44p26-runtime -mindepth 1 -maxdepth 1 -type d -name 'node-*linux-x64' -print -quit)"
+          ROOT="r44p26-runtime"
           printf 'RUNTIME_ROOT=%s\n' "$ROOT" | tee r44p26-runtime/runtime-root.txt
-          find "$ROOT" -maxdepth 3 -type f -o -type l | sort | sed -n '1,100p' > r44p26-runtime/runtime-tree-head.txt
-          test -n "$ROOT" && test -x "$ROOT/bin/node" || exit 14
+          find "$ROOT" -maxdepth 3 \( -type f -o -type l \) | sort | sed -n '1,100p' > r44p26-runtime/runtime-tree-head.txt
+          test -x "$ROOT/bin/node" || exit 14
+          test -f "$ROOT/lib/node_modules/npm/bin/npm-cli.js" || exit 15
           NODE_ACTUAL="$($ROOT/bin/node --version)"
           NPM_ACTUAL="$($ROOT/bin/node "$ROOT/lib/node_modules/npm/bin/npm-cli.js" --version)"
           VERSIONS="$($ROOT/bin/node -e 'console.log(JSON.stringify(process.versions))')"
           printf 'NODE_ACTUAL=%s\nNPM_ACTUAL=%s\nVERSIONS=%s\n' "$NODE_ACTUAL" "$NPM_ACTUAL" "$VERSIONS" | tee r44p26-runtime/runtime-diagnostics.txt
           "$ROOT/bin/node" -e 'console.log(JSON.stringify({node:process.version,...process.versions},null,2))' > r44p26-runtime/runtime-versions.json
           sha256sum "$ROOT/bin/node" | tee r44p26-runtime/node-binary.sha256
-          test "$NODE_ACTUAL" = "v${NODE_VERSION}" || exit 15
-          test "$NPM_ACTUAL" = "$EXPECTED_NPM_VERSION" || exit 16
-          "$ROOT/bin/node" -e 'if(process.version!=="v24.18.0")process.exit(1); if(!String(process.versions.v8).startsWith("13.6.233"))process.exit(2)' || exit 17
+          test "$NODE_ACTUAL" = "v${NODE_VERSION}" || exit 16
+          test "$NPM_ACTUAL" = "$EXPECTED_NPM_VERSION" || exit 17
+          "$ROOT/bin/node" -e 'if(process.version!=="v24.18.0")process.exit(1); if(!String(process.versions.v8).startsWith("13.6.233"))process.exit(2)' || exit 18
       - name: Write provenance receipt
         if: steps.intake.outcome == 'success'
         shell: bash
@@ -59,7 +60,7 @@ jobs:
           import hashlib,json,pathlib,subprocess,os,datetime
           root=pathlib.Path('r44p26-runtime')
           archive=root/f"node-{os.environ['NODE_VERSION']}-linux-x64.tar.gz"
-          runtime=next(p for p in root.iterdir() if p.is_dir() and p.name.startswith('node-') and p.name.endswith('linux-x64'))
+          runtime=root
           def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
           node=runtime/'bin/node'
           npm=runtime/'lib/node_modules/npm/bin/npm-cli.js'
