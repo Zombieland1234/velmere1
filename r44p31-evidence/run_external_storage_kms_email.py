@@ -488,8 +488,12 @@ ledger = {
 }
 write_json(EVIDENCE_DIR / "R44P31_EXTERNAL_CI_STORAGE_KMS_EMAIL_LEDGER.json", ledger)
 
+semantic_artifact_paths = [
+    EVIDENCE_DIR / "R44P31_EXTERNAL_CI_STORAGE_KMS_EMAIL_LEDGER.json",
+    *sorted(CASES_DIR.glob("*.json")),
+]
 index_rows = []
-for path in sorted(p for p in EVIDENCE_DIR.rglob("*") if p.is_file() and p.name != "R44P31_ARTIFACT_INDEX.json"):
+for path in semantic_artifact_paths:
     data = path.read_bytes()
     index_rows.append({
         "path": path.relative_to(EVIDENCE_DIR).as_posix(),
