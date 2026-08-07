@@ -1,0 +1,119 @@
+name: R44P26 Current Lock Cache Chunks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p26-cache-chunks.yml'
+      - 'r44p26-runtime/missing-current-lock-tarballs.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  cache-chunks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      NODE_VERSION: '24.18.0'
+      EXPECTED_NODE_ARCHIVE_SHA256: 'efced36c041a7a43e8b4a4b35cb929bef7747c1c7442e693901a0b4f06467e1d'
+      NODE_RELEASE_TAG: '24.18.0-28070977815'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare exact runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p26-cache/runtime r44p26-cache/cache r44p26-cache/out
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output r44p26-cache/node.tar.gz \
+            "https://github.com/actions/node-versions/releases/download/${NODE_RELEASE_TAG}/node-${NODE_VERSION}-linux-x64.tar.gz"
+          test "$(sha256sum r44p26-cache/node.tar.gz | awk '{print $1}')" = "$EXPECTED_NODE_ARCHIVE_SHA256"
+          tar -xzf r44p26-cache/node.tar.gz -C r44p26-cache/runtime
+          test "$(r44p26-cache/runtime/bin/node --version)" = 'v24.18.0'
+          test "$(r44p26-cache/runtime/bin/node r44p26-cache/runtime/lib/node_modules/npm/bin/npm-cli.js --version)" = '11.16.0'
+      - name: Build supplement cache and deterministic chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE="$PWD/r44p26-cache/runtime/bin/node"
+          NPM="$PWD/r44p26-cache/runtime/lib/node_modules/npm/bin/npm-cli.js"
+          CACHE="$PWD/r44p26-cache/cache"
+          total=0
+          while IFS= read -r url; do
+            test -n "$url" || continue
+            total=$((total+1))
+            "$NODE" "$NPM" cache add "$url" --cache "$CACHE" --registry=https://registry.npmjs.org/ --prefer-online --no-audit --no-fund
+          done < r44p26-runtime/missing-current-lock-tarballs.txt
+          test "$total" = '137'
+          "$NODE" "$NPM" cache verify --cache "$CACHE" | tee r44p26-cache/out/cache-verify.txt
+          tar --sort=name --mtime='UTC 2026-08-07' --owner=0 --group=0 --numeric-owner \
+            -czf r44p26-cache/out/current-lock-supplement-cache.tar.gz -C "$CACHE" .
+          sha256sum r44p26-cache/out/current-lock-supplement-cache.tar.gz > r44p26-cache/out/full.sha256
+          split -b 150M -d -a 2 r44p26-cache/out/current-lock-supplement-cache.tar.gz r44p26-cache/out/cache.part-
+          sha256sum r44p26-cache/out/cache.part-* > r44p26-cache/out/parts.sha256
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          out=pathlib.Path('r44p26-cache/out')
+          full=out/'current-lock-supplement-cache.tar.gz'
+          parts=sorted(out.glob('cache.part-*'))
+          manifest={
+            'schemaVersion':'velmere.pass36.a102r44p26.cache-chunks.v1',
+            'status':'PASS_CURRENT_LOCK_SUPPLEMENT_CACHE_CHUNKS',
+            'requestedTarballs':137,
+            'fullBytes':full.stat().st_size,
+            'fullSha256':hashlib.sha256(full.read_bytes()).hexdigest(),
+            'parts':[{'name':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in parts],
+            'reconstruction':'concatenate parts in lexical order, verify fullSha256, then extract tar.gz',
+            'truthBoundary':{'projectNpmCiCredit':False,'saleCredit':False,'liveCredit':False}
+          }
+          (out/'R44P26_CACHE_CHUNKS_MANIFEST.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(manifest,indent=2,sort_keys=True))
+          PY
+          rm r44p26-cache/out/current-lock-supplement-cache.tar.gz
+      - name: Upload cache manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-cache-manifest
+          path: |
+            r44p26-cache/out/R44P26_CACHE_CHUNKS_MANIFEST.json
+            r44p26-cache/out/full.sha256
+            r44p26-cache/out/parts.sha256
+            r44p26-cache/out/cache-verify.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload cache part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-cache-part-00
+          path: r44p26-cache/out/cache.part-00
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload cache part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-cache-part-01
+          path: r44p26-cache/out/cache.part-01
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload cache part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-cache-part-02
+          path: r44p26-cache/out/cache.part-02
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload cache part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-cache-part-03
+          path: r44p26-cache/out/cache.part-03
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload cache part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-cache-part-04
+          path: r44p26-cache/out/cache.part-04
+          if-no-files-found: ignore
+          retention-days: 14
