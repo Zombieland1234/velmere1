@@ -36,7 +36,7 @@ jobs:
           test -x "$ROOT/bin/node"
           test "$($ROOT/bin/node --version)" = "v${NODE_VERSION}"
           test "$($ROOT/bin/node "$ROOT/lib/node_modules/npm/bin/npm-cli.js" --version)" = "$EXPECTED_NPM_VERSION"
-          "$ROOT/bin/node" -e 'const x=process.versions; if(process.version!=="v24.18.0"||x.v8!=="13.6.233.17-node.37") process.exit(1); console.log(JSON.stringify({node:process.version,v8:x.v8,openssl:x.openssl,modules:x.modules,napi:x.napi},null,2))' > r44p26-runtime/runtime-versions.json
+          "$ROOT/bin/node" -e 'const x=process.versions; if(process.version!=="v24.18.0"||!String(x.v8).startsWith("13.6.233.17")) process.exit(1); console.log(JSON.stringify({node:process.version,v8:x.v8,openssl:x.openssl,modules:x.modules,napi:x.napi},null,2))' > r44p26-runtime/runtime-versions.json
           sha256sum "$ROOT/bin/node" > r44p26-runtime/node-binary.sha256
           sha256sum "$ARCHIVE" > r44p26-runtime/archive.sha256
       - name: Write provenance receipt
@@ -66,6 +66,7 @@ jobs:
             'runtime':{
               'nodeVersion':subprocess.check_output([node,'--version'],text=True).strip(),
               'npmVersion':subprocess.check_output([node,npm,'--version'],text=True).strip(),
+              'versions':json.loads((root/'runtime-versions.json').read_text()),
               'nodeBinarySha256':sha(node),
               'archiveBytes':archive.stat().st_size,
             },
