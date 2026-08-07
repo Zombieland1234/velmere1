@@ -1,0 +1,60 @@
+name: R44P30 Exact Node 24.18.0 Runtime Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p30-exact-node-runtime.yml'
+      - 'r44p30-runtime/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r44p30-exact-node-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-node-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout workflow branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Download and verify exact Node distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p30-runtime/evidence
+          cd r44p30-runtime
+          curl --fail --location --retry 4 --retry-all-errors \
+            --output node-v24.18.0-linux-x64.tar.xz \
+            https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-x64.tar.xz
+          printf '%s  %s\n' \
+            '55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742' \
+            'node-v24.18.0-linux-x64.tar.xz' > expected.sha256
+          sha256sum --check expected.sha256
+          tar -xJf node-v24.18.0-linux-x64.tar.xz
+          test "$(./node-v24.18.0-linux-x64/bin/node --version)" = 'v24.18.0'
+          test "$(./node-v24.18.0-linux-x64/bin/npm --version)" = '11.16.0'
+          sha256sum node-v24.18.0-linux-x64.tar.xz > evidence/NODE_ARCHIVE_SHA256SUMS.txt
+          ./node-v24.18.0-linux-x64/bin/node -p \
+            'JSON.stringify({node:process.version,npm:process.env.npm_config_user_agent||null,platform:process.platform,arch:process.arch,versions:process.versions},null,2)' \
+            > evidence/NODE_RUNTIME_IDENTITY.json
+          ./node-v24.18.0-linux-x64/bin/npm --version > evidence/NPM_VERSION.txt
+          printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
+
+      - name: Upload exact runtime archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p30-node-v24.18.0-linux-x64
+          path: |
+            r44p30-runtime/node-v24.18.0-linux-x64.tar.xz
+            r44p30-runtime/evidence
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
