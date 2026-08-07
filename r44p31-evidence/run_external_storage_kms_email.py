@@ -196,17 +196,34 @@ try:
 
     started = utc_now()
     authorized = s3.get_object(Bucket=bucket, Key=object_key)["Body"].read() == ciphertext
-    anonymous_url = f"{LOCALSTACK_ENDPOINT}/{bucket}/{urllib.parse.quote(object_key)}"
-    anonymous_status, _ = http_status(anonymous_url)
+    unsigned_url = f"{LOCALSTACK_ENDPOINT}/{bucket}/{urllib.parse.quote(object_key)}"
+    unsigned_status, _ = http_status(unsigned_url)
+    invalid_session = boto3.session.Session(
+        aws_access_key_id="invalid-r44p31",
+        aws_secret_access_key="invalid-r44p31",
+        region_name="us-east-1",
+    )
+    invalid_s3 = invalid_session.client("s3", endpoint_url=LOCALSTACK_ENDPOINT, config=common_config)
+    invalid_url = invalid_s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": bucket, "Key": object_key},
+        ExpiresIn=30,
+    )
+    invalid_credential_status, _ = http_status(invalid_url)
     public_block = s3.get_public_access_block(Bucket=bucket)["PublicAccessBlockConfiguration"]
-    passed = authorized and anonymous_status in {401, 403, 404} and all(bool(v) for v in public_block.values())
+    passed = authorized and invalid_credential_status in {401, 403, 404} and all(bool(v) for v in public_block.values())
     add_case(
         "private-object",
         passed,
         {
             "authorizedRead": authorized,
-            "anonymousStatus": anonymous_status,
+            "invalidCredentialStatus": invalid_credential_status,
             "publicAccessBlock": public_block,
+            "unsignedRawStatus": unsigned_status,
+            "unsignedRawHttpEnforcementCredit": False,
+            "creditBasis": "SIGNED_CREDENTIAL_DENIAL_AND_PUBLIC_ACCESS_CONFIGURATION_ONLY",
+            "invalidUrlSha256": sha256_text(invalid_url),
+            "rawInvalidUrlStored": False,
             "bucketHash": sha256_text(bucket),
             "objectKeyHash": sha256_text(object_key),
         },
