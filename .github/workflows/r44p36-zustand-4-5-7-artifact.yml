@@ -1,4 +1,4 @@
-name: R44P36 Exact zustand 4.5.7 Artifact
+name: R44P36 Exact Missing npm Tarballs
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  package-zustand:
+  package-missing-tarballs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24.18.0
-      - name: Pack exact zustand
+      - name: Pack exact missing tarballs
         shell: bash
         run: |
           set -euo pipefail
@@ -30,11 +30,13 @@ jobs:
           mkdir -p r44p36-toolchain
           cd r44p36-toolchain
           npm pack zustand@4.5.7 --registry=https://registry.npmjs.org --ignore-scripts
+          npm pack zod-validation-error@4.0.2 --registry=https://registry.npmjs.org --ignore-scripts
           test -f zustand-4.5.7.tgz
-          sha256sum zustand-4.5.7.tgz > ZUSTAND_4_5_7_SHA256SUMS.txt
+          test -f zod-validation-error-4.0.2.tgz
+          sha256sum *.tgz | sort > EXACT_MISSING_TARBALLS_SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: r44p36-zustand-4.5.7
+          name: r44p36-exact-missing-npm-tarballs
           path: r44p36-toolchain
           if-no-files-found: error
           retention-days: 7
