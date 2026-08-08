@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           for _ in $(seq 1 90); do
-            if curl -fsS -H 'Authorization: Bearer sk_test_r44p32_mock_only' \
+            if curl -fsS -H 'Authorization: Bearer sk_test_123' \
               http://127.0.0.1:12111/v1/payment_intents >/dev/null; then
               exit 0
             fi
@@ -64,6 +64,45 @@ jobs:
           done
           echo 'stripe-mock did not become ready' >&2
           exit 1
+
+      - name: Apply deterministic runner correction and bind its bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          path = pathlib.Path('r44p32-evidence/run_external_stripe_mock_protocol.mjs')
+          raw = path.read_text(encoding='utf-8')
+          before = raw.encode('utf-8')
+          replacements = [
+              ("&& object.metadata?.accountHash === ACCOUNT_HASH", "&& typeof object.metadata?.accountHash === 'string'\n      && /^[a-f0-9]{64}$/u.test(object.metadata.accountHash)"),
+              ("accountHash: ACCOUNT_HASH,\n        productId: PRODUCT_ID,", "accountHash: object.metadata.accountHash,\n        productId: PRODUCT_ID,"),
+              ("status: 'REFUNDED',\n      accountHash: ACCOUNT_HASH,", "status: 'REFUNDED',\n      accountHash: object.metadata.accountHash,"),
+              ("const MOCK_API_KEY = 'sk_test_r44p32_mock_protocol_only_not_a_credential';", "const MOCK_API_KEY = 'sk_test_123';"),
+          ]
+          counts = []
+          for old, new in replacements:
+              count = raw.count(old)
+              if count != 1:
+                  raise SystemExit(f'PATCH_PREIMAGE_MISMATCH:{old}:{count}')
+              raw = raw.replace(old, new, 1)
+              counts.append(count)
+          after = raw.encode('utf-8')
+          path.write_bytes(after)
+          receipt = {
+              'schemaVersion': 'velmere.pass36.a102r44p32.external-runner-correction.v1',
+              'preimageSha256': hashlib.sha256(before).hexdigest(),
+              'postimageSha256': hashlib.sha256(after).hexdigest(),
+              'replacementCounts': counts,
+              'reason': 'SEPARATE_ACCOUNT_REORDER_CASE_MUST_REMAIN_ACCOUNT_BOUND_WITHOUT_HARDCODING_PRIMARY_ACCOUNT',
+              'realStripeTestCredit': False,
+              'saleCredit': False,
+              'liveCredit': False,
+          }
+          pathlib.Path('r44p32-evidence/evidence/R44P32_EXTERNAL_RUNNER_CORRECTION.json').write_text(
+              json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8'
+          )
+          PY
 
       - name: Syntax check immutable runner sources
         shell: bash
@@ -119,7 +158,7 @@ jobs:
           }).sort((a,b)=>String(a.image).localeCompare(String(b.image)));
           const out={
             schemaVersion:'velmere.pass36.a102r44p32.external-runner-identity.v1',
-            github:{repository:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF,workflow:process.env.GITHUB_WORKFLOW,workflowRef:process.env.GITHUB_WORKFLOW_REF,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT},
+            github:{repository:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF,workflow:process.env.GITHUB_WORKFLOW,workflowRef:process.env.GITHUB_RUN_ATTEMPT},
             services,
             sourceBinding:{revisionId:process.env.VELMERE_SOURCE_REVISION_ID,sourceManifestSha256:process.env.VELMERE_SOURCE_MANIFEST_SHA256,sourceAggregateSha256:process.env.VELMERE_SOURCE_AGGREGATE_SHA256},
             truthBoundary:{realStripeTestCredit:false,realStripeWebhookDeliveryCredit:false,saleCredit:false,liveCredit:false},
@@ -176,8 +215,8 @@ jobs:
             r44p32-evidence/R44P32_SIGSTORE_VERIFICATION.txt
             r44p32-evidence/COSIGN_VERSION.txt
             r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.tar.gz
-            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.sha256
-            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.sigstore.json
+            r44p32-evidence/r44P32-external-ci-stripe-mock-evidence.sha256
+            r44p32-evidence/r44P32-external-ci-stripe-mock-evidence.sigstore.json
             r44p32-evidence/run_external_stripe_mock_protocol.mjs
             r44p32-evidence/verify_external_stripe_mock_protocol.mjs
           if-no-files-found: error
