@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           for _ in $(seq 1 90); do
-            if curl -fsS -u sk_test_r44p32_mock_only: \
+            if curl -fsS -H 'Authorization: Bearer sk_test_r44p32_mock_only' \
               http://127.0.0.1:12111/v1/payment_intents >/dev/null; then
               exit 0
             fi
@@ -126,7 +126,7 @@ jobs:
           };
           const data=Buffer.from(JSON.stringify(out,Object.keys(out).sort(),2)+'\n');
           fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.json',data);
-          fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.sha256',crypto.createHash('sha256').update(data).digest('hex')+'\n');
+          fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDFTITY.sha256',crypto.createHash('sha256').update(data).digest('hex')+'\n');
           NODE
 
       - name: Build deterministic evidence blob
@@ -137,7 +137,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
           find evidence -type f -print0 \
             | sort -z \
-            | tar --null --files-from=- --sort=name \
+            | tar --null --files-from-=- --sort=name \
               --mtime='UTC 2026-08-08 00:00:00' \
               --owner=0 --group=0 --numeric-owner \
               -czf r44p32-external-ci-stripe-mock-evidence.tar.gz
