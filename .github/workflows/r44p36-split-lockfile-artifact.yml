@@ -1,0 +1,88 @@
+name: R44P36 Split Full Lockfile Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p36-split-lockfile-artifact.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  split-artifact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      SOURCE_ARTIFACT_ID: '9026324352'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Download prior immutable artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p r44p36-split/full
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${SOURCE_ARTIFACT_ID}/zip" > r44p36-split/full.zip
+          sha256sum r44p36-split/full.zip > r44p36-split/FULL_ARTIFACT_SHA256SUMS.txt
+          unzip -q r44p36-split/full.zip -d r44p36-split/full
+          test "$(find r44p36-split/full -type f -name '*.tgz' | wc -l)" -ge 600
+      - name: Split tarballs into four bounded chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, shutil
+          root=Path('r44p36-split/full')
+          out=Path('r44p36-split/chunks')
+          buckets=[{'size':0,'files':[]} for _ in range(4)]
+          files=sorted(root.rglob('*.tgz'), key=lambda p:p.stat().st_size, reverse=True)
+          for item in files:
+              bucket=min(buckets,key=lambda row:row['size'])
+              bucket['files'].append(item)
+              bucket['size']+=item.stat().st_size
+          for index,bucket in enumerate(buckets):
+              target=out/f'chunk-{index}'
+              target.mkdir(parents=True)
+              rows=[]
+              for item in bucket['files']:
+                  shutil.copy2(item,target/item.name)
+                  rows.append({'name':item.name,'byteLength':item.stat().st_size})
+              (target/'CHUNK_MANIFEST.json').write_text(json.dumps({'chunk':index,'files':rows,'byteLength':bucket['size']},sort_keys=True,separators=(',',':'))+'\n')
+              shutil.copy2('r44p36-split/FULL_ARTIFACT_SHA256SUMS.txt',target/'FULL_ARTIFACT_SHA256SUMS.txt')
+          print(json.dumps([{'chunk':i,'files':len(b['files']),'byteLength':b['size']} for i,b in enumerate(buckets)],indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p36-lockfile-tarballs-chunk-0
+          path: r44p36-split/chunks/chunk-0
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p36-lockfile-tarballs-chunk-1
+          path: r44p36-split/chunks/chunk-1
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p36-lockfile-tarballs-chunk-2
+          path: r44p36-split/chunks/chunk-2
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p36-lockfile-tarballs-chunk-3
+          path: r44p36-split/chunks/chunk-3
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
