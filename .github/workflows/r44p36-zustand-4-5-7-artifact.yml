@@ -31,8 +31,10 @@ jobs:
           cd r44p36-toolchain
           npm pack zustand@4.5.7 --registry=https://registry.npmjs.org --ignore-scripts
           npm pack zod-validation-error@4.0.2 --registry=https://registry.npmjs.org --ignore-scripts
+          npm pack zod@3.25.76 --registry=https://registry.npmjs.org --ignore-scripts
           test -f zustand-4.5.7.tgz
           test -f zod-validation-error-4.0.2.tgz
+          test -f zod-3.25.76.tgz
           sha256sum *.tgz | sort > EXACT_MISSING_TARBALLS_SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
