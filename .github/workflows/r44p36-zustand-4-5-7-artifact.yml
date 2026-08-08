@@ -1,4 +1,4 @@
-name: R44P36 Exact Missing npm Tarballs
+name: R44P36 Exact Full Lockfile npm Tarballs
 
 on:
   pull_request:
@@ -10,9 +10,9 @@ permissions:
   contents: read
 
 jobs:
-  package-missing-tarballs:
+  package-lockfile-tarballs:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24.18.0
-      - name: Pack exact missing tarballs
+      - name: Pack exact lockfile tarballs
         shell: bash
         run: |
           set -euo pipefail
@@ -29,45 +29,18 @@ jobs:
           test "$(npm --version)" = '11.16.0'
           mkdir -p r44p36-toolchain
           cd r44p36-toolchain
-          packages=(
-            'zustand@5.0.3' 'zustand@5.0.0' 'zod@3.22.4' 'ws@7.5.13'
-            'unstorage@1.17.5' 'undici-types@7.29.0' 'tslib@2.8.1' 'tslib@1.14.1'
-            'ts-interface-checker@0.1.13' 'ts-api-utils@2.5.0' 'tr46@0.0.3'
-            'to-regex-range@5.0.1' 'tinyglobby@0.2.17' 'three@0.184.0'
-            'thread-stream@3.2.0' 'thenify@3.3.1' 'thenify-all@1.6.0'
-            'tailwindcss@3.4.19' 'tailwind-merge@2.6.1' 'swr@2.4.1'
-            'supports-preserve-symlinks-flag@1.0.0' 'sucrase@3.35.1'
-            'styled-jsx@5.1.6' 'stripe@22.2.0' 'strip-ansi@6.0.1'
-            'string-width@4.2.3' 'split2@4.2.0' 'source-map-js@1.2.1'
-            'sonic-boom@4.2.1' 'slow-redact@0.3.2' 'shebang-regex@3.0.0'
-            'shebang-command@2.0.0' 'sharp@0.35.3' 'set-blocking@2.0.0'
-            'semver@7.8.5' 'semver@7.7.2' 'semver@6.3.1'
-            'scheduler@0.27.0' 'safe-stable-stringify@2.5.0'
-            'run-parallel@1.2.0' 'reusify@1.1.0' 'resolve@1.22.12'
-            'require-main-filename@2.0.0' 'require-directory@2.1.1'
-            'real-require@0.2.0' 'readdirp@5.0.0' 'readdirp@3.6.0'
-            'read-cache@1.0.0' 'react@19.2.7' 'react-style-singleton@2.2.3'
-            'react-remove-scroll@2.7.2' 'react-remove-scroll-bar@2.3.8'
-            'react-dom@19.2.7' 'radix3@1.1.2' 'quick-format-unescaped@4.0.4'
-            'queue-microtask@1.2.3' 'qrcode@1.5.3' 'punycode@2.3.1'
-            'proxy-from-env@2.1.0' 'proxy-compare@3.0.1' 'process-warning@5.1.0'
-            'prelude-ls@1.2.1' 'preact@10.24.2' 'postcss@8.5.19'
-            'postcss-value-parser@4.2.0' 'postcss-selector-parser@6.1.2'
-            'postcss-nested@6.2.0' 'postcss-load-config@6.0.1'
-            'postcss-js@4.1.0' 'postcss-import@15.1.0' 'po-parser@2.1.1'
-            'pngjs@5.0.0' 'playwright@1.60.0' 'playwright-core@1.60.0'
-            'pirates@4.0.7' 'pino@10.0.0' 'pino-std-serializers@7.1.0'
-            'pino-abstract-transport@2.0.0' 'pify@2.3.0' 'picomatch@4.0.5'
-            'picocolors@1.1.1' 'path-parse@1.0.7' 'path-key@3.1.1'
-            'path-exists@4.0.0' 'p-try@2.2.0' 'p-locate@5.0.0'
-          )
-          for spec in "${packages[@]}"; do
+          printf '%s' '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' | base64 -d | gzip -d > package-specs.txt
+          while IFS= read -r spec; do
+            spec="${spec#\'}"
+            spec="${spec%\'}"
+            test -n "$spec" || continue
             npm pack "$spec" --registry=https://registry.npmjs.org --ignore-scripts
-          done
-          sha256sum *.tgz | sort > EXACT_MISSING_TARBALLS_SHA256SUMS.txt
+          done < package-specs.txt
+          sha256sum *.tgz | sort > EXACT_LOCKFILE_TARBALLS_SHA256SUMS.txt
+          test "$(find . -maxdepth 1 -name '*.tgz' | wc -l)" -ge 600
       - uses: actions/upload-artifact@v4
         with:
-          name: r44p36-exact-missing-npm-tarballs
+          name: r44p36-exact-lockfile-npm-tarballs
           path: r44p36-toolchain
           if-no-files-found: error
           retention-days: 7
