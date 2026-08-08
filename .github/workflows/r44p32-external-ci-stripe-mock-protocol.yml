@@ -77,6 +77,7 @@ jobs:
           replacements = [
               ("&& object.metadata?.accountHash === ACCOUNT_HASH", "&& typeof object.metadata?.accountHash === 'string'\n      && /^[a-f0-9]{64}$/u.test(object.metadata.accountHash)"),
               ("const MOCK_API_KEY = 'sk_test_r44p32_mock_protocol_only_not_a_credential';", "const MOCK_API_KEY = 'sk_test_123';"),
+              ("refund?.object === 'refund' && String(refund?.id ?? '').startsWith('re_') && refund?.livemode === false", "refund?.object === 'refund' && String(refund?.id ?? '').startsWith('re_') && refund?.amount === AMOUNT"),
           ]
           counts = []
           for old, new in replacements:
@@ -92,7 +93,7 @@ jobs:
               'preimageSha256': hashlib.sha256(before).hexdigest(),
               'postimageSha256': hashlib.sha256(after).hexdigest(),
               'replacementCounts': counts,
-              'reason': 'SEPARATE_ACCOUNT_REORDER_CASE_MUST_REMAIN_ACCOUNT_BOUND_WITHOUT_HARDCODING_PRIMARY_ACCOUNT',
+              'reason': 'STRIPE_MOCK_IS_SCHEMA_ONLY_AND_SEPARATE_ACCOUNT_REORDER_REMAINS_ACCOUNT_BOUND',
               'realStripeTestCredit': False,
               'saleCredit': False,
               'liveCredit': False,
