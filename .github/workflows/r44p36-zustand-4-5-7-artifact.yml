@@ -1,0 +1,41 @@
+name: R44P36 Exact zustand 4.5.7 Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p36-zustand-4-5-7-artifact.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-zustand:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+      - name: Pack exact zustand
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          mkdir -p r44p36-toolchain
+          cd r44p36-toolchain
+          npm pack zustand@4.5.7 --registry=https://registry.npmjs.org --ignore-scripts
+          test -f zustand-4.5.7.tgz
+          sha256sum zustand-4.5.7.tgz > ZUSTAND_4_5_7_SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p36-zustand-4.5.7
+          path: r44p36-toolchain
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
