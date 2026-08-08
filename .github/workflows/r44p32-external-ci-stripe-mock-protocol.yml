@@ -76,8 +76,6 @@ jobs:
           before = raw.encode('utf-8')
           replacements = [
               ("&& object.metadata?.accountHash === ACCOUNT_HASH", "&& typeof object.metadata?.accountHash === 'string'\n      && /^[a-f0-9]{64}$/u.test(object.metadata.accountHash)"),
-              ("accountHash: ACCOUNT_HASH,\n        productId: PRODUCT_ID,", "accountHash: object.metadata.accountHash,\n        productId: PRODUCT_ID,"),
-              ("status: 'REFUNDED',\n      accountHash: ACCOUNT_HASH,", "status: 'REFUNDED',\n      accountHash: object.metadata.accountHash,"),
               ("const MOCK_API_KEY = 'sk_test_r44p32_mock_protocol_only_not_a_credential';", "const MOCK_API_KEY = 'sk_test_123';"),
           ]
           counts = []
@@ -158,14 +156,14 @@ jobs:
           }).sort((a,b)=>String(a.image).localeCompare(String(b.image)));
           const out={
             schemaVersion:'velmere.pass36.a102r44p32.external-runner-identity.v1',
-            github:{repository:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF,workflow:process.env.GITHUB_WORKFLOW,workflowRef:process.env.GITHUB_RUN_ATTEMPT},
+            github:{repository:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF,workflow:process.env.GITHUB_WORKFLOW,workflowRef:process.env.GITHUB_WORKFLOW_REF,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT},
             services,
             sourceBinding:{revisionId:process.env.VELMERE_SOURCE_REVISION_ID,sourceManifestSha256:process.env.VELMERE_SOURCE_MANIFEST_SHA256,sourceAggregateSha256:process.env.VELMERE_SOURCE_AGGREGATE_SHA256},
             truthBoundary:{realStripeTestCredit:false,realStripeWebhookDeliveryCredit:false,saleCredit:false,liveCredit:false},
           };
           const data=Buffer.from(JSON.stringify(out,Object.keys(out).sort(),2)+'\n');
           fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.json',data);
-          fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDFTITY.sha256',crypto.createHash('sha256').update(data).digest('hex')+'\n');
+          fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.sha256',crypto.createHash('sha256').update(data).digest('hex')+'\n');
           NODE
 
       - name: Build deterministic evidence blob
@@ -176,7 +174,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
           find evidence -type f -print0 \
             | sort -z \
-            | tar --null --files-from-=- --sort=name \
+            | tar --null --files-from=- --sort=name \
               --mtime='UTC 2026-08-08 00:00:00' \
               --owner=0 --group=0 --numeric-owner \
               -czf r44p32-external-ci-stripe-mock-evidence.tar.gz
@@ -215,8 +213,8 @@ jobs:
             r44p32-evidence/R44P32_SIGSTORE_VERIFICATION.txt
             r44p32-evidence/COSIGN_VERSION.txt
             r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.tar.gz
-            r44p32-evidence/r44P32-external-ci-stripe-mock-evidence.sha256
-            r44p32-evidence/r44P32-external-ci-stripe-mock-evidence.sigstore.json
+            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.sha256
+            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.sigstore.json
             r44p32-evidence/run_external_stripe_mock_protocol.mjs
             r44p32-evidence/verify_external_stripe_mock_protocol.mjs
           if-no-files-found: error
