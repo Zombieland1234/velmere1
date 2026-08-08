@@ -30,8 +30,10 @@ jobs:
           mkdir -p r44p34-toolchain
           cd r44p34-toolchain
           npm pack typescript@5.9.3 --registry=https://registry.npmjs.org --ignore-scripts
-          mv typescript-5.9.3.tgz typescript-5.9.3.tgz
+          test -f typescript-5.9.3.tgz
           sha256sum typescript-5.9.3.tgz > TYPESCRIPT_5_9_3_SHA256SUMS.txt
+          printf '%s\n' 'typescript@5.9.3' > TYPESCRIPT_PACKAGE_IDENTITY.txt
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
       - uses: actions/upload-artifact@v4
         with:
           name: r44p34-typescript-5.9.3
