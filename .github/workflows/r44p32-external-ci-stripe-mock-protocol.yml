@@ -162,7 +162,7 @@ jobs:
             sourceBinding:{revisionId:process.env.VELMERE_SOURCE_REVISION_ID,sourceManifestSha256:process.env.VELMERE_SOURCE_MANIFEST_SHA256,sourceAggregateSha256:process.env.VELMERE_SOURCE_AGGREGATE_SHA256},
             truthBoundary:{realStripeTestCredit:false,realStripeWebhookDeliveryCredit:false,saleCredit:false,liveCredit:false},
           };
-          const data=Buffer.from(JSON.stringify(out,Object.keys(out).sort(),2)+'\n');
+          const data=Buffer.from(JSON.stringify(out,null,2)+'\n');
           fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.json',data);
           fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.sha256',crypto.createHash('sha256').update(data).digest('hex')+'\n');
           NODE
