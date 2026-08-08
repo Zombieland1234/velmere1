@@ -1,0 +1,185 @@
+name: R44P32 External CI Stripe Mock Protocol + Sigstore
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p32-evidence/**'
+      - '.github/workflows/r44p32-external-ci-stripe-mock-protocol.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r44p32-external-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  external-ci-stripe-mock-protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock:v0.202.0
+        ports:
+          - 12111:12111
+    env:
+      STRIPE_MOCK_API_BASE: http://127.0.0.1:12111
+      VELMERE_SOURCE_REVISION_ID: VELMERE_PASS36_A102R44P31_ACTION_REQUIRED_EXTERNAL_CI_LOCALSTACK_STORAGE_KMS_EMAIL10_SIGSTORE_OIDC_AND_PARENT_EXACT_RELEASE_NO_LIVE_CREDIT
+      VELMERE_SOURCE_MANIFEST_SHA256: 1dae92c5e85eb8772d8c2d6fcb4028c90dc8eee2bd3adb86f2c6ff32962c02f6
+      VELMERE_SOURCE_AGGREGATE_SHA256: ae6b7a84e5698aed01e67f5e68c09daa41ce3318c35e612ae5e2fab0ab6aa919
+
+    steps:
+      - name: Checkout evidence runner
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+
+      - name: Verify exact runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          mkdir -p r44p32-evidence/evidence
+          node -p 'JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,versions:process.versions},null,2)' \
+            > r44p32-evidence/evidence/NODE_RUNTIME_IDENTITY.json
+
+      - name: Wait for stripe-mock
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 90); do
+            if curl -fsS -u sk_test_r44p32_mock_only: \
+              http://127.0.0.1:12111/v1/payment_intents >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'stripe-mock did not become ready' >&2
+          exit 1
+
+      - name: Syntax check immutable runner sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check r44p32-evidence/run_external_stripe_mock_protocol.mjs
+          node --check r44p32-evidence/verify_external_stripe_mock_protocol.mjs
+          sha256sum \
+            r44p32-evidence/run_external_stripe_mock_protocol.mjs \
+            r44p32-evidence/verify_external_stripe_mock_protocol.mjs \
+            .github/workflows/r44p32-external-ci-stripe-mock-protocol.yml \
+            | sort > r44p32-evidence/evidence/RUNNER_SOURCE_SHA256SUMS.txt
+
+      - name: Execute external Stripe mock protocol denominator
+        working-directory: r44p32-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node run_external_stripe_mock_protocol.mjs \
+            > evidence/R44P32_EXTERNAL_CI_EXECUTION.stdout.json \
+            2> evidence/R44P32_EXTERNAL_CI_EXECUTION.stderr.log
+          test ! -s evidence/R44P32_EXTERNAL_CI_EXECUTION.stderr.log
+
+      - name: Independently verify semantic cases and physical artifacts
+        working-directory: r44p32-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node verify_external_stripe_mock_protocol.mjs \
+            > evidence/R44P32_INDEPENDENT_VERIFIER.stdout.json \
+            2> evidence/R44P32_INDEPENDENT_VERIFIER.stderr.log
+          test ! -s evidence/R44P32_INDEPENDENT_VERIFIER.stderr.log
+
+      - name: Record external runner and service identity
+        working-directory: r44p32-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const cp = require('node:child_process');
+          const ps = cp.execFileSync('docker',['ps','--no-trunc','--format','{{json .}}'],{encoding:'utf8'}).trim().split(/\r?\n/u).filter(Boolean).map(JSON.parse);
+          const services = ps.map((row)=>{
+            const inspect = JSON.parse(cp.execFileSync('docker',['inspect',row.ID],{encoding:'utf8'}))[0];
+            return {
+              idSha256: crypto.createHash('sha256').update(String(inspect.Id||'')).digest('hex'),
+              image: inspect.Config?.Image ?? null,
+              imageId: inspect.Image ?? null,
+              platform: inspect.Platform ?? null,
+              state: {status:inspect.State?.Status ?? null,health:inspect.State?.Health?.Status ?? null},
+            };
+          }).sort((a,b)=>String(a.image).localeCompare(String(b.image)));
+          const out={
+            schemaVersion:'velmere.pass36.a102r44p32.external-runner-identity.v1',
+            github:{repository:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF,workflow:process.env.GITHUB_WORKFLOW,workflowRef:process.env.GITHUB_WORKFLOW_REF,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT},
+            services,
+            sourceBinding:{revisionId:process.env.VELMERE_SOURCE_REVISION_ID,sourceManifestSha256:process.env.VELMERE_SOURCE_MANIFEST_SHA256,sourceAggregateSha256:process.env.VELMERE_SOURCE_AGGREGATE_SHA256},
+            truthBoundary:{realStripeTestCredit:false,realStripeWebhookDeliveryCredit:false,saleCredit:false,liveCredit:false},
+          };
+          const data=Buffer.from(JSON.stringify(out,Object.keys(out).sort(),2)+'\n');
+          fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.json',data);
+          fs.writeFileSync('evidence/R44P32_EXTERNAL_RUNNER_IDENTITY.sha256',crypto.createHash('sha256').update(data).digest('hex')+'\n');
+          NODE
+
+      - name: Build deterministic evidence blob
+        working-directory: r44p32-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
+          find evidence -type f -print0 \
+            | sort -z \
+            | tar --null --files-from=- --sort=name \
+              --mtime='UTC 2026-08-08 00:00:00' \
+              --owner=0 --group=0 --numeric-owner \
+              -czf r44p32-external-ci-stripe-mock-evidence.tar.gz
+          sha256sum r44p32-external-ci-stripe-mock-evidence.tar.gz \
+            > r44p32-external-ci-stripe-mock-evidence.sha256
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: 'v3.0.6'
+
+      - name: Keyless-sign external evidence with GitHub OIDC
+        working-directory: r44p32-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cosign version > COSIGN_VERSION.txt
+          cosign sign-blob --yes \
+            --bundle r44p32-external-ci-stripe-mock-evidence.sigstore.json \
+            r44p32-external-ci-stripe-mock-evidence.tar.gz
+          cosign verify-blob \
+            --bundle r44p32-external-ci-stripe-mock-evidence.sigstore.json \
+            --certificate-identity-regexp '^https://github.com/Zombieland1234/velmere1/.github/workflows/r44p32-external-ci-stripe-mock-protocol.yml@refs/(heads/r44p32-stripe-test-admission-20260808|pull/[0-9]+/merge)$' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            r44p32-external-ci-stripe-mock-evidence.tar.gz \
+            > R44P32_SIGSTORE_VERIFICATION.txt
+
+      - name: Upload immutable external evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p32-external-ci-stripe-mock-sigstore-evidence
+          path: |
+            r44p32-evidence/evidence
+            r44p32-evidence/R44P32_INDEPENDENT_EXTERNAL_CI_VERIFICATION.json
+            r44p32-evidence/R44P32_SIGSTORE_VERIFICATION.txt
+            r44p32-evidence/COSIGN_VERSION.txt
+            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.tar.gz
+            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.sha256
+            r44p32-evidence/r44p32-external-ci-stripe-mock-evidence.sigstore.json
+            r44p32-evidence/run_external_stripe_mock_protocol.mjs
+            r44p32-evidence/verify_external_stripe_mock_protocol.mjs
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
