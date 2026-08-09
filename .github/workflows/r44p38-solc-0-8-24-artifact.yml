@@ -12,7 +12,7 @@ permissions:
 jobs:
   package-solc:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,31 +21,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24.18.0
-      - name: Pack exact compiler package
+      - name: Build exact compiler dependency closure
         shell: bash
         run: |
           set -euo pipefail
           test "$(node --version)" = 'v24.18.0'
           test "$(npm --version)" = '11.16.0'
-          mkdir -p r44p38-toolchain
-          cd r44p38-toolchain
-          npm pack solc@0.8.24 --registry=https://registry.npmjs.org --ignore-scripts
-          test -f solc-0.8.24.tgz
-          sha256sum solc-0.8.24.tgz > SOLC_0_8_24_SHA256SUMS.txt
-          tar -xzf solc-0.8.24.tgz
+          mkdir -p r44p38-toolchain/work
+          cd r44p38-toolchain/work
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund --save-exact solc@0.8.24
           node - <<'NODE'
-          const solc = require('./package');
+          const solc = require('solc');
           const version = solc.version();
           if (!version.startsWith('0.8.24+commit.e11b9ed9')) {
             throw new Error(`unexpected solc version: ${version}`);
           }
-          require('node:fs').writeFileSync('SOLC_VERSION.txt', `${version}\n`);
+          require('node:fs').writeFileSync('../SOLC_VERSION.txt', `${version}\n`);
           NODE
-          rm -rf package
+          npm ls --all --json > ../NPM_LS_ALL.json
+          cd ..
+          tar --sort=name --mtime='UTC 2026-08-09 00:00:00' \
+            --owner=0 --group=0 --numeric-owner \
+            -czf r44p38-solc-js-0.8.24-closure.tar.gz \
+            -C work package.json package-lock.json node_modules
+          sha256sum r44p38-solc-js-0.8.24-closure.tar.gz > SOLC_CLOSURE_SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: r44p38-solc-0.8.24
-          path: r44p38-toolchain
+          name: r44p38-solc-js-0.8.24-closure
+          path: |
+            r44p38-toolchain/r44p38-solc-js-0.8.24-closure.tar.gz
+            r44p38-toolchain/SOLC_VERSION.txt
+            r44p38-toolchain/NPM_LS_ALL.json
+            r44p38-toolchain/SOLC_CLOSURE_SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
