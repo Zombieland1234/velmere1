@@ -1,0 +1,76 @@
+name: R44P41 Exact Foundry 1.7.1 and solc 0.8.24 Toolchain
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p41-foundry-solc-toolchain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Download and verify official Foundry and solc
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p41-toolchain/bin r44p41-toolchain/evidence
+          cd r44p41-toolchain
+
+          curl --fail --location --retry 4 --retry-all-errors \
+            --output foundry_v1.7.1_linux_amd64.tar.gz \
+            https://github.com/foundry-rs/foundry/releases/download/v1.7.1/foundry_v1.7.1_linux_amd64.tar.gz
+          printf '%s  %s\n' \
+            'cf7e688ed0c4c48adffca788b496076e31060b67ac5afe1e43dbb5499c20c88b' \
+            'foundry_v1.7.1_linux_amd64.tar.gz' > evidence/FOUNDRY_EXPECTED_SHA256.txt
+          sha256sum --check evidence/FOUNDRY_EXPECTED_SHA256.txt
+          tar -xzf foundry_v1.7.1_linux_amd64.tar.gz -C bin
+
+          curl --fail --location --retry 4 --retry-all-errors \
+            --output bin/solc-0.8.24 \
+            https://github.com/argotorg/solidity/releases/download/v0.8.24/solc-static-linux
+          chmod 0755 bin/solc-0.8.24
+
+          test "$(bin/forge --version | head -n1 | awk '{print $3}')" = '1.7.1'
+          test "$(bin/cast --version | head -n1 | awk '{print $3}')" = '1.7.1'
+          test "$(bin/anvil --version | head -n1 | awk '{print $3}')" = '1.7.1'
+          bin/solc-0.8.24 --version | grep -F '0.8.24+commit.e11b9ed9'
+
+          sha256sum bin/forge bin/cast bin/anvil bin/chisel bin/solc-0.8.24 \
+            > evidence/TOOLCHAIN_BINARIES_SHA256SUMS.txt
+          bin/forge --version > evidence/FORGE_VERSION.txt
+          bin/cast --version > evidence/CAST_VERSION.txt
+          bin/anvil --version > evidence/ANVIL_VERSION.txt
+          bin/solc-0.8.24 --version > evidence/SOLC_VERSION.txt
+          printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
+
+      - name: Build deterministic toolchain archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --sort=name \
+            --mtime='UTC 2026-08-09 00:00:00' \
+            --owner=0 --group=0 --numeric-owner \
+            -czf r44p41-toolchain/r44p41-foundry-v1.7.1-solc-0.8.24-linux-amd64.tar.gz \
+            -C r44p41-toolchain bin evidence
+          sha256sum r44p41-toolchain/r44p41-foundry-v1.7.1-solc-0.8.24-linux-amd64.tar.gz \
+            > r44p41-toolchain/evidence/TOOLCHAIN_ARCHIVE_SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p41-foundry-v1.7.1-solc-0.8.24-linux-amd64
+          path: |
+            r44p41-toolchain/r44p41-foundry-v1.7.1-solc-0.8.24-linux-amd64.tar.gz
+            r44p41-toolchain/evidence
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
