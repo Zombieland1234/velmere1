@@ -1,0 +1,42 @@
+name: R44P38 Exact solc-js 0.8.30 Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p38-solc-0-8-30-artifact.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-solc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+      - name: Pack exact solc-js
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          mkdir -p r44p38-toolchain
+          cd r44p38-toolchain
+          npm pack solc@0.8.30 --registry=https://registry.npmjs.org --ignore-scripts
+          test -f solc-0.8.30.tgz
+          sha256sum solc-0.8.30.tgz > SOLC_0_8_30_SHA256SUMS.txt
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p38-solc-0.8.30
+          path: r44p38-toolchain
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
