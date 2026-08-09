@@ -43,13 +43,28 @@ jobs:
 
           upstream = Path('r44p42-smartbugs-upstream')
           out = Path('r44p42-smartbugs-corpus')
-          selection = [line.strip() for line in (upstream/'ICSE2020_curated_69.txt').read_text().splitlines() if line.strip()]
+          selection = []
+          for line in (upstream/'ICSE2020_curated_69.txt').read_text().splitlines():
+              line = line.strip()
+              if not line.startswith('./dataset/'):
+                  continue
+              original = line
+              moved = re.search(r'\[MOVED TO:\s*([^\]]+)\]', line)
+              effective = moved.group(1).strip() if moved else line.split(' [', 1)[0]
+              selection.append({'selectionLine': original, 'effectivePath': effective})
+
           vulnerabilities = json.loads((upstream/'vulnerabilities.json').read_text())
           version_rows = {}
           with (upstream/'versions.csv').open(newline='') as handle:
-              for row in csv.DictReader(handle):
-                  key = row.get('file') or row.get('path') or row.get('contract') or next(iter(row.values()))
-                  version_rows[str(key).replace('\\','/')] = row
+              rows_raw = list(csv.reader(handle))
+          if rows_raw:
+              header = rows_raw[0]
+              for raw in rows_raw[1:]:
+                  if not raw:
+                      continue
+                  row = dict(zip(header, raw))
+                  key = row.get('file') or row.get('path') or row.get('contract') or raw[0]
+                  version_rows[str(key).replace('\\','/').lstrip('./')] = row
 
           def sha256(data: bytes) -> str:
               return hashlib.sha256(data).hexdigest()
@@ -60,15 +75,16 @@ jobs:
                   if isinstance(row, dict):
                       key = row.get('path') or row.get('file') or row.get('name')
                       if key:
-                          vuln_by_name[str(key).replace('\\','/')] = row
+                          vuln_by_name[str(key).replace('\\','/').lstrip('./')] = row
           elif isinstance(vulnerabilities, dict):
               for key, value in vulnerabilities.items():
-                  vuln_by_name[str(key).replace('\\','/')] = value
+                  vuln_by_name[str(key).replace('\\','/').lstrip('./')] = value
 
           rows = []
           missing = []
-          for raw in selection:
-              rel = raw.replace('\\','/').lstrip('./')
+          for item in selection:
+              raw = item['selectionLine']
+              rel = item['effectivePath'].replace('\\','/').lstrip('./')
               candidates = [upstream/rel, upstream/'dataset'/rel]
               src = next((p for p in candidates if p.is_file()), None)
               if src is None:
@@ -85,10 +101,11 @@ jobs:
               text = data.decode('utf-8', errors='replace')
               pragma = re.search(r'pragma\s+solidity\s+([^;]+);', text)
               annotations = sorted(set(re.findall(r'<yes>\s*<report>\s*([A-Z0-9_]+)', text)))
-              vuln = vuln_by_name.get(canonical_rel) or vuln_by_name.get(rel) or vuln_by_name.get(Path(rel).name)
-              version = version_rows.get(canonical_rel) or version_rows.get(rel) or version_rows.get(Path(rel).name)
+              lookup_keys = [canonical_rel, rel, Path(rel).name]
+              vuln = next((vuln_by_name.get(key) for key in lookup_keys if vuln_by_name.get(key) is not None), None)
+              version = next((version_rows.get(key) for key in lookup_keys if version_rows.get(key) is not None), None)
               rows.append({
-                  'selectionPath': rel,
+                  'selectionLine': raw,
                   'sourcePath': canonical_rel,
                   'byteLength': len(data),
                   'sha256': sha256(data),
@@ -99,7 +116,7 @@ jobs:
               })
 
           if missing or len(rows) != 69:
-              raise SystemExit(f'corpus mismatch: rows={len(rows)} missing={missing}')
+              raise SystemExit(f'corpus mismatch: selection={len(selection)} rows={len(rows)} missing={missing}')
 
           manifest = {
               'schemaVersion': 'velmere.r44p42.smartbugs-curated-corpus.v1',
