@@ -90,6 +90,7 @@ jobs:
                   'expectedSupportedSignals': [],
                   'labelClass': 'PUBLIC_CONTROL_CANDIDATE_NO_INDEPENDENT_SAFETY_CLAIM',
               })
+          package_json=json.loads((package/'package.json').read_text())
           manifest={
               'schemaVersion':'velmere.r44p43.openzeppelin-control-candidates.v1',
               'package':'@openzeppelin/contracts',
@@ -100,7 +101,8 @@ jobs:
               'independentHumanReview':False,
               'formalTrueNegativeCredit':False,
               'metricName':'candidate_control_alert_rate_not_formal_fpr',
-              'license':'MIT',
+              'license':package_json.get('license'),
+              'licenseBoundary':'OpenZeppelin package metadata declares MIT. This temporary artifact is for evaluation and does not imply independent safety adjudication of selected roots.',
               'customerCredit':False,
               'saleCredit':False,
               'liveCredit':False,
@@ -108,7 +110,7 @@ jobs:
           }
           payload=(json.dumps(manifest,sort_keys=True,separators=(',',':'))+'\n').encode()
           (out/'R44P43_OPENZEPPELIN_CONTROL_MANIFEST.json').write_bytes(payload)
-          (out/'LICENSE').write_bytes((package/'LICENSE').read_bytes())
+          (out/'LICENSE_BOUNDARY.txt').write_text(manifest['licenseBoundary']+'\n')
           (Path('r44p43-openzeppelin/evidence')/'MANIFEST_SHA256.txt').write_text(hashlib.sha256(payload).hexdigest()+'  R44P43_OPENZEPPELIN_CONTROL_MANIFEST.json\n')
           (Path('r44p43-openzeppelin/evidence')/'ROOT_COUNT.txt').write_text(str(len(rows))+'\n')
           PY
