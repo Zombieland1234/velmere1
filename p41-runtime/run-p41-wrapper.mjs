@@ -51,14 +51,14 @@ if (!runner.includes(npmVersionNeedle)) {
 }
 runner = runner.replace(
   npmVersionNeedle,
-  "const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';\nconst npmVersion = execFileSync(npmCommand, ['--version'], { encoding: 'utf8' }).trim();",
+  "const npmCliPath = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');\nif (!fs.existsSync(npmCliPath)) throw new Error(`Exact npm CLI not found: ${npmCliPath}`);\nconst npmVersion = execFileSync(process.execPath, [npmCliPath, '--version'], { encoding: 'utf8' }).trim();",
 );
 
 const originalRunCount = (runner.match(/run\('npm', \[/g) || []).length;
 if (originalRunCount !== 2) {
   throw new Error(`Expected exactly two npm run invocations, found ${originalRunCount}`);
 }
-runner = runner.replaceAll("run('npm', [", 'run(npmCommand, [');
+runner = runner.replaceAll("run('npm', [", 'run(process.execPath, [npmCliPath,');
 fs.writeFileSync(runnerPath, runner, 'utf8');
 
 await import('./run-p41.mjs');
