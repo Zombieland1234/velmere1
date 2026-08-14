@@ -1,6 +1,6 @@
 name: P41 Exact Windows Node24 Dependency Closure
 
-# P41 exact P40 payload revision 5
+# P41 exact P40 payload revision 6 summary-artifact
 on:
   push:
     branches:
@@ -39,19 +39,18 @@ jobs:
         shell: pwsh
         run: node p41-runtime/run-p41-wrapper.mjs
 
-      - name: Upload exact closure artifact
+      - name: Upload exact closure receipts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: p41-exact-windows-node24-dependency-closure
+          name: p41-exact-windows-node24-dependency-closure-receipts
           path: |
             p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json
             p41-out/dependency-cas-manifest.json
             p41-out/derived-dependency-list.json
-            p41-out/cas
             p41-out/logs
             p41-out/project/package.json
             p41-out/project/package-lock.json
           if-no-files-found: error
-          compression-level: 0
+          compression-level: 9
           retention-days: 7
