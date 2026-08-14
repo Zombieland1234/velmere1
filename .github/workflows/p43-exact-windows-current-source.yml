@@ -9,6 +9,10 @@ on:
       - 'p43-bridge/**'
       - '.github/workflows/p43-exact-windows-current-source.yml'
 
+concurrency:
+  group: p43-exact-windows-current-source-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   actions: read
