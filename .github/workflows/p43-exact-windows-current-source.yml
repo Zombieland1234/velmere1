@@ -45,6 +45,43 @@ jobs:
           if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
           if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
 
+      - name: Download P42 tracked-source seed
+        uses: actions/download-artifact@v4
+        with:
+          name: p42-branch-source-snapshot
+          path: p43-artifact-seeds/p42
+          github-token: ${{ github.token }}
+          repository: Zombieland1234/velmere1
+          run-id: 31791166532
+
+      - name: Download P41 dependency-CAS seed
+        uses: actions/download-artifact@v4
+        with:
+          name: p41-exact-windows-node24-dependency-closure
+          path: p43-artifact-seeds/p41
+          github-token: ${{ github.token }}
+          repository: Zombieland1234/velmere1
+          run-id: 31789641833
+
+      - name: Make artifact seed bytes reachable to Git object scan
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p43-artifact-seeds/p42-source | Out-Null
+          tar -xzf p43-artifact-seeds/p42/branch-source-tracked.tar.gz -C p43-artifact-seeds/p42-source
+          git config core.autocrlf false
+          git config core.safecrlf false
+          $env:GIT_INDEX_FILE = (Join-Path $PWD '.git/p43-artifact-seed-index')
+          if (Test-Path $env:GIT_INDEX_FILE) { Remove-Item $env:GIT_INDEX_FILE -Force }
+          git --work-tree="$PWD/p43-artifact-seeds" add -f -A .
+          $tree = (git write-tree).Trim()
+          $commit = ("P43 local artifact seed pool`n" | git commit-tree $tree).Trim()
+          git update-ref refs/heads/p43-local-artifact-seed $commit
+          Remove-Item Env:GIT_INDEX_FILE
+          Write-Host "Local artifact seed tree: $tree"
+          Write-Host "Local artifact seed commit: $commit"
+          git count-objects -vH
+
       - name: Assemble and verify compact P43 identity
         shell: pwsh
         run: |
@@ -86,7 +123,7 @@ jobs:
             throw "Decoded identity SHA mismatch: $identitySha"
           }
 
-      - name: Reconstruct exact current source from all refs
+      - name: Reconstruct exact current source from refs and retained artifacts
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force p43-win-work | Out-Null
