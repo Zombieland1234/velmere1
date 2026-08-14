@@ -71,11 +71,19 @@ jobs:
           tar -xzf p43-artifact-seeds/p42/branch-source-tracked.tar.gz -C p43-artifact-seeds/p42-source
           git config core.autocrlf false
           git config core.safecrlf false
+          git config user.name 'Velmere Closure Bot'
+          git config user.email 'velmere-closure@users.noreply.github.com'
+          $env:GIT_AUTHOR_NAME = 'Velmere Closure Bot'
+          $env:GIT_AUTHOR_EMAIL = 'velmere-closure@users.noreply.github.com'
+          $env:GIT_COMMITTER_NAME = 'Velmere Closure Bot'
+          $env:GIT_COMMITTER_EMAIL = 'velmere-closure@users.noreply.github.com'
           $env:GIT_INDEX_FILE = (Join-Path $PWD '.git/p43-artifact-seed-index')
           if (Test-Path $env:GIT_INDEX_FILE) { Remove-Item $env:GIT_INDEX_FILE -Force }
           git --work-tree="$PWD/p43-artifact-seeds" add -f -A .
           $tree = (git write-tree).Trim()
+          if ([string]::IsNullOrWhiteSpace($tree)) { throw 'Artifact seed tree was not created' }
           $commit = ("P43 local artifact seed pool`n" | git commit-tree $tree).Trim()
+          if ([string]::IsNullOrWhiteSpace($commit)) { throw 'Artifact seed commit was not created' }
           git update-ref refs/heads/p43-local-artifact-seed $commit
           Remove-Item Env:GIT_INDEX_FILE
           Write-Host "Local artifact seed tree: $tree"
@@ -145,20 +153,31 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if (!(Test-Path 'p43-win-result/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json')) {
-            Write-Host 'Exact Windows receipt was not produced before failure.'
+          New-Item -ItemType Directory -Force p43-results | Out-Null
+          $paths = @()
+          if (Test-Path 'p43-win-result/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json') {
+            Copy-Item p43-win-result/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json p43-results/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json -Force
+            $paths += 'p43-results/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json'
+          }
+          if (Test-Path 'p43-win-work/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json') {
+            Copy-Item p43-win-work/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json p43-results/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json -Force
+            $paths += 'p43-results/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json'
+          }
+          if (Test-Path 'p43-win-work/P43_GITHUB_ALL_REFS_MISSING_SOURCE_ROWS.json') {
+            Copy-Item p43-win-work/P43_GITHUB_ALL_REFS_MISSING_SOURCE_ROWS.json p43-results/P43_GITHUB_ALL_REFS_MISSING_SOURCE_ROWS.json -Force
+            $paths += 'p43-results/P43_GITHUB_ALL_REFS_MISSING_SOURCE_ROWS.json'
+          }
+          if ($paths.Count -eq 0) {
+            Write-Host 'No Windows receipt or reconstruction result was produced before failure.'
             exit 0
           }
-          New-Item -ItemType Directory -Force p43-results | Out-Null
-          Copy-Item p43-win-result/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json p43-results/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json -Force
-          Copy-Item p43-win-work/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json p43-results/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json -Force
           git config user.name 'Velmere Closure Bot'
           git config user.email 'velmere-closure@users.noreply.github.com'
-          git add p43-results/P43_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json p43-results/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json
+          git add -- $paths
           if (git diff --cached --quiet) {
             Write-Host 'No receipt change to commit.'
           } else {
-            git commit -m 'P43: persist exact Windows current-source closure receipt'
+            git commit -m 'P43: persist exact Windows current-source closure evidence'
             git push origin HEAD:velmere-p43-current-source-reconstruction-20260814
           }
 
