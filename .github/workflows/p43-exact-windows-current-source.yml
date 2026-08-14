@@ -71,12 +71,16 @@ jobs:
           $joined = ($parts | ForEach-Object { (Get-Content $_ -Raw).Trim() }) -join ''
           [IO.File]::WriteAllText('p43-identity.bin.gz.b64', $joined, [Text.Encoding]::ASCII)
           $sha = (Get-FileHash p43-identity.bin.gz.b64 -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($sha -ne '6fe180370bd70a508af3cb22b1dbfbea4d20f30b2617978bc03400bba8f192fb') {
+          if ($sha -ne '26f191e21dba2cfcd73e3ab00e6b4a8ec2fdd1066ec9aaf2eb4663c7f456b198') {
             throw "Compact identity SHA mismatch: $sha"
           }
           $gzip = [Convert]::FromBase64String($joined)
           [IO.File]::WriteAllBytes('p43-identity.bin.gz', $gzip)
           python -c "import gzip,pathlib; pathlib.Path('p43-identity.bin').write_bytes(gzip.decompress(pathlib.Path('p43-identity.bin.gz').read_bytes()))"
+          $identitySha = (Get-FileHash p43-identity.bin -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($identitySha -ne '588acada1e423fa2f52f608c7638bfd23d55229ad8a7078e440ae6198d79cbd0') {
+            throw "Decoded identity SHA mismatch: $identitySha"
+          }
 
       - name: Reconstruct exact current source from all refs
         shell: pwsh
