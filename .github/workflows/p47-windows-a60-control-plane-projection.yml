@@ -21,7 +21,7 @@ jobs:
         shell: pwsh
         run: |
           $archive = 'p47-bootstrap/p47-projection.tar.gz'
-          $expected = '510a25a809a80e88a6c3143a5b380d96f6403484e3958749db857f0ba66292d6'
+          $expected = 'ef2c924c13da5dcc0518a453c932450d5507df4b3cb4477530b85081f21989ad'
           if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) { throw 'Projection archive missing' }
           $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) { throw "Projection archive SHA mismatch: $actual" }
