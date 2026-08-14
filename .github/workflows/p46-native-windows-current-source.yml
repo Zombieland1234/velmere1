@@ -1,0 +1,155 @@
+name: P46 Native Windows Current Source Semantic Dual Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p46-native-windows-current-source-20260814
+    paths:
+      - "p46-native-windows/**"
+      - ".github/workflows/p46-native-windows-current-source.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact-windows-current-source:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout isolated P46 bridge branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch every reachable repository ref
+        shell: pwsh
+        run: |
+          git config core.autocrlf false
+          git config core.eol lf
+          git fetch --force origin "+refs/heads/*:refs/remotes/origin/*" "+refs/pull/*/head:refs/remotes/pull/*/head" "+refs/pull/*/merge:refs/remotes/pull/*/merge"
+          if ($LASTEXITCODE -ne 0) { throw "fetch all refs failed: $LASTEXITCODE" }
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Download exact P42 tracked-source snapshot
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: "31791166532"
+          name: p42-branch-source-snapshot
+          path: p43-artifact-seeds/p42-source
+
+      - name: Download exact P41 dependency CAS
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: "31789641833"
+          name: p41-exact-windows-node24-dependency-closure
+          path: p43-artifact-seeds/p41-cas
+
+      - name: Seed a local Git object database from downloaded exact artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Velmere P46 Exact Windows Bridge'
+          git config user.email 'velmere-p46-bridge@users.noreply.github.com'
+          find p43-artifact-seeds -maxdepth 4 -type f -printf '%p %s\n' | sort > p43-artifact-seeds/downloaded-files.txt
+          GIT_INDEX_FILE="$PWD/.git/p46-artifact-index" git --work-tree="$PWD/p43-artifact-seeds" add -f -A .
+          SEED_TREE="$(GIT_INDEX_FILE="$PWD/.git/p46-artifact-index" git write-tree)"
+          SEED_COMMIT="$(printf '%s\n' 'P46 local artifact object seed' | git commit-tree "$SEED_TREE")"
+          git update-ref refs/p46-local-artifact-seed "$SEED_COMMIT"
+          git count-objects -vH > p43-artifact-seeds/git-object-count.txt
+          git cat-file --batch-all-objects --batch-check='%(objectname) %(objecttype) %(objectsize)' | sort > p43-artifact-seeds/git-all-objects.txt
+          printf '%s\n' "$SEED_COMMIT" > p43-artifact-seeds/local-seed-commit.txt
+
+      - name: Assemble and verify compact P43 identity
+        shell: pwsh
+        run: |
+          python p43-bridge/assemble-identity-parts.py --parts-directory p43-bridge/identity-parts --output p43-bridge/p43-source-identity.bin
+          python p43-bridge/verify-identity-bin.py --identity-bin p43-bridge/p43-source-identity.bin --expected-file-count 6666 --expected-payload-bytes 196479563 --expected-path-set-sha256 38eba6c9b7f1761d531bed806cc783d28b540165f199bce385ba6d38842238fa --expected-source-aggregate-sha256 ae505b6f94813767752e344c76c249099fb3e30283b64a3647420eaafbbd8478 --output p43-bridge/identity-assembly-receipt.json
+
+      - name: Reconstruct exact P43 source from all reachable Git and artifact blobs
+        shell: pwsh
+        run: |
+          python p43-bridge/measure-source-coverage-bin.py --identity-bin p43-bridge/p43-source-identity.bin --output p43-bridge/P43_SOURCE_COVERAGE_RECEIPT.json --inventory-output p43-bridge/P43_GITHUB_OBJECT_INVENTORY.json
+          python p43-bridge/run-exact-windows-current-source.py --identity-bin p43-bridge/p43-source-identity.bin --coverage-receipt p43-bridge/P43_SOURCE_COVERAGE_RECEIPT.json --output p43-bridge/P43_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json --source-root p43-exact-source
+
+      - name: Apply and verify exact P43 to P46 source patch
+        shell: pwsh
+        run: |
+          python p46-native-windows/apply-verify-p46-patch.py --base-root p43-exact-source --identity-bin p43-bridge/p43-source-identity.bin --base-coverage-receipt p43-bridge/P43_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json --manifest p46-native-windows/p46-patch-manifest.json --output p46-native-windows/P46_EXACT_SOURCE_PATCH_RECEIPT.json
+
+      - name: Create clean exact P46 Git worktree and bind current authority
+        shell: pwsh
+        run: |
+          Push-Location p43-exact-source
+          try {
+            git init
+            git config core.autocrlf false
+            git config core.eol lf
+            git config user.name 'Velmere P46 Exact Windows'
+            git config user.email 'velmere-p46-exact-windows@users.noreply.github.com'
+            git add -A
+            git commit -m 'P46 exact current source reconstructed on Windows'
+            node scripts/pass36/verify-a102r44p46-current-source-authority.mjs --output "$env:GITHUB_WORKSPACE/p46-native-windows/P46_CURRENT_SOURCE_AUTHORITY_RECEIPT.json"
+          } finally { Pop-Location }
+
+      - name: Run exact Windows semantic and dual production build
+        shell: pwsh
+        run: |
+          Push-Location p43-exact-source
+          try {
+            node scripts/pass42/run-p42-exact-windows-semantic-dual-build.mjs --output "$env:GITHUB_WORKSPACE/p46-native-windows/P46_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json"
+          } finally { Pop-Location }
+
+      - name: Persist bridge diagnostics
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p46-native-windows/result | Out-Null
+          $paths = @(
+            'p43-artifact-seeds/downloaded-files.txt',
+            'p43-artifact-seeds/git-object-count.txt',
+            'p43-artifact-seeds/local-seed-commit.txt',
+            'p43-bridge/identity-assembly-receipt.json',
+            'p43-bridge/P43_SOURCE_COVERAGE_RECEIPT.json',
+            'p43-bridge/P43_GITHUB_OBJECT_INVENTORY.json',
+            'p43-bridge/P43_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json',
+            'p46-native-windows/P46_EXACT_SOURCE_PATCH_RECEIPT.json',
+            'p46-native-windows/P46_CURRENT_SOURCE_AUTHORITY_RECEIPT.json',
+            'p46-native-windows/P46_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json'
+          )
+          foreach ($path in $paths) {
+            if (Test-Path -LiteralPath $path -PathType Leaf) {
+              Copy-Item -LiteralPath $path -Destination p46-native-windows/result -Force
+            }
+          }
+          if (Test-Path -LiteralPath p43-exact-source/p42-out -PathType Container) {
+            Copy-Item -LiteralPath p43-exact-source/p42-out -Destination p46-native-windows/result/p42-out -Recurse -Force
+          }
+
+      - name: Upload exact Windows receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p46-native-windows-current-source-semantic-dual-build
+          path: p46-native-windows/result
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14
