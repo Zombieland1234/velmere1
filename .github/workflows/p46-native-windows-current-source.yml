@@ -9,6 +9,10 @@ on:
       - "p46-native-windows/**"
       - ".github/workflows/p46-native-windows-current-source.yml"
 
+concurrency:
+  group: p46-native-windows-current-source-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   actions: read
@@ -27,6 +31,7 @@ jobs:
       - name: Fetch every reachable repository ref
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           git config core.autocrlf false
           git config core.eol lf
           git fetch --force origin "+refs/heads/*:refs/remotes/origin/*" "+refs/pull/*/head:refs/remotes/pull/*/head" "+refs/pull/*/merge:refs/remotes/pull/*/merge"
@@ -52,7 +57,7 @@ jobs:
           repository: ${{ github.repository }}
           run-id: "31791166532"
           name: p42-branch-source-snapshot
-          path: p43-artifact-seeds/p42-source
+          path: p43-artifact-seeds/p42
 
       - name: Download exact P41 dependency CAS
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -61,44 +66,107 @@ jobs:
           repository: ${{ github.repository }}
           run-id: "31789641833"
           name: p41-exact-windows-node24-dependency-closure
-          path: p43-artifact-seeds/p41-cas
+          path: p43-artifact-seeds/p41
 
-      - name: Seed a local Git object database from downloaded exact artifacts
-        shell: bash
+      - name: Make retained artifact bytes reachable to Git object scan
+        shell: pwsh
         run: |
-          set -euo pipefail
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p43-artifact-seeds/p42-source | Out-Null
+          tar -xzf p43-artifact-seeds/p42/branch-source-tracked.tar.gz -C p43-artifact-seeds/p42-source
+          if ($LASTEXITCODE -ne 0) { throw "P42 source extraction failed: $LASTEXITCODE" }
+          git config core.autocrlf false
+          git config core.safecrlf false
           git config user.name 'Velmere P46 Exact Windows Bridge'
           git config user.email 'velmere-p46-bridge@users.noreply.github.com'
-          find p43-artifact-seeds -maxdepth 4 -type f -printf '%p %s\n' | sort > p43-artifact-seeds/downloaded-files.txt
-          GIT_INDEX_FILE="$PWD/.git/p46-artifact-index" git --work-tree="$PWD/p43-artifact-seeds" add -f -A .
-          SEED_TREE="$(GIT_INDEX_FILE="$PWD/.git/p46-artifact-index" git write-tree)"
-          SEED_COMMIT="$(printf '%s\n' 'P46 local artifact object seed' | git commit-tree "$SEED_TREE")"
-          git update-ref refs/p46-local-artifact-seed "$SEED_COMMIT"
-          git count-objects -vH > p43-artifact-seeds/git-object-count.txt
-          git cat-file --batch-all-objects --batch-check='%(objectname) %(objecttype) %(objectsize)' | sort > p43-artifact-seeds/git-all-objects.txt
-          printf '%s\n' "$SEED_COMMIT" > p43-artifact-seeds/local-seed-commit.txt
+          $env:GIT_AUTHOR_NAME = 'Velmere P46 Exact Windows Bridge'
+          $env:GIT_AUTHOR_EMAIL = 'velmere-p46-bridge@users.noreply.github.com'
+          $env:GIT_COMMITTER_NAME = 'Velmere P46 Exact Windows Bridge'
+          $env:GIT_COMMITTER_EMAIL = 'velmere-p46-bridge@users.noreply.github.com'
+          $env:GIT_INDEX_FILE = (Join-Path $PWD '.git/p46-artifact-seed-index')
+          if (Test-Path $env:GIT_INDEX_FILE) { Remove-Item $env:GIT_INDEX_FILE -Force }
+          git --work-tree="$PWD/p43-artifact-seeds" add -f -A .
+          if ($LASTEXITCODE -ne 0) { throw "Artifact seed add failed: $LASTEXITCODE" }
+          $tree = (git write-tree).Trim()
+          if ([string]::IsNullOrWhiteSpace($tree)) { throw 'Artifact seed tree was not created' }
+          $commit = ("P46 local artifact seed pool`n" | git commit-tree $tree).Trim()
+          if ([string]::IsNullOrWhiteSpace($commit)) { throw 'Artifact seed commit was not created' }
+          git update-ref refs/heads/p46-local-artifact-seed $commit
+          if ($LASTEXITCODE -ne 0) { throw "Artifact seed ref failed: $LASTEXITCODE" }
+          Remove-Item Env:GIT_INDEX_FILE
+          New-Item -ItemType Directory -Force p46-native-windows/diagnostics | Out-Null
+          Get-ChildItem p43-artifact-seeds -Recurse -File | ForEach-Object {
+            "$($_.FullName.Substring($PWD.Path.Length + 1).Replace('\\','/')) $($_.Length)"
+          } | Sort-Object | Set-Content p46-native-windows/diagnostics/downloaded-files.txt
+          git count-objects -vH | Set-Content p46-native-windows/diagnostics/git-object-count.txt
+          $commit | Set-Content p46-native-windows/diagnostics/local-seed-commit.txt
 
       - name: Assemble and verify compact P43 identity
         shell: pwsh
         run: |
-          python p43-bridge/assemble-identity-parts.py --parts-directory p43-bridge/identity-parts --output p43-bridge/p43-source-identity.bin
-          python p43-bridge/verify-identity-bin.py --identity-bin p43-bridge/p43-source-identity.bin --expected-file-count 6666 --expected-payload-bytes 196479563 --expected-path-set-sha256 38eba6c9b7f1761d531bed806cc783d28b540165f199bce385ba6d38842238fa --expected-source-aggregate-sha256 ae505b6f94813767752e344c76c249099fb3e30283b64a3647420eaafbbd8478 --output p43-bridge/identity-assembly-receipt.json
+          $ErrorActionPreference = 'Stop'
+          $parts = @(
+            'p43-bridge/i8s.part-00',
+            'p43-bridge/i8s.part-01',
+            'p43-bridge/i8b.part-00',
+            'p43-bridge/i8b.part-01',
+            'p43-bridge/i8b.part-02',
+            'p43-bridge/i8b.part-03',
+            'p43-bridge/i8b.part-04',
+            'p43-bridge/i8b.part-05',
+            'p43-bridge/i8b.part-06',
+            'p43-bridge/i8b.part-07',
+            'p43-bridge/i8b.part-08'
+          )
+          if (Test-Path 'p43-bridge/i8b.part-09-real') {
+            $parts += 'p43-bridge/i8b.part-09-real'
+          } elseif (Test-Path 'p43-bridge/i8b.part-09') {
+            $parts += 'p43-bridge/i8b.part-09'
+          } else {
+            throw 'Final compact identity block is missing'
+          }
+          foreach ($part in $parts) {
+            if (!(Test-Path $part -PathType Leaf)) { throw "Missing identity block: $part" }
+          }
+          $joined = ($parts | ForEach-Object { (Get-Content $_ -Raw).Trim() }) -join ''
+          [IO.File]::WriteAllText('p43-identity.bin.gz.b64', $joined, [Text.Encoding]::ASCII)
+          $transportSha = (Get-FileHash p43-identity.bin.gz.b64 -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($transportSha -ne '26f191e21dba2cfcd73e3ab00e6b4a8ec2fdd1066ec9aaf2eb4663c7f456b198') {
+            throw "Compact identity transport SHA mismatch: $transportSha"
+          }
+          [IO.File]::WriteAllBytes('p43-identity.bin.gz', [Convert]::FromBase64String($joined))
+          python -c "import gzip,pathlib; pathlib.Path('p43-identity.bin').write_bytes(gzip.decompress(pathlib.Path('p43-identity.bin.gz').read_bytes()))"
+          $identitySha = (Get-FileHash p43-identity.bin -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($identitySha -ne '588acada1e423fa2f52f608c7638bfd23d55229ad8a7078e440ae6198d79cbd0') {
+            throw "Decoded identity SHA mismatch: $identitySha"
+          }
+          @{ transportSha256 = $transportSha; identitySha256 = $identitySha; partCount = $parts.Count } |
+            ConvertTo-Json | Set-Content p46-native-windows/diagnostics/identity-assembly-receipt.json
 
-      - name: Reconstruct exact P43 source from all reachable Git and artifact blobs
+      - name: Reconstruct exact P43 source from every reachable Git and artifact blob
         shell: pwsh
         run: |
-          python p43-bridge/measure-source-coverage-bin.py --identity-bin p43-bridge/p43-source-identity.bin --output p43-bridge/P43_SOURCE_COVERAGE_RECEIPT.json --inventory-output p43-bridge/P43_GITHUB_OBJECT_INVENTORY.json
-          python p43-bridge/run-exact-windows-current-source.py --identity-bin p43-bridge/p43-source-identity.bin --coverage-receipt p43-bridge/P43_SOURCE_COVERAGE_RECEIPT.json --output p43-bridge/P43_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json --source-root p43-exact-source
+          New-Item -ItemType Directory -Force p43-win-work | Out-Null
+          python p43-bridge/measure-source-coverage-bin.py `
+            --repo . `
+            --identity-bin p43-identity.bin `
+            --output-dir p43-win-work `
+            --reconstruct
 
       - name: Apply and verify exact P43 to P46 source patch
         shell: pwsh
         run: |
-          python p46-native-windows/apply-verify-p46-patch.py --base-root p43-exact-source --identity-bin p43-bridge/p43-source-identity.bin --base-coverage-receipt p43-bridge/P43_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json --manifest p46-native-windows/p46-patch-manifest.json --output p46-native-windows/P46_EXACT_SOURCE_PATCH_RECEIPT.json
+          python p46-native-windows/apply-verify-p46-patch.py `
+            --base-root p43-win-work/reconstructed-current-source `
+            --identity-bin p43-identity.bin `
+            --base-coverage-receipt p43-win-work/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json `
+            --manifest p46-native-windows/p46-patch-manifest.json `
+            --output p46-native-windows/P46_EXACT_SOURCE_PATCH_RECEIPT.json
 
       - name: Create clean exact P46 Git worktree and bind current authority
         shell: pwsh
         run: |
-          Push-Location p43-exact-source
+          Push-Location p43-win-work/reconstructed-current-source
           try {
             git init
             git config core.autocrlf false
@@ -113,7 +181,7 @@ jobs:
       - name: Run exact Windows semantic and dual production build
         shell: pwsh
         run: |
-          Push-Location p43-exact-source
+          Push-Location p43-win-work/reconstructed-current-source
           try {
             node scripts/pass42/run-p42-exact-windows-semantic-dual-build.mjs --output "$env:GITHUB_WORKSPACE/p46-native-windows/P46_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json"
           } finally { Pop-Location }
@@ -124,13 +192,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force p46-native-windows/result | Out-Null
           $paths = @(
-            'p43-artifact-seeds/downloaded-files.txt',
-            'p43-artifact-seeds/git-object-count.txt',
-            'p43-artifact-seeds/local-seed-commit.txt',
-            'p43-bridge/identity-assembly-receipt.json',
-            'p43-bridge/P43_SOURCE_COVERAGE_RECEIPT.json',
-            'p43-bridge/P43_GITHUB_OBJECT_INVENTORY.json',
-            'p43-bridge/P43_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json',
+            'p46-native-windows/diagnostics/downloaded-files.txt',
+            'p46-native-windows/diagnostics/git-object-count.txt',
+            'p46-native-windows/diagnostics/local-seed-commit.txt',
+            'p46-native-windows/diagnostics/identity-assembly-receipt.json',
+            'p43-win-work/P43_GITHUB_ALL_REFS_SOURCE_RECONSTRUCTION_COVERAGE.json',
+            'p43-win-work/P43_GITHUB_ALL_REFS_MISSING_SOURCE_ROWS.json',
+            'p43-win-work/P43_GITHUB_ALL_REFS_COVERED_SOURCE_ROWS.json',
             'p46-native-windows/P46_EXACT_SOURCE_PATCH_RECEIPT.json',
             'p46-native-windows/P46_CURRENT_SOURCE_AUTHORITY_RECEIPT.json',
             'p46-native-windows/P46_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json'
@@ -140,8 +208,8 @@ jobs:
               Copy-Item -LiteralPath $path -Destination p46-native-windows/result -Force
             }
           }
-          if (Test-Path -LiteralPath p43-exact-source/p42-out -PathType Container) {
-            Copy-Item -LiteralPath p43-exact-source/p42-out -Destination p46-native-windows/result/p42-out -Recurse -Force
+          if (Test-Path -LiteralPath p43-win-work/reconstructed-current-source/p42-out -PathType Container) {
+            Copy-Item -LiteralPath p43-win-work/reconstructed-current-source/p42-out -Destination p46-native-windows/result/p42-out -Recurse -Force
           }
 
       - name: Upload exact Windows receipts
