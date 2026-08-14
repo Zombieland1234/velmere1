@@ -27,10 +27,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch every branch and tag
+      - name: Fetch every branch, tag and pull-request ref
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune --tags --force
+          $pullRefs = @(git ls-remote origin 'refs/pull/*/head' 'refs/pull/*/merge')
+          if ($pullRefs.Count -eq 0) { throw 'No pull-request refs discovered' }
+          $fetched = 0
+          foreach ($row in $pullRefs) {
+            if ([string]::IsNullOrWhiteSpace($row)) { continue }
+            $columns = $row -split "`t"
+            if ($columns.Count -ne 2) { throw "Unexpected ls-remote row: $row" }
+            $remoteRef = $columns[1]
+            $localRef = $remoteRef -replace '^refs/pull/', 'refs/remotes/pull/'
+            git fetch origin "+$remoteRef`:$localRef" --force
+            if ($LASTEXITCODE -ne 0) { throw "Failed to fetch $remoteRef" }
+            $fetched++
+          }
+          if ($fetched -lt 27) { throw "Expected at least 27 pull refs; fetched $fetched" }
+          Write-Host "Fetched pull-request refs: $fetched"
+          git for-each-ref --format='%(refname)' refs/remotes/pull
 
       - name: Set up exact Node 24.18.0
         uses: actions/setup-node@v4
