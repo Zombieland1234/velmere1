@@ -71,7 +71,7 @@ jobs:
           $joined = ($parts | ForEach-Object { (Get-Content $_ -Raw).Trim() }) -join ''
           [IO.File]::WriteAllText('p43-identity.bin.gz.b64', $joined, [Text.Encoding]::ASCII)
           $sha = (Get-FileHash p43-identity.bin.gz.b64 -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($sha -ne '26f1600434724aa9724064009ab3e1f6b10393e39f4c98a3133b9824735ecfd5') {
+          if ($sha -ne 'fd36e6e80aa677fcfa517f14d5c2466ad9c4f8b4cef213a7a2fa6de0ba8328d5') {
             throw "Compact identity SHA mismatch: $sha"
           }
           $gzip = [Convert]::FromBase64String($joined)
