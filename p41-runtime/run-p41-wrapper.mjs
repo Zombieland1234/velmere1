@@ -44,6 +44,21 @@ if (!runner.includes(oldDigest)) {
   throw new Error('Runner compressed-payload digest binding was not found');
 }
 runner = runner.replace(oldDigest, expectedDigest);
+
+const npmVersionNeedle = "const npmVersion = execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim();";
+if (!runner.includes(npmVersionNeedle)) {
+  throw new Error('Runner npm-version invocation binding was not found');
+}
+runner = runner.replace(
+  npmVersionNeedle,
+  "const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';\nconst npmVersion = execFileSync(npmCommand, ['--version'], { encoding: 'utf8' }).trim();",
+);
+
+const originalRunCount = (runner.match(/run\('npm', \[/g) || []).length;
+if (originalRunCount !== 2) {
+  throw new Error(`Expected exactly two npm run invocations, found ${originalRunCount}`);
+}
+runner = runner.replaceAll("run('npm', [", 'run(npmCommand, [');
 fs.writeFileSync(runnerPath, runner, 'utf8');
 
 await import('./run-p41.mjs');
