@@ -33,7 +33,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           git config core.autocrlf false
           git config core.eol lf
-          git checkout --force HEAD -- p49-build-projection p60-runtime p61-browser
+          git checkout --force HEAD -- p49-build-projection
+          python -c "import pathlib,subprocess; paths=['p60-runtime/build-p60-reconciled-runner.py','p61-browser/run-p61-browser-sku-executions.mjs']; [(pathlib.Path(p).parent.mkdir(parents=True, exist_ok=True), pathlib.Path(p).write_bytes(subprocess.check_output(['git','show',f'HEAD:{p}']))) for p in paths]"
+          if ($LASTEXITCODE -ne 0) { throw "Exact Git blob materialization failed: ${LASTEXITCODE}" }
           $checks = @(
             @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
             @{ Path = 'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json'; Sha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b' },
@@ -136,11 +138,15 @@ jobs:
           Write-Host "Browser: $browser"
           Write-Host "SHA-256: $sha"
 
-      - name: Start exact P60 production server
+      - name: Start exact P60 server and execute Browser Basic Pro Advanced physical journeys
         shell: pwsh
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: '1'
+          P61_BASE_URL: 'http://127.0.0.1:3110'
+          P61_OUTPUT_ROOT: 'p61-out/browser'
+          P61_NODE_MODULES_ROOT: 'p49-work/source/node_modules'
+          P61_BROWSER_EXECUTABLE_PATH: ${{ steps.browser.outputs.path }}
           VELMERE_LENS_SOURCE_TOKEN_SECRET_CURRENT: 'p61-source-token-fixture-secret-2026-08-15-0123456789abcdef'
           VELMERE_LENS_SOURCE_TOKEN_KEY_ID: 'p61-browser-current-execution'
           VELMERE_LENS_RENDER_TOKEN_SECRET_CURRENT: 'p61-render-token-fixture-secret-2026-08-15-fedcba9876543210'
@@ -160,48 +166,29 @@ jobs:
             -RedirectStandardError $stderr `
             -PassThru
           $process.Id | Set-Content p61-out/server/next-start.pid -Encoding ascii
-          $ready = $false
-          for ($i = 0; $i -lt 120; $i++) {
-            if ($process.HasExited) {
-              Get-Content $stdout -ErrorAction SilentlyContinue
-              Get-Content $stderr -ErrorAction SilentlyContinue
-              throw "Next server exited early with code $($process.ExitCode)"
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 120; $i++) {
+              if ($process.HasExited) {
+                Get-Content $stdout -ErrorAction SilentlyContinue
+                Get-Content $stderr -ErrorAction SilentlyContinue
+                throw "Next server exited early with code $($process.ExitCode)"
+              }
+              try {
+                $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3110/en/search' -UseBasicParsing -TimeoutSec 5
+                if ($response.StatusCode -eq 200) { $ready = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
             }
-            try {
-              $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3110/en/search' -UseBasicParsing -TimeoutSec 5
-              if ($response.StatusCode -eq 200) { $ready = $true; break }
-            } catch {}
-            Start-Sleep -Seconds 1
+            if (-not $ready) { throw 'Next server did not become ready within 120 seconds' }
+            Write-Host "P61 server ready, PID=$($process.Id)"
+            node p61-browser/run-p61-browser-sku-executions.mjs
+            if ($LASTEXITCODE -ne 0) { throw "P61 Browser campaign failed: ${LASTEXITCODE}" }
+          } finally {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            Get-Content $stdout -ErrorAction SilentlyContinue
+            Get-Content $stderr -ErrorAction SilentlyContinue
           }
-          if (-not $ready) { throw 'Next server did not become ready within 120 seconds' }
-          Write-Host "P61 server ready, PID=$($process.Id)"
-
-      - name: Execute Browser Basic Pro Advanced physical journeys
-        shell: pwsh
-        env:
-          P61_BASE_URL: 'http://127.0.0.1:3110'
-          P61_OUTPUT_ROOT: 'p61-out/browser'
-          P61_NODE_MODULES_ROOT: 'p49-work/source/node_modules'
-          P61_BROWSER_EXECUTABLE_PATH: ${{ steps.browser.outputs.path }}
-          VELMERE_LENS_SOURCE_TOKEN_SECRET_CURRENT: 'p61-source-token-fixture-secret-2026-08-15-0123456789abcdef'
-          VELMERE_LENS_SOURCE_TOKEN_KEY_ID: 'p61-browser-current-execution'
-        run: |
-          $ErrorActionPreference = 'Stop'
-          node p61-browser/run-p61-browser-sku-executions.mjs
-          if ($LASTEXITCODE -ne 0) { throw "P61 Browser campaign failed: ${LASTEXITCODE}" }
-
-      - name: Stop exact P60 production server
-        if: always()
-        shell: pwsh
-        run: |
-          if (Test-Path -LiteralPath p61-out/server/next-start.pid) {
-            $pidText = (Get-Content -LiteralPath p61-out/server/next-start.pid -Raw).Trim()
-            if ($pidText -match '^\d+$') {
-              Stop-Process -Id ([int]$pidText) -Force -ErrorAction SilentlyContinue
-            }
-          }
-          Get-Content p61-out/server/next-start.stdout.log -ErrorAction SilentlyContinue
-          Get-Content p61-out/server/next-start.stderr.log -ErrorAction SilentlyContinue
 
       - name: Capture P61 workflow boundary
         if: always()
