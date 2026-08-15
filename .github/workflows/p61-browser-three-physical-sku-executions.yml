@@ -34,7 +34,7 @@ jobs:
           git config core.autocrlf false
           git config core.eol lf
           git checkout --force HEAD -- p49-build-projection
-          python -c "import pathlib,subprocess; paths=['p60-runtime/build-p60-reconciled-runner.py','p61-browser/run-p61-browser-sku-executions.mjs']; [(pathlib.Path(p).parent.mkdir(parents=True, exist_ok=True), pathlib.Path(p).write_bytes(subprocess.check_output(['git','show',f'HEAD:{p}']))) for p in paths]"
+          python -c "import pathlib,subprocess; paths=['p60-runtime/build-p60-reconciled-runner.py','p61-browser/run-p61-browser-sku-executions.mjs','p61-browser/P61_VISIBLE_LOCATOR_FIX.patch']; [(pathlib.Path(p).parent.mkdir(parents=True, exist_ok=True), pathlib.Path(p).write_bytes(subprocess.check_output(['git','show',f'HEAD:{p}']))) for p in paths]"
           if ($LASTEXITCODE -ne 0) { throw "Exact Git blob materialization failed: ${LASTEXITCODE}" }
           $checks = @(
             @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
@@ -42,7 +42,8 @@ jobs:
             @{ Path = 'p49-build-projection/reconstruct-p49-direct-projection.py'; Sha256 = '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8' },
             @{ Path = 'p49-build-projection/run-p47-product-windows-projection.mjs'; Sha256 = '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4' },
             @{ Path = 'p60-runtime/build-p60-reconciled-runner.py'; Sha256 = 'b1ebefec74d5c1d50895c01c9092d8e49fde46314eba1f3cdd41e4f570d9e433' },
-            @{ Path = 'p61-browser/run-p61-browser-sku-executions.mjs'; Sha256 = '7a51aa87be9c2bc97d0f73a874c2dc1eb23ad54a375ccfbd3cfe4c3c4848c3f5' }
+            @{ Path = 'p61-browser/run-p61-browser-sku-executions.mjs'; Sha256 = '7a51aa87be9c2bc97d0f73a874c2dc1eb23ad54a375ccfbd3cfe4c3c4848c3f5' },
+            @{ Path = 'p61-browser/P61_VISIBLE_LOCATOR_FIX.patch'; Sha256 = '5582e586e2c9deeecb9bae37e82113d4a14190b5d2894f1d05e11a0dbe2fb051' }
           )
           foreach ($check in $checks) {
             if (-not (Test-Path -LiteralPath $check.Path -PathType Leaf)) { throw "Required P61 file missing: $($check.Path)" }
@@ -52,7 +53,17 @@ jobs:
           $attribute = (git check-attr text -- p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json).Trim()
           if ($LASTEXITCODE -ne 0) { throw "git check-attr failed with exit code ${LASTEXITCODE}" }
           if ($attribute -notmatch 'text: unset$') { throw "P49 byte-preservation attribute is not active: $attribute" }
-          Write-Host 'P61 byte identity preflight: PASS'
+          git apply --check --whitespace=nowarn p61-browser/P61_VISIBLE_LOCATOR_FIX.patch
+          if ($LASTEXITCODE -ne 0) { throw "P61 visible-locator patch check failed: ${LASTEXITCODE}" }
+          git apply --whitespace=nowarn p61-browser/P61_VISIBLE_LOCATOR_FIX.patch
+          if ($LASTEXITCODE -ne 0) { throw "P61 visible-locator patch failed: ${LASTEXITCODE}" }
+          $patchedHarnessSha = (Get-FileHash -LiteralPath p61-browser/run-p61-browser-sku-executions.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($patchedHarnessSha -ne '3300616da2a03a666590d19e32105b0f07b25f4482e8950540a401e3ba85256c') {
+            throw "P61 patched harness mismatch: $patchedHarnessSha"
+          }
+          node --check p61-browser/run-p61-browser-sku-executions.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P61 patched harness parse check failed: ${LASTEXITCODE}" }
+          Write-Host 'P61 byte identity and visible-locator repair preflight: PASS'
 
       - name: Set up exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
