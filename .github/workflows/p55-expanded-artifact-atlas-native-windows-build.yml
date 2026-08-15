@@ -1,0 +1,265 @@
+name: P55 Expanded Artifact Atlas And Native Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p55-expanded-artifact-atlas-native-windows-build.yml'
+      - 'p55-runtime/reconstruct-artifact-atlas.py'
+
+concurrency:
+  group: p55-expanded-artifact-atlas-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  mine-exact-projection:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    outputs:
+      complete: ${{ steps.mine.outputs.complete }}
+    steps:
+      - name: Checkout complete reachable repository history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Install bounded archive support
+        run: python -m pip install --disable-pip-version-check zstandard==0.24.0
+
+      - name: Select and download source-like artifact atlas
+        id: atlas
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p55-artifacts p55-out
+          python - <<'PY'
+          import json, os, re, urllib.request
+          repo='${{ github.repository }}'
+          token=os.environ['GH_TOKEN']
+          headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          rows=[]
+          for page in range(1,10):
+              req=urllib.request.Request(f'https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&page={page}',headers=headers)
+              with urllib.request.urlopen(req) as r: data=json.load(r)
+              chunk=data.get('artifacts',[])
+              rows.extend(chunk)
+              if len(chunk)<100: break
+          positive=re.compile(r'(source|snapshot|projection|bundle|payload|corpus|transport|current|p43|p45|p46|p49|p50|p51|p52|p53)',re.I)
+          negative=re.compile(r'(node[-_ ]?modules|npm[-_ ]?cache|dependency|tarball|browser|chrome|chromium|playwright|foundry|solc|openzeppelin)',re.I)
+          selected=[]; total=0
+          for a in sorted(rows,key=lambda x:(x.get('created_at',''),x.get('id',0)),reverse=True):
+              name=a.get('name',''); size=int(a.get('size_in_bytes') or 0)
+              if a.get('expired') or not positive.search(name) or negative.search(name): continue
+              if size<=0 or size>450_000_000: continue
+              if total+size>1_800_000_000 or len(selected)>=80: continue
+              selected.append({'id':a['id'],'name':name,'size':size,'digest':a.get('digest'),'created_at':a.get('created_at')})
+              total+=size
+          pathlib=__import__('pathlib').Path
+          pathlib('p55-out/P55_SELECTED_ARTIFACT_ATLAS.json').write_text(json.dumps({'count':len(selected),'totalBytes':total,'rows':selected},indent=2)+'\n')
+          print(json.dumps({'count':len(selected),'totalBytes':total}))
+          PY
+          python - <<'PY'
+          import json, os, pathlib, urllib.request
+          repo='${{ github.repository }}'; token=os.environ['GH_TOKEN']
+          headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          atlas=json.loads(pathlib.Path('p55-out/P55_SELECTED_ARTIFACT_ATLAS.json').read_text())
+          for i,a in enumerate(atlas['rows'],1):
+              dest=pathlib.Path('p55-artifacts')/f"{a['id']}.zip"
+              req=urllib.request.Request(f"https://api.github.com/repos/{repo}/actions/artifacts/{a['id']}/zip",headers=headers)
+              with urllib.request.urlopen(req,timeout=300) as r, dest.open('wb') as w:
+                  while True:
+                      chunk=r.read(1024*1024)
+                      if not chunk: break
+                      w.write(chunk)
+              print(f"[{i}/{atlas['count']}] {a['name']} {dest.stat().st_size}")
+          PY
+
+      - name: Reconstruct exact 1597-file projection from expanded atlas
+        id: mine
+        shell: bash
+        run: |
+          set +e
+          python p55-runtime/reconstruct-artifact-atlas.py --repo . --artifacts p55-artifacts --work p55-work --output p55-out
+          code=$?
+          if [[ $code -eq 0 ]]; then echo 'complete=true' >> "$GITHUB_OUTPUT"; else echo 'complete=false' >> "$GITHUB_OUTPUT"; fi
+          echo "reconstructor_exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Canonical verifier against exact manifest
+        if: steps.mine.outputs.complete == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, hashlib, pathlib
+          root=pathlib.Path('p50-existing-branch/manifest-parts')
+          p3=(root/'part-03.b64').read_bytes()[:9201]+(root/'part-03-suffix-from-9201.b64').read_bytes()
+          p56=bytearray((root/'part-05-06.b64').read_bytes()); p56[17052]=105
+          data=b''.join([(root/'part-00.b64').read_bytes(),(root/'part-01-02.b64').read_bytes(),p3,(root/'part-04.b64').read_bytes()[:10000],bytes(p56),(root/'part-07-08.b64').read_bytes(),(root/'part-09.b64').read_bytes()])
+          assert hashlib.sha256(data).hexdigest()=='b8a5b2770d17b894b5622c595a364c55fb2b14eb634b85c82a75b0fa1c3f7806'
+          pathlib.Path('p55-out/P55_TARGET_MANIFEST.tsv.xz.b64').write_bytes(data)
+          PY
+          python p50-existing-branch/reconstruct-p50-existing-branch-projection.py \
+            --checkout-root p55-work/source \
+            --manifest-b64 p55-out/P55_TARGET_MANIFEST.tsv.xz.b64 \
+            --meta p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_META.json \
+            --output-root p55-verified-source \
+            --receipt p55-out/P55_CANONICAL_PROJECTION_VERIFICATION_RECEIPT.json
+
+      - name: Upload P55 mine evidence and exact source when available
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p55-expanded-artifact-atlas-projection
+          path: |
+            p55-out
+            p55-verified-source
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  native-windows-build:
+    needs: mine-exact-projection
+    if: needs.mine-exact-projection.outputs.complete == 'true'
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - name: Checkout control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Download exact verified source
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: p55-expanded-artifact-atlas-projection
+          path: p55-download
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Native Windows exact npm, semantic checks and dual build
+        shell: pwsh
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          CI: '1'
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force p55-windows-out | Out-Null
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          $source=(Resolve-Path p55-download/p55-verified-source).Path
+          $receipt=[ordered]@{schemaVersion='velmere.p55.native-windows-build.v1';status='FAIL';runtime=[ordered]@{node=(node --version).Trim();npm=(npm --version).Trim();image=$env:ImageOS};stages=[ordered]@{};truthBoundary='Exact 1597-file P46 build-relevant projection only.'}
+          function Stage($name,[scriptblock]$cmd){
+            $log="p55-windows-out/$name.log"; $start=[DateTime]::UtcNow.ToString('o'); $code=0
+            try { & $cmd *>&1 | Tee-Object $log; if($null-ne $LASTEXITCODE){$code=$LASTEXITCODE} } catch { $_|Out-String|Add-Content $log; $code=1 }
+            $receipt.stages[$name]=[ordered]@{exitCode=$code;startedAtUtc=$start;endedAtUtc=[DateTime]::UtcNow.ToString('o');log=$log}
+            $receipt|ConvertTo-Json -Depth 12|Set-Content p55-windows-out/P55_NATIVE_WINDOWS_BUILD_RECEIPT.json -Encoding utf8
+            if($code-ne 0){throw "Stage failed: $name"}
+          }
+          Push-Location $source
+          try {
+            Stage 'npm-ci' { node $npmCli ci --ignore-scripts --audit=false --fund=false }
+            Stage 'typescript' { node node_modules/typescript/bin/tsc --noEmit }
+            Stage 'eslint' { node node_modules/eslint/bin/eslint.js . }
+            Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+            Stage 'next-webpack' { node node_modules/next/dist/bin/next build --webpack }
+            Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+            Stage 'next-turbopack' { node node_modules/next/dist/bin/next build --turbopack }
+            $receipt.status='PASS'
+          } finally { Pop-Location; $receipt|ConvertTo-Json -Depth 12|Set-Content p55-windows-out/P55_NATIVE_WINDOWS_BUILD_RECEIPT.json -Encoding utf8 }
+
+      - name: Upload native Windows build evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p55-native-windows-exact-projection-build
+          path: p55-windows-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish-adjudication:
+    needs: [mine-exact-projection, native-windows-build]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Download all P55 evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: p55-*
+          path: p55-publish
+          merge-multiple: true
+
+      - name: Emit and publish stable fail-closed result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MINE_RESULT: ${{ needs.mine-exact-projection.result }}
+          BUILD_RESULT: ${{ needs.native-windows-build.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p55-publish
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          root=pathlib.Path('p55-publish')
+          def load(name):
+              hits=list(root.rglob(name)); return json.loads(hits[0].read_text(encoding='utf-8-sig')) if hits else None
+          mine=load('P55_ARTIFACT_ATLAS_RECONSTRUCTION_RECEIPT.json')
+          build=load('P55_NATIVE_WINDOWS_BUILD_RECEIPT.json')
+          projection_pass=bool(mine and mine.get('status')=='PASS')
+          build_pass=bool(build and build.get('status')=='PASS')
+          decision='PASS_EXACT_PROJECTION_NATIVE_WINDOWS_DUAL_BUILD' if projection_pass and build_pass else ('FAIL_EXPANDED_ATLAS_STILL_MISSING_EXACT_BYTES' if not projection_pass else 'FAIL_NATIVE_WINDOWS_BUILD')
+          out={'schemaVersion':'velmere.p55.fail-closed-adjudication.v1','runId':'${{ github.run_id }}','sha':'${{ github.sha }}','projectionPass':projection_pass,'buildPass':build_pass,'decision':decision,'credit':'P46_BUILD_RELEVANT_WINDOWS_ONLY' if projection_pass and build_pass else 'WITHHELD','mineSummary':mine.get('actual') if mine else None,'frozen':{'fullP46Source':'0/1','browser':'0/3','pdfReplay':'0/1','customerOutputs':'0/17','providerRights':'0/176','materialDeltas':'0/6','saleEligible':'0/17','global':'NO_GO'},'truthBoundary':'No Browser, PDF, customer-output, rights, material-value, sale, production or world-class credit.'}
+          core=json.dumps(out,sort_keys=True,separators=(',',':')).encode(); out['integritySha256']=hashlib.sha256(core).hexdigest()
+          (root/'P55_FAIL_CLOSED_ADJUDICATION.json').write_text(json.dumps(out,indent=2)+'\n')
+          PY
+          python - <<'PY'
+          import base64,json,os,pathlib,urllib.error,urllib.request
+          repo='${{ github.repository }}'; branch='velmere-p47-p46-build-projection-windows-20260815'; token=os.environ['GH_TOKEN']
+          headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'}
+          names=['P55_FAIL_CLOSED_ADJUDICATION.json','P55_ARTIFACT_ATLAS_RECONSTRUCTION_RECEIPT.json','P55_CANONICAL_PROJECTION_VERIFICATION_RECEIPT.json','P55_NATIVE_WINDOWS_BUILD_RECEIPT.json','P55_MISSING_SHA256.tsv','P55_SELECTED_ARTIFACT_ATLAS.json']
+          root=pathlib.Path('p55-publish')
+          for name in names:
+              hits=list(root.rglob(name))
+              if not hits: continue
+              p=hits[0]; remote='p55-results/latest/'+name; api=f'https://api.github.com/repos/{repo}/contents/{remote}'; sha=None
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(api+'?ref='+branch,headers=headers)) as r: sha=json.load(r).get('sha')
+              except urllib.error.HTTPError as e:
+                  if e.code!=404: raise
+              body={'message':'P55: publish '+name,'content':base64.b64encode(p.read_bytes()).decode(),'branch':branch}
+              if sha: body['sha']=sha
+              with urllib.request.urlopen(urllib.request.Request(api,data=json.dumps(body).encode(),headers=headers,method='PUT')) as r: print(remote,json.load(r)['commit']['sha'])
+          PY
+
+      - name: Upload consolidated P55 result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p55-consolidated-fail-closed-result
+          path: p55-publish
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
