@@ -7,6 +7,7 @@ on:
       - velmere-p47-p46-build-projection-windows-20260815
     paths:
       - "p49-build-projection/**"
+      - ".gitattributes"
       - ".github/workflows/p49-native-windows-p46-build-relevant-projection.yml"
 
 concurrency:
@@ -26,6 +27,34 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Enforce and verify byte-exact P49 working tree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          git checkout --force HEAD -- p49-build-projection
+
+          $checks = @(
+            @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
+            @{ Path = 'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json'; Sha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b' },
+            @{ Path = 'p49-build-projection/reconstruct-p49-direct-projection.py'; Sha256 = '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8' },
+            @{ Path = 'p49-build-projection/run-p47-product-windows-projection.mjs'; Sha256 = '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4' }
+          )
+          foreach ($check in $checks) {
+            if (-not (Test-Path -LiteralPath $check.Path -PathType Leaf)) {
+              throw "Required P49 file missing: $($check.Path)"
+            }
+            $actual = (Get-FileHash -LiteralPath $check.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $check.Sha256) {
+              throw "P49 working-tree byte mismatch for $($check.Path): $actual != $($check.Sha256)"
+            }
+          }
+          $attribute = (git check-attr text -- p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "git check-attr failed with exit code ${LASTEXITCODE}" }
+          Write-Host "P49 byte identity preflight: PASS"
+          Write-Host "Attribute: $attribute"
 
       - name: Set up exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -64,7 +93,7 @@ jobs:
             --parts-root p49-build-projection/parts `
             --work-root p49-work `
             --output-root p49-out
-          if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: ${LASTEXITCODE}" }
 
       - name: Execute dependency, SWC, semantic, lint and dual-build campaign
         shell: pwsh
@@ -76,7 +105,7 @@ jobs:
             --source-root p49-work/source `
             --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
             --output-dir p49-out
-          if ($LASTEXITCODE -ne 0) { throw "Native Windows projection campaign failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "Native Windows projection campaign failed: ${LASTEXITCODE}" }
 
       - name: Capture workflow boundary receipt
         if: always()
@@ -84,7 +113,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force p49-out | Out-Null
           $boundary = [ordered]@{
-            schemaVersion = 'velmere.p49.github-workflow-boundary.v1'
+            schemaVersion = 'velmere.p59.github-workflow-boundary.v1'
             runId = '${{ github.run_id }}'
             runAttempt = '${{ github.run_attempt }}'
             workflow = '${{ github.workflow }}'
@@ -97,7 +126,8 @@ jobs:
             npm = (npm --version 2>$null)
             timestampUtc = [DateTime]::UtcNow.ToString('o')
             selfContainedTransportManifestSha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f'
-            truthBoundary = 'This workflow may credit only the exact 1597-file P46 build-relevant projection. It does not prove full 6681-file Windows source closure or any Browser/PDF/customer/value/rights/sale gate.'
+            checkoutBytePolicy = 'p49-build-projection/** -text'
+            truthBoundary = 'This workflow may credit only the exact 1597-file P46 build-relevant projection. It does not prove full 6666-file Windows source closure or any Browser/PDF/customer/value/rights/sale gate.'
           }
           $boundary | ConvertTo-Json -Depth 6 | Set-Content p49-out/P49_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
 
