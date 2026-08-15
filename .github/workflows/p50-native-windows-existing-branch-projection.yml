@@ -56,7 +56,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force p50-out | Out-Null
-          python -c "from pathlib import Path; root=Path('p50-existing-branch/manifest-parts'); names=['part-00.b64','part-01-02.b64','part-03-04.b64','part-05-06.b64','part-07-08.b64','part-09.b64']; Path('p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_MANIFEST.tsv.xz.b64').write_bytes(b''.join((root / name).read_bytes() for name in names))"
+          python -c "from pathlib import Path; root=Path('p50-existing-branch/manifest-parts'); names=['part-00.b64','part-01-02.b64','part-03.b64','part-04.b64','part-05-06.b64','part-07-08.b64','part-09.b64']; Path('p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_MANIFEST.tsv.xz.b64').write_bytes(b''.join((root / name).read_bytes() for name in names))"
           if ($LASTEXITCODE -ne 0) { throw "Projection manifest concatenation failed: $LASTEXITCODE" }
           python p50-existing-branch/reconstruct-p50-existing-branch-projection.py `
             --checkout-root . `
