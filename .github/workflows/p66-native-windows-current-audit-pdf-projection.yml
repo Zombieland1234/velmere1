@@ -1,0 +1,160 @@
+name: P66 Native Windows Current Audit PDF Projection
+
+on:
+  push:
+    branches:
+      - velmere-p66-audit-pdf-full-windows-20260816
+  workflow_dispatch:
+
+concurrency:
+  group: p66-native-windows-current-audit-pdf-projection-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p66-native-windows-current-audit-pdf-projection:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout byte-safe projection branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Enforce P60 projection transport identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          git checkout --force HEAD -- p49-build-projection p60-runtime p66-runtime
+          $checks = @(
+            @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
+            @{ Path = 'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json'; Sha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b' },
+            @{ Path = 'p49-build-projection/reconstruct-p49-direct-projection.py'; Sha256 = '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8' },
+            @{ Path = 'p49-build-projection/run-p47-product-windows-projection.mjs'; Sha256 = '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4' },
+            @{ Path = 'p60-runtime/build-p60-reconciled-runner.py'; Sha256 = 'b1ebefec74d5c1d50895c01c9092d8e49fde46314eba1f3cdd41e4f570d9e433' }
+          )
+          foreach ($check in $checks) {
+            if (-not (Test-Path -LiteralPath $check.Path -PathType Leaf)) { throw "Required file missing: $($check.Path)" }
+            $actual = (Get-FileHash -LiteralPath $check.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $check.Sha256) { throw "Byte mismatch for $($check.Path): $actual != $($check.Sha256)" }
+          }
+          Write-Host 'P66 inherited P60 transport identity: PASS'
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
+          $npmRoot = (npm root --global).Trim()
+          $npmCli = (Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct exact original 1597-file projection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p66-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p66-work `
+            --output-root p66-out
+          if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: $LASTEXITCODE" }
+
+      - name: Apply exact P66 Audit PDF source delta and rebind manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p66-runtime/apply-p66-audit-pdf-delta.py `
+            --source-root p66-work/source `
+            --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --output-manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p66-out/P66_PATCH_AND_MANIFEST.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 source delta failed: $LASTEXITCODE" }
+          $target = 'p66-work/source/lib/security/pro-audit-pdf/render-pro-audit-pdf.ts'
+          $targetSha = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($targetSha -ne '9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530') { throw "P66 target SHA mismatch: $targetSha" }
+          Copy-Item p66-work/P66_BUILD_PROJECTION_MANIFEST.json p66-out/
+
+      - name: Generate P60 reconciled runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p60-runtime/build-p60-reconciled-runner.py `
+            --input p49-build-projection/run-p47-product-windows-projection.mjs `
+            --output p66-work/run-p66-reconciled-windows-projection.mjs `
+            --receipt p66-out/P66_RECONCILED_RUNNER_BUILD_RECEIPT.json
+          if ($LASTEXITCODE -ne 0) { throw "P66 runner generation failed: $LASTEXITCODE" }
+          node --check p66-work/run-p66-reconciled-windows-projection.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P66 generated runner parse check failed: $LASTEXITCODE" }
+          $actual = (Get-FileHash -LiteralPath p66-work/run-p66-reconciled-windows-projection.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne '805d80391fd2b4def259e896e1aadcd3b4bbe130c6374a5bc28a00f760abb6d2') { throw "Generated runner SHA mismatch: $actual" }
+
+      - name: Execute dependency SWC semantic lint and dual build campaign
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.toolchain.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p66-work/run-p66-reconciled-windows-projection.mjs `
+            --source-root p66-work/source `
+            --manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json `
+            --output-dir p66-out
+          if ($LASTEXITCODE -ne 0) { throw "P66 native Windows projection campaign failed: $LASTEXITCODE" }
+
+      - name: Capture P66 workflow boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p66-out | Out-Null
+          $boundary = [ordered]@{
+            schemaVersion = 'velmere.p66.github-workflow-boundary.v1'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            workflow = '${{ github.workflow }}'
+            ref = '${{ github.ref }}'
+            sha = '${{ github.sha }}'
+            runnerOs = '${{ runner.os }}'
+            runnerArch = '${{ runner.arch }}'
+            imageOs = $env:ImageOS
+            node = (node --version 2>$null)
+            npm = (npm --version 2>$null)
+            p66AuditPdfSourceSha256 = '9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530'
+            p66ProjectionFileCount = 1597
+            p66ProjectionPayloadBytes = 20953477
+            p66ProjectionPathSetSha256 = 'b8d9b3c275e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
+            p66ProjectionAggregateSha256 = 'e643dfcc3bc08d5bac89f97aab4cabbaff7d23b36f2ef04d147d9eec609a97d0'
+            truthBoundary = 'Exact Windows engineering proof only for the modified 1597-file build-relevant projection. No final customer, current provider, rights, value, sale, LIVE or WORLD_CLASS promotion.'
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content p66-out/P66_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P66 native Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p66-native-windows-current-audit-pdf-projection
+          path: p66-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
