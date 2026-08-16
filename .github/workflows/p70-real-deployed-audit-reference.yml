@@ -110,7 +110,7 @@ jobs:
           P70_SOLC_ROOT: ${{ github.workspace }}\p70-toolchain
         run: |
           $ErrorActionPreference='Stop'
-          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p70-runtime/test-p70-real-multicall3-audit.mjs
+          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p70-runtime/run-p70-real-multicall3-audit-expanded-rpc.mjs
           if ($LASTEXITCODE -ne 0) { throw "P70 real deployed Audit reference failed: $LASTEXITCODE" }
 
       - name: Capture P70 workflow boundary
@@ -125,7 +125,7 @@ jobs:
             if($r.credit.realDeployedReferenceTarget -eq 1 -and $r.credit.realChainProviderQuorum -eq $true -and $r.credit.sourceRuntimeBinding -eq $true -and $r.credit.realTargetAuditPdfCases -eq 9){ $state='PASS_REAL_REFERENCE_NO_PROMOTION' }
           }
           $b=[ordered]@{
-            schemaVersion='velmere.p70.github-workflow-boundary.v1';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            schemaVersion='velmere.p70.github-workflow-boundary.v2';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
             productSourceChangedSinceP69R2=$false;parentP69R2ProjectionFileCount=1597;parentP69R2ProjectionPayloadBytes=20973109;parentP69R2ProjectionAggregateSha256='e0b5f045c7c20f87c0704b6c8fff8be70655ec98e69c5cf2f4f588207b0bab6f';realReferenceState=$state;
             productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;rightsPassed=2;rightsDenominator=203;customerFinalOutputs=0;auditFinalCustomerPdfs=0;saleEligibleRows=0;live=$false;worldClassProven=$false;
             truthBoundary='P70 executes one real deployed public Audit reference target on exact P69R2 product bytes. It may credit only real-reference source/chain/compiler/deployment/PDF evidence. No customer-final, Audit-final-PDF, provider-rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
