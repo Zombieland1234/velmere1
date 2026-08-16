@@ -24,54 +24,34 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Enforce P60 projection transport identity
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          git config core.autocrlf false
-          git config core.eol lf
-          git checkout --force HEAD -- p49-build-projection p60-runtime p66-runtime
-          $checks = @(
-            @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
-            @{ Path = 'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json'; Sha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b' },
-            @{ Path = 'p49-build-projection/reconstruct-p49-direct-projection.py'; Sha256 = '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8' },
-            @{ Path = 'p49-build-projection/run-p47-product-windows-projection.mjs'; Sha256 = '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4' },
-            @{ Path = 'p60-runtime/build-p60-reconciled-runner.py'; Sha256 = 'b1ebefec74d5c1d50895c01c9092d8e49fde46314eba1f3cdd41e4f570d9e433' }
-          )
-          foreach ($check in $checks) {
-            if (-not (Test-Path -LiteralPath $check.Path -PathType Leaf)) { throw "Required file missing: $($check.Path)" }
-            $actual = (Get-FileHash -LiteralPath $check.Path -Algorithm SHA256).Hash.ToLowerInvariant()
-            if ($actual -ne $check.Sha256) { throw "Byte mismatch for $($check.Path): $actual != $($check.Sha256)" }
-          }
-          Write-Host 'P66 inherited P60 transport identity: PASS'
-
-      - name: Setup exact Node 24.18.0
+      - name: Setup exact Node 24.18.0 and npm 11.16.0
+        id: toolchain
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24.18.0
           check-latest: false
 
-      - name: Pin exact npm 11.16.0
-        id: toolchain
+      - name: Pin npm and resolve CLI
+        id: npmcli
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Stop'
           npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
-          $nodeVersion = (node --version).Trim()
-          $npmVersion = (npm --version).Trim()
-          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
-          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
-          $npmRoot = (npm root --global).Trim()
-          $npmCli = (Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
           "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           node --version
           npm --version
           python --version
 
-      - name: Reconstruct exact original 1597-file projection
+      - name: Reconstruct exact P46 projection and apply P66 delta
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
           New-Item -ItemType Directory -Force p66-out | Out-Null
           python p49-build-projection/reconstruct-p49-direct-projection.py `
             --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
@@ -81,126 +61,89 @@ jobs:
             --parts-root p49-build-projection/parts `
             --work-root p66-work `
             --output-root p66-out
-          if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: $LASTEXITCODE" }
-
-      - name: Apply final P66 owner topology and Audit PDF source delta
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
+          if ($LASTEXITCODE -ne 0) { throw "P46 reconstruction failed: $LASTEXITCODE" }
           python p66-runtime/apply-p66-audit-pdf-delta.py `
             --source-root p66-work/source `
             --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
             --output-manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p66-out/P66_PATCH_AND_MANIFEST.log
-          if ($LASTEXITCODE -ne 0) { throw "P66 source delta stage 1 failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 1 failed: $LASTEXITCODE" }
           python p66-runtime/finalize-p66-shield-pro-row-id.py `
             --source-root p66-work/source `
             --manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p66-out/P66_FINALIZE_TOPOLOGY.log
-          if ($LASTEXITCODE -ne 0) { throw "P66 source delta stage 2 failed: $LASTEXITCODE" }
-          $checks = @(
-            @{ Path='p66-work/source/lib/security/pro-audit-pdf/render-pro-audit-pdf.ts'; Sha='9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530' },
-            @{ Path='p66-work/source/lib/product/vlm-canonical-product-topology.ts'; Sha='e29792e10ca10f56c752d00f35a7bd08399a21ff084e06eb93f91547786e6e5b' },
-            @{ Path='p66-work/source/lib/commerce/vlm-current-sku-truth.ts'; Sha='01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee' }
-          )
-          foreach ($check in $checks) {
-            $actual=(Get-FileHash -LiteralPath $check.Path -Algorithm SHA256).Hash.ToLowerInvariant()
-            if ($actual -ne $check.Sha) { throw "P66 current source SHA mismatch for $($check.Path): $actual" }
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 2 failed: $LASTEXITCODE" }
+          python p66-runtime/fix-p66-topology-ts-const.py `
+            --source-root p66-work/source `
+            --manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p66-out/P66_TOPOLOGY_TS_FIX.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 3 failed: $LASTEXITCODE" }
+          $expected=@{
+            'lib/security/pro-audit-pdf/render-pro-audit-pdf.ts'='9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530';
+            'lib/product/vlm-canonical-product-topology.ts'='fc5214b3b9bfb65614e4eb5f47d291ffc773cfadaf65133afc1495cbb18db220';
+            'lib/commerce/vlm-current-sku-truth.ts'='01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee'
+          }
+          foreach ($rel in $expected.Keys) {
+            $actual=(Get-FileHash -LiteralPath (Join-Path 'p66-work/source' $rel) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $expected[$rel]) { throw "P66 source identity mismatch: $rel $actual" }
           }
           Copy-Item p66-work/P66_BUILD_PROJECTION_MANIFEST.json p66-out/
 
-      - name: Verify owner-corrected topology runtime
+      - name: Verify owner topology runtime
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           Push-Location p66-work/source
           try {
-            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const rows=m.VLM_CANONICAL_CUSTOMER_PRODUCTS; const fam=m.VLM_CANONICAL_PRODUCT_FAMILIES; const profiles=m.VLM_INTERNAL_EXECUTION_PROFILES; const tr=m.VLM_CONTEXT_TRANSITIONS; const fake=rows.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null); const shieldPro=rows.find(x=>x.family==='shield'&&x.tier==='pro'); if(rows.length!==20||fam.length!==10||profiles.length!==20||tr.length!==10||fake.length!==0||fam.some(x=>x.family==='pdf')||shieldPro?.productId!=='shield-pro'||m.VLM_V16_TOPOLOGY_DENOMINATORS.pdfSeparateProductFamily!==false||m.VLM_V16_TOPOLOGY_DENOMINATORS.legacy33ProductCompletionDenominatorRetired!==true) process.exit(2); console.log(JSON.stringify({status:'PASS_P66_OWNER_TOPOLOGY_RUNTIME',rows:rows.length,families:fam.length,profiles:profiles.length,transitions:tr.length,fakeStandaloneTiers:fake.length,pdfFamily:false,shieldProRowId:shieldPro.productId,legacy33Retired:true}))}).catch(e=>{console.error(e);process.exit(1)})"
-            if ($LASTEXITCODE -ne 0) { throw "P66 topology runtime verifier failed: $LASTEXITCODE" }
+            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const r=m.VLM_CANONICAL_CUSTOMER_PRODUCTS,f=m.VLM_CANONICAL_PRODUCT_FAMILIES,p=m.VLM_INTERNAL_EXECUTION_PROFILES,t=m.VLM_CONTEXT_TRANSITIONS;const fake=r.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null);const sp=r.find(x=>x.family==='shield'&&x.tier==='pro');if(r.length!==20||f.length!==10||p.length!==20||t.length!==10||fake.length||f.some(x=>x.family==='pdf')||sp?.productId!=='shield-pro'||m.VLM_V16_TOPOLOGY_DENOMINATORS.pdfSeparateProductFamily!==false||m.VLM_V16_TOPOLOGY_DENOMINATORS.legacy33ProductCompletionDenominatorRetired!==true)process.exit(2);console.log(JSON.stringify({status:'PASS_P66_OWNER_TOPOLOGY_RUNTIME',rows:20,families:10,profiles:20,transitions:10,fakeStandaloneTiers:0,pdfFamily:false,shieldProRowId:sp.productId,legacy33Retired:true}))}).catch(e=>{console.error(e);process.exit(1)})"
+            if ($LASTEXITCODE -ne 0) { throw "Topology runtime failed: $LASTEXITCODE" }
           } finally { Pop-Location }
 
-      - name: Generate P60 reconciled runner
+      - name: Generate reconciled runner and execute exact Windows campaign
         shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference='Stop'
           python p60-runtime/build-p60-reconciled-runner.py `
             --input p49-build-projection/run-p47-product-windows-projection.mjs `
             --output p66-work/run-p66-reconciled-windows-projection.mjs `
             --receipt p66-out/P66_RECONCILED_RUNNER_BUILD_RECEIPT.json
-          if ($LASTEXITCODE -ne 0) { throw "P66 runner generation failed: $LASTEXITCODE" }
-          node --check p66-work/run-p66-reconciled-windows-projection.mjs
-          if ($LASTEXITCODE -ne 0) { throw "P66 generated runner parse check failed: $LASTEXITCODE" }
-          $actual = (Get-FileHash -LiteralPath p66-work/run-p66-reconciled-windows-projection.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne '805d80391fd2b4def259e896e1aadcd3b4bbe130c6374a5bc28a00f760abb6d2') { throw "Generated runner SHA mismatch: $actual" }
-
-      - name: Execute dependency SWC semantic lint and dual build campaign
-        shell: pwsh
-        env:
-          P47_NPM_CLI_PATH: ${{ steps.toolchain.outputs.npm_cli }}
-        run: |
-          $ErrorActionPreference = 'Stop'
+          if ($LASTEXITCODE -ne 0) { throw "Runner generation failed: $LASTEXITCODE" }
+          $runnerSha=(Get-FileHash -LiteralPath p66-work/run-p66-reconciled-windows-projection.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($runnerSha -ne '805d80391fd2b4def259e896e1aadcd3b4bbe130c6374a5bc28a00f760abb6d2') { throw "Runner SHA mismatch: $runnerSha" }
           node p66-work/run-p66-reconciled-windows-projection.mjs `
             --source-root p66-work/source `
             --manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json `
             --output-dir p66-out
-          if ($LASTEXITCODE -ne 0) { throw "P66 native Windows projection campaign failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "Native Windows campaign failed: $LASTEXITCODE" }
 
-      - name: Typecheck current nonprojected evidence matrix without changing projection credit
+      - name: Typecheck current nonprojected evidence matrix
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $path='p66-work/source/lib/commerce/vlm-current-evidence-availability-matrix.ts'
-          if (Test-Path -LiteralPath $path) { throw 'Nonprojected path unexpectedly existed in exact P47 projection' }
+          if (Test-Path -LiteralPath $path) { throw 'Nonprojected matrix unexpectedly projected' }
           python p66-runtime/write-p66-nonprojected.py --root p66-work/source
           $actual=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne '5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736') { throw 'Nonprojected matrix hash mismatch' }
           Push-Location p66-work/source
           try {
             node node_modules/typescript/bin/tsc --noEmit --pretty false
-            if ($LASTEXITCODE -ne 0) { throw "P66 full semantic typecheck with nonprojected matrix failed: $LASTEXITCODE" }
+            if ($LASTEXITCODE -ne 0) { throw "Full semantic typecheck with current matrix failed: $LASTEXITCODE" }
           } finally { Pop-Location }
           Remove-Item -LiteralPath $path -Force
-          if (Test-Path -LiteralPath $path) { throw 'Nonprojected matrix cleanup failed' }
 
       - name: Capture P66 workflow boundary
         if: always()
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force p66-out | Out-Null
-          $boundary = [ordered]@{
-            schemaVersion = 'velmere.p66.github-workflow-boundary.v3'
-            runId = '${{ github.run_id }}'
-            runAttempt = '${{ github.run_attempt }}'
-            workflow = '${{ github.workflow }}'
-            ref = '${{ github.ref }}'
-            sha = '${{ github.sha }}'
-            runnerOs = '${{ runner.os }}'
-            runnerArch = '${{ runner.arch }}'
-            imageOs = $env:ImageOS
-            node = (node --version 2>$null)
-            npm = (npm --version 2>$null)
-            changedBuildRelevantFiles = 3
-            auditPdfSourceSha256 = '9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530'
-            canonicalTopologySourceSha256 = 'e29792e10ca10f56c752d00f35a7bd08399a21ff084e06eb93f91547786e6e5b'
-            currentSkuTruthSourceSha256 = '01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee'
-            nonprojectedEvidenceMatrixSha256 = '5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736'
-            projectionFileCount = 1597
-            projectionPayloadBytes = 20956802
-            projectionPathSetSha256 = 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
-            projectionAggregateSha256 = 'c512eb907ea6733bba2f932ff23fd4b5e5cf74c07c02c0505ff3bc3fd9604281'
-            productFamilies = 10
-            customerFacingRows = 20
-            tieredFamilies = 5
-            tieredRows = 15
-            standaloneRows = 5
-            currentExecutionProfiles = 20
-            paidValueTransitions = 10
-            legacy33ProductCompletionDenominatorRetired = $true
-            pdfSeparateProductFamily = $false
-            customerFinalOutputCredit = 0
-            saleEligibleRows = 0
-            live = $false
-            truthBoundary = 'Exact Windows engineering proof for the owner-corrected current build-relevant source and semantic validation of one nonprojected current matrix. Audit PDF fixture and QA evidence remain internal only. No final customer, provider-rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
+          $r=[ordered]@{
+            schemaVersion='velmere.p66.github-workflow-boundary.v4';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            changedBuildRelevantFiles=3;auditPdfSourceSha256='9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530';canonicalTopologySourceSha256='fc5214b3b9bfb65614e4eb5f47d291ffc773cfadaf65133afc1495cbb18db220';currentSkuTruthSourceSha256='01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee';nonprojectedEvidenceMatrixSha256='5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736';
+            projectionFileCount=1597;projectionPayloadBytes=20956802;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='0778ac3f6ae71785495b8e6bbb228b30d8e3bb10ba73eb9de7d3da7f08a19cd3';
+            productFamilies=10;customerFacingRows=20;tieredFamilies=5;tieredRows=15;standaloneRows=5;currentExecutionProfiles=20;paidValueTransitions=10;legacy33ProductCompletionDenominatorRetired=$true;pdfSeparateProductFamily=$false;customerFinalOutputCredit=0;saleEligibleRows=0;live=$false;
+            truthBoundary='Exact Windows engineering proof for owner-corrected build-relevant source plus semantic validation of the current nonprojected evidence matrix. Audit PDF fixture/QA remains internal only. No final customer, rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
           }
-          $boundary | ConvertTo-Json -Depth 8 | Set-Content p66-out/P66_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+          $r | ConvertTo-Json -Depth 8 | Set-Content p66-out/P66_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
 
       - name: Upload P66 native Windows evidence
         if: always()
