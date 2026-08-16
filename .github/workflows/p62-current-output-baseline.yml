@@ -10,52 +10,66 @@ concurrency:
   group: p62-exact-windows-current-output-baseline
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   p62-current-output-baseline:
     runs-on: windows-2025
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout exact P46 current source branch descendant
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Setup exact Node 24.18.0
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
+          check-latest: false
 
       - name: Setup exact npm 11.16.0 and PDF QA dependencies
         shell: pwsh
         run: |
-          npm install --global npm@11.16.0
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
           python -m pip install --disable-pip-version-check pymupdf pillow pypdf
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node version mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm version mismatch' }
           node --version
           npm --version
           python --version
 
-      - name: Exact dependency closure
+      - name: Exact dependency closure using P60 method
         shell: pwsh
         run: |
-          npm ci
+          $ErrorActionPreference = 'Stop'
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
           npm ls --all *> P62_NPM_LS.txt
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) { Get-Content P62_NPM_LS.txt -Tail 250; throw "npm ls failed: $LASTEXITCODE" }
+          node -e "const p=require('./node_modules/@next/swc-win32-x64-msvc/package.json'); if(!p.version) process.exit(2); console.log('@next/swc-win32-x64-msvc',p.version)"
+          node -e "const p=require('./node_modules/typescript/package.json'); if(!p.version) process.exit(2); console.log('typescript',p.version)"
 
       - name: V16 topology 17 rows and 33 profiles
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run build:p39:v16-topology
           npm run test:p39:v16-topology
 
       - name: Audit Basic Pro Advanced current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run test:pass36:a82
           npm run verify:pass36:a82
 
       - name: Browser Lens PDF full current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run pass36:generate-a83-pdfs
           npm run test:pass36:a83
           python scripts/pass36/qa-a83-browser-lens-pdf-corpus.py
@@ -64,36 +78,42 @@ jobs:
       - name: Shield current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run test:pass36:a84
           npm run verify:pass36:a84
 
       - name: Shield Pro and Shield Map current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run test:pass36:a85
           npm run verify:pass36:a85
 
       - name: Real Markets current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run test:pass36:a86
           npm run verify:pass36:a86
 
       - name: Market Impact and Whale Watch current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run test:pass36:a87
           npm run verify:pass36:a87
 
       - name: Angel and Risk Indicator current-byte fixture execution
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           npm run test:pass36:a88
           npm run verify:pass36:a88
 
       - name: Build P62 current-byte receipt pack
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path P62_RESULT | Out-Null
           $paths = @(
             'artifacts/closure/p39/P39_V16_AUTHORITY_TOPOLOGY_EXACT_NODE24_LINUX.json',
@@ -115,31 +135,36 @@ jobs:
             $manifest += [ordered]@{ path=$p; bytes=$i.Length; sha256=$h }
           }
           $sys = [ordered]@{
-            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v1'
+            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v2'
             generatedAt=(Get-Date).ToUniversalTime().ToString('o')
             runner=$env:RUNNER_OS
             runnerArch=$env:RUNNER_ARCH
-            node=(node --version)
-            npm=(npm --version)
-            gitHead=(git rev-parse HEAD)
+            imageOs=$env:ImageOS
+            node=(node --version).Trim()
+            npm=(npm --version).Trim()
+            python=(python --version 2>&1).Trim()
+            gitHead=(git rev-parse HEAD).Trim()
             branch=$env:GITHUB_REF_NAME
             productFamilies=11
             customerFacingRows=17
             internalExecutionProfiles=33
             executionClass='CURRENT_BYTE_EXACT_WINDOWS_FIXTURE_INTERNAL_ONLY'
+            dependencyInstallPolicy='P60_METHOD_NPM_CI_IGNORE_SCRIPTS_PLUS_NPM_LS_ALL'
             currentProviderDataCredit=0
             rightsCredit=0
             saleEligibleRows=0
-            live=false
+            live=$false
+            worldClassProven=$false
           }
           $sys | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8NoBOM P62_RESULT/P62_EXACT_WINDOWS_EXECUTION_RECEIPT.json
           $manifest | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8NoBOM P62_RESULT/P62_RECEIPT_MANIFEST.json
           Copy-Item P62_NPM_LS.txt P62_RESULT/
 
       - name: Upload P62 receipt pack
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: p62-exact-windows-current-output-baseline
           path: P62_RESULT
           if-no-files-found: error
+          compression-level: 0
           retention-days: 14
