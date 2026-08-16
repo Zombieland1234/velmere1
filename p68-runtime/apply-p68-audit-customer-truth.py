@@ -6,15 +6,12 @@ P66_FILE_COUNT=1597
 P66_PAYLOAD=20956802
 P66_PATHSET='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
 P66_AGG='0778ac3f6ae71785495b8e6bbb228b30d8e3bb10ba73eb9de7d3da7f08a19cd3'
-P68_PAYLOAD=20958924
+P68_PAYLOAD=20958767
 P68_PATHSET=P66_PATHSET
-P68_AGG='d4bddcf0df467142e022e59a0840c37695076be65acd6f29e5339e21a87c574c'
+P68_AGG='6a6ce54cb454da438f7a151b1e8ed5e4681900cafc6df6acb163a93998bfa7d0'
 PATCHES={
 'lib/security/audit-report-assembler.ts': {
-  'beforeSha256':'1592120be048f1f96f08d971fe826376ccb97ab09999d1e4926d51ea21a84f71',
-  'afterSha256':'f3b95f8d43d94ee6087b30a12814cbe78b6ed61bfe3dc186323fbc18af167438',
-  'afterBytes':25026,
-  'replacements':[
+  'beforeSha256':'1592120be048f1f96f08d971fe826376ccb97ab09999d1e4926d51ea21a84f71','afterSha256':'f3b95f8d43d94ee6087b30a12814cbe78b6ed61bfe3dc186323fbc18af167438','afterBytes':25026,'replacements':[
     ('      "Advanced queue only starts after server-side entitlement/payment proof",\n','      "Advanced remains automated-only: no human-review or operator-signoff claim may be introduced by a deeper tier",\n'),
     ('        slot: "advanced_manual_queue",\n','        slot: "advanced_automated_evidence_actions",\n'),
     ('        notes: "Do not expose full operator notes publicly; show only safe upgrade copy.",\n','        notes: "Expose only bounded automated evidence-resolution and retest actions; never imply human review or operator sign-off.",\n'),
@@ -28,37 +25,23 @@ PATCHES={
     ('  const advancedState = manualReview + blocked + missing > 0 ? "manual_review" : "ready";\n','  const advancedState = blocked > 0 ? "blocked" : missing > 0 ? "missing" : partial > 0 ? "partial" : "ready";\n'),
     ('      "PASS2578 składa wynik audytu z poprzednich silników w jeden kontrakt: Basic public, Pro PDF, Advanced manual queue.",\n      "PASS2578 baut aus den bisherigen Engines einen Audit-Vertrag: Basic public, Pro PDF, Advanced manual queue.",\n      "PASS2578 assembles prior engines into one audit contract: Basic public, Pro PDF, Advanced manual queue.",\n','      "PASS2578 składa wynik audytu w jeden kontrakt: Basic prescreen, Pro rozszerzony PDF, Advanced zautomatyzowany evidence/retest appendix bez human review.",\n      "PASS2578 baut das Audit in einen Vertrag: Basic Prescreen, erweitertes Pro-PDF und automatisierter Advanced Evidence/Retest-Anhang ohne Human Review.",\n      "PASS2578 assembles one audit contract: Basic prescreen, extended Pro PDF, and an automated Advanced evidence/retest appendix with no human review.",\n'),
     ('        `Advanced wymaga ${advancedQueue.length} działań manual review przed prywatnym werdyktem.`,\n        `Advanced braucht ${advancedQueue.length} Manual-Review Aktionen vor privatem Urteil.`,\n        `Advanced requires ${advancedQueue.length} manual-review actions before private verdict.`,\n','        `Advanced wymaga ${advancedQueue.length} zautomatyzowanych działań evidence-resolution/retest przed kompletnym werdyktem informacyjnym.`,\n        `Advanced benötigt ${advancedQueue.length} automatisierte Evidence-Resolution/Retest-Aktionen vor einem vollständigen informativen Urteil.`,\n        `Advanced requires ${advancedQueue.length} automated evidence-resolution/retest actions before a complete informational verdict.`,\n'),
-  ],
-},
+  ],},
 'lib/security/audit-report-customer-projection.ts': {
-  'beforeSha256':'606c4f19cd061970e3ce842ada10a29f5499b7629d2e359cfc3908f38a648bf1',
-  'afterSha256':'35825487b6b5bbd90d3a1eeeb1a27a9c131d60fe5a8385509431e4a88c954b50',
-  'afterBytes':5435,
-  'replacements':[
+  'beforeSha256':'606c4f19cd061970e3ce842ada10a29f5499b7629d2e359cfc3908f38a648bf1','afterSha256':'1835fa6a7a521b644500368405a3dd2c7eadc19e8c730ebabb8c81c81d635d9b','afterBytes':5278,'replacements':[
     ('    advancedAction: safeLockedAction(locale),\n','    advancedAction: deliveredTier === "basic" ? safeLockedAction(locale) : clean(section.advancedAction),\n'),
     ('      advancedAction: safeLockedAction(report.locale),\n','      advancedAction: deliveredTier === "basic" ? safeLockedAction(report.locale) : clean(finding.advancedAction),\n'),
-    ('  const advancedQueue: string[] = [];\n','  const advancedQueue: string[] = deliveredTier === "advanced"\n    ? report.advancedQueue.map((line) => clean(line, 900)).filter(Boolean).slice(0, 18)\n    : [];\n'),
-    ('        .filter((slot) => slot.slot !== "advanced_manual_queue")\n','        .filter((slot) => deliveredTier === "advanced" || (slot.slot !== "advanced_manual_queue" && slot.slot !== "advanced_automated_evidence_actions"))\n'),
+    ('        .filter((slot) => slot.slot !== "advanced_manual_queue")\n','        .filter((slot) => slot.slot !== "advanced_manual_queue" && slot.slot !== "advanced_automated_evidence_actions")\n'),
     ('    rule: "Customer projection never exposes Pro evidence to Basic and never exposes Advanced operator actions. Advanced is not for sale and human review is not included.",\n','    rule: "Customer projection never exposes Pro evidence to Basic and never exposes Advanced automated evidence actions below Advanced. Advanced remains not for sale and human review/operator sign-off are not included.",\n'),
-  ],
-},
+  ],},
 'lib/security/audit-account-customer-snapshot.ts': {
-  'beforeSha256':'650d2db723b2ad14f63a8468a331a902701fc3e65352d5905943de20f3588e58',
-  'afterSha256':'3929e379b41a81c9fc38c68a517d861745a0220dc308069733e96d074a68f456',
-  'afterBytes':17106,
-  'replacements':[
+  'beforeSha256':'650d2db723b2ad14f63a8468a331a902701fc3e65352d5905943de20f3588e58','afterSha256':'3929e379b41a81c9fc38c68a517d861745a0220dc308069733e96d074a68f456','afterBytes':17106,'replacements':[
     ('  const sections = unique(decisionSections.map((section) => `${section.title}: ${section.summary}`), 16);\n  const nextSteps = unique(decisionSections.flatMap((section) => section.actions), 16);\n','  const projectedFindings = pipeline.projection.report.topFindings.slice(0, 8);\n  const findingLines = projectedFindings.map((finding) => {\n    const detail = pipeline.deliveredTier === "basic" ? finding.publicLine : finding.proLine;\n    return `Finding [${finding.severity.toUpperCase()}] ${finding.title}: ${detail} | source=${finding.sourceFamily}`;\n  });\n  const findingActions = pipeline.deliveredTier === "basic"\n    ? []\n    : projectedFindings.map((finding) => `Finding action - ${finding.title}: ${finding.advancedAction}`);\n  const sourceTruthLines = [\n    `Source-bound provider receipts: ${pipeline.sourceTruth.providerReceiptCount}`,\n    `Content-bound current receipts: ${pipeline.sourceTruth.contentBoundProviderReceiptCount}`,\n    `Independent upstream roots: ${pipeline.sourceTruth.strictUpstreamRoots.length ? pipeline.sourceTruth.strictUpstreamRoots.join(", ") : "none"}`,\n  ];\n  const sections = unique([\n    ...decisionSections.map((section) => `${section.title}: ${section.summary}`),\n    ...findingLines,\n    ...sourceTruthLines,\n  ], 28);\n  const nextSteps = unique([...decisionSections.flatMap((section) => section.actions), ...findingActions], 24);\n'),
     ('    sections: unique([...sections, ...missingEvidence], 20),\n','    sections: unique([...sections, ...missingEvidence], 32),\n'),
-  ],
-},
+  ],},
 'lib/server/security-route-modules/audit-report-assembler.ts': {
-  'beforeSha256':'eae5402c2a99545549e5184270f88c18ee61739d3c9374d1152ddfdb87870e82',
-  'afterSha256':'a2b3d3e9036a06de4213e309d49cea515e21aacc983280c2979ebaf341d07c1e',
-  'afterBytes':11692,
-  'replacements':[
+  'beforeSha256':'eae5402c2a99545549e5184270f88c18ee61739d3c9374d1152ddfdb87870e82','afterSha256':'a2b3d3e9036a06de4213e309d49cea515e21aacc983280c2979ebaf341d07c1e','afterBytes':11692,'replacements':[
     ('    customerBoundary: "The API returns only the allowed tier projection. Advanced is not for sale; legacy operator actions remain private and do not create customer entitlement or release proof.",\n','    customerBoundary: "The API returns only the allowed tier projection. Advanced is not for sale; deeper automated evidence/retest actions remain gated and do not create human-review, operator-signoff, certification, entitlement or release proof.",\n'),
-  ],
-},
+  ],},
 }
 
 def sha(b:bytes)->str:return hashlib.sha256(b).hexdigest()
@@ -85,4 +68,4 @@ if (len(ordered),payload,pathset,aggregate)!=(P66_FILE_COUNT,P68_PAYLOAD,P68_PAT
 manifest['projection']['payloadBytes']=payload;manifest['projection']['pathSetSha256']=pathset;manifest['projection']['sourceContentAggregateSha256']=aggregate
 manifest['p68Delta']={'classification':'OWNER_AUDIT_CUSTOMER_ARTIFACT_TRUTH_NO_RELEASE_PROMOTION','changedBuildRelevantFiles':changed,'customerFinalOutputCredit':0,'auditFinalCustomerPdfCredit':0,'rightsCredit':0,'saleCredit':0,'live':False,'truthBoundary':'P68 corrects active Audit customer artifact semantics, binds findings/remediation/source-currentness into immutable customer snapshots, and removes positive manual-review semantics from the active assembler. No fixture or source change promotes a real customer output, rights clearance, paid value, sale, LIVE or WORLD_CLASS readiness.'}
 Path(a.output_manifest).write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
-print(json.dumps({'schemaVersion':'velmere.p68.audit-customer-truth-projection-patch.v2','status':'PASS','changedFiles':changed,'fileCount':len(ordered),'payloadBytes':payload,'pathSetSha256':pathset,'aggregateSha256':aggregate,'customerFinalOutputCredit':0,'auditFinalCustomerPdfCredit':0,'rightsCredit':0,'saleCredit':0,'live':False,'truthBoundary':manifest['p68Delta']['truthBoundary']},indent=2))
+print(json.dumps({'schemaVersion':'velmere.p68.audit-customer-truth-projection-patch.v3','status':'PASS','changedFiles':changed,'fileCount':len(ordered),'payloadBytes':payload,'pathSetSha256':pathset,'aggregateSha256':aggregate,'customerFinalOutputCredit':0,'auditFinalCustomerPdfCredit':0,'rightsCredit':0,'saleCredit':0,'live':False,'truthBoundary':manifest['p68Delta']['truthBoundary']},indent=2))
