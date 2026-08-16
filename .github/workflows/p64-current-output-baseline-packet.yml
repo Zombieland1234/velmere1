@@ -1,0 +1,121 @@
+name: P64 current-output baseline packet exact Windows
+
+on:
+  push:
+    branches:
+      - velmere-p64-current-output-baseline-20260816
+    paths:
+      - "p64-baseline/**"
+      - ".github/workflows/p64-current-output-baseline-packet.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: p64-current-output-baseline-packet-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p64-baseline-packet:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout P64 baseline branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          node --version
+          npm --version
+
+      - name: Validate P64 17-row 33-profile compact baseline packet
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = 'p64-baseline/P64_WINDOWS_COMPACT_BASELINE_PACKET.json'
+          if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw 'P64 packet missing' }
+          $raw = Get-Content -LiteralPath $path -Raw
+          $packet = $raw | ConvertFrom-Json
+          $sha = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+          $bytes = (Get-Item -LiteralPath $path).Length
+          if ($packet.schemaVersion -ne 'velmere.p64.windows-compact-baseline-packet.v1') { throw 'schema mismatch' }
+          if ($packet.denominators.productFamilies -ne 11) { throw 'family denominator mismatch' }
+          if ($packet.denominators.customerFacingRowsBaselineCaptured -ne 17) { throw 'customer baseline mismatch' }
+          if ($packet.denominators.internalProfilesBaselineCaptured -ne 33) { throw 'profile baseline mismatch' }
+          if ($packet.denominators.customerFacingRowsFinalCustomerOutput -ne 0) { throw 'false final customer promotion' }
+          if ($packet.denominators.internalProfilesFinalCustomerOutput -ne 0) { throw 'false final profile promotion' }
+          if ($packet.denominators.legalSourceFieldsPassed -ne 0) { throw 'false rights promotion' }
+          if ($packet.denominators.saleEligibleRows -ne 0) { throw 'false sale promotion' }
+          $profiles = @($packet.profiles)
+          if ($profiles.Count -ne 33) { throw "profile count mismatch: $($profiles.Count)" }
+          $families = @($profiles | Select-Object -ExpandProperty f -Unique)
+          if ($families.Count -ne 11) { throw "family count mismatch: $($families.Count)" }
+          foreach ($f in $families) {
+            $rows = @($profiles | Where-Object { $_.f -eq $f })
+            if ($rows.Count -ne 3) { throw "context count mismatch for $f" }
+            $ctx = @($rows | Select-Object -ExpandProperty c -Unique | Sort-Object)
+            if (($ctx -join ',') -ne 'ADVANCED_CONTEXT,BASIC_CONTEXT,PRO_CONTEXT') { throw "context set mismatch for $f" }
+          }
+          foreach ($row in $profiles) {
+            if ([int]$row.n -le 0) { throw "empty profile: $($row.f)/$($row.c)" }
+            if ($row.a -notmatch '^[0-9a-f]{64}$') { throw 'aggregate hash malformed' }
+            if ($row.x -notmatch '^[0-9a-f]{64}$') { throw 'capture hash malformed' }
+            if (@('FIXTURE_INTERNAL_ONLY','SYNTHETIC_INTERNAL_ONLY') -notcontains [string]$row.t) { throw "unexpected truth class: $($row.t)" }
+          }
+          if (@($packet.sourceBindings).Count -ne 11) { throw 'source binding count mismatch' }
+          if (@($packet.sourceReceiptBindings).Count -ne 4) { throw 'receipt binding count mismatch' }
+          if (-not $packet.invariants.allFinalCustomerOutputCreditFalse) { throw 'final output invariant false' }
+          if (-not $packet.invariants.allSaleFalse) { throw 'sale invariant false' }
+          if (-not $packet.invariants.allLiveFalse) { throw 'live invariant false' }
+          New-Item -ItemType Directory -Force -Path P64_RESULT | Out-Null
+          $receipt = [ordered]@{
+            schemaVersion='velmere.p64.exact-windows-baseline-packet-receipt.v1'
+            generatedAt=[DateTime]::UtcNow.ToString('o')
+            runId='${{ github.run_id }}'
+            runAttempt='${{ github.run_attempt }}'
+            gitHead='${{ github.sha }}'
+            gitRef='${{ github.ref }}'
+            runnerOs='${{ runner.os }}'
+            runnerArch='${{ runner.arch }}'
+            imageOs=$env:ImageOS
+            node=(node --version).Trim()
+            npm=(npm --version).Trim()
+            packetSha256=$sha
+            packetBytes=$bytes
+            productFamilies=11
+            customerRowsBaselineCaptured=17
+            internalProfilesBaselineCaptured=33
+            finalCustomerRows=0
+            finalProfiles=0
+            rightsPassed=0
+            saleEligibleRows=0
+            status='PASS_P64_EXACT_WINDOWS_CURRENT_SOURCE_BOUND_BASELINE_PACKET_NO_PROMOTION'
+            truthBoundary='Exact Windows/Node24 validation of compact P64 baseline metadata only. No product source re-execution; no final customer output/current provider/rights/value/sale/LIVE/WORLD_CLASS promotion.'
+          }
+          $receipt | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath P64_RESULT/P64_EXACT_WINDOWS_BASELINE_PACKET_RECEIPT.json -Encoding utf8
+          Copy-Item -LiteralPath $path -Destination P64_RESULT/
+          Write-Host "P64 packet PASS: 11 families / 17 rows baseline / 33 profiles baseline / 0 final / 0 rights / 0 sale"
+
+      - name: Upload P64 exact Windows baseline receipts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p64-current-output-baseline-exact-windows
+          path: P64_RESULT
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
