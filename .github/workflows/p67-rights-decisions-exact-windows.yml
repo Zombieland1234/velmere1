@@ -39,9 +39,12 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $path='p67-windows/P67_WINDOWS_COMPACT_PACKET.json'
-          $sha=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($sha -ne '8b95ac62ea4bdac902b356c9dbbe8c97da68ceeeeb94f2b85fdfcd9bb893f0ea') { throw "packet hash mismatch: $sha" }
-          $p=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+          $raw=[IO.File]::ReadAllText($path)
+          $normalized=$raw.Replace("`r`n","`n")
+          $bytes=[Text.Encoding]::UTF8.GetBytes($normalized)
+          $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
+          if ($sha -ne '8b95ac62ea4bdac902b356c9dbbe8c97da68ceeeeb94f2b85fdfcd9bb893f0ea') { throw "normalized packet hash mismatch: $sha" }
+          $p=$normalized | ConvertFrom-Json
           if ($p.schemaVersion -ne 'velmere.p67.windows-compact-rights-decisions-packet.v1') { throw 'schema mismatch' }
           if ($p.parentP66.githubHead -ne 'd91251cdf09b0af978228a26b2b9cd9b24ea91da') { throw 'parent head mismatch' }
           if ($p.parentP66.nativeWindowsRunId -ne '31963801473') { throw 'parent Windows receipt mismatch' }
@@ -64,7 +67,7 @@ jobs:
             gitHead='${{ github.sha }}';
             gitRef='${{ github.ref }}';
             runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;
-            node=(node --version).Trim();npm=(npm --version).Trim();packetSha256=$sha;
+            node=(node --version).Trim();npm=(npm --version).Trim();normalizedPacketSha256=$sha;
             parentP66NativeWindowsRunId='31963801473';parentP66HardGates='12/12 PASS inherited by byte-identical parent only';
             productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;
             correctedRightsDenominator=199;rightsPassed=0;customerRowsSourceFallbackDecision=20;internalProfilesSourceFallbackDecision=20;
@@ -73,7 +76,7 @@ jobs:
             truthBoundary=$p.truthBoundary
           }
           $r | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath P67_RESULT/P67_EXACT_WINDOWS_RIGHTS_DECISIONS_RECEIPT.json -Encoding utf8
-          Copy-Item -LiteralPath $path -Destination P67_RESULT/
+          [IO.File]::WriteAllText((Join-Path $PWD 'P67_RESULT/P67_WINDOWS_COMPACT_PACKET_LF.json'),$normalized,[Text.UTF8Encoding]::new($false))
           Write-Host 'P67 exact Windows packet PASS: rights 0/199; source/fallback decisions 20/20 + profiles 20/20; final outputs 0/20.'
 
       - name: Upload P67 receipts
