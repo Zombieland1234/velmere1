@@ -19,7 +19,7 @@ permissions:
 jobs:
   p66-current-source:
     runs-on: windows-2025
-    timeout-minutes: 150
+    timeout-minutes: 180
     steps:
       - name: Checkout P66 transport branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -48,11 +48,20 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $zip='p66-transport/P66_EXACT_WINDOWS_TRANSPORT.zip'
           $expectedSha='30564c47580b1234b54c080554c6bcea5a8340484350a5b5c0f6619a89c744b0'
           $expectedBytes=53260
-          if ((Get-Item $zip).Length -ne $expectedBytes) { throw 'P66 transport byte mismatch' }
-          if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedSha) { throw 'P66 transport hash mismatch' }
+          $chunks=Get-ChildItem -LiteralPath 'p66-transport/chunks' -Filter 'part*.txt' | Sort-Object Name
+          if ($chunks.Count -ne 6) { throw "Expected 6 P66 base64 chunks, got $($chunks.Count)" }
+          $b64=''
+          foreach ($chunk in $chunks) { $b64 += (Get-Content -LiteralPath $chunk.FullName -Raw).Trim() }
+          $bytes=[Convert]::FromBase64String($b64)
+          $zip='P66_EXACT_WINDOWS_TRANSPORT.zip'
+          [IO.File]::WriteAllBytes((Join-Path $PWD $zip),$bytes)
+          $actualBytes=(Get-Item $zip).Length
+          $actualSha=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "P66 reconstructed transport: $actualSha / $actualBytes B"
+          if ($actualBytes -ne $expectedBytes) { throw "P66 transport byte mismatch: $actualBytes != $expectedBytes" }
+          if ($actualSha -ne $expectedSha) { throw "P66 transport hash mismatch: $actualSha != $expectedSha" }
           Remove-Item -Recurse -Force p66-overlay -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Path p66-overlay | Out-Null
           Expand-Archive -LiteralPath $zip -DestinationPath p66-overlay -Force
@@ -67,6 +76,7 @@ jobs:
             New-Item -ItemType Directory -Force -Path (Split-Path $to -Parent) | Out-Null
             Copy-Item -LiteralPath $from -Destination $to -Force
           }
+          'PASS' | Set-Content P66_TRANSPORT_PASS.txt
           Write-Host "P66 exact source delta overlay PASS: $($manifest.files.Count) files"
 
       - name: P66 owner topology current-source verification
@@ -77,6 +87,7 @@ jobs:
           $ErrorActionPreference='Stop'
           node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass66/verify-p66-owner-topology.ts | Tee-Object -FilePath P66_TOPOLOGY_STDOUT.json
           if ($LASTEXITCODE -ne 0) { throw "P66 topology verification failed: $LASTEXITCODE" }
+          'PASS' | Set-Content P66_TOPOLOGY_PASS.txt
 
       - name: P66 Audit PDF two-process exact generation
         shell: pwsh
@@ -94,10 +105,10 @@ jobs:
           if ($a.rows.Count -ne 9 -or $b.rows.Count -ne 9) { throw 'Audit PDF denominator mismatch' }
           $lines=@()
           foreach ($row in ($a.rows | Sort-Object tier,locale)) {
-            $match=$b.rows | Where-Object { $_.tier -eq $row.tier -and $_.locale -eq $row.locale }
+            $match=@($b.rows | Where-Object { $_.tier -eq $row.tier -and $_.locale -eq $row.locale })
             if ($match.Count -ne 1) { throw "missing replay row $($row.tier)/$($row.locale)" }
             $pa=Join-Path $PWD $row.pdfPath
-            $pb=Join-Path $PWD $match.pdfPath
+            $pb=Join-Path $PWD $match[0].pdfPath
             $ha=(Get-FileHash $pa -Algorithm SHA256).Hash.ToLowerInvariant()
             $hb=(Get-FileHash $pb -Algorithm SHA256).Hash.ToLowerInvariant()
             if ($ha -ne $hb -or $ha -ne [string]$row.pdfSha256) { throw "Audit PDF replay mismatch $($row.tier)/$($row.locale)" }
@@ -109,6 +120,7 @@ jobs:
           [IO.File]::WriteAllText($tmp,$aggregateText,[Text.UTF8Encoding]::new($false))
           $aggregate=(Get-FileHash $tmp -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($aggregate -ne 'a4b47efa99ef11757354382269317d48972a25727f01521c276a87642e1077bb') { throw "cross-OS Audit PDF aggregate mismatch: $aggregate" }
+          'PASS' | Set-Content P66_AUDIT_REPLAY_PASS.txt
           Write-Host "P66 Audit PDF exact Windows PASS: 9/9 x 2 byte-identical; aggregate=$aggregate"
 
       - name: Install PDF QA tools
@@ -132,6 +144,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "P66 Audit PDF QA runA failed: $LASTEXITCODE" }
           python scripts/pass66/qa-audit-tier-customer-pdfs.py runB
           if ($LASTEXITCODE -ne 0) { throw "P66 Audit PDF QA runB failed: $LASTEXITCODE" }
+          'PASS' | Set-Content P66_AUDIT_QA_PASS.txt
 
       - name: Exact dependency install and full TypeScript
         shell: pwsh
@@ -139,8 +152,11 @@ jobs:
           $ErrorActionPreference='Stop'
           npm ci --ignore-scripts --include=dev --audit=false --fund=false
           if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $LASTEXITCODE" }
+          node -e "const p=require('./node_modules/typescript/package.json'); console.log('typescript',p.version)"
+          node -e "const p=require('./node_modules/@next/swc-win32-x64-msvc/package.json'); console.log('@next/swc-win32-x64-msvc',p.version)"
           npm run typecheck
           if ($LASTEXITCODE -ne 0) { throw "full TypeScript failed: $LASTEXITCODE" }
+          'PASS' | Set-Content P66_TYPECHECK_PASS.txt
 
       - name: Targeted zero-warning ESLint for current P66 source
         shell: pwsh
@@ -148,6 +164,29 @@ jobs:
           $ErrorActionPreference='Stop'
           npx eslint --max-warnings 0 lib/product/vlm-current-product-topology.ts lib/commerce/vlm-current-sku-truth.ts lib/commerce/vlm-current-evidence-availability-matrix.ts lib/server/lazy-route-modules/angel.ts lib/security/customer-safe-audit-layout.ts lib/security/audit-tier-customer-pdf.ts scripts/pass66/verify-p66-owner-topology.ts scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts
           if ($LASTEXITCODE -ne 0) { throw "P66 targeted ESLint failed: $LASTEXITCODE" }
+          'PASS' | Set-Content P66_LINT_PASS.txt
+
+      - name: Exact Windows Webpack build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+          npm run check:i18n
+          if ($LASTEXITCODE -ne 0) { throw "i18n check failed: $LASTEXITCODE" }
+          npm run vercel:preflight
+          if ($LASTEXITCODE -ne 0) { throw "vercel preflight failed: $LASTEXITCODE" }
+          npx next build --webpack
+          if ($LASTEXITCODE -ne 0) { throw "Webpack build failed: $LASTEXITCODE" }
+          'PASS' | Set-Content P66_WEBPACK_PASS.txt
+
+      - name: Exact Windows Turbopack build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+          npx next build --turbopack
+          if ($LASTEXITCODE -ne 0) { throw "Turbopack build failed: $LASTEXITCODE" }
+          'PASS' | Set-Content P66_TURBOPACK_PASS.txt
 
       - name: Build P66 exact Windows receipt pack
         if: always()
@@ -164,7 +203,7 @@ jobs:
           )
           foreach ($p in $copy) { if (Test-Path $p) { Copy-Item $p P66_RESULT/ } }
           $receipt=[ordered]@{
-            schemaVersion='velmere.p66.exact-windows-owner-topology-audit-pdf.v1'
+            schemaVersion='velmere.p66.exact-windows-owner-topology-audit-pdf.v2'
             generatedAt=[DateTime]::UtcNow.ToString('o')
             runId='${{ github.run_id }}'
             runAttempt='${{ github.run_attempt }}'
@@ -176,20 +215,32 @@ jobs:
             node=(node --version 2>$null)
             npm=(npm --version 2>$null)
             transportSha256='30564c47580b1234b54c080554c6bcea5a8340484350a5b5c0f6619a89c744b0'
+            transportPass=(Test-Path P66_TRANSPORT_PASS.txt)
+            topologyPass=(Test-Path P66_TOPOLOGY_PASS.txt)
+            auditTwoProcessReplayPass=(Test-Path P66_AUDIT_REPLAY_PASS.txt)
+            auditPdfQaPass=(Test-Path P66_AUDIT_QA_PASS.txt)
+            fullTypeScriptPass=(Test-Path P66_TYPECHECK_PASS.txt)
+            targetedZeroWarningLintPass=(Test-Path P66_LINT_PASS.txt)
+            webpackBuildPass=(Test-Path P66_WEBPACK_PASS.txt)
+            turbopackBuildPass=(Test-Path P66_TURBOPACK_PASS.txt)
             correctedProductFamilies=10
             correctedCustomerRows=20
             correctedPrimaryInternalContexts=20
             legacyHistoricalContexts=33
             materialTierTransitions=10
             requiredPdfArtifactSlots=6
-            auditFixturePdfSlotsExecuted=9
+            auditRequiredPdfArtifactSlots=3
+            auditFixturePdfLocaleCasesExecuted=9
+            auditFixturePdfProcessExecutions=18
             auditFinalCustomerPdfSlots=0
             finalCustomerRows=0
+            finalPrimaryInternalContexts=0
             rightsFieldsPassed=0
+            paidSaleCandidateRows=10
             paidSaleEligibleRows=0
             live=$false
             worldClassProven=$false
-            truthBoundary='Exact Windows current-source overlay verifies owner-corrected topology mechanics, Audit tier-PDF fixture mechanics, deterministic PDF bytes, PDF structural/render QA, TypeScript and targeted lint. It does not prove real customer findings, production route execution, current provider completeness, legal counsel approval, material paid value, sale, LIVE or WORLD_CLASS.'
+            truthBoundary='Exact Windows current-source overlay verifies owner-corrected topology mechanics, Audit tier-PDF fixture mechanics, deterministic PDF bytes, PDF structural/render QA, semantic TypeScript, targeted zero-warning lint and records current dual-build state. Fixture evidence does not prove real customer findings, production route execution, current provider completeness, legal counsel approval, material paid value, sale, LIVE or WORLD_CLASS.'
           }
           $receipt | ConvertTo-Json -Depth 8 | Set-Content P66_RESULT/P66_EXACT_WINDOWS_RECEIPT.json -Encoding utf8
           Get-ChildItem P66_RESULT -File | ForEach-Object { "{0}  {1}" -f ((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()),$_.Name } | Set-Content P66_RESULT/P66_RESULT_SHA256.txt -Encoding utf8
