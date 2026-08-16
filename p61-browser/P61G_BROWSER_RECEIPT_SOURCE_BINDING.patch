@@ -1,6 +1,18 @@
 --- a/p61-browser/run-p61-browser-sku-executions.mjs
 +++ b/p61-browser/run-p61-browser-sku-executions.mjs
-@@ -451,9 +451,9 @@
+@@ -359,6 +359,10 @@
+       await page.waitForTimeout(1200);
+       page.off('response', listener);
+       const downloadLink = visibleTestId(page, 'lens-download-link');
++      const pdfToggle = visibleTestId(page, 'lens-pdf-toggle');
++      await pdfToggle.waitFor({ state: 'visible', timeout: 30_000 });
++      await pdfToggle.click();
+       const frame = visibleTestId(page, 'lens-pdf-frame');
++      await frame.waitFor({ state: 'visible', timeout: 30_000 });
+       const downloadHref = await downloadLink.getAttribute('href');
+       const frameSrc = await frame.getAttribute('src');
+       const downloadName = await downloadLink.getAttribute('download');
+@@ -451,9 +455,9 @@
  const tiers = ['basic', 'pro', 'advanced'].map(summarizeTier);
  const allPass = !topLevelError && rows.length === cases.length && rows.every((row) => row.ok) && tiers.every((tier) => tier.pass);
  const receipt = {
@@ -12,7 +24,7 @@
    executedAt: new Date().toISOString(),
    sourceBinding: {
      projectionManifestSha256: EXPECTED_PROJECTION_MANIFEST_SHA256,
-@@ -461,3 +461,12 @@
+@@ -461,3 +465,12 @@
      projection: EXPECTED_PROJECTION,
      p60EngineeringDecision: 'PASS_NATIVE_WINDOWS_EXACT_BUILD_RELEVANT_PROJECTION_SEMANTIC_LINT_DUAL_BUILD_WITH_CONTROLLED_NEXT_ENV_RECONCILIATION',
 +    controlledP61gSourceDelta: {
@@ -25,7 +37,7 @@
 +      sourceEngineeringReceipt: 'P61G_OFFICIAL_MANROPE_RENDERER_SOURCE_ENGINEERING_RECEIPT.json',
 +    },
    },
-@@ -504,7 +513,7 @@
+@@ -504,7 +517,7 @@
    tiers,
    rows,
    topLevelError,
