@@ -1,0 +1,139 @@
+name: P62 exact Windows current-output baseline
+
+on:
+  push:
+    branches:
+      - velmere-p62-current-output-baseline-20260816
+  workflow_dispatch:
+
+jobs:
+  p62-current-output-baseline:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact P46 current source branch descendant
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Setup exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0
+          node --version
+          npm --version
+
+      - name: Exact dependency closure
+        shell: pwsh
+        run: |
+          npm ci
+          npm ls --all *> P62_NPM_LS.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: V16 topology 17 rows and 33 profiles
+        shell: pwsh
+        run: |
+          npm run build:p39:v16-topology
+          npm run test:p39:v16-topology
+
+      - name: Audit Basic Pro Advanced current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run test:pass36:a82
+          npm run verify:pass36:a82
+
+      - name: Browser Lens PDF full current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run pass36:generate-a83-pdfs
+          npm run test:pass36:a83
+          python scripts/pass36/qa-a83-browser-lens-pdf-corpus.py
+          npm run verify:pass36:a83
+
+      - name: Shield current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run test:pass36:a84
+          npm run verify:pass36:a84
+
+      - name: Shield Pro and Shield Map current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run test:pass36:a85
+          npm run verify:pass36:a85
+
+      - name: Real Markets current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run test:pass36:a86
+          npm run verify:pass36:a86
+
+      - name: Market Impact and Whale Watch current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run test:pass36:a87
+          npm run verify:pass36:a87
+
+      - name: Angel and Risk Indicator current-byte fixture execution
+        shell: pwsh
+        run: |
+          npm run test:pass36:a88
+          npm run verify:pass36:a88
+
+      - name: Build P62 current-byte receipt pack
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path P62_RESULT | Out-Null
+          $paths = @(
+            'artifacts/closure/p39/P39_V16_PRODUCT_TOPOLOGY.json',
+            'artifacts/pass36/a82/PASS36_A82_FIXTURE_RUNTIME.json',
+            'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_FIXTURE_RUNTIME.json',
+            'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_RASTER_QA_RECEIPT.json',
+            'artifacts/pass36/a84/PASS36_A84_SHIELD_FULL_CATALOG_RUNTIME.json',
+            'artifacts/pass36/a85/PASS36_A85_SHIELD_PRO_MAP_FULL_DEPTH_RUNTIME.json',
+            'artifacts/pass36/a86/PASS36_A86_REAL_MARKETS_CROSS_ASSET_RUNTIME.json',
+            'artifacts/pass36/a87/PASS36_A87_MARKET_IMPACT_WHALE_RUNTIME.json',
+            'artifacts/pass36/a88/PASS36_A88_BRAIN_ANGEL_RISK_EVAL_RUNTIME.json'
+          )
+          $manifest = @()
+          foreach ($p in $paths) {
+            if (-not (Test-Path $p)) { throw "Missing expected P62 receipt: $p" }
+            Copy-Item $p P62_RESULT/
+            $i = Get-Item $p
+            $h = (Get-FileHash -Algorithm SHA256 $p).Hash.ToLowerInvariant()
+            $manifest += [ordered]@{ path=$p; bytes=$i.Length; sha256=$h }
+          }
+          $sys = [ordered]@{
+            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v1'
+            generatedAt=(Get-Date).ToUniversalTime().ToString('o')
+            runner=$env:RUNNER_OS
+            runnerArch=$env:RUNNER_ARCH
+            node=(node --version)
+            npm=(npm --version)
+            gitHead=(git rev-parse HEAD)
+            branch=$env:GITHUB_REF_NAME
+            productFamilies=11
+            customerFacingRows=17
+            internalExecutionProfiles=33
+            executionClass='CURRENT_BYTE_EXACT_WINDOWS_FIXTURE_INTERNAL_ONLY'
+            currentProviderDataCredit=0
+            rightsCredit=0
+            saleEligibleRows=0
+            live=false
+          }
+          $sys | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8NoBOM P62_RESULT/P62_EXACT_WINDOWS_EXECUTION_RECEIPT.json
+          $manifest | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8NoBOM P62_RESULT/P62_RECEIPT_MANIFEST.json
+          Copy-Item P62_NPM_LS.txt P62_RESULT/
+
+      - name: Upload P62 receipt pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: p62-exact-windows-current-output-baseline
+          path: P62_RESULT
+          if-no-files-found: error
+          retention-days: 14
