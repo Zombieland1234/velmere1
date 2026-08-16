@@ -1,0 +1,131 @@
+name: P69 Native Windows ECB Reference FX Customer Envelope V2
+
+on:
+  push:
+    branches:
+      - velmere-p69-ecb-reference-fx-customer-envelope-20260816
+  workflow_dispatch:
+
+concurrency:
+  group: p69-native-windows-ecb-reference-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p69-current-public-reference:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Checkout P69 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact P69 current source projection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p69-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p69-work `
+            --output-root p69-out
+          if ($LASTEXITCODE -ne 0) { throw "P46 reconstruction failed: $LASTEXITCODE" }
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p69-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p69-work/P66_BUILD_PROJECTION_MANIFEST.json | Out-File p69-out/P66_STAGE1.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 1 failed: $LASTEXITCODE" }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p69-work/source --manifest p69-work/P66_BUILD_PROJECTION_MANIFEST.json | Out-File p69-out/P66_STAGE2.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 2 failed: $LASTEXITCODE" }
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p69-work/source --manifest p69-work/P66_BUILD_PROJECTION_MANIFEST.json | Out-File p69-out/P66_STAGE3.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 3 failed: $LASTEXITCODE" }
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p69-work/source --manifest p69-work/P66_BUILD_PROJECTION_MANIFEST.json --output-manifest p69-work/P68_BUILD_PROJECTION_MANIFEST.json | Out-File p69-out/P68_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P68 source patch failed: $LASTEXITCODE" }
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p69-work/source --manifest p69-work/P68_BUILD_PROJECTION_MANIFEST.json --output-manifest p69-work/P69_BUILD_PROJECTION_MANIFEST.json | Out-File p69-out/P69_SOURCE_PATCH.log
+          if ($LASTEXITCODE -ne 0) { throw "P69 source patch failed: $LASTEXITCODE" }
+          $m=Get-Content p69-work/P69_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if ($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20972925 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne '5454819675a912e9791e143d48d61385622e1ab3f494253ea28c6a9a10895d71') { throw 'P69 projection identity mismatch' }
+          Copy-Item p69-work/P69_BUILD_PROJECTION_MANIFEST.json p69-out/
+
+      - name: Install exact dependencies for route execution
+        shell: pwsh
+        env:
+          npm_config_audit: 'false'
+          npm_config_fund: 'false'
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p69-work/source
+          try {
+            node "${{ steps.npmcli.outputs.npm_cli }}" ci --ignore-scripts --audit=false --fund=false
+            if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $LASTEXITCODE" }
+            if (-not (Test-Path -LiteralPath 'node_modules/next/server.js')) { throw 'next/server.js missing after npm ci' }
+          } finally { Pop-Location }
+
+      - name: Execute current public ECB reference customer sub-envelope
+        shell: pwsh
+        env:
+          P69_SOURCE_ROOT: ${{ github.workspace }}\p69-work\source
+          P69_RESULT_DIR: ${{ github.workspace }}\p69-out
+        run: |
+          $ErrorActionPreference='Stop'
+          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p69-runtime/test-p69-ecb-reference-route.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P69 ECB customer envelope failed: $LASTEXITCODE" }
+
+      - name: Capture P69 exact route boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p69-out | Out-Null
+          $rightsPassed=0
+          $referenceState='NOT_EXECUTED_OR_FAILED'
+          $receiptPath='p69-out/P69_ECB_REFERENCE_PUBLIC_NETWORK_RIGHTS_RECEIPT.json'
+          if(Test-Path -LiteralPath $receiptPath){
+            $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+            if($receipt.status -eq 'PASS_P69_ECB_REFERENCE_PUBLIC_NETWORK_FREE_DISPLAY_BOUNDED' -and $receipt.rightsMeasurement.currentUniqueRightsObligations -eq 203 -and $receipt.rightsMeasurement.passed -eq 2){
+              $rightsPassed=2
+              $referenceState='PASS_BOUNDED_FREE_PUBLIC_DISPLAY'
+            }
+          }
+          $r=[ordered]@{
+            schemaVersion='velmere.p69.github-route-boundary.v2';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            exactEngineeringParentRunId='31972868784';exactEngineeringParentHead='f3a8c62c9cbfb93a9bd9a5b74837cf3075281c23';exactEngineeringParentHardGates='12/12 PASS';productSourceChangedSinceEngineeringParent=$false;
+            projectionFileCount=1597;projectionPayloadBytes=20972925;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='5454819675a912e9791e143d48d61385622e1ab3f494253ea28c6a9a10895d71';
+            rightsPassed=$rightsPassed;rightsDenominator=203;referenceEnvelopeState=$referenceState;customerFinalOutputs=0;realMarketsFinalRows='0/3';paidValueTransitions='0/10';saleEligibleRows=0;live=$false;worldClassProven=$false;
+            truthBoundary='This V2 run repairs only route-test loader resolution after the P69 exact current source already passed 12/12 Windows engineering in run 31972868784. Rights credit, if present, is limited to the exact current public ECB reference sub-envelope.'
+          }
+          $r | ConvertTo-Json -Depth 8 | Set-Content p69-out/P69_GITHUB_ROUTE_BOUNDARY_V2.json -Encoding utf8
+
+      - name: Upload P69 exact route evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p69-native-windows-ecb-reference-fx-v2
+          path: p69-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
