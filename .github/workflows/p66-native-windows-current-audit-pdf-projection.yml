@@ -83,7 +83,7 @@ jobs:
             --output-root p66-out
           if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: $LASTEXITCODE" }
 
-      - name: Apply P66 owner topology and Audit PDF source delta
+      - name: Apply final P66 owner topology and Audit PDF source delta
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -91,10 +91,14 @@ jobs:
             --source-root p66-work/source `
             --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
             --output-manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p66-out/P66_PATCH_AND_MANIFEST.log
-          if ($LASTEXITCODE -ne 0) { throw "P66 source delta failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "P66 source delta stage 1 failed: $LASTEXITCODE" }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py `
+            --source-root p66-work/source `
+            --manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p66-out/P66_FINALIZE_TOPOLOGY.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 source delta stage 2 failed: $LASTEXITCODE" }
           $checks = @(
             @{ Path='p66-work/source/lib/security/pro-audit-pdf/render-pro-audit-pdf.ts'; Sha='9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530' },
-            @{ Path='p66-work/source/lib/product/vlm-canonical-product-topology.ts'; Sha='e0be119fd341dd226a2501ae617f6f399b6b671299654a2344d60cc7e642e042' },
+            @{ Path='p66-work/source/lib/product/vlm-canonical-product-topology.ts'; Sha='e29792e10ca10f56c752d00f35a7bd08399a21ff084e06eb93f91547786e6e5b' },
             @{ Path='p66-work/source/lib/commerce/vlm-current-sku-truth.ts'; Sha='01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee' }
           )
           foreach ($check in $checks) {
@@ -109,7 +113,7 @@ jobs:
           $ErrorActionPreference='Stop'
           Push-Location p66-work/source
           try {
-            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const rows=m.VLM_CANONICAL_CUSTOMER_PRODUCTS; const fam=m.VLM_CANONICAL_PRODUCT_FAMILIES; const profiles=m.VLM_INTERNAL_EXECUTION_PROFILES; const tr=m.VLM_CONTEXT_TRANSITIONS; const fake=rows.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null); if(rows.length!==20||fam.length!==10||profiles.length!==20||tr.length!==10||fake.length!==0||fam.some(x=>x.family==='pdf')||m.VLM_V16_TOPOLOGY_DENOMINATORS.pdfSeparateProductFamily!==false||m.VLM_V16_TOPOLOGY_DENOMINATORS.legacy33ProductCompletionDenominatorRetired!==true) process.exit(2); console.log(JSON.stringify({status:'PASS_P66_OWNER_TOPOLOGY_RUNTIME',rows:rows.length,families:fam.length,profiles:profiles.length,transitions:tr.length,fakeStandaloneTiers:fake.length,pdfFamily:false,legacy33Retired:true}))}).catch(e=>{console.error(e);process.exit(1)})"
+            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const rows=m.VLM_CANONICAL_CUSTOMER_PRODUCTS; const fam=m.VLM_CANONICAL_PRODUCT_FAMILIES; const profiles=m.VLM_INTERNAL_EXECUTION_PROFILES; const tr=m.VLM_CONTEXT_TRANSITIONS; const fake=rows.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null); const shieldPro=rows.find(x=>x.family==='shield'&&x.tier==='pro'); if(rows.length!==20||fam.length!==10||profiles.length!==20||tr.length!==10||fake.length!==0||fam.some(x=>x.family==='pdf')||shieldPro?.productId!=='shield-pro'||m.VLM_V16_TOPOLOGY_DENOMINATORS.pdfSeparateProductFamily!==false||m.VLM_V16_TOPOLOGY_DENOMINATORS.legacy33ProductCompletionDenominatorRetired!==true) process.exit(2); console.log(JSON.stringify({status:'PASS_P66_OWNER_TOPOLOGY_RUNTIME',rows:rows.length,families:fam.length,profiles:profiles.length,transitions:tr.length,fakeStandaloneTiers:fake.length,pdfFamily:false,shieldProRowId:shieldPro.productId,legacy33Retired:true}))}).catch(e=>{console.error(e);process.exit(1)})"
             if ($LASTEXITCODE -ne 0) { throw "P66 topology runtime verifier failed: $LASTEXITCODE" }
           } finally { Pop-Location }
 
@@ -162,7 +166,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force p66-out | Out-Null
           $boundary = [ordered]@{
-            schemaVersion = 'velmere.p66.github-workflow-boundary.v2'
+            schemaVersion = 'velmere.p66.github-workflow-boundary.v3'
             runId = '${{ github.run_id }}'
             runAttempt = '${{ github.run_attempt }}'
             workflow = '${{ github.workflow }}'
@@ -175,13 +179,13 @@ jobs:
             npm = (npm --version 2>$null)
             changedBuildRelevantFiles = 3
             auditPdfSourceSha256 = '9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530'
-            canonicalTopologySourceSha256 = 'e0be119fd341dd226a2501ae617f6f399b6b671299654a2344d60cc7e642e042'
+            canonicalTopologySourceSha256 = 'e29792e10ca10f56c752d00f35a7bd08399a21ff084e06eb93f91547786e6e5b'
             currentSkuTruthSourceSha256 = '01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee'
             nonprojectedEvidenceMatrixSha256 = '5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736'
             projectionFileCount = 1597
-            projectionPayloadBytes = 20956817
+            projectionPayloadBytes = 20956802
             projectionPathSetSha256 = 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
-            projectionAggregateSha256 = '7aad68401296380d998ff558fb94640efe3cb2c88c9c34d65bb2f6902b7398a7'
+            projectionAggregateSha256 = 'c512eb907ea6733bba2f932ff23fd4b5e5cf74c07c02c0505ff3bc3fd9604281'
             productFamilies = 10
             customerFacingRows = 20
             tieredFamilies = 5
