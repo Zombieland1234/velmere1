@@ -96,7 +96,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Topology runtime failed: $LASTEXITCODE" }
           } finally { Pop-Location }
 
-      - name: Generate reconciled runner and execute exact Windows campaign
+      - name: Generate P66 reconciled runner and execute exact Windows campaign
         shell: pwsh
         env:
           P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
@@ -106,9 +106,15 @@ jobs:
             --input p49-build-projection/run-p47-product-windows-projection.mjs `
             --output p66-work/run-p66-reconciled-windows-projection.mjs `
             --receipt p66-out/P66_RECONCILED_RUNNER_BUILD_RECEIPT.json
-          if ($LASTEXITCODE -ne 0) { throw "Runner generation failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "Base runner generation failed: $LASTEXITCODE" }
+          python p66-runtime/patch-p66-reconciled-runner.py `
+            --runner p66-work/run-p66-reconciled-windows-projection.mjs `
+            --receipt p66-out/P66_CURRENT_NEXT_ENV_POLICY_RUNNER_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw "P66 runner policy patch failed: $LASTEXITCODE" }
           $runnerSha=(Get-FileHash -LiteralPath p66-work/run-p66-reconciled-windows-projection.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($runnerSha -ne '805d80391fd2b4def259e896e1aadcd3b4bbe130c6374a5bc28a00f760abb6d2') { throw "Runner SHA mismatch: $runnerSha" }
+          if ($runnerSha -ne '080024211d415360e5d83d1bb91a841174684ba6d6b165faa92e45831e75d4e3') { throw "P66 runner SHA mismatch: $runnerSha" }
+          node --check p66-work/run-p66-reconciled-windows-projection.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'P66 patched runner parse failure' }
           node p66-work/run-p66-reconciled-windows-projection.mjs `
             --source-root p66-work/source `
             --manifest p66-work/P66_BUILD_PROJECTION_MANIFEST.json `
@@ -137,9 +143,9 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force p66-out | Out-Null
           $r=[ordered]@{
-            schemaVersion='velmere.p66.github-workflow-boundary.v4';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
-            changedBuildRelevantFiles=3;auditPdfSourceSha256='9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530';canonicalTopologySourceSha256='fc5214b3b9bfb65614e4eb5f47d291ffc773cfadaf65133afc1495cbb18db220';currentSkuTruthSourceSha256='01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee';nonprojectedEvidenceMatrixSha256='5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736';
-            projectionFileCount=1597;projectionPayloadBytes=20956802;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='0778ac3f6ae71785495b8e6bbb228b30d8e3bb10ba73eb9de7d3da7f08a19cd3';
+            schemaVersion='velmere.p66.github-workflow-boundary.v5';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            changedBuildRelevantFiles=3;auditPdfSourceSha256='9e1f16f519dd5166fdacdb070dea6aa39dd6d7f7688e7aee065f069e18311530';canonicalTopologySourceSha256='fc5214b3b9bfb65614e4eb5f47d291ffc773cfadaf65133afc1495cbb18db220';currentSkuTruthSourceSha256='01a0d155513372145e7000959a81e14218d514930fafe63f7a226d59f47432ee';nonprojectedEvidenceMatrixSha256='5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736';p66RunnerSha256='080024211d415360e5d83d1bb91a841174684ba6d6b165faa92e45831e75d4e3';
+            projectionFileCount=1597;projectionPayloadBytes=20956802;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='0778ac3f6ae71785495b8e6bbb228b30d8e3bb10ba73eb9de7d3da7f08a19cd3';generatedNextEnvProjectionPayloadBytes=20956787;generatedNextEnvProjectionAggregateSha256='b98854da4f8eec535dc0a0294ff7e7c2ea27f28f1a70a51c820b9758ee98d123';
             productFamilies=10;customerFacingRows=20;tieredFamilies=5;tieredRows=15;standaloneRows=5;currentExecutionProfiles=20;paidValueTransitions=10;legacy33ProductCompletionDenominatorRetired=$true;pdfSeparateProductFamily=$false;customerFinalOutputCredit=0;saleEligibleRows=0;live=$false;
             truthBoundary='Exact Windows engineering proof for owner-corrected build-relevant source plus semantic validation of the current nonprojected evidence matrix. Audit PDF fixture/QA remains internal only. No final customer, rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
           }
