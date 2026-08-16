@@ -1,0 +1,140 @@
+name: P61E Discover Official Manrope Runtime Font
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p61e-discover-official-manrope-font.yml'
+
+concurrency:
+  group: p61e-discover-official-manrope-font-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  discover-official-font:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Fetch and verify official upstream Manrope font without retaining font bytes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_REPOSITORY: terrapkg/pkg-manrope-fonts
+          UPSTREAM_FONT_BLOB_SHA: cf7cea3879019206c6e084ac14ada8e2d3e4dd70
+          UPSTREAM_FONT_PATH: Manrope-ExtraLight.ttf
+          UPSTREAM_FONT_EXPECTED_BYTES: '134800'
+          UPSTREAM_LICENSE_BLOB_SHA: 472064afc4b8dec9079fab03b8ffafb617a1b2d8
+          UPSTREAM_LICENSE_PATH: OFL.txt
+        run: |
+          set -euo pipefail
+          mkdir -p p61e-out/runtime
+          python - <<'PY'
+          from __future__ import annotations
+          import base64
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import urllib.request
+
+          root = pathlib.Path('p61e-out')
+          runtime = root / 'runtime'
+          runtime.mkdir(parents=True, exist_ok=True)
+          repo = os.environ['UPSTREAM_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+
+          def github_json(url: str) -> dict:
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      'Accept': 'application/vnd.github+json',
+                      'Authorization': f'Bearer {token}',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'User-Agent': 'velmere-p61e-font-discovery',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.loads(response.read())
+
+          def fetch_blob(blob_sha: str) -> bytes:
+              payload = github_json(f'https://api.github.com/repos/{repo}/git/blobs/{blob_sha}')
+              if payload.get('sha') != blob_sha or payload.get('encoding') != 'base64':
+                  raise RuntimeError(f'upstream_blob_identity_mismatch:{blob_sha}:{payload.get("sha")}:{payload.get("encoding")}')
+              return base64.b64decode(str(payload['content']).replace('\n', ''), validate=True)
+
+          font_blob_sha = os.environ['UPSTREAM_FONT_BLOB_SHA']
+          font_bytes = fetch_blob(font_blob_sha)
+          expected_bytes = int(os.environ['UPSTREAM_FONT_EXPECTED_BYTES'])
+          if len(font_bytes) != expected_bytes:
+              raise RuntimeError(f'upstream_font_size_mismatch:{len(font_bytes)}:{expected_bytes}')
+          font_path = runtime / 'upstream-Manrope-ExtraLight.ttf'
+          font_path.write_bytes(font_bytes)
+          observed_git_sha = subprocess.check_output(['git', 'hash-object', str(font_path)], text=True).strip()
+          if observed_git_sha != font_blob_sha:
+              raise RuntimeError(f'upstream_font_git_blob_mismatch:{observed_git_sha}:{font_blob_sha}')
+          font_sha256 = hashlib.sha256(font_bytes).hexdigest()
+
+          license_blob_sha = os.environ['UPSTREAM_LICENSE_BLOB_SHA']
+          license_bytes = fetch_blob(license_blob_sha)
+          license_text = license_bytes.decode('utf-8')
+          if 'SIL OPEN FONT LICENSE' not in license_text.upper() or 'Version 1.1' not in license_text:
+              raise RuntimeError('upstream_license_not_recognized_as_ofl_1_1')
+          license_sha256 = hashlib.sha256(license_bytes).hexdigest()
+
+          receipt = {
+              'schemaVersion': 'velmere.p61e.official-manrope-runtime-font-discovery.v1',
+              'status': 'PASS',
+              'decision': 'PASS_OFFICIAL_MANROPE_RUNTIME_FONT_HASH_AND_LICENSE_DISCOVERED',
+              'upstream': {
+                  'repository': repo,
+                  'fontPath': os.environ['UPSTREAM_FONT_PATH'],
+                  'fontGitBlobSha1': font_blob_sha,
+                  'fontByteLength': len(font_bytes),
+                  'fontSha256': font_sha256,
+                  'licensePath': os.environ['UPSTREAM_LICENSE_PATH'],
+                  'licenseGitBlobSha1': license_blob_sha,
+                  'licenseByteLength': len(license_bytes),
+                  'licenseSha256': license_sha256,
+                  'licenseId': 'OFL-1.1',
+              },
+              'retention': {
+                  'fontUploadedAsArtifact': False,
+                  'fontCommittedToSource': False,
+                  'fontCommittedToMaterials': False,
+                  'fontDeletedBeforeArtifactUpload': True,
+              },
+              'truthBoundary': 'This receipt proves only deterministic acquisition identity and OFL-1.1 text recognition for the specified official upstream Git blobs. It grants no Browser, PDF output, customer value, sale, GO, LIVE or WORLD_CLASS credit.',
+          }
+          core = json.dumps(receipt, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = hashlib.sha256(core).hexdigest()
+          (root / 'P61E_OFFICIAL_MANROPE_RUNTIME_FONT_DISCOVERY.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n')
+          print(json.dumps(receipt, ensure_ascii=False, indent=2))
+
+          font_path.unlink()
+          if font_path.exists():
+              raise RuntimeError('runtime_font_delete_failed')
+          PY
+          test ! -f p61e-out/runtime/upstream-Manrope-ExtraLight.ttf
+
+      - name: Upload receipt only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p61e-official-manrope-runtime-font-discovery
+          path: |
+            p61e-out/P61E_OFFICIAL_MANROPE_RUNTIME_FONT_DISCOVERY.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
