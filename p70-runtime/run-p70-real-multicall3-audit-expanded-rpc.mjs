@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const sourcePath=path.resolve('p70-runtime/test-p70-real-multicall3-audit.mjs');
-let source=fs.readFileSync(sourcePath,'utf8');
+let source=fs.readFileSync(sourcePath,'utf8').replace(/\r\n?/g,'\n');
 const oldEndpoints="const rpcEndpoints=['https://ethereum-rpc.publicnode.com','https://cloudflare-eth.com','https://eth.llamarpc.com'];";
 const newEndpoints="const rpcEndpoints=['https://ethereum-rpc.publicnode.com','https://cloudflare-eth.com','https://eth.llamarpc.com','https://1rpc.io/eth','https://eth.drpc.org','https://rpc.flashbots.net'];";
 if(!source.includes(oldEndpoints)) throw new Error('p70_expanded_rpc_preimage_missing');
