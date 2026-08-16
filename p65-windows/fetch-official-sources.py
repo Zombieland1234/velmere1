@@ -1,10 +1,11 @@
 from __future__ import annotations
 import csv, datetime as dt, hashlib, io, json, pathlib, urllib.request
 OUT=pathlib.Path('P65_RESULT'); OUT.mkdir(exist_ok=True)
-UA='Velmere-P65-Current-Source-Evidence/1.0 (+https://velmere.ai)'
+UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Velmere-P65-Current-Source-Evidence/1.1'
 SOURCES=[
  ('nvd_terms','https://nvd.nist.gov/developers/terms-of-use',True,['NVD API','Terms of Use']),
- ('cve_terms','https://www.cve.org/legal/termsofuse',True,['royalty-free','CVE']),
+ ('cve_terms_current','https://www.cve.org/legal/termsofuse',False,['royalty-free','CVE']),
+ ('cve_terms_archive','https://www.cve.org/Resources/Media/Archives/OldWebsite/about/termsofuse.html',True,['royalty-free','CVE']),
  ('cwe_terms','https://cwe.mitre.org/about/termsofuse.html',True,['commercial purposes','CWE']),
  ('capec_terms','https://capec.mitre.org/about/termsofuse.html',True,['commercial purposes','CAPEC']),
  ('ecb_reuse','https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html',True,['free of charge','reuse']),
@@ -50,8 +51,8 @@ try:
 except Exception as e: normalized['cisaKev']={'parseError':str(e),'rightsState':'WITHHELD_EXPLICIT_LICENSE_BODY_NOT_CAPTURED'}
 public=[]
 for x in results: public.append({k:v for k,v in x.items() if k!='_bytes'})
-receipt={'schemaVersion':'velmere.p65.current-official-source-fetch-receipt.v1','generatedAt':dt.datetime.now(dt.timezone.utc).isoformat(),'requiredSourceCount':sum(x[2] for x in SOURCES),'requiredFailures':required_fail,'requiredPassed':len(required_fail)==0,'sources':public,'rightsCreditBoundary':'HTTP retrieval and anchor checks prove only current document/data receipt. Rights classifications remain bounded engineering decisions in the P65 policy; CISA KEV rights remain withheld.','currentProviderDataCredit':'ECB_FX_REFERENCE_AND_NVD_SAMPLE_ONLY_NOT_FULL_PRODUCT_CURRENTNESS'}
+receipt={'schemaVersion':'velmere.p65.current-official-source-fetch-receipt.v2','generatedAt':dt.datetime.now(dt.timezone.utc).isoformat(),'requiredSourceCount':sum(x[2] for x in SOURCES),'requiredFailures':required_fail,'requiredPassed':len(required_fail)==0,'sources':public,'cveCurrentEndpointState':'CURRENT_URL_FETCH_IS_BEST_EFFORT; OFFICIAL_CVE_ARCHIVE_LICENSE_TEXT_IS_HASH_BOUND_FOR_RUNNER_REPLAY; CURRENT_CVE_TERMS WERE_SEPARATELY_PRIMARY-SOURCE_REVIEWED','rightsCreditBoundary':'HTTP retrieval and anchor checks prove only current document/data receipt. Rights classifications remain bounded engineering decisions in the P65 policy; CISA KEV rights remain withheld.','currentProviderDataCredit':'ECB_FX_REFERENCE_AND_NVD_SAMPLE_ONLY_NOT_FULL_PRODUCT_CURRENTNESS'}
 (OUT/'P65_CURRENT_OFFICIAL_SOURCE_FETCH_RECEIPT.json').write_text(json.dumps(receipt,indent=2,sort_keys=True)+'\n',encoding='utf-8')
 (OUT/'P65_CURRENT_OFFICIAL_SOURCE_NORMALIZED.json').write_text(json.dumps(normalized,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-print(json.dumps({'requiredPassed':receipt['requiredPassed'],'requiredFailures':required_fail,'nvd':normalized['nvd'],'ecbRows':normalized['ecbFx'].get('rowCount') if isinstance(normalized['ecbFx'],dict) else None,'cisaCount':normalized['cisaKev'].get('count') if isinstance(normalized['cisaKev'],dict) else None},indent=2))
+print(json.dumps({'requiredPassed':receipt['requiredPassed'],'requiredFailures':required_fail,'nvd':normalized['nvd'],'ecbRows':normalized['ecbFx'].get('rowCount') if isinstance(normalized['ecbFx'],dict) else None,'cisaCount':normalized['cisaKev'].get('count') if isinstance(normalized['cisaKev'],dict) else None,'cveCurrentHttp':by['cve_terms_current']['httpStatus']},indent=2))
 if required_fail: raise SystemExit(2)
