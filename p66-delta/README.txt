@@ -1,0 +1,1 @@
+P66 current-source delta transport. The only product source mutation is lib/security/pro-audit-pdf/render-pro-audit-pdf.ts to add honest Basic Audit PDF support while preserving Pro/Advanced paid fail-closed completeness gates. This branch is execution evidence only and grants no customer/sale/live credit.
