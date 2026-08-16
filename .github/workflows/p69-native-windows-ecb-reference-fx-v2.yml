@@ -1,13 +1,160 @@
-name: P69 Native Windows ECB Reference FX V2 Paused
+name: P69R1 Native Windows ECB Reference FX Customer Envelope
 
 on:
+  push:
+    branches:
+      - velmere-p69-ecb-reference-fx-customer-envelope-20260816
   workflow_dispatch:
+
+concurrency:
+  group: p69r1-native-windows-ecb-reference-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  paused:
-    runs-on: ubuntu-latest
+  p69r1-current-public-reference:
+    runs-on: windows-2025
+    timeout-minutes: 150
     steps:
-      - run: echo "Paused while P69R1 Node24 pinned-egress repair is prepared."
+      - name: Checkout P69R1 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct P46 and apply P66 P68 P69 P69R1 source deltas
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p69r1-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p69r1-work `
+            --output-root p69r1-out
+          if ($LASTEXITCODE -ne 0) { throw "P46 reconstruction failed: $LASTEXITCODE" }
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p69r1-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p69r1-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p69r1-out/P66_STAGE1.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 1 failed: $LASTEXITCODE" }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p69r1-work/source --manifest p69r1-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p69r1-out/P66_STAGE2.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 2 failed: $LASTEXITCODE" }
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p69r1-work/source --manifest p69r1-work/P66_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p69r1-out/P66_STAGE3.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage 3 failed: $LASTEXITCODE" }
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p69r1-work/source --manifest p69r1-work/P66_BUILD_PROJECTION_MANIFEST.json --output-manifest p69r1-work/P68_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p69r1-out/P68_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P68 source patch failed: $LASTEXITCODE" }
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p69r1-work/source --manifest p69r1-work/P68_BUILD_PROJECTION_MANIFEST.json --output-manifest p69r1-work/P69_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p69r1-out/P69_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P69 source patch failed: $LASTEXITCODE" }
+          python p69-runtime/fix-p69r1-node24-pinned-egress.py `
+            --source-root p69r1-work/source `
+            --manifest p69r1-work/P69_BUILD_PROJECTION_MANIFEST.json `
+            --output-manifest p69r1-work/P69R1_BUILD_PROJECTION_MANIFEST.json `
+            --receipt p69r1-out/P69R1_NODE24_PINNED_EGRESS_REPAIR.json
+          if ($LASTEXITCODE -ne 0) { throw "P69R1 pinned-egress repair failed: $LASTEXITCODE" }
+          $m=Get-Content p69r1-work/P69R1_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if ($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20972956 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne 'ace1ec8b7e836d20098e20510b00eeaada8ed8636557fcb4da907990070dbf08') { throw 'P69R1 projection identity mismatch' }
+          $safe=(Get-FileHash -LiteralPath 'p69r1-work/source/lib/network/safe-egress.ts' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($safe -ne 'b2e51f5f218716ba64ccd4bb6ec812731b8778d96bdf82deb063b3d8730ee939'){ throw "safe-egress identity mismatch: $safe" }
+          Copy-Item p69r1-work/P69R1_BUILD_PROJECTION_MANIFEST.json p69r1-out/
+
+      - name: Verify owner corrected topology remains exact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p69r1-work/source
+          try {
+            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const r=m.VLM_CANONICAL_CUSTOMER_PRODUCTS,f=m.VLM_CANONICAL_PRODUCT_FAMILIES,p=m.VLM_INTERNAL_EXECUTION_PROFILES,t=m.VLM_CONTEXT_TRANSITIONS;const fake=r.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null);if(r.length!==20||f.length!==10||p.length!==20||t.length!==10||fake.length||f.some(x=>x.family==='pdf')||m.VLM_V16_TOPOLOGY_DENOMINATORS.legacy33ProductCompletionDenominatorRetired!==true)process.exit(2);console.log(JSON.stringify({status:'PASS_P69R1_TOPOLOGY_RETENTION',rows:20,families:10,profiles:20,transitions:10,fakeStandaloneTiers:0,pdfFamily:false}))}).catch(e=>{console.error(e);process.exit(1)})"
+            if ($LASTEXITCODE -ne 0) { throw "P69R1 topology verifier failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Exact Windows dependency semantic lint and dual build
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p69r1-work/run-p69r1-reconciled-windows-projection.mjs --receipt p69r1-out/P69R1_BASE_RECONCILED_RUNNER.json
+          if ($LASTEXITCODE -ne 0) { throw 'base runner generation failed' }
+          python p66-runtime/patch-p66-reconciled-runner.py --runner p69r1-work/run-p69r1-reconciled-windows-projection.mjs --receipt p69r1-out/P69R1_P66_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P66 runner adaptation failed' }
+          python p68-runtime/patch-p68-reconciled-runner.py --runner p69r1-work/run-p69r1-reconciled-windows-projection.mjs --receipt p69r1-out/P69R1_P68_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P68 runner adaptation failed' }
+          python p69-runtime/patch-p69-reconciled-runner.py --runner p69r1-work/run-p69r1-reconciled-windows-projection.mjs --receipt p69r1-out/P69R1_P69_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P69 runner adaptation failed' }
+          python p69-runtime/patch-p69r1-reconciled-runner.py --runner p69r1-work/run-p69r1-reconciled-windows-projection.mjs --receipt p69r1-out/P69R1_CURRENT_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P69R1 runner adaptation failed' }
+          node --check p69r1-work/run-p69r1-reconciled-windows-projection.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'P69R1 runner parse failed' }
+          node p69r1-work/run-p69r1-reconciled-windows-projection.mjs --source-root p69r1-work/source --manifest p69r1-work/P69R1_BUILD_PROJECTION_MANIFEST.json --output-dir p69r1-out
+          if ($LASTEXITCODE -ne 0) { throw "P69R1 exact Windows engineering failed: $LASTEXITCODE" }
+
+      - name: Execute current public ECB reference customer sub-envelope
+        shell: pwsh
+        env:
+          P69_SOURCE_ROOT: ${{ github.workspace }}\p69r1-work\source
+          P69_RESULT_DIR: ${{ github.workspace }}\p69r1-out
+        run: |
+          $ErrorActionPreference='Stop'
+          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p69-runtime/test-p69-ecb-reference-route.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P69R1 ECB customer envelope failed: $LASTEXITCODE" }
+
+      - name: Capture P69R1 workflow boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p69r1-out | Out-Null
+          $rightsPassed=0
+          $rightsDenominator=199
+          $referenceState='NOT_EXECUTED_OR_FAILED'
+          $receiptPath='p69r1-out/P69_ECB_REFERENCE_PUBLIC_NETWORK_RIGHTS_RECEIPT.json'
+          if(Test-Path -LiteralPath $receiptPath){
+            $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+            if($receipt.status -eq 'PASS_P69_ECB_REFERENCE_PUBLIC_NETWORK_FREE_DISPLAY_BOUNDED' -and $receipt.rightsMeasurement.currentUniqueRightsObligations -eq 203 -and $receipt.rightsMeasurement.passed -eq 2){
+              $rightsPassed=2
+              $rightsDenominator=203
+              $referenceState='PASS_BOUNDED_FREE_PUBLIC_DISPLAY'
+            }
+          }
+          $r=[ordered]@{
+            schemaVersion='velmere.p69r1.github-workflow-boundary.v1';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            changedBuildRelevantFilesSinceP68=6;projectionFileCount=1597;projectionPayloadBytes=20972956;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='ace1ec8b7e836d20098e20510b00eeaada8ed8636557fcb4da907990070dbf08';generatedNextEnvProjectionPayloadBytes=20972941;generatedNextEnvProjectionAggregateSha256='adc2460fa85c4e0ff9f8610a0151f1e3165e3c43899219e3755f4e31017bb51a';
+            node24PinnedEgressRepairSha256='b2e51f5f218716ba64ccd4bb6ec812731b8778d96bdf82deb063b3d8730ee939';productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;rightsPassed=$rightsPassed;rightsDenominator=$rightsDenominator;referenceEnvelopeState=$referenceState;customerFinalOutputs=0;realMarketsFinalRows='0/3';saleEligibleRows=0;live=$false;worldClassProven=$false;
+            truthBoundary='P69R1 exact Windows proof for the repaired current product bytes plus an exact current public ECB direct-reference sub-envelope if route/source/policy verification passes. The reference lane is not market.price or executable and cannot grant full Real Markets, paid-value, sale, LIVE or WORLD_CLASS credit.'
+          }
+          $r | ConvertTo-Json -Depth 8 | Set-Content p69r1-out/P69R1_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P69R1 exact Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p69r1-native-windows-ecb-reference-fx
+          path: p69r1-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
