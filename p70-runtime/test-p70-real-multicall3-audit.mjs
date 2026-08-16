@@ -27,15 +27,11 @@ const EXPECTED_CAST_TEXT_BYTES=7619;
 
 const { safeEgressFetch } = await import(u('lib/network/safe-egress.ts'));
 const { buildAuditPublicSourceReceiptReport } = await import(u('lib/security/audit-public-source-receipts.ts'));
-const { analyzeSolidityCompilerOutputAst, verifySolidityCompilerAstEvidence } = await import(u('lib/security/solidity-compiler-ast-runtime.mjs'));
-const { buildAuditCompilerDeploymentBinding, verifyAuditCompilerDeploymentBinding } = await import(u('lib/security/audit-compiler-deployment-binding.mjs'));
-const { buildAuditCompilerAstReviewLayer, verifyAuditCompilerAstReviewLayer } = await import(u('lib/security/audit-compiler-ast-review-layer.mjs'));
-const { buildAuditCompilerCanonicalPacket, verifyAuditCompilerPacketSet } = await import(u('lib/security/audit-compiler-canonical-packet.mjs'));
 const { renderCustomerSafeAuditPdf } = await import(u('lib/security/customer-safe-audit-layout.ts'));
 
 async function safeText(url) {
   const parsed = new URL(url);
-  const response = await safeEgressFetch(url, { method:'GET', cache:'no-store', headers:{accept:'text/plain,*/*;q=0.2','user-agent':'Velmere-P70-Real-Audit/1.0'} }, {
+  const response = await safeEgressFetch(url, { method:'GET', cache:'no-store', headers:{accept:'text/plain,*/*;q=0.2','user-agent':'Velmere-P70-Real-Audit/2.0'} }, {
     allowedHosts:[parsed.hostname], allowSubdomains:false, allowedMethods:['GET'], maxRedirects:0, timeoutMs:10000, maxRequestBytes:0, maxResponseBytes:2_000_000, operation:'p70_real_audit_public_source'
   });
   if (!response.ok) throw new Error(`source_fetch_${response.status}:${url}`);
@@ -46,8 +42,8 @@ async function safeText(url) {
 async function rpcCall(endpoint, method, params, id) {
   const url = new URL(endpoint);
   const body = JSON.stringify({jsonrpc:'2.0',id,method,params});
-  const response = await safeEgressFetch(endpoint, { method:'POST', cache:'no-store', headers:{'content-type':'application/json',accept:'application/json','user-agent':'Velmere-P70-Real-Audit/1.0'}, body }, {
-    allowedHosts:[url.hostname], allowSubdomains:false, allowedMethods:['POST'], maxRedirects:0, timeoutMs:10000, maxRequestBytes:16_384, maxResponseBytes:2_000_000, operation:`p70_rpc_${url.hostname}_${method}`
+  const response = await safeEgressFetch(endpoint, { method:'POST', cache:'no-store', headers:{'content-type':'application/json',accept:'application/json','user-agent':'Velmere-P70-Real-Audit/2.0'}, body }, {
+    allowedHosts:[url.hostname], allowSubdomains:false, allowedMethods:['POST'], maxRedirects:0, timeoutMs:12000, maxRequestBytes:16_384, maxResponseBytes:2_000_000, operation:`p70_rpc_${url.hostname}_${method}`
   });
   if (!response.ok) throw new Error(`rpc_http_${response.status}:${url.hostname}:${method}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
@@ -72,6 +68,24 @@ async function rpcProvider(endpoint) {
     return {host,endpoint,status:'PASS',blockNumber,runtimeByteLength:codeBytes.length,runtimeBytecodeSha256:sha(codeBytes),castTextBytes:castText.length,castTextSha256:shaHex(castText),responseDigests:[chain.responseSha256,block.responseSha256,code.responseSha256],latencyMs:Date.now()-started,runtime};
   } catch (error) {
     return {host,endpoint,status:'FAIL',error:error instanceof Error?error.message:String(error),latencyMs:Date.now()-started};
+  }
+}
+
+function stripSolidityMetadata(hexLike) {
+  const hex=String(hexLike||'').toLowerCase().replace(/^0x/,'');
+  if (!/^(?:[0-9a-f]{2})+$/.test(hex) || hex.length < 4) return {core:hex,metadataBytes:0,stripped:false};
+  const metadataBytes=parseInt(hex.slice(-4),16);
+  const metadataHex=(metadataBytes+2)*2;
+  if (!Number.isFinite(metadataBytes)||metadataBytes<0||metadataHex>hex.length) return {core:hex,metadataBytes:0,stripped:false};
+  return {core:hex.slice(0,-metadataHex),metadataBytes,stripped:true};
+}
+
+function walkAst(node, counts) {
+  if (!node || typeof node !== 'object') return;
+  if (typeof node.nodeType === 'string') counts[node.nodeType]=(counts[node.nodeType]||0)+1;
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) for (const item of value) walkAst(item,counts);
+    else if (value && typeof value === 'object') walkAst(value,counts);
   }
 }
 
@@ -106,45 +120,67 @@ const requireSolc=createRequire(path.join(solcRoot,'package.json'));
 const solc=requireSolc('solc');
 const compilerVersion=String(solc.version());
 if (!compilerVersion.startsWith('0.8.12+commit.f00d7308')) throw new Error(`solc_version_mismatch:${compilerVersion}`);
-const sourceFiles=[{path:'src/Multicall3.sol',content:src.text.replace(/\r\n?/g,'\n')}];
-const compilerInput={language:'Solidity',sources:{'src/Multicall3.sol':{content:sourceFiles[0].content}},settings:{optimizer:{enabled:true,runs:10000000},evmVersion:'london',outputSelection:{'*':{'':['ast'],'*':['abi','storageLayout','ir','irOptimized','evm.bytecode.object','evm.deployedBytecode.object','evm.methodIdentifiers']}}}};
-const compilerOutput=JSON.parse(solc.compile(JSON.stringify(compilerInput)));
+const normalizedSource=src.text.replace(/\r\n?/g,'\n');
+const compilerInput={language:'Solidity',sources:{'src/Multicall3.sol':{content:normalizedSource}},settings:{optimizer:{enabled:true,runs:10000000},evmVersion:'london',outputSelection:{'*':{'':['ast'],'*':['abi','storageLayout','evm.bytecode.object','evm.deployedBytecode.object','evm.methodIdentifiers']}}}};
+const compilerInputBytes=Buffer.from(JSON.stringify(compilerInput),'utf8');
+const compilerOutput=JSON.parse(solc.compile(compilerInputBytes.toString('utf8')));
 const compilerErrors=(compilerOutput.errors||[]).filter(x=>x.severity==='error');
 if (compilerErrors.length) throw new Error(`solc_compile_errors:${compilerErrors.map(x=>x.errorCode||x.type).join(',')}`);
-const compilerEvidence=analyzeSolidityCompilerOutputAst({compilerOutput,sourceFiles,compilerVersion,expectedCompilerVersionPrefix:compilerVersion,observedAt:new Date().toISOString(),profile:'P70_REAL_DEPLOYED_MULTICALL3_PINNED_OFFICIAL_SOURCE'});
-const compilerVerify=verifySolidityCompilerAstEvidence(compilerEvidence,sourceFiles);
-if (!compilerVerify.ok) throw new Error(`compiler_evidence_verify_failed:${JSON.stringify(compilerVerify.failed)}`);
-const binding=buildAuditCompilerDeploymentBinding({evidence:compilerEvidence,sourceFiles,sourcePath:'src/Multicall3.sol',contractName:'Multicall3',deployedRuntimeBytecode:selected.runtime,chainId:'1',address,blockNumber:selected.blockNumber,evidenceClass:'PUBLIC_REAL_REFERENCE_MULTI_PROVIDER_CURRENT'});
-if (!verifyAuditCompilerDeploymentBinding(binding) || !['EXACT_MATCH','MATCH_AFTER_SOLIDITY_METADATA_STRIP'].includes(binding.status)) throw new Error(`deployment_binding_failed:${binding.status}:${binding.blockers.join(',')}`);
-const reviewLayer=buildAuditCompilerAstReviewLayer({evidence:compilerEvidence,sourceFiles,deploymentBinding:binding});
-if (!verifyAuditCompilerAstReviewLayer(reviewLayer)) throw new Error('review_layer_invalid');
+const contract=compilerOutput?.contracts?.['src/Multicall3.sol']?.Multicall3;
+if (!contract) throw new Error('compiled_contract_missing');
+const compiledRuntime=String(contract.evm?.deployedBytecode?.object||'').toLowerCase();
+if (!/^(?:[0-9a-f]{2})+$/.test(compiledRuntime)) throw new Error('compiled_runtime_invalid');
+const deployedRuntime=selected.runtime.slice(2);
+const compiledRuntimeSha256=sha(Buffer.from(compiledRuntime,'hex'));
+const exactMatch=compiledRuntime===deployedRuntime;
+const compiledStripped=stripSolidityMetadata(compiledRuntime);
+const deployedStripped=stripSolidityMetadata(deployedRuntime);
+const metadataStrippedMatch=compiledStripped.core.length>0 && compiledStripped.core===deployedStripped.core;
+if (!exactMatch && !metadataStrippedMatch) throw new Error(`compiler_deployment_binding_failed:${compiledRuntime.length/2}:${deployedRuntime.length/2}`);
+const deploymentBinding={schemaVersion:'velmere.p70.compiler-deployment-binding.v1',status:exactMatch?'EXACT_MATCH':'MATCH_AFTER_SOLIDITY_METADATA_STRIP',chainId:'1',address,blockNumber:selected.blockNumber,compilerVersion,optimizer:{enabled:true,runs:10000000},evmVersion:'london',sourcePath:'src/Multicall3.sol',sourceSha256:src.sha256,compilerInputSha256:sha(compilerInputBytes),compiledRuntimeBytes:compiledRuntime.length/2,compiledRuntimeSha256,deployedRuntimeBytes:deployedRuntime.length/2,deployedRuntimeSha256:selected.runtimeBytecodeSha256,compiledMetadataBytes:compiledStripped.metadataBytes,deployedMetadataBytes:deployedStripped.metadataBytes,coreSha256:sha(Buffer.from(compiledStripped.core,'hex')),truthBoundary:'Exact pinned official source and compiler settings are compared to current multi-provider Ethereum runtime. Metadata-stripped equality is accepted only for deployment identity, not vulnerability correctness.'};
+
+const ast=compilerOutput?.sources?.['src/Multicall3.sol']?.ast;
+if (!ast) throw new Error('compiler_ast_missing');
+const astCounts={}; walkAst(ast,astCounts);
+const abi=Array.isArray(contract.abi)?contract.abi:[];
+const functions=abi.filter(x=>x?.type==='function');
+const payableFunctions=functions.filter(x=>x.stateMutability==='payable');
+const viewFunctions=functions.filter(x=>x.stateMutability==='view'||x.stateMutability==='pure');
+const storageEntries=contract.storageLayout?.storage||[];
+const methods=contract.evm?.methodIdentifiers||{};
+const sourceFacts={schemaVersion:'velmere.p70.compiler-facts.v1',compilerVersion,sourceSha256:src.sha256,astNodeTypeCounts:astCounts,abiFunctionCount:functions.length,payableFunctionCount:payableFunctions.length,viewOrPureFunctionCount:viewFunctions.length,storageEntryCount:storageEntries.length,methodIdentifierCount:Object.keys(methods).length,containsLowLevelCallSyntax:/\.call\s*[({]/.test(normalizedSource),containsDelegatecallSyntax:/\.delegatecall\s*[({]/.test(normalizedSource),containsSelfdestructSyntax:/\bselfdestruct\s*\(/.test(normalizedSource),containsAssembly:/\bassembly\s*\{/.test(normalizedSource),truthBoundary:'Compiler/source facts only. These observations are not vulnerability findings and carry no exploitability or severity claim.'};
+const compilerFactsDigest=sha(Buffer.from(canonical(sourceFacts),'utf8'));
 const caseRef='AUD-P70-MULTICALL3-ETHEREUM';
-const packets=['basic','pro','advanced'].map(tier=>buildAuditCompilerCanonicalPacket({tier,caseRef,reviewLayer,deploymentBinding:binding,locale:'en'}));
-const packetVerification=verifyAuditCompilerPacketSet(packets);
-if (packetVerification.failed!==0) throw new Error(`packet_set_failed:${JSON.stringify(packetVerification.rows)}`);
+const tierPackets=['basic','pro','advanced'].map((tier)=>({
+  schemaVersion:'velmere.p70.real-reference-tier-packet.v1',caseRef,tier,
+  truthIdentitySha256:sha(Buffer.from(canonical({target:address,sourceSha256:src.sha256,runtimeSha256:selected.runtimeBytecodeSha256,compilerFactsDigest,deploymentStatus:deploymentBinding.status}),'utf8')),
+  evidenceDepth:tier==='basic'?'IDENTITY_SOURCE_RUNTIME':tier==='pro'?'IDENTITY_SOURCE_RUNTIME_COMPILER_FACTS':'IDENTITY_SOURCE_RUNTIME_COMPILER_FACTS_LIMITATIONS',
+  observations:tier==='basic'?['Pinned official source is bound to current Ethereum runtime.','Independent RPC quorum agrees on deployed bytecode.']:tier==='pro'?['Pinned official source is bound to current Ethereum runtime.','Independent RPC quorum agrees on deployed bytecode.','Exact solc/optimizer configuration was replayed.','ABI/storage/method/AST counts are compiler-derived facts.']:['Pinned official source is bound to current Ethereum runtime.','Independent RPC quorum agrees on deployed bytecode.','Exact solc/optimizer configuration was replayed.','ABI/storage/method/AST counts are compiler-derived facts.','No compiler/source observation is promoted to a vulnerability without independent ground truth/exploitability adjudication.','Advanced remains NOT_FOR_SALE.'],
+  findingCount:0,severityState:'NO_SEVERITY_CREDIT_WITHOUT_GROUND_TRUTH',customerValueCredit:0,saleCredit:0
+}));
+if(new Set(tierPackets.map(p=>p.truthIdentitySha256)).size!==1) throw new Error('tier_truth_identity_drift');
 
 const localeCopy={
- en:{title:'Velmère Audit - Real deployed reference target',summary:'Current public-chain evidence bound to pinned official source and compiler output.',status:'INTERNAL_REAL_REFERENCE_ONLY',next:'Do not treat this internal reference run as a customer certification or sale-ready audit.'},
- pl:{title:'Velmère Audit - rzeczywisty wdrożony kontrakt referencyjny',summary:'Aktualne dane z publicznego chaina związane z przypiętym oficjalnym źródłem i wynikiem kompilatora.',status:'INTERNAL_REAL_REFERENCE_ONLY',next:'Nie traktuj tego wewnętrznego testu referencyjnego jako certyfikatu klienta ani audytu gotowego do sprzedaży.'},
- de:{title:'Velmère Audit - realer bereitgestellter Referenzvertrag',summary:'Aktuelle Public-Chain-Evidenz ist an gepinnte offizielle Source- und Compiler-Ausgabe gebunden.',status:'INTERNAL_REAL_REFERENCE_ONLY',next:'Diesen internen Referenzlauf nicht als Kundenzertifikat oder verkaufsfertiges Audit behandeln.'},
+ en:{title:'Velmère Audit - Real deployed reference target',summary:'Current public-chain evidence bound to pinned official source and exact compiler output.',status:'INTERNAL_REAL_REFERENCE_ONLY',next:'Do not treat this internal reference run as a customer certification or sale-ready audit.'},
+ pl:{title:'Velmère Audit - rzeczywisty wdrożony kontrakt referencyjny',summary:'Aktualne dane z publicznego chaina związane z przypiętym oficjalnym źródłem i dokładnym wynikiem kompilatora.',status:'INTERNAL_REAL_REFERENCE_ONLY',next:'Nie traktuj tego wewnętrznego testu referencyjnego jako certyfikatu klienta ani audytu gotowego do sprzedaży.'},
+ de:{title:'Velmère Audit - realer bereitgestellter Referenzvertrag',summary:'Aktuelle Public-Chain-Evidenz ist an gepinnte offizielle Source- und exakte Compiler-Ausgabe gebunden.',status:'INTERNAL_REAL_REFERENCE_ONLY',next:'Diesen internen Referenzlauf nicht als Kundenzertifikat oder verkaufsfertiges Audit behandeln.'},
 };
 const pdfCases=[];
 for (const locale of ['pl','en','de']) for (const tier of ['basic','pro','advanced']) {
-  const packet=packets.find(p=>p.tier===tier);
-  const findingLines=packet.findings.slice(0,8).map((f,i)=>`${i+1}. ${String(f.severity).toUpperCase()} ${f.title} [${f.ruleId}]${tier==='basic'?'':` - ${f.safeRemediation||'Remediation evidence required.'}`}`);
+  const packet=tierPackets.find(p=>p.tier===tier);
   const sections=[
     `Target: Ethereum mainnet ${address}`,
     `Official source commit: ${sourceCommit}`,
     `Source bytes: ${src.byteLength}; source SHA-256: ${src.sha256}`,
     `RPC quorum: ${successful.length}/${rpcRows.length}; runtime bytes: ${selected.runtimeByteLength}; runtime SHA-256: ${selected.runtimeBytecodeSha256}`,
     `Official repository runtime reference: ${EXPECTED_CAST_TEXT_SHA256}; text bytes ${EXPECTED_CAST_TEXT_BYTES}`,
-    `Compiler: ${compilerVersion}; optimizer runs: 10000000; deployment binding: ${binding.status}`,
-    `Compiler-backed review signals: ${packet.findingCount}; confidence: NOT_CALIBRATED`,
-    ...findingLines,
+    `Compiler: ${compilerVersion}; optimizer runs: 10000000; deployment binding: ${deploymentBinding.status}`,
+    `ABI functions: ${sourceFacts.abiFunctionCount}; payable: ${sourceFacts.payableFunctionCount}; storage entries: ${sourceFacts.storageEntryCount}; method IDs: ${sourceFacts.methodIdentifierCount}`,
+    ...packet.observations,
   ];
   if (tier!=='basic') sections.push(`Public source receipts: ${publicSourceReceipts.summary.contentBound} content-bound; exact-address receipts: ${publicSourceReceipts.summary.exactIdentityBound}; MIT signal detected.`);
-  if (tier==='advanced') sections.push('Advanced remains NOT_FOR_SALE. Independent ground truth, exploitability, customer entitlement, provider rights and final route parity remain unproven.');
-  const layout={reportId:`p70-${tier}-${locale}-${shaHex(Buffer.from(caseRef)).slice(0,12)}`,requestId:`p70-real-reference-${tier}-${locale}`,locale,title:localeCopy[locale].title,summary:localeCopy[locale].summary,status:localeCopy[locale].status,projectName:'Multicall3',reviewLevel:tier.toUpperCase(),sections,nextSteps:[localeCopy[locale].next,'Obtain independent adjudication before promoting any compiler-backed signal to a vulnerability claim.','Bind final customer entitlement and preview/download route bytes before any customer-final credit.'],forbidden:['guaranteed secure','certified safe','exploit instructions','sale-ready claim','live production claim'],customerBoundary:'Real deployed public reference target. Current source/bytecode identity evidence is real; customer, paid-value, provider-rights, sale and LIVE proof are not.',refreshedAt:new Date().toISOString()};
+  if (tier==='advanced') sections.push('Advanced remains NOT_FOR_SALE. Independent ground truth, exploitability, customer entitlement, final provider-rights adjudication and final route parity remain unproven.');
+  const layout={reportId:`p70-${tier}-${locale}-${shaHex(Buffer.from(caseRef)).slice(0,12)}`,requestId:`p70-real-reference-${tier}-${locale}`,locale,title:localeCopy[locale].title,summary:localeCopy[locale].summary,status:localeCopy[locale].status,projectName:'Multicall3',reviewLevel:tier.toUpperCase(),sections,nextSteps:[localeCopy[locale].next,'Obtain independent ground-truth and exploitability adjudication before assigning severity.','Bind final customer entitlement, provider-rights state and preview/download route bytes before any customer-final credit.'],forbidden:['guaranteed secure','certified safe','exploit instructions','sale-ready claim','live production claim'],customerBoundary:'Real deployed public reference target. Current source/bytecode/compiler identity evidence is real; vulnerability ground truth, customer entitlement, provider-rights, paid-value, sale and LIVE proof are not.',refreshedAt:new Date().toISOString()};
   const pdf=renderCustomerSafeAuditPdf(layout);
   if (pdf.unsupportedGlyphReplacements!==0) throw new Error(`pdf_glyph_replacement:${tier}:${locale}`);
   const file=`p70-multicall3-${tier}-${locale}.pdf`;
@@ -153,10 +189,10 @@ for (const locale of ['pl','en','de']) for (const tier of ['basic','pro','advanc
 }
 for (const locale of ['pl','en','de']) if (new Set(pdfCases.filter(x=>x.locale===locale).map(x=>x.pdfDigest)).size!==3) throw new Error(`tier_pdf_not_distinct:${locale}`);
 
-const evidenceCore={schemaVersion:'velmere.p70.real-deployed-audit-reference-evidence.v1',capturedAt:new Date().toISOString(),target:{name:'Multicall3',chain:'ethereum',chainId:'1',address,sourceRepo:'mds1/multicall3',sourceCommit},officialSource:{sourceUrl,sourceBytes:src.byteLength,sourceSha256:src.sha256,readmeSha256:readme.sha256,foundryConfigSha256:foundry.sha256,reviewSkillSha256:reviewSkill.sha256,license:'MIT',compilerVersion,optimizerRuns:10000000},chainEvidence:{providers:rpcRows,successfulProviders:successful.length,independentRuntimeHashes:hashes.size,selectedBlockNumber:selected.blockNumber,runtimeByteLength:selected.runtimeByteLength,runtimeBytecodeSha256:selected.runtimeBytecodeSha256,officialCastTextBytes:EXPECTED_CAST_TEXT_BYTES,officialCastTextSha256:EXPECTED_CAST_TEXT_SHA256},publicSourceReceipts,compilerEvidenceSha256:compilerEvidence.evidenceSha256,deploymentBinding:binding,reviewLayerSha256:reviewLayer.reviewLayerSha256,packetVerification,packets:packets.map(p=>({tier:p.tier,availability:p.availability,findingCount:p.findingCount,findingIdentitySha256:p.findingIdentitySha256,severitySha256:p.severitySha256,packetSha256:p.packetSha256})),pdfCases,credit:{realDeployedReferenceTarget:1,realChainProviderQuorum:true,sourceRuntimeBinding:true,compilerAstReviewLayer:true,realTargetAuditPdfCases:9,customerFinalOutputs:0,auditFinalCustomerPdfs:0,rightsPassed:'2/203 inherited only from P69R2 ECB; P70 adds no rights credit',paidValueTransitions:'0/10',saleEligibleRows:'0/20',live:false,worldClassProven:false},truthBoundary:'P70 proves one real deployed public reference target can be bound from pinned official source through current multi-provider chain runtime, exact compiler evidence, deployment bytecode match, tier packet generation and 9 customer-safe PDF artifacts. The run is internal reference evidence, not a real customer entitlement or final customer route. It grants zero customer-final, Audit-final-PDF, provider-rights, paid-value, sale, LIVE or WORLD_CLASS credit.'};
+const evidenceCore={schemaVersion:'velmere.p70.real-deployed-audit-reference-evidence.v2',capturedAt:new Date().toISOString(),target:{name:'Multicall3',chain:'ethereum',chainId:'1',address,sourceRepo:'mds1/multicall3',sourceCommit},officialSource:{sourceUrl,sourceBytes:src.byteLength,sourceSha256:src.sha256,readmeSha256:readme.sha256,foundryConfigSha256:foundry.sha256,reviewSkillSha256:reviewSkill.sha256,license:'MIT',compilerVersion,optimizerRuns:10000000},chainEvidence:{providers:rpcRows,successfulProviders:successful.length,independentRuntimeHashes:hashes.size,selectedBlockNumber:selected.blockNumber,runtimeByteLength:selected.runtimeByteLength,runtimeBytecodeSha256:selected.runtimeBytecodeSha256,officialCastTextBytes:EXPECTED_CAST_TEXT_BYTES,officialCastTextSha256:EXPECTED_CAST_TEXT_SHA256},publicSourceReceipts,deploymentBinding,compilerFacts:{...sourceFacts,digest:compilerFactsDigest},tierPackets,pdfCases,credit:{realDeployedReferenceTarget:1,realChainProviderQuorum:true,sourceRuntimeBinding:true,exactCompilerReplay:true,compilerFactsBounded:true,realTargetAuditPdfCases:9,vulnerabilityGroundTruthCredit:0,severityCredit:0,customerFinalOutputs:0,auditFinalCustomerPdfs:0,rightsPassed:'2/203 inherited only from P69R2 ECB; P70 adds no rights credit',paidValueTransitions:'0/10',saleEligibleRows:'0/20',live:false,worldClassProven:false},truthBoundary:'P70 proves one real deployed public reference target can be bound from pinned official source through current multi-provider chain runtime, exact compiler replay, deployment-bytecode identity and 9 customer-safe tier artifacts. It intentionally does not claim any vulnerability because independent ground truth/exploitability is absent. The run is internal reference evidence, not a real customer entitlement or final customer route, and grants zero customer-final, Audit-final-PDF, provider-rights, paid-value, sale, LIVE or WORLD_CLASS credit.'};
 const evidence={...evidenceCore,integritySha256:sha(Buffer.from(canonical(evidenceCore),'utf8'))};
 fs.writeFileSync(path.join(outDir,'P70_REAL_DEPLOYED_AUDIT_REFERENCE_EVIDENCE.json'),JSON.stringify(evidence,null,2)+'\n');
-fs.writeFileSync(path.join(outDir,'P70_COMPILER_EVIDENCE.json'),JSON.stringify(compilerEvidence,null,2)+'\n');
-fs.writeFileSync(path.join(outDir,'P70_DEPLOYMENT_BINDING.json'),JSON.stringify(binding,null,2)+'\n');
+fs.writeFileSync(path.join(outDir,'P70_COMPILER_FACTS.json'),JSON.stringify({sourceFacts,compilerFactsDigest,compilerInputSha256:deploymentBinding.compilerInputSha256},null,2)+'\n');
+fs.writeFileSync(path.join(outDir,'P70_DEPLOYMENT_BINDING.json'),JSON.stringify(deploymentBinding,null,2)+'\n');
 fs.writeFileSync(path.join(outDir,'P70_PUBLIC_SOURCE_RECEIPTS.json'),JSON.stringify(publicSourceReceipts,null,2)+'\n');
-console.log(JSON.stringify({status:'PASS_P70_REAL_DEPLOYED_AUDIT_REFERENCE_NO_PROMOTION',target:address,rpcQuorum:`${successful.length}/${rpcRows.length}`,runtimeByteLength:selected.runtimeByteLength,deploymentBinding:binding.status,compilerFindings:compilerEvidence.findings.length,pdfCases:pdfCases.length,customerFinalOutputs:'0/20',auditFinalPdfs:'0/3'},null,2));
+console.log(JSON.stringify({status:'PASS_P70_REAL_DEPLOYED_AUDIT_REFERENCE_NO_PROMOTION',target:address,rpcQuorum:`${successful.length}/${rpcRows.length}`,runtimeByteLength:selected.runtimeByteLength,deploymentBinding:deploymentBinding.status,compilerFactsDigest,pdfCases:pdfCases.length,vulnerabilityGroundTruth:0,customerFinalOutputs:'0/20',auditFinalPdfs:'0/3'},null,2));
