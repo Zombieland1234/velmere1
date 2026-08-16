@@ -46,25 +46,7 @@
        }, { href: downloadHref, frameUrl: frameSrc, suggestedName: downloadName });
        let blobFile = null;
        if (blobEvidence.available) {
-@@ -409,5 +431,16 @@
-       && consoleErrors.length === 0
-       && pageErrors.length === 0
-       && unexpectedHttpErrors.length === 0
-       && firstPartyFailures.length === 0;
--    const previewPass = !primaryPreview || Boolean(preview?.visible && preview?.downloadVisible && preview?.frameVisible && preview?.blobEvidence?.startsWithPdf && preview?.capturedResponses?.some((item) => item.contentType?.includes('application/pdf') && item.startsWithPdf));
-+    const capturedPreviewPdf = preview?.capturedResponses?.find((item) => item.contentType?.includes('application/pdf') && item.startsWithPdf);
-+    const previewPass = !primaryPreview || Boolean(
-+      preview?.visible
-+      && preview?.downloadVisible
-+      && preview?.frameVisible
-+      && preview?.blobEvidence?.startsWithPdf
-+      && preview?.blobEvidence?.blobType === 'application/pdf'
-+      && preview?.blobEvidence?.frameSameUrl
-+      && capturedPreviewPdf?.sha256
-+      && capturedPreviewPdf.sha256 === preview?.blobEvidence?.file?.sha256
-+      && capturedPreviewPdf.byteLength === preview?.blobEvidence?.byteLength
-+    );
-@@ -451,9 +484,9 @@
+@@ -451,9 +473,9 @@
  const tiers = ['basic', 'pro', 'advanced'].map(summarizeTier);
  const allPass = !topLevelError && rows.length === cases.length && rows.every((row) => row.ok) && tiers.every((tier) => tier.pass);
  const receipt = {
@@ -76,7 +58,7 @@
    executedAt: new Date().toISOString(),
    sourceBinding: {
      projectionManifestSha256: EXPECTED_PROJECTION_MANIFEST_SHA256,
-@@ -461,3 +494,12 @@
+@@ -461,3 +483,12 @@
      projection: EXPECTED_PROJECTION,
      p60EngineeringDecision: 'PASS_NATIVE_WINDOWS_EXACT_BUILD_RELEVANT_PROJECTION_SEMANTIC_LINT_DUAL_BUILD_WITH_CONTROLLED_NEXT_ENV_RECONCILIATION',
 +    controlledP61gSourceDelta: {
@@ -89,12 +71,12 @@
 +      sourceEngineeringReceipt: 'P61G_OFFICIAL_MANROPE_RENDERER_SOURCE_ENGINEERING_RECEIPT.json',
 +    },
    },
-@@ -504,7 +546,7 @@
+@@ -504,7 +535,7 @@
    tiers,
    rows,
    topLevelError,
 -  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection and native Windows runtime. Basic is exercised through a real source-token JSON/PDF preview path; Pro and Advanced are exercised as exact fail-closed current commercial states. The source input is an owned deterministic fixture. This grants no live/current provider, rights, customer value, independent PDF replay, sale, GO or WORLD_CLASS credit.',
-+  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection plus the one-file same-length P61G renderer hash transition, using an exact-hash official runtime font acquired under an internal OFL-1.1 text match. Basic is exercised through a real source-token JSON/PDF preview path; QA-only URL.createObjectURL registry instrumentation binds the exact in-memory preview/download Blob to the captured PDF response without changing product source. Pro and Advanced execute their current fail-closed commercial states. This grants no production rate-limit, live/current provider, external legal opinion, customer value, independent PDF replay, sale, GO, LIVE or WORLD_CLASS credit.',
++  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection plus the one-file same-length P61G renderer hash transition, using an exact-hash official runtime font acquired under an internal OFL-1.1 text match. Basic is exercised through a real source-token JSON/PDF preview path; QA-only URL.createObjectURL registry instrumentation reads the exact in-memory preview/download Blob without a second network fetch and without changing product source. Pro and Advanced execute their current fail-closed commercial states. This grants no production rate-limit, live/current provider, external legal opinion, customer value, independent PDF replay, sale, GO, LIVE or WORLD_CLASS credit.',
  };
  receipt.integritySha256 = stableSha(receipt);
  writeJson('P61_BROWSER_THREE_PHYSICAL_SKU_EXECUTIONS.json', receipt);
