@@ -111,11 +111,12 @@ jobs:
         shell: pwsh
         env:
           P68_RESULT_DIR: ${{ github.workspace }}\p68-out
+          P68_SOURCE_ROOT: ${{ github.workspace }}\p68-work\source
         run: |
           $ErrorActionPreference='Stop'
           Push-Location p68-work/source
           try {
-            node --import ./scripts/pass11/register-offline-ts-loader.mjs ../../p68-runtime/test-p68-audit-customer-truth.mjs
+            node --import ../../p68-runtime/register-p68-ts-loader.mjs ../../p68-runtime/test-p68-audit-customer-truth.mjs
             if ($LASTEXITCODE -ne 0) { throw "P68 Audit artifact fixture failed: $LASTEXITCODE" }
           } finally { Pop-Location }
 
@@ -125,7 +126,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force p68-out | Out-Null
           $r=[ordered]@{
-            schemaVersion='velmere.p68.github-workflow-boundary.v2';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            schemaVersion='velmere.p68.github-workflow-boundary.v3';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
             changedBuildRelevantFiles=4;projectionFileCount=1597;projectionPayloadBytes=20958767;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='6a6ce54cb454da438f7a151b1e8ed5e4681900cafc6df6acb163a93998bfa7d0';generatedNextEnvProjectionPayloadBytes=20958752;generatedNextEnvProjectionAggregateSha256='6f75972cdef164a84410455732822dda6a552581a9a1ff59c5c4a10fa41444cf';
             productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;rightsPassed=0;rightsDenominator=199;customerFinalOutputs=0;auditFinalCustomerPdfs=0;saleEligibleRows=0;live=$false;worldClassProven=$false;
             truthBoundary='Exact Windows engineering and synthetic Audit customer artifact truth/PDF parity only. No real customer, provider-rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
