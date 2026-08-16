@@ -11,5 +11,9 @@ const oldGate="const successful=rpcRows.filter(r=>r.status==='PASS');\nif (succe
 const newGate="const successful=rpcRows.filter(r=>r.status==='PASS');\nfs.writeFileSync(path.join(outDir,'P70_RPC_PROVIDER_DIAGNOSTIC.json'),JSON.stringify({capturedAt:new Date().toISOString(),providers:rpcRows},null,2)+'\\n');\nif (successful.length<2)";
 if(!source.includes(oldGate)) throw new Error('p70_rpc_diagnostic_preimage_missing');
 source=source.replace(oldGate,newGate);
+const oldTarget="    `Target: Ethereum mainnet ${address}`,";
+const newTarget="    `Target: ${address}`,\n    'Network: Ethereum mainnet',";
+if(!source.includes(oldTarget)) throw new Error('p70_target_line_preimage_missing');
+source=source.replace(oldTarget,newTarget);
 const dataUrl=`data:text/javascript;base64,${Buffer.from(source,'utf8').toString('base64')}`;
 await import(dataUrl);
