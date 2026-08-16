@@ -1,0 +1,37 @@
+--- a/p61-browser/run-p61-browser-sku-executions.mjs
++++ b/p61-browser/run-p61-browser-sku-executions.mjs
+@@ -451,9 +451,9 @@
+ const tiers = ['basic', 'pro', 'advanced'].map(summarizeTier);
+ const allPass = !topLevelError && rows.length === cases.length && rows.every((row) => row.ok) && tiers.every((tier) => tier.pass);
+ const receipt = {
+-  schemaVersion: 'velmere.p61.browser-three-physical-sku-executions.v1',
++  schemaVersion: 'velmere.p61g.browser-three-physical-sku-executions-official-runtime-font.v1',
+   status: allPass ? 'PASS' : 'FAIL',
+-  decision: allPass ? 'PASS_BROWSER_BASIC_PRO_ADVANCED_PHYSICAL_EXECUTIONS_CURRENT_TRUTH_BOUNDED' : 'FAIL_CLOSED_BROWSER_THREE_SKU_EXECUTION',
++  decision: allPass ? 'PASS_P61G_BROWSER_BASIC_PRO_ADVANCED_PHYSICAL_EXECUTIONS_OFFICIAL_RUNTIME_FONT_TRUTH_BOUNDED' : 'FAIL_CLOSED_P61G_BROWSER_THREE_SKU_EXECUTION',
+   executedAt: new Date().toISOString(),
+   sourceBinding: {
+     projectionManifestSha256: EXPECTED_PROJECTION_MANIFEST_SHA256,
+@@ -461,6 +461,15 @@
+     projection: EXPECTED_PROJECTION,
+     p60EngineeringDecision: 'PASS_NATIVE_WINDOWS_EXACT_BUILD_RELEVANT_PROJECTION_SEMANTIC_LINT_DUAL_BUILD_WITH_CONTROLLED_NEXT_ENV_RECONCILIATION',
++    controlledP61gSourceDelta: {
++      path: 'lib/search/lens-pdf-renderer.ts',
++      mode: 'ONE_EXISTING_FILE_SAME_LENGTH_HASH_TRANSITION',
++      baselineByteLength: 76847,
++      baselineSha256: '1e18d849d232e48cf12b40f5b274141f21353b2d7038d40d3f69103ed71380d3',
++      patchedByteLength: 76847,
++      patchedSha256: '18142581dc6f858df800c684c90bb6c444683758664f45f5eb7b87932f0bd647',
++      sourceEngineeringReceipt: 'P61G_OFFICIAL_MANROPE_RENDERER_SOURCE_ENGINEERING_RECEIPT.json',
++    },
+   },
+   runtime: {
+@@ -504,7 +513,7 @@
+   tiers,
+   rows,
+   topLevelError,
+-  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection and native Windows runtime. Basic is exercised through a real source-token JSON/PDF preview path; Pro and Advanced are exercised as exact fail-closed current commercial states. The source input is an owned deterministic fixture. This grants no live/current provider, rights, customer value, independent PDF replay, sale, GO or WORLD_CLASS credit.',
++  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection plus the one-file same-length P61G renderer hash transition, using an exact-hash official runtime font acquired under an internal OFL-1.1 text match. Basic is exercised through a real source-token JSON/PDF preview path; Pro and Advanced execute their current fail-closed commercial states. This grants no production rate-limit, live/current provider, external legal opinion, customer value, independent PDF replay, sale, GO, LIVE or WORLD_CLASS credit.',
+ };
+ receipt.integritySha256 = stableSha(receipt);
+ writeJson('P61_BROWSER_THREE_PHYSICAL_SKU_EXECUTIONS.json', receipt);
