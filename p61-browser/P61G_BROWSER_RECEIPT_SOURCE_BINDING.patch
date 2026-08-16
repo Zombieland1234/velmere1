@@ -18,7 +18,7 @@
 +      });
 +    });
      page.on('console', (message) => { if (message.type() === 'error' && !/React DevTools/i.test(message.text())) consoleErrors.push(sanitizedConsoleText(message.text())); });
-@@ -359,15 +374,24 @@
+@@ -359,17 +374,24 @@
        await page.waitForTimeout(1200);
        page.off('response', listener);
        const downloadLink = visibleTestId(page, 'lens-download-link');
@@ -46,12 +46,9 @@
        }, { href: downloadHref, frameUrl: frameSrc, suggestedName: downloadName });
        let blobFile = null;
        if (blobEvidence.available) {
-@@ -397,8 +421,18 @@
- 
-     const uiPass = navigation?.status() === 200
-       && resultTitle === 'Bitcoin'
-       && targetChoiceVisible
-@@ -409,7 +443,17 @@
+@@ -409,5 +431,16 @@
+       && consoleErrors.length === 0
+       && pageErrors.length === 0
        && unexpectedHttpErrors.length === 0
        && firstPartyFailures.length === 0;
 -    const previewPass = !primaryPreview || Boolean(preview?.visible && preview?.downloadVisible && preview?.frameVisible && preview?.blobEvidence?.startsWithPdf && preview?.capturedResponses?.some((item) => item.contentType?.includes('application/pdf') && item.startsWithPdf));
@@ -67,9 +64,7 @@
 +      && capturedPreviewPdf.sha256 === preview?.blobEvidence?.file?.sha256
 +      && capturedPreviewPdf.byteLength === preview?.blobEvidence?.byteLength
 +    );
-     const ok = uiPass && directPass && previewPass;
-     rows.push({
-@@ -451,9 +495,9 @@
+@@ -451,9 +484,9 @@
  const tiers = ['basic', 'pro', 'advanced'].map(summarizeTier);
  const allPass = !topLevelError && rows.length === cases.length && rows.every((row) => row.ok) && tiers.every((tier) => tier.pass);
  const receipt = {
@@ -81,7 +76,7 @@
    executedAt: new Date().toISOString(),
    sourceBinding: {
      projectionManifestSha256: EXPECTED_PROJECTION_MANIFEST_SHA256,
-@@ -461,3 +505,12 @@
+@@ -461,3 +494,12 @@
      projection: EXPECTED_PROJECTION,
      p60EngineeringDecision: 'PASS_NATIVE_WINDOWS_EXACT_BUILD_RELEVANT_PROJECTION_SEMANTIC_LINT_DUAL_BUILD_WITH_CONTROLLED_NEXT_ENV_RECONCILIATION',
 +    controlledP61gSourceDelta: {
@@ -94,7 +89,7 @@
 +      sourceEngineeringReceipt: 'P61G_OFFICIAL_MANROPE_RENDERER_SOURCE_ENGINEERING_RECEIPT.json',
 +    },
    },
-@@ -504,7 +557,7 @@
+@@ -504,7 +546,7 @@
    tiers,
    rows,
    topLevelError,
