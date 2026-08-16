@@ -23,11 +23,8 @@ if(!snap.layoutInput.sections.includes(expected)) throw new Error(`target_line_m
 if(!snap.canonicalLayout.customerSections.includes(expected)) throw new Error('canonical_target_line_missing');
 const rerender=renderCustomerSafeAuditPdf(snap.layoutInput);
 if(rerender.pdfDigest!==snap.pdfArtifact.pdfDigest||rerender.pdfByteLength!==snap.pdfArtifact.pdfByteLength) throw new Error('target_snapshot_pdf_parity');
-const raw=Buffer.from(rerender.bytes).toString('latin1').toLowerCase();
-if(!raw.includes(address.slice(2).toLowerCase())&&!raw.includes(address.toLowerCase())) {
-  // PDF text is commonly hex encoded; verify source-safe render plan instead of assuming literal encoding.
-  if(!snap.canonicalLayout.sections.flatMap(s=>s.lines).some(line=>line.toLowerCase()===expected.toLowerCase())) throw new Error('target_not_render_plan_bound');
-}
-const receipt={schemaVersion:'velmere.p70.audit-target-identity-runtime.v1',status:'PASS_P70_AUDIT_TARGET_IDENTITY_BOUND_NO_PROMOTION',target:address,targetLine:expected,layoutDigest:snap.canonicalLayout.layoutDigest,pdfDigest:snap.pdfArtifact.pdfDigest,pdfBytes:snap.pdfArtifact.pdfByteLength,pageCount:snap.pdfArtifact.pageCount,customerFinalOutputCredit:0,auditFinalCustomerPdfCredit:0,rightsCredit:0,saleCredit:0,live:false,truthBoundary:'Exact current-source runtime proof that an EVM target address passed through the Audit account snapshot is retained in customer-safe layout/PDF planning. No customer-final, vulnerability, rights, value, sale, LIVE or WORLD_CLASS promotion.'};
+const canonicalLines=snap.canonicalLayout.sections.flatMap(s=>s.lines).map(String);
+if(!canonicalLines.some(line=>line.toLowerCase().includes(expected.toLowerCase()))) throw new Error(`target_not_render_plan_bound:${JSON.stringify(canonicalLines)}`);
+const receipt={schemaVersion:'velmere.p70.audit-target-identity-runtime.v2',status:'PASS_P70_AUDIT_TARGET_IDENTITY_BOUND_NO_PROMOTION',target:address,targetLine:expected,layoutDigest:snap.canonicalLayout.layoutDigest,pdfDigest:snap.pdfArtifact.pdfDigest,pdfBytes:snap.pdfArtifact.pdfByteLength,pageCount:snap.pdfArtifact.pageCount,customerFinalOutputCredit:0,auditFinalCustomerPdfCredit:0,rightsCredit:0,saleCredit:0,live:false,truthBoundary:'Exact current-source runtime proof that an EVM target address passed through the Audit account snapshot is retained in customer-safe layout/PDF planning. No customer-final, vulnerability, rights, value, sale, LIVE or WORLD_CLASS promotion.'};
 fs.writeFileSync(path.join(out,'P70_AUDIT_TARGET_IDENTITY_RUNTIME.json'),JSON.stringify(receipt,null,2)+'\n');
 console.log(JSON.stringify(receipt,null,2));
