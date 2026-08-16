@@ -30,12 +30,11 @@ jobs:
           node-version: '24.18.0'
           check-latest: false
 
-      - name: Setup exact npm 11.16.0 and PDF QA dependencies
+      - name: Setup exact npm 11.16.0
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
-          python -m pip install --disable-pip-version-check pymupdf pillow pypdf
           if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node version mismatch' }
           if ((npm --version).Trim() -ne '11.16.0') { throw 'npm version mismatch' }
           node --version
@@ -54,7 +53,7 @@ jobs:
           $lsExit = $LASTEXITCODE
           "npm_ls_exit=$lsExit" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           if ($lsExit -ne 0) {
-            Write-Host 'P62 full-root npm ls is WITHHELD, continuing current-byte product fixture diagnostics.'
+            Write-Host 'P62 full-root npm ls is WITHHELD, continuing isolated current-byte product fixture diagnostics.'
             Get-Content P62_NPM_LS.txt -Tail 120
           }
           node -e "const p=require('./node_modules/@next/swc-win32-x64-msvc/package.json'); if(!p.version) process.exit(2); console.log('@next/swc-win32-x64-msvc',p.version)"
@@ -67,56 +66,67 @@ jobs:
           npm run build:p39:v16-topology
           npm run test:p39:v16-topology
 
-      - name: Audit Basic Pro Advanced current-byte fixture execution
+      - name: Audit exact Windows current-byte fixture execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm run test:pass36:a82
           npm run verify:pass36:a82
 
-      - name: Browser Lens PDF full current-byte fixture execution
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          npm run pass36:generate-a83-pdfs
-          npm run test:pass36:a83
-          python scripts/pass36/qa-a83-browser-lens-pdf-corpus.py
-          npm run verify:pass36:a83
-
-      - name: Shield current-byte fixture execution
+      - name: Shield exact Windows current-byte fixture execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm run test:pass36:a84
           npm run verify:pass36:a84
 
-      - name: Shield Pro and Shield Map current-byte fixture execution
+      - name: Shield Pro and Shield Map exact Windows current-byte fixture execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm run test:pass36:a85
           npm run verify:pass36:a85
 
-      - name: Real Markets current-byte fixture execution
+      - name: Real Markets exact Windows current-byte fixture execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm run test:pass36:a86
           npm run verify:pass36:a86
 
-      - name: Market Impact and Whale Watch current-byte fixture execution
+      - name: Market Impact and Whale Watch exact Windows current-byte fixture execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm run test:pass36:a87
           npm run verify:pass36:a87
 
-      - name: Angel and Risk Indicator current-byte fixture execution
+      - name: Angel and Risk Indicator exact Windows current-byte fixture execution
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm run test:pass36:a88
           npm run verify:pass36:a88
+
+      - name: Browser PDF source-byte boundary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $renderer='lib/search/lens-pdf-renderer.ts'
+          if (-not (Test-Path $renderer)) { throw 'renderer missing' }
+          $hash=(Get-FileHash -Algorithm SHA256 $renderer).Hash.ToLowerInvariant()
+          $bytes=(Get-Item $renderer).Length
+          $source=[ordered]@{
+            rendererPath=$renderer
+            rendererSha256=$hash
+            rendererBytes=$bytes
+            externalFontRequired=(Select-String -LiteralPath $renderer -SimpleMatch 'VELMERE_PDF_FONT_PATH' -Quiet)
+            expectedFontShaBound=(Select-String -LiteralPath $renderer -SimpleMatch 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa' -Quiet)
+            execution='WITHHELD_NO_FONT_BINARY_IN_SOURCE_ONLY'
+            p61r1BoundedBrowserPdfEvidenceMustRemainSeparate=$true
+          }
+          New-Item -ItemType Directory -Force P62_RESULT | Out-Null
+          $source | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8NoBOM P62_RESULT/P62_BROWSER_PDF_SOURCE_BOUNDARY.json
 
       - name: Build P62 current-byte receipt pack
         shell: pwsh
@@ -128,9 +138,6 @@ jobs:
           $paths = @(
             'config/p39/p39-v16-product-topology-reconciliation.json',
             'artifacts/pass36/a82/PASS36_A82_FIXTURE_RUNTIME.json',
-            'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_FIXTURE_RUNTIME.json',
-            'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_CORPUS_MANIFEST.json',
-            'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_RASTER_QA_RECEIPT.json',
             'artifacts/pass36/a84/PASS36_A84_SHIELD_FULL_CATALOG_RUNTIME.json',
             'artifacts/pass36/a85/PASS36_A85_SHIELD_PRO_MAP_FULL_DEPTH_RUNTIME.json',
             'artifacts/pass36/a86/PASS36_A86_REAL_MARKETS_CROSS_ASSET_RUNTIME.json',
@@ -146,7 +153,7 @@ jobs:
             $manifest += [ordered]@{ path=$p; bytes=$i.Length; sha256=$h }
           }
           $sys = [ordered]@{
-            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v3'
+            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v4'
             generatedAt=(Get-Date).ToUniversalTime().ToString('o')
             runner=$env:RUNNER_OS
             runnerArch=$env:RUNNER_ARCH
@@ -159,7 +166,10 @@ jobs:
             productFamilies=11
             customerFacingRows=17
             internalExecutionProfiles=33
-            executionClass='CURRENT_BYTE_EXACT_WINDOWS_FIXTURE_INTERNAL_ONLY'
+            exactWindowsFixtureProfilesExecuted=27
+            browserPdfProfilesExactWindowsExecuted=0
+            browserPdfProfilesBoundedP61R1=6
+            executionClass='CURRENT_BYTE_EXACT_WINDOWS_FIXTURE_INTERNAL_ONLY_FOR_27_OF_33_PROFILES'
             npmCi='PASS_IGNORE_SCRIPTS_P60_METHOD'
             fullRootNpmLsExit=[int]$env:P62_NPM_LS_EXIT
             fullRootDependencyClosure=if ([int]$env:P62_NPM_LS_EXIT -eq 0) { 'PASS' } else { 'WITHHELD_ELSPROBLEMS_DIAGNOSTIC' }
