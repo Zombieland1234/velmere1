@@ -6,6 +6,10 @@ on:
       - velmere-p62-current-output-baseline-20260816
   workflow_dispatch:
 
+concurrency:
+  group: p62-exact-windows-current-output-baseline
+  cancel-in-progress: true
+
 jobs:
   p62-current-output-baseline:
     runs-on: windows-2025
@@ -21,12 +25,14 @@ jobs:
         with:
           node-version: '24.18.0'
 
-      - name: Setup exact npm 11.16.0
+      - name: Setup exact npm 11.16.0 and PDF QA dependencies
         shell: pwsh
         run: |
           npm install --global npm@11.16.0
+          python -m pip install --disable-pip-version-check pymupdf pillow pypdf
           node --version
           npm --version
+          python --version
 
       - name: Exact dependency closure
         shell: pwsh
@@ -90,7 +96,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path P62_RESULT | Out-Null
           $paths = @(
-            'artifacts/closure/p39/P39_V16_PRODUCT_TOPOLOGY.json',
+            'artifacts/closure/p39/P39_V16_AUTHORITY_TOPOLOGY_EXACT_NODE24_LINUX.json',
             'artifacts/pass36/a82/PASS36_A82_FIXTURE_RUNTIME.json',
             'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_FIXTURE_RUNTIME.json',
             'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_RASTER_QA_RECEIPT.json',
