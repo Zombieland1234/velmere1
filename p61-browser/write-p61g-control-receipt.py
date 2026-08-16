@@ -20,7 +20,9 @@ OLD_EXPECTED_ROWS = """  const expectedRows = manifest.files
 NEW_EXPECTED_ROWS = """  // Preserve canonical manifest order. P49/P60 identity hashes are defined over
   // manifest order, not locale-dependent filesystem sorting.
   const expectedRows = manifest.files.map((row) => overrides.get(row.path) ?? row);"""
-OLD_ROWS_SORT = "  rows.sort((left, right) => left.path.localeCompare(right.path));\n"
+OLD_IDENTITY_ROWS_SORT = """  rows.sort((left, right) => left.path.localeCompare(right.path));
+  const pathSetSha256 = sha256Bytes(Buffer.from(rows.map((row) => row.path).join('\\n'), 'utf8'));"""
+NEW_IDENTITY_ROWS_SORT = """  const pathSetSha256 = sha256Bytes(Buffer.from(rows.map((row) => row.path).join('\\n'), 'utf8'));"""
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -48,13 +50,15 @@ def build_manifest_order_runner(paths: list[Path]) -> dict[str, Any]:
         raise RuntimeError(f"p61g_runner_baseline_sha_mismatch:{before['sha256']}")
 
     text = runner.read_text(encoding="utf-8")
-    if text.count(OLD_EXPECTED_ROWS) != 1:
-        raise RuntimeError(f"p61g_runner_expected_rows_anchor_count:{text.count(OLD_EXPECTED_ROWS)}")
-    if text.count(OLD_ROWS_SORT) != 1:
-        raise RuntimeError(f"p61g_runner_rows_sort_anchor_count:{text.count(OLD_ROWS_SORT)}")
+    expected_rows_count = text.count(OLD_EXPECTED_ROWS)
+    identity_sort_count = text.count(OLD_IDENTITY_ROWS_SORT)
+    if expected_rows_count != 1:
+        raise RuntimeError(f"p61g_runner_expected_rows_anchor_count:{expected_rows_count}")
+    if identity_sort_count != 1:
+        raise RuntimeError(f"p61g_runner_identity_rows_sort_anchor_count:{identity_sort_count}")
 
     text = text.replace(OLD_EXPECTED_ROWS, NEW_EXPECTED_ROWS, 1)
-    text = text.replace(OLD_ROWS_SORT, "", 1)
+    text = text.replace(OLD_IDENTITY_ROWS_SORT, NEW_IDENTITY_ROWS_SORT, 1)
     runner.write_text(text, encoding="utf-8", newline="\n")
 
     after = file_identity(runner)
@@ -68,11 +72,11 @@ def build_manifest_order_runner(paths: list[Path]) -> dict[str, Any]:
         "decision": "PASS_P61G_RUNNER_CANONICAL_MANIFEST_ORDER_REPAIR",
         "reason": (
             "P49/P60 projection path-set and content aggregate are defined by P47_BUILD_PROJECTION_MANIFEST.json row order. "
-            "The P61G diagnostic runner incorrectly re-sorted those rows with JavaScript localeCompare, producing a false identity mismatch despite 1597/1597 byte matches."
+            "The P61G diagnostic runner incorrectly re-sorted identity rows with JavaScript localeCompare, producing a false identity mismatch despite 1597/1597 byte matches."
         ),
         "before": before,
         "after": after,
-        "anchors": {"expectedRows": 1, "rowsSort": 1},
+        "anchors": {"expectedRows": expected_rows_count, "identityRowsSort": identity_sort_count},
         "nodeParseCheck": "PASS",
         "semanticScope": "diagnostic/control runner only; no product source bytes changed",
     }
@@ -113,14 +117,14 @@ def main() -> int:
     rows = [file_identity(path) for path in paths]
 
     receipt: dict[str, Any] = {
-        "schemaVersion": "velmere.p61g2.control-identity-and-runner-repair.v2",
+        "schemaVersion": "velmere.p61g3.control-identity-and-runner-repair.v3",
         "status": "PASS",
         "decision": "PASS_P61G_CONTROLS_BOUND_AND_FALSE_IDENTITY_ORDERING_REPAIRED",
         "githubSha": args.github_sha,
         "runtimeRepair": runtime_repair,
         "files": rows,
         "truthBoundary": (
-            "This receipt binds P61G control bytes and deterministically repairs only the diagnostic runner's ordering bug. "
+            "This receipt binds P61G control bytes and deterministically repairs only the diagnostic runner's identity-ordering bug. "
             "It changes no product source bytes and grants no Browser, PDF output, customer, sale, GO, LIVE or WORLD_CLASS credit."
         ),
     }
