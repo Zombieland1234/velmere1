@@ -1,0 +1,72 @@
+name: P65 current free legal source receipts exact Windows
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p65-current-free-legal-source-receipts-20260816
+    paths:
+      - 'p65-windows/**'
+      - 'p65-packet/**'
+      - '.github/workflows/p65-current-free-legal-source-receipts.yml'
+concurrency:
+  group: p65-current-free-legal-source-receipts
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  p65-current-source:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout P65 source-receipt branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+      - name: Validate bounded P65 policy packet
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p=Get-Content 'p65-packet/P65_WINDOWS_POLICY_PACKET.json' -Raw | ConvertFrom-Json
+          if ($p.schemaVersion -ne 'velmere.p65.windows-current-free-legal-policy-packet.v1') { throw 'schema mismatch' }
+          if ($p.denominators.customerRowsCurrentSourceDecisionReceipt -ne 6) { throw 'customer decision denominator mismatch' }
+          if ($p.denominators.internalProfilesCurrentSourceDecisionReceipt -ne 12) { throw 'profile decision denominator mismatch' }
+          if ($p.denominators.targetFieldsAdjudicated -ne 74) { throw 'target field denominator mismatch' }
+          if ($p.denominators.customerRowsFinalCustomerOutput -ne 0 -or $p.denominators.legalSourceFieldsPassed -ne 0 -or $p.denominators.saleEligibleRows -ne 0) { throw 'false promotion' }
+          if ($p.releaseState.GO_INTERNAL -or $p.releaseState.PILOT_READY -or $p.releaseState.GO_PAID -or $p.releaseState.LIVE -or $p.releaseState.WORLD_CLASS_PROVEN) { throw 'release-state promotion' }
+      - name: Fetch and normalize official current sources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p65-windows/fetch-official-sources.py
+          if ($LASTEXITCODE -ne 0) { throw "P65 source fetch failed: $LASTEXITCODE" }
+      - name: Build exact Windows receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $f=Get-Content 'P65_RESULT/P65_CURRENT_OFFICIAL_SOURCE_FETCH_RECEIPT.json' -Raw | ConvertFrom-Json
+          if (-not $f.requiredPassed) { throw 'required source fetch not clean' }
+          Copy-Item 'p65-packet/P65_WINDOWS_POLICY_PACKET.json' 'P65_RESULT/'
+          $r=[ordered]@{schemaVersion='velmere.p65.exact-windows-current-source-receipt.v1';generatedAt=[DateTime]::UtcNow.ToString('o');runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';gitHead='${{ github.sha }}';gitRef='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version).Trim();npm=(npm --version).Trim();customerRowsCurrentSourceDecisionReceipt=6;internalProfilesCurrentSourceDecisionReceipt=12;targetFieldsAdjudicated=74;finalCustomerRows=0;finalProfiles=0;legalSourceFieldsPassed=0;saleEligibleRows=0;status='PASS_P65_EXACT_WINDOWS_CURRENT_OFFICIAL_SOURCE_RECEIPTS_NO_PROMOTION';truthBoundary='Current official-source receipt + bounded policy verification only. No full product currentness, final customer output, legal counsel approval, paid value, sale, LIVE or WORLD_CLASS credit.'}
+          $r | ConvertTo-Json -Depth 8 | Set-Content 'P65_RESULT/P65_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json' -Encoding utf8
+          Get-ChildItem P65_RESULT -File | ForEach-Object { "{0}  {1}" -f ((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()),$_.Name } | Set-Content 'P65_RESULT/P65_RESULT_SHA256.txt' -Encoding utf8
+      - name: Upload P65 exact Windows source receipts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p65-current-free-legal-source-receipts
+          path: P65_RESULT
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
