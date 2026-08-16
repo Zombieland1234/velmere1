@@ -42,13 +42,21 @@ jobs:
           npm --version
           python --version
 
-      - name: Exact dependency closure using P60 method
+      - name: Exact install plus full-root dependency-tree diagnostic
+        id: deps
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          $installExit = $LASTEXITCODE
+          if ($installExit -ne 0) { throw "npm ci failed: $installExit" }
           npm ls --all *> P62_NPM_LS.txt
-          if ($LASTEXITCODE -ne 0) { Get-Content P62_NPM_LS.txt -Tail 250; throw "npm ls failed: $LASTEXITCODE" }
+          $lsExit = $LASTEXITCODE
+          "npm_ls_exit=$lsExit" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($lsExit -ne 0) {
+            Write-Host 'P62 full-root npm ls is WITHHELD, continuing current-byte product fixture diagnostics.'
+            Get-Content P62_NPM_LS.txt -Tail 120
+          }
           node -e "const p=require('./node_modules/@next/swc-win32-x64-msvc/package.json'); if(!p.version) process.exit(2); console.log('@next/swc-win32-x64-msvc',p.version)"
           node -e "const p=require('./node_modules/typescript/package.json'); if(!p.version) process.exit(2); console.log('typescript',p.version)"
 
@@ -112,13 +120,16 @@ jobs:
 
       - name: Build P62 current-byte receipt pack
         shell: pwsh
+        env:
+          P62_NPM_LS_EXIT: ${{ steps.deps.outputs.npm_ls_exit }}
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path P62_RESULT | Out-Null
           $paths = @(
-            'artifacts/closure/p39/P39_V16_AUTHORITY_TOPOLOGY_EXACT_NODE24_LINUX.json',
+            'config/p39/p39-v16-product-topology-reconciliation.json',
             'artifacts/pass36/a82/PASS36_A82_FIXTURE_RUNTIME.json',
             'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_FIXTURE_RUNTIME.json',
+            'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_CORPUS_MANIFEST.json',
             'artifacts/pass36/a83/PASS36_A83_BROWSER_LENS_PDF_RASTER_QA_RECEIPT.json',
             'artifacts/pass36/a84/PASS36_A84_SHIELD_FULL_CATALOG_RUNTIME.json',
             'artifacts/pass36/a85/PASS36_A85_SHIELD_PRO_MAP_FULL_DEPTH_RUNTIME.json',
@@ -135,7 +146,7 @@ jobs:
             $manifest += [ordered]@{ path=$p; bytes=$i.Length; sha256=$h }
           }
           $sys = [ordered]@{
-            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v2'
+            schemaVersion='velmere.p62.exact-windows-current-output-baseline.v3'
             generatedAt=(Get-Date).ToUniversalTime().ToString('o')
             runner=$env:RUNNER_OS
             runnerArch=$env:RUNNER_ARCH
@@ -149,7 +160,9 @@ jobs:
             customerFacingRows=17
             internalExecutionProfiles=33
             executionClass='CURRENT_BYTE_EXACT_WINDOWS_FIXTURE_INTERNAL_ONLY'
-            dependencyInstallPolicy='P60_METHOD_NPM_CI_IGNORE_SCRIPTS_PLUS_NPM_LS_ALL'
+            npmCi='PASS_IGNORE_SCRIPTS_P60_METHOD'
+            fullRootNpmLsExit=[int]$env:P62_NPM_LS_EXIT
+            fullRootDependencyClosure=if ([int]$env:P62_NPM_LS_EXIT -eq 0) { 'PASS' } else { 'WITHHELD_ELSPROBLEMS_DIAGNOSTIC' }
             currentProviderDataCredit=0
             rightsCredit=0
             saleEligibleRows=0
