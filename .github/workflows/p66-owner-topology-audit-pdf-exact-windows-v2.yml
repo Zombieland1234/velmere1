@@ -1,0 +1,161 @@
+name: P66 owner topology Audit PDF exact Windows v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [velmere-p66-owner-topology-audit-pdf-20260816]
+    paths: [".github/workflows/p66-owner-topology-audit-pdf-exact-windows-v2.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p66-owner-topology-audit-pdf-exact-windows-v2
+  cancel-in-progress: true
+
+jobs:
+  p66:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout P66 branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          node --version; npm --version; python --version
+
+      - name: Reconstruct exact P66 source delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $expectedSha='30564c47580b1234b54c080554c6bcea5a8340484350a5b5c0f6619a89c744b0'; $expectedBytes=53260
+          $chunks=Get-ChildItem 'p66-transport/chunks' -Filter 'part*.txt' | Sort-Object Name
+          if ($chunks.Count -ne 6) { throw "chunk count $($chunks.Count)" }
+          $b64=''; foreach ($chunk in $chunks) { $b64 += (Get-Content $chunk.FullName -Raw).Trim() }
+          [IO.File]::WriteAllBytes((Join-Path $PWD 'P66_TRANSPORT.zip'),[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash P66_TRANSPORT.zip -Algorithm SHA256).Hash.ToLowerInvariant(); $bytes=(Get-Item P66_TRANSPORT.zip).Length
+          if ($sha -ne $expectedSha -or $bytes -ne $expectedBytes) { throw "transport mismatch $sha / $bytes" }
+          New-Item -ItemType Directory -Force p66-overlay | Out-Null; Expand-Archive P66_TRANSPORT.zip p66-overlay -Force
+          $m=Get-Content p66-overlay/P66_TRANSPORT_MANIFEST.json -Raw | ConvertFrom-Json
+          foreach ($e in $m.files) {
+            $from=Join-Path p66-overlay $e.path; if ((Get-FileHash $from -Algorithm SHA256).Hash.ToLowerInvariant() -ne [string]$e.sha256) { throw "hash $($e.path)" }
+            $to=Join-Path $PWD $e.path; New-Item -ItemType Directory -Force (Split-Path $to -Parent) | Out-Null; Copy-Item $from $to -Force
+          }
+          'PASS' | Set-Content P66_TRANSPORT_PASS.txt
+          Write-Host "P66 transport PASS $sha / $bytes B / $($m.files.Count) files"
+
+      - name: Exact dependency install and semantic TypeScript
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          if ($LASTEXITCODE -ne 0) { throw "npm ci $LASTEXITCODE" }
+          npm run typecheck
+          if ($LASTEXITCODE -ne 0) { throw "typecheck $LASTEXITCODE" }
+          'PASS' | Set-Content P66_TYPECHECK_PASS.txt
+
+      - name: Owner topology verification
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npx tsx scripts/pass66/verify-p66-owner-topology.ts | Tee-Object P66_TOPOLOGY_STDOUT.json
+          if ($LASTEXITCODE -ne 0) { throw "topology $LASTEXITCODE" }
+          'PASS' | Set-Content P66_TOPOLOGY_PASS.txt
+
+      - name: Audit PDF two independent processes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Remove-Item -Recurse -Force artifacts/closure/p66/audit_pdf_fixture/runA,artifacts/closure/p66/audit_pdf_fixture/runB -ErrorAction SilentlyContinue
+          npx tsx scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts runA
+          if ($LASTEXITCODE -ne 0) { throw "audit runA $LASTEXITCODE" }
+          npx tsx scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts runB
+          if ($LASTEXITCODE -ne 0) { throw "audit runB $LASTEXITCODE" }
+          $a=Get-Content artifacts/closure/p66/audit_pdf_fixture/runA/manifest.json -Raw | ConvertFrom-Json; $b=Get-Content artifacts/closure/p66/audit_pdf_fixture/runB/manifest.json -Raw | ConvertFrom-Json
+          if ($a.rows.Count -ne 9 -or $b.rows.Count -ne 9) { throw '9/9 denominator mismatch' }
+          $lines=@(); foreach ($row in ($a.rows | Sort-Object tier,locale)) {
+            $match=@($b.rows | Where-Object { $_.tier -eq $row.tier -and $_.locale -eq $row.locale }); if ($match.Count -ne 1) { throw 'replay row missing' }
+            $ha=(Get-FileHash (Join-Path $PWD $row.pdfPath) -Algorithm SHA256).Hash.ToLowerInvariant(); $hb=(Get-FileHash (Join-Path $PWD $match[0].pdfPath) -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($ha -ne $hb -or $ha -ne [string]$row.pdfSha256) { throw "replay $($row.tier)/$($row.locale)" }
+            if ($row.layoutCustomerSectionCount -ne $row.sectionCount) { throw "truncation $($row.tier)/$($row.locale)" }
+            $lines += "$($row.tier)|$($row.locale)|$ha|$($row.pdfBytes)|$($row.pageCount)|$($row.sectionCount)"
+          }
+          [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'p66-agg.txt'),(($lines -join "`n")+"`n"),[Text.UTF8Encoding]::new($false))
+          $agg=(Get-FileHash (Join-Path $env:RUNNER_TEMP 'p66-agg.txt') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($agg -ne 'a4b47efa99ef11757354382269317d48972a25727f01521c276a87642e1077bb') { throw "aggregate $agg" }
+          'PASS' | Set-Content P66_AUDIT_REPLAY_PASS.txt; Write-Host "Audit replay 9/9 x2 PASS aggregate=$agg"
+
+      - name: PDF QA dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install --disable-pip-version-check pypdf pymupdf
+          if (-not (Get-Command gswin64c -ErrorAction SilentlyContinue)) { choco install ghostscript -y --no-progress }
+          $gs=Get-ChildItem 'C:\Program Files\gs' -Filter gswin64c.exe -Recurse -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+          if ($gs) { "P66_GS_DIR=$($gs.Directory.FullName)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append }
+
+      - name: Audit PDF structural and dual-render QA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; if ($env:P66_GS_DIR) { $env:PATH="$env:P66_GS_DIR;$env:PATH" }
+          python scripts/pass66/qa-audit-tier-customer-pdfs.py runA; if ($LASTEXITCODE -ne 0) { throw "qaA $LASTEXITCODE" }
+          python scripts/pass66/qa-audit-tier-customer-pdfs.py runB; if ($LASTEXITCODE -ne 0) { throw "qaB $LASTEXITCODE" }
+          'PASS' | Set-Content P66_AUDIT_QA_PASS.txt
+
+      - name: Targeted zero-warning ESLint
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npx eslint --max-warnings 0 lib/product/vlm-current-product-topology.ts lib/commerce/vlm-current-sku-truth.ts lib/commerce/vlm-current-evidence-availability-matrix.ts lib/server/lazy-route-modules/angel.ts lib/security/customer-safe-audit-layout.ts lib/security/audit-tier-customer-pdf.ts scripts/pass66/verify-p66-owner-topology.ts scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts
+          if ($LASTEXITCODE -ne 0) { throw "lint $LASTEXITCODE" }; 'PASS' | Set-Content P66_LINT_PASS.txt
+
+      - name: Exact Windows Webpack build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+          npm run check:i18n; if ($LASTEXITCODE -ne 0) { throw 'i18n' }
+          npm run vercel:preflight; if ($LASTEXITCODE -ne 0) { throw 'preflight' }
+          npx next build --webpack; if ($LASTEXITCODE -ne 0) { throw 'webpack' }
+          'PASS' | Set-Content P66_WEBPACK_PASS.txt
+
+      - name: Exact Windows Turbopack build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+          npx next build --turbopack; if ($LASTEXITCODE -ne 0) { throw 'turbopack' }
+          'PASS' | Set-Content P66_TURBOPACK_PASS.txt
+
+      - name: Build receipt pack
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force P66_RESULT | Out-Null
+          foreach ($p in @('artifacts/closure/p66/P66_OWNER_TOPOLOGY_VERIFICATION.json','artifacts/closure/p66/P66_LEGACY33_INTERNAL_CONTEXT_RECLASSIFICATION.json','artifacts/closure/p66/P66_AUDIT_PDF_QA_RUNA.json','artifacts/closure/p66/P66_AUDIT_PDF_QA_RUNB.json','artifacts/closure/p66/audit_pdf_fixture/runA/manifest.json','artifacts/closure/p66/audit_pdf_fixture/runB/manifest.json')) { if (Test-Path $p) { Copy-Item $p P66_RESULT/ } }
+          $r=[ordered]@{schemaVersion='velmere.p66.exact-windows-owner-topology-audit-pdf.v3';generatedAt=[DateTime]::UtcNow.ToString('o');runId='${{ github.run_id }}';gitHead='${{ github.sha }}';runnerOs='${{ runner.os }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);transportSha256='30564c47580b1234b54c080554c6bcea5a8340484350a5b5c0f6619a89c744b0';transportPass=(Test-Path P66_TRANSPORT_PASS.txt);fullTypeScriptPass=(Test-Path P66_TYPECHECK_PASS.txt);topologyPass=(Test-Path P66_TOPOLOGY_PASS.txt);auditTwoProcessReplayPass=(Test-Path P66_AUDIT_REPLAY_PASS.txt);auditPdfQaPass=(Test-Path P66_AUDIT_QA_PASS.txt);targetedZeroWarningLintPass=(Test-Path P66_LINT_PASS.txt);webpackBuildPass=(Test-Path P66_WEBPACK_PASS.txt);turbopackBuildPass=(Test-Path P66_TURBOPACK_PASS.txt);correctedProductFamilies=10;correctedCustomerRows=20;correctedPrimaryInternalContexts=20;legacyHistoricalContexts=33;materialTierTransitions=10;requiredPdfArtifactSlots=6;auditRequiredPdfArtifactSlots=3;auditFixturePdfLocaleCasesExecuted=9;auditFixturePdfProcessExecutions=18;auditFinalCustomerPdfSlots=0;finalCustomerRows=0;finalPrimaryInternalContexts=0;rightsFieldsPassed=0;paidSaleCandidateRows=10;paidSaleEligibleRows=0;live=$false;worldClassProven=$false;truthBoundary='Exact Windows current-source overlay verifies owner-corrected topology mechanics, Audit tier-PDF fixture mechanics, deterministic bytes, structural/render QA, TypeScript, targeted lint and dual builds. Fixture evidence grants no real-customer truth/currentness/rights/value/sale/LIVE/WORLD_CLASS credit.'}
+          $r | ConvertTo-Json -Depth 8 | Set-Content P66_RESULT/P66_EXACT_WINDOWS_RECEIPT.json -Encoding utf8
+          Get-ChildItem P66_RESULT -File | % { "{0}  {1}" -f ((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()),$_.Name } | Set-Content P66_RESULT/P66_RESULT_SHA256.txt -Encoding utf8
+
+      - name: Upload receipt pack
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p66-owner-topology-audit-pdf-exact-windows-v2
+          path: P66_RESULT
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
