@@ -81,24 +81,20 @@ jobs:
 
       - name: P66 owner topology current-source verification
         shell: pwsh
-        env:
-          VELMERE_OFFLINE_TS_FORCE_BUILTIN: '1'
         run: |
           $ErrorActionPreference='Stop'
-          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass66/verify-p66-owner-topology.ts | Tee-Object -FilePath P66_TOPOLOGY_STDOUT.json
+          node --experimental-strip-types scripts/pass66/verify-p66-owner-topology.ts | Tee-Object -FilePath P66_TOPOLOGY_STDOUT.json
           if ($LASTEXITCODE -ne 0) { throw "P66 topology verification failed: $LASTEXITCODE" }
           'PASS' | Set-Content P66_TOPOLOGY_PASS.txt
 
       - name: P66 Audit PDF two-process exact generation
         shell: pwsh
-        env:
-          VELMERE_OFFLINE_TS_FORCE_BUILTIN: '1'
         run: |
           $ErrorActionPreference='Stop'
           Remove-Item -Recurse -Force artifacts/closure/p66/audit_pdf_fixture/runA,artifacts/closure/p66/audit_pdf_fixture/runB -ErrorAction SilentlyContinue
-          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts runA
+          node --experimental-strip-types scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts runA
           if ($LASTEXITCODE -ne 0) { throw "P66 Audit PDF runA failed: $LASTEXITCODE" }
-          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts runB
+          node --experimental-strip-types scripts/pass66/generate-audit-tier-customer-pdf-fixture.ts runB
           if ($LASTEXITCODE -ne 0) { throw "P66 Audit PDF runB failed: $LASTEXITCODE" }
           $a=Get-Content artifacts/closure/p66/audit_pdf_fixture/runA/manifest.json -Raw | ConvertFrom-Json
           $b=Get-Content artifacts/closure/p66/audit_pdf_fixture/runB/manifest.json -Raw | ConvertFrom-Json
