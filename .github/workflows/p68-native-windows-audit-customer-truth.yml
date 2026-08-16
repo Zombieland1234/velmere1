@@ -70,10 +70,10 @@ jobs:
           python p68-runtime/apply-p68-audit-customer-truth.py --source-root p68-work/source --manifest p68-work/P66_BUILD_PROJECTION_MANIFEST.json --output-manifest p68-work/P68_BUILD_PROJECTION_MANIFEST.json | Tee-Object -FilePath p68-out/P68_SOURCE_PATCH.log
           if ($LASTEXITCODE -ne 0) { throw "P68 source patch failed: $LASTEXITCODE" }
           $m=Get-Content p68-work/P68_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
-          if ($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20958924 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne 'd4bddcf0df467142e022e59a0840c37695076be65acd6f29e5339e21a87c574c') { throw 'P68 manifest identity mismatch' }
+          if ($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20958767 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne '6a6ce54cb454da438f7a151b1e8ed5e4681900cafc6df6acb163a93998bfa7d0') { throw 'P68 manifest identity mismatch' }
           $expected=@{
             'lib/security/audit-report-assembler.ts'='f3b95f8d43d94ee6087b30a12814cbe78b6ed61bfe3dc186323fbc18af167438';
-            'lib/security/audit-report-customer-projection.ts'='35825487b6b5bbd90d3a1eeeb1a27a9c131d60fe5a8385509431e4a88c954b50';
+            'lib/security/audit-report-customer-projection.ts'='1835fa6a7a521b644500368405a3dd2c7eadc19e8c730ebabb8c81c81d635d9b';
             'lib/security/audit-account-customer-snapshot.ts'='3929e379b41a81c9fc38c68a517d861745a0220dc308069733e96d074a68f456';
             'lib/server/security-route-modules/audit-report-assembler.ts'='a2b3d3e9036a06de4213e309d49cea515e21aacc983280c2979ebaf341d07c1e'
           }
@@ -125,8 +125,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force p68-out | Out-Null
           $r=[ordered]@{
-            schemaVersion='velmere.p68.github-workflow-boundary.v1';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
-            changedBuildRelevantFiles=4;projectionFileCount=1597;projectionPayloadBytes=20958924;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='d4bddcf0df467142e022e59a0840c37695076be65acd6f29e5339e21a87c574c';generatedNextEnvProjectionPayloadBytes=20958909;generatedNextEnvProjectionAggregateSha256='80849d7b41f3e902ed1f1ae033a8b08e83e9ea57f48fa1974465d8ce727d4434';
+            schemaVersion='velmere.p68.github-workflow-boundary.v2';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            changedBuildRelevantFiles=4;projectionFileCount=1597;projectionPayloadBytes=20958767;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='6a6ce54cb454da438f7a151b1e8ed5e4681900cafc6df6acb163a93998bfa7d0';generatedNextEnvProjectionPayloadBytes=20958752;generatedNextEnvProjectionAggregateSha256='6f75972cdef164a84410455732822dda6a552581a9a1ff59c5c4a10fa41444cf';
             productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;rightsPassed=0;rightsDenominator=199;customerFinalOutputs=0;auditFinalCustomerPdfs=0;saleEligibleRows=0;live=$false;worldClassProven=$false;
             truthBoundary='Exact Windows engineering and synthetic Audit customer artifact truth/PDF parity only. No real customer, provider-rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
           }
