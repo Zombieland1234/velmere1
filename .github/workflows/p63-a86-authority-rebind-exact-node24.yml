@@ -1,0 +1,159 @@
+name: P63 A86 authority rebind exact Node24 Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p63-a86-authority-rebind-20260816
+    paths:
+      - "p63-current-source-transport/**"
+      - ".github/workflows/p63-a86-authority-rebind-exact-node24.yml"
+
+concurrency:
+  group: p63-a86-authority-rebind-exact-node24-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p63-a86-exact-node24:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact P63 transport branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
+          node --version
+          npm --version
+
+      - name: Reconstruct and verify exact P63 transport
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expectedZipSha = '5a0f2e09700f50f2de6434cb39e7eb85dd8a65f2ff456241d8580d02b03fa023'
+          $expectedZipBytes = 69888
+          $chunks = Get-ChildItem -LiteralPath 'p63-current-source-transport/chunks' -Filter 'part*.txt' | Sort-Object Name
+          if ($chunks.Count -ne 8) { throw "Expected 8 transport chunks, got $($chunks.Count)" }
+          $b64 = ''
+          foreach ($chunk in $chunks) {
+            $b64 += (Get-Content -LiteralPath $chunk.FullName -Raw).Trim()
+          }
+          $bytes = [Convert]::FromBase64String($b64)
+          [IO.File]::WriteAllBytes((Join-Path $PWD 'P63_A86_EXACT_NODE24_TRANSPORT.zip'), $bytes)
+          $zip = Get-Item -LiteralPath 'P63_A86_EXACT_NODE24_TRANSPORT.zip'
+          $zipSha = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($zip.Length -ne $expectedZipBytes) { throw "Transport bytes mismatch: $($zip.Length) != $expectedZipBytes" }
+          if ($zipSha -ne $expectedZipSha) { throw "Transport SHA mismatch: $zipSha != $expectedZipSha" }
+          New-Item -ItemType Directory -Force -Path 'p63-work' | Out-Null
+          Expand-Archive -LiteralPath $zip.FullName -DestinationPath 'p63-work' -Force
+          $manifestPath = 'p63-work/P63_TRANSPORT_MANIFEST.json'
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          foreach ($entry in $manifest.files) {
+            $path = Join-Path 'p63-work' $entry.path
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing transport file: $($entry.path)" }
+            $actualBytes = (Get-Item -LiteralPath $path).Length
+            $actualSha = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualBytes -ne [int64]$entry.bytes) { throw "Transport byte mismatch: $($entry.path)" }
+            if ($actualSha -ne [string]$entry.sha256) { throw "Transport hash mismatch: $($entry.path)" }
+          }
+          Write-Host "P63 exact transport PASS: $zipSha / $($zip.Length) B / $($manifest.files.Count) files"
+
+      - name: Execute exact Node24 A86 test and independent verifier
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'p63-work'
+          try {
+            & node --experimental-strip-types scripts/pass36/test-a86-real-markets-cross-asset-matrix.ts --write | Out-File -LiteralPath '../P63_A86_NODE24_TEST.json' -Encoding utf8
+            if ($LASTEXITCODE -ne 0) { throw "A86 exact Node24 test failed: $LASTEXITCODE" }
+            & node --experimental-strip-types scripts/pass36/verify-a86-real-markets-cross-asset-matrix.ts | Out-File -LiteralPath '../P63_A86_NODE24_VERIFY.json' -Encoding utf8
+            if ($LASTEXITCODE -ne 0) { throw "A86 exact Node24 verifier failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+          }
+          $test = Get-Content -LiteralPath 'P63_A86_NODE24_TEST.json' -Raw | ConvertFrom-Json
+          $verify = Get-Content -LiteralPath 'P63_A86_NODE24_VERIFY.json' -Raw | ConvertFrom-Json
+          if ($test.summary.checks -ne 30 -or $test.summary.passed -ne 30 -or $test.summary.failed -ne 0) { throw 'A86 test denominator mismatch' }
+          if ($verify.checks -ne 20 -or $verify.passed -ne 20 -or $verify.failed -ne 0) { throw 'A86 verifier denominator mismatch' }
+          if ($test.status -ne 'PASS_A86_LOCAL_CROSS_ASSET_MATRIX_NO_PROMOTION') { throw "Unexpected A86 test status: $($test.status)" }
+          if ($verify.status -ne 'PASS_A86_LOCAL_REAL_MARKETS_CROSS_ASSET_VERIFICATION_NO_PROMOTION') { throw "Unexpected A86 verifier status: $($verify.status)" }
+          if ($test.currentProviderEvidenceVerified -ne $false -or $verify.currentProviderEvidenceVerified -ne $false) { throw 'False provider promotion detected' }
+          if ($test.providerRightsApproved -ne $false -or $verify.providerRightsApproved -ne $false) { throw 'False rights promotion detected' }
+          if ($test.saleEnabled -ne $false -or $verify.saleEnabled -ne $false) { throw 'False sale promotion detected' }
+          Write-Host "A86 exact Node24 Windows PASS: test 30/30; verifier 20/20; mutations $($test.denominators.mutationKilled)/$($test.denominators.semanticMutations)"
+
+      - name: Build exact Windows receipt pack
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path 'P63_RESULT' | Out-Null
+          $test = Get-Content -LiteralPath 'P63_A86_NODE24_TEST.json' -Raw | ConvertFrom-Json
+          $verify = Get-Content -LiteralPath 'P63_A86_NODE24_VERIFY.json' -Raw | ConvertFrom-Json
+          $receipt = [ordered]@{
+            schemaVersion = 'velmere.p63.a86-authority-rebind-exact-node24-windows.v1'
+            generatedAt = [DateTime]::UtcNow.ToString('o')
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            gitHead = '${{ github.sha }}'
+            gitRef = '${{ github.ref }}'
+            runnerOs = '${{ runner.os }}'
+            runnerArch = '${{ runner.arch }}'
+            imageOs = $env:ImageOS
+            node = (node --version).Trim()
+            npm = (npm --version).Trim()
+            transportZipSha256 = '5a0f2e09700f50f2de6434cb39e7eb85dd8a65f2ff456241d8580d02b03fa023'
+            transportZipBytes = 69888
+            repairedA86PolicySha256 = 'bdc62a4648ee5f84b7cc68a99a61022e90b816b6902c586fe80bc8a469eca78f'
+            currentA85PolicySha256 = '99d45a32efe55d4d630a6fcab42c3b4a47a5b54332ed6ddbb23b8af52653bc73'
+            testStatus = $test.status
+            testChecks = $test.summary.checks
+            testPassed = $test.summary.passed
+            verifierStatus = $verify.status
+            verifierChecks = $verify.checks
+            verifierPassed = $verify.passed
+            runtimeIntegritySha256 = $test.runtimeIntegritySha256
+            denominators = $test.denominators
+            currentProviderEvidenceVerified = $false
+            rightsCredit = 0
+            customerValueCredit = 0
+            saleEligible = $false
+            live = $false
+            worldClassProven = $false
+            truthBoundary = 'Exact Node 24.18.0 / Windows Server 2025 credit is limited to the current-byte A86 Real Markets static-fixture/control lane and the one-field A85-policy hash rebind. It does not prove current provider data, provider rights, customer value, production browser execution, sale eligibility, LIVE, or WORLD_CLASS.'
+          }
+          $receipt | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath 'P63_RESULT/P63_A86_EXACT_NODE24_WINDOWS_RECEIPT.json' -Encoding utf8
+          Copy-Item -LiteralPath 'P63_A86_NODE24_TEST.json' -Destination 'P63_RESULT/'
+          Copy-Item -LiteralPath 'P63_A86_NODE24_VERIFY.json' -Destination 'P63_RESULT/'
+          Copy-Item -LiteralPath 'P63_A86_EXACT_NODE24_TRANSPORT.zip' -Destination 'P63_RESULT/'
+          Copy-Item -LiteralPath 'p63-work/P63_TRANSPORT_MANIFEST.json' -Destination 'P63_RESULT/'
+          Get-ChildItem -LiteralPath 'P63_RESULT' -File | ForEach-Object {
+            "{0}  {1}" -f ((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()), $_.Name
+          } | Set-Content -LiteralPath 'P63_RESULT/P63_RESULT_SHA256.txt' -Encoding utf8
+
+      - name: Upload P63 exact Node24 Windows receipts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p63-a86-exact-node24-windows-receipts
+          path: P63_RESULT
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
