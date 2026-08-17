@@ -1,0 +1,132 @@
+name: P74 Runtime Bytecode Provider Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p74-ancient8-runtime-bytecode-quorum-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p74-bytecode-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Minimal current-bytecode provider diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p74-diagnostic-out
+          python - <<'PY'
+          from __future__ import annotations
+          import hashlib, json, time, urllib.request, urllib.error
+          from pathlib import Path
+
+          ADDRESS='0xca11bde05977b3631167028862be2a173976ca11'
+          CHAIN_ID_HEX=hex(888888888)
+          providers={
+            'ancient8_official_rpc':'https://rpc.ancient8.gg',
+            'thirdweb_rpc':'https://888888888.rpc.thirdweb.com',
+            'ancient8_blockscout_rpc':'https://scan.ancient8.gg/api/eth-rpc',
+          }
+          out={'schemaVersion':'velmere.p74.runtime-bytecode-provider-diagnostic.v1','status':'DIAGNOSTIC_ONLY_ZERO_CREDIT','target':{'chain':'ancient8','chainId':888888888,'address':ADDRESS},'providers':{},'explorer':{},'credit':{'currentRuntimeBytecodeCases':0,'customerFinalOutput':0,'auditFinalPdf':0,'rights':0,'paidValue':0,'sale':0,'live':False},'truthBoundary':'Diagnostic-only minimal calls. No provider response is promoted to product evidence or commercial/display rights. P74 product source remains unchanged.'}
+
+          def req_bytes(url:str, data:bytes|None=None, headers:dict|None=None, timeout=15):
+            h={'User-Agent':'Velmere-P74-Diagnostic/1.0','Accept':'application/json'}
+            if headers: h.update(headers)
+            r=urllib.request.Request(url,data=data,headers=h,method='POST' if data is not None else 'GET')
+            try:
+              with urllib.request.urlopen(r,timeout=timeout) as resp:
+                b=resp.read(8*1024*1024+1)
+                return {'ok':True,'httpStatus':resp.status,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'body':b.decode('utf-8','replace')}
+            except urllib.error.HTTPError as e:
+              b=e.read(1024*1024)
+              return {'ok':False,'httpStatus':e.code,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'body':b.decode('utf-8','replace'),'error':f'HTTPError:{e.code}'}
+            except Exception as e:
+              return {'ok':False,'httpStatus':None,'bytes':0,'sha256':None,'body':'','error':f'{type(e).__name__}:{e}'}
+
+          rpc_id=0
+          def rpc(url:str, method:str, params:list):
+            global rpc_id
+            rpc_id += 1
+            payload=json.dumps({'jsonrpc':'2.0','id':rpc_id,'method':method,'params':params},separators=(',',':')).encode()
+            rr=req_bytes(url,payload,{'Content-Type':'application/json'})
+            parsed=None; result=None; error=None
+            if rr['body']:
+              try:
+                parsed=json.loads(rr['body']); result=parsed.get('result') if isinstance(parsed,dict) else None; error=parsed.get('error') if isinstance(parsed,dict) else None
+              except Exception as e: error={'parseError':f'{type(e).__name__}:{e}'}
+            return {k:v for k,v in rr.items() if k!='body'} | {'result':result,'rpcError':error}
+
+          # Resolve one fixed block from the official RPC only.
+          official_chain=rpc(providers['ancient8_official_rpc'],'eth_chainId',[])
+          official_latest=rpc(providers['ancient8_official_rpc'],'eth_blockNumber',[])
+          block_hex=official_latest.get('result') if isinstance(official_latest.get('result'),str) else None
+          out['fixedBlock']={'hex':block_hex,'number':int(block_hex,16) if block_hex else None}
+          out['officialResolution']={'chainId':official_chain,'blockNumber':official_latest}
+
+          for name,url in providers.items():
+            row={'url':url,'upstreamRoot':urllib.request.urlparse(url).hostname if hasattr(urllib.request,'urlparse') else url.split('/')[2]}
+            # urllib.request has no urlparse in some Pythons; normalize below.
+            row['upstreamRoot']=url.split('/')[2].lower()
+            row['chainId']=rpc(url,'eth_chainId',[])
+            if block_hex:
+              row['block']=rpc(url,'eth_getBlockByNumber',[block_hex,False])
+              row['code']=rpc(url,'eth_getCode',[ADDRESS,block_hex])
+              code=row['code'].get('result')
+              if isinstance(code,str) and code.startswith('0x'):
+                try:
+                  raw=bytes.fromhex(code[2:])
+                  row['codeIdentity']={'hexChars':len(code)-2,'byteLength':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'empty':len(raw)==0}
+                except Exception as e:
+                  row['codeIdentity']={'parseError':f'{type(e).__name__}:{e}'}
+              block=row['block'].get('result')
+              if isinstance(block,dict):
+                row['blockIdentity']={'number':block.get('number'),'hash':block.get('hash'),'timestamp':block.get('timestamp')}
+            out['providers'][name]=row
+
+          explorer_url=f'https://scan.ancient8.gg/api/v2/smart-contracts/{ADDRESS}'
+          ex=req_bytes(explorer_url)
+          ex_row={k:v for k,v in ex.items() if k!='body'} | {'url':explorer_url,'upstreamRoot':'scan.ancient8.gg'}
+          if ex['body']:
+            try:
+              obj=json.loads(ex['body']); bytecode=obj.get('deployed_bytecode') if isinstance(obj,dict) else None
+              ex_row['hasDeployedBytecodeField']=isinstance(bytecode,str)
+              if isinstance(bytecode,str) and bytecode.startswith('0x'):
+                raw=bytes.fromhex(bytecode[2:]);ex_row['codeIdentity']={'byteLength':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'empty':len(raw)==0}
+            except Exception as e: ex_row['parseError']=f'{type(e).__name__}:{e}'
+          out['explorer']['blockscoutSmartContract']=ex_row
+
+          # Diagnostic synthesis only; never product credit.
+          identities=[]
+          for name,row in out['providers'].items():
+            ci=row.get('codeIdentity')
+            chain=row.get('chainId',{}).get('result')
+            bi=row.get('blockIdentity',{})
+            if isinstance(ci,dict) and ci.get('sha256') and not ci.get('empty') and chain==CHAIN_ID_HEX and bi.get('number')==block_hex:
+              identities.append({'provider':name,'upstreamRoot':row['upstreamRoot'],'codeSha256':ci['sha256'],'byteLength':ci['byteLength'],'blockHash':bi.get('hash')})
+          out['diagnosticSynthesis']={'successfulRpcCodeRoots':identities,'successfulRootCount':len({x['upstreamRoot'] for x in identities}),'exactCodeShaAgreement':len({x['codeSha256'] for x in identities})==1 if len(identities)>=2 else False,'exactBlockHashAgreement':len({x['blockHash'] for x in identities})==1 if len(identities)>=2 else False}
+          Path('p74-diagnostic-out/P74_RUNTIME_BYTECODE_PROVIDER_DIAGNOSTIC.json').write_text(json.dumps(out,indent=2)+'\n')
+          print(json.dumps(out,indent=2))
+          PY
+
+      - name: Upload diagnostic only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-runtime-bytecode-provider-diagnostic
+          path: p74-diagnostic-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
