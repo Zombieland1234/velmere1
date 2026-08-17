@@ -1,0 +1,167 @@
+name: P75 Exact Windows Advanced Automation Runtime
+
+on:
+  push:
+    branches:
+      - velmere-p75-advanced-automation-runtime-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p75-exact-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p75-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P75 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 CI bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''
+          foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact P73R7 parent bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          python p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p75-out
+          if ($LASTEXITCODE -ne 0) { throw 'P73R7 exact parent reconstruction failed' }
+
+      - name: Apply exact P75 source delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p75-runtime/apply-p75-advanced-automation-runtime.py `
+            --source-root p75-work/source `
+            --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json `
+            --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json `
+            --receipt p75-out/P75_SOURCE_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P75 exact source delta failed' }
+          Copy-Item p75-work/P75_BUILD_PROJECTION_MANIFEST.json p75-out/
+
+      - name: Static automation and migration controls
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p75-runtime/test-p75-static.py `
+            --source-root p75-work/source `
+            --migration p75-runtime/P75_ADVANCED_AUTOMATION_MIGRATION.sql `
+            --receipt p75-out/P75_STATIC_CONTROL.json
+          if ($LASTEXITCODE -ne 0) { throw 'P75 static control failed' }
+
+      - name: Exact Windows TypeScript ESLint Webpack Turbopack
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Run([string]$cmd){ Invoke-Expression $cmd; if($LASTEXITCODE-ne0){throw "failed: $cmd"} }
+          Run "python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p75-work/run-p75.mjs --receipt p75-out/RUNNER_P60.json"
+          Run "python p66-runtime/patch-p66-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P66.json"
+          Run "python p68-runtime/patch-p68-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P68.json"
+          Run "python p69-runtime/patch-p69-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P69.json"
+          Run "python p69-runtime/patch-p69r2-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P69R2.json"
+          Run "python p71-runtime/patch-p71-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P71.json"
+          Run "python p71-runtime/patch-p71r1-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P71R1.json"
+          Run "python p71-runtime/patch-p71r3-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P71R3.json"
+          Run "python p72-runtime/patch-p72-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P72.json"
+          Run "python p72-runtime/patch-p72r3-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P72R3.json"
+          Run "python p73-runtime/patch-p73r4-reconciled-runner.py --runner p75-work/run-p75.mjs --receipt p75-out/RUNNER_P73R4.json"
+          Run "python p73-runtime/patch-p73r7-reconciled-runner.py --runner p75-work/run-p75.mjs --manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --receipt p75-out/RUNNER_P73R7.json"
+          Run "python p75-runtime/patch-p75-reconciled-runner.py --runner p75-work/run-p75.mjs --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p75-out/RUNNER_P75.json"
+          Run "node --check p75-work/run-p75.mjs"
+          Run "node p75-work/run-p75.mjs --source-root p75-work/source --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --output-dir p75-out"
+
+      - name: Execute P73 authority regression on P75 bytes
+        shell: pwsh
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}\p75-out
+          P73_SOURCE_ROOT: ${{ github.workspace }}\p75-work\source
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}\p75-work\source\tsconfig.json
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p75-work/source
+          try {
+            node ./node_modules/tsx/dist/cli.mjs ../../p73-runtime/test-p73r7-full-authority.ts | Tee-Object ../..\p75-out\P75_P73_AUTHORITY_REGRESSION.log
+            if($LASTEXITCODE-ne0){throw 'P73 authority regression on P75 bytes failed'}
+          } finally { Pop-Location }
+
+      - name: Execute Advanced automation memory runtime
+        shell: pwsh
+        env:
+          NODE_ENV: test
+          P75_RESULT_DIR: ${{ github.workspace }}\p75-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}\p75-work\source\tsconfig.json
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p75-work/source
+          try {
+            node ./node_modules/tsx/dist/cli.mjs ../../p75-runtime/test-p75-advanced-memory.ts | Tee-Object ../..\p75-out\P75_ADVANCED_MEMORY_RUNTIME.log
+            if($LASTEXITCODE-ne0){throw 'P75 Advanced automation memory runtime failed'}
+          } finally { Pop-Location }
+
+      - name: Capture zero-fake-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $eng='NOT_EXECUTED_OR_FAILED';$static='NOT_EXECUTED_OR_FAILED';$memory='NOT_EXECUTED_OR_FAILED';$authority='NOT_EXECUTED_OR_FAILED';$m=$null
+          if(Test-Path 'p75-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p75-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$eng='PASS'}}
+          if(Test-Path 'p75-out/P75_STATIC_CONTROL.json'){$x=Get-Content 'p75-out/P75_STATIC_CONTROL.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$static='PASS'}}
+          if(Test-Path 'p75-out/P75_ADVANCED_MEMORY_RUNTIME.json'){$x=Get-Content 'p75-out/P75_ADVANCED_MEMORY_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$memory='PASS'}}
+          if(Test-Path 'p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'){$x=Get-Content 'p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$authority='PASS'}}
+          if(Test-Path 'p75-work/P75_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p75-work/P75_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
+          [ordered]@{
+            schemaVersion='velmere.p75.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';
+            projectionFileCount=if($m){$m.projection.fileCount}else{0};projectionPayloadBytes=if($m){$m.projection.payloadBytes}else{0};projectionPathSetSha256=if($m){$m.projection.pathSetSha256}else{$null};projectionAggregateSha256=if($m){$m.projection.sourceContentAggregateSha256}else{$null};
+            engineering=$eng;staticControl=$static;advancedMemoryRuntime=$memory;p73AuthorityRegression=$authority;
+            deploymentGroundTruthCases=if($authority-eq'PASS'){1}else{0};currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;
+            customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;
+            truthBoundary='P75 may credit only the Advanced automation architecture/runtime repair when exact engineering, static controls and memory runtime pass. P73 deployment identity is retained only when its authority regression passes. P75 does not prove a live durable Supabase deployment, current Ancient8 bytecode, vulnerability/exploitability, customer FINAL/PDF, rights, paid value, sale eligibility, LIVE or WORLD_CLASS.'
+          }|ConvertTo-Json -Depth 8|Set-Content p75-out/P75_GITHUB_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P75 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p75-advanced-automation-runtime-exact-windows
+          path: p75-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
