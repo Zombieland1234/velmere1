@@ -1,0 +1,73 @@
+name: P73R5 Frozen README Runtime Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p73r5-runtime-diagnostic-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact diagnostic head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Reconstruct exact P73R5 product bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p73r5diag-out
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p73r5-work --output-root p73r5diag-out
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p73r5-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p73r5-work/P66.json
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p73r5-work/source --manifest p73r5-work/P66.json
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p73r5-work/source --manifest p73r5-work/P66.json
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p73r5-work/source --manifest p73r5-work/P66.json --output-manifest p73r5-work/P68.json
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p73r5-work/source --manifest p73r5-work/P68.json --output-manifest p73r5-work/P69.json
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p73r5-work/source --manifest p73r5-work/P69.json --output-manifest p73r5-work/P69R2.json --receipt p73r5diag-out/P69R2.json
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p73r5-work/source --manifest p73r5-work/P69R2.json --output-manifest p73r5-work/P71.json --receipt p73r5diag-out/P71.json
+          python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p73r5-work/source --manifest p73r5-work/P71.json --output-manifest p73r5-work/P71R1.json --receipt p73r5diag-out/P71R1.json
+          python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p73r5-work/source --manifest p73r5-work/P71R1.json --output-manifest p73r5-work/P71R2.json --receipt p73r5diag-out/P71R2.json
+          python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p73r5-work/source --manifest p73r5-work/P71R2.json --output-manifest p73r5-work/P71R5.json --receipt p73r5diag-out/P71R3.json
+          python p72-runtime/apply-p72-commercial-topology-measurement.py --source-root p73r5-work/source --manifest p73r5-work/P71R5.json --output-manifest p73r5-work/P72.json --receipt p73r5diag-out/P72.json
+          python p72-runtime/apply-p72r3-typescript-contract-repair.py --source-root p73r5-work/source --manifest p73r5-work/P72.json --output-manifest p73r5-work/P72R3.json --receipt p73r5diag-out/P72R3.json
+          python p73-runtime/apply-p73r4-adjudicated-authority-engine.py --source-root p73r5-work/source --manifest p73r5-work/P72R3.json --output-manifest p73r5-work/P73R4R3.json --receipt p73r5diag-out/P73R4R3.json
+          python p73-runtime/apply-p73r5-frozen-readme-authority.py --source-root p73r5-work/source --manifest p73r5-work/P73R4R3.json --output-manifest p73r5-work/P73R5.json --receipt p73r5diag-out/P73R5.json
+          python - <<'PY'
+          import json
+          p=json.load(open('p73r5-work/P73R5.json',encoding='utf-8'))['projection']
+          actual=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          expected=(1598,21015244,'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25','c65b31b5efb03da359947c2939179b4f41a58cc0a15067770f37ef7e371b7f63')
+          if actual!=expected: raise SystemExit(f'P73R5 identity mismatch:{actual}')
+          print('P73R5 identity PASS',actual)
+          PY
+      - name: Install dependency closure
+        shell: bash
+        working-directory: p73r5-work/source
+        run: npm ci --ignore-scripts --include=dev --audit=false --fund=false
+      - name: Execute live P73R5 runtime test
+        shell: bash
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}/p73r5diag-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}/p73r5-work/source/tsconfig.json
+        run: node p73r5-work/source/node_modules/tsx/dist/cli.mjs p73-runtime/test-p73r5-frozen-readme-runtime.ts | tee p73r5diag-out/P73R5_RUNTIME_DIAGNOSTIC.log
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r5-runtime-diagnostic
+          path: p73r5diag-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
