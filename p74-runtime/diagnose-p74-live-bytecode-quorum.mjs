@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 const OUT = process.env.P74_RESULT_DIR || path.resolve('p74-diagnostic-out');
-const OFFICIAL_RPC = 'https://rpc.ancient8.gg';
+const BLOCKSCOUT_RPC = 'https://scan.ancient8.gg/api/eth-rpc';
 const ROUTESCAN_BASE = 'https://api.routescan.io/v2/network/mainnet/evm/888888888/etherscan/api';
 const CHAIN_ID_DEC = 888888888;
 const CHAIN_ID_HEX = '0x34fb5e38';
@@ -44,14 +44,14 @@ async function fetchJson(url, init, label) {
   return { json, statusCode: response.status, latencyMs: Date.now() - started };
 }
 
-async function rpc(method, params = []) {
+async function blockscout(method, params = []) {
   const body = JSON.stringify({ jsonrpc: '2.0', id: 74, method, params });
-  const { json, statusCode, latencyMs } = await fetchJson(OFFICIAL_RPC, {
+  const { json, statusCode, latencyMs } = await fetchJson(BLOCKSCOUT_RPC, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'VelmereP74Diagnostic/1.0' },
+    headers: { 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'VelmereP74Diagnostic/2.0' },
     body,
-  }, `official_rpc:${method}`);
-  if (!json || json.error || typeof json.result !== 'string') throw new Error(`official_rpc:${method}:rpc_error:${JSON.stringify(json?.error ?? json).slice(0,240)}`);
+  }, `blockscout:${method}`);
+  if (!json || json.error || typeof json.result !== 'string') throw new Error(`blockscout:${method}:rpc_error:${JSON.stringify(json?.error ?? json).slice(0,240)}`);
   return { result: json.result, statusCode, latencyMs, requestDigest: sha256Hex(Buffer.from(body)) };
 }
 
@@ -62,7 +62,7 @@ async function routescan(action, params = {}) {
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
   const { json, statusCode, latencyMs } = await fetchJson(url, {
     method: 'GET',
-    headers: { accept: 'application/json', 'user-agent': 'VelmereP74Diagnostic/1.0' },
+    headers: { accept: 'application/json', 'user-agent': 'VelmereP74Diagnostic/2.0' },
   }, `routescan:${action}`);
   if (!json || json.error || typeof json.result !== 'string') throw new Error(`routescan:${action}:rpc_error:${JSON.stringify(json?.error ?? json).slice(0,240)}`);
   return { result: json.result, statusCode, latencyMs, requestDigest: sha256Hex(Buffer.from(url.toString())) };
@@ -70,15 +70,15 @@ async function routescan(action, params = {}) {
 
 async function main() {
   const result = {
-    schemaVersion: 'velmere.p74.live-bytecode-quorum-diagnostic.v1',
+    schemaVersion: 'velmere.p74.live-bytecode-quorum-diagnostic.v2',
     status: 'DIAGNOSTIC_RUNNING_NO_PRODUCT_CREDIT',
     generatedAt: new Date().toISOString(),
     chain: 'ancient8',
     chainIdDecimal: CHAIN_ID_DEC,
     chainIdHex: CHAIN_ID_HEX,
     sources: {
-      officialRpc: { upstreamRoot: 'rpc.ancient8.gg', providerFamily: 'official_chain_rpc' },
-      routescan: { upstreamRoot: 'api.routescan.io', providerFamily: 'independent_indexed_rpc_api' },
+      blockscout: { upstreamRoot: 'scan.ancient8.gg', providerFamily: 'blockscout_instance_eth_rpc', transport: 'POST /api/eth-rpc' },
+      routescan: { upstreamRoot: 'api.routescan.io', providerFamily: 'routescan_etherscan_proxy_api', transport: 'GET module=proxy' },
     },
     targets: TARGETS,
     observations: {},
@@ -93,50 +93,50 @@ async function main() {
       sale: 0,
       live: false,
     },
-    truthBoundary: 'Control-only live diagnostic. It changes no product bytes and grants zero release credit. A future product receipt may credit current runtime bytecode only after exact product integration, independent-source agreement at one common block, and exact Windows engineering pass.',
+    truthBoundary: 'Control-only live diagnostic. It changes no product bytes and grants zero release credit. Blockscout and Routescan are independent acquisition roots, not a decentralized node-consensus proof. A future product receipt may credit current runtime bytecode only after exact product integration, same-block byte agreement, and exact Windows engineering pass.',
   };
 
   try {
-    const [chainId, officialHead, routescanHead] = await Promise.all([
-      rpc('eth_chainId'),
-      rpc('eth_blockNumber'),
+    const [blockscoutChainId, blockscoutHead, routescanHead] = await Promise.all([
+      blockscout('eth_chainId'),
+      blockscout('eth_blockNumber'),
       routescan('eth_blockNumber'),
     ]);
-    result.observations.chainId = chainId;
-    result.observations.heads = { officialRpc: officialHead, routescan: routescanHead };
-    if (chainId.result.toLowerCase() !== CHAIN_ID_HEX) throw new Error(`chain_id_mismatch:${chainId.result}`);
-    const officialN = BigInt(officialHead.result);
+    result.observations.chainId = { blockscout: blockscoutChainId };
+    result.observations.heads = { blockscout: blockscoutHead, routescan: routescanHead };
+    if (blockscoutChainId.result.toLowerCase() !== CHAIN_ID_HEX) throw new Error(`chain_id_mismatch:${blockscoutChainId.result}`);
+    const blockscoutN = BigInt(blockscoutHead.result);
     const routescanN = BigInt(routescanHead.result);
-    const snapshotN = officialN < routescanN ? officialN : routescanN;
+    const snapshotN = blockscoutN < routescanN ? blockscoutN : routescanN;
     const snapshotTag = `0x${snapshotN.toString(16)}`;
     result.observations.snapshot = {
       blockNumberDecimal: snapshotN.toString(10),
       blockTag: snapshotTag,
-      headGapBlocks: (officialN >= routescanN ? officialN - routescanN : routescanN - officialN).toString(10),
+      headGapBlocks: (blockscoutN >= routescanN ? blockscoutN - routescanN : routescanN - blockscoutN).toString(10),
     };
 
     const targetRows = {};
     for (const [id, address] of Object.entries(TARGETS)) {
-      const [officialCode, routescanCode] = await Promise.all([
-        rpc('eth_getCode', [address, snapshotTag]),
+      const [blockscoutCode, routescanCode] = await Promise.all([
+        blockscout('eth_getCode', [address, snapshotTag]),
         routescan('eth_getCode', { address, tag: snapshotTag }),
       ]);
-      const officialNormalized = normalizeCode(officialCode.result);
+      const blockscoutNormalized = normalizeCode(blockscoutCode.result);
       const routescanNormalized = normalizeCode(routescanCode.result);
       targetRows[id] = {
         address,
-        officialRpc: { ...officialCode, code: codeSummary(officialNormalized) },
+        blockscout: { ...blockscoutCode, code: codeSummary(blockscoutNormalized) },
         routescan: { ...routescanCode, code: codeSummary(routescanNormalized) },
-        byteIdentical: officialNormalized === routescanNormalized,
+        byteIdentical: blockscoutNormalized === routescanNormalized,
       };
     }
     result.observations.bytecode = targetRows;
     const canonical = targetRows.canonicalExpected;
     const alternate = targetRows.officialDocumented;
-    const twoRoots = result.sources.officialRpc.upstreamRoot !== result.sources.routescan.upstreamRoot;
-    const sameAtCanonical = canonical.byteIdentical && !canonical.officialRpc.code.empty && !canonical.routescan.code.empty;
-    const sameAtAlternate = alternate.byteIdentical && !alternate.officialRpc.code.empty && !alternate.routescan.code.empty;
-    const distinctDeployments = canonical.officialRpc.code.sha256 !== alternate.officialRpc.code.sha256;
+    const twoRoots = result.sources.blockscout.upstreamRoot !== result.sources.routescan.upstreamRoot;
+    const sameAtCanonical = canonical.byteIdentical && !canonical.blockscout.code.empty && !canonical.routescan.code.empty;
+    const sameAtAlternate = alternate.byteIdentical && !alternate.blockscout.code.empty && !alternate.routescan.code.empty;
+    const distinctDeployments = canonical.blockscout.code.sha256 !== alternate.blockscout.code.sha256;
     result.quorum = {
       twoIndependentRoots: twoRoots,
       sameCommonBlock: true,
