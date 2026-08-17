@@ -1,0 +1,167 @@
+name: P74R6 Exact Windows Audit Deployment Identity
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/apply-p74-audit-deployment-identity-v2.py'
+      - 'p74-runtime/product-delta/lib/security/audit-deployment-identity-evidence.ts'
+      - 'p74-runtime/test-p74-audit-deployment-identity-integration.ts'
+      - '.github/workflows/p74r6-exact-windows-audit-deployment-identity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p74r6-exact-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p74-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P74R6 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact P73R7 and apply guarded P74R6 product patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p74-out | Out-Null
+          python p73-runtime/reconstruct-p73r7-exact.py --work-root p74-work --out-root p74-out
+          if ($LASTEXITCODE -ne 0) { throw 'P73R7 exact reconstruction failed' }
+          $parent=Get-Content p74-work/P73R7_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if($parent.projection.fileCount-ne1598 -or $parent.projection.payloadBytes-ne21014913 -or $parent.projection.pathSetSha256-ne'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25' -or $parent.projection.sourceContentAggregateSha256-ne'b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b'){throw 'P73R7 parent identity mismatch'}
+          python p74-runtime/apply-p74-audit-deployment-identity-v2.py --source-root p74-work/source --manifest p74-work/P73R7_BUILD_PROJECTION_MANIFEST.json --output-manifest p74-work/P74_BUILD_PROJECTION_MANIFEST.json --receipt p74-out/P74_SOURCE_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P74 guarded product patch failed' }
+          $m=Get-Content p74-work/P74_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if($m.projection.fileCount-ne1599 -or $m.projection.payloadBytes-ne21038429 -or $m.projection.pathSetSha256-ne'ef3dc017a0a92ff2fde1d7aca857b8ff88f73acc53a336dfee43d5ba89950e6a' -or $m.projection.sourceContentAggregateSha256-ne'6323f9d4081ca255937cd1f9c888a928c66d65da08855e6439a32f47e1e581dd'){throw 'P74 product projection identity mismatch'}
+          Copy-Item p74-work/P73R7_BUILD_PROJECTION_MANIFEST.json p74-out/
+          Copy-Item p74-work/P74_BUILD_PROJECTION_MANIFEST.json p74-out/
+
+      - name: Static product truth and fail-closed invariants
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $deployment=Get-Content 'p74-work/source/lib/security/audit-deployment-identity-evidence.ts' -Raw
+          $authority=Get-Content 'p74-work/source/lib/security/audit-adjudicated-authority-evidence.ts' -Raw
+          $provider=Get-Content 'p74-work/source/lib/security/audit-provider-runtime-client.ts' -Raw
+          $pipeline=Get-Content 'p74-work/source/lib/security/audit-customer-report-pipeline.ts' -Raw
+          $claim=Get-Content 'p74-work/source/lib/security/audit-claim-ledger.ts' -Raw
+          $route=Get-Content 'p74-work/source/lib/server/security-route-modules/audit-report-assembler.ts' -Raw
+          if($deployment-notmatch'PASS5002_AUDIT_DEPLOYMENT_IDENTITY_EVIDENCE_ID'){throw 'deployment identity module missing'}
+          if($deployment-notmatch'32063820844'){throw 'P74R5 replay binding missing'}
+          if($deployment-notmatch'435d8ffcf6c6dac190ab1d07c5c9f09d7f9ee92acd6b5c24d8149601ac12bbc1'){throw 'P74R5 runtime digest missing'}
+          if($deployment-notmatch'e9a893737791350d763db354b1b1f5eb48a7b3046cdc7933713867ea7c340a74'){throw 'P74R5 source digest missing'}
+          if($deployment-notmatch'independenceEligible: false'){throw 'single-provider independence boundary missing'}
+          if($deployment-notmatch'independentProviderQuorum: false'){throw 'runtime quorum false boundary missing'}
+          if($deployment-notmatch'independent_runtime_provider_quorum_unavailable'){throw 'runtime quorum blocker missing'}
+          if($authority-notmatch'deploymentIdentity: AuditDeploymentIdentityEvidence \| null'){throw 'authority nested deployment identity missing'}
+          if($authority-match'Current runtime bytecode remains unverified'){throw 'stale runtime-unverified product copy remains'}
+          if($authority-notmatch'new Set\(value\.receipts\.map\(\(item\) => item\.upstreamRoot\)\)\.size < 2'){throw 'two-root authority quorum missing'}
+          if($provider-notmatch'sourceTimestampProvenance\?: "provider" \| "blockchain" \| "transport_received"'){throw 'provider source-clock provenance missing'}
+          if($pipeline-notmatch'createPass4644ProviderEvidenceReceipt'){throw 'central Pass4644 receipt factory missing'}
+          if($pipeline-notmatch'function coverage\('){throw 'coverage helper regression'}
+          if($pipeline-notmatch'function normalizeManualReviewReceipt\('){throw 'manual review normalizer regression'}
+          if($pipeline-notmatch'currentRuntimeIdentityVerified'){throw 'customer sourceTruth runtime identity missing'}
+          if(($pipeline | Select-String -Pattern 'authorityEvidence: null' -AllMatches).Matches.Count -ne 2){throw 'Pro/Advanced authority isolation changed'}
+          if($claim-notmatch'authorityEvidence\.deploymentIdentity\.evidenceDigest'){throw 'claim ledger deployment evidence inheritance missing'}
+          if($route-notmatch'deploymentIdentity: authorityEvidence\.deploymentIdentity \? \{'){throw 'route deployment identity output missing'}
+          if($route-notmatch'independentProviderQuorum: authorityEvidence\.deploymentIdentity\.independentProviderQuorum'){throw 'route quorum truth missing'}
+
+      - name: Exact Windows TypeScript ESLint Webpack Turbopack
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Run([string]$cmd){ Invoke-Expression $cmd; if($LASTEXITCODE-ne0){throw "failed: $cmd"} }
+          Run "python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p74-work/run-p74.mjs --receipt p74-out/RUNNER_P60.json"
+          Run "python p66-runtime/patch-p66-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P66.json"
+          Run "python p68-runtime/patch-p68-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P68.json"
+          Run "python p69-runtime/patch-p69-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P69.json"
+          Run "python p69-runtime/patch-p69r2-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P69R2.json"
+          Run "python p71-runtime/patch-p71-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P71.json"
+          Run "python p71-runtime/patch-p71r1-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P71R1.json"
+          Run "python p71-runtime/patch-p71r3-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P71R3.json"
+          Run "python p72-runtime/patch-p72-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P72.json"
+          Run "python p72-runtime/patch-p72r3-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P72R3.json"
+          Run "python p73-runtime/patch-p73r4-reconciled-runner.py --runner p74-work/run-p74.mjs --receipt p74-out/RUNNER_P73R4.json"
+          Run "python p73-runtime/patch-p73r7-reconciled-runner.py --runner p74-work/run-p74.mjs --manifest p74-work/P74_BUILD_PROJECTION_MANIFEST.json --receipt p74-out/RUNNER_P74_MANIFEST_BINDING.json"
+          Run "node --check p74-work/run-p74.mjs"
+          Run "node p74-work/run-p74.mjs --source-root p74-work/source --manifest p74-work/P74_BUILD_PROJECTION_MANIFEST.json --output-dir p74-out"
+
+      - name: Execute live Audit deployment identity integration
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-out
+          P74_SOURCE_ROOT: ${{ github.workspace }}\p74-work\source
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}\p74-work\source\tsconfig.json
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p74-work/source
+          try {
+            node ./node_modules/tsx/dist/cli.mjs ../../p74-runtime/test-p74-audit-deployment-identity-integration.ts | Tee-Object ../..\p74-out\P74_AUDIT_DEPLOYMENT_IDENTITY_INTEGRATION.log
+            if($LASTEXITCODE-ne0){throw 'P74 Audit deployment identity integration failed'}
+          } finally { Pop-Location }
+
+      - name: Re-assert exact pre-build product projection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $m=Get-Content p74-work/P74_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if($m.projection.fileCount-ne1599 -or $m.projection.payloadBytes-ne21038429 -or $m.projection.pathSetSha256-ne'ef3dc017a0a92ff2fde1d7aca857b8ff88f73acc53a336dfee43d5ba89950e6a' -or $m.projection.sourceContentAggregateSha256-ne'6323f9d4081ca255937cd1f9c888a928c66d65da08855e6439a32f47e1e581dd'){throw 'P74 manifest mutated unexpectedly'}
+
+      - name: Capture P74R6 zero-fake-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $eng='NOT_EXECUTED_OR_FAILED';$integration='NOT_EXECUTED_OR_FAILED';$runtimeIdentity=0;$sourceIdentity=0;$m=$null
+          if(Test-Path 'p74-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p74-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$eng='PASS'}}
+          if(Test-Path 'p74-out/P74_AUDIT_DEPLOYMENT_IDENTITY_INTEGRATION_TEST.json'){$x=Get-Content 'p74-out/P74_AUDIT_DEPLOYMENT_IDENTITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$integration='PASS'}}
+          if($eng-eq'PASS' -and $integration-eq'PASS'){$runtimeIdentity=1;$sourceIdentity=1}
+          if(Test-Path 'p74-work/P74_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p74-work/P74_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
+          [ordered]@{
+            schemaVersion='velmere.p74r6.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';parentRevision='P73R7';parentAggregateSha256='b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b';
+            p74r5ReplayRunId='32063820844';p74r5ReplayArtifactId='9299112031';
+            projectionFileCount=if($m){$m.projection.fileCount}else{0};projectionPayloadBytes=if($m){$m.projection.payloadBytes}else{0};projectionPathSetSha256=if($m){$m.projection.pathSetSha256}else{$null};projectionAggregateSha256=if($m){$m.projection.sourceContentAggregateSha256}else{$null};
+            engineering=$eng;auditDeploymentIdentityIntegration=$integration;boundedCurrentRuntimeIdentityCases=$runtimeIdentity;boundedSourceDeploymentIdentityCases=$sourceIdentity;
+            independentRuntimeProviderQuorum='OPEN';vulnerabilityGroundTruthCases=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;
+            truthBoundary='P74R6 may credit one bounded Ancient8 current-runtime/source-deployment identity case only if exact Windows engineering and the live product integration both PASS. A8Scan/Conduit remains one provider family, independent runtime-provider quorum is OPEN, vulnerability ground truth remains zero, and no customer FINAL/PDF/rights/paid-value/sale/LIVE/WORLD_CLASS numerator is promoted.'
+          }|ConvertTo-Json -Depth 8|Set-Content p74-out/P74R6_GITHUB_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P74R6 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74r6-audit-deployment-identity-exact-windows
+          path: p74-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
