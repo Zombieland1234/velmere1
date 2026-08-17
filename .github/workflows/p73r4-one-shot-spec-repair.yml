@@ -1,0 +1,87 @@
+name: P73R4 One-Shot Spec Repair
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p73r4-one-shot-spec-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, 'P73R4 repair malformed patch spec') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Repair exact malformed JSON escape and rebind guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+          import hashlib, json, re
+          from pathlib import Path
+
+          spec_path=Path('p73-runtime/p73r4-product-patch-spec.json')
+          patcher_path=Path('p73-runtime/apply-p73r4-adjudicated-authority-engine.py')
+          receipt_path=Path('p73-runtime/P73R4_SPEC_REPAIR_RECEIPT.json')
+          raw=spec_path.read_bytes()
+          old_sha=hashlib.sha256(raw).hexdigest()
+          if len(raw)!=12131 or old_sha!='0784e970b6a77a936cd8414f42a76a0cbf404aaedab1d2511b7c30ae6f6365cd':
+              raise SystemExit(f'unexpected malformed preimage:{len(raw)}:{old_sha}')
+          bad=b'authorityEvidence.authorityRoots.join(\\" + \\\\")'
+          good=b'authorityEvidence.authorityRoots.join(\\" + \\")'
+          if raw.count(bad)!=1:
+              raise SystemExit(f'exact malformed escape anchor count:{raw.count(bad)}')
+          repaired=raw.replace(bad,good,1)
+          parsed=json.loads(repaired.decode('utf-8'))
+          expected={
+              'lib/security/audit-provider-runtime-client.ts',
+              'lib/security/audit-claim-ledger.ts',
+              'lib/security/audit-report-assembler.ts',
+              'lib/security/audit-paid-evidence-readiness.ts',
+              'lib/security/audit-customer-report-pipeline.ts',
+              'lib/server/security-route-modules/audit-report-assembler.ts',
+          }
+          if set(parsed)!=expected:
+              raise SystemExit(f'repaired spec path mismatch:{sorted(parsed)}')
+          new_sha=hashlib.sha256(repaired).hexdigest()
+          if len(repaired)!=12130 or new_sha!='5bda6ce45aab0995420004807a356a384290e45d667205f1b31c4f0a80728d5e':
+              raise SystemExit(f'unexpected repaired identity:{len(repaired)}:{new_sha}')
+          spec_path.write_bytes(repaired)
+          patcher=patcher_path.read_text(encoding='utf-8')
+          patched,n=re.subn(r"SPEC_SHA='[0-9a-f]{64}'",f"SPEC_SHA='{new_sha}'",patcher,count=1)
+          if n!=1: raise SystemExit('patcher SPEC_SHA replacement count mismatch')
+          patcher_path.write_text(patched,encoding='utf-8')
+          receipt={
+              'schemaVersion':'velmere.p73r4.spec-repair.v1',
+              'status':'PASS_CONTROL_PLANE_REPAIR_NO_PRODUCT_CREDIT',
+              'oldBytes':len(raw),'oldSha256':old_sha,
+              'newBytes':len(repaired),'newSha256':new_sha,
+              'replacementCount':1,'parsedPathCount':len(parsed),'productOpsChanged':False,
+              'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,
+              'truthBoundary':'Repairs exactly one malformed JSON escape in the P73R4 control-plane patch spec and rebinds its SHA guard. Product source and patch operations are not modified and receive zero release credit.'
+          }
+          receipt_path.write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(receipt,indent=2))
+          PY
+
+      - name: Commit repaired control-plane bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Velmere Closure Bot'
+          git config user.email 'velmere141@gmail.com'
+          git add p73-runtime/p73r4-product-patch-spec.json p73-runtime/apply-p73r4-adjudicated-authority-engine.py p73-runtime/P73R4_SPEC_REPAIR_RECEIPT.json
+          git commit -m 'P73R4 repair malformed patch spec'
+          git push origin HEAD:velmere-p73-audit-ancient8-ground-truth-20260817
