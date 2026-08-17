@@ -7,13 +7,13 @@ BASE_PAYLOAD=20988569
 BASE_PATHSET='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
 BASE_AGG='4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252'
 FINAL_COUNT=1598
-FINAL_PAYLOAD=21015946
+FINAL_PAYLOAD=21015520
 FINAL_PATHSET='9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25'
-FINAL_AGG='1ac85bb49caade92cecae6ba2c7d8f76e782a9c86fd90509d99a762d25f44c4f'
+FINAL_AGG='d0306b565af73939691a34554e4f7e57543f6d3b91d778a9c93ebf25f5ffd377'
 SPEC_SHA='9386413bfd3d1b733547393117ee799f50918572a4eceb4964d5416e1830389a'
 NEW_REL='lib/security/audit-adjudicated-authority-evidence.ts'
-NEW_BYTES=20175
-NEW_SHA='30bbb4d9813bb0866234b02280e177d0939fcee9956578b04e636d068de1fb84'
+NEW_BYTES=19749
+NEW_SHA='0d9ad2b771ad4d19c61853ed5d5562f54c2549b07493690f28edc5383aff6521'
 
 def sha(b:bytes)->str:return hashlib.sha256(b).hexdigest()
 def identity(rows):
@@ -44,7 +44,7 @@ for rel,cfg in spec.items():
     if len(out)!=cfg['afterBytes'] or sha(out)!=cfg['afterSha256']:raise SystemExit(f'P73R4 output mismatch:{rel}:{len(out)}:{sha(out)}')
     f.write_bytes(out);row['byteLength']=cfg['afterBytes'];row['sha256']=cfg['afterSha256'];rows[rel]=row
     changed.append({'path':rel,'beforeSha256':cfg['beforeSha256'],'afterSha256':cfg['afterSha256'],'afterBytes':cfg['afterBytes']})
-new_source=(control/'p73r4-new-audit-adjudicated-authority-evidence.ts').read_bytes()
+new_source=(control/'p73r4-new-audit-adjudicated-authority-evidence.ts').read_text(encoding='utf-8').replace('\r\n','\n').replace('\r','\n').encode('utf-8')
 if len(new_source)!=NEW_BYTES or sha(new_source)!=NEW_SHA:raise SystemExit(f'P73R4 new source identity mismatch:{len(new_source)}:{sha(new_source)}')
 new_path=root/NEW_REL
 if new_path.exists() or NEW_REL in rows:raise SystemExit('P73R4 new source already exists')
@@ -55,8 +55,8 @@ ident=identity(list(rows.values()))
 if ident[:4]!=(FINAL_COUNT,FINAL_PAYLOAD,FINAL_PATHSET,FINAL_AGG):raise SystemExit(f'P73R4 projection identity mismatch:{ident[:4]}')
 m['files']=ident[4]
 m['projection']['fileCount']=FINAL_COUNT;m['projection']['payloadBytes']=FINAL_PAYLOAD;m['projection']['pathSetSha256']=FINAL_PATHSET;m['projection']['sourceContentAggregateSha256']=FINAL_AGG
-truth='P73R4 adds a server-fetched, digest-bound dual-authority adverse deployment-identity evidence engine, fixes Ancient8 chain binding, projects confirmed authority evidence into claims/risk, and permits that verified authority bundle to supplement Basic readiness only. Existing strict provider-lane semantics are not weakened and Pro/Advanced cannot be unlocked by authority pages alone. No customer FINAL/PDF, rights, paid-value, sale, LIVE or WORLD_CLASS credit is granted by this source patch.'
+truth='P73R4 adds a server-fetched, digest-bound dual-authority adverse deployment-identity evidence engine, fixes Ancient8 chain binding, projects confirmed authority evidence into claims/risk, and permits that verified authority bundle to supplement Basic readiness only. New-source control bytes are canonicalized to LF before product hashing/writing so projection identity is cross-platform deterministic. Existing strict provider-lane semantics are not weakened and Pro/Advanced cannot be unlocked by authority pages alone. No customer FINAL/PDF, rights, paid-value, sale, LIVE or WORLD_CLASS credit is granted by this source patch.'
 m['p73r4Delta']={'classification':'ADJUDICATED_DUAL_AUTHORITY_DEPLOYMENT_IDENTITY_ENGINE','changedBuildRelevantFiles':changed,'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':truth}
 Path(a.output_manifest).write_text(json.dumps(m,indent=2)+'\n',encoding='utf-8')
-r={'schemaVersion':'velmere.p73r4.adjudicated-authority-engine-patch.v1','status':'PASS','patchSpecSha256':SPEC_SHA,'newSourceSha256':NEW_SHA,'changedFiles':changed,'fileCount':ident[0],'payloadBytes':ident[1],'pathSetSha256':ident[2],'aggregateSha256':ident[3],'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':truth}
+r={'schemaVersion':'velmere.p73r4.adjudicated-authority-engine-patch.v2','status':'PASS','patchSpecSha256':SPEC_SHA,'newSourceSha256':NEW_SHA,'newSourceLineEnding':'LF_CANONICAL','changedFiles':changed,'fileCount':ident[0],'payloadBytes':ident[1],'pathSetSha256':ident[2],'aggregateSha256':ident[3],'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':truth}
 Path(a.receipt).write_text(json.dumps(r,indent=2)+'\n',encoding='utf-8');print(json.dumps(r,indent=2))
