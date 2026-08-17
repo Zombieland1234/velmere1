@@ -42,7 +42,7 @@ function syntheticStrictLane(args: {
     id: 'p74-unit-source-clock-lane',
     label: 'P74 source-clock unit control',
     provider: 'P74 unit provider',
-    providerFamily: 'p74_unit_provider',
+    providerFamily: 'block_explorer',
     lineage: {
       providerId: 'p74-unit-provider',
       upstreamRoot: 'unit.example',
