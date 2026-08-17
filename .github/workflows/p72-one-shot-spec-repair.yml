@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   repair:
-    if: ${{ !contains(github.event.head_commit.message, 'P72 repair merge product spec chunks') }}
+    if: ${{ !contains(github.event.head_commit.message, 'P72 repair canonicalize product spec') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout exact branch head
@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: true
 
-      - name: Merge malformed product-spec chunks and rebind guard
+      - name: Canonicalize malformed product spec and rebind guard
         shell: bash
         run: |
           set -euo pipefail
@@ -49,31 +49,54 @@ jobs:
           decoder = json.JSONDecoder()
           first, end = decoder.raw_decode(text)
           trailing = text[end:].strip()
+          if not isinstance(first, dict):
+              raise SystemExit('P72 first decoded value must be object')
 
+          repair_mode = 'already_single'
+          first_keys = set(first)
+          second_keys: set[str] = set()
           if not trailing:
-              if not isinstance(first, dict) or set(first) != expected:
-                  raise SystemExit(f'already-single P72 spec has wrong paths: {sorted(first) if isinstance(first, dict) else type(first)}')
+              merged = first
+          else:
+              merged = None
+              try:
+                  second = json.loads(trailing)
+              except json.JSONDecodeError:
+                  second = None
+              if isinstance(second, dict):
+                  second_keys = set(second)
+                  if first_keys & second_keys:
+                      raise SystemExit(f'P72 object-chunk overlap: {sorted(first_keys & second_keys)}')
+                  candidate = dict(first)
+                  candidate.update(second)
+                  merged = candidate
+                  repair_mode = 'two_disjoint_objects'
+              elif trailing.startswith(','):
+                  first_text = text[:end]
+                  if not first_text.endswith('}'):
+                      raise SystemExit('P72 continuation repair requires first object to end with }')
+                  candidate_text = first_text[:-1] + trailing
+                  candidate = json.loads(candidate_text)
+                  if not isinstance(candidate, dict):
+                      raise SystemExit('P72 continuation candidate must be object')
+                  merged = candidate
+                  second_keys = set(candidate) - first_keys
+                  repair_mode = 'comma_continuation'
+              else:
+                  prefix = trailing[:160].encode('unicode_escape').decode('ascii')
+                  raise SystemExit(f'P72 unrecognized trailing transport prefix: {prefix}')
+
+          if set(merged) != expected:
+              raise SystemExit(f'P72 merged path mismatch: first={sorted(first_keys)} added={sorted(second_keys)} merged={sorted(merged)}')
+          if not trailing:
               print('P72 product spec already canonical; no repair needed')
               raise SystemExit(0)
 
-          second = json.loads(trailing)
-          if not isinstance(first, dict) or not isinstance(second, dict):
-              raise SystemExit('P72 concatenated chunks must both be JSON objects')
-          first_keys, second_keys = set(first), set(second)
-          if first_keys & second_keys:
-              raise SystemExit(f'P72 chunk path overlap: {sorted(first_keys & second_keys)}')
-          if first_keys | second_keys != expected:
-              raise SystemExit(f'P72 chunk union mismatch: first={sorted(first_keys)} second={sorted(second_keys)}')
-
-          merged = dict(first)
-          merged.update(second)
           clean_raw = json.dumps(merged, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
           clean_sha = hashlib.sha256(clean_raw).hexdigest()
           old_sha = hashlib.sha256(raw).hexdigest()
-          first_raw = text[:end].encode('utf-8')
-          second_raw = trailing.encode('utf-8')
-
           spec_path.write_text(base64.b64encode(clean_raw).decode('ascii') + '\n', encoding='utf-8')
+
           patcher = patcher_path.read_text(encoding='utf-8')
           patched, n = re.subn(r"SPEC_SHA='[0-9a-f]{64}'", f"SPEC_SHA='{clean_sha}'", patcher, count=1)
           if n != 1:
@@ -81,16 +104,13 @@ jobs:
           patcher_path.write_text(patched, encoding='utf-8')
 
           receipt = {
-              'schemaVersion': 'velmere.p72.product-spec-chunk-merge-repair.v1',
+              'schemaVersion': 'velmere.p72.product-spec-canonicalization.v2',
               'status': 'PASS_CONTROL_PLANE_REPAIR_NO_PRODUCT_CREDIT',
+              'repairMode': repair_mode,
               'oldCombinedDecodedBytes': len(raw),
               'oldCombinedDecodedSha256': old_sha,
-              'chunk1DecodedBytes': len(first_raw),
-              'chunk1DecodedSha256': hashlib.sha256(first_raw).hexdigest(),
-              'chunk1Paths': sorted(first_keys),
-              'chunk2DecodedBytes': len(second_raw),
-              'chunk2DecodedSha256': hashlib.sha256(second_raw).hexdigest(),
-              'chunk2Paths': sorted(second_keys),
+              'firstParsedPaths': sorted(first_keys),
+              'recoveredAdditionalPaths': sorted(second_keys),
               'cleanProductDecodedBytes': len(clean_raw),
               'cleanProductDecodedSha256': clean_sha,
               'productPathCount': len(merged),
@@ -100,7 +120,7 @@ jobs:
               'paidValueCredit': 0,
               'saleCredit': 0,
               'live': False,
-              'truthBoundary': 'Repairs only the malformed two-chunk P72 product patch transport by merging two disjoint JSON objects whose union is exactly the five guarded product files. Product source is not modified and receives zero release credit.'
+              'truthBoundary': 'Canonicalizes only the malformed P72 product patch transport. A repair is accepted only if the resulting object contains exactly the five predeclared guarded product-source paths. Product source is not modified and receives zero release credit.'
           }
           receipt_path.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
           print(json.dumps(receipt, indent=2))
@@ -117,5 +137,5 @@ jobs:
           git config user.name 'Velmere Closure Bot'
           git config user.email 'velmere141@gmail.com'
           git add p72-runtime/p72-product-patch-spec.b64 p72-runtime/apply-p72-commercial-topology-measurement.py p72-runtime/P72_PRODUCT_SPEC_SPLIT_RECEIPT.json
-          git commit -m 'P72 repair merge product spec chunks'
+          git commit -m 'P72 repair canonicalize product spec'
           git push origin HEAD:velmere-p72-commercial-topology-measurement-20260817
