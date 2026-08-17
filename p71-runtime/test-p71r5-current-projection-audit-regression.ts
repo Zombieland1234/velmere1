@@ -30,7 +30,7 @@ async function main() {
     deliveryReady:{basic:true,pro:true,advanced:true},
     blockers:{basic:[],pro:[],advanced:[]},
   });
-  const adv=matrix.find((x:any)=>x.tier==='advanced');
+  const adv=matrix.tiers.find((x:any)=>x.tier==='advanced');
   check('matrix:advanced-payment-cannot-unlock',adv?.releaseState==='blocked',adv);
   check('matrix:advanced-not-for-sale-blocker',Array.isArray(adv?.blockers) && adv.blockers.includes('not_for_sale'),adv?.blockers);
   check('matrix:no-manual-review-gate-current-advanced',!Array.isArray(adv?.blockers) || !adv.blockers.includes('manual_review_required'),adv?.blockers);
@@ -48,7 +48,7 @@ async function main() {
   check('pdf:no-glyph-replacement',pdf.unsupportedGlyphReplacements===0,pdf.unsupportedGlyphReplacements);
   check('pdf:has-digest',typeof pdf.pdfDigest==='string' && pdf.pdfDigest.length>20,pdf.pdfDigest);
 
-  const result={schemaVersion:'velmere.p71r5.current-projection-audit-regression.v1',status:'PASS',checkCount:checks.length,checks};
+  const result={schemaVersion:'velmere.p71r5.current-projection-audit-regression.v2',status:'PASS',checkCount:checks.length,checks};
   fs.mkdirSync(resultDir,{recursive:true});
   fs.writeFileSync(path.join(resultDir,'P71R5_CURRENT_PROJECTION_AUDIT_REGRESSION.json'),JSON.stringify(result,null,2)+'\n');
   console.log(JSON.stringify(result,null,2));
