@@ -8,7 +8,7 @@ New-Item -ItemType Directory -Force -Path p76r2-out | Out-Null
 Run "python p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p76r2-out"
 Run "python p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p76r2-out/P75_PARENT_SOURCE_PATCH.json"
 
-Run "python -c \"from pathlib import Path; import hashlib; parts=sorted(Path('p76-runtime').glob('apply.part*')); data=b''.join(x.read_bytes() for x in parts); Path('p76-runtime/apply-p76-advanced-release-automation.py').write_bytes(data); assert len(parts)==4 and hashlib.sha256(data).hexdigest()=='73d5378a6645b9d82caa43cbf25786435d4f377bbbfe7a63b31f4bbe75e83561'\""
+Run "python p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py"
 Run "python p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p76r2-out/P76_SOURCE_PATCH.json"
 Run "python p76-runtime/test-p76-static.py --source-root p75-work/source --receipt p76r2-out/P76_STATIC_CONTROL.json"
 
