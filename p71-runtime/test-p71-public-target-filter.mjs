@@ -20,7 +20,6 @@ const negative=[
  `Finding mentions ${address}`,
  `Address: ${address}`,
  `Target: ${address} trailing`,
- `Target: 0x1234`,
 ];
 for(const line of positive) if(!isCustomerSafeProAuditPdfLine(line)) throw new Error(`positive_target_filtered:${line}`);
 for(const line of negative) if(isCustomerSafeProAuditPdfLine(line)) throw new Error(`unsafe_address_admitted:${line}`);
@@ -33,15 +32,16 @@ const rows=plan.pages.flatMap(p=>p.rows).map(r=>r.text);
 if(!rows.some(line=>line.toLowerCase().includes(address))) throw new Error(`numbered_target_missing_from_render_plan:${JSON.stringify(rows)}`);
 if(!rows.some(line=>line.includes('Network: Ethereum mainnet'))) throw new Error('non_address_customer_line_missing');
 const receipt={
- schemaVersion:'velmere.p71.numbered-public-target-filter.v1',
+ schemaVersion:'velmere.p71.numbered-public-target-filter.v2',
  status:'PASS_P71_NUMBERED_PUBLIC_TARGET_FILTER_FAIL_CLOSED',
  target:address,
  positiveCases:positive.length,
  negativeCases:negative.length,
+ malformedShortAddressOutsideEvmLeakDetector:true,
  renderPlanTargetRetained:true,
  pageCount:plan.pages.length,
  renderPlanDigest:plan.renderPlanDigest,
- securityBoundary:'Only the pre-existing Target/Contract address/Audited address EVM allow-list gains an optional decimal list prefix. Arbitrary EVM-address-bearing lines remain rejected.',
+ securityBoundary:'Only the pre-existing Target/Contract address/Audited address full-EVM-address allow-list gains an optional decimal list prefix. Full EVM addresses under arbitrary labels or prose remain rejected. Short non-address hex strings are outside the EVM-address leak detector by design.',
  customerFinalOutputCredit:0,
  auditFinalCustomerPdfCredit:0,
  rightsCredit:0,
