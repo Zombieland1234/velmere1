@@ -1,0 +1,67 @@
+name: P74 Finalized Routescan MPT Bytecode V2
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - .github/workflows/p74-finalized-routescan-mpt-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact diagnostic head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Run zero-credit finalized Routescan MPT V2
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: p74-finalized-routescan-mpt-v2-out
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          New-Item -ItemType Directory -Force p74-finalized-routescan-mpt-v2-out | Out-Null
+          node p74-runtime/diagnose-p74-finalized-routescan-mpt-v2.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'diagnostic process failed' }
+          $r=Get-Content p74-finalized-routescan-mpt-v2-out/P74_FINALIZED_ROUTESCAN_MPT_BYTECODE_DIAGNOSTIC_V2.json -Raw | ConvertFrom-Json
+          Write-Host "status=$($r.status)"
+          Write-Host "checks=$($r.checks | ConvertTo-Json -Compress)"
+          if ($r.credit.product -ne 0 -or $r.credit.currentRuntimeBytecode -ne 0 -or $r.credit.customerFinal -ne 0 -or $r.credit.sale -ne 0 -or $r.credit.live -ne $false) { throw 'zero-credit boundary violated' }
+      - name: Capture strict boundary
+        shell: pwsh
+        run: |
+          [ordered]@{
+            schemaVersion='velmere.p74.finalized-routescan-mpt-v2-github-boundary.v1'
+            runId='${{ github.run_id }}'
+            headSha='${{ github.sha }}'
+            productCredit=0
+            currentRuntimeBytecodeCredit=0
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            sale='0/20'
+            live=$false
+            truthBoundary='Control-only. This diagnostic itself cannot promote product or release numerators.'
+          } | ConvertTo-Json -Depth 5 | Set-Content p74-finalized-routescan-mpt-v2-out/P74_FINALIZED_ROUTESCAN_MPT_V2_GITHUB_BOUNDARY.json -Encoding utf8
+      - name: Upload diagnostic evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-finalized-routescan-mpt-bytecode-v2
+          path: p74-finalized-routescan-mpt-v2-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
