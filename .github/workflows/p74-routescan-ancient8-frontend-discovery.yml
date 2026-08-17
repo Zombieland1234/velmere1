@@ -1,0 +1,41 @@
+name: P74 Ancient8 Routescan Frontend Discovery
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - .github/workflows/p74-routescan-ancient8-frontend-discovery.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Discover zero-credit frontend backend hints
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: p74-routescan-frontend-out
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force p74-routescan-frontend-out | Out-Null
+          node p74-runtime/discover-p74-routescan-ancient8-frontend.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'discovery process failed' }
+          $r=Get-Content p74-routescan-frontend-out/P74_ROUTESCAN_ANCIENT8_FRONTEND_DISCOVERY.json -Raw | ConvertFrom-Json
+          if ($r.credit.product -ne 0 -or $r.credit.currentRuntimeBytecode -ne 0 -or $r.credit.customerFinal -ne 0 -or $r.credit.sale -ne 0 -or $r.credit.live -ne $false) { throw 'zero-credit boundary violated' }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-routescan-ancient8-frontend-discovery
+          path: p74-routescan-frontend-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
