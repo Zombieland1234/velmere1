@@ -1,0 +1,65 @@
+name: P74 Conduit Verification Client Discovery
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/discover-p74-conduit-verification-client.mjs'
+      - '.github/workflows/p74-conduit-verification-client-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact discovery head
+        uses: actions/checkout@v4
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+      - name: Confirm runtime identity
+        shell: pwsh
+        run: |
+          node --version
+          if ((node --version) -ne 'v24.18.0') { throw 'Node version mismatch' }
+          git rev-parse HEAD
+      - name: Discover current A8Scan verification client
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-conduit-verification-client-out
+        run: |
+          node p74-runtime/discover-p74-conduit-verification-client.mjs | Tee-Object -FilePath p74-conduit-verification-client.log
+      - name: Capture strict zero-credit boundary
+        shell: pwsh
+        run: |
+          $boundary=[ordered]@{
+            schemaVersion='velmere.p74.conduit-verification-client-boundary.v1'
+            runId='${{ github.run_id }}'
+            headSha='${{ github.sha }}'
+            productCredit=0
+            currentRuntimeBytecodeCredit=0
+            vulnerabilityGroundTruthCredit=0
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            sale='0/20'
+            live=$false
+            truthBoundary='Discovery only. Frontend/client reverse discovery cannot by itself establish source-to-deployment identity or product readiness.'
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 p74-conduit-verification-client-out\P74_CONDUIT_VERIFICATION_CLIENT_GITHUB_BOUNDARY.json
+      - name: Upload discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p74-conduit-verification-client-discovery
+          path: |
+            p74-conduit-verification-client-out/**
+            p74-conduit-verification-client.log
+          if-no-files-found: error
+          retention-days: 14
