@@ -1,0 +1,77 @@
+name: P74 Exact P73R7 Basic Customer Pipeline
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - .github/workflows/p74-p73r7-basic-customer-pipeline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout exact control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Reconstruct exact P73R7 product bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v24.18.0"
+          mkdir -p p74-basic-work p74-basic-out
+          git config core.autocrlf false
+          git config core.eol lf
+          python p73-runtime/reconstruct-p73r7-exact.py --work-root p74-basic-work --out-root p74-basic-out
+          python - <<'PY'
+          import json
+          m=json.load(open('p74-basic-work/P73R7_BUILD_PROJECTION_MANIFEST.json',encoding='utf-8'))['projection']
+          exp=(1598,21014913,'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25','b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b')
+          got=(m['fileCount'],m['payloadBytes'],m['pathSetSha256'],m['sourceContentAggregateSha256'])
+          if got!=exp: raise SystemExit(f'P73R7 identity mismatch:{got}')
+          print('P73R7 exact identity PASS',got)
+          PY
+      - name: Install exact dependency closure
+        shell: bash
+        working-directory: p74-basic-work/source
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          npm ls --all >/dev/null
+      - name: Execute zero-credit current Basic customer pipeline diagnostic
+        shell: bash
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}/p74-basic-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}/p74-basic-work/source/tsconfig.json
+        run: |
+          set -euo pipefail
+          node p74-basic-work/source/node_modules/tsx/dist/cli.mjs p74-runtime/diagnose-p74-p73r7-basic-customer-pipeline.ts | tee p74-basic-out/P74_P73R7_BASIC_CUSTOMER_PIPELINE_DIAGNOSTIC.log
+      - name: Capture strict zero-credit boundary
+        if: always()
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');let d=null;try{d=JSON.parse(fs.readFileSync('p74-basic-out/P74_P73R7_BASIC_CUSTOMER_PIPELINE_DIAGNOSTIC.json','utf8'));}catch{}
+          fs.writeFileSync('p74-basic-out/P74_P73R7_BASIC_CUSTOMER_PIPELINE_BOUNDARY.json',JSON.stringify({schemaVersion:'velmere.p74.p73r7-basic-customer-pipeline-boundary.v1',runId:process.env.GITHUB_RUN_ID,headSha:process.env.GITHUB_SHA,parentAggregate:'b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b',diagnosticStatus:d?.status??'MISSING',customerFinal:'0/20',auditFinalPdf:'0/3',rights:'2/203',paidValue:'0/10',sale:'0/20',live:false,truthBoundary:'Diagnostic only. Simulated ledger/payment branches isolate blockers; no release numerator may move.'},null,2)+'\n');
+          NODE
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-p73r7-basic-customer-pipeline
+          path: p74-basic-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
