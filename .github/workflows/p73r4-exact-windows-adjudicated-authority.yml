@@ -1,4 +1,4 @@
-name: P73R4R2 Exact Windows Adjudicated Authority Engine
+name: P73R4R3 Exact Windows Adjudicated Authority Engine
 
 on:
   push:
@@ -10,15 +10,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: p73r4r2-exact-windows-adjudicated-authority-${{ github.ref }}
+  group: p73r4r3-exact-windows-adjudicated-authority-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  p73r4r2-current-product:
+  p73r4r3-current-product:
     runs-on: windows-2025
     timeout-minutes: 150
     steps:
-      - name: Checkout exact P73R4R2 control head
+      - name: Checkout exact P73R4R3 control head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
@@ -42,7 +42,7 @@ jobs:
           $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
           "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      - name: Reconstruct exact P72R3 parent and apply guarded P73R4 delta
+      - name: Reconstruct exact P72R3 parent and apply guarded LF-canonical P73R4 delta
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop';git config core.autocrlf false;git config core.eol lf;New-Item -ItemType Directory -Force p73r4-out|Out-Null
@@ -64,9 +64,10 @@ jobs:
           if($parent.projection.fileCount-ne1597-or$parent.projection.payloadBytes-ne20988569-or$parent.projection.pathSetSha256-ne'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'-or$parent.projection.sourceContentAggregateSha256-ne'4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252'){throw 'P72R3 parent identity mismatch'}
           Run "python p73-runtime/apply-p73r4-adjudicated-authority-engine.py --source-root p73r4-work/source --manifest p73r4-work/P72R3_BUILD_PROJECTION_MANIFEST.json --output-manifest p73r4-work/P73R4_BUILD_PROJECTION_MANIFEST.json --receipt p73r4-out/P73R4_SOURCE_PATCH.json"
           $m=Get-Content p73r4-work/P73R4_BUILD_PROJECTION_MANIFEST.json -Raw|ConvertFrom-Json
-          if($m.projection.fileCount-ne1598-or$m.projection.payloadBytes-ne21015946-or$m.projection.pathSetSha256-ne'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25'-or$m.projection.sourceContentAggregateSha256-ne'1ac85bb49caade92cecae6ba2c7d8f76e782a9c86fd90509d99a762d25f44c4f'){throw 'P73R4 product identity mismatch'}
+          if($m.projection.fileCount-ne1598-or$m.projection.payloadBytes-ne21015520-or$m.projection.pathSetSha256-ne'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25'-or$m.projection.sourceContentAggregateSha256-ne'd0306b565af73939691a34554e4f7e57543f6d3b91d778a9c93ebf25f5ffd377'){throw 'P73R4R3 product identity mismatch'}
           Copy-Item p73r4-work/P73R4_BUILD_PROJECTION_MANIFEST.json p73r4-out/
           if(Test-Path p73-runtime/P73R4_SPEC_REPAIR_RECEIPT.json){Copy-Item p73-runtime/P73R4_SPEC_REPAIR_RECEIPT.json p73r4-out/}
+          if(Test-Path p73-runtime/P73R4R3_LF_CONTROL_NORMALIZATION_RECEIPT.json){Copy-Item p73-runtime/P73R4R3_LF_CONTROL_NORMALIZATION_RECEIPT.json p73r4-out/}
 
       - name: Static authority and fail-closed invariants
         shell: pwsh
@@ -114,20 +115,20 @@ jobs:
           $ErrorActionPreference='Stop';Push-Location p73r4-work/source
           try { node ./node_modules/tsx/dist/cli.mjs ../../p73-runtime/test-p73r4-adjudicated-authority-runtime.ts | Tee-Object ../..\p73r4-out\P73R4_AUTHORITY_RUNTIME.log;if($LASTEXITCODE-ne0){throw 'P73R4 authority runtime failed'} } finally { Pop-Location }
 
-      - name: Capture P73R4R2 boundary
+      - name: Capture P73R4R3 boundary
         if: always()
         shell: pwsh
         run: |
           $eng='NOT_EXECUTED_OR_FAILED';$runtime='NOT_EXECUTED_OR_FAILED'
           if(Test-Path 'p73r4-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p73r4-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$eng='PASS'}}
           if(Test-Path 'p73r4-out/P73R4_ADJUDICATED_AUTHORITY_RUNTIME_TEST.json'){$x=Get-Content 'p73r4-out/P73R4_ADJUDICATED_AUTHORITY_RUNTIME_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$runtime='PASS'}}
-          [ordered]@{schemaVersion='velmere.p73r4r2.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';parentRevision='P72R3';parentAggregateSha256='4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252';projectionFileCount=1598;projectionPayloadBytes=21015946;projectionPathSetSha256='9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25';projectionAggregateSha256='1ac85bb49caade92cecae6ba2c7d8f76e782a9c86fd90509d99a762d25f44c4f';generatedNextEnvPayloadBytes=21015931;generatedNextEnvAggregateSha256='d6c2a3fccd6b8d8c0887d74b1badaf8c6d776ddff5559742d600d658b98a4fe5';engineering=$eng;authorityRuntime=$runtime;deploymentGroundTruthCases=1;currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='P73R4R2 validates the generic server-fetched adjudicated dual-authority deployment-identity engine, Ancient8 chain binding, claim/risk projection and Basic-only authority readiness supplement. Strict provider lanes remain intact; Pro/Advanced are not unlocked. Zero customer FINAL/PDF, rights, paid-value, sale, LIVE or WORLD_CLASS credit.'}|ConvertTo-Json -Depth 8|Set-Content p73r4-out/P73R4R2_GITHUB_BOUNDARY.json -Encoding utf8
+          [ordered]@{schemaVersion='velmere.p73r4r3.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';parentRevision='P72R3';parentAggregateSha256='4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252';projectionFileCount=1598;projectionPayloadBytes=21015520;projectionPathSetSha256='9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25';projectionAggregateSha256='d0306b565af73939691a34554e4f7e57543f6d3b91d778a9c93ebf25f5ffd377';generatedNextEnvPayloadBytes=21015505;generatedNextEnvAggregateSha256='7040ed310df042104f9628d68a18f0afa7a4497b1aaab5ead0434b452a65a076';engineering=$eng;authorityRuntime=$runtime;deploymentGroundTruthCases=1;currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='P73R4R3 validates the cross-platform LF-canonical generic server-fetched adjudicated dual-authority deployment-identity engine, Ancient8 chain binding, claim/risk projection and Basic-only authority readiness supplement. Strict provider lanes remain intact; Pro/Advanced are not unlocked. Zero customer FINAL/PDF, rights, paid-value, sale, LIVE or WORLD_CLASS credit.'}|ConvertTo-Json -Depth 8|Set-Content p73r4-out/P73R4R3_GITHUB_BOUNDARY.json -Encoding utf8
 
-      - name: Upload P73R4R2 evidence
+      - name: Upload P73R4R3 evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p73r4r2-adjudicated-authority-exact-windows
+          name: p73r4r3-adjudicated-authority-exact-windows
           path: p73r4-out
           if-no-files-found: error
           compression-level: 0
