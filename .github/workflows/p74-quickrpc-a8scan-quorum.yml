@@ -1,0 +1,70 @@
+name: P74 QuickRPC A8Scan Exact Block Quorum
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/diagnose-p74-quickrpc-a8scan-quorum.mjs'
+      - '.github/workflows/p74-quickrpc-a8scan-quorum.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact diagnostic head
+        uses: actions/checkout@v4
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Confirm runtime identity
+        shell: pwsh
+        run: |
+          node --version
+          if ((node --version) -ne 'v24.18.0') { throw 'Node version mismatch' }
+          git rev-parse HEAD
+
+      - name: Execute zero-credit QuickRPC A8Scan quorum diagnostic
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-quickrpc-a8scan-out
+        run: |
+          node p74-runtime/diagnose-p74-quickrpc-a8scan-quorum.mjs | Tee-Object -FilePath p74-quickrpc-a8scan.log
+
+      - name: Capture strict zero-credit boundary
+        shell: pwsh
+        run: |
+          $boundary = [ordered]@{
+            schemaVersion = 'velmere.p74.quickrpc-a8scan-github-boundary.v1'
+            runId = '${{ github.run_id }}'
+            headSha = '${{ github.sha }}'
+            productCredit = 0
+            currentRuntimeBytecodeCredit = 0
+            vulnerabilityGroundTruthCredit = 0
+            customerFinal = '0/20'
+            auditFinalPdf = '0/3'
+            rights = '2/203'
+            paidValue = '0/10'
+            sale = '0/20'
+            live = $false
+            truthBoundary = 'Diagnostic only. Even PASS grants zero product/release credit until MPT proofs are independently verified against the agreed exact block stateRoot and a guarded product patch plus exact-Windows/live regression passes.'
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 p74-quickrpc-a8scan-out\P74_QUICKRPC_A8SCAN_GITHUB_BOUNDARY.json
+
+      - name: Upload diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p74-quickrpc-a8scan-quorum
+          path: |
+            p74-quickrpc-a8scan-out/**
+            p74-quickrpc-a8scan.log
+          if-no-files-found: error
+          retention-days: 14
