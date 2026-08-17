@@ -1,0 +1,81 @@
+name: P74R4 Ancient8 Official Multicall3 Compiler Replay
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/replay-p74-ancient8-official-multicall3-v4.mjs'
+      - '.github/workflows/p74r4-ancient8-official-multicall3-replay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact replay head
+        uses: actions/checkout@v4
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Confirm runtime identity
+        shell: pwsh
+        run: |
+          node --version
+          npm --version
+          if ((node --version) -ne 'v24.18.0') { throw 'Node version mismatch' }
+          git rev-parse HEAD
+
+      - name: Execute shell-free exact source compiler replay
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-ancient8-official-replay-v4-out
+        run: |
+          node p74-runtime/replay-p74-ancient8-official-multicall3-v4.mjs | Tee-Object -FilePath p74r4-ancient8-official-replay.log
+
+      - name: Enforce bounded replay truth
+        shell: pwsh
+        run: |
+          $r = Get-Content p74-ancient8-official-replay-v4-out\P74R4_ANCIENT8_OFFICIAL_MULTICALL3_REPLAY.json -Raw | ConvertFrom-Json
+          if ($r.credit.product -ne 0 -or $r.credit.vulnerabilityGroundTruth -ne 0 -or $r.credit.customerFinal -ne 0 -or $r.credit.auditFinalPdf -ne 0 -or $r.credit.rights -ne 0 -or $r.credit.paidValue -ne 0 -or $r.credit.sale -ne 0 -or $r.credit.live -ne $false) { throw 'Forbidden release credit in bounded replay' }
+          if ($r.status -eq 'PASS_BOUNDED_SOURCE_TO_CURRENT_RUNTIME_IDENTITY') {
+            if ($r.credit.currentRuntimeBytecode -ne 1 -or $r.credit.sourceDeploymentIdentity -ne 1) { throw 'PASS missing bounded identity credit' }
+          } else {
+            if ($r.credit.currentRuntimeBytecode -ne 0 -or $r.credit.sourceDeploymentIdentity -ne 0) { throw 'Non-PASS granted bounded identity credit' }
+          }
+          $boundary=[ordered]@{
+            schemaVersion='velmere.p74r4.ancient8-official-multicall3-replay-boundary.v1'
+            runId='${{ github.run_id }}'
+            headSha='${{ github.sha }}'
+            replayStatus=$r.status
+            boundedCurrentRuntimeBytecodeCredit=$r.credit.currentRuntimeBytecode
+            boundedSourceDeploymentIdentityCredit=$r.credit.sourceDeploymentIdentity
+            independentProviderQuorum='OPEN'
+            productCredit=0
+            vulnerabilityGroundTruthCredit=0
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            sale='0/20'
+            live=$false
+            truthBoundary='PASS is bounded to official Ancient8 source/compiler/current-runtime identity only. Independent provider quorum and every product/customer/commercial gate remain separate.'
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 p74-ancient8-official-replay-v4-out\P74R4_ANCIENT8_OFFICIAL_MULTICALL3_REPLAY_GITHUB_BOUNDARY.json
+
+      - name: Upload replay evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p74r4-ancient8-official-multicall3-replay
+          path: |
+            p74-ancient8-official-replay-v4-out/**
+            p74r4-ancient8-official-replay.log
+          if-no-files-found: error
+          retention-days: 14
