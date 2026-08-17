@@ -1,0 +1,44 @@
+name: P74 L2 Output Preimage V1
+on:
+  push:
+    branches: [velmere-p73-audit-ancient8-ground-truth-20260817]
+    paths:
+      - 'p74-runtime/diagnose-p74-l2-output-preimage-v1.mjs'
+      - '.github/workflows/p74-l2-output-preimage-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 1, persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 24.18.0, check-latest: false}
+      - name: Recompute exact L2 output preimage and code hashes
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-l2-preimage-out
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          New-Item -ItemType Directory -Force p74-l2-preimage-out | Out-Null
+          node p74-runtime/diagnose-p74-l2-output-preimage-v1.mjs | Tee-Object p74-l2-preimage-out\P74_L2_PREIMAGE.log
+          if($LASTEXITCODE-ne0){throw 'P74 L2 preimage diagnostic execution failed'}
+      - name: Strict zero-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $s='NOT_EXECUTED';if(Test-Path 'p74-l2-preimage-out/P74_L2_OUTPUT_PREIMAGE_V1.json'){$x=Get-Content 'p74-l2-preimage-out/P74_L2_OUTPUT_PREIMAGE_V1.json' -Raw|ConvertFrom-Json;$s=$x.status}
+          [ordered]@{schemaVersion='velmere.p74.l2-preimage-v1-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';diagnosticStatus=$s;parentP73R7Aggregate='b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b';l1OracleQuorumRun='32054328583';productBytesChanged=$false;currentRuntimeBytecodeCredit=0;vulnerabilityGroundTruthCredit=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='Output-root/codeHash preimage diagnostic only. No credit until MPT account proofs are independently verified against stateRoot, then exact product integration and exact Windows/live integration pass.'}|ConvertTo-Json -Depth 8|Set-Content p74-l2-preimage-out/P74_L2_PREIMAGE_BOUNDARY.json -Encoding utf8
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-l2-output-preimage-v1
+          path: p74-l2-preimage-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
