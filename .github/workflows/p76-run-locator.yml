@@ -31,6 +31,6 @@ jobs:
             sleep 2
           done
           [ -n "$target" ] || { echo 'main P76 run not found'; exit 1; }
-          payload="$(python -c 'import json,os; print(json.dumps({"state":"pending","target_url":os.environ["TARGET"],"description":"P76 exact Windows + PostgreSQL run","context":"velmere/P76"}))' TARGET="$target")"
+          payload="$(TARGET="$target" python -c 'import json,os; print(json.dumps({"state":"pending","target_url":os.environ["TARGET"],"description":"P76 exact Windows + PostgreSQL run","context":"velmere/P76"}))')"
           curl -fsSL -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' -H 'Content-Type: application/json' -d "$payload" "https://api.github.com/repos/${REPO}/statuses/${HEAD_SHA}" >/dev/null
           echo "P76_MAIN_RUN=${target}"
