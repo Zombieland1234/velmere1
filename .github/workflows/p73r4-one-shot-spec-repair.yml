@@ -56,7 +56,7 @@ jobs:
           if set(parsed)!=expected:
               raise SystemExit(f'repaired spec path mismatch:{sorted(parsed)}')
           new_sha=hashlib.sha256(repaired).hexdigest()
-          if len(repaired)!=12130 or new_sha!='5bda6ce45aab0995420004807a356a384290e45d667205f1b31c4f0a80728d5e':
+          if len(repaired)!=12130 or new_sha!='9386413bfd3d1b733547393117ee799f50918572a4eceb4964d5416e1830389a':
               raise SystemExit(f'unexpected repaired identity:{len(repaired)}:{new_sha}')
           spec_path.write_bytes(repaired)
           patcher=patcher_path.read_text(encoding='utf-8')
