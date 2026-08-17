@@ -1,0 +1,152 @@
+name: P71 Exact Windows Owner Truth Advanced Automation
+
+on:
+  push:
+    branches:
+      - velmere-p71-v17-advanced-automation-truth-20260817
+  workflow_dispatch:
+
+concurrency:
+  group: p71-owner-truth-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p71-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout P71 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct exact P69R2 parent and apply guarded P71 product delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p71-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p71-work --output-root p71-out
+          if ($LASTEXITCODE -ne 0) { throw "P46 reconstruction failed: $LASTEXITCODE" }
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p71-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p71-work/P66.json | Tee-Object p71-out/P66_STAGE1.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage1 failed: $LASTEXITCODE" }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p71-work/source --manifest p71-work/P66.json | Tee-Object p71-out/P66_STAGE2.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage2 failed: $LASTEXITCODE" }
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p71-work/source --manifest p71-work/P66.json | Tee-Object p71-out/P66_STAGE3.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage3 failed: $LASTEXITCODE" }
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p71-work/source --manifest p71-work/P66.json --output-manifest p71-work/P68.json | Tee-Object p71-out/P68_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P68 patch failed: $LASTEXITCODE" }
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p71-work/source --manifest p71-work/P68.json --output-manifest p71-work/P69.json | Tee-Object p71-out/P69_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P69 patch failed: $LASTEXITCODE" }
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p71-work/source --manifest p71-work/P69.json --output-manifest p71-work/P69R2.json --receipt p71-out/P71_P69R2_RECONSTRUCTION_RECEIPT.json
+          if ($LASTEXITCODE -ne 0) { throw "P69R2 repair failed: $LASTEXITCODE" }
+          $parent=Get-Content p71-work/P69R2.json -Raw | ConvertFrom-Json
+          if($parent.projection.fileCount -ne 1597 -or $parent.projection.payloadBytes -ne 20973109 -or $parent.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $parent.projection.sourceContentAggregateSha256 -ne 'e0b5f045c7c20f87c0704b6c8fff8be70655ec98e69c5cf2f4f588207b0bab6f'){ throw 'P69R2 parent identity mismatch' }
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p71-work/source --manifest p71-work/P69R2.json --output-manifest p71-work/P71_BUILD_PROJECTION_MANIFEST.json --receipt p71-out/P71_OWNER_TRUTH_SOURCE_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw "P71 source patch failed: $LASTEXITCODE" }
+          $m=Get-Content p71-work/P71_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20973841 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne 'ac82b075bf53541b4d0a2fcec32e337aa75d007e9db9a82e652ceb447fe4e048'){ throw 'P71 projection mismatch' }
+          Copy-Item p71-work/P71_BUILD_PROJECTION_MANIFEST.json p71-out/
+
+      - name: Verify corrected topology and Advanced product-source invariants
+        shell: pwsh
+        env:
+          P71_SOURCE_ROOT: ${{ github.workspace }}\p71-work\source
+          P71_RESULT_DIR: ${{ github.workspace }}\p71-out
+          P71_PRODUCT_ONLY: '1'
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p71-work/source
+          try {
+            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const r=m.VLM_CANONICAL_CUSTOMER_PRODUCTS,f=m.VLM_CANONICAL_PRODUCT_FAMILIES,p=m.VLM_INTERNAL_EXECUTION_PROFILES,t=m.VLM_CONTEXT_TRANSITIONS;const fake=r.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null);if(r.length!==20||f.length!==10||p.length!==20||t.length!==10||fake.length||f.some(x=>x.family==='pdf'))process.exit(2);console.log(JSON.stringify({status:'PASS_P71_TOPOLOGY',rows:20,families:10,profiles:20,transitions:10,fakeStandaloneTiers:0,pdfFamily:false}))}).catch(e=>{console.error(e);process.exit(1)})"
+            if ($LASTEXITCODE -ne 0) { throw "Topology failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+          node p71-runtime/test-p71-owner-bound-advanced-automation.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P71 static owner truth failed: $LASTEXITCODE" }
+
+      - name: Exact Windows dependency semantic lint and dual build
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p71-work/run-p71.mjs --receipt p71-out/P71_BASE_RECONCILED_RUNNER.json
+          python p66-runtime/patch-p66-reconciled-runner.py --runner p71-work/run-p71.mjs --receipt p71-out/P71_P66_NEXT_ENV_PATCH.json
+          python p68-runtime/patch-p68-reconciled-runner.py --runner p71-work/run-p71.mjs --receipt p71-out/P71_P68_NEXT_ENV_PATCH.json
+          python p69-runtime/patch-p69-reconciled-runner.py --runner p71-work/run-p71.mjs --receipt p71-out/P71_P69_NEXT_ENV_PATCH.json
+          python p69-runtime/patch-p69r2-reconciled-runner.py --runner p71-work/run-p71.mjs --receipt p71-out/P71_P69R2_NEXT_ENV_PATCH.json
+          python p71-runtime/patch-p71-reconciled-runner.py --runner p71-work/run-p71.mjs --receipt p71-out/P71_CURRENT_NEXT_ENV_PATCH.json
+          node --check p71-work/run-p71.mjs
+          if($LASTEXITCODE -ne 0){ throw 'runner parse failed' }
+          node p71-work/run-p71.mjs --source-root p71-work/source --manifest p71-work/P71_BUILD_PROJECTION_MANIFEST.json --output-dir p71-out
+          if($LASTEXITCODE -ne 0){ throw "P71 exact Windows engineering failed: $LASTEXITCODE" }
+
+      - name: Execute focused current Audit semantics
+        shell: pwsh
+        env:
+          P71_SOURCE_ROOT: ${{ github.workspace }}\p71-work\source
+          P71_RESULT_DIR: ${{ github.workspace }}\p71-out
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p71-work/source
+          try {
+            node ./node_modules/tsx/dist/cli.mjs ../../p71-runtime/test-p71-runtime-semantics.ts | Tee-Object ../..\p71-out\P71_RUNTIME_TEST.log
+            if ($LASTEXITCODE -ne 0) { throw "P71 runtime semantics failed: $LASTEXITCODE" }
+            node ./node_modules/tsx/dist/cli.mjs scripts/pass36/test-a102r44p2-automated-informational-sku-pdf-seal.ts | Tee-Object ../..\p71-out\P71_A102R44P2_AUTOMATION_REGRESSION.log
+            if ($LASTEXITCODE -ne 0) { throw "P71 A102R44P2 regression failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Capture exact changed product source bytes
+        if: always()
+        shell: pwsh
+        run: |
+          $root='p71-work/source';$dst='p71-out/source-delta'
+          $paths=@('lib/server/security-route-modules/audit-intake.ts','lib/security/audit-intake-case-vault.ts','lib/security/audit-case-customer-history.ts','lib/security/audit-review-orchestration.ts','lib/security/audit-review-flow.ts','lib/commerce/vlm-paid-access.ts','components/checkout/VlmServiceCheckoutSuccessClient.tsx','components/account/AuditCasesPortalClient.tsx','lib/security/audit-tier-contract.ts')
+          foreach($rel in $paths){$src=Join-Path $root $rel;if(Test-Path $src){$target=Join-Path $dst $rel;New-Item -ItemType Directory -Force (Split-Path $target)|Out-Null;Copy-Item $src $target}}
+
+      - name: Capture P71 workflow boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p71-out | Out-Null
+          $static='NOT_EXECUTED_OR_FAILED';$runtime='NOT_EXECUTED_OR_FAILED'
+          if(Test-Path 'p71-out/P71_OWNER_BOUND_ADVANCED_AUTOMATION_STATIC_TEST.json'){$x=Get-Content 'p71-out/P71_OWNER_BOUND_ADVANCED_AUTOMATION_STATIC_TEST.json' -Raw|ConvertFrom-Json;if($x.status -eq 'PASS'){$static='PASS'}}
+          if(Test-Path 'p71-out/P71_OWNER_BOUND_ADVANCED_AUTOMATION_RUNTIME_TEST.json'){$x=Get-Content 'p71-out/P71_OWNER_BOUND_ADVANCED_AUTOMATION_RUNTIME_TEST.json' -Raw|ConvertFrom-Json;if($x.status -eq 'PASS'){$runtime='PASS'}}
+          $r=[ordered]@{schemaVersion='velmere.p71.github-workflow-boundary.v1';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);changedBuildRelevantFilesSinceP69R2=9;projectionFileCount=1597;projectionPayloadBytes=20973841;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='ac82b075bf53541b4d0a2fcec32e337aa75d007e9db9a82e652ceb447fe4e048';generatedNextEnvProjectionPayloadBytes=20973826;generatedNextEnvProjectionAggregateSha256='12b6a643c8a94d3c46579dd0448d6b2c79aa772912cf6ff5c4b1ebf9e24ca4fe';productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;staticOwnerTruth=$static;runtimeOwnerTruth=$runtime;authorityByteRebind='DEFERRED_TO_FINAL_SOURCE_ONLY_PACKAGE';rightsPassed=2;rightsDenominator=203;customerFinalOutputs=0;auditFinalCustomerPdfs=0;paidValuePassed=0;saleEligibleRows=0;live=$false;worldClassProven=$false;truthBoundary='P71 exact-Windows proof covers only the nine owner-bound current product-source changes removing mandatory-human semantics from Advanced Audit while preserving legacy stored-record compatibility. Authority bytes are rebound only by final SOURCE_ONLY package verification. No final-output, rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'}
+          $r|ConvertTo-Json -Depth 8|Set-Content p71-out/P71_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P71 exact Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p71-owner-truth-exact-windows
+          path: p71-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
