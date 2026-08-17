@@ -1,0 +1,72 @@
+name: P73R4R3 Authority Runtime Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p73r4r3-runtime-diagnostic-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Reconstruct exact LF-canonical P73R4R3 bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p73diag-out
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p73diag-work --output-root p73diag-out
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p73diag-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p73diag-work/P66.json
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p73diag-work/source --manifest p73diag-work/P66.json
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p73diag-work/source --manifest p73diag-work/P66.json
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p73diag-work/source --manifest p73diag-work/P66.json --output-manifest p73diag-work/P68.json
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p73diag-work/source --manifest p73diag-work/P68.json --output-manifest p73diag-work/P69.json
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p73diag-work/source --manifest p73diag-work/P69.json --output-manifest p73diag-work/P69R2.json --receipt p73diag-out/P69R2.json
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p73diag-work/source --manifest p73diag-work/P69R2.json --output-manifest p73diag-work/P71.json --receipt p73diag-out/P71.json
+          python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p73diag-work/source --manifest p73diag-work/P71.json --output-manifest p73diag-work/P71R1.json --receipt p73diag-out/P71R1.json
+          python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p73diag-work/source --manifest p73diag-work/P71R1.json --output-manifest p73diag-work/P71R2.json --receipt p73diag-out/P71R2.json
+          python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p73diag-work/source --manifest p73diag-work/P71R2.json --output-manifest p73diag-work/P71R5.json --receipt p73diag-out/P71R3.json
+          python p72-runtime/apply-p72-commercial-topology-measurement.py --source-root p73diag-work/source --manifest p73diag-work/P71R5.json --output-manifest p73diag-work/P72.json --receipt p73diag-out/P72.json
+          python p72-runtime/apply-p72r3-typescript-contract-repair.py --source-root p73diag-work/source --manifest p73diag-work/P72.json --output-manifest p73diag-work/P72R3.json --receipt p73diag-out/P72R3.json
+          python p73-runtime/apply-p73r4-adjudicated-authority-engine.py --source-root p73diag-work/source --manifest p73diag-work/P72R3.json --output-manifest p73diag-work/P73R4.json --receipt p73diag-out/P73R4.json
+          python - <<'PY'
+          import json
+          p=json.load(open('p73diag-work/P73R4.json',encoding='utf-8'))['projection']
+          actual=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          expected=(1598,21015520,'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25','d0306b565af73939691a34554e4f7e57543f6d3b91d778a9c93ebf25f5ffd377')
+          if actual!=expected: raise SystemExit(f'identity mismatch:{actual}')
+          print('LF-canonical P73R4R3 identity PASS',actual)
+          PY
+      - name: Install dependency closure
+        shell: bash
+        working-directory: p73diag-work/source
+        run: npm ci --ignore-scripts --include=dev --audit=false --fund=false
+      - name: Emit exact authority state
+        shell: bash
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}/p73diag-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}/p73diag-work/source/tsconfig.json
+        run: node p73diag-work/source/node_modules/tsx/dist/cli.mjs p73-runtime/diagnose-p73r4r3-authority-state.ts | tee p73diag-out/P73R4R3_AUTHORITY_RUNTIME_DIAGNOSTIC.log
+      - name: Upload diagnostic
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r4r3-authority-runtime-diagnostic
+          path: p73diag-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
