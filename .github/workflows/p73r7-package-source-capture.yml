@@ -1,0 +1,90 @@
+name: P73R7 Canonical Package Source Capture
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p73r7-package-source-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Reconstruct exact P73R7 bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          git config core.eol lf
+          python p73-runtime/reconstruct-p73r7-exact.py --work-root p73r7-package-work --out-root p73r7-package-out
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('p73r7-package-work/P73R7_BUILD_PROJECTION_MANIFEST.json')
+          m=json.loads(p.read_text())['projection']
+          expected=(1598,21014913,'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25','b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b')
+          got=(m['fileCount'],m['payloadBytes'],m['pathSetSha256'],m['sourceContentAggregateSha256'])
+          if got != expected: raise SystemExit(f'P73R7 package-capture identity mismatch: {got}')
+          print('P73R7 exact package source identity PASS',got)
+          PY
+
+      - name: Capture final product source delta and control evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          dst=p73r7-package-out/source-delta
+          paths=(
+            lib/security/audit-provider-runtime-client.ts
+            lib/security/audit-claim-ledger.ts
+            lib/security/audit-report-assembler.ts
+            lib/security/audit-paid-evidence-readiness.ts
+            lib/security/audit-customer-report-pipeline.ts
+            lib/server/security-route-modules/audit-report-assembler.ts
+            lib/security/audit-adjudicated-authority-evidence.ts
+          )
+          for rel in "${paths[@]}"; do
+            mkdir -p "$dst/$(dirname "$rel")"
+            cp "p73r7-package-work/source/$rel" "$dst/$rel"
+          done
+          cp p73r7-package-work/P73R7_BUILD_PROJECTION_MANIFEST.json p73r7-package-out/
+          mkdir -p p73r7-package-out/control/p73-runtime
+          cp -a p73-runtime/. p73r7-package-out/control/p73-runtime/
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('p73r7-package-out/source-delta')
+          rows=[]
+          for p in sorted(x for x in root.rglob('*') if x.is_file()):
+              b=p.read_bytes(); rows.append({'path':p.relative_to(root).as_posix(),'byteLength':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          expected={
+            'lib/security/audit-adjudicated-authority-evidence.ts':'242868a1a746a6d256c01ce6f902929d964b97e42102644517d6e5b0bb042b54'
+          }
+          for rel,sha in expected.items():
+              row=next((r for r in rows if r['path']==rel),None)
+              if not row or row['sha256']!=sha: raise SystemExit(f'final source delta hash mismatch:{rel}:{row}')
+          receipt={'schemaVersion':'velmere.p73r7.package-source-capture.v1','status':'PASS','runId':'${{ github.run_id }}','headSha':'${{ github.sha }}','productProjection':{'fileCount':1598,'payloadBytes':21014913,'pathSetSha256':'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25','aggregateSha256':'b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b'},'sourceDeltaFileCount':len(rows),'sourceDelta':rows,'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':'Control/package capture only. Reconstructs the exact P73R7 aggregate already proven by run 32046176467 and exports final changed source bytes plus P73 control files for canonical SOURCE_ONLY packaging. No new product/release credit.'}
+          Path('p73r7-package-out/P73R7_PACKAGE_SOURCE_CAPTURE.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          PY
+
+      - name: Upload package source capture
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r7-canonical-package-source-capture
+          path: p73r7-package-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
