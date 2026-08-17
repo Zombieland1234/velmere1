@@ -1,0 +1,43 @@
+name: P74 Thirdweb A8Scan Bytecode Quorum Diagnostic
+on:
+  push:
+    branches: [velmere-p73-audit-ancient8-ground-truth-20260817]
+    paths:
+      - 'p74-runtime/diagnose-p74-thirdweb-a8scan-quorum.mjs'
+      - '.github/workflows/p74-thirdweb-a8scan-quorum-diagnostic.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 1, persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 24.18.0, check-latest: false}
+      - name: Execute strict zero-credit same-block quorum diagnostic
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-thirdweb-a8scan-out
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force p74-thirdweb-a8scan-out | Out-Null
+          node p74-runtime/diagnose-p74-thirdweb-a8scan-quorum.mjs | Tee-Object p74-thirdweb-a8scan-out\P74_THIRDWEB_A8SCAN.log
+          if($LASTEXITCODE-ne0){throw 'P74 thirdweb/A8Scan diagnostic execution failed'}
+      - name: Capture strict zero-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $s='NOT_EXECUTED';if(Test-Path 'p74-thirdweb-a8scan-out/P74_THIRDWEB_A8SCAN_QUORUM_DIAGNOSTIC.json'){$x=Get-Content 'p74-thirdweb-a8scan-out/P74_THIRDWEB_A8SCAN_QUORUM_DIAGNOSTIC.json' -Raw|ConvertFrom-Json;$s=$x.status}
+          [ordered]@{schemaVersion='velmere.p74.thirdweb-a8scan-diagnostic-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';diagnosticStatus=$s;parentP73R7Aggregate='b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b';productBytesChanged=$false;currentRuntimeBytecodeCredit=0;vulnerabilityGroundTruthCredit=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='Diagnostic only. Even a two-provider PASS grants zero product/release credit until exact P73R7 product integration, exact Windows engineering and live product integration all pass.'}|ConvertTo-Json|Set-Content p74-thirdweb-a8scan-out/P74_DIAGNOSTIC_BOUNDARY.json -Encoding utf8
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-thirdweb-a8scan-bytecode-quorum-diagnostic
+          path: p74-thirdweb-a8scan-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
