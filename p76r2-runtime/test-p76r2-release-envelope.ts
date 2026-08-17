@@ -1,0 +1,16 @@
+import fs from "node:fs";
+import path from "node:path";
+import { buildAdvancedAuditReleaseEnvelope, verifyAdvancedAuditReleaseEnvelope, type AdvancedAuditReleaseEnvelope } from "../p75-work/source/lib/security/advanced-audit-release-envelope";
+const outDir=process.env.P76R2_RESULT_DIR??process.cwd();
+const d=(c:string)=>`sha256:${c.repeat(64)}`;
+const secret="p76r2-test-secret-0123456789-abcdefghijklmnopqrstuvwxyz";
+const ready=buildAdvancedAuditReleaseEnvelope({secret,caseRef:"AUD-P76R2",target:"0xca11bde05977b3631167028862be2a173976ca11",accountRef:"acct",entitlementRef:"ent",entitlementState:"active",paymentVerified:true,scopeConsentVerified:true,evidenceReadinessMet:true,redactionPassed:true,evidencePacketId:"packet",payloadHash:d("a"),sourceReceiptRoot:d("b"),pdfDigest:d("c"),automationCompleted:true,automationLeaseActive:false,immutableSnapshotBound:true,automationCompletedAt:"2026-08-18T00:00:00.000Z",issuedAt:"2026-08-18T00:01:00.000Z"});
+const baseline=verifyAdvancedAuditReleaseEnvelope({envelope:ready,secret,now:"2026-08-18T00:02:00.000Z"});
+if(!baseline.deliverable) throw new Error("p76r2_baseline_not_deliverable");
+const tampered=structuredClone(ready) as unknown as Record<string,unknown>;
+const dual=structuredClone((ready as AdvancedAuditReleaseEnvelope).dualControl) as unknown as Record<string,unknown>;
+dual.required=true;tampered.dualControl=dual;
+const rejected=verifyAdvancedAuditReleaseEnvelope({envelope:tampered as unknown as AdvancedAuditReleaseEnvelope,secret,now:"2026-08-18T00:02:00.000Z"});
+if(rejected.deliverable || !rejected.integrityBlockers.includes("human_approval_must_not_gate_advanced_v17") || !rejected.integrityBlockers.includes("envelope_shape_invalid")) throw new Error(`p76r2_human_gate_not_rejected:${JSON.stringify(rejected)}`);
+const r={schemaVersion:"velmere.p76r2.release-envelope-runtime.v1",status:"PASS",checks:["baseline_deliverable","runtime_required_true_rejected","shape_invalid_detected"],zeroFakeCredit:{customerFinal:"0/20",auditFinalPdf:"0/3",rights:"2/203",paidValue:"0/10",saleEligible:"0/20",live:false}};
+fs.mkdirSync(outDir,{recursive:true});fs.writeFileSync(path.join(outDir,"P76R2_RELEASE_ENVELOPE_RUNTIME.json"),JSON.stringify(r,null,2)+"\n");console.log(JSON.stringify(r,null,2));
