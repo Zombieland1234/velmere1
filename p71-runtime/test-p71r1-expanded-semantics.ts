@@ -32,7 +32,7 @@ check('quorum:advanced-product-rule-automated',String(q.productRule).includes('d
 
 const spine=spineMod.buildPass2569AuditSourceSpine('en');
 const spineHuman=spine.lanes.find((x:any)=>x.id==='manual-human-review');
-check('spine:human-is-optional-internal-qa',spineHuman?.status==='unavailable' && String(spineHuman?.label).includes('Optional internal QA'),spineHuman);
+check('spine:human-is-optional-internal-qa',spineHuman?.status==='optional_internal_qa' && String(spineHuman?.label).includes('Optional internal QA'),spineHuman);
 check('spine:human-never-product-gate',String(spineHuman?.adapterTarget).includes('never a customer entitlement') && String(spineHuman?.missingRule).includes('Do not treat absence'),spineHuman);
 
 const queue=queueMod.buildPass2579AdvancedManualReviewQueueReport({locale:'en',reviewLevel:'advanced_review'});
@@ -60,7 +60,7 @@ const optionalQa=consoleReport.controls.find((x:any)=>x.label==='Optional intern
 check('console:optional-qa-nonblocking',optionalQa?.blocksCustomerDelivery===false && optionalQa?.blocksFinalSign===false,optionalQa);
 check('console:rule-denies-human-override',String(consoleReport.rule).includes('no human/operator action may unlock, block or certify it'),consoleReport.rule);
 
-const result={schemaVersion:'velmere.p71r1.expanded-advanced-automation-runtime.v1',status:'PASS',checkCount:checks.length,checks};
+const result={schemaVersion:'velmere.p71r2.expanded-advanced-automation-runtime.v1',status:'PASS',checkCount:checks.length,checks};
 fs.mkdirSync(resultDir,{recursive:true});
-fs.writeFileSync(path.join(resultDir,'P71R1_EXPANDED_ADVANCED_AUTOMATION_RUNTIME_TEST.json'),JSON.stringify(result,null,2)+'\n');
+fs.writeFileSync(path.join(resultDir,'P71R2_EXPANDED_ADVANCED_AUTOMATION_RUNTIME_TEST.json'),JSON.stringify(result,null,2)+'\n');
 console.log(JSON.stringify(result,null,2));
