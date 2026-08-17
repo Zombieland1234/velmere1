@@ -1,0 +1,70 @@
+name: P74 Routescan Current Block Anchor
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/diagnose-p74-routescan-current-block-anchor.mjs'
+      - '.github/workflows/p74-routescan-current-block-anchor.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact diagnostic head
+        uses: actions/checkout@v4
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Confirm runtime identity
+        shell: pwsh
+        run: |
+          node --version
+          if ((node --version) -ne 'v24.18.0') { throw 'Node version mismatch' }
+          git rev-parse HEAD
+
+      - name: Execute zero-credit Routescan current block anchor diagnostic
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-routescan-current-block-anchor-out
+        run: |
+          node p74-runtime/diagnose-p74-routescan-current-block-anchor.mjs | Tee-Object -FilePath p74-routescan-current-block-anchor.log
+
+      - name: Capture strict zero-credit boundary
+        shell: pwsh
+        run: |
+          $boundary = [ordered]@{
+            schemaVersion = 'velmere.p74.routescan-current-block-anchor-github-boundary.v1'
+            runId = '${{ github.run_id }}'
+            headSha = '${{ github.sha }}'
+            productCredit = 0
+            currentRuntimeBytecodeCredit = 0
+            vulnerabilityGroundTruthCredit = 0
+            customerFinal = '0/20'
+            auditFinalPdf = '0/3'
+            rights = '2/203'
+            paidValue = '0/10'
+            sale = '0/20'
+            live = $false
+            truthBoundary = 'Diagnostic only. Even PASS grants zero product/release credit until combined with independently verified MPT account/code proof and guarded product integration plus exact-Windows/live regression evidence.'
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 p74-routescan-current-block-anchor-out\P74_ROUTEScan_CURRENT_BLOCK_ANCHOR_GITHUB_BOUNDARY.json
+
+      - name: Upload diagnostic evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p74-routescan-current-block-anchor
+          path: |
+            p74-routescan-current-block-anchor-out/**
+            p74-routescan-current-block-anchor.log
+          if-no-files-found: error
+          retention-days: 14
