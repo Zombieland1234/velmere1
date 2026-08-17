@@ -1,4 +1,4 @@
-name: P73 Ancient8 Multicall3 Ground Truth
+name: P73R2 Ancient8 Multicall3 Ground Truth
 
 on:
   push:
@@ -10,15 +10,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: p73-ancient8-multicall3-ground-truth-${{ github.ref }}
+  group: p73r2-ancient8-multicall3-ground-truth-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  p73-ground-truth:
+  p73r2-ground-truth:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Checkout P73 control branch
+      - name: Checkout P73R2 control branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
@@ -30,43 +30,62 @@ jobs:
           node-version: 24.18.0
           check-latest: false
 
-      - name: Verify exact toolchain and execute current ground-truth probe
+      - name: Attempt current RPC bytecode quorum as supplemental evidence
+        shell: bash
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}/p73-out
+        run: |
+          set -uo pipefail
+          test "$(node --version)" = "v24.18.0"
+          mkdir -p p73-out
+          set +e
+          node p73-runtime/probe-p73-ancient8-multicall3-ground-truth.mjs > p73-out/P73_RPC_SUPPLEMENTAL.log 2>&1
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > p73-out/P73_RPC_SUPPLEMENTAL_EXIT_CODE.txt
+          cat p73-out/P73_RPC_SUPPLEMENTAL.log
+          exit 0
+
+      - name: Execute strict dual-authority deployment-address ground truth
         shell: bash
         env:
           P73_RESULT_DIR: ${{ github.workspace }}/p73-out
         run: |
           set -euo pipefail
           test "$(node --version)" = "v24.18.0"
-          mkdir -p p73-out
-          node p73-runtime/probe-p73-ancient8-multicall3-ground-truth.mjs | tee p73-out/P73_GROUND_TRUTH.log
+          node p73-runtime/probe-p73r2-authority-ground-truth.mjs | tee p73-out/P73R2_AUTHORITY_GROUND_TRUTH.log
 
-      - name: Bind P72R3 parent and P73 truth boundary
+      - name: Bind P72R3 parent and truth boundary
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           node - <<'NODE'
           const fs=require('fs');
-          const p='p73-out/P73_GITHUB_BOUNDARY.json';
+          const proofPath='p73-out/P73R2_ANCIENT8_MULTICALL3_DUAL_AUTHORITY_GROUND_TRUTH.json';
+          let proof=null;
+          try { proof=JSON.parse(fs.readFileSync(proofPath,'utf8')); } catch {}
+          const positive=proof?.status==='PASS_POSITIVE_DEPLOYMENT_ADDRESS_GROUND_TRUTH' && proof?.credit?.deploymentGroundTruthCase===1;
           fs.mkdirSync('p73-out',{recursive:true});
-          fs.writeFileSync(p, JSON.stringify({
-            schemaVersion:'velmere.p73.github-boundary.v1',
+          fs.writeFileSync('p73-out/P73R2_GITHUB_BOUNDARY.json', JSON.stringify({
+            schemaVersion:'velmere.p73r2.github-boundary.v1',
             runId:process.env.GITHUB_RUN_ID,
             sha:process.env.GITHUB_SHA,
             parent:{revision:'P72R3',headSha:'516bd5a051b143cae192833cb36ce4e573800928',projectionAggregateSha256:'4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252'},
-            target:{chain:'Ancient8 Mainnet',chainId:888888888,address:'0xca11bde05977b3631167028862be2a173976ca11'},
-            officialRpc:'https://rpc.ancient8.gg',
-            groundTruthAuthority:'mds1/multicall3 issue #336 owner comment 2495504312',
+            target:{chain:'Ancient8 Mainnet',chainId:888888888,canonicalAddress:'0xca11bde05977b3631167028862be2a173976ca11',ancient8DocumentedMulticall3:'0xb76d6e8c82d06fd262ef3799db73d5a724108d4e'},
+            deploymentGroundTruthCase:positive?1:0,
+            currentRuntimeBytecodeCase:0,
+            vulnerabilityGroundTruthCase:0,
             customerFinal:'0/20',auditFinalPdf:'0/3',rights:'2/203',paidValue:'0/10',sale:'0/20',live:false,worldClassProven:false,
-            truthBoundary:'P73 external proof may promote only a current deployment-identity ground-truth case if exact public evidence passes. It cannot promote vulnerability exploitability, customer FINAL output, rights, paid value, sale, LIVE or WORLD_CLASS.'
+            truthBoundary:'P73R2 may promote only one deployment-address ground-truth case when both official Ancient8 documentation and the official Multicall3 maintainer statement are content-bound. RPC runtime remains supplemental and cannot be credited without quorum. No customer FINAL, vulnerability, rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
           },null,2)+'\n');
           NODE
 
-      - name: Upload P73 evidence
+      - name: Upload P73R2 evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p73-ancient8-multicall3-ground-truth
+          name: p73r2-ancient8-multicall3-ground-truth
           path: p73-out
           if-no-files-found: error
           compression-level: 0
