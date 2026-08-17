@@ -18,12 +18,11 @@ s=b.decode('utf-8')
 old='const ADDRESS_PATTERN = /0x[a-fA-F0-9]{40}/g;\n'
 if s.count(old)!=1:raise SystemExit(f'P73R7 ADDRESS_PATTERN anchor mismatch:{s.count(old)}')
 s=s.replace(old,'',1)
-old_regex='(?:[:=\-–—]\\s*)?'
-new_regex='(?:[:=–—-]\\s*)?'
-if s.count(old_regex)!=1:raise SystemExit(f'P73R7 regex anchor mismatch:{s.count(old_regex)}')
-s=s.replace(old_regex,new_regex,1)
-out=s.encode();f.write_bytes(out);after=sha(out);row=rows[REL];row['byteLength']=len(out);row['sha256']=after;rows[REL]=row
+old_escape=r'\-'
+if s.count(old_escape)!=1:raise SystemExit(f'P73R7 escaped-hyphen byte anchor mismatch:{s.count(old_escape)}')
+s=s.replace(old_escape,'-',1)
+out=s.encode('utf-8');f.write_bytes(out);after=sha(out);row=rows[REL];row['byteLength']=len(out);row['sha256']=after;rows[REL]=row
 ident=identity(list(rows.values()));m['files']=ident[4];m['projection']['fileCount']=ident[0];m['projection']['payloadBytes']=ident[1];m['projection']['pathSetSha256']=ident[2];m['projection']['sourceContentAggregateSha256']=ident[3]
-truth='P73R7 removes only the stale unused ADDRESS_PATTERN constant and an unnecessary escaped hyphen exposed by zero-warning ESLint after P73R6. Row-bound authority semantics, pinned source binding, two-root quorum, runtime-bytecode blocker and release numerators are unchanged.'
+truth='P73R7 removes only the stale unused ADDRESS_PATTERN constant and exactly one unnecessary escaped hyphen exposed by zero-warning ESLint after P73R6. Row-bound authority semantics, pinned source binding, two-root quorum, runtime-bytecode blocker and release numerators are unchanged.'
 m['p73r7Delta']={'classification':'ROW_BOUND_PARSER_LINT_CORRECTNESS_REPAIR','changedBuildRelevantFiles':[{'path':REL,'beforeSha256':BEFORE_SHA,'afterSha256':after,'beforeBytes':BEFORE_BYTES,'afterBytes':len(out)}],'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':truth}
-Path(a.output_manifest).write_text(json.dumps(m,indent=2)+'\n');r={'schemaVersion':'velmere.p73r7.row-parser-lint-repair.v1','status':'PASS','parentAggregateSha256':BASE_AGG,'path':REL,'beforeBytes':BEFORE_BYTES,'beforeSha256':BEFORE_SHA,'afterBytes':len(out),'afterSha256':after,'fileCount':ident[0],'payloadBytes':ident[1],'pathSetSha256':ident[2],'aggregateSha256':ident[3],'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':truth};Path(a.receipt).write_text(json.dumps(r,indent=2)+'\n');print(json.dumps(r,indent=2))
+Path(a.output_manifest).write_text(json.dumps(m,indent=2)+'\n');r={'schemaVersion':'velmere.p73r7.row-parser-lint-repair.v2','status':'PASS','parentAggregateSha256':BASE_AGG,'path':REL,'beforeBytes':BEFORE_BYTES,'beforeSha256':BEFORE_SHA,'afterBytes':len(out),'afterSha256':after,'fileCount':ident[0],'payloadBytes':ident[1],'pathSetSha256':ident[2],'aggregateSha256':ident[3],'removedUnusedAddressPattern':True,'escapedHyphenReplacementCount':1,'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,'truthBoundary':truth};Path(a.receipt).write_text(json.dumps(r,indent=2)+'\n');print(json.dumps(r,indent=2))
