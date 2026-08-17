@@ -1,0 +1,33 @@
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import fs from 'node:fs';
+
+const root=process.env.P70_SOURCE_ROOT||process.cwd();
+const out=process.env.P70_RESULT_DIR||path.resolve(root,'../p70-out');
+fs.mkdirSync(out,{recursive:true});
+const u=p=>pathToFileURL(path.join(root,p)).href;
+const {buildPass2578AuditReportAssemblerReport}=await import(u('lib/security/audit-report-assembler.ts'));
+const {projectAuditReportForCustomer}=await import(u('lib/security/audit-report-customer-projection.ts'));
+const {buildAuditAccountCustomerSnapshot}=await import(u('lib/security/audit-account-customer-snapshot.ts'));
+const {buildCustomerSafeAuditPdfPlan,renderCustomerSafeAuditPdf}=await import(u('lib/security/customer-safe-audit-layout.ts'));
+
+const address='0xca11bde05977b3631167028862be2a173976ca11';
+const perm={summary:{detected:1,notDetected:0,unknown:0,blocked:0,proRequired:1,riskDelta:0,confidenceDelta:0},customerRule:'Source-bound.',signals:[{category:'source'}],advancedQueue:[]};
+const liq={summary:{confirmed:1,partial:0,missing:0,blocked:0,proRequired:1,riskDelta:0,confidenceDelta:0},customerRule:'Source-bound.',signals:[{sourceFamilies:['rpc']}],advancedQueue:[]};
+const report=buildPass2578AuditReportAssemblerReport({locale:'en',chain:'ethereum',projectName:'Multicall3',contractAddress:address,permissionParser:perm,liquidityHolderRisk:liq});
+const pro=projectAuditReportForCustomer({report,requestedTier:'pro',deliveredTier:'pro',manualReviewVerified:false});
+const pipeline={requestedTier:'pro',deliveredTier:'pro',releaseState:'INTERNAL_REAL_REFERENCE_ONLY',pipelineDigest:`sha256:${'2'.repeat(64)}`,projection:{...pro,projectionDigest:`sha256:${'1'.repeat(64)}`},sourceTruth:{providerReceiptCount:3,contentBoundProviderReceiptCount:3,strictUpstreamRoots:['official-source','ethereum-rpc']},customerReportPreviewLayout:{layoutDigest:`sha256:${'3'.repeat(64)}`},customerReport:{reportId:'p70r3-target-identity',generatedAt:new Date().toISOString(),locale:'en',target:{name:'Multicall3',symbol:'MC3'},summary:{riskScore:0,confidenceScore:0},deliveryPolicy:{visibleTier:'PRO'},decisionSections:[{title:'Identity',summary:'Pinned public target identity.',actions:['Keep evidence bound.']}],missingEvidence:['Independent vulnerability ground truth']}};
+const snap=buildAuditAccountCustomerSnapshot({pipeline,accountIdHash:'a'.repeat(64),requestId:'p70r3-target-identity-request',projectName:'Multicall3',targetLabel:address});
+const expected=`Target: ${address}`;
+if(!snap.layoutInput.sections.includes(expected)) throw new Error(`target_line_missing:${JSON.stringify(snap.layoutInput.sections)}`);
+if(!snap.canonicalLayout.customerSections.includes(expected)) throw new Error('canonical_target_line_missing');
+const numbered=`1. ${expected}`;
+const planned=buildCustomerSafeAuditPdfPlan(snap.layoutInput);
+const planRows=planned.plan.pages.flatMap(page=>page.rows).map(row=>String(row.text));
+if(!planRows.some(line=>line.toLowerCase()===numbered.toLowerCase())) throw new Error(`target_not_in_actual_pdf_render_plan:${JSON.stringify(planRows)}`);
+const rerender=renderCustomerSafeAuditPdf(snap.layoutInput);
+if(rerender.pdfDigest!==snap.pdfArtifact.pdfDigest||rerender.pdfByteLength!==snap.pdfArtifact.pdfByteLength) throw new Error('target_snapshot_pdf_parity');
+if(rerender.renderPlanDigest!==planned.plan.planDigest) throw new Error('target_render_plan_digest_parity');
+const receipt={schemaVersion:'velmere.p70r3.audit-target-render-plan-runtime.v1',status:'PASS_P70R3_AUDIT_TARGET_RENDER_PLAN_BOUND_NO_PROMOTION',target:address,targetLine:expected,numberedTargetLine:numbered,layoutDigest:snap.canonicalLayout.layoutDigest,renderPlanDigest:planned.plan.planDigest,pdfDigest:snap.pdfArtifact.pdfDigest,pdfBytes:snap.pdfArtifact.pdfByteLength,pageCount:snap.pdfArtifact.pageCount,renderedRowCount:planned.plan.renderedRowCount,customerFinalOutputCredit:0,auditFinalCustomerPdfCredit:0,rightsCredit:0,saleCredit:0,live:false,truthBoundary:'Exact current-source proof that the target address survives both customer layout construction and the actual PDF safety/render plan. This is an internal bounded reference check and grants no final customer, vulnerability, rights, value, sale, LIVE or WORLD_CLASS credit.'};
+fs.writeFileSync(path.join(out,'P70R3_AUDIT_TARGET_RENDER_PLAN_RUNTIME.json'),JSON.stringify(receipt,null,2)+'\n');
+console.log(JSON.stringify(receipt,null,2));
