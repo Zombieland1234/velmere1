@@ -1,0 +1,109 @@
+name: P73R5R1 Runtime-Only Pinned Authority
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p73r5r1-runtime-only-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p73r5r1-runtime:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+
+      - name: Reconstruct exact P73R5 product bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop';git config core.autocrlf false;git config core.eol lf;New-Item -ItemType Directory -Force p73r5r1-out|Out-Null
+          function Run([string]$cmd){Invoke-Expression $cmd;if($LASTEXITCODE-ne 0){throw "failed: $cmd"}}
+          Run "python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p73r5r1-work --output-root p73r5r1-out"
+          Run "python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p73r5r1-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p73r5r1-work/P66.json"
+          Run "python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P66.json"
+          Run "python p66-runtime/fix-p66-topology-ts-const.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P66.json"
+          Run "python p68-runtime/apply-p68-audit-customer-truth.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P66.json --output-manifest p73r5r1-work/P68.json"
+          Run "python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P68.json --output-manifest p73r5r1-work/P69.json"
+          Run "python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P69.json --output-manifest p73r5r1-work/P69R2.json --receipt p73r5r1-out/P69R2.json"
+          Run "python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P69R2.json --output-manifest p73r5r1-work/P71.json --receipt p73r5r1-out/P71.json"
+          Run "python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P71.json --output-manifest p73r5r1-work/P71R1.json --receipt p73r5r1-out/P71R1.json"
+          Run "python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P71R1.json --output-manifest p73r5r1-work/P71R2.json --receipt p73r5r1-out/P71R2.json"
+          Run "python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P71R2.json --output-manifest p73r5r1-work/P71R5.json --receipt p73r5r1-out/P71R3.json"
+          Run "python p72-runtime/apply-p72-commercial-topology-measurement.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P71R5.json --output-manifest p73r5r1-work/P72.json --receipt p73r5r1-out/P72_SOURCE_PATCH.json"
+          Run "python p72-runtime/apply-p72r3-typescript-contract-repair.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P72.json --output-manifest p73r5r1-work/P72R3.json --receipt p73r5r1-out/P72R3_SOURCE_PATCH.json"
+          Run "python p73-runtime/apply-p73r4-adjudicated-authority-engine.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P72R3.json --output-manifest p73r5r1-work/P73R4.json --receipt p73r5r1-out/P73R4_SOURCE_PATCH.json"
+          Run "python p73-runtime/apply-p73r5-pinned-maintainer-authority.py --source-root p73r5r1-work/source --manifest p73r5r1-work/P73R4.json --output-manifest p73r5r1-work/P73R5.json --receipt p73r5r1-out/P73R5_SOURCE_PATCH.json"
+          $m=Get-Content p73r5r1-work/P73R5.json -Raw|ConvertFrom-Json
+          if($m.projection.fileCount-ne1598-or$m.projection.payloadBytes-ne21014969-or$m.projection.pathSetSha256-ne'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25'-or$m.projection.sourceContentAggregateSha256-ne'1c0f505f6d580ef49cc3b6fdb1e52518b341e4da96a3f2729b5b7d05cd9a4401'){throw 'P73R5 exact aggregate mismatch; engineering inheritance invalid'}
+          Copy-Item p73r5r1-work/P73R5.json p73r5r1-out/P73R5_BUILD_PROJECTION_MANIFEST.json
+
+      - name: Install exact dependency closure for runtime test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop';Push-Location p73r5r1-work/source
+          try { npm ci --ignore-scripts --include=dev --audit=false --fund=false;if($LASTEXITCODE-ne0){throw 'npm ci failed'};npm ls --all;if($LASTEXITCODE-ne0){throw 'npm ls failed'} } finally { Pop-Location }
+
+      - name: Build control-only P73R5R1 runtime harness
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $src='p73-runtime/test-p73r4-adjudicated-authority-runtime.ts';$dst='p73-runtime/test-p73r5r1-adjudicated-authority-runtime.generated.ts'
+          $raw=Get-Content $src -Raw
+          $old='../p73r4-work/source/';$count=([regex]::Matches($raw,[regex]::Escape($old))).Count
+          if($count-lt1){throw 'P73R5R1 harness preimage path not found'}
+          $adapted=$raw.Replace($old,'../p73r5r1-work/source/')
+          Set-Content -LiteralPath $dst -Value $adapted -Encoding utf8 -NoNewline
+          $before=(Get-FileHash $src -Algorithm SHA256).Hash.ToLower();$after=(Get-FileHash $dst -Algorithm SHA256).Hash.ToLower()
+          [ordered]@{schemaVersion='velmere.p73r5r1.runtime-harness-adaptation.v1';status='PASS_CONTROL_ONLY_NO_PRODUCT_CREDIT';source=$src;generated=$dst;replacementCount=$count;beforeSha256=$before;afterSha256=$after;productAggregateSha256='1c0f505f6d580ef49cc3b6fdb1e52518b341e4da96a3f2729b5b7d05cd9a4401';truthBoundary='Adapts only the historical test workspace path from p73r4-work to p73r5r1-work. Product bytes are unchanged and engineering is inherited only by exact aggregate.'}|ConvertTo-Json|Set-Content p73r5r1-out/P73R5R1_RUNTIME_HARNESS_ADAPTATION.json -Encoding utf8
+
+      - name: Execute live pinned dual-authority runtime test
+        shell: pwsh
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}\p73r5r1-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}\p73r5r1-work\source\tsconfig.json
+        run: |
+          $ErrorActionPreference='Stop';Push-Location p73r5r1-work/source
+          try { node ./node_modules/tsx/dist/cli.mjs ../../p73-runtime/test-p73r5r1-adjudicated-authority-runtime.generated.ts | Tee-Object ../..\p73r5r1-out\P73R5R1_AUTHORITY_RUNTIME.log;if($LASTEXITCODE-ne0){throw 'P73R5R1 authority runtime failed'} } finally { Pop-Location }
+
+      - name: Capture zero-fake-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $runtime='NOT_EXECUTED_OR_FAILED';$ground=0
+          if(Test-Path 'p73r5r1-out/P73R4_ADJUDICATED_AUTHORITY_RUNTIME_TEST.json'){$x=Get-Content 'p73r5r1-out/P73R4_ADJUDICATED_AUTHORITY_RUNTIME_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$runtime='PASS';$ground=1}}
+          [ordered]@{schemaVersion='velmere.p73r5r1.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';productFileCount=1598;productPayloadBytes=21014969;productPathSetSha256='9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25';productAggregateSha256='1c0f505f6d580ef49cc3b6fdb1e52518b341e4da96a3f2729b5b7d05cd9a4401';engineering='PASS_INHERITED_BY_EXACT_AGGREGATE_FROM_RUN_32044114745';authorityRuntime=$runtime;deploymentGroundTruthCases=$ground;currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='P73R5R1 changes no product bytes. Engineering credit is inherited only because reconstruction reproduced the exact P73R5 aggregate previously proven by Windows TS/ESLint/Webpack/Turbopack. Deployment-ground-truth count is one only if the live authority runtime receipt passes. Current runtime bytecode remains unverified.'}|ConvertTo-Json -Depth 8|Set-Content p73r5r1-out/P73R5R1_GITHUB_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P73R5R1 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r5r1-runtime-only-pinned-authority
+          path: p73r5r1-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
