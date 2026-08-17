@@ -1,0 +1,75 @@
+name: P74 Live Bytecode Quorum Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/diagnose-p74-live-bytecode-quorum.mjs'
+      - '.github/workflows/p74-live-bytecode-quorum-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p74-live-bytecode-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact diagnostic head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Confirm runtime identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          New-Item -ItemType Directory -Force p74-diagnostic-out | Out-Null
+
+      - name: Execute control-only live quorum diagnostic
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-diagnostic-out
+        run: |
+          $ErrorActionPreference='Stop'
+          node p74-runtime/diagnose-p74-live-bytecode-quorum.mjs | Tee-Object p74-diagnostic-out\P74_DIAGNOSTIC.log
+          if ($LASTEXITCODE -ne 0) { throw 'P74 diagnostic harness execution failed' }
+
+      - name: Capture zero-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $status='NOT_EXECUTED'
+          if(Test-Path 'p74-diagnostic-out/P74_LIVE_BYTECODE_QUORUM_DIAGNOSTIC.json'){$x=Get-Content 'p74-diagnostic-out/P74_LIVE_BYTECODE_QUORUM_DIAGNOSTIC.json' -Raw|ConvertFrom-Json;$status=$x.status}
+          [ordered]@{
+            schemaVersion='velmere.p74.diagnostic-github-boundary.v1';
+            runId='${{ github.run_id }}';sha='${{ github.sha }}';diagnosticStatus=$status;
+            parentP73R7Aggregate='b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b';
+            productBytesChanged=$false;deploymentGroundTruthCredit=0;currentRuntimeBytecodeCredit=0;vulnerabilityGroundTruthCredit=0;
+            customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;
+            truthBoundary='Control-only network diagnostic. No product bytes are reconstructed or changed, and no current-runtime-bytecode credit is granted regardless of diagnostic outcome.'
+          }|ConvertTo-Json -Depth 8|Set-Content p74-diagnostic-out/P74_DIAGNOSTIC_GITHUB_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P74 diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-live-bytecode-quorum-diagnostic
+          path: p74-diagnostic-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
