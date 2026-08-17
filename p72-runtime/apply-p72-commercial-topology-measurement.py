@@ -8,7 +8,7 @@ PATHSET='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
 BASE_AGG='ad00eb69fef750a106ed36828dfa22e5590181e9903d062132596519f494af5d'
 FINAL_PAYLOAD=20988568
 FINAL_AGG='90a94bf0b74f6de06bbfbdc61dac483aba220bd7beb5c333a767abe2c7634109'
-SPEC_SHA='3455c03c02ab3b11e7acad81c679f5eeb41641627331fd3b631a3f58df59a93f'
+SPEC_SHA='2ce7dd1920ff50e0a79a3c2d96ec268fca162b66ec79b2ce3aa878a038ee1ece'
 
 def sha(b:bytes)->str:return hashlib.sha256(b).hexdigest()
 def identity(rows):
