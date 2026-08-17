@@ -1,0 +1,187 @@
+name: P70R3 Exact Windows Audit Target Renderer And Real Reference V2
+
+on:
+  push:
+    branches:
+      - velmere-p70-audit-target-identity-20260817
+  workflow_dispatch:
+
+concurrency:
+  group: p70r3-exact-windows-audit-target-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p70r3-current-source:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout P70R3 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct exact P70R3 current product projection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p70r3-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p70r3-work `
+            --output-root p70r3-out
+          if ($LASTEXITCODE -ne 0) { throw "P46 reconstruction failed: $LASTEXITCODE" }
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p70r3-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p70r3-work/P66.json | Tee-Object -FilePath p70r3-out/P66_STAGE1.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage1 failed: $LASTEXITCODE" }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p70r3-work/source --manifest p70r3-work/P66.json | Tee-Object -FilePath p70r3-out/P66_STAGE2.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage2 failed: $LASTEXITCODE" }
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p70r3-work/source --manifest p70r3-work/P66.json | Tee-Object -FilePath p70r3-out/P66_STAGE3.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage3 failed: $LASTEXITCODE" }
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p70r3-work/source --manifest p70r3-work/P66.json --output-manifest p70r3-work/P68.json | Tee-Object -FilePath p70r3-out/P68_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P68 stage failed: $LASTEXITCODE" }
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p70r3-work/source --manifest p70r3-work/P68.json --output-manifest p70r3-work/P69.json | Tee-Object -FilePath p70r3-out/P69_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P69 stage failed: $LASTEXITCODE" }
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p70r3-work/source --manifest p70r3-work/P69.json --output-manifest p70r3-work/P69R2.json --receipt p70r3-out/P70R3_PARENT_P69R2_RECONSTRUCTION.json | Tee-Object -FilePath p70r3-out/P69R2_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P69R2 stage failed: $LASTEXITCODE" }
+          python p70-runtime/apply-p70-audit-target-identity.py --source-root p70r3-work/source --manifest p70r3-work/P69R2.json --output-manifest p70r3-work/P70.json --receipt p70r3-out/P70_AUDIT_TARGET_IDENTITY_SOURCE_REPAIR.json
+          if ($LASTEXITCODE -ne 0) { throw "P70 target identity patch failed: $LASTEXITCODE" }
+          python p70-runtime/apply-p70r1-numbered-target-renderer.py --source-root p70r3-work/source --manifest p70r3-work/P70.json --output-manifest p70r3-work/P70R3.json --receipt p70r3-out/P70R3_NUMBERED_TARGET_RENDERER_REPAIR.json
+          if ($LASTEXITCODE -ne 0) { throw "P70R3 renderer patch failed: $LASTEXITCODE" }
+          $m=Get-Content p70r3-work/P70R3.json -Raw | ConvertFrom-Json
+          if ($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20973292 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne '6d400af1c8a042b9f1b9876744dc4e00d8786bb480a989cb78b477674760ee54') { throw 'P70R3 projection identity mismatch' }
+          $snapshot=(Get-FileHash -LiteralPath 'p70r3-work/source/lib/security/audit-account-customer-snapshot.ts' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($snapshot -ne '9a16f5ac334beb280ed50ec608049ab54c5722fe06a4bf0dd52dea82d0274912'){ throw "P70R3 snapshot identity mismatch: $snapshot" }
+          $renderer=(Get-FileHash -LiteralPath 'p70r3-work/source/lib/security/pro-audit-pdf/customer-safe-renderer.ts' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($renderer -ne '7bbc9aadaf0dcc05eb74abe94ab7ff7f1353cbc67ca0711e5a7096995bd15865'){ throw "P70R3 renderer identity mismatch: $renderer" }
+          Copy-Item p70r3-work/P70R3.json p70r3-out/P70R3_BUILD_PROJECTION_MANIFEST.json
+
+      - name: Verify corrected product topology remains exact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p70r3-work/source
+          try {
+            node --experimental-strip-types -e "import('./lib/product/vlm-canonical-product-topology.ts').then(m=>{const r=m.VLM_CANONICAL_CUSTOMER_PRODUCTS,f=m.VLM_CANONICAL_PRODUCT_FAMILIES,p=m.VLM_INTERNAL_EXECUTION_PROFILES,t=m.VLM_CONTEXT_TRANSITIONS;const fake=r.filter(x=>['angel','whale-watch','market-impact','shield-map','risk-indicator'].includes(x.family)&&x.tier!==null);if(r.length!==20||f.length!==10||p.length!==20||t.length!==10||fake.length||f.some(x=>x.family==='pdf')||m.VLM_V16_TOPOLOGY_DENOMINATORS.legacy33ProductCompletionDenominatorRetired!==true)process.exit(2);console.log(JSON.stringify({status:'PASS_P70R3_TOPOLOGY_RETENTION',rows:20,families:10,profiles:20,transitions:10,fakeStandaloneTiers:0,pdfFamily:false}))}).catch(e=>{console.error(e);process.exit(1)})"
+            if ($LASTEXITCODE -ne 0) { throw "P70R3 topology verifier failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Exact Windows dependency semantic lint and dual build
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_BASE_RECONCILED_RUNNER.json
+          if ($LASTEXITCODE -ne 0) { throw 'base runner generation failed' }
+          python p66-runtime/patch-p66-reconciled-runner.py --runner p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_P66_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P66 runner adaptation failed' }
+          python p68-runtime/patch-p68-reconciled-runner.py --runner p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_P68_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P68 runner adaptation failed' }
+          python p69-runtime/patch-p69-reconciled-runner.py --runner p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_P69_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P69 runner adaptation failed' }
+          python p69-runtime/patch-p69r2-reconciled-runner.py --runner p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_P69R2_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P69R2 runner adaptation failed' }
+          python p70-runtime/patch-p70-reconciled-runner.py --runner p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_P70_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P70 runner adaptation failed' }
+          python p70-runtime/patch-p70r1-reconciled-runner.py --runner p70r3-work/run-p70r3-reconciled-windows-projection.mjs --receipt p70r3-out/P70R3_CURRENT_NEXT_ENV_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw 'P70R3 runner adaptation failed' }
+          node --check p70r3-work/run-p70r3-reconciled-windows-projection.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'P70R3 runner parse failed' }
+          node p70r3-work/run-p70r3-reconciled-windows-projection.mjs --source-root p70r3-work/source --manifest p70r3-work/P70R3.json --output-dir p70r3-out
+          if ($LASTEXITCODE -ne 0) { throw "P70R3 exact Windows engineering failed: $LASTEXITCODE" }
+
+      - name: Execute Audit target render-plan boundary
+        shell: pwsh
+        env:
+          P69_SOURCE_ROOT: ${{ github.workspace }}\p70r3-work\source
+          P70_SOURCE_ROOT: ${{ github.workspace }}\p70r3-work\source
+          P70_RESULT_DIR: ${{ github.workspace }}\p70r3-out
+        run: |
+          $ErrorActionPreference='Stop'
+          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p70-runtime/test-p70r3-audit-target-render-plan.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P70R3 target render-plan runtime failed: $LASTEXITCODE" }
+
+      - name: Install pinned solc for real reference
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force p70r3-toolchain | Out-Null
+          '{"private":true}' | Set-Content p70r3-toolchain/package.json -Encoding utf8
+          node "${{ steps.npmcli.outputs.npm_cli }}" install --prefix p70r3-toolchain solc@0.8.12 --ignore-scripts --audit=false --fund=false --save-exact
+          if ($LASTEXITCODE -ne 0) { throw "solc install failed: $LASTEXITCODE" }
+          $v=node -e "const s=require('./p70r3-toolchain/node_modules/solc'); process.stdout.write(s.version())"
+          if (-not $v.StartsWith('0.8.12+commit.f00d7308')) { throw "solc mismatch: $v" }
+          $v | Set-Content p70r3-out/P70R3_SOLC_VERSION.txt -Encoding utf8
+
+      - name: Execute real deployed Audit reference with target retention
+        shell: pwsh
+        env:
+          P69_SOURCE_ROOT: ${{ github.workspace }}\p70r3-work\source
+          P70_SOURCE_ROOT: ${{ github.workspace }}\p70r3-work\source
+          P70_RESULT_DIR: ${{ github.workspace }}\p70r3-out
+          P70_SOLC_ROOT: ${{ github.workspace }}\p70r3-toolchain
+        run: |
+          $ErrorActionPreference='Stop'
+          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p70-runtime/run-p70r3-real-multicall3-audit.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P70R3 real deployed Audit reference failed: $LASTEXITCODE" }
+          $e=Get-Content 'p70r3-out/P70_REAL_DEPLOYED_AUDIT_REFERENCE_EVIDENCE.json' -Raw | ConvertFrom-Json
+          if($e.pdfCases.Count -ne 9){ throw 'P70R3 expected exactly 9 PDF cases' }
+          if(($e.pdfCases | Where-Object { $_.targetLinePresent -eq $true }).Count -ne 9){ throw 'P70R3 target line missing from one or more PDF render plans' }
+          if($e.credit.realTargetAuditPdfTargetLineCases -ne 9){ throw 'P70R3 target-line credit receipt mismatch' }
+
+      - name: Capture P70R3 workflow boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p70r3-out | Out-Null
+          $refState='NOT_EXECUTED_OR_FAILED'; $targetState='NOT_EXECUTED_OR_FAILED'
+          if(Test-Path 'p70r3-out/P70_REAL_DEPLOYED_AUDIT_REFERENCE_EVIDENCE.json'){
+            $e=Get-Content 'p70r3-out/P70_REAL_DEPLOYED_AUDIT_REFERENCE_EVIDENCE.json' -Raw | ConvertFrom-Json
+            if($e.credit.realDeployedReferenceTarget -eq 1 -and $e.credit.realChainProviderQuorum -eq $true -and $e.credit.sourceRuntimeBinding -eq $true -and $e.credit.realTargetAuditPdfCases -eq 9 -and $e.credit.realTargetAuditPdfTargetLineCases -eq 9){$refState='PASS_REAL_REFERENCE_TARGET_RETAINED_NO_PROMOTION'}
+          }
+          if(Test-Path 'p70r3-out/P70R3_AUDIT_TARGET_RENDER_PLAN_RUNTIME.json'){
+            $t=Get-Content 'p70r3-out/P70R3_AUDIT_TARGET_RENDER_PLAN_RUNTIME.json' -Raw | ConvertFrom-Json
+            if($t.status -eq 'PASS_P70R3_AUDIT_TARGET_RENDER_PLAN_BOUND_NO_PROMOTION'){$targetState='PASS_RENDER_PLAN_BOUND'}
+          }
+          $b=[ordered]@{schemaVersion='velmere.p70r3.github-workflow-boundary.v1';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);changedBuildRelevantFilesSinceP69R2=2;projectionFileCount=1597;projectionPayloadBytes=20973292;projectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73';projectionAggregateSha256='6d400af1c8a042b9f1b9876744dc4e00d8786bb480a989cb78b477674760ee54';generatedNextEnvProjectionPayloadBytes=20973277;generatedNextEnvProjectionAggregateSha256='59c64fedd078e5e4f9f0989f8fe9a973c23ff0dc4cb810b8da564447ad08e172';targetIdentityState=$targetState;realReferenceState=$refState;productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;rightsPassed=2;rightsDenominator=203;customerFinalOutputs=0;auditFinalCustomerPdfs=0;saleEligibleRows=0;live=$false;worldClassProven=$false;truthBoundary='P70R3 exact Windows engineering for the functional Audit target-identity plus numbered-safe-renderer repairs and one real deployed public reference lane. Nine internal real-reference PDF artifacts must retain the exact target in the actual render plan. This grants zero final customer, vulnerability, provider-rights, paid-value, sale, LIVE or WORLD_CLASS credit.'}
+          $b | ConvertTo-Json -Depth 8 | Set-Content p70r3-out/P70R3_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P70R3 exact Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p70r3-exact-windows-audit-target-real-reference
+          path: p70r3-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
