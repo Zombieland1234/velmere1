@@ -1,15 +1,16 @@
-name: P73R5 One-Shot Frozen README Authority Source Generator
+name: P73R5 Frozen README Source Generator
 
 on:
   push:
     branches:
       - velmere-p73r5-frozen-readme-authority-20260817
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: p73r5-one-shot-source-generator
+  group: p73r5-frozen-readme-source-generator
   cancel-in-progress: false
 
 jobs:
@@ -23,203 +24,9 @@ jobs:
           fetch-depth: 1
           persist-credentials: true
 
-      - name: Generate exact P73R5 replacement source from LF P73R4 template
+      - name: Generate and validate P73R5 source
         shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib,json
-
-          src=Path('p73-runtime/p73r4-new-audit-adjudicated-authority-evidence.ts')
-          out=Path('p73-runtime/p73r5-authority-evidence-source.ts')
-          receipt=Path('p73-runtime/P73R5_SOURCE_GENERATION_RECEIPT.json')
-          raw=src.read_text(encoding='utf-8').replace('\r\n','\n').replace('\r','\n')
-          b=raw.encode('utf-8')
-          def sha(x): return hashlib.sha256(x).hexdigest()
-          if len(b)!=19749 or sha(b)!='0d9ad2b771ad4d19c61853ed5d5562f54c2549b07493690f28edc5383aff6521':
-              raise SystemExit(f'P73R4 LF template drift:{len(b)}:{sha(b)}')
-
-          replacements=[]
-          def one(old,new,label):
-              global raw
-              c=raw.count(old)
-              if c!=1: raise SystemExit(f'anchor mismatch:{label}:{c}')
-              raw=raw.replace(old,new,1)
-              replacements.append(label)
-
-          one(
-'''    maintainerAuthorityUrl: "https://api.github.com/repos/mds1/multicall3/issues/comments/2495504312",''',
-'''    maintainerAuthorityUrl: "https://raw.githubusercontent.com/mds1/multicall3/b667d67ecfa5361a81e8f110234ce242613b0012/README.md",''',
-'canonical_reference_frozen_readme_url')
-
-          one(
-'''function sourceRepoFromGithubApiUrl(value: string) {
-  const parsed = new URL(value);
-  if (parsed.protocol !== "https:" || parsed.hostname.toLowerCase() !== "api.github.com") return null;
-  const match = parsed.pathname.match(/^\\/repos\\/([^/]+)\\/([^/]+)\\/issues\\/comments\\/\\d+$/);
-  return match ? `${match[1]}/${match[2]}`.toLowerCase() : null;
-}''',
-'''function frozenRepositoryAuthorityUrlMatches(value: string, reference: CanonicalReference) {
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol !== "https:" || parsed.hostname.toLowerCase() !== "raw.githubusercontent.com") return false;
-    const expectedPath = `/${reference.sourceRepo}/${reference.sourceCommit}/README.md`.toLowerCase();
-    return parsed.pathname.toLowerCase() === expectedPath && parsed.search === "" && parsed.hash === "";
-  } catch {
-    return false;
-  }
-}''',
-'frozen_repository_url_validator')
-
-          one(
-'''  const docsUrl = clean(input.docsUrl, 700) || authority.defaultContractsUrl;
-  const maintainerUrl = clean(input.maintainerUrl, 700) || reference.maintainerAuthorityUrl;
-  try {
-    if (hostOf(docsUrl) !== authority.officialDocsHost) throw new Error("official_chain_docs_host_mismatch");
-    if (sourceRepoFromGithubApiUrl(maintainerUrl) !== reference.sourceRepo.toLowerCase()) throw new Error("project_maintainer_repository_mismatch");
-
-    const [docs, maintainer] = await Promise.all([
-      fetchAuthority(docsUrl, "audit_authority_chain_docs", [authority.officialDocsHost]),
-      fetchAuthority(maintainerUrl, "audit_authority_project_maintainer", ["api.github.com"]),
-    ]);''',
-'''  const docsUrl = clean(input.docsUrl, 700) || authority.defaultContractsUrl;
-  // For a recognized canonical reference the project authority is registry-bound to the exact
-  // frozen source commit. Caller input cannot replace this root with a mutable issue, branch or fork.
-  const maintainerUrl = reference.maintainerAuthorityUrl;
-  try {
-    if (hostOf(docsUrl) !== authority.officialDocsHost) throw new Error("official_chain_docs_host_mismatch");
-    if (!frozenRepositoryAuthorityUrlMatches(maintainerUrl, reference)) throw new Error("project_maintainer_frozen_repository_binding_mismatch");
-
-    const [docs, maintainer] = await Promise.all([
-      fetchAuthority(docsUrl, "audit_authority_chain_docs", [authority.officialDocsHost]),
-      fetchAuthority(maintainerUrl, "audit_authority_project_maintainer", ["raw.githubusercontent.com"]),
-    ]);''',
-'fetch_frozen_readme_instead_of_api_comment')
-
-          one(
-'''    let maintainerJson: Record<string, unknown>;
-    try { maintainerJson = JSON.parse(maintainer.text) as Record<string, unknown>; }
-    catch { throw new Error("maintainer_json_invalid"); }
-    const user = maintainerJson.user && typeof maintainerJson.user === "object" && !Array.isArray(maintainerJson.user) ? maintainerJson.user as Record<string, unknown> : {};
-    const body = String(maintainerJson.body ?? "");
-    const bodyLower = body.toLowerCase();
-    const authorAssociation = String(maintainerJson.author_association ?? "").toUpperCase();
-    const maintainerBound = authorAssociation === "OWNER"
-      && String(user.login ?? "").trim().length > 0
-      && bodyLower.includes(reference.projectName.toLowerCase())
-      && bodyLower.includes(chain)
-      && bodyLower.includes(contractAddress)
-      && /compromis(?:ed|e)|different contract|wrong contract/.test(bodyLower)
-      && /cannot be deployed|can not be deployed|unable to deploy|regular multicall3/.test(bodyLower);
-    if (!maintainerBound) throw new Error("project_maintainer_adverse_statement_not_bound");''',
-'''    const maintainerLower = maintainer.text.toLowerCase();
-    const frozenReadmeBound = maintainerLower.includes(reference.projectName.toLowerCase())
-      && maintainerLower.includes(chain)
-      && maintainerLower.includes(contractAddress)
-      && maintainerLower.includes("deployer private key")
-      && maintainerLower.includes("compromised")
-      && maintainerLower.includes("custom contract being deployed to the multicall3 address on ancient8")
-      && maintainerLower.includes("only the ancient8 deployment is known to be incorrect");
-    if (!frozenReadmeBound) throw new Error("project_maintainer_frozen_readme_adverse_statement_not_bound");''',
-'frozen_readme_content_binding')
-
-          one(
-'''    const sourceTimestamp = typeof maintainerJson.updated_at === "string" && Number.isFinite(Date.parse(maintainerJson.updated_at))
-      ? new Date(Date.parse(maintainerJson.updated_at)).toISOString()
-      : typeof maintainerJson.created_at === "string" && Number.isFinite(Date.parse(maintainerJson.created_at))
-        ? new Date(Date.parse(maintainerJson.created_at)).toISOString()
-        : maintainer.sourceTimestamp;
-    const maintainerReceipt = receipt({
-      id: `authority-project-maintainer-${sha256Digest(maintainer.finalUrl).replace(/^sha256:/, "").slice(0, 20)}`,
-      authorityClass: "project_maintainer",
-      providerId: `github-owner:${reference.sourceRepo}`,
-      providerFamily: "project_maintainer_authority",
-      upstreamRoot: "api.github.com",
-      independenceEligible: true,
-      targetBound: true,
-      statusCode: maintainer.statusCode,
-      contentType: maintainer.contentType,
-      bodyBytes: maintainer.bytes.byteLength,
-      bodyDigest: sha256BytesDigest(maintainer.bytes),
-      requestUrlDigest: sha256Digest(maintainer.finalUrl),
-      observedAt: maintainer.observedAt,
-      sourceTimestamp: sourceTimestamp ?? null,
-      sourceTimestampProvenance: sourceTimestamp ? "provider" : "transport_received",
-      assertions: [
-        `repository:${reference.sourceRepo}`,
-        `author_association:${authorAssociation}`,
-        `project:${reference.projectName}`,
-        `chain:${chain}`,
-        `wrong_contract_address:${contractAddress}`,
-      ],
-    });''',
-'''    const sourceTimestamp = maintainer.sourceTimestamp;
-    const maintainerReceipt = receipt({
-      id: `authority-project-maintainer-${sha256Digest(maintainer.finalUrl).replace(/^sha256:/, "").slice(0, 20)}`,
-      authorityClass: "project_maintainer",
-      providerId: `repo-commit:${reference.sourceRepo}@${reference.sourceCommit}`,
-      providerFamily: "project_maintainer_authority",
-      upstreamRoot: "raw.githubusercontent.com",
-      independenceEligible: true,
-      targetBound: true,
-      statusCode: maintainer.statusCode,
-      contentType: maintainer.contentType,
-      bodyBytes: maintainer.bytes.byteLength,
-      bodyDigest: sha256BytesDigest(maintainer.bytes),
-      requestUrlDigest: sha256Digest(maintainer.finalUrl),
-      observedAt: maintainer.observedAt,
-      sourceTimestamp: sourceTimestamp ?? null,
-      sourceTimestampProvenance: sourceTimestamp ? "provider" : "transport_received",
-      assertions: [
-        `repository:${reference.sourceRepo}`,
-        `source_commit:${reference.sourceCommit}`,
-        `project:${reference.projectName}`,
-        `chain:${chain}`,
-        `canonical_address:${contractAddress}`,
-        "deployment_status:known_incorrect",
-      ],
-    });''',
-'frozen_readme_receipt_binding')
-
-          one(
-'''      truthBoundary: "This evidence proves a deployment-identity contradiction, not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to the audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.",''',
-'''      truthBoundary: "This evidence proves a deployment-identity contradiction from two independent authorities: official chain documentation plus the project's exact frozen repository commit. It is not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.",''',
-'authority_truth_boundary')
-
-          out_bytes=raw.encode('utf-8')
-          # Safety assertions: old mutable API authority and JSON-comment parsing must be gone.
-          forbidden=['api.github.com/repos/mds1/multicall3/issues/comments/2495504312','sourceRepoFromGithubApiUrl','maintainerJson','authorAssociation','github-owner:']
-          for token in forbidden:
-              if token in raw: raise SystemExit(f'forbidden legacy runtime authority remains:{token}')
-          required=[
-            'raw.githubusercontent.com/mds1/multicall3/b667d67ecfa5361a81e8f110234ce242613b0012/README.md',
-            'frozenRepositoryAuthorityUrlMatches',
-            'repo-commit:${reference.sourceRepo}@${reference.sourceCommit}',
-            'custom contract being deployed to the multicall3 address on ancient8',
-            'only the ancient8 deployment is known to be incorrect',
-            'current_runtime_bytecode_quorum_unavailable',
-          ]
-          for token in required:
-              if token not in raw: raise SystemExit(f'required P73R5 invariant missing:{token}')
-
-          out.write_bytes(out_bytes)
-          result={
-            'schemaVersion':'velmere.p73r5.frozen-readme-source-generation.v1',
-            'status':'PASS_CONTROL_SOURCE_GENERATION_NO_PRODUCT_CREDIT',
-            'inputBytes':len(b),'inputSha256':sha(b),
-            'outputBytes':len(out_bytes),'outputSha256':sha(out_bytes),
-            'replacementLabels':replacements,
-            'runtimeProjectAuthority':'raw.githubusercontent.com/mds1/multicall3@b667d67ecfa5361a81e8f110234ce242613b0012/README.md',
-            'authorityRootCountRequired':2,
-            'currentRuntimeBytecodeCredit':0,
-            'vulnerabilityGroundTruthCredit':0,
-            'customerFinalOutputCredit':0,'auditFinalPdfCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,
-            'truthBoundary':'Generates the P73R5 replacement source only. Runtime project authority is moved from an unstable GitHub API comment endpoint to the exact P70-frozen official repository README. Ancient8 official docs remain the independent second root. No product or release credit.'
-          }
-          receipt.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8',newline='\n')
-          print(json.dumps(result,indent=2))
-          PY
+        run: python p73-runtime/generate-p73r5-frozen-readme-source.py
 
       - name: Commit generated ordinary control files
         shell: bash
