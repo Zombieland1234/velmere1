@@ -1,0 +1,44 @@
+name: P74 L1 Oracle Output Quorum V3
+on:
+  push:
+    branches: [velmere-p73-audit-ancient8-ground-truth-20260817]
+    paths:
+      - 'p74-runtime/diagnose-p74-l1-oracle-output-quorum-v3.mjs'
+      - '.github/workflows/p74-l1-oracle-output-quorum-v3.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 1, persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 24.18.0, check-latest: false}
+      - name: Execute exact-block oracle output quorum diagnostic
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-l1-output-v3-out
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          New-Item -ItemType Directory -Force p74-l1-output-v3-out | Out-Null
+          node p74-runtime/diagnose-p74-l1-oracle-output-quorum-v3.mjs | Tee-Object p74-l1-output-v3-out\P74_L1_OUTPUT_V3.log
+          if($LASTEXITCODE-ne0){throw 'P74 L1 output quorum diagnostic execution failed'}
+      - name: Capture strict zero-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $s='NOT_EXECUTED';if(Test-Path 'p74-l1-output-v3-out/P74_L1_ORACLE_OUTPUT_QUORUM_V3.json'){$x=Get-Content 'p74-l1-output-v3-out/P74_L1_ORACLE_OUTPUT_QUORUM_V3.json' -Raw|ConvertFrom-Json;$s=$x.status}
+          [ordered]@{schemaVersion='velmere.p74.l1-output-v3-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';diagnosticStatus=$s;parentP73R7Aggregate='b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b';productBytesChanged=$false;currentRuntimeBytecodeCredit=0;vulnerabilityGroundTruthCredit=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='Focused L1 oracle diagnostic only. Even a 2+ provider PASS grants zero product/release credit until the L2 output-root/state/account proof is independently recomputed and exact P73R7 product integration plus exact Windows engineering and live integration pass.'}|ConvertTo-Json -Depth 8|Set-Content p74-l1-output-v3-out/P74_L1_OUTPUT_V3_BOUNDARY.json -Encoding utf8
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-l1-oracle-output-quorum-v3
+          path: p74-l1-output-v3-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
