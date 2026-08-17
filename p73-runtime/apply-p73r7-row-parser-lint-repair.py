@@ -18,7 +18,7 @@ s=b.decode('utf-8')
 old='const ADDRESS_PATTERN = /0x[a-fA-F0-9]{40}/g;\n'
 if s.count(old)!=1:raise SystemExit(f'P73R7 ADDRESS_PATTERN anchor mismatch:{s.count(old)}')
 s=s.replace(old,'',1)
-old_regex='(?:[:=\\-–—]\\s*)?'
+old_regex='(?:[:=\-–—]\\s*)?'
 new_regex='(?:[:=–—-]\\s*)?'
 if s.count(old_regex)!=1:raise SystemExit(f'P73R7 regex anchor mismatch:{s.count(old_regex)}')
 s=s.replace(old_regex,new_regex,1)
