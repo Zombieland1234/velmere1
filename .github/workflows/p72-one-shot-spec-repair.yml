@@ -1,0 +1,112 @@
+name: P72 One-Shot Product Spec Repair
+
+on:
+  push:
+    branches:
+      - velmere-p72-commercial-topology-measurement-20260817
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p72-one-shot-spec-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, 'P72 repair split product spec') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Split malformed product spec and rebind guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+          import base64, hashlib, json, re
+          from pathlib import Path
+
+          spec_path = Path('p72-runtime/p72-product-patch-spec.b64')
+          patcher_path = Path('p72-runtime/apply-p72-commercial-topology-measurement.py')
+          support_path = Path('p72-runtime/p72-supporting-closure-patch-spec.json')
+          receipt_path = Path('p72-runtime/P72_PRODUCT_SPEC_SPLIT_RECEIPT.json')
+
+          encoded = spec_path.read_text(encoding='utf-8').strip()
+          raw = base64.b64decode(encoded, validate=True)
+          text = raw.decode('utf-8')
+          decoder = json.JSONDecoder()
+          product, end = decoder.raw_decode(text)
+          trailing = text[end:].strip()
+          expected = {
+              'lib/commerce/vlm-commercial-readiness.ts',
+              'lib/commerce/vlm-field-level-readiness.ts',
+              'lib/commerce/vlm-evidence-availability.ts',
+              'app/api/checkout/vlm-service/route.ts',
+              'app/api/checkout/vlm-service/readiness/route.ts',
+          }
+          if not isinstance(product, dict) or set(product) != expected:
+              raise SystemExit(f'unexpected P72 product-spec paths: {sorted(product) if isinstance(product, dict) else type(product)}')
+          if not trailing:
+              print('P72 product spec already clean; no repair needed')
+              raise SystemExit(0)
+          support = json.loads(trailing)
+          if not isinstance(support, dict):
+              raise SystemExit('P72 trailing spec must be a JSON object')
+
+          clean_raw = text[:end].encode('utf-8')
+          clean_sha = hashlib.sha256(clean_raw).hexdigest()
+          old_sha = hashlib.sha256(raw).hexdigest()
+          trailing_raw = trailing.encode('utf-8')
+          trailing_sha = hashlib.sha256(trailing_raw).hexdigest()
+
+          spec_path.write_text(base64.b64encode(clean_raw).decode('ascii') + '\n', encoding='utf-8')
+          support_path.write_text(trailing + '\n', encoding='utf-8')
+
+          patcher = patcher_path.read_text(encoding='utf-8')
+          patched, n = re.subn(r"SPEC_SHA='[0-9a-f]{64}'", f"SPEC_SHA='{clean_sha}'", patcher, count=1)
+          if n != 1:
+              raise SystemExit('could not rebind P72 SPEC_SHA exactly once')
+          patcher_path.write_text(patched, encoding='utf-8')
+
+          receipt = {
+              'schemaVersion': 'velmere.p72.product-spec-split-repair.v1',
+              'status': 'PASS_CONTROL_PLANE_REPAIR_NO_PRODUCT_CREDIT',
+              'oldCombinedDecodedBytes': len(raw),
+              'oldCombinedDecodedSha256': old_sha,
+              'cleanProductDecodedBytes': len(clean_raw),
+              'cleanProductDecodedSha256': clean_sha,
+              'productPathCount': len(product),
+              'productPaths': sorted(product),
+              'separatedTrailingDecodedBytes': len(trailing_raw),
+              'separatedTrailingDecodedSha256': trailing_sha,
+              'supportTopLevelKeys': sorted(support),
+              'customerFinalOutputCredit': 0,
+              'rightsCredit': 0,
+              'paidValueCredit': 0,
+              'saleCredit': 0,
+              'live': False,
+              'truthBoundary': 'Repairs only the malformed concatenated P72 control-plane patch transport. Product source is not modified and receives zero release credit.'
+          }
+          receipt_path.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Commit repaired control-plane bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- p72-runtime/p72-product-patch-spec.b64 p72-runtime/p72-supporting-closure-patch-spec.json p72-runtime/apply-p72-commercial-topology-measurement.py p72-runtime/P72_PRODUCT_SPEC_SPLIT_RECEIPT.json; then
+            echo 'No repair diff to commit.'
+            exit 0
+          fi
+          git config user.name 'Velmere Closure Bot'
+          git config user.email 'velmere141@gmail.com'
+          git add p72-runtime/p72-product-patch-spec.b64 p72-runtime/p72-supporting-closure-patch-spec.json p72-runtime/apply-p72-commercial-topology-measurement.py p72-runtime/P72_PRODUCT_SPEC_SPLIT_RECEIPT.json
+          git commit -m 'P72 repair split product spec'
+          git push origin HEAD:velmere-p72-commercial-topology-measurement-20260817
