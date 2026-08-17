@@ -1,0 +1,164 @@
+name: P72 One-Shot Output Metadata Calibration
+
+on:
+  push:
+    branches:
+      - velmere-p72-commercial-topology-measurement-20260817
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p72-one-shot-output-metadata-calibration
+  cancel-in-progress: false
+
+jobs:
+  calibrate:
+    if: ${{ !contains(github.event.head_commit.message, 'P72 calibrate deterministic output metadata') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Reconstruct exact P71R5 parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p72cal-out
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p72cal-work --output-root p72cal-out
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p72cal-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p72cal-work/P66.json >/dev/null
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p72cal-work/source --manifest p72cal-work/P66.json >/dev/null
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p72cal-work/source --manifest p72cal-work/P66.json >/dev/null
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p72cal-work/source --manifest p72cal-work/P66.json --output-manifest p72cal-work/P68.json >/dev/null
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p72cal-work/source --manifest p72cal-work/P68.json --output-manifest p72cal-work/P69.json >/dev/null
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p72cal-work/source --manifest p72cal-work/P69.json --output-manifest p72cal-work/P69R2.json --receipt p72cal-out/P69R2.json >/dev/null
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p72cal-work/source --manifest p72cal-work/P69R2.json --output-manifest p72cal-work/P71.json --receipt p72cal-out/P71.json >/dev/null
+          python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p72cal-work/source --manifest p72cal-work/P71.json --output-manifest p72cal-work/P71R1.json --receipt p72cal-out/P71R1.json >/dev/null
+          python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p72cal-work/source --manifest p72cal-work/P71R1.json --output-manifest p72cal-work/P71R2.json --receipt p72cal-out/P71R2.json >/dev/null
+          python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p72cal-work/source --manifest p72cal-work/P71R2.json --output-manifest p72cal-work/P71R5.json --receipt p72cal-out/P71R3.json >/dev/null
+
+      - name: Calibrate only deterministic expected-output metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+          import base64, copy, hashlib, json, re
+          from pathlib import Path
+
+          ROOT=Path('p72cal-work/source')
+          MANIFEST=Path('p72cal-work/P71R5.json')
+          SPEC=Path('p72-runtime/p72-product-patch-spec.b64')
+          PATCHER=Path('p72-runtime/apply-p72-commercial-topology-measurement.py')
+          RECEIPT=Path('p72-runtime/P72_OUTPUT_METADATA_CALIBRATION_RECEIPT.json')
+          EXPECTED_PATHS={
+              'lib/commerce/vlm-commercial-readiness.ts',
+              'lib/commerce/vlm-field-level-readiness.ts',
+              'lib/commerce/vlm-evidence-availability.ts',
+              'app/api/checkout/vlm-service/route.ts',
+              'app/api/checkout/vlm-service/readiness/route.ts',
+          }
+          BASE_COUNT=1597
+          BASE_PAYLOAD=20981047
+          BASE_PATHSET='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
+          BASE_AGG='ad00eb69fef750a106ed36828dfa22e5590181e9903d062132596519f494af5d'
+
+          def sha(b:bytes)->str:return hashlib.sha256(b).hexdigest()
+          def identity(rows):
+              payload=sum(int(r['byteLength']) for r in rows)
+              pathset=hashlib.sha256('\n'.join(r['path'] for r in rows).encode()).hexdigest()
+              h=hashlib.sha256()
+              for r in rows:h.update(f"{r['path']}\0{r['byteLength']}\0{r['sha256']}\n".encode())
+              return len(rows),payload,pathset,h.hexdigest()
+
+          m=json.loads(MANIFEST.read_text(encoding='utf-8'))
+          p=m['projection']
+          parent=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          expected_parent=(BASE_COUNT,BASE_PAYLOAD,BASE_PATHSET,BASE_AGG)
+          if parent!=expected_parent:raise SystemExit(f'P72 calibration parent mismatch:{parent}')
+
+          raw=base64.b64decode(SPEC.read_text(encoding='utf-8').strip(),validate=True)
+          spec=json.loads(raw.decode('utf-8'))
+          if set(spec)!=EXPECTED_PATHS:raise SystemExit(f'P72 calibration path set mismatch:{sorted(spec)}')
+          original=copy.deepcopy(spec)
+          rows={r['path']:copy.deepcopy(r) for r in m['files']}
+          calibration=[]
+          for rel in sorted(spec):
+              cfg=spec[rel]
+              b=(ROOT/rel).read_bytes()
+              if len(b)!=cfg['beforeBytes'] or sha(b)!=cfg['beforeSha256']:
+                  raise SystemExit(f'P72 calibration preimage mismatch:{rel}:{len(b)}:{sha(b)}')
+              mr=rows.get(rel)
+              if not mr or int(mr['byteLength'])!=cfg['beforeBytes'] or mr['sha256']!=cfg['beforeSha256']:
+                  raise SystemExit(f'P72 calibration manifest preimage mismatch:{rel}')
+              ops=cfg['ops']
+              if not isinstance(ops,list) or not ops:raise SystemExit(f'P72 calibration empty ops:{rel}')
+              for op in ops:
+                  if set(op)!={'i1','i2','new'}:raise SystemExit(f'P72 calibration unexpected op keys:{rel}:{op.keys()}')
+                  if not (0<=int(op['i1'])<=int(op['i2'])):raise SystemExit(f'P72 calibration bad op range:{rel}:{op}')
+              lines=b.decode('utf-8').splitlines(keepends=True)
+              for op in reversed(ops):
+                  i1,i2=int(op['i1']),int(op['i2'])
+                  if i2>len(lines):raise SystemExit(f'P72 calibration op past EOF:{rel}:{op}:{len(lines)}')
+                  lines[i1:i2]=[op['new']] if op['new'] else []
+              out=''.join(lines).encode('utf-8')
+              actual_bytes=len(out);actual_sha=sha(out)
+              old_after=(cfg['afterBytes'],cfg['afterSha256'])
+              cfg['afterBytes']=actual_bytes;cfg['afterSha256']=actual_sha
+              mr['byteLength']=actual_bytes;mr['sha256']=actual_sha
+              rows[rel]=mr
+              calibration.append({'path':rel,'oldExpectedAfterBytes':old_after[0],'oldExpectedAfterSha256':old_after[1],'calibratedAfterBytes':actual_bytes,'calibratedAfterSha256':actual_sha,'opsCount':len(ops)})
+
+          # Prove only afterBytes/afterSha256 metadata changed in the spec.
+          for rel in spec:
+              before=copy.deepcopy(original[rel]);after=copy.deepcopy(spec[rel])
+              before.pop('afterBytes');before.pop('afterSha256');after.pop('afterBytes');after.pop('afterSha256')
+              if before!=after:raise SystemExit(f'P72 calibration attempted to mutate product ops/preimage:{rel}')
+
+          ordered_rows=[]
+          for old in m['files']:
+              ordered_rows.append(rows[old['path']])
+          ident=identity(ordered_rows)
+          if ident[0]!=BASE_COUNT or ident[2]!=BASE_PATHSET:raise SystemExit(f'P72 calibration path identity changed:{ident}')
+
+          clean_raw=json.dumps(spec,separators=(',',':'),ensure_ascii=False).encode('utf-8')
+          clean_sha=sha(clean_raw)
+          SPEC.write_text(base64.b64encode(clean_raw).decode('ascii')+'\n',encoding='utf-8')
+          patcher=PATCHER.read_text(encoding='utf-8')
+          patcher,n1=re.subn(r"FINAL_PAYLOAD=\d+",f"FINAL_PAYLOAD={ident[1]}",patcher,count=1)
+          patcher,n2=re.subn(r"FINAL_AGG='[0-9a-f]{64}'",f"FINAL_AGG='{ident[3]}'",patcher,count=1)
+          patcher,n3=re.subn(r"SPEC_SHA='[0-9a-f]{64}'",f"SPEC_SHA='{clean_sha}'",patcher,count=1)
+          if (n1,n2,n3)!=(1,1,1):raise SystemExit(f'P72 calibration patcher constant update mismatch:{n1,n2,n3}')
+          PATCHER.write_text(patcher,encoding='utf-8')
+
+          receipt={
+              'schemaVersion':'velmere.p72.output-metadata-calibration.v1',
+              'status':'PASS_CONTROL_PLANE_CALIBRATION_NO_PRODUCT_CREDIT',
+              'parentProjection':{'fileCount':BASE_COUNT,'payloadBytes':BASE_PAYLOAD,'pathSetSha256':BASE_PATHSET,'aggregateSha256':BASE_AGG},
+              'calibration':calibration,
+              'finalProjection':{'fileCount':ident[0],'payloadBytes':ident[1],'pathSetSha256':ident[2],'aggregateSha256':ident[3]},
+              'cleanPatchSpecDecodedBytes':len(clean_raw),'cleanPatchSpecSha256':clean_sha,
+              'productOpsChanged':False,'preimageMetadataChanged':False,'expectedOutputMetadataOnly':True,
+              'customerFinalOutputCredit':0,'rightsCredit':0,'paidValueCredit':0,'saleCredit':0,'live':False,
+              'truthBoundary':'Recomputes only deterministic afterBytes/afterSha256 and resulting projection identity from the already-frozen five-file P72 ops against exact P71R5 parent bytes. It does not alter product ops, preimages, source files, release numerators or product claims.'
+          }
+          RECEIPT.write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(receipt,indent=2))
+          PY
+
+      - name: Commit calibrated control-plane metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Velmere Closure Bot'
+          git config user.email 'velmere141@gmail.com'
+          git add p72-runtime/p72-product-patch-spec.b64 p72-runtime/apply-p72-commercial-topology-measurement.py p72-runtime/P72_OUTPUT_METADATA_CALIBRATION_RECEIPT.json
+          if git diff --cached --quiet; then
+            echo 'No calibration diff.'
+            exit 0
+          fi
+          git commit -m 'P72 calibrate deterministic output metadata'
+          git push origin HEAD:velmere-p72-commercial-topology-measurement-20260817
