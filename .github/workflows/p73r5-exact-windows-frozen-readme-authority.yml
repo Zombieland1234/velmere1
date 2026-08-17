@@ -1,0 +1,139 @@
+name: P73R5 Exact Windows Frozen README Authority
+
+on:
+  push:
+    branches:
+      - velmere-p73r5-frozen-readme-authority-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p73r5-exact-windows-frozen-readme-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p73r5-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P73R5 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact P73R4R3 parent and apply guarded P73R5 delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop';git config core.autocrlf false;git config core.eol lf;New-Item -ItemType Directory -Force p73r5-out|Out-Null
+          function Run([string]$cmd){Invoke-Expression $cmd;if($LASTEXITCODE-ne 0){throw "failed: $cmd"}}
+          Run "python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p73r5-work --output-root p73r5-out"
+          Run "python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p73r5-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p73r5-work/P66.json"
+          Run "python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p73r5-work/source --manifest p73r5-work/P66.json"
+          Run "python p66-runtime/fix-p66-topology-ts-const.py --source-root p73r5-work/source --manifest p73r5-work/P66.json"
+          Run "python p68-runtime/apply-p68-audit-customer-truth.py --source-root p73r5-work/source --manifest p73r5-work/P66.json --output-manifest p73r5-work/P68.json"
+          Run "python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p73r5-work/source --manifest p73r5-work/P68.json --output-manifest p73r5-work/P69.json"
+          Run "python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p73r5-work/source --manifest p73r5-work/P69.json --output-manifest p73r5-work/P69R2.json --receipt p73r5-out/P69R2.json"
+          Run "python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p73r5-work/source --manifest p73r5-work/P69R2.json --output-manifest p73r5-work/P71.json --receipt p73r5-out/P71.json"
+          Run "python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p73r5-work/source --manifest p73r5-work/P71.json --output-manifest p73r5-work/P71R1.json --receipt p73r5-out/P71R1.json"
+          Run "python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p73r5-work/source --manifest p73r5-work/P71R1.json --output-manifest p73r5-work/P71R2.json --receipt p73r5-out/P71R2.json"
+          Run "python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p73r5-work/source --manifest p73r5-work/P71R2.json --output-manifest p73r5-work/P71R5.json --receipt p73r5-out/P71R3.json"
+          Run "python p72-runtime/apply-p72-commercial-topology-measurement.py --source-root p73r5-work/source --manifest p73r5-work/P71R5.json --output-manifest p73r5-work/P72.json --receipt p73r5-out/P72.json"
+          Run "python p72-runtime/apply-p72r3-typescript-contract-repair.py --source-root p73r5-work/source --manifest p73r5-work/P72.json --output-manifest p73r5-work/P72R3.json --receipt p73r5-out/P72R3.json"
+          Run "python p73-runtime/apply-p73r4-adjudicated-authority-engine.py --source-root p73r5-work/source --manifest p73r5-work/P72R3.json --output-manifest p73r5-work/P73R4R3.json --receipt p73r5-out/P73R4R3.json"
+          $parent=Get-Content p73r5-work/P73R4R3.json -Raw|ConvertFrom-Json
+          if($parent.projection.fileCount-ne1598-or$parent.projection.payloadBytes-ne21015520-or$parent.projection.pathSetSha256-ne'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25'-or$parent.projection.sourceContentAggregateSha256-ne'd0306b565af73939691a34554e4f7e57543f6d3b91d778a9c93ebf25f5ffd377'){throw 'P73R4R3 parent identity mismatch'}
+          Run "python p73-runtime/apply-p73r5-frozen-readme-authority.py --source-root p73r5-work/source --manifest p73r5-work/P73R4R3.json --output-manifest p73r5-work/P73R5_BUILD_PROJECTION_MANIFEST.json --receipt p73r5-out/P73R5_SOURCE_PATCH.json"
+          $m=Get-Content p73r5-work/P73R5_BUILD_PROJECTION_MANIFEST.json -Raw|ConvertFrom-Json
+          if($m.projection.fileCount-ne1598-or$m.projection.payloadBytes-ne21015244-or$m.projection.pathSetSha256-ne'9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25'-or$m.projection.sourceContentAggregateSha256-ne'c65b31b5efb03da359947c2939179b4f41a58cc0a15067770f37ef7e371b7f63'){throw 'P73R5 product identity mismatch'}
+          Copy-Item p73r5-work/P73R5_BUILD_PROJECTION_MANIFEST.json p73r5-out/
+          Copy-Item p73-runtime/P73R5_SOURCE_GENERATION_RECEIPT.json p73r5-out/
+          Copy-Item p73-runtime/P73R5_PROJECTION_CALIBRATION_RECEIPT.json p73r5-out/
+
+      - name: Static frozen authority and fail-closed invariants
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $authority=Get-Content 'p73r5-work/source/lib/security/audit-adjudicated-authority-evidence.ts' -Raw
+          $provider=Get-Content 'p73r5-work/source/lib/security/audit-provider-runtime-client.ts' -Raw
+          $readiness=Get-Content 'p73r5-work/source/lib/security/audit-paid-evidence-readiness.ts' -Raw
+          $pipeline=Get-Content 'p73r5-work/source/lib/security/audit-customer-report-pipeline.ts' -Raw
+          if($provider-notmatch'ancient8:\s*"888888888"'){throw 'Ancient8 chain binding missing'}
+          if($authority-match'api\.github\.com/repos/mds1/multicall3/issues/comments/2495504312'){throw 'mutable API authority remains'}
+          if($authority-notmatch'raw\.githubusercontent\.com/mds1/multicall3/b667d67ecfa5361a81e8f110234ce242613b0012/README\.md'){throw 'frozen README authority missing'}
+          if($authority-notmatch'const maintainerUrl = reference\.maintainerAuthorityUrl'){throw 'registry-bound project authority missing'}
+          if($authority-notmatch'\["raw\.githubusercontent\.com"\]'){throw 'raw GitHub safe-egress host missing'}
+          if($authority-notmatch'current_runtime_bytecode_quorum_unavailable'){throw 'runtime-unverified boundary missing'}
+          if($authority-notmatch'new Set\(value\.receipts\.map\(\(item\) => item\.upstreamRoot\)\)\.size < 2'){throw 'independent authority roots missing'}
+          if($readiness-notmatch'input\.tier === "basic"'){throw 'Basic-only supplement missing'}
+          if($pipeline-notmatch'tier: "pro".*authorityEvidence: null'){throw 'Pro isolation missing'}
+          if($pipeline-notmatch'tier: "advanced".*authorityEvidence: null'){throw 'Advanced isolation missing'}
+
+      - name: Exact Windows TypeScript ESLint Webpack Turbopack
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop';function Run([string]$cmd){Invoke-Expression $cmd;if($LASTEXITCODE-ne0){throw "failed: $cmd"}}
+          Run "python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P60.json"
+          Run "python p66-runtime/patch-p66-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P66.json"
+          Run "python p68-runtime/patch-p68-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P68.json"
+          Run "python p69-runtime/patch-p69-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P69.json"
+          Run "python p69-runtime/patch-p69r2-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P69R2.json"
+          Run "python p71-runtime/patch-p71-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P71.json"
+          Run "python p71-runtime/patch-p71r1-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P71R1.json"
+          Run "python p71-runtime/patch-p71r3-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P71R3.json"
+          Run "python p72-runtime/patch-p72-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P72.json"
+          Run "python p72-runtime/patch-p72r3-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P72R3.json"
+          Run "python p73-runtime/patch-p73r4-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P73R4.json"
+          Run "python p73-runtime/patch-p73r5-reconciled-runner.py --runner p73r5-work/run-p73r5.mjs --receipt p73r5-out/RUNNER_P73R5.json"
+          Run "node --check p73r5-work/run-p73r5.mjs"
+          Run "node p73r5-work/run-p73r5.mjs --source-root p73r5-work/source --manifest p73r5-work/P73R5_BUILD_PROJECTION_MANIFEST.json --output-dir p73r5-out"
+
+      - name: Execute live frozen README authority runtime tests
+        shell: pwsh
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}\p73r5-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}\p73r5-work\source\tsconfig.json
+        run: |
+          $ErrorActionPreference='Stop';Push-Location p73r5-work/source
+          try { node ./node_modules/tsx/dist/cli.mjs ../../p73-runtime/test-p73r5-frozen-readme-runtime.ts | Tee-Object ../..\p73r5-out\P73R5_FROZEN_README_RUNTIME.log;if($LASTEXITCODE-ne0){throw 'P73R5 frozen README runtime failed'} } finally { Pop-Location }
+
+      - name: Capture P73R5 boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $eng='NOT_EXECUTED_OR_FAILED';$runtime='NOT_EXECUTED_OR_FAILED'
+          if(Test-Path 'p73r5-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p73r5-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$eng='PASS'}}
+          if(Test-Path 'p73r5-out/P73R5_FROZEN_README_AUTHORITY_RUNTIME_TEST.json'){$x=Get-Content 'p73r5-out/P73R5_FROZEN_README_AUTHORITY_RUNTIME_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$runtime='PASS'}}
+          [ordered]@{schemaVersion='velmere.p73r5.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';parentRevision='P73R4R3';parentAggregateSha256='d0306b565af73939691a34554e4f7e57543f6d3b91d778a9c93ebf25f5ffd377';projectionFileCount=1598;projectionPayloadBytes=21015244;projectionPathSetSha256='9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25';projectionAggregateSha256='c65b31b5efb03da359947c2939179b4f41a58cc0a15067770f37ef7e371b7f63';generatedNextEnvPayloadBytes=21015229;generatedNextEnvAggregateSha256='9a35dffe5b69481699e8b0d4c8b494b280560dfc05522181f9a2d98e0439f0a9';engineering=$eng;authorityRuntime=$runtime;deploymentGroundTruthCases=1;currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='P73R5 replaces the unstable GitHub API project-authority transport with the exact P70-frozen official Multicall3 README. Ancient8 official docs remain the independent second root. Safe-egress, digest binding, explicit runtime-unverified status, Basic-only supplement and Pro/Advanced isolation remain intact. Zero customer FINAL/PDF, rights, paid-value, sale, LIVE or WORLD_CLASS credit.'}|ConvertTo-Json -Depth 8|Set-Content p73r5-out/P73R5_GITHUB_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P73R5 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r5-frozen-readme-authority-exact-windows
+          path: p73r5-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
