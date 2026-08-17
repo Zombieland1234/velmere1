@@ -1,0 +1,37 @@
+name: P74 A8Scan Bundle Capture
+on:
+  push:
+    branches: [velmere-p73-audit-ancient8-ground-truth-20260817]
+    paths:
+      - 'p74-runtime/fetch-p74-a8scan-bundles.mjs'
+      - '.github/workflows/p74-a8scan-bundle-capture.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 1, persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: 24.18.0, check-latest: false}
+      - name: Capture exact public bundles
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-a8scan-bundles-out
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force p74-a8scan-bundles-out | Out-Null
+          node p74-runtime/fetch-p74-a8scan-bundles.mjs | Tee-Object p74-a8scan-bundles-out\P74_BUNDLE_CAPTURE.log
+          if($LASTEXITCODE-ne0){throw 'bundle capture failed'}
+      - name: Upload bundle evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-a8scan-bundle-capture
+          path: p74-a8scan-bundles-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
