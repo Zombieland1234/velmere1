@@ -1,0 +1,107 @@
+name: P72 Exact Windows Commercial Topology Measurement
+
+on:
+  push:
+    branches:
+      - velmere-p72-commercial-topology-measurement-20260817
+  workflow_dispatch:
+
+concurrency:
+  group: p72-commercial-topology-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p72-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout P72 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim();$npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+      - name: Reconstruct exact P71R5 parent and apply guarded P72 delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop';git config core.autocrlf false;git config core.eol lf;New-Item -ItemType Directory -Force p72-out|Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p72-work --output-root p72-out
+          if($LASTEXITCODE-ne 0){throw 'P46 reconstruction failed'}
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p72-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p72-work/P66.json;if($LASTEXITCODE-ne 0){throw 'P66-1 failed'}
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p72-work/source --manifest p72-work/P66.json;if($LASTEXITCODE-ne 0){throw 'P66-2 failed'}
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p72-work/source --manifest p72-work/P66.json;if($LASTEXITCODE-ne 0){throw 'P66-3 failed'}
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p72-work/source --manifest p72-work/P66.json --output-manifest p72-work/P68.json;if($LASTEXITCODE-ne 0){throw 'P68 failed'}
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p72-work/source --manifest p72-work/P68.json --output-manifest p72-work/P69.json;if($LASTEXITCODE-ne 0){throw 'P69 failed'}
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p72-work/source --manifest p72-work/P69.json --output-manifest p72-work/P69R2.json --receipt p72-out/P69R2.json;if($LASTEXITCODE-ne 0){throw 'P69R2 failed'}
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p72-work/source --manifest p72-work/P69R2.json --output-manifest p72-work/P71.json --receipt p72-out/P71.json;if($LASTEXITCODE-ne 0){throw 'P71 failed'}
+          python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p72-work/source --manifest p72-work/P71.json --output-manifest p72-work/P71R1.json --receipt p72-out/P71R1.json;if($LASTEXITCODE-ne 0){throw 'P71R1 failed'}
+          python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p72-work/source --manifest p72-work/P71R1.json --output-manifest p72-work/P71R2.json --receipt p72-out/P71R2.json;if($LASTEXITCODE-ne 0){throw 'P71R2 failed'}
+          python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p72-work/source --manifest p72-work/P71R2.json --output-manifest p72-work/P71R5.json --receipt p72-out/P71R3.json;if($LASTEXITCODE-ne 0){throw 'P71R3 failed'}
+          $p=Get-Content p72-work/P71R5.json -Raw|ConvertFrom-Json;if($p.projection.payloadBytes-ne 20981047-or$p.projection.sourceContentAggregateSha256-ne'ad00eb69fef750a106ed36828dfa22e5590181e9903d062132596519f494af5d'){throw 'P71R5 parent mismatch'}
+          python p72-runtime/apply-p72-commercial-topology-measurement.py --source-root p72-work/source --manifest p72-work/P71R5.json --output-manifest p72-work/P72_BUILD_PROJECTION_MANIFEST.json --receipt p72-out/P72_SOURCE_PATCH.json;if($LASTEXITCODE-ne 0){throw 'P72 patch failed'}
+          $m=Get-Content p72-work/P72_BUILD_PROJECTION_MANIFEST.json -Raw|ConvertFrom-Json;if($m.projection.fileCount-ne 1597-or$m.projection.payloadBytes-ne 20988568-or$m.projection.sourceContentAggregateSha256-ne'90a94bf0b74f6de06bbfbdc61dac483aba220bd7beb5c333a767abe2c7634109'){throw 'P72 identity mismatch'}
+          Copy-Item p72-work/P72_BUILD_PROJECTION_MANIFEST.json p72-out/
+      - name: Static fail-closed measurement invariants
+        shell: pwsh
+        env:
+          P72_SOURCE_ROOT: ${{ github.workspace }}\p72-work\source
+          P72_RESULT_DIR: ${{ github.workspace }}\p72-out
+        run: |
+          $ErrorActionPreference='Stop';node p72-runtime/test-p72-endpoint-failclosed.mjs;if($LASTEXITCODE-ne 0){throw 'P72 static fail-closed test failed'}
+      - name: Exact Windows TypeScript ESLint Webpack Turbopack
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p72-work/run-p72.mjs --receipt p72-out/RUNNER_P60.json;if($LASTEXITCODE-ne 0){throw 'P60 runner failed'}
+          python p66-runtime/patch-p66-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P66.json;if($LASTEXITCODE-ne 0){throw 'P66 runner failed'}
+          python p68-runtime/patch-p68-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P68.json;if($LASTEXITCODE-ne 0){throw 'P68 runner failed'}
+          python p69-runtime/patch-p69-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P69.json;if($LASTEXITCODE-ne 0){throw 'P69 runner failed'}
+          python p69-runtime/patch-p69r2-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P69R2.json;if($LASTEXITCODE-ne 0){throw 'P69R2 runner failed'}
+          python p71-runtime/patch-p71-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P71.json;if($LASTEXITCODE-ne 0){throw 'P71 runner failed'}
+          python p71-runtime/patch-p71r1-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P71R1.json;if($LASTEXITCODE-ne 0){throw 'P71R1 runner failed'}
+          python p71-runtime/patch-p71r3-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P71R3.json;if($LASTEXITCODE-ne 0){throw 'P71R3 runner failed'}
+          python p72-runtime/patch-p72-reconciled-runner.py --runner p72-work/run-p72.mjs --receipt p72-out/RUNNER_P72.json;if($LASTEXITCODE-ne 0){throw 'P72 runner failed'}
+          node --check p72-work/run-p72.mjs;if($LASTEXITCODE-ne 0){throw 'runner parse failed'}
+          node p72-work/run-p72.mjs --source-root p72-work/source --manifest p72-work/P72_BUILD_PROJECTION_MANIFEST.json --output-dir p72-out;if($LASTEXITCODE-ne 0){throw 'P72 engineering failed'}
+      - name: Execute commercial topology runtime tests
+        shell: pwsh
+        env:
+          P72_SOURCE_ROOT: ${{ github.workspace }}\p72-work\source
+          P72_RESULT_DIR: ${{ github.workspace }}\p72-out
+        run: |
+          $ErrorActionPreference='Stop';Push-Location p72-work/source
+          try { node ./node_modules/tsx/dist/cli.mjs ../../p72-runtime/test-p72-commercial-topology-runtime.ts | Tee-Object ../..\p72-out\P72_RUNTIME.log;if($LASTEXITCODE-ne 0){throw 'P72 runtime failed'} } finally { Pop-Location }
+      - name: Capture current source delta and boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $root='p72-work/source';$dst='p72-out/source-delta';$paths=@('lib/commerce/vlm-commercial-readiness.ts','lib/commerce/vlm-field-level-readiness.ts','lib/commerce/vlm-evidence-availability.ts','app/api/checkout/vlm-service/route.ts','app/api/checkout/vlm-service/readiness/route.ts');foreach($rel in $paths){$s=Join-Path $root $rel;if(Test-Path $s){$t=Join-Path $dst $rel;New-Item -ItemType Directory -Force(Split-Path $t)|Out-Null;Copy-Item $s $t}}
+          [ordered]@{schemaVersion='velmere.p72.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';projectionFileCount=1597;projectionPayloadBytes=20988568;projectionAggregateSha256='90a94bf0b74f6de06bbfbdc61dac483aba220bd7beb5c333a767abe2c7634109';families=10;customerRows=20;profiles=20;paidTransitions=10;pdfProductFamily=$false;shieldProIndependent=$true;rights='2/203';customerFinal='0/20';paidValue='0/10';sale='0/20';live=$false;truthBoundary='Measurement/topology correction only; no release numerator promotion.'}|ConvertTo-Json|Set-Content p72-out/P72_GITHUB_BOUNDARY.json -Encoding utf8
+      - name: Upload P72 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p72-commercial-topology-exact-windows
+          path: p72-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
