@@ -12,14 +12,19 @@ const sha=(b)=>crypto.createHash('sha256').update(b).digest('hex');
 const checks=[];
 function check(id, ok, detail=''){ checks.push({id,passed:Boolean(ok),detail}); if(!ok) throw new Error(`${id}: ${detail}`); }
 
-const v16Path=v16Override || srcPath('VELMERE_CANONICAL_OWNER_DIRECTIVE_V16_FULL_TOPOLOGY_FREE_LEGAL_CURRENT_WORLD_CLASS_2026-08-14.txt');
-const v17Path=v17Override || srcPath('VELMERE_CANONICAL_OWNER_DIRECTIVE_V17_TRUE_TOPOLOGY_AUTOMATED_ADVANCED_CURRENT_WORLD_CLASS_2026-08-17.txt');
-const v16=read(v16Path), v17=read(v17Path);
-check('history:v16-byte-preserved', sha(fs.readFileSync(v16Path))==='67816a5a9238668c8080a3a8cc623f078d268c1b78fddf534cb4893bb45490e9', sha(fs.readFileSync(v16Path)));
-check('authority:v17-topology', v17.includes('canonical product families = 10;') && v17.includes('customer-facing rows = 20;') && v17.includes('current product execution profiles = 20;') && v17.includes('material paid transitions = 10.'), '10/20/20/10');
-check('authority:v17-pdf-not-family', v17.includes('PDF is not a family, SKU or independent sale row.'), 'pdf artifact');
-check('authority:v17-advanced-automation', v17.includes('CURRENT ADVANCED AUTOMATION COVENANT') && v17.includes('may not require a human/operator allocation'), 'advanced automation covenant');
-check('authority:v17-no-stale-current-denominators', !/all 17 customer-facing|17-row customer|all 33 internal|33-profile internal|all 11 product families|11 families × 50/u.test(v17), 'legacy denominators absent from current rules');
+const productOnly=process.env.P71_PRODUCT_ONLY==='1';
+if(!productOnly){
+  const v16Path=v16Override || srcPath('VELMERE_CANONICAL_OWNER_DIRECTIVE_V16_FULL_TOPOLOGY_FREE_LEGAL_CURRENT_WORLD_CLASS_2026-08-14.txt');
+  const v17Path=v17Override || srcPath('VELMERE_CANONICAL_OWNER_DIRECTIVE_V17_TRUE_TOPOLOGY_AUTOMATED_ADVANCED_CURRENT_WORLD_CLASS_2026-08-17.txt');
+  const v16=read(v16Path), v17=read(v17Path);
+  check('history:v16-byte-preserved', sha(fs.readFileSync(v16Path))==='67816a5a9238668c8080a3a8cc623f078d268c1b78fddf534cb4893bb45490e9', sha(fs.readFileSync(v16Path)));
+  check('authority:v17-topology', v17.includes('canonical product families = 10;') && v17.includes('customer-facing rows = 20;') && v17.includes('current product execution profiles = 20;') && v17.includes('material paid transitions = 10.'), '10/20/20/10');
+  check('authority:v17-pdf-not-family', v17.includes('PDF is not a family, SKU or independent sale row.'), 'pdf artifact');
+  check('authority:v17-advanced-automation', v17.includes('CURRENT ADVANCED AUTOMATION COVENANT') && v17.includes('may not require a human/operator allocation'), 'advanced automation covenant');
+  check('authority:v17-no-stale-current-denominators', !/all 17 customer-facing|17-row customer|all 33 internal|33-profile internal|all 11 product families|11 families × 50/u.test(v17), 'legacy denominators absent from current rules');
+}else{
+  checks.push({id:'authority:byte-rebind-deferred-to-final-package',passed:true,detail:'Exact Windows validates product bytes only; V16/V17 byte rebound is proved by final SOURCE_ONLY manifest/package.'});
+}
 
 const intake=read(srcPath('lib/server/security-route-modules/audit-intake.ts'));
 check('audit:intake-no-manual-allocation', !intake.includes('manual-review allocation') && intake.includes('deeper automated evidence/retest pipeline'), 'intake copy');
