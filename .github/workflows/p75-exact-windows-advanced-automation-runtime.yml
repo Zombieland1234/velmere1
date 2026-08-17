@@ -118,7 +118,7 @@ jobs:
           New-Item -ItemType Junction -Path 'p73r7-work/source' -Target $target | Out-Null
           $bound=(Resolve-Path 'p73r7-work/source').Path
           if(-not (Test-Path 'p73r7-work/source/lib/security/audit-adjudicated-authority-evidence.ts')){throw 'P73 harness source binding failed'}
-          [ordered]@{schemaVersion='velmere.p75r2.authority-harness-binding.v1';status='PASS';legacyHarnessPath='p73r7-work/source';target=$target;resolved=$bound;truthBoundary='Control-plane compatibility alias only. Product bytes are unchanged.'}|ConvertTo-Json -Depth 4|Set-Content p75-out/P75R2_AUTHORITY_HARNESS_BINDING.json -Encoding utf8
+          [ordered]@{schemaVersion='velmere.p75r3.authority-harness-binding.v1';status='PASS';legacyHarnessPath='p73r7-work/source';target=$target;resolved=$bound;truthBoundary='Control-plane compatibility alias only. Product bytes are unchanged.'}|ConvertTo-Json -Depth 4|Set-Content p75-out/P75R3_AUTHORITY_HARNESS_BINDING.json -Encoding utf8
 
       - name: Execute Advanced automation memory runtime
         shell: pwsh
@@ -130,7 +130,8 @@ jobs:
           $ErrorActionPreference='Stop'
           Push-Location p75-work/source
           try {
-            node ./node_modules/tsx/dist/cli.mjs ../../p75-runtime/test-p75-advanced-memory.ts | Tee-Object ../..\p75-out\P75_ADVANCED_MEMORY_RUNTIME.log
+            Copy-Item ../../p75-runtime/test-p75-advanced-memory.ts ../../p75-runtime/test-p75-advanced-memory.mts -Force
+            node ./node_modules/tsx/dist/cli.mjs ../../p75-runtime/test-p75-advanced-memory.mts | Tee-Object ../..\p75-out\P75_ADVANCED_MEMORY_RUNTIME.log
             if($LASTEXITCODE-ne0){throw 'P75 Advanced automation memory runtime failed'}
           } finally { Pop-Location }
 
@@ -159,19 +160,19 @@ jobs:
           if(Test-Path 'p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'){$x=Get-Content 'p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$authority='PASS'}}
           if(Test-Path 'p75-work/P75_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p75-work/P75_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
           [ordered]@{
-            schemaVersion='velmere.p75r2.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';
+            schemaVersion='velmere.p75r3.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';
             projectionFileCount=if($m){$m.projection.fileCount}else{0};projectionPayloadBytes=if($m){$m.projection.payloadBytes}else{0};projectionPathSetSha256=if($m){$m.projection.pathSetSha256}else{$null};projectionAggregateSha256=if($m){$m.projection.sourceContentAggregateSha256}else{$null};
             engineering=$eng;staticControl=$static;advancedMemoryRuntime=$memory;p73AuthorityRegression=$authority;
             deploymentGroundTruthCases=if($authority-eq'PASS'){1}else{0};currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;
             customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;
-            truthBoundary='P75R2 may credit only the Advanced automation architecture/runtime repair when exact engineering, static controls and memory runtime pass. P73 deployment identity is retained only when its authority regression passes. The P75R2 harness-path junction is control-plane only and changes no product bytes. No live durable Supabase deployment, current Ancient8 bytecode, vulnerability/exploitability, customer FINAL/PDF, rights, paid value, sale eligibility, LIVE or WORLD_CLASS is proved.'
-          }|ConvertTo-Json -Depth 8|Set-Content p75-out/P75R2_GITHUB_BOUNDARY.json -Encoding utf8
+            truthBoundary='P75R3 may credit only the Advanced automation architecture/runtime repair when exact engineering, static controls and memory runtime pass. P73 deployment identity is retained only when its authority regression passes. Harness compatibility changes are control-plane only and change no product bytes. No live durable Supabase deployment, current Ancient8 bytecode, vulnerability/exploitability, customer FINAL/PDF, rights, paid value, sale eligibility, LIVE or WORLD_CLASS is proved.'
+          }|ConvertTo-Json -Depth 8|Set-Content p75-out/P75R3_GITHUB_BOUNDARY.json -Encoding utf8
 
       - name: Upload P75 evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p75r2-advanced-automation-runtime-exact-windows
+          name: p75r3-advanced-automation-runtime-exact-windows
           path: p75-out
           if-no-files-found: error
           compression-level: 0
