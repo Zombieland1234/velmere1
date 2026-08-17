@@ -1,0 +1,59 @@
+name: P74 Conduit Blockscout Bytecode Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+    paths:
+      - 'p74-runtime/diagnose-p74-conduit-blockscout-quorum.mjs'
+      - '.github/workflows/p74-conduit-blockscout-bytecode-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p74-conduit-blockscout-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact diagnostic head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Execute zero-credit same-block bytecode diagnostic
+        shell: pwsh
+        env:
+          P74_RESULT_DIR: ${{ github.workspace }}\p74-conduit-diagnostic-out
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          New-Item -ItemType Directory -Force p74-conduit-diagnostic-out | Out-Null
+          node p74-runtime/diagnose-p74-conduit-blockscout-quorum.mjs | Tee-Object p74-conduit-diagnostic-out\P74_CONDUIT_BLOCKSCOUT.log
+          if ($LASTEXITCODE -ne 0) { throw 'diagnostic harness execution failed' }
+      - name: Capture strict zero-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $status='NOT_EXECUTED'
+          if(Test-Path 'p74-conduit-diagnostic-out/P74_CONDUIT_BLOCKSCOUT_BYTECODE_DIAGNOSTIC.json'){$x=Get-Content 'p74-conduit-diagnostic-out/P74_CONDUIT_BLOCKSCOUT_BYTECODE_DIAGNOSTIC.json' -Raw|ConvertFrom-Json;$status=$x.status}
+          [ordered]@{schemaVersion='velmere.p74.conduit-blockscout-diagnostic-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';diagnosticStatus=$status;parentP73R7Aggregate='b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b';productBytesChanged=$false;deploymentGroundTruthCredit=0;currentRuntimeBytecodeCredit=0;vulnerabilityGroundTruthCredit=0;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;truthBoundary='Diagnostic only. Even a byte-identical same-block result grants zero product/release credit until integrated into exact P73R7 product bytes and re-proven by exact Windows engineering plus live integration.'}|ConvertTo-Json -Depth 8|Set-Content p74-conduit-diagnostic-out/P74_DIAGNOSTIC_BOUNDARY.json -Encoding utf8
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p74-conduit-blockscout-bytecode-diagnostic
+          path: p74-conduit-diagnostic-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
