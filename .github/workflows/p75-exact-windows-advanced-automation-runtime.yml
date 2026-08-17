@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: p75-exact-windows-${{ github.ref }}
@@ -118,7 +119,7 @@ jobs:
           New-Item -ItemType Junction -Path 'p73r7-work/source' -Target $target | Out-Null
           $bound=(Resolve-Path 'p73r7-work/source').Path
           if(-not (Test-Path 'p73r7-work/source/lib/security/audit-adjudicated-authority-evidence.ts')){throw 'P73 harness source binding failed'}
-          [ordered]@{schemaVersion='velmere.p75r3.authority-harness-binding.v1';status='PASS';legacyHarnessPath='p73r7-work/source';target=$target;resolved=$bound;truthBoundary='Control-plane compatibility alias only. Product bytes are unchanged.'}|ConvertTo-Json -Depth 4|Set-Content p75-out/P75R3_AUTHORITY_HARNESS_BINDING.json -Encoding utf8
+          [ordered]@{schemaVersion='velmere.p75r4.authority-harness-binding.v1';status='PASS';legacyHarnessPath='p73r7-work/source';target=$target;resolved=$bound;truthBoundary='Control-plane compatibility alias only. Product bytes are unchanged.'}|ConvertTo-Json -Depth 4|Set-Content p75-out/P75R4_AUTHORITY_HARNESS_BINDING.json -Encoding utf8
 
       - name: Execute Advanced automation memory runtime
         shell: pwsh
@@ -160,20 +161,41 @@ jobs:
           if(Test-Path 'p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'){$x=Get-Content 'p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$authority='PASS'}}
           if(Test-Path 'p75-work/P75_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p75-work/P75_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
           [ordered]@{
-            schemaVersion='velmere.p75r3.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';
+            schemaVersion='velmere.p75r4.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';
             projectionFileCount=if($m){$m.projection.fileCount}else{0};projectionPayloadBytes=if($m){$m.projection.payloadBytes}else{0};projectionPathSetSha256=if($m){$m.projection.pathSetSha256}else{$null};projectionAggregateSha256=if($m){$m.projection.sourceContentAggregateSha256}else{$null};
             engineering=$eng;staticControl=$static;advancedMemoryRuntime=$memory;p73AuthorityRegression=$authority;
             deploymentGroundTruthCases=if($authority-eq'PASS'){1}else{0};currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;
             customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;
-            truthBoundary='P75R3 may credit only the Advanced automation architecture/runtime repair when exact engineering, static controls and memory runtime pass. P73 deployment identity is retained only when its authority regression passes. Harness compatibility changes are control-plane only and change no product bytes. No live durable Supabase deployment, current Ancient8 bytecode, vulnerability/exploitability, customer FINAL/PDF, rights, paid value, sale eligibility, LIVE or WORLD_CLASS is proved.'
-          }|ConvertTo-Json -Depth 8|Set-Content p75-out/P75R3_GITHUB_BOUNDARY.json -Encoding utf8
+            truthBoundary='P75R4 may credit only the Advanced automation architecture/runtime repair when exact engineering, static controls and memory runtime pass. P73 deployment identity is retained only when its authority regression passes. Harness compatibility changes are control-plane only and change no product bytes. No live durable Supabase deployment, current Ancient8 bytecode, vulnerability/exploitability, customer FINAL/PDF, rights, paid value, sale eligibility, LIVE or WORLD_CLASS is proved.'
+          }|ConvertTo-Json -Depth 8|Set-Content p75-out/P75R4_GITHUB_BOUNDARY.json -Encoding utf8
 
       - name: Upload P75 evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p75r3-advanced-automation-runtime-exact-windows
+          name: p75r4-advanced-automation-runtime-exact-windows
           path: p75-out
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
+
+      - name: Publish P75R4 run locator status
+        if: always()
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_JOB_STATUS: ${{ job.status }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $ok=$true
+          if($env:CURRENT_JOB_STATUS -ne 'success'){$ok=$false}
+          foreach($f in @('p75-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json','p75-out/P75_STATIC_CONTROL.json','p75-out/P75_ADVANCED_MEMORY_RUNTIME.json','p75-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json')){
+            if(-not(Test-Path $f)){$ok=$false;continue}
+            $j=Get-Content $f -Raw|ConvertFrom-Json
+            if($j.status -ne 'PASS'){$ok=$false}
+          }
+          $state=if($ok){'success'}else{'failure'}
+          $target="$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          $body=@{state=$state;target_url=$target;description="P75R4 exact Windows boundary $state";context='velmere/P75R4'}|ConvertTo-Json -Compress
+          $headers=@{Authorization="Bearer $env:GITHUB_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}
+          Invoke-RestMethod -Method Post -Uri "$env:GITHUB_API_URL/repos/$env:GITHUB_REPOSITORY/statuses/$env:GITHUB_SHA" -Headers $headers -Body $body -ContentType 'application/json' | Out-Null
