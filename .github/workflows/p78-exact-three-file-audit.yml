@@ -1,11 +1,6 @@
 name: P78 Exact P77 Three-File Audit
 
 on:
-  push:
-    branches:
-      - velmere-p78-real-audit-customer-final-20260818
-    paths-ignore:
-      - 'p78-results/**'
   workflow_dispatch:
 
 permissions:
@@ -112,24 +107,6 @@ jobs:
             live=$false
             truthBoundary='P78 diagnostic only. Failure is published as failure. No release numerator is promoted by inspection or by a partial run.'
           } | ConvertTo-Json -Depth 10 | Set-Content p78-out/P78_BOUNDARY.json -Encoding utf8
-
-      - name: Publish P78 diagnostic receipts even on failure
-        if: always()
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          New-Item -ItemType Directory -Force -Path p78-results | Out-Null
-          Copy-Item p78-out/P78_BOUNDARY.json p78-results/P78_BOUNDARY.json -Force
-          if(Test-Path 'p78-out/P78_THREE_FILE_AUDIT.json'){
-            Copy-Item p78-out/P78_THREE_FILE_AUDIT.json p78-results/P78_THREE_FILE_AUDIT.json -Force
-          }
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- p78-results
-          if(-not (git diff --cached --quiet)){
-            git commit -m 'P78 publish exact three-file audit outcome'
-            git push origin HEAD:velmere-p78-real-audit-customer-final-20260818
-          }
 
       - name: Upload P78 exact three-file audit evidence
         if: always()
