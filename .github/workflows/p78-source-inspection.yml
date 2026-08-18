@@ -1,0 +1,72 @@
+name: P78 Source Inspection Bootstrap
+
+on:
+  push:
+    branches:
+      - velmere-p78-source-inspection-20260818
+    paths-ignore:
+      - 'p78-inspection-results/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect-bootstrap:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout inspection branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Expand pinned P75 parent bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Expand pinned P77 support bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Capture exact extracted support inventory and scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p78-inspection-results | Out-Null
+          Get-ChildItem p77-runtime -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $rel=$_.FullName.Substring((Resolve-Path '.').Path.Length+1).Replace('\','/')
+            $sha=(Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$rel`t$($_.Length)`t$sha"
+          } | Set-Content p78-inspection-results/P78_P77_SUPPORT_INVENTORY.tsv -Encoding utf8
+          Get-ChildItem p77-runtime -Recurse -File -Include *.py,*.ps1 | Sort-Object FullName | ForEach-Object {
+            "===== $($_.FullName.Substring((Resolve-Path '.').Path.Length+1).Replace('\','/')) ====="
+            Get-Content $_.FullName -Raw
+          } | Set-Content p78-inspection-results/P78_P77_SUPPORT_SCRIPTS.txt -Encoding utf8
+          Get-ChildItem p75-runtime -Recurse -File -Include *.py,*.ps1 | Sort-Object FullName | ForEach-Object {
+            "===== $($_.FullName.Substring((Resolve-Path '.').Path.Length+1).Replace('\','/')) ====="
+            Get-Content $_.FullName -Raw
+          } | Set-Content p78-inspection-results/P78_P75_SUPPORT_SCRIPTS.txt -Encoding utf8
+
+      - name: Publish bootstrap inspection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78-inspection-results
+          if(-not (git diff --cached --quiet)){
+            git commit -m 'P78 publish support reconstruction inspection'
+            git push origin HEAD:velmere-p78-source-inspection-20260818
+          }
