@@ -1,0 +1,170 @@
+name: P78R2 Verified Static Evidence Source Proof
+
+on:
+  push:
+    branches:
+      - velmere-p78r2-verified-static-evidence-20260818
+    paths:
+      - 'p78-runtime/apply-p78r2-verified-static-evidence-handoff.py'
+      - 'p78-runtime/test-p78r2-static.py'
+      - 'p78-runtime/test-p78r2-runtime.mts'
+      - '.github/workflows/p78r2-source-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p78r2-source-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout P78R2 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Expand pinned P75 support
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          if len(parts)!=7: raise SystemExit(f'P75 part count mismatch:{len(parts)}')
+          raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+          sha=hashlib.sha256(raw).hexdigest(); expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          if sha!=expected: raise SystemExit(f'P75 support mismatch:{sha}')
+          z=Path('p75-runtime/p75-ci-bundle.zip');z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a:a.extractall('p75-runtime')
+          PY
+
+      - name: Expand pinned P77 support
+        run: |
+          set -euo pipefail
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Reconstruct exact P77R3 and P78R1 parent
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78r2-out
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78r2-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78r2-out/P75_PARENT_SOURCE_PATCH.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78r2-out/P76_SOURCE_PATCH.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r2-out/P76R2_SOURCE_PATCH.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78r2-out/P77_SOURCE_PATCH.json
+          python3 p78-runtime/apply-p78r1-audit-authority-customer-path.py --source-root p75-work/source --parent-manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --receipt p78r2-out/P78R1_SOURCE_PATCH.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json',encoding='utf-8'))['projection']
+          expected=(1601,21038083,'40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59','ea3c19a193d44055e00c3ca952d279f15b4df1813f977789e6ebcea203870a08')
+          got=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          if got!=expected: raise SystemExit(f'P78R1 parent identity mismatch:{got}')
+          print('PASS exact P78R1 parent',got)
+          PY
+
+      - name: Apply P78R2 private verified-static-evidence repair
+        run: |
+          set -euo pipefail
+          python3 p78-runtime/apply-p78r2-verified-static-evidence-handoff.py \
+            --source-root p75-work/source \
+            --parent-manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json \
+            --manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json \
+            --receipt p78r2-out/P78R2_SOURCE_PATCH.json
+
+      - name: Run P78R2 static controls
+        run: |
+          set -euo pipefail
+          python3 p78-runtime/test-p78r2-static.py \
+            --source-root p75-work/source \
+            --manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json \
+            --receipt p78r2-out/P78R2_STATIC_CONTROL.json
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin npm and install exact dependency closure
+        run: |
+          set -euo pipefail
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          cd p75-work/source
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          npm ls --all
+
+      - name: Semantic TypeScript and zero-warning ESLint
+        run: |
+          set -euo pipefail
+          cd p75-work/source
+          node ./node_modules/typescript/bin/tsc --noEmit --pretty false
+          node ./node_modules/eslint/bin/eslint.js app components lib store i18n.ts navigation.ts proxy.ts routing.ts tailwind.config.ts next.config.mjs --ext .js,.mjs,.cjs,.ts,.tsx --max-warnings 0
+
+      - name: Execute P78R2 private evidence runtime controls
+        env:
+          P78R2_RESULT_DIR: ${{ github.workspace }}/p78r2-out
+        run: |
+          set -euo pipefail
+          cd p75-work/source
+          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r2-runtime.mts
+
+      - name: Publish P78R2 exact source candidate receipts
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p p78r2-results
+          if [ -f p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json ]; then cp p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json p78r2-results/; fi
+          find p78r2-out -maxdepth 1 -type f -name '*.json' -exec cp {} p78r2-results/ \;
+          python3 - <<'PY'
+          import json, pathlib, os
+          out=pathlib.Path('p78r2-results/P78R2_SOURCE_WORKFLOW_BOUNDARY.json')
+          manifest=pathlib.Path('p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json')
+          projection=None
+          if manifest.exists(): projection=json.loads(manifest.read_text())['projection']
+          out.write_text(json.dumps({
+            'schemaVersion':'velmere.p78r2.source-workflow-boundary.v1',
+            'runId':os.environ.get('GITHUB_RUN_ID'),
+            'sha':os.environ.get('GITHUB_SHA'),
+            'parent':'P78R1/V17',
+            'candidate':'P78R2/V17',
+            'projection':projection,
+            'creditBoundary':{
+              'newVulnerabilityDetector':0,
+              'runtimeExploitability':0,
+              'customerFinal':'0/20',
+              'auditFinalPdf':'0/3',
+              'rights':'2/203',
+              'paidValue':'0/10',
+              'saleEligible':'0/20',
+              'live':False,
+            }
+          },indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78r2-results
+          if ! git diff --cached --quiet; then
+            git commit -m 'P78R2 publish verified static evidence source proof'
+            git push origin HEAD:velmere-p78r2-verified-static-evidence-20260818
+          fi
+
+      - name: Upload P78R2 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78r2-verified-static-evidence-source-proof
+          path: p78r2-out
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14
