@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - velmere-p78-real-audit-customer-final-20260818
+    paths-ignore:
+      - 'p78-results/**'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: p78-three-file-audit-${{ github.ref }}
@@ -22,7 +24,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Expand pinned P75 parent bundle
         shell: pwsh
@@ -100,6 +102,22 @@ jobs:
             live=$false
             truthBoundary='P78 diagnostic only. It audits exact P77R3 bytes for the authority→report→QA chain. No release numerator is promoted by inspection.'
           } | ConvertTo-Json -Depth 10 | Set-Content p78-out/P78_BOUNDARY.json -Encoding utf8
+
+      - name: Publish exact P78 diagnostic receipts to branch
+        if: success()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p78-results | Out-Null
+          Copy-Item p78-out/P78_THREE_FILE_AUDIT.json p78-results/P78_THREE_FILE_AUDIT.json -Force
+          Copy-Item p78-out/P78_BOUNDARY.json p78-results/P78_BOUNDARY.json -Force
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78-results/P78_THREE_FILE_AUDIT.json p78-results/P78_BOUNDARY.json
+          if(-not (git diff --cached --quiet)){
+            git commit -m 'P78 publish exact three-file audit receipts'
+            git push origin HEAD:velmere-p78-real-audit-customer-final-20260818
+          }
 
       - name: Upload P78 exact three-file audit evidence
         if: always()
