@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "velmere.p78r5.erc2771-context-authenticity-source-patch.v1",
+  "status": "PASS",
+  "parentProjection": {
+    "fileCount": 1602,
+    "payloadBytes": 21065534,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "280fa6aa59b39e52c695951664664d525d12ab46124becd8c1ac1ff3539d6432"
+  },
+  "projection": {
+    "fileCount": 1602,
+    "payloadBytes": 21069277,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "530e81064adafe6b8c2f3a7d31f485c85b0e5f7977c371369b721e88a8558cfe"
+  },
+  "changedFiles": [
+    {
+      "path": "lib/security/erc2771-multicall-source-detector.ts",
+      "beforeBytes": 22188,
+      "beforeSha256": "98f2dc5e278d55f2c32de44be1e665b5350213b97663de3f8dbe2c5dcfcc2728",
+      "afterBytes": 25931,
+      "afterSha256": "26eeaa3b3a4a73096f4da3986182aeb910c432f1f883f90094664d2f93fdc908"
+    }
+  ],
+  "rootCause": "P78R4 treated the ERC2771Context class name as sufficient meta-transaction evidence, so a custom class with plain msg.sender semantics could compose a false positive.",
+  "repair": [
+    "recognize exact OpenZeppelin metatx/ERC2771Context.sol import only from comment-stripped Solidity import statements in correlated units",
+    "otherwise require source-visible isTrustedForwarder(msg.sender) plus sender-suffix extraction semantics in the inherited ERC2771Context body",
+    "treat class-name-only context as blocked/fail-closed and expose an authenticity blocker instead of a vulnerability finding",
+    "preserve exact target/inheritance correlation and source-unit evidence scoping from P78R4"
+  ],
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "P78R5 is a source-authenticity precision repair. It can remove class-name false positives but does not prove population accuracy, deployed equivalence, runtime exploitability or customer/commercial release readiness."
+}
