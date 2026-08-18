@@ -28,7 +28,7 @@ jobs:
       - name: Checkout P78R1 control head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: true
 
       - name: Expand pinned P75 support
@@ -86,7 +86,7 @@ jobs:
             Get-ChildItem p78r1-windows-out -File -Filter '*.json' | Copy-Item -Destination p78r1-windows-results -Force
           }
           [ordered]@{
-            schemaVersion='velmere.p78r1.windows-workflow-boundary.v1'
+            schemaVersion='velmere.p78r1.windows-workflow-boundary.v2'
             runId='${{ github.run_id }}'
             sha='${{ github.sha }}'
             engineeringOutcome='${{ steps.engineering.outcome }}'
@@ -99,12 +99,15 @@ jobs:
             paidValue='0/10'
             saleEligible='0/20'
             live=$false
+            publishMode='fetch_rebase_fast_forward_safe'
           } | ConvertTo-Json -Depth 10 | Set-Content p78r1-windows-results/P78R1_WINDOWS_WORKFLOW_BOUNDARY.json -Encoding utf8
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- p78r1-windows-results
           if(-not (git diff --cached --quiet)){
             git commit -m 'P78R1 publish exact Windows engineering outcome'
+            git fetch origin velmere-p78-real-audit-customer-final-20260818
+            git rebase origin/velmere-p78-real-audit-customer-final-20260818
             git push origin HEAD:velmere-p78-real-audit-customer-final-20260818
           }
 
