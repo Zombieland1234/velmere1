@@ -1,0 +1,883 @@
+{
+  "schemaVersion": "velmere.p78.three-file-exact-source-audit.v1",
+  "status": "PASS",
+  "parent": {
+    "revision": "P77R3/V17",
+    "projectionFiles": 1601,
+    "projectionBytes": 21037233,
+    "projectionAggregateSha256": "354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032"
+  },
+  "files": {
+    "authority_evidence": {
+      "path": "lib/security/audit-adjudicated-authority-evidence.ts",
+      "bytes": 19142,
+      "sha256": "242868a1a746a6d256c01ce6f902929d964b97e42102644517d6e5b0bb042b54",
+      "lineCount": 414,
+      "exports": [
+        {
+          "line": 7,
+          "text": "export const PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID = \"pass5001-audit-adjudicated-authority-evidence-v1\" as const;"
+        },
+        {
+          "line": 9,
+          "text": "export type AuditAuthorityEvidenceState = \"confirmed\" | \"not_applicable\" | \"partial\" | \"blocked\" | \"error\";"
+        },
+        {
+          "line": 10,
+          "text": "export type AuditAuthorityReceiptClass = \"chain_official_docs\" | \"project_maintainer\";"
+        },
+        {
+          "line": 12,
+          "text": "export type AuditAuthorityReceipt = {"
+        },
+        {
+          "line": 33,
+          "text": "export type AuditAdjudicatedAuthorityEvidence = {"
+        },
+        {
+          "line": 207,
+          "text": "export function isStrictAuditAuthorityReceipt(value: AuditAuthorityReceipt) {"
+        },
+        {
+          "line": 221,
+          "text": "export function verifyAuditAdjudicatedAuthorityEvidence(value: AuditAdjudicatedAuthorityEvidence | null | undefined) {"
+        },
+        {
+          "line": 275,
+          "text": "export async function buildAuditAdjudicatedAuthorityEvidence(input: {"
+        }
+      ],
+      "signals": {
+        "vulnerability": {
+          "count": 1,
+          "hits": [
+            {
+              "line": 398,
+              "text": "truthBoundary: \"This evidence proves a deployment-identity contradiction, not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to the audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.\","
+            }
+          ]
+        },
+        "exploitability": {
+          "count": 1,
+          "hits": [
+            {
+              "line": 398,
+              "text": "truthBoundary: \"This evidence proves a deployment-identity contradiction, not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to the audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.\","
+            }
+          ]
+        },
+        "severity": {
+          "count": 3,
+          "hits": [
+            {
+              "line": 46,
+              "text": "severity: \"critical\" | null;"
+            },
+            {
+              "line": 261,
+              "text": "severity: null,"
+            },
+            {
+              "line": 388,
+              "text": "severity: \"critical\","
+            }
+          ]
+        },
+        "remediation": {
+          "count": 0,
+          "hits": []
+        },
+        "retest": {
+          "count": 0,
+          "hits": []
+        },
+        "ground_truth": {
+          "count": 16,
+          "hits": [
+            {
+              "line": 7,
+              "text": "export const PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID = \"pass5001-audit-adjudicated-authority-evidence-v1\" as const;"
+            },
+            {
+              "line": 33,
+              "text": "export type AuditAdjudicatedAuthorityEvidence = {"
+            },
+            {
+              "line": 34,
+              "text": "schemaVersion: typeof PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID;"
+            },
+            {
+              "line": 221,
+              "text": "export function verifyAuditAdjudicatedAuthorityEvidence(value: AuditAdjudicatedAuthorityEvidence | null | undefined) {"
+            },
+            {
+              "line": 222,
+              "text": "if (!value || value.schemaVersion !== PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID) return false;"
+            },
+            {
+              "line": 234,
+              "text": "function finalize(value: Omit<AuditAdjudicatedAuthorityEvidence, \"evidenceDigest\">): AuditAdjudicatedAuthorityEvidence {"
+            },
+            {
+              "line": 247,
+              "text": "}): AuditAdjudicatedAuthorityEvidence {"
+            },
+            {
+              "line": 249,
+              "text": "schemaVersion: PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID,"
+            },
+            {
+              "line": 275,
+              "text": "export async function buildAuditAdjudicatedAuthorityEvidence(input: {"
+            },
+            {
+              "line": 280,
+              "text": "}): Promise<AuditAdjudicatedAuthorityEvidence> {"
+            },
+            {
+              "line": 376,
+              "text": "schemaVersion: PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID,"
+            },
+            {
+              "line": 400,
+              "text": "if (!verifyAuditAdjudicatedAuthorityEvidence(value)) throw new Error(\"adjudicated_authority_evidence_self_verification_failed\");"
+            }
+          ]
+        },
+        "runtime_bytecode": {
+          "count": 4,
+          "hits": [
+            {
+              "line": 392,
+              "text": "customerLine: `Critical deployment-identity mismatch: official ${chain} documentation assigns ${reference.projectName} to ${documentedAlternateAddress}, while the project maintainer independently documents that the canonical ${contractAddress} deployment on ${chain} was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.`,"
+            },
+            {
+              "line": 393,
+              "text": "proPdfLine: `Deployment identity contradiction confirmed by two independent authorities. canonical=${contractAddress}; official_chain_documented=${documentedAlternateAddress}; repo=${reference.sourceRepo}; sourceCommit=${reference.sourceCommit}; p70Source=${reference.p70SourceSha256}; runtimeBytecode=current_unverified.`,"
+            },
+            {
+              "line": 397,
+              "text": "blockers: [\"current_runtime_bytecode_quorum_unavailable\"],"
+            },
+            {
+              "line": 398,
+              "text": "truthBoundary: \"This evidence proves a deployment-identity contradiction, not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to the audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.\","
+            }
+          ]
+        },
+        "evidence": {
+          "count": 30,
+          "hits": [
+            {
+              "line": 7,
+              "text": "export const PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID = \"pass5001-audit-adjudicated-authority-evidence-v1\" as const;"
+            },
+            {
+              "line": 9,
+              "text": "export type AuditAuthorityEvidenceState = \"confirmed\" | \"not_applicable\" | \"partial\" | \"blocked\" | \"error\";"
+            },
+            {
+              "line": 33,
+              "text": "export type AuditAdjudicatedAuthorityEvidence = {"
+            },
+            {
+              "line": 34,
+              "text": "schemaVersion: typeof PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID;"
+            },
+            {
+              "line": 35,
+              "text": "state: AuditAuthorityEvidenceState;"
+            },
+            {
+              "line": 56,
+              "text": "evidenceDigest: string;"
+            },
+            {
+              "line": 221,
+              "text": "export function verifyAuditAdjudicatedAuthorityEvidence(value: AuditAdjudicatedAuthorityEvidence | null | undefined) {"
+            },
+            {
+              "line": 222,
+              "text": "if (!value || value.schemaVersion !== PASS5001_AUDIT_ADJUDICATED_AUTHORITY_EVIDENCE_ID) return false;"
+            },
+            {
+              "line": 223,
+              "text": "const { evidenceDigest, ...unsigned } = value;"
+            },
+            {
+              "line": 224,
+              "text": "if (sha256Digest(canonicalJson(unsigned)) !== evidenceDigest) return false;"
+            },
+            {
+              "line": 234,
+              "text": "function finalize(value: Omit<AuditAdjudicatedAuthorityEvidence, \"evidenceDigest\">): AuditAdjudicatedAuthorityEvidence {"
+            },
+            {
+              "line": 235,
+              "text": "const evidenceDigest = sha256Digest(canonicalJson(value));"
+            }
+          ]
+        },
+        "freshness": {
+          "count": 0,
+          "hits": []
+        },
+        "rights": {
+          "count": 0,
+          "hits": []
+        },
+        "customer_final": {
+          "count": 0,
+          "hits": []
+        },
+        "audit_final_pdf": {
+          "count": 0,
+          "hits": []
+        },
+        "immutable_snapshot": {
+          "count": 0,
+          "hits": []
+        },
+        "human_review": {
+          "count": 0,
+          "hits": []
+        },
+        "fail_closed": {
+          "count": 3,
+          "hits": [
+            {
+              "line": 9,
+              "text": "export type AuditAuthorityEvidenceState = \"confirmed\" | \"not_applicable\" | \"partial\" | \"blocked\" | \"error\";"
+            },
+            {
+              "line": 165,
+              "text": "if (!decision.allowed || !decision.normalizedUrl) throw new Error(`authority_url_blocked:${operation}`);"
+            },
+            {
+              "line": 405,
+              "text": "state: error instanceof VelmereEgressPolicyError ? \"blocked\" : \"error\","
+            }
+          ]
+        }
+      }
+    },
+    "report_assembler": {
+      "path": "lib/security/audit-report-assembler.ts",
+      "bytes": 26736,
+      "sha256": "8ca934e68c0d432479f9faf25d5bcd1f54a157abeab80082bc89d9a6f3b171f0",
+      "lineCount": 492,
+      "exports": [
+        {
+          "line": 11,
+          "text": "export const PASS2578_AUDIT_REPORT_ASSEMBLER_ID = \"audit-report-assembler\" as const;"
+        },
+        {
+          "line": 13,
+          "text": "export type Pass2578ReportTier = \"basic\" | \"pro\" | \"advanced\";"
+        },
+        {
+          "line": 14,
+          "text": "export type Pass2578ReportSectionState = \"ready\" | \"partial\" | \"missing\" | \"blocked\" | \"manual_review\";"
+        },
+        {
+          "line": 15,
+          "text": "export type Pass2578ReportFindingSeverity = \"info\" | \"watch\" | \"elevated\" | \"critical\";"
+        },
+        {
+          "line": 17,
+          "text": "export type Pass2578ReportSection = {"
+        },
+        {
+          "line": 32,
+          "text": "export type Pass2578TopFinding = {"
+        },
+        {
+          "line": 42,
+          "text": "export type Pass2578VisualMergeContract = {"
+        },
+        {
+          "line": 53,
+          "text": "export type Pass2578AuditReportAssemblerReport = {"
+        },
+        {
+          "line": 250,
+          "text": "export function buildPass2578AuditReportAssemblerReport(input: AssemblerInput): Pass2578AuditReportAssemblerReport {"
+        }
+      ],
+      "signals": {
+        "vulnerability": {
+          "count": 0,
+          "hits": []
+        },
+        "exploitability": {
+          "count": 0,
+          "hits": []
+        },
+        "severity": {
+          "count": 8,
+          "hits": [
+            {
+              "line": 15,
+              "text": "export type Pass2578ReportFindingSeverity = \"info\" | \"watch\" | \"elevated\" | \"critical\";"
+            },
+            {
+              "line": 34,
+              "text": "severity: Pass2578ReportFindingSeverity;"
+            },
+            {
+              "line": 130,
+              "text": "function severityFor(state: Pass2578ReportSectionState, impact: number): Pass2578ReportFindingSeverity {"
+            },
+            {
+              "line": 177,
+              "text": "severity: severityFor(item.state, item.scoreImpact),"
+            },
+            {
+              "line": 190,
+              "text": "severity: riskFloor >= 85 ? \"critical\" : riskFloor >= 65 ? \"elevated\" : \"watch\","
+            }
+          ]
+        },
+        "remediation": {
+          "count": 0,
+          "hits": []
+        },
+        "retest": {
+          "count": 7,
+          "hits": [
+            {
+              "line": 238,
+              "text": "notes: \"Expose only bounded automated evidence-resolution and retest actions; never imply human review or operator sign-off.\","
+            },
+            {
+              "line": 433,
+              "text": "\"PASS2578 składa wynik audytu w jeden kontrakt: Basic prescreen, Pro rozszerzony PDF, Advanced zautomatyzowany evidence/retest appendix bez human review.\","
+            },
+            {
+              "line": 434,
+              "text": "\"PASS2578 baut das Audit in einen Vertrag: Basic Prescreen, erweitertes Pro-PDF und automatisierter Advanced Evidence/Retest-Anhang ohne Human Review.\","
+            },
+            {
+              "line": 435,
+              "text": "\"PASS2578 assembles one audit contract: Basic prescreen, extended Pro PDF, and an automated Advanced evidence/retest appendix with no human review.\","
+            },
+            {
+              "line": 467,
+              "text": "`Advanced wymaga ${advancedQueue.length} zautomatyzowanych działań evidence-resolution/retest przed kompletnym werdyktem informacyjnym.`,"
+            },
+            {
+              "line": 468,
+              "text": "`Advanced benötigt ${advancedQueue.length} automatisierte Evidence-Resolution/Retest-Aktionen vor einem vollständigen informativen Urteil.`,"
+            },
+            {
+              "line": 469,
+              "text": "`Advanced requires ${advancedQueue.length} automated evidence-resolution/retest actions before a complete informational verdict.`,"
+            }
+          ]
+        },
+        "ground_truth": {
+          "count": 0,
+          "hits": []
+        },
+        "runtime_bytecode": {
+          "count": 3,
+          "hits": [
+            {
+              "line": 350,
+              "text": "advancedAction: t(locale, \"Odtworzyć owner/proxy/mint/freeze/blacklist/tax z source/ABI/bytecode i potwierdzić niezależnym evidence przed oceną końcową.\", \"Owner/Proxy/Mint/Freeze/Blacklist/Tax aus Source/ABI/Bytecode reproduzieren und vor der Endbewertung mit unabhängiger Evidenz bestätigen.\", \"Reproduce owner/proxy/mint/freeze/blacklist/tax from source/ABI/bytecode and confirm with independent evidence before the final rating.\"),"
+            }
+          ]
+        },
+        "evidence": {
+          "count": 46,
+          "hits": [
+            {
+              "line": 27,
+              "text": "evidenceCount: number;"
+            },
+            {
+              "line": 84,
+              "text": "totalEvidence: number;"
+            },
+            {
+              "line": 151,
+              "text": "evidenceCount: number;"
+            },
+            {
+              "line": 159,
+              "text": "evidenceCount: clamp(args.evidenceCount, 0, 200),"
+            },
+            {
+              "line": 212,
+              "text": "\"Missing evidence is a first-class output, not hidden copy\","
+            },
+            {
+              "line": 226,
+              "text": "notes: \"Can be condensed visually, but keep state badges and missing evidence visible.\","
+            },
+            {
+              "line": 235,
+              "text": "slot: \"advanced_automated_evidence_actions\","
+            },
+            {
+              "line": 238,
+              "text": "notes: \"Expose only bounded automated evidence-resolution and retest actions; never imply human review or operator sign-off.\","
+            },
+            {
+              "line": 308,
+              "text": "advancedAction: t(locale, \"Przywrócić brakujące źródła/provider fallback i ponownie uruchomić evidence runtime.\", \"Fehlende Quellen/Provider-Fallbacks wiederherstellen und Evidence-Runtime erneut ausführen.\", \"Restore missing sources/provider fallbacks and rerun the evidence runtime.\"),"
+            },
+            {
+              "line": 309,
+              "text": "evidenceCount: input.providerRuntime?.summary.confirmed ?? 0,"
+            },
+            {
+              "line": 323,
+              "text": "evidenceCount: input.claimLedger?.summary.factSafeClaims ?? 0,"
+            },
+            {
+              "line": 336,
+              "text": "advancedAction: t(locale, \"Odświeżyć stale/expired lane’y i ponownie związać dowody przed artefaktem po TTL.\", \"Stale/Expired Lanes aktualisieren und die Evidenz nach TTL vor dem Artefakt erneut binden.\", \"Refresh stale/expired lanes and re-bind evidence before any artifact after TTL.\"),"
+            }
+          ]
+        },
+        "freshness": {
+          "count": 50,
+          "hits": [
+            {
+              "line": 7,
+              "text": "import type { Pass2575AuditSourceFreshnessReport } from \"./audit-source-freshness\";"
+            },
+            {
+              "line": 103,
+              "text": "sourceFreshness?: Pass2575AuditSourceFreshnessReport | null;"
+            },
+            {
+              "line": 208,
+              "text": "\"claim -> source -> grade -> freshness -> confidence -> verdict\","
+            },
+            {
+              "line": 277,
+              "text": "const freshnessState = sectionState("
+            },
+            {
+              "line": 278,
+              "text": "(input.sourceFreshness?.summary.fresh ?? 0) + (input.sourceFreshness?.summary.acceptable ?? 0),"
+            },
+            {
+              "line": 279,
+              "text": "input.sourceFreshness?.summary.stale ?? 0,"
+            },
+            {
+              "line": 280,
+              "text": "(input.sourceFreshness?.summary.expired ?? 0) + (input.sourceFreshness?.summary.unknown ?? 0),"
+            },
+            {
+              "line": 281,
+              "text": "input.sourceFreshness?.summary.blocked ?? 0,"
+            },
+            {
+              "line": 328,
+              "text": "id: \"freshness-ledger\","
+            },
+            {
+              "line": 330,
+              "text": "title: \"Source freshness ledger\","
+            },
+            {
+              "line": 331,
+              "text": "state: freshnessState,"
+            },
+            {
+              "line": 332,
+              "text": "scoreImpact: (input.sourceFreshness?.summary.expired ?? 0) * 5 + (input.sourceFreshness?.summary.stale ?? 0) * 3,"
+            }
+          ]
+        },
+        "rights": {
+          "count": 0,
+          "hits": []
+        },
+        "customer_final": {
+          "count": 0,
+          "hits": []
+        },
+        "audit_final_pdf": {
+          "count": 1,
+          "hits": [
+            {
+              "line": 322,
+              "text": "advancedAction: t(locale, \"Rozwiązać claimy partial/missing i związać drugi niezależny source przed finalnym PDF.\", \"Partial/Missing Claims auflösen und vor dem finalen PDF an eine zweite unabhängige Quelle binden.\", \"Resolve partial/missing claims and bind a second independent source before the final PDF.\"),"
+            }
+          ]
+        },
+        "immutable_snapshot": {
+          "count": 0,
+          "hits": []
+        },
+        "human_review": {
+          "count": 5,
+          "hits": [
+            {
+              "line": 211,
+              "text": "\"Advanced remains automated-only: no human-review or operator-signoff claim may be introduced by a deeper tier\","
+            },
+            {
+              "line": 238,
+              "text": "notes: \"Expose only bounded automated evidence-resolution and retest actions; never imply human review or operator sign-off.\","
+            },
+            {
+              "line": 433,
+              "text": "\"PASS2578 składa wynik audytu w jeden kontrakt: Basic prescreen, Pro rozszerzony PDF, Advanced zautomatyzowany evidence/retest appendix bez human review.\","
+            },
+            {
+              "line": 434,
+              "text": "\"PASS2578 baut das Audit in einen Vertrag: Basic Prescreen, erweitertes Pro-PDF und automatisierter Advanced Evidence/Retest-Anhang ohne Human Review.\","
+            },
+            {
+              "line": 435,
+              "text": "\"PASS2578 assembles one audit contract: Basic prescreen, extended Pro PDF, and an automated Advanced evidence/retest appendix with no human review.\","
+            }
+          ]
+        },
+        "fail_closed": {
+          "count": 37,
+          "hits": [
+            {
+              "line": 14,
+              "text": "export type Pass2578ReportSectionState = \"ready\" | \"partial\" | \"missing\" | \"blocked\" | \"manual_review\";"
+            },
+            {
+              "line": 82,
+              "text": "blocked: number;"
+            },
+            {
+              "line": 122,
+              "text": "function sectionState(ready: number, partial: number, missing: number, blocked: number, manual = 0): Pass2578ReportSectionState {"
+            },
+            {
+              "line": 124,
+              "text": "if (blocked > 0) return \"blocked\";"
+            },
+            {
+              "line": 132,
+              "text": "if (state === \"blocked\" || impact >= 18) return \"critical\";"
+            },
+            {
+              "line": 168,
+              "text": "if (state === \"blocked\") return t(locale, \"zablokowane\", \"blockiert\", \"blocked\");"
+            },
+            {
+              "line": 269,
+              "text": "input.providerRuntime?.summary.blocked ?? 0,"
+            },
+            {
+              "line": 275,
+              "text": "input.claimLedger?.summary.blocked ?? 0,"
+            },
+            {
+              "line": 281,
+              "text": "input.sourceFreshness?.summary.blocked ?? 0,"
+            },
+            {
+              "line": 287,
+              "text": "input.permissionParser?.summary.blocked ?? 0,"
+            },
+            {
+              "line": 294,
+              "text": "input.liquidityHolderRisk?.summary.blocked ?? 0,"
+            },
+            {
+              "line": 304,
+              "text": "scoreImpact: ((input.providerRuntime?.summary.blocked ?? 0) + (input.providerRuntime?.summary.timedOut ?? 0) + (input.providerRuntime?.summary.errors ?? 0)) * 5 || 8,"
+            }
+          ]
+        }
+      }
+    },
+    "qa_release_matrix": {
+      "path": "lib/security/audit-evidence-qa-release-gate-matrix.ts",
+      "bytes": 27154,
+      "sha256": "f7723e3daf9d70c881a39008d8f440f3927d541135f42533b384afae54f006fa",
+      "lineCount": 437,
+      "exports": [
+        {
+          "line": 13,
+          "text": "export const PASS2594_AUDIT_EVIDENCE_QA_RELEASE_GATE_MATRIX_ID = \"audit-evidence-qa-release-gate-matrix\" as const;"
+        },
+        {
+          "line": 15,
+          "text": "export type Pass2594QaStatus = \"pass\" | \"watch\" | \"fail\" | \"blocked\" | \"operator_review\";"
+        },
+        {
+          "line": 16,
+          "text": "export type Pass2594QaLayer = \"basic\" | \"pro_pdf\" | \"advanced\" | \"delivery\" | \"score\" | \"source\" | \"visual_merge\";"
+        },
+        {
+          "line": 18,
+          "text": "export type Pass2594QaGate = {"
+        },
+        {
+          "line": 35,
+          "text": "export type Pass2594QaRow = {"
+        },
+        {
+          "line": 41,
+          "text": "export type Pass2594AuditEvidenceQaReleaseGateMatrixReport = {"
+        },
+        {
+          "line": 164,
+          "text": "export function buildPass2594AuditEvidenceQaReleaseGateMatrixReport(input: BuilderInput): Pass2594AuditEvidenceQaReleaseGateMatrixReport {"
+        }
+      ],
+      "signals": {
+        "vulnerability": {
+          "count": 0,
+          "hits": []
+        },
+        "exploitability": {
+          "count": 0,
+          "hits": []
+        },
+        "severity": {
+          "count": 15,
+          "hits": [
+            {
+              "line": 23,
+              "text": "severity: \"low\" | \"medium\" | \"high\" | \"critical\";"
+            },
+            {
+              "line": 131,
+              "text": "const severity = gate.severity === \"critical\" ? 1.25 : gate.severity === \"high\" ? 1.1 : gate.severity === \"medium\" ? 1 : 0.75;"
+            },
+            {
+              "line": 132,
+              "text": "return sum + value * severity;"
+            },
+            {
+              "line": 193,
+              "text": "severity: \"critical\","
+            },
+            {
+              "line": 211,
+              "text": "severity: conflicts?.summary.blockingConflicts ? \"critical\" : \"high\","
+            },
+            {
+              "line": 229,
+              "text": "severity: \"high\","
+            },
+            {
+              "line": 247,
+              "text": "severity: \"critical\","
+            },
+            {
+              "line": 265,
+              "text": "severity: \"critical\","
+            },
+            {
+              "line": 283,
+              "text": "severity: \"high\","
+            },
+            {
+              "line": 301,
+              "text": "severity: \"high\","
+            },
+            {
+              "line": 319,
+              "text": "severity: \"critical\","
+            },
+            {
+              "line": 339,
+              "text": "const criticalBlockers = gates.filter((item) => item.severity === \"critical\" && (item.status === \"blocked\" || item.status === \"fail\" || item.blocksAdvancedFinalSign)).length;"
+            }
+          ]
+        },
+        "remediation": {
+          "count": 0,
+          "hits": []
+        },
+        "retest": {
+          "count": 0,
+          "hits": []
+        },
+        "ground_truth": {
+          "count": 0,
+          "hits": []
+        },
+        "runtime_bytecode": {
+          "count": 0,
+          "hits": []
+        },
+        "evidence": {
+          "count": 39,
+          "hits": [
+            {
+              "line": 8,
+              "text": "import type { Pass2590RiskFormulaEvidenceWeightingContractReport } from \"./risk-formula-evidence-weighting-contract\";"
+            },
+            {
+              "line": 11,
+              "text": "import type { Pass2593EvidenceNarrativeClaimLedgerExplainabilityReport } from \"./evidence-narrative-claim-ledger-explainability\";"
+            },
+            {
+              "line": 13,
+              "text": "export const PASS2594_AUDIT_EVIDENCE_QA_RELEASE_GATE_MATRIX_ID = \"audit-evidence-qa-release-gate-matrix\" as const;"
+            },
+            {
+              "line": 27,
+              "text": "evidenceRefs: string[];"
+            },
+            {
+              "line": 41,
+              "text": "export type Pass2594AuditEvidenceQaReleaseGateMatrixReport = {"
+            },
+            {
+              "line": 42,
+              "text": "passId: typeof PASS2594_AUDIT_EVIDENCE_QA_RELEASE_GATE_MATRIX_ID;"
+            },
+            {
+              "line": 102,
+              "text": "riskFormulaEvidenceWeightingContract?: Pass2590RiskFormulaEvidenceWeightingContractReport | null;"
+            },
+            {
+              "line": 105,
+              "text": "evidenceNarrativeClaimLedgerExplainability?: Pass2593EvidenceNarrativeClaimLedgerExplainabilityReport | null;"
+            },
+            {
+              "line": 140,
+              "text": "evidenceRefs: uniq(args.evidenceRefs),"
+            },
+            {
+              "line": 164,
+              "text": "export function buildPass2594AuditEvidenceQaReleaseGateMatrixReport(input: BuilderInput): Pass2594AuditEvidenceQaReleaseGateMatrixReport {"
+            },
+            {
+              "line": 173,
+              "text": "const formula = input.riskFormulaEvidenceWeightingContract;"
+            },
+            {
+              "line": 176,
+              "text": "const narrative = input.evidenceNarrativeClaimLedgerExplainability;"
+            }
+          ]
+        },
+        "freshness": {
+          "count": 8,
+          "hits": [
+            {
+              "line": 7,
+              "text": "import type { Pass2589SourceFreshnessRecheckOrchestratorReport } from \"./source-freshness-recheck-orchestrator\";"
+            },
+            {
+              "line": 101,
+              "text": "sourceFreshnessRecheckOrchestrator?: Pass2589SourceFreshnessRecheckOrchestratorReport | null;"
+            },
+            {
+              "line": 172,
+              "text": "const recheck = input.sourceFreshnessRecheckOrchestrator;"
+            },
+            {
+              "line": 288,
+              "text": "operatorLine: \"No silent mutation: stale source changes must create a new version, diff, or frozen receipt state.\","
+            },
+            {
+              "line": 291,
+              "text": "fixAction: \"Schedule re-check, freeze stale report, or issue new version with diff.\","
+            },
+            {
+              "line": 389,
+              "text": "\"Pro PDF must show conflict/freshness/claim caveats when they affect confidence.\","
+            }
+          ]
+        },
+        "rights": {
+          "count": 0,
+          "hits": []
+        },
+        "customer_final": {
+          "count": 0,
+          "hits": []
+        },
+        "audit_final_pdf": {
+          "count": 0,
+          "hits": []
+        },
+        "immutable_snapshot": {
+          "count": 0,
+          "hits": []
+        },
+        "human_review": {
+          "count": 0,
+          "hits": []
+        },
+        "fail_closed": {
+          "count": 17,
+          "hits": [
+            {
+              "line": 15,
+              "text": "export type Pass2594QaStatus = \"pass\" | \"watch\" | \"fail\" | \"blocked\" | \"operator_review\";"
+            },
+            {
+              "line": 59,
+              "text": "blocked: number;"
+            },
+            {
+              "line": 150,
+              "text": "if (hardBlock) return \"blocked\";"
+            },
+            {
+              "line": 160,
+              "text": "if (status === \"blocked\") return t(locale, \"zablokowane\", \"blockiert\", \"blocked\");"
+            },
+            {
+              "line": 182,
+              "text": "const pdfOk = Boolean(pdf?.summary.canRenderCustomerPdf && !pdf.summary.debugCopyBlocked);"
+            },
+            {
+              "line": 251,
+              "text": "proPdfLine: `PDF readiness ${pdf?.summary.proPdfReadiness ?? 0}/100; customer-safe ${pdf?.summary.customerSafeReadiness ?? 0}/100; debug blocked ${pdf?.summary.debugCopyBlocked ?? \"n/a\"}.`,"
+            },
+            {
+              "line": 323,
+              "text": "proPdfLine: `Advanced deterministic delivery ${delivery?.summary.canDeliverAdvancedPrivately ? \"ready\" : \"blocked\"}; delivery readiness ${delivery?.summary.deliveryReadiness ?? 0}/100; next ${delivery?.summary.nextBlockingGate ?? \"missing\"}.`,"
+            },
+            {
+              "line": 326,
+              "text": "failureRefs: advancedOk ? [] : [delivery?.summary.nextBlockingGate ?? \"deterministic Advanced delivery blocked\"],"
+            },
+            {
+              "line": 337,
+              "text": "const blocked = gates.filter((item) => item.status === \"blocked\").length;"
+            },
+            {
+              "line": 339,
+              "text": "const criticalBlockers = gates.filter((item) => item.severity === \"critical\" && (item.status === \"blocked\" || item.status === \"fail\" || item.blocksAdvancedFinalSign)).length;"
+            },
+            {
+              "line": 344,
+              "text": "const topReleaseBlocker = gates.find((item) => item.status === \"blocked\" || item.status === \"fail\" || item.blocksAdvancedFinalSign)?.fixAction ?? t(locale, \"Kontynuować live provider QA i visual merge.\", \"Live-Provider-QA und Visual-Merge fortsetzen.\", \"Continue live provider QA and visual merge.\");"
+            },
+            {
+              "line": 356,
+              "text": "operatorRule: \"Advanced delivery is blocked until deterministic payment, scope, evidence sufficiency, redaction, conflict arbitration, replay and private-delivery gates pass; optional QA notes are non-gating.\","
+            }
+          ]
+        }
+      }
+    }
+  },
+  "crossFileObservations": [
+    "Authority layer explicitly models runtime-bytecode state; inspect whether current quorum can be satisfied before exploitability promotion.",
+    "Report assembler does not visibly bind both remediation and retest semantics in this three-file slice; P78 must verify the end-to-end finding→fix→retest chain elsewhere or repair it.",
+    "QA release matrix has no literal Customer FINAL marker; P78 must verify that final eligibility is nevertheless derived from deterministic evidence/artifact gates rather than a cosmetic status flag."
+  ],
+  "releaseCredit": {
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "Diagnostic audit only. Exact-byte inspection does not itself prove vulnerability/exploitability ground truth, Customer FINAL, Audit FINAL PDF, rights, paid value, sale eligibility, LIVE or WORLD_CLASS."
+}
