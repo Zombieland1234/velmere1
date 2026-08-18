@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "velmere.p78r3.erc2771-multicall-source-pattern-source-patch.v1",
+  "status": "PASS",
+  "parentProjection": {
+    "fileCount": 1601,
+    "payloadBytes": 21040272,
+    "pathSetSha256": "40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59",
+    "sourceContentAggregateSha256": "7f161ad862642233a7f7984bd681353f4a1aced3a0f14e1492400a4609c0146f"
+  },
+  "projection": {
+    "fileCount": 1602,
+    "payloadBytes": 21059203,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "6570f1ef462dcc2d84daf30576a84b2acc518d6ec16f6030b7f670280780b79f"
+  },
+  "changedFiles": [
+    {
+      "path": "lib/security/audit-claim-ledger.ts",
+      "beforeBytes": 16238,
+      "beforeSha256": "1834f057f666198c3a0957163f596ce3f86cfbe73f5bfb6ae59078decfe2fa23",
+      "afterBytes": 17932,
+      "afterSha256": "a8d5ea411634732118d76d19b64d7ab0d5ed51096adef58b6857443911ce9d3b"
+    },
+    {
+      "path": "lib/security/audit-report-assembler.ts",
+      "beforeBytes": 26736,
+      "beforeSha256": "8ca934e68c0d432479f9faf25d5bcd1f54a157abeab80082bc89d9a6f3b171f0",
+      "afterBytes": 27481,
+      "afterSha256": "ce0140a0fa0b536607d715a605f47d99a714b2c3c7fbdb84497477fecdd7cf16"
+    },
+    {
+      "path": "lib/security/audit-watch-post-handler.ts",
+      "beforeBytes": 40441,
+      "beforeSha256": "50d4a1585186f3c4fe716f45fdec2ddabf409396d13e5e5d6e9df277b6c54546",
+      "afterBytes": 40880,
+      "afterSha256": "38302f7cec34e6dea91d5fdad106a79dd72df6b6adb44a3cff1ac32801b954b1"
+    },
+    {
+      "path": "lib/security/erc2771-multicall-source-detector.ts",
+      "beforeBytes": null,
+      "beforeSha256": null,
+      "afterBytes": 16053,
+      "afterSha256": "1ddc6c380edc01e73b5d36394c6f659aa9c37711c408607a5b4bfac38397e6be"
+    }
+  ],
+  "semanticRepairs": [
+    "new detector consumes only exact identity+chain+digest-bound verified static source",
+    "Etherscan plain Solidity and standard-json/double-brace source containers are bounded and decoded",
+    "comments and string literals are excluded from pattern matching",
+    "confirmed source pattern maps into claim ledger with evidence refs, exploitability boundary, remediation and retest",
+    "report assembler surfaces the source-pattern finding without applying an adverse risk floor",
+    "reachable audit handler executes detector before claim ledger and passes the structured result"
+  ],
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "P78R3 may confirm only a verified-source vulnerability pattern. It cannot claim deployed reachability/runtime exploitability or promote FINAL/PDF/value/rights/sale/LIVE by itself."
+}
