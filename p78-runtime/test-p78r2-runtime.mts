@@ -11,8 +11,10 @@ import { buildPass2583ContractSourceAbiExtractionReport } from "../p75-work/sour
 
 const outDir = process.env.P78R2_RESULT_DIR ?? process.cwd();
 const address = "0x1111111111111111111111111111111111111111";
+const rawOnlySentinel = "P78_RAW_SOURCE_SENTINEL_7C4D8E2A";
 const sourceText = `pragma solidity ^0.8.20;
-contract P78PrivateSourceMarker {
+// ${rawOnlySentinel}
+contract P78InternalSourceContract {
   address public owner;
   modifier onlyOwner() { require(msg.sender == owner, "owner"); _; }
   function pause() external onlyOwner {}
@@ -45,7 +47,7 @@ pass4824AuditProviderRuntimeClientDependencies.brokeredEgressFetch = (async (inp
       result: [{
         SourceCode: sourceText,
         ABI: abiText,
-        ContractName: "P78PrivateSourceMarker",
+        ContractName: "P78PublicMetadataName",
         CompilerVersion: "v0.8.20+commit.a1b79de6",
         Proxy: "0",
         Implementation: "",
@@ -97,8 +99,11 @@ try {
   if (etherscanFetchCount !== 2) throw new Error(`p78r2_etherscan_fetch_count:${etherscanFetchCount}`);
 
   const publicReportJson = JSON.stringify(execution.report);
-  if (publicReportJson.includes("P78PrivateSourceMarker") || publicReportJson.includes("function pause() external onlyOwner")) {
+  if (publicReportJson.includes(rawOnlySentinel) || publicReportJson.includes("function pause() external onlyOwner")) {
     throw new Error("p78r2_raw_source_leaked_into_public_provider_report");
+  }
+  if (!publicReportJson.includes("P78PublicMetadataName")) {
+    throw new Error("p78r2_expected_safe_contract_metadata_missing");
   }
   if ((execution.report as unknown as Record<string, unknown>).verifiedStaticEvidence !== undefined) {
     throw new Error("p78r2_private_evidence_property_leaked_into_public_report_object");
@@ -109,7 +114,8 @@ try {
   if (fetchCount !== countBeforeLegacyRead) {
     throw new Error(`p78r2_legacy_report_caused_duplicate_fetch:${countBeforeLegacyRead}:${fetchCount}`);
   }
-  if (JSON.stringify(legacyReport).includes("P78PrivateSourceMarker")) {
+  const legacyJson = JSON.stringify(legacyReport);
+  if (legacyJson.includes(rawOnlySentinel) || legacyJson.includes("function pause() external onlyOwner")) {
     throw new Error("p78r2_legacy_report_raw_source_leak");
   }
 
@@ -156,13 +162,13 @@ try {
   }
 
   const receipt = {
-    schemaVersion: "velmere.p78r2.verified-static-evidence-handoff-runtime.v1",
+    schemaVersion: "velmere.p78r2.verified-static-evidence-handoff-runtime.v2",
     status: "PASS",
     checks: [
       "single_provider_execution_returns_public_report_and_private_static_evidence",
       "private_evidence_requires_exact_contract_identity_and_content_receipt",
       "private_evidence_binds_chain_provider_observation_time_and_digest",
-      "public_provider_report_contains_no_raw_source_or_private_evidence_property",
+      "public_provider_report_contains_safe_contract_metadata_but_no_raw_source_or_private_evidence_property",
       "legacy_report_builder_reuses_same_cached_execution_without_duplicate_fetch",
       "permission_parser_consumes_private_verified_source",
       "source_abi_extraction_consumes_private_verified_source_and_abi",
