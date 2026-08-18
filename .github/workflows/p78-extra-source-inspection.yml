@@ -1,0 +1,76 @@
+name: P78 Extra Audit Source Inspection
+
+on:
+  push:
+    branches:
+      - velmere-p78-source-inspection-20260818
+    paths:
+      - '.github/workflows/p78-extra-source-inspection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect-extra:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Expand support and reconstruct exact P77 source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+          expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          if len(parts)!=7 or hashlib.sha256(raw).hexdigest()!=expected: raise SystemExit('P75 support mismatch')
+          z=Path('p75-runtime/p75-ci-bundle.zip');z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a:a.extractall('p75-runtime')
+          PY
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78-extra-out
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78-extra-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78-extra-out/P75.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78-extra-out/P76.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78-extra-out/P76R2.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78-extra-out/P77.json
+
+      - name: Publish exact extra source files
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil,hashlib,json
+          src=Path('p75-work/source'); out=Path('p78-inspection-results/extra'); out.mkdir(parents=True,exist_ok=True)
+          paths=[
+            'lib/security/contract-source-abi-extraction.ts',
+            'lib/security/audit-permission-parser.ts',
+            'lib/security/audit-source-quorum-runtime.ts',
+            'package.json',
+            'tsconfig.json',
+          ]
+          rows=[]
+          for rel in paths:
+            p=src/rel
+            if not p.is_file(): raise SystemExit(f'missing {rel}')
+            target=out/rel; target.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(p,target)
+            b=p.read_bytes(); rows.append({'path':rel,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          (out/'P78_EXTRA_SOURCE_MANIFEST.json').write_text(json.dumps({'parent':'P77R3/V17','aggregate':'354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032','files':rows},indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78-inspection-results/extra
+          if ! git diff --cached --quiet; then
+            git commit -m 'P78 publish exact source acquisition internals'
+            git push origin HEAD:velmere-p78-source-inspection-20260818
+          fi
