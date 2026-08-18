@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "velmere.p78.real-target-ground-truth-probe.v1",
+  "caseId": "P78-GT-THIRDWEB-ERC2771-MULTICALL-2023",
+  "status": "PASS_BOUNDED_GROUND_TRUTH_PROBE",
+  "target": {
+    "repository": "thirdweb-dev/contracts",
+    "vulnerableCommit": "745afa8537dbc577f72bfa75a718a2b781d0379d",
+    "fixedCommit": "efd2218ff9cbbfe326c33ce661042d7c19c17317",
+    "patchParentBound": true,
+    "scope": [
+      "contracts/extension/Multicall.sol",
+      "contracts/infra/TWFactory.sol",
+      "src/test/Multicall.t.sol"
+    ]
+  },
+  "classification": {
+    "vulnerabilityFamily": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+    "impactClass": "AUTHORIZATION_IDENTITY_SPOOFING",
+    "severity": "UNADJUDICATED_FOR_VELMERE",
+    "exploitability": "NOT_YET_RUNTIME_REPRODUCED_BY_VELMERE"
+  },
+  "assets": {
+    "vulnerableMulticall": {
+      "url": "https://raw.githubusercontent.com/thirdweb-dev/contracts/745afa8537dbc577f72bfa75a718a2b781d0379d/contracts/extension/Multicall.sol",
+      "bytes": 1016,
+      "gitBlobSha1": "25e51cdf8505723f586b6f6320456441a39149dc",
+      "sha256": "d3507b964169c50f878881b1fbafc87b8316616994bc8e85312cab578eff4f81"
+    },
+    "fixedMulticall": {
+      "url": "https://raw.githubusercontent.com/thirdweb-dev/contracts/efd2218ff9cbbfe326c33ce661042d7c19c17317/contracts/extension/Multicall.sol",
+      "bytes": 1435,
+      "gitBlobSha1": "043d6c3c02610294236945e0abeb8c60c3319b22",
+      "sha256": "78167133f656827b1b76bf6c86456fe917dc7b60d3c27ccd8e4c3169085e5e9c"
+    },
+    "vulnerableTWFactory": {
+      "url": "https://raw.githubusercontent.com/thirdweb-dev/contracts/745afa8537dbc577f72bfa75a718a2b781d0379d/contracts/infra/TWFactory.sol",
+      "bytes": 6228,
+      "gitBlobSha1": "7d88d1636c7467702dd5f1297163087a0b111df8",
+      "sha256": "d270d7968366c8fec8ed404536778093080c139ad22923cb6915f2e7834f1e8f"
+    },
+    "fixedTWFactory": {
+      "url": "https://raw.githubusercontent.com/thirdweb-dev/contracts/efd2218ff9cbbfe326c33ce661042d7c19c17317/contracts/infra/TWFactory.sol",
+      "bytes": 6239,
+      "gitBlobSha1": "0e47d7114119ca1ea9afd73d046ba2847aef7c16",
+      "sha256": "816c1896093f70680f37a0a5c8a4a254cd3794fabf4cfcddfb3ca184e3ce46cf"
+    },
+    "fixedMulticallTests": {
+      "url": "https://raw.githubusercontent.com/thirdweb-dev/contracts/efd2218ff9cbbfe326c33ce661042d7c19c17317/src/test/Multicall.t.sol",
+      "bytes": 10092,
+      "gitBlobSha1": "3b9bbfb931e7f5c0cd62d1dde37f164177aabf6d",
+      "sha256": "f3191a4ae960a453c683c62a4bcde338de5d27b4b60b045cd3f7aa2e00169817"
+    }
+  },
+  "structuralGroundTruth": {
+    "vulnerableDirectDelegateCall": true,
+    "vulnerableHasNoForwarderPreservation": true,
+    "vulnerableFactoryCombinesMulticallAndERC2771": true,
+    "vulnerableFactoryUsesContextForRoleChecks": true,
+    "vulnerableFactoryOverrideOmitsMulticall": true,
+    "fixedCapturesLogicalSender": true,
+    "fixedDetectsForwarderContext": true,
+    "fixedPreservesLogicalSenderAcrossDelegateCall": true,
+    "fixedFactoryOverrideIncludesMulticall": true,
+    "fixedHasSpoofNegativeControl": true,
+    "fixedHasRoleProtectedTokenSpoofNegativeControl": true
+  },
+  "patchEvidence": {
+    "patchCommitMessage": "Patch extension/Multicall (#588)\n\n* Patch: special handling for multicall via forwarder\r\n\r\n* Fix build errors\r\n\r\n* Use OpenZeppelin 4.9.3 in lib/Address.sol\r\n\r\n* Test for multicall use with and without forwarder\r\n\r\n* Break out test cases\r\n\r\n* add test case with TokenERC721 usage\r\n\r\n* use ERC2771 context _msgSender and _msgData implementation",
+    "parent": "745afa8537dbc577f72bfa75a718a2b781d0379d"
+  },
+  "externalPointers": {
+    "openZeppelinIssue4791": {
+      "url": "https://github.com/OpenZeppelin/openzeppelin-contracts/issues/4791",
+      "bodySha256": "12d31eba5066b8d88d5220ea2358b62c8875e1596433f6ef7538ee8c4c8fa62c",
+      "role": "INDEPENDENT_DISCLOSURE_POINTER_NOT_RUNTIME_REPRODUCTION"
+    },
+    "openGSNIssue1008": {
+      "url": "https://github.com/opengsn/gsn/issues/1008",
+      "bodySha256": "3d8cd834746d17198b360c0887ca879a9ad2339c861cf47a7d0c6853ab45f42f",
+      "role": "ECOSYSTEM_CORROBORATION_ONLY_EXPLICITLY_NOT_REPRODUCED"
+    }
+  },
+  "rightsBoundary": "Public Apache-2.0 target source is used for internal security evaluation. This receipt does not decide customer redistribution/display rights for external text or source.",
+  "creditBoundary": {
+    "velmereDetectorExecuted": false,
+    "velmereFindingAdjudicated": false,
+    "velmereRemediationRetestExecuted": false,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "nextAcceptanceTest": "Run the exact P77R3/P78 Audit analyzer against the vulnerable commit and fixed negative control on matched inputs; require vulnerable detection, fixed abstention/no false positive, evidence-bound exploitability reasoning, remediation mapping and retest before any Customer FINAL credit."
+}
