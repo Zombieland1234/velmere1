@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "velmere.p78r6.oz-import-symbol-binding-diagnostic.v1",
+  "status": "MEASURED",
+  "case": "real_oz_erc2771_import_aliased_but_target_inherits_unrelated_local_erc2771context",
+  "expectedSafeInterpretation": "blocked_or_not_detected_because_the_imported_oz_symbol_is_not_the_inherited_ERC2771Context_symbol",
+  "observedState": "confirmed_source_pattern",
+  "falsePositiveObserved": true,
+  "contextAuthenticity": {
+    "state": "verified_openzeppelin_import",
+    "evidenceUnitIds": [
+      "verified-source.sol"
+    ]
+  },
+  "correlation": {
+    "targetSelection": "etherscan_contract_name",
+    "targetContractName": "AliasDecoyTarget",
+    "analyzedContractNames": [
+      "AliasDecoyTarget",
+      "ERC2771Context"
+    ],
+    "sourceUnitIds": [
+      "verified-source.sol"
+    ]
+  },
+  "signals": {
+    "erc2771LogicalSenderContext": true,
+    "arbitrarySelfDelegatecallBatch": true,
+    "authorizationUsesLogicalSender": true,
+    "logicalSenderPreservedAcrossDelegatecall": false
+  },
+  "sourceFacts": {
+    "realOzImportExists": true,
+    "importedLocalSymbolName": "OZERC2771Context",
+    "targetInheritedBaseName": "ERC2771Context",
+    "localErc2771MsgSenderIsPlainMsgSender": true
+  },
+  "truthBoundary": "Diagnostic only. A confirmed finding demonstrates that an authentic import path is insufficient unless the imported local symbol is the same symbol actually inherited by the target closure. No accuracy or exploitability credit is granted.",
+  "zeroFakeCredit": {
+    "formalDetectorAccuracy": "WITHHELD",
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  }
+}
