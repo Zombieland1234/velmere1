@@ -1,0 +1,59 @@
+name: P77 Run Locator
+
+on:
+  push:
+    branches:
+      - velmere-p77-deterministic-final-delivery-20260818
+
+permissions:
+  contents: read
+  actions: read
+  statuses: write
+
+jobs:
+  locate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Locate exact P77 run and publish status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
+          API: ${{ github.api_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow='p77-exact-windows-deterministic-final-delivery.yml'
+          run_url=''
+          run_api=''
+          for i in $(seq 1 60); do
+            body="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$API/repos/$REPO/actions/workflows/$workflow/runs?branch=$REF_NAME&event=push&per_page=20")"
+            run_api="$(printf '%s' "$body" | python -c 'import json,sys,os; x=json.load(sys.stdin); sha=os.environ["SHA"]; print(next((r["url"] for r in x.get("workflow_runs",[]) if r.get("head_sha")==sha),""))')"
+            run_url="$(printf '%s' "$body" | python -c 'import json,sys,os; x=json.load(sys.stdin); sha=os.environ["SHA"]; print(next((r["html_url"] for r in x.get("workflow_runs",[]) if r.get("head_sha")==sha),""))')"
+            if [ -n "$run_api" ] && [ -n "$run_url" ]; then break; fi
+            sleep 5
+          done
+          if [ -z "$run_api" ] || [ -z "$run_url" ]; then echo 'P77 run not found'; exit 1; fi
+          post_status(){
+            state="$1"; desc="$2"
+            python - "$state" "$desc" "$run_url" <<'PY' > status.json
+import json,sys
+print(json.dumps({'state':sys.argv[1],'context':'velmere/P77','description':sys.argv[2][:140],'target_url':sys.argv[3]}))
+PY
+            curl -fsSL -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'Content-Type: application/json' --data @status.json "$API/repos/$REPO/statuses/$SHA" >/dev/null
+          }
+          post_status pending 'P77 exact Windows running'
+          for i in $(seq 1 180); do
+            run="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$run_api")"
+            status="$(printf '%s' "$run" | python -c 'import json,sys; print(json.load(sys.stdin).get("status",""))')"
+            conclusion="$(printf '%s' "$run" | python -c 'import json,sys; print(json.load(sys.stdin).get("conclusion") or "")')"
+            if [ "$status" = completed ]; then
+              if [ "$conclusion" = success ]; then post_status success 'P77 exact Windows PASS'; else post_status failure "P77 exact Windows $conclusion"; fi
+              exit 0
+            fi
+            sleep 5
+          done
+          post_status failure 'P77 exact Windows locator timeout'
+          exit 1
