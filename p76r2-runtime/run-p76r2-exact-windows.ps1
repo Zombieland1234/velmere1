@@ -34,6 +34,9 @@ Run "python p76r2-runtime/patch-p76r2-reconciled-runner.py --runner p75-work/run
 Run "node --check p75-work/run-p76r2.mjs"
 Run "node p75-work/run-p76r2.mjs --source-root p75-work/source --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --output-dir p76r2-out"
 
+if(Test-Path p73r7-work){Remove-Item p73r7-work -Recurse -Force}
+New-Item -ItemType Junction -Path p73r7-work -Target (Resolve-Path p75-work).Path | Out-Null
+
 $env:P73_RESULT_DIR=(Resolve-Path p76r2-out).Path
 $env:P73_SOURCE_ROOT=(Resolve-Path p75-work/source).Path
 $env:TSX_TSCONFIG_PATH=(Resolve-Path p75-work/source/tsconfig.json).Path
