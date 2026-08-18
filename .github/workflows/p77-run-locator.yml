@@ -20,18 +20,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
-          REF_NAME: ${{ github.ref_name }}
           API: ${{ github.api_url }}
         shell: bash
         run: |
           set -euo pipefail
-          workflow='p77-exact-windows-deterministic-final-delivery.yml'
+          target_path='.github/workflows/p77-exact-windows-deterministic-final-delivery.yml'
           run_url=''
           run_api=''
           for i in $(seq 1 60); do
-            body="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$API/repos/$REPO/actions/workflows/$workflow/runs?branch=$REF_NAME&event=push&per_page=20")"
-            run_api="$(printf '%s' "$body" | python -c 'import json,sys,os; x=json.load(sys.stdin); sha=os.environ["SHA"]; print(next((r["url"] for r in x.get("workflow_runs",[]) if r.get("head_sha")==sha),""))')"
-            run_url="$(printf '%s' "$body" | python -c 'import json,sys,os; x=json.load(sys.stdin); sha=os.environ["SHA"]; print(next((r["html_url"] for r in x.get("workflow_runs",[]) if r.get("head_sha")==sha),""))')"
+            body="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "$API/repos/$REPO/actions/runs?head_sha=$SHA&event=push&per_page=50")"
+            run_api="$(printf '%s' "$body" | python -c 'import json,sys,os; x=json.load(sys.stdin); p=".github/workflows/p77-exact-windows-deterministic-final-delivery.yml"; print(next((r["url"] for r in x.get("workflow_runs",[]) if r.get("head_sha")==os.environ["SHA"] and str(r.get("path","")).split("@")[0]==p),""))')"
+            run_url="$(printf '%s' "$body" | python -c 'import json,sys,os; x=json.load(sys.stdin); p=".github/workflows/p77-exact-windows-deterministic-final-delivery.yml"; print(next((r["html_url"] for r in x.get("workflow_runs",[]) if r.get("head_sha")==os.environ["SHA"] and str(r.get("path","")).split("@")[0]==p),""))')"
             if [ -n "$run_api" ] && [ -n "$run_url" ]; then break; fi
             sleep 5
           done
