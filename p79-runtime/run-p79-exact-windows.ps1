@@ -1,6 +1,5 @@
 $ErrorActionPreference='Stop'
 function Run([string]$cmd){ Write-Host "P79_RUN $cmd"; Invoke-Expression $cmd; if($LASTEXITCODE-ne0){throw "failed: $cmd"} }
-function Copy-TestTree([string]$rel){ $src=Join-Path 'p79-support' $rel; $dst=Join-Path 'p75-work/source' $rel; New-Item -ItemType Directory -Force -Path (Split-Path $dst -Parent)|Out-Null; Copy-Item $src $dst -Force }
 
 git config core.autocrlf false
 git config core.eol lf
@@ -15,11 +14,9 @@ Run "python p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-wor
 Run "python p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p79-out/P77_SOURCE_PATCH.json"
 Run "python p77-runtime/test-p77-static.py --source-root p75-work/source --receipt p79-out/P77_STATIC_CONTROL_PARENT.json"
 
-# Reconstruct and apply exact P79 payload. Every modified file is preimage/postimage SHA-bound.
-Run "python p79-runtime/reconstruct-p79-support.py --parts-dir p79-runtime --output-dir p79-support"
-Run "python p79-runtime/apply-p79-current-customer-path.py --source-root p75-work/source --parent-manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --payload-root p79-support --spec p79-support/p79-runtime/P79_SOURCE_PATCH_SPEC.json --manifest p75-work/P79_BUILD_PROJECTION_MANIFEST.json --receipt p79-out/P79_SOURCE_PATCH.json"
+# Apply the compact exact P79 production diff. Preimage SHA is checked before patch; postimage and the full 1605-file projection are checked after patch.
+Run "python p79-runtime/apply-p79-unified-diff.py --source-root p75-work/source --parent-manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --spec p79-runtime/P79_SOURCE_PATCH_SPEC.json --patch-b64 p79-runtime/P79_SOURCE_PATCH.diff.gz.b64 --manifest p75-work/P79_BUILD_PROJECTION_MANIFEST.json --receipt p79-out/P79_SOURCE_PATCH.json"
 Copy-Item p75-work/P79_BUILD_PROJECTION_MANIFEST.json p79-out/
-Copy-Item p79-support/P79_SUPPORT_RECONSTRUCTION.json p79-out/
 
 # Reconcile the proven native-Windows runner through P77 and bind its one controlled Next-generated mutation to P79.
 Run "python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p75-work/run-p79.mjs --receipt p79-out/RUNNER_P60.json"
@@ -55,19 +52,9 @@ Push-Location p75-work/source;try{Run "node ./node_modules/tsx/dist/cli.mjs ../.
 $env:P77_RESULT_DIR=(Resolve-Path p79-out).Path
 Push-Location p75-work/source;try{Run "node ./node_modules/tsx/dist/cli.mjs ../../p77-runtime/test-p77-deterministic-delivery.mts"}finally{Pop-Location}
 
-# Temporarily install only P78/P79 harness files into the exact source tree so relative imports bind to the exact product bytes.
-$tests=@(
- 'scripts/p78/test-p78-private-provider-evidence-runtime.mjs',
- 'scripts/p78/test-p78-standard-json-customer-path-runtime.mjs',
- 'scripts/p78/test-p78-static.py',
- 'scripts/p78/test-p78-thirdweb-micro-corpus-runtime.mjs',
- 'scripts/p78/test-p78r3-customer-path-static.py',
- 'scripts/p79/test-p79-basic-pdf-historical-artifact-runtime.mjs',
- 'scripts/p79/test-p79-dominott-historical-ground-truth-runtime.mjs',
- 'scripts/p79/test-p79-registry-customer-path-runtime.mjs',
- 'scripts/p79/test-p79-static.py'
-)
-foreach($rel in $tests){Copy-TestTree $rel}
+# Temporarily reconstruct only P78/P79 harness files inside the exact source tree so relative imports bind to the exact product bytes.
+# The harness bundle is not part of the product projection and is removed before the final identity check.
+Run "python p79-runtime/reconstruct-p79-harnesses.py --bundle-b64 p79-runtime/P79_HARNESSES.tar.gz.b64 --output-dir p75-work/source --receipt p79-out/P79_HARNESS_RECONSTRUCTION.json"
 Push-Location p75-work/source
 try{
  Run "python scripts/p78/test-p78-static.py"
