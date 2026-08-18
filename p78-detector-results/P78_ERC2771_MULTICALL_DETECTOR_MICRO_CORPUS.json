@@ -1,0 +1,387 @@
+{
+  "schemaVersion": "velmere.p78.erc2771-multicall-development-micro-corpus.v1",
+  "status": "PASS",
+  "detectorClass": "PURE_SOURCE_PATTERN_DIAGNOSTIC",
+  "caseCount": 6,
+  "matrix": {
+    "tp": 2,
+    "tn": 4,
+    "fp": 0,
+    "fn": 0
+  },
+  "rows": [
+    {
+      "caseId": "thirdweb_vulnerable",
+      "expectedPattern": true,
+      "observedPattern": true,
+      "result": {
+        "schemaVersion": "velmere.p78.erc2771-multicall-source-detector.v1",
+        "state": "source_pattern_confirmed",
+        "family": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+        "signals": {
+          "erc2771LogicalSenderContext": true,
+          "arbitrarySelfDelegatecallBatch": true,
+          "authorizationUsesLogicalSender": true,
+          "logicalSenderPreservedAcrossDelegatecall": false
+        },
+        "confidence": 92,
+        "severityCandidate": "high",
+        "exploitability": "source_preconditions_present_runtime_not_reproduced",
+        "evidence": [
+          {
+            "unit": "Multicall.sol",
+            "refs": [
+              {
+                "line": 22,
+                "text": "function multicall(bytes[] calldata data) external virtual override returns (bytes[] memory results) {"
+              },
+              {
+                "line": 25,
+                "text": "results[i] = Address.functionDelegateCall(address(this), data[i]);"
+              }
+            ]
+          },
+          {
+            "unit": "TWFactory.sol",
+            "refs": [
+              {
+                "line": 20,
+                "text": "import { ERC2771Context } from \"@openzeppelin/contracts/metatx/ERC2771Context.sol\";"
+              },
+              {
+                "line": 26,
+                "text": "contract TWFactory is Multicall, ERC2771Context, AccessControlEnumerable, IContractFactory {"
+              },
+              {
+                "line": 49,
+                "text": "constructor(address _trustedForwarder, address _registry) ERC2771Context(_trustedForwarder) {"
+              },
+              {
+                "line": 50,
+                "text": "_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());"
+              },
+              {
+                "line": 51,
+                "text": "_setupRole(FACTORY_ROLE, _msgSender());"
+              },
+              {
+                "line": 58,
+                "text": "bytes32 salt = bytes32(registry.count(_msgSender()));"
+              },
+              {
+                "line": 79,
+                "text": "bytes32 salthash = keccak256(abi.encodePacked(_msgSender(), _salt));"
+              },
+              {
+                "line": 82,
+                "text": "deployer[deployedProxy] = _msgSender();"
+              }
+            ]
+          }
+        ],
+        "preconditions": [
+          "a trusted ERC2771 forwarder can reach the multicall entry point",
+          "multicall delegatecalls user-controlled calldata back into the same contract context",
+          "authorization-sensitive logic resolves identity with _msgSender()",
+          "the original logical sender is not preserved across the delegated subcall"
+        ],
+        "remediation": [
+          "preserve the logical ERC2771 sender across each self-delegatecall and make _msgSender/_msgData recover it consistently",
+          "or remove/strictly constrain arbitrary self-delegatecall batching across meta-transaction context",
+          "add a trusted-forwarder spoof regression that proves an attacker cannot substitute the logical sender"
+        ],
+        "retest": {
+          "required": true,
+          "negativeControl": "trusted-forwarder spoof attempt must revert/fail authorization after remediation",
+          "positiveControl": "legitimate direct and trusted-forwarder multicall behavior should remain functional"
+        },
+        "blockers": [
+          "runtime_exploit_reproduction_not_executed",
+          "deployment_reachability_not_proven"
+        ],
+        "truthBoundary": "Source-pattern confirmation is not runtime exploit reproduction, deployed-bytecode proof, or a customer FINAL finding. Severity remains a candidate until case-bound exploitability/adjudication is complete."
+      }
+    },
+    {
+      "caseId": "thirdweb_fixed",
+      "expectedPattern": false,
+      "observedPattern": false,
+      "result": {
+        "schemaVersion": "velmere.p78.erc2771-multicall-source-detector.v1",
+        "state": "not_detected",
+        "family": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+        "signals": {
+          "erc2771LogicalSenderContext": true,
+          "arbitrarySelfDelegatecallBatch": true,
+          "authorizationUsesLogicalSender": true,
+          "logicalSenderPreservedAcrossDelegatecall": true
+        },
+        "confidence": 88,
+        "severityCandidate": null,
+        "exploitability": "not_claimed",
+        "evidence": [
+          {
+            "unit": "Multicall.sol",
+            "refs": [
+              {
+                "line": 22,
+                "text": "function multicall(bytes[] calldata data) external returns (bytes[] memory results) {"
+              },
+              {
+                "line": 24,
+                "text": "address sender = _msgSender();"
+              },
+              {
+                "line": 25,
+                "text": "bool isForwarder = msg.sender != sender;"
+              },
+              {
+                "line": 28,
+                "text": "results[i] = Address.functionDelegateCall(address(this), abi.encodePacked(data[i], sender));"
+              },
+              {
+                "line": 30,
+                "text": "results[i] = Address.functionDelegateCall(address(this), data[i]);"
+              },
+              {
+                "line": 37,
+                "text": "function _msgSender() internal view virtual returns (address) {"
+              }
+            ]
+          },
+          {
+            "unit": "TWFactory.sol",
+            "refs": [
+              {
+                "line": 20,
+                "text": "import { ERC2771Context } from \"@openzeppelin/contracts/metatx/ERC2771Context.sol\";"
+              },
+              {
+                "line": 26,
+                "text": "contract TWFactory is Multicall, ERC2771Context, AccessControlEnumerable, IContractFactory {"
+              },
+              {
+                "line": 49,
+                "text": "constructor(address _trustedForwarder, address _registry) ERC2771Context(_trustedForwarder) {"
+              },
+              {
+                "line": 50,
+                "text": "_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());"
+              },
+              {
+                "line": 51,
+                "text": "_setupRole(FACTORY_ROLE, _msgSender());"
+              },
+              {
+                "line": 58,
+                "text": "bytes32 salt = bytes32(registry.count(_msgSender()));"
+              },
+              {
+                "line": 79,
+                "text": "bytes32 salthash = keccak256(abi.encodePacked(_msgSender(), _salt));"
+              },
+              {
+                "line": 82,
+                "text": "deployer[deployedProxy] = _msgSender();"
+              }
+            ]
+          }
+        ],
+        "preconditions": [],
+        "remediation": [],
+        "retest": {
+          "required": false,
+          "negativeControl": "trusted-forwarder spoof attempt must revert/fail authorization after remediation",
+          "positiveControl": "legitimate direct and trusted-forwarder multicall behavior should remain functional"
+        },
+        "blockers": [],
+        "truthBoundary": "Source-pattern confirmation is not runtime exploit reproduction, deployed-bytecode proof, or a customer FINAL finding. Severity remains a candidate until case-bound exploitability/adjudication is complete."
+      }
+    },
+    {
+      "caseId": "hard_negative_multicall_without_erc2771",
+      "expectedPattern": false,
+      "observedPattern": false,
+      "result": {
+        "schemaVersion": "velmere.p78.erc2771-multicall-source-detector.v1",
+        "state": "not_detected",
+        "family": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+        "signals": {
+          "erc2771LogicalSenderContext": false,
+          "arbitrarySelfDelegatecallBatch": true,
+          "authorizationUsesLogicalSender": false,
+          "logicalSenderPreservedAcrossDelegatecall": false
+        },
+        "confidence": 45,
+        "severityCandidate": null,
+        "exploitability": "not_claimed",
+        "evidence": [
+          {
+            "unit": "Multicall.sol",
+            "refs": [
+              {
+                "line": 1,
+                "text": "pragma solidity ^0.8.0; contract M { function multicall(bytes[] calldata calls) external { for(uint i; i<calls.length; i++){ address(this).delegatecall(calls[i]); } } }"
+              }
+            ]
+          }
+        ],
+        "preconditions": [],
+        "remediation": [],
+        "retest": {
+          "required": false,
+          "negativeControl": "trusted-forwarder spoof attempt must revert/fail authorization after remediation",
+          "positiveControl": "legitimate direct and trusted-forwarder multicall behavior should remain functional"
+        },
+        "blockers": [],
+        "truthBoundary": "Source-pattern confirmation is not runtime exploit reproduction, deployed-bytecode proof, or a customer FINAL finding. Severity remains a candidate until case-bound exploitability/adjudication is complete."
+      }
+    },
+    {
+      "caseId": "hard_negative_erc2771_without_delegatecall",
+      "expectedPattern": false,
+      "observedPattern": false,
+      "result": {
+        "schemaVersion": "velmere.p78.erc2771-multicall-source-detector.v1",
+        "state": "not_detected",
+        "family": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+        "signals": {
+          "erc2771LogicalSenderContext": true,
+          "arbitrarySelfDelegatecallBatch": false,
+          "authorizationUsesLogicalSender": true,
+          "logicalSenderPreservedAcrossDelegatecall": false
+        },
+        "confidence": 45,
+        "severityCandidate": null,
+        "exploitability": "not_claimed",
+        "evidence": [
+          {
+            "unit": "Auth.sol",
+            "refs": [
+              {
+                "line": 1,
+                "text": "pragma solidity ^0.8.0; abstract contract ERC2771Context {} contract A is ERC2771Context { function _msgSender() internal view returns(address){return msg.sender;} function f() external { require(_msgSender()!=address(0)); } }"
+              }
+            ]
+          }
+        ],
+        "preconditions": [],
+        "remediation": [],
+        "retest": {
+          "required": false,
+          "negativeControl": "trusted-forwarder spoof attempt must revert/fail authorization after remediation",
+          "positiveControl": "legitimate direct and trusted-forwarder multicall behavior should remain functional"
+        },
+        "blockers": [],
+        "truthBoundary": "Source-pattern confirmation is not runtime exploit reproduction, deployed-bytecode proof, or a customer FINAL finding. Severity remains a candidate until case-bound exploitability/adjudication is complete."
+      }
+    },
+    {
+      "caseId": "lookalike_sender_preserved",
+      "expectedPattern": false,
+      "observedPattern": false,
+      "result": {
+        "schemaVersion": "velmere.p78.erc2771-multicall-source-detector.v1",
+        "state": "not_detected",
+        "family": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+        "signals": {
+          "erc2771LogicalSenderContext": true,
+          "arbitrarySelfDelegatecallBatch": true,
+          "authorizationUsesLogicalSender": true,
+          "logicalSenderPreservedAcrossDelegatecall": true
+        },
+        "confidence": 88,
+        "severityCandidate": null,
+        "exploitability": "not_claimed",
+        "evidence": [
+          {
+            "unit": "Safe.sol",
+            "refs": [
+              {
+                "line": 1,
+                "text": "pragma solidity ^0.8.0; abstract contract ERC2771Context {} contract S is ERC2771Context { function _msgSender() internal view returns(address){return msg.sender;} function multicall(bytes[] calldata calls) external { address sender=_msgSender(); bool isForwarder=msg.sender != sender; for(uint i; i<calls.length; i++){ "
+              }
+            ]
+          }
+        ],
+        "preconditions": [],
+        "remediation": [],
+        "retest": {
+          "required": false,
+          "negativeControl": "trusted-forwarder spoof attempt must revert/fail authorization after remediation",
+          "positiveControl": "legitimate direct and trusted-forwarder multicall behavior should remain functional"
+        },
+        "blockers": [],
+        "truthBoundary": "Source-pattern confirmation is not runtime exploit reproduction, deployed-bytecode proof, or a customer FINAL finding. Severity remains a candidate until case-bound exploitability/adjudication is complete."
+      }
+    },
+    {
+      "caseId": "metamorphic_vulnerable",
+      "expectedPattern": true,
+      "observedPattern": true,
+      "result": {
+        "schemaVersion": "velmere.p78.erc2771-multicall-source-detector.v1",
+        "state": "source_pattern_confirmed",
+        "family": "ERC2771_CONTEXT_MULTICALL_SENDER_SPOOFING",
+        "signals": {
+          "erc2771LogicalSenderContext": true,
+          "arbitrarySelfDelegatecallBatch": true,
+          "authorizationUsesLogicalSender": true,
+          "logicalSenderPreservedAcrossDelegatecall": false
+        },
+        "confidence": 92,
+        "severityCandidate": "high",
+        "exploitability": "source_preconditions_present_runtime_not_reproduced",
+        "evidence": [
+          {
+            "unit": "Meta.sol",
+            "refs": [
+              {
+                "line": 1,
+                "text": "pragma solidity ^0.8.0; abstract contract ERC2771Context {} contract X is ERC2771Context { function _msgSender() internal view returns(address){ return msg.sender; } function batch(bytes[] calldata payloads) external { for (uint256 j=0;j<payloads.length;j++){ address(this).delegatecall(payloads[j]); } } function privil"
+              }
+            ]
+          }
+        ],
+        "preconditions": [
+          "a trusted ERC2771 forwarder can reach the multicall entry point",
+          "multicall delegatecalls user-controlled calldata back into the same contract context",
+          "authorization-sensitive logic resolves identity with _msgSender()",
+          "the original logical sender is not preserved across the delegated subcall"
+        ],
+        "remediation": [
+          "preserve the logical ERC2771 sender across each self-delegatecall and make _msgSender/_msgData recover it consistently",
+          "or remove/strictly constrain arbitrary self-delegatecall batching across meta-transaction context",
+          "add a trusted-forwarder spoof regression that proves an attacker cannot substitute the logical sender"
+        ],
+        "retest": {
+          "required": true,
+          "negativeControl": "trusted-forwarder spoof attempt must revert/fail authorization after remediation",
+          "positiveControl": "legitimate direct and trusted-forwarder multicall behavior should remain functional"
+        },
+        "blockers": [
+          "runtime_exploit_reproduction_not_executed",
+          "deployment_reachability_not_proven"
+        ],
+        "truthBoundary": "Source-pattern confirmation is not runtime exploit reproduction, deployed-bytecode proof, or a customer FINAL finding. Severity remains a candidate until case-bound exploitability/adjudication is complete."
+      }
+    }
+  ],
+  "groundTruthBinding": {
+    "repository": "thirdweb-dev/contracts",
+    "vulnerableCommit": "745afa8537dbc577f72bfa75a718a2b781d0379d",
+    "fixedCommit": "efd2218ff9cbbfe326c33ce661042d7c19c17317",
+    "independentGroundTruthReceipt": "P78_THIRDWEB_ERC2771_MULTICALL_GROUND_TRUTH.json"
+  },
+  "creditClass": "DEVELOPMENT_MICRO_CORPUS_NOT_ACCURACY_CREDIT",
+  "zeroFakeCredit": {
+    "formalPrecisionRecall": "WITHHELD_MICRO_CORPUS",
+    "runtimeExploitability": 0,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "nextAcceptanceTest": "Port this pure source-pattern detector into exact P78 product source only after the current source-acquisition contract is shown to provide hash-bound complete source units. Then run the same pinned vulnerable/fixed pair plus larger hard-negative and holdout sets under exact Windows."
+}
