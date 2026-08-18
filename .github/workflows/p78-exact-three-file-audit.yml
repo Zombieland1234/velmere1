@@ -1,0 +1,112 @@
+name: P78 Exact P77 Three-File Audit
+
+on:
+  push:
+    branches:
+      - velmere-p78-real-audit-customer-final-20260818
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p78-three-file-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p78-three-file-audit:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P78 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 parent bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Expand pinned P77 support bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct and re-prove exact P77R3 product bytes
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          ./p77-runtime/run-p77-exact-windows.ps1
+
+      - name: Audit exact authority report and QA files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p78-out | Out-Null
+          python p78-runtime/audit-three-files.py --source-root p75-work/source --output p78-out/P78_THREE_FILE_AUDIT.json --print-source
+
+      - name: Capture P78 diagnostic boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path p78-out | Out-Null
+          $audit='FAIL'
+          if(Test-Path 'p78-out/P78_THREE_FILE_AUDIT.json'){
+            $x=Get-Content 'p78-out/P78_THREE_FILE_AUDIT.json' -Raw | ConvertFrom-Json
+            if($x.status-eq'PASS'){$audit='PASS'}
+          }
+          [ordered]@{
+            schemaVersion='velmere.p78.three-file-audit-boundary.v1'
+            runId='${{ github.run_id }}'
+            sha='${{ github.sha }}'
+            canonicalParent='P77R3/V17'
+            parentHead='ec1808241cd3a19f4af01aa47836b197ab4c48dd'
+            threeFileExactAudit=$audit
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            sale='0/20'
+            live=$false
+            truthBoundary='P78 diagnostic only. It audits exact P77R3 bytes for the authority→report→QA chain. No release numerator is promoted by inspection.'
+          } | ConvertTo-Json -Depth 10 | Set-Content p78-out/P78_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P78 exact three-file audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78-exact-three-file-audit
+          path: p78-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
