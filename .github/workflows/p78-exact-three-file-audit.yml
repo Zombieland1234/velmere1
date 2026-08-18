@@ -63,6 +63,8 @@ jobs:
           "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Reconstruct and re-prove exact P77R3 product bytes
+        id: p77
+        continue-on-error: true
         shell: pwsh
         env:
           P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
@@ -71,6 +73,9 @@ jobs:
           ./p77-runtime/run-p77-exact-windows.ps1
 
       - name: Audit exact authority report and QA files
+        id: audit
+        if: steps.p77.outcome == 'success'
+        continue-on-error: true
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -81,41 +86,48 @@ jobs:
         if: always()
         shell: pwsh
         run: |
+          $ErrorActionPreference='Continue'
           New-Item -ItemType Directory -Force -Path p78-out | Out-Null
-          $audit='FAIL'
+          $auditState='NOT_RUN'
           if(Test-Path 'p78-out/P78_THREE_FILE_AUDIT.json'){
-            $x=Get-Content 'p78-out/P78_THREE_FILE_AUDIT.json' -Raw | ConvertFrom-Json
-            if($x.status-eq'PASS'){$audit='PASS'}
-          }
+            try {
+              $x=Get-Content 'p78-out/P78_THREE_FILE_AUDIT.json' -Raw | ConvertFrom-Json
+              if($x.status-eq'PASS'){$auditState='PASS'}else{$auditState=[string]$x.status}
+            } catch { $auditState='INVALID_RECEIPT' }
+          } elseif ('${{ steps.audit.outcome }}' -eq 'failure') { $auditState='FAIL' }
           [ordered]@{
-            schemaVersion='velmere.p78.three-file-audit-boundary.v1'
+            schemaVersion='velmere.p78.three-file-audit-boundary.v2'
             runId='${{ github.run_id }}'
             sha='${{ github.sha }}'
             canonicalParent='P77R3/V17'
             parentHead='ec1808241cd3a19f4af01aa47836b197ab4c48dd'
-            threeFileExactAudit=$audit
+            exactP77ReproofOutcome='${{ steps.p77.outcome }}'
+            threeFileStepOutcome='${{ steps.audit.outcome }}'
+            threeFileExactAudit=$auditState
             customerFinal='0/20'
             auditFinalPdf='0/3'
             rights='2/203'
             paidValue='0/10'
             sale='0/20'
             live=$false
-            truthBoundary='P78 diagnostic only. It audits exact P77R3 bytes for the authority→report→QA chain. No release numerator is promoted by inspection.'
+            truthBoundary='P78 diagnostic only. Failure is published as failure. No release numerator is promoted by inspection or by a partial run.'
           } | ConvertTo-Json -Depth 10 | Set-Content p78-out/P78_BOUNDARY.json -Encoding utf8
 
-      - name: Publish exact P78 diagnostic receipts to branch
-        if: success()
+      - name: Publish P78 diagnostic receipts even on failure
+        if: always()
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           New-Item -ItemType Directory -Force -Path p78-results | Out-Null
-          Copy-Item p78-out/P78_THREE_FILE_AUDIT.json p78-results/P78_THREE_FILE_AUDIT.json -Force
           Copy-Item p78-out/P78_BOUNDARY.json p78-results/P78_BOUNDARY.json -Force
+          if(Test-Path 'p78-out/P78_THREE_FILE_AUDIT.json'){
+            Copy-Item p78-out/P78_THREE_FILE_AUDIT.json p78-results/P78_THREE_FILE_AUDIT.json -Force
+          }
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- p78-results/P78_THREE_FILE_AUDIT.json p78-results/P78_BOUNDARY.json
+          git add -- p78-results
           if(-not (git diff --cached --quiet)){
-            git commit -m 'P78 publish exact three-file audit receipts'
+            git commit -m 'P78 publish exact three-file audit outcome'
             git push origin HEAD:velmere-p78-real-audit-customer-final-20260818
           }
 
@@ -128,3 +140,10 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
+
+      - name: Enforce diagnostic success
+        if: always()
+        shell: pwsh
+        run: |
+          if('${{ steps.p77.outcome }}' -ne 'success'){throw 'P77 exact reproof failed in P78 diagnostic'}
+          if('${{ steps.audit.outcome }}' -ne 'success'){throw 'P78 three-file exact audit failed'}
