@@ -69,7 +69,10 @@ def main() -> None:
     check("calldataload\\s*\\(" in detector, "sender_suffix_calldataload_signal")
     check("calldatasize\\s*\\(" in detector, "sender_suffix_calldatasize_signal")
     check("_contextSuffixLength\\s*\\(" in detector, "openzeppelin_v5_suffix_signal")
-    check('return { state: "unverified_name_only"' in detector, "name_only_has_explicit_unverified_state")
+    auth_start = detector.index("function erc2771ContextAuthenticity(")
+    auth_end = detector.index("\nfunction evidenceRefs(", auth_start)
+    auth_body = detector[auth_start:auth_end]
+    check('state: "unverified_name_only"' in auth_body, "name_only_has_explicit_unverified_state")
     check('const authenticErc2771Context = contextAuthenticity.state === "verified_openzeppelin_import" || contextAuthenticity.state === "verified_source_semantics";' in detector, "meta_signal_requires_verified_authenticity")
     check("const metaContext = authenticErc2771Context" in detector, "meta_context_gated_by_authenticity")
     check('const authenticityBlocked = contextAuthenticity.state === "unverified_name_only";' in detector, "unverified_name_sets_blocker_state")
