@@ -1,0 +1,703 @@
+{
+  "schemaVersion": "velmere.p73r7.full-authority-integration.v1",
+  "status": "PASS",
+  "checkCount": 27,
+  "checks": [
+    {
+      "id": "authority:confirmed",
+      "passed": true,
+      "detail": {
+        "schemaVersion": "pass5001-audit-adjudicated-authority-evidence-v1",
+        "state": "confirmed",
+        "generatedAt": "2026-08-18T13:05:58.591Z",
+        "target": {
+          "chain": "ancient8",
+          "chainId": "888888888",
+          "contractAddress": "0xca11bde05977b3631167028862be2a173976ca11",
+          "projectName": "Multicall3",
+          "canonicalReferenceId": "p70-multicall3-canonical-reference"
+        },
+        "category": "deployment_identity",
+        "adverseKind": "wrong_contract_at_expected_address",
+        "severity": "critical",
+        "riskFloor": 90,
+        "confidence": 96,
+        "finding": "Multicall3 deployment identity mismatch on ancient8: the expected canonical address 0xca11bde05977b3631167028862be2a173976ca11 is not the address currently documented by the official chain authority.",
+        "customerLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+        "proPdfLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0xb76d6e8c82d06fd262ef3799db73d5a724108d4e; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+        "documentedAlternateAddress": "0xb76d6e8c82d06fd262ef3799db73d5a724108d4e",
+        "authorityRoots": [
+          "docs.ancient8.gg",
+          "raw.githubusercontent.com"
+        ],
+        "receipts": [
+          {
+            "schemaVersion": "velmere.audit-authority-receipt.v1",
+            "id": "authority-chain-docs-aea70444e454bb426d1b",
+            "authorityClass": "chain_official_docs",
+            "providerId": "official-docs:docs.ancient8.gg",
+            "providerFamily": "official_chain_authority",
+            "upstreamRoot": "docs.ancient8.gg",
+            "independenceEligible": true,
+            "targetBound": true,
+            "statusCode": 200,
+            "contentType": "text/html",
+            "bodyBytes": 470894,
+            "bodyDigest": "sha256:dc9c749e66c86d7b4cb4ad8baaa3dbda16d77472318219ae5eccb66d68f8e21c",
+            "requestUrlDigest": "sha256:aea70444e454bb426d1bd028d89d0c9ea2d4674d660d063c90931243e8e0ecc0",
+            "observedAt": "2026-08-18T13:05:58.579Z",
+            "sourceTimestamp": null,
+            "sourceTimestampProvenance": "transport_received",
+            "assertions": [
+              "chain:ancient8",
+              "project:Multicall3",
+              "documented_address:0xb76d6e8c82d06fd262ef3799db73d5a724108d4e",
+              "requested_address_absent:true"
+            ],
+            "receiptDigest": "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a"
+          },
+          {
+            "schemaVersion": "velmere.audit-authority-receipt.v1",
+            "id": "authority-project-maintainer-30f455302e89bd6dd49b",
+            "authorityClass": "project_maintainer",
+            "providerId": "github-pinned-readme:mds1/multicall3@b667d67ecfa5361a81e8f110234ce242613b0012",
+            "providerFamily": "project_maintainer_repository_authority",
+            "upstreamRoot": "raw.githubusercontent.com",
+            "independenceEligible": true,
+            "targetBound": true,
+            "statusCode": 200,
+            "contentType": "text/plain",
+            "bodyBytes": 25797,
+            "bodyDigest": "sha256:fd8a929918ebcc9a2cf26c3d072c0566718937e2f980751ba2be4e1b8b143b9e",
+            "requestUrlDigest": "sha256:30f455302e89bd6dd49b371f16229012ab8a0a73b685782662c781450c4e1f22",
+            "observedAt": "2026-08-18T13:05:58.318Z",
+            "sourceTimestamp": null,
+            "sourceTimestampProvenance": "transport_received",
+            "assertions": [
+              "repository:mds1/multicall3",
+              "source_commit:b667d67ecfa5361a81e8f110234ce242613b0012",
+              "project:Multicall3",
+              "chain:ancient8",
+              "wrong_contract_address:0xca11bde05977b3631167028862be2a173976ca11"
+            ],
+            "receiptDigest": "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+          }
+        ],
+        "blockers": [
+          "current_runtime_bytecode_quorum_unavailable"
+        ],
+        "truthBoundary": "This evidence proves a deployment-identity contradiction, not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to the audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.",
+        "evidenceDigest": "sha256:55ea07e5238bb025d4e77960c0d055dcd564ae558b0293a61928d499ad7a3e71"
+      }
+    },
+    {
+      "id": "authority:self-verifies",
+      "passed": true
+    },
+    {
+      "id": "authority:chain-id",
+      "passed": true,
+      "detail": {
+        "chain": "ancient8",
+        "chainId": "888888888",
+        "contractAddress": "0xca11bde05977b3631167028862be2a173976ca11",
+        "projectName": "Multicall3",
+        "canonicalReferenceId": "p70-multicall3-canonical-reference"
+      }
+    },
+    {
+      "id": "authority:canonical-reference",
+      "passed": true,
+      "detail": {
+        "chain": "ancient8",
+        "chainId": "888888888",
+        "contractAddress": "0xca11bde05977b3631167028862be2a173976ca11",
+        "projectName": "Multicall3",
+        "canonicalReferenceId": "p70-multicall3-canonical-reference"
+      }
+    },
+    {
+      "id": "authority:official-multicall3-row-bound",
+      "passed": true,
+      "detail": "0xb76d6e8c82d06fd262ef3799db73d5a724108d4e"
+    },
+    {
+      "id": "authority:not-neighbor-contract",
+      "passed": true,
+      "detail": "0xb76d6e8c82d06fd262ef3799db73d5a724108d4e"
+    },
+    {
+      "id": "authority:two-receipts",
+      "passed": true,
+      "detail": [
+        {
+          "schemaVersion": "velmere.audit-authority-receipt.v1",
+          "id": "authority-chain-docs-aea70444e454bb426d1b",
+          "authorityClass": "chain_official_docs",
+          "providerId": "official-docs:docs.ancient8.gg",
+          "providerFamily": "official_chain_authority",
+          "upstreamRoot": "docs.ancient8.gg",
+          "independenceEligible": true,
+          "targetBound": true,
+          "statusCode": 200,
+          "contentType": "text/html",
+          "bodyBytes": 470894,
+          "bodyDigest": "sha256:dc9c749e66c86d7b4cb4ad8baaa3dbda16d77472318219ae5eccb66d68f8e21c",
+          "requestUrlDigest": "sha256:aea70444e454bb426d1bd028d89d0c9ea2d4674d660d063c90931243e8e0ecc0",
+          "observedAt": "2026-08-18T13:05:58.579Z",
+          "sourceTimestamp": null,
+          "sourceTimestampProvenance": "transport_received",
+          "assertions": [
+            "chain:ancient8",
+            "project:Multicall3",
+            "documented_address:0xb76d6e8c82d06fd262ef3799db73d5a724108d4e",
+            "requested_address_absent:true"
+          ],
+          "receiptDigest": "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a"
+        },
+        {
+          "schemaVersion": "velmere.audit-authority-receipt.v1",
+          "id": "authority-project-maintainer-30f455302e89bd6dd49b",
+          "authorityClass": "project_maintainer",
+          "providerId": "github-pinned-readme:mds1/multicall3@b667d67ecfa5361a81e8f110234ce242613b0012",
+          "providerFamily": "project_maintainer_repository_authority",
+          "upstreamRoot": "raw.githubusercontent.com",
+          "independenceEligible": true,
+          "targetBound": true,
+          "statusCode": 200,
+          "contentType": "text/plain",
+          "bodyBytes": 25797,
+          "bodyDigest": "sha256:fd8a929918ebcc9a2cf26c3d072c0566718937e2f980751ba2be4e1b8b143b9e",
+          "requestUrlDigest": "sha256:30f455302e89bd6dd49b371f16229012ab8a0a73b685782662c781450c4e1f22",
+          "observedAt": "2026-08-18T13:05:58.318Z",
+          "sourceTimestamp": null,
+          "sourceTimestampProvenance": "transport_received",
+          "assertions": [
+            "repository:mds1/multicall3",
+            "source_commit:b667d67ecfa5361a81e8f110234ce242613b0012",
+            "project:Multicall3",
+            "chain:ancient8",
+            "wrong_contract_address:0xca11bde05977b3631167028862be2a173976ca11"
+          ],
+          "receiptDigest": "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+        }
+      ]
+    },
+    {
+      "id": "authority:two-independent-roots",
+      "passed": true,
+      "detail": [
+        "docs.ancient8.gg",
+        "raw.githubusercontent.com"
+      ]
+    },
+    {
+      "id": "authority:docs-address-assertion",
+      "passed": true,
+      "detail": {
+        "schemaVersion": "velmere.audit-authority-receipt.v1",
+        "id": "authority-chain-docs-aea70444e454bb426d1b",
+        "authorityClass": "chain_official_docs",
+        "providerId": "official-docs:docs.ancient8.gg",
+        "providerFamily": "official_chain_authority",
+        "upstreamRoot": "docs.ancient8.gg",
+        "independenceEligible": true,
+        "targetBound": true,
+        "statusCode": 200,
+        "contentType": "text/html",
+        "bodyBytes": 470894,
+        "bodyDigest": "sha256:dc9c749e66c86d7b4cb4ad8baaa3dbda16d77472318219ae5eccb66d68f8e21c",
+        "requestUrlDigest": "sha256:aea70444e454bb426d1bd028d89d0c9ea2d4674d660d063c90931243e8e0ecc0",
+        "observedAt": "2026-08-18T13:05:58.579Z",
+        "sourceTimestamp": null,
+        "sourceTimestampProvenance": "transport_received",
+        "assertions": [
+          "chain:ancient8",
+          "project:Multicall3",
+          "documented_address:0xb76d6e8c82d06fd262ef3799db73d5a724108d4e",
+          "requested_address_absent:true"
+        ],
+        "receiptDigest": "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a"
+      }
+    },
+    {
+      "id": "authority:pinned-maintainer-commit",
+      "passed": true,
+      "detail": {
+        "schemaVersion": "velmere.audit-authority-receipt.v1",
+        "id": "authority-project-maintainer-30f455302e89bd6dd49b",
+        "authorityClass": "project_maintainer",
+        "providerId": "github-pinned-readme:mds1/multicall3@b667d67ecfa5361a81e8f110234ce242613b0012",
+        "providerFamily": "project_maintainer_repository_authority",
+        "upstreamRoot": "raw.githubusercontent.com",
+        "independenceEligible": true,
+        "targetBound": true,
+        "statusCode": 200,
+        "contentType": "text/plain",
+        "bodyBytes": 25797,
+        "bodyDigest": "sha256:fd8a929918ebcc9a2cf26c3d072c0566718937e2f980751ba2be4e1b8b143b9e",
+        "requestUrlDigest": "sha256:30f455302e89bd6dd49b371f16229012ab8a0a73b685782662c781450c4e1f22",
+        "observedAt": "2026-08-18T13:05:58.318Z",
+        "sourceTimestamp": null,
+        "sourceTimestampProvenance": "transport_received",
+        "assertions": [
+          "repository:mds1/multicall3",
+          "source_commit:b667d67ecfa5361a81e8f110234ce242613b0012",
+          "project:Multicall3",
+          "chain:ancient8",
+          "wrong_contract_address:0xca11bde05977b3631167028862be2a173976ca11"
+        ],
+        "receiptDigest": "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+      }
+    },
+    {
+      "id": "authority:risk-floor-90",
+      "passed": true,
+      "detail": {
+        "riskFloor": 90,
+        "severity": "critical"
+      }
+    },
+    {
+      "id": "authority:runtime-explicitly-unverified",
+      "passed": true,
+      "detail": [
+        "current_runtime_bytecode_quorum_unavailable"
+      ]
+    },
+    {
+      "id": "authority:tamper-fails",
+      "passed": true
+    },
+    {
+      "id": "authority:unsupported-chain-fails-closed",
+      "passed": true,
+      "detail": {
+        "schemaVersion": "pass5001-audit-adjudicated-authority-evidence-v1",
+        "state": "not_applicable",
+        "generatedAt": "2026-08-18T13:05:58.592Z",
+        "target": {
+          "chain": "ethereum",
+          "chainId": null,
+          "contractAddress": "0xca11bde05977b3631167028862be2a173976ca11",
+          "projectName": "Multicall3",
+          "canonicalReferenceId": "p70-multicall3-canonical-reference"
+        },
+        "category": "deployment_identity",
+        "adverseKind": null,
+        "severity": null,
+        "riskFloor": null,
+        "confidence": 0,
+        "finding": null,
+        "customerLine": null,
+        "proPdfLine": null,
+        "documentedAlternateAddress": null,
+        "authorityRoots": [],
+        "receipts": [],
+        "blockers": [
+          "chain_authority_not_registered"
+        ],
+        "truthBoundary": "No adverse deployment-identity claim is created unless a canonical reference, official chain authority and independent project-maintainer authority all bind to the same target.",
+        "evidenceDigest": "sha256:7f985cd765aec0721a6d8ad79252a69a7c9f1ada17244984e5448db080f921a2"
+      }
+    },
+    {
+      "id": "claim:exactly-one-adverse",
+      "passed": true,
+      "detail": [
+        {
+          "id": "authority-deployment_identity-55ea07e5238bb025",
+          "category": "identity",
+          "label": "Deployment identity",
+          "grade": "confirmed",
+          "sourceFamily": "docs.ancient8.gg + raw.githubusercontent.com",
+          "claim": "Multicall3 deployment identity mismatch on ancient8: the expected canonical address 0xca11bde05977b3631167028862be2a173976ca11 is not the address currently documented by the official chain authority.",
+          "customerLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+          "proPdfLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0xb76d6e8c82d06fd262ef3799db73d5a724108d4e; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+          "advancedAction": "Verify current runtime bytecode with independent RPC quorum before making an exploitability claim.",
+          "canShowAsFact": true,
+          "confidence": 96,
+          "missing": [
+            "current_runtime_bytecode_quorum_unavailable"
+          ],
+          "adverseKind": "deployment_identity",
+          "adverseRiskFloor": 90,
+          "evidenceRefs": [
+            "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a",
+            "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "claim:confirmed-fact",
+      "passed": true,
+      "detail": {
+        "id": "authority-deployment_identity-55ea07e5238bb025",
+        "category": "identity",
+        "label": "Deployment identity",
+        "grade": "confirmed",
+        "sourceFamily": "docs.ancient8.gg + raw.githubusercontent.com",
+        "claim": "Multicall3 deployment identity mismatch on ancient8: the expected canonical address 0xca11bde05977b3631167028862be2a173976ca11 is not the address currently documented by the official chain authority.",
+        "customerLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+        "proPdfLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0xb76d6e8c82d06fd262ef3799db73d5a724108d4e; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+        "advancedAction": "Verify current runtime bytecode with independent RPC quorum before making an exploitability claim.",
+        "canShowAsFact": true,
+        "confidence": 96,
+        "missing": [
+          "current_runtime_bytecode_quorum_unavailable"
+        ],
+        "adverseKind": "deployment_identity",
+        "adverseRiskFloor": 90,
+        "evidenceRefs": [
+          "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a",
+          "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+        ]
+      }
+    },
+    {
+      "id": "claim:risk-floor-bound",
+      "passed": true,
+      "detail": {
+        "id": "authority-deployment_identity-55ea07e5238bb025",
+        "category": "identity",
+        "label": "Deployment identity",
+        "grade": "confirmed",
+        "sourceFamily": "docs.ancient8.gg + raw.githubusercontent.com",
+        "claim": "Multicall3 deployment identity mismatch on ancient8: the expected canonical address 0xca11bde05977b3631167028862be2a173976ca11 is not the address currently documented by the official chain authority.",
+        "customerLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+        "proPdfLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0xb76d6e8c82d06fd262ef3799db73d5a724108d4e; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+        "advancedAction": "Verify current runtime bytecode with independent RPC quorum before making an exploitability claim.",
+        "canShowAsFact": true,
+        "confidence": 96,
+        "missing": [
+          "current_runtime_bytecode_quorum_unavailable"
+        ],
+        "adverseKind": "deployment_identity",
+        "adverseRiskFloor": 90,
+        "evidenceRefs": [
+          "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a",
+          "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+        ]
+      }
+    },
+    {
+      "id": "claim:evidence-refs-two",
+      "passed": true,
+      "detail": [
+        "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a",
+        "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+      ]
+    },
+    {
+      "id": "report:risk-score-90",
+      "passed": true,
+      "detail": {
+        "riskScore": 90,
+        "riskLabel": "High watch",
+        "reviewPriorityScore": 67,
+        "sourceConfidence": 39,
+        "readinessScore": 0,
+        "basicState": "missing",
+        "proState": "ready",
+        "advancedState": "missing",
+        "publicVerdict": "Basic publishes evidence-bound risk 90/100; missing evidence is 0.",
+        "proVerdict": "Pro PDF should include 4 sections and 5 top findings before final layout.",
+        "advancedVerdict": "Advanced requires 4 automated evidence-resolution/retest actions before a complete informational verdict."
+      }
+    },
+    {
+      "id": "report:critical-deployment-finding",
+      "passed": true,
+      "detail": {
+        "id": "finding-authority-deployment_identity-55ea07e5238bb025",
+        "severity": "critical",
+        "title": "Deployment identity mismatch · confirmed",
+        "publicLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+        "proLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0xb76d6e8c82d06fd262ef3799db73d5a724108d4e; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+        "advancedAction": "Verify current runtime bytecode with independent RPC quorum before making an exploitability claim.",
+        "sourceFamily": "docs.ancient8.gg + raw.githubusercontent.com",
+        "evidenceRefs": [
+          "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a",
+          "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+        ]
+      }
+    },
+    {
+      "id": "report:no-exploitability-overclaim",
+      "passed": true,
+      "detail": [
+        {
+          "id": "finding-authority-deployment_identity-55ea07e5238bb025",
+          "severity": "critical",
+          "title": "Deployment identity mismatch · confirmed",
+          "publicLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+          "proLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0xb76d6e8c82d06fd262ef3799db73d5a724108d4e; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+          "advancedAction": "Verify current runtime bytecode with independent RPC quorum before making an exploitability claim.",
+          "sourceFamily": "docs.ancient8.gg + raw.githubusercontent.com",
+          "evidenceRefs": [
+            "sha256:e6d36740cb7e4c39e4863f4e048d29a721b71b7fb03fae9134f3dbbb25e8394a",
+            "sha256:d33485a77d7cde0dc76cd2543a35c1cbbd34c2839798ec20a12296137d38fe7d"
+          ]
+        },
+        {
+          "id": "finding-liquidity-holder-lock-risk",
+          "severity": "elevated",
+          "title": "Liquidity / holders / lock risk · missing",
+          "publicLine": "Liquidity and holders stay limited without sources.",
+          "proLine": "confirmed=0; partial=0; missing=0; blocked=0; riskDelta=0",
+          "advancedAction": "Revalidate top holders, LP custody, lock proof and deployer relation from current source-bound evidence.",
+          "sourceFamily": "velmere-engine"
+        },
+        {
+          "id": "finding-permission-parser",
+          "severity": "watch",
+          "title": "Permission parser · missing",
+          "publicLine": "Contract permissions need parser and confirmation.",
+          "proLine": "detected=0; unknown=0; blocked=0; riskDelta=0; confidenceDelta=0",
+          "advancedAction": "Reproduce owner/proxy/mint/freeze/blacklist/tax from source/ABI/bytecode and confirm with independent evidence before the final rating.",
+          "sourceFamily": "velmere-engine"
+        },
+        {
+          "id": "finding-provider-runtime",
+          "severity": "watch",
+          "title": "Live provider runtime · missing",
+          "publicLine": "Live sources are not complete yet.",
+          "proLine": "runtime=missing; confirmed=0; partial=0; blocked=0; timedOut=0; errors=0",
+          "advancedAction": "Restore missing sources/provider fallbacks and rerun the evidence runtime.",
+          "sourceFamily": "velmere-engine"
+        },
+        {
+          "id": "finding-freshness-ledger",
+          "severity": "watch",
+          "title": "Source freshness ledger · missing",
+          "publicLine": "Timestamp and TTL must be visible.",
+          "proLine": "fresh=0; acceptable=0; stale=0; expired=0; next=n/a",
+          "advancedAction": "Refresh stale/expired lanes and re-bind evidence before any artifact after TTL.",
+          "sourceFamily": "velmere-engine"
+        }
+      ]
+    },
+    {
+      "id": "readiness:basic-authority-supplement",
+      "passed": true,
+      "detail": {
+        "passId": "pass4819-audit-paid-evidence-readiness-v1",
+        "tier": "basic",
+        "eligibleLanes": 0,
+        "strictConfirmedLanes": 0,
+        "strictAuthorityReceipts": 2,
+        "rejectedOrPartialLanes": 0,
+        "verifiedProviderReceipts": 0,
+        "verifiedAuthorityReceipts": 2,
+        "verifiedEvidenceReceipts": 2,
+        "independentProviderFamilies": 2,
+        "independentProviderFamilyIds": [
+          "official_chain_authority",
+          "project_maintainer_repository_authority"
+        ],
+        "independentUpstreamRoots": 2,
+        "independentUpstreamRootIds": [
+          "docs.ancient8.gg",
+          "raw.githubusercontent.com"
+        ],
+        "uniqueContentDigests": 2,
+        "evidenceRows": 2,
+        "minimum": {
+          "verifiedProviderReceipts": 1,
+          "independentProviderFamilies": 1,
+          "liveLanes": 2,
+          "evidenceRows": 2,
+          "independentUpstreamRoots": 1
+        },
+        "blockers": [],
+        "met": true,
+        "rule": "Strict provider lanes keep their original exact-response identity rules. Basic may additionally count a server-adjudicated dual-authority contradiction bundle only when its target binding, digests and two independent authority roots verify. Pro/Advanced never inherit that exception; partial/request-bound evidence never satisfies paid quorum."
+      }
+    },
+    {
+      "id": "readiness:pro-still-blocked",
+      "passed": true,
+      "detail": {
+        "passId": "pass4819-audit-paid-evidence-readiness-v1",
+        "tier": "pro",
+        "eligibleLanes": 0,
+        "strictConfirmedLanes": 0,
+        "strictAuthorityReceipts": 0,
+        "rejectedOrPartialLanes": 0,
+        "verifiedProviderReceipts": 0,
+        "verifiedAuthorityReceipts": 0,
+        "verifiedEvidenceReceipts": 0,
+        "independentProviderFamilies": 0,
+        "independentProviderFamilyIds": [],
+        "independentUpstreamRoots": 0,
+        "independentUpstreamRootIds": [],
+        "uniqueContentDigests": 0,
+        "evidenceRows": 6,
+        "minimum": {
+          "verifiedProviderReceipts": 4,
+          "independentProviderFamilies": 3,
+          "liveLanes": 5,
+          "evidenceRows": 6,
+          "independentUpstreamRoots": 3
+        },
+        "blockers": [
+          "verified_evidence_receipts:0/4",
+          "independent_provider_families:0/3",
+          "independent_upstream_roots:0/3",
+          "strict_live_evidence:0/5"
+        ],
+        "met": false,
+        "rule": "Strict provider lanes keep their original exact-response identity rules. Basic may additionally count a server-adjudicated dual-authority contradiction bundle only when its target binding, digests and two independent authority roots verify. Pro/Advanced never inherit that exception; partial/request-bound evidence never satisfies paid quorum."
+      }
+    },
+    {
+      "id": "readiness:advanced-still-blocked",
+      "passed": true,
+      "detail": {
+        "passId": "pass4819-audit-paid-evidence-readiness-v1",
+        "tier": "advanced",
+        "eligibleLanes": 0,
+        "strictConfirmedLanes": 0,
+        "strictAuthorityReceipts": 0,
+        "rejectedOrPartialLanes": 0,
+        "verifiedProviderReceipts": 0,
+        "verifiedAuthorityReceipts": 0,
+        "verifiedEvidenceReceipts": 0,
+        "independentProviderFamilies": 0,
+        "independentProviderFamilyIds": [],
+        "independentUpstreamRoots": 0,
+        "independentUpstreamRootIds": [],
+        "uniqueContentDigests": 0,
+        "evidenceRows": 10,
+        "minimum": {
+          "verifiedProviderReceipts": 5,
+          "independentProviderFamilies": 4,
+          "liveLanes": 6,
+          "evidenceRows": 10,
+          "independentUpstreamRoots": 4
+        },
+        "blockers": [
+          "verified_evidence_receipts:0/5",
+          "independent_provider_families:0/4",
+          "independent_upstream_roots:0/4",
+          "strict_live_evidence:0/6"
+        ],
+        "met": false,
+        "rule": "Strict provider lanes keep their original exact-response identity rules. Basic may additionally count a server-adjudicated dual-authority contradiction bundle only when its target binding, digests and two independent authority roots verify. Pro/Advanced never inherit that exception; partial/request-bound evidence never satisfies paid quorum."
+      }
+    },
+    {
+      "id": "chain-map:ancient8",
+      "passed": true
+    },
+    {
+      "id": "route:source-url-binding",
+      "passed": true
+    },
+    {
+      "id": "route:authority-builder",
+      "passed": true
+    }
+  ],
+  "evidenceDigest": "sha256:55ea07e5238bb025d4e77960c0d055dcd564ae558b0293a61928d499ad7a3e71",
+  "documentedAlternateAddress": "0xb76d6e8c82d06fd262ef3799db73d5a724108d4e",
+  "reportRiskScore": 90,
+  "basicReadiness": {
+    "passId": "pass4819-audit-paid-evidence-readiness-v1",
+    "tier": "basic",
+    "eligibleLanes": 0,
+    "strictConfirmedLanes": 0,
+    "strictAuthorityReceipts": 2,
+    "rejectedOrPartialLanes": 0,
+    "verifiedProviderReceipts": 0,
+    "verifiedAuthorityReceipts": 2,
+    "verifiedEvidenceReceipts": 2,
+    "independentProviderFamilies": 2,
+    "independentProviderFamilyIds": [
+      "official_chain_authority",
+      "project_maintainer_repository_authority"
+    ],
+    "independentUpstreamRoots": 2,
+    "independentUpstreamRootIds": [
+      "docs.ancient8.gg",
+      "raw.githubusercontent.com"
+    ],
+    "uniqueContentDigests": 2,
+    "evidenceRows": 2,
+    "minimum": {
+      "verifiedProviderReceipts": 1,
+      "independentProviderFamilies": 1,
+      "liveLanes": 2,
+      "evidenceRows": 2,
+      "independentUpstreamRoots": 1
+    },
+    "blockers": [],
+    "met": true,
+    "rule": "Strict provider lanes keep their original exact-response identity rules. Basic may additionally count a server-adjudicated dual-authority contradiction bundle only when its target binding, digests and two independent authority roots verify. Pro/Advanced never inherit that exception; partial/request-bound evidence never satisfies paid quorum."
+  },
+  "proReadiness": {
+    "passId": "pass4819-audit-paid-evidence-readiness-v1",
+    "tier": "pro",
+    "eligibleLanes": 0,
+    "strictConfirmedLanes": 0,
+    "strictAuthorityReceipts": 0,
+    "rejectedOrPartialLanes": 0,
+    "verifiedProviderReceipts": 0,
+    "verifiedAuthorityReceipts": 0,
+    "verifiedEvidenceReceipts": 0,
+    "independentProviderFamilies": 0,
+    "independentProviderFamilyIds": [],
+    "independentUpstreamRoots": 0,
+    "independentUpstreamRootIds": [],
+    "uniqueContentDigests": 0,
+    "evidenceRows": 6,
+    "minimum": {
+      "verifiedProviderReceipts": 4,
+      "independentProviderFamilies": 3,
+      "liveLanes": 5,
+      "evidenceRows": 6,
+      "independentUpstreamRoots": 3
+    },
+    "blockers": [
+      "verified_evidence_receipts:0/4",
+      "independent_provider_families:0/3",
+      "independent_upstream_roots:0/3",
+      "strict_live_evidence:0/5"
+    ],
+    "met": false,
+    "rule": "Strict provider lanes keep their original exact-response identity rules. Basic may additionally count a server-adjudicated dual-authority contradiction bundle only when its target binding, digests and two independent authority roots verify. Pro/Advanced never inherit that exception; partial/request-bound evidence never satisfies paid quorum."
+  },
+  "advancedReadiness": {
+    "passId": "pass4819-audit-paid-evidence-readiness-v1",
+    "tier": "advanced",
+    "eligibleLanes": 0,
+    "strictConfirmedLanes": 0,
+    "strictAuthorityReceipts": 0,
+    "rejectedOrPartialLanes": 0,
+    "verifiedProviderReceipts": 0,
+    "verifiedAuthorityReceipts": 0,
+    "verifiedEvidenceReceipts": 0,
+    "independentProviderFamilies": 0,
+    "independentProviderFamilyIds": [],
+    "independentUpstreamRoots": 0,
+    "independentUpstreamRootIds": [],
+    "uniqueContentDigests": 0,
+    "evidenceRows": 10,
+    "minimum": {
+      "verifiedProviderReceipts": 5,
+      "independentProviderFamilies": 4,
+      "liveLanes": 6,
+      "evidenceRows": 10,
+      "independentUpstreamRoots": 4
+    },
+    "blockers": [
+      "verified_evidence_receipts:0/5",
+      "independent_provider_families:0/4",
+      "independent_upstream_roots:0/4",
+      "strict_live_evidence:0/6"
+    ],
+    "met": false,
+    "rule": "Strict provider lanes keep their original exact-response identity rules. Basic may additionally count a server-adjudicated dual-authority contradiction bundle only when its target binding, digests and two independent authority roots verify. Pro/Advanced never inherit that exception; partial/request-bound evidence never satisfies paid quorum."
+  }
+}
