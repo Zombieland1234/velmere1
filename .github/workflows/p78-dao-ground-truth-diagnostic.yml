@@ -1,0 +1,117 @@
+name: P78 DAO Real Ground Truth Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p78-real-dao-ground-truth-20260818
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p78-dao-ground-truth-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p78-dao-ground-truth:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact P78 diagnostic head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 parent bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Expand pinned P77 support bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+
+      - name: Reconstruct exact P77R3 current product source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          ./p78-runtime/reconstruct-p77-current.ps1
+
+      - name: Probe historical solc 0.3.1 npm package
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p78-solc | Out-Null
+          '{"private":true}' | Set-Content p78-solc/package.json -Encoding ascii
+          Push-Location p78-solc
+          try {
+            npm install solc@0.3.1-1 --ignore-scripts --audit=false --fund=false 2>&1 | Tee-Object -FilePath ../p78-out/P78_SOLC_NPM_INSTALL.txt
+          } finally { Pop-Location }
+
+      - name: Execute real DAO ground-truth diagnostic
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          node p78-runtime/probe-p78-dao-ground-truth.mjs --source-root p78-work/source --out-dir p78-out --solc-root p78-solc
+
+      - name: Capture P78 diagnostic boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path p78-out | Out-Null
+          $diag=$null
+          if(Test-Path 'p78-out/P78_DAO_REAL_GROUND_TRUTH_DIAGNOSTIC.json'){$diag=Get-Content 'p78-out/P78_DAO_REAL_GROUND_TRUTH_DIAGNOSTIC.json' -Raw|ConvertFrom-Json}
+          [ordered]@{
+            schemaVersion='velmere.p78.dao-diagnostic-windows-boundary.v1'
+            runId='${{ github.run_id }}'
+            sha='${{ github.sha }}'
+            parentCheckpoint='P77R3'
+            diagnosticStatus=if($diag){$diag.status}else{'NOT_PRODUCED'}
+            gates=if($diag){$diag.gates}else{$null}
+            runtimeQuorum=if($diag){$diag.currentRuntime}else{$null}
+            detector=if($diag){$diag.currentVelmereDetector}else{$null}
+            compilerReplay=if($diag){$diag.compilerReplay}else{$null}
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            sale='0/20'
+            live=$false
+            truthBoundary='Diagnostic only. No product checkpoint or customer FINAL/PDF/value/rights/sale/LIVE credit is granted by P78 diagnostic.'
+          }|ConvertTo-Json -Depth 20|Set-Content p78-out/P78_WINDOWS_DIAGNOSTIC_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P78 diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78-dao-real-ground-truth-diagnostic
+          path: p78-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
