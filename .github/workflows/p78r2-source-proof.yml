@@ -26,7 +26,7 @@ jobs:
       - name: Checkout P78R2 control head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: true
 
       - name: Expand pinned P75 support
@@ -111,21 +111,28 @@ jobs:
           node ./node_modules/typescript/bin/tsc --noEmit --pretty false
           node ./node_modules/eslint/bin/eslint.js app components lib store i18n.ts navigation.ts proxy.ts routing.ts tailwind.config.ts next.config.mjs --ext .js,.mjs,.cjs,.ts,.tsx --max-warnings 0
 
-      - name: Execute P78R2 private evidence runtime controls
+      - name: Execute P78R2 private evidence runtime controls with exact stderr capture
+        id: runtime
+        continue-on-error: true
         env:
           P78R2_RESULT_DIR: ${{ github.workspace }}/p78r2-out
         run: |
-          set -euo pipefail
+          set +e
           cd p75-work/source
-          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r2-runtime.mts
+          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r2-runtime.mts > ../../p78r2-out/P78R2_RUNTIME_LOG.txt 2>&1
+          status=$?
+          cd ../..
+          printf '%s\n' "$status" > p78r2-out/P78R2_RUNTIME_EXIT.txt
+          cat p78r2-out/P78R2_RUNTIME_LOG.txt
+          exit "$status"
 
-      - name: Publish P78R2 exact source candidate receipts
+      - name: Publish P78R2 exact source candidate receipts and runtime diagnostics
         if: always()
         run: |
           set -euo pipefail
           mkdir -p p78r2-results
           if [ -f p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json ]; then cp p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json p78r2-results/; fi
-          find p78r2-out -maxdepth 1 -type f -name '*.json' -exec cp {} p78r2-results/ \;
+          if [ -d p78r2-out ]; then find p78r2-out -maxdepth 1 -type f \( -name '*.json' -o -name '*.txt' \) -exec cp {} p78r2-results/ \;; fi
           python3 - <<'PY'
           import json, pathlib, os
           out=pathlib.Path('p78r2-results/P78R2_SOURCE_WORKFLOW_BOUNDARY.json')
@@ -133,12 +140,15 @@ jobs:
           projection=None
           if manifest.exists(): projection=json.loads(manifest.read_text())['projection']
           out.write_text(json.dumps({
-            'schemaVersion':'velmere.p78r2.source-workflow-boundary.v1',
+            'schemaVersion':'velmere.p78r2.source-workflow-boundary.v2',
             'runId':os.environ.get('GITHUB_RUN_ID'),
             'sha':os.environ.get('GITHUB_SHA'),
             'parent':'P78R1/V17',
             'candidate':'P78R2/V17',
             'projection':projection,
+            'runtimeOutcome':'${{ steps.runtime.outcome }}',
+            'runtimeExitPath':'p78r2-results/P78R2_RUNTIME_EXIT.txt',
+            'runtimeLogPath':'p78r2-results/P78R2_RUNTIME_LOG.txt',
             'creditBoundary':{
               'newVulnerabilityDetector':0,
               'runtimeExploitability':0,
@@ -155,7 +165,9 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- p78r2-results
           if ! git diff --cached --quiet; then
-            git commit -m 'P78R2 publish verified static evidence source proof'
+            git commit -m 'P78R2 publish verified static evidence source proof diagnostics'
+            git fetch origin velmere-p78r2-verified-static-evidence-20260818
+            git rebase origin/velmere-p78r2-verified-static-evidence-20260818
             git push origin HEAD:velmere-p78r2-verified-static-evidence-20260818
           fi
 
@@ -168,3 +180,11 @@ jobs:
           if-no-files-found: warn
           compression-level: 0
           retention-days: 14
+
+      - name: Enforce P78R2 runtime success
+        if: always()
+        run: |
+          if [ '${{ steps.runtime.outcome }}' != 'success' ]; then
+            echo 'P78R2 runtime failed; exact stderr is committed in p78r2-results/P78R2_RUNTIME_LOG.txt'
+            exit 1
+          fi
