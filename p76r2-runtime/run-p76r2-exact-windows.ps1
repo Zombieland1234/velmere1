@@ -46,7 +46,10 @@ try { Run "node ./node_modules/tsx/dist/cli.mjs ../../p73-runtime/test-p73r7-ful
 $env:NODE_ENV='test'
 $env:P75_RESULT_DIR=(Resolve-Path p76r2-out).Path
 Push-Location p75-work/source
-try { Run "node ./node_modules/tsx/dist/cli.mjs ../../p75-runtime/test-p75-advanced-memory.ts" } finally { Pop-Location }
+try {
+  Copy-Item ../../p75-runtime/test-p75-advanced-memory.ts ../../p75-runtime/test-p75-advanced-memory.mts -Force
+  Run "node ./node_modules/tsx/dist/cli.mjs ../../p75-runtime/test-p75-advanced-memory.mts"
+} finally { Pop-Location }
 
 $env:P76_RESULT_DIR=(Resolve-Path p76r2-out).Path
 Push-Location p75-work/source
