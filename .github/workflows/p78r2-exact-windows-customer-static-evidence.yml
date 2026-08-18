@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - velmere-p78r2-customer-static-evidence-20260818
+  pull_request:
+    branches:
+      - velmere-p77-deterministic-final-delivery-20260818
   workflow_dispatch:
 
 permissions:
@@ -21,6 +24,7 @@ jobs:
       - name: Checkout exact P78R2 control head
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -83,7 +87,7 @@ jobs:
           if(Test-Path 'p78-out/P77_DETERMINISTIC_DELIVERY_RUNTIME.json'){$x=Get-Content 'p78-out/P77_DETERMINISTIC_DELIVERY_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p77='PASS'}}
           if(Test-Path 'p78-out/P77_STATIC_CONTROL.json'){$x=Get-Content 'p78-out/P77_STATIC_CONTROL.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p77static='PASS'}}
           if(Test-Path 'p78-out/P78R2_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p78-out/P78R2_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
-          [ordered]@{schemaVersion='velmere.p78r2.windows-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';projection=if($m){$m.projection}else{$null};sourcePatch=$sourcePatch;engineering=$engineering;customerStaticEvidenceRuntime=$runtime;p73AuthorityRegression=$p73;p75AutomationRegression=$p75;p76ReleaseRegression=$p76;p76r2HumanGateRegression=$p76r2;p77DeliveryRegression=$p77;p77StaticRegression=$p77static;vulnerabilityGroundTruth='1/1 calibration reference from P78R1; no customer credit';customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;truthBoundary='P78R2 credits a build-relevant customer Audit repair only if exact Windows and the server-private source-evidence runtime pass. No real customer FINAL/PDF/rights/value/sale/LIVE promotion.'}|ConvertTo-Json -Depth 12|Set-Content p78-out/P78R2_WINDOWS_BOUNDARY.json -Encoding utf8
+          [ordered]@{schemaVersion='velmere.p78r2.windows-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}';projection=if($m){$m.projection}else{$null};sourcePatch=$sourcePatch;engineering=$engineering;customerStaticEvidenceRuntime=$runtime;p73AuthorityRegression=$p73;p75AutomationRegression=$p75;p76ReleaseRegression=$p76;p76r2HumanGateRegression=$p76r2;p77DeliveryRegression=$p77;p77StaticRegression=$p77static;vulnerabilityGroundTruth='1/1 calibration reference from P78R1; no customer credit';customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;truthBoundary='P78R2 credits a build-relevant customer Audit repair only if exact Windows and the server-private source-evidence runtime pass. No real customer FINAL/PDF/rights/value/sale/LIVE promotion.'}|ConvertTo-Json -Depth 12|Set-Content p78-out/P78R2_WINDOWS_BOUNDARY.json -Encoding utf8
 
       - name: Upload P78R2 Windows evidence
         if: always()
