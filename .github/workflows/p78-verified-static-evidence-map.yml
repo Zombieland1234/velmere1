@@ -1,0 +1,90 @@
+name: P78 Verified Static Evidence Map
+
+on:
+  push:
+    branches:
+      - velmere-p78-source-inspection-20260818
+    paths:
+      - '.github/workflows/p78-verified-static-evidence-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  map-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Reconstruct exact P77 source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          if len(parts)!=7: raise SystemExit('P75 part count mismatch')
+          raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+          if hashlib.sha256(raw).hexdigest()!='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad': raise SystemExit('P75 support mismatch')
+          z=Path('p75-runtime/p75-ci-bundle.zip');z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a:a.extractall('p75-runtime')
+          PY
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78-map-out
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78-map-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78-map-out/P75.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78-map-out/P76.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78-map-out/P76R2.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78-map-out/P77.json
+
+      - name: Map all verified static evidence producers and consumers
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,re,hashlib
+          root=Path('p75-work/source')
+          terms=['verifiedStaticEvidence','Pass2576VerifiedStaticEvidence','sourceText','abiText','bytecodeText','responseDigest']
+          matches=[]
+          for p in sorted(root.rglob('*')):
+            if not p.is_file() or p.suffix.lower() not in {'.ts','.tsx','.js','.mjs','.cjs'}: continue
+            rel=p.relative_to(root).as_posix()
+            text=p.read_text(encoding='utf-8',errors='replace')
+            lines=text.splitlines()
+            for i,line in enumerate(lines,1):
+              if any(term in line for term in terms):
+                matches.append({'path':rel,'line':i,'text':line.strip()[:600]})
+          direct=[m for m in matches if 'verifiedStaticEvidence' in m['text'] or 'Pass2576VerifiedStaticEvidence' in m['text']]
+          report={
+            'schemaVersion':'velmere.p78.verified-static-evidence-map.v1',
+            'parent':'P77R3/V17',
+            'aggregate':'354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032',
+            'directVerifiedStaticEvidenceMatches':direct,
+            'allRelatedMatches':matches,
+            'directMatchCount':len(direct),
+            'relatedMatchCount':len(matches),
+          }
+          out=Path('p78-inspection-results/P78_VERIFIED_STATIC_EVIDENCE_MAP.json')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          out.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,indent=2))
+          PY
+
+      - name: Publish map
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78-inspection-results/P78_VERIFIED_STATIC_EVIDENCE_MAP.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'P78 publish verified static evidence producer consumer map'
+            git push origin HEAD:velmere-p78-source-inspection-20260818
+          fi
