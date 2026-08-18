@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "velmere.p78r6.oz-import-symbol-binding-source-patch.v1",
+  "status": "PASS",
+  "parentProjection": {
+    "fileCount": 1602,
+    "payloadBytes": 21069277,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "530e81064adafe6b8c2f3a7d31f485c85b0e5f7977c371369b721e88a8558cfe"
+  },
+  "projection": {
+    "fileCount": 1602,
+    "payloadBytes": 21071356,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "ed50bfc50e677687b7d5d970b94e6a9b1fb45e67ed1fe98e3d51b31710a5ed22"
+  },
+  "changedFiles": [
+    {
+      "path": "lib/security/erc2771-multicall-source-detector.ts",
+      "beforeBytes": 25931,
+      "beforeSha256": "26eeaa3b3a4a73096f4da3986182aeb910c432f1f883f90094664d2f93fdc908",
+      "afterBytes": 28010,
+      "afterSha256": "c767aec214c16128588b3f6e1a31c6961c0a62bb3147349778174f465d790b0d"
+    }
+  ],
+  "rootCause": "P78R5 authenticated any correlated exact-path OpenZeppelin ERC2771Context import, without proving that the imported local symbol was the symbol actually inherited by the target closure.",
+  "repair": [
+    "parse exact-path plain/selective/namespace Solidity imports after comment stripping",
+    "derive the local symbol produced by each import, including aliases and qualified namespace symbols",
+    "credit import authenticity only when a closure node in the same source unit directly inherits that exact local symbol",
+    "support qualified inheritance base names without pretending imported source bodies exist",
+    "preserve source-semantic authenticity as an independent fallback and retain all R4/R5 fail-closed boundaries"
+  ],
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "P78R6 is a source-symbol-binding precision repair. It removes a measured import-decoy false positive but does not prove population accuracy, deployed equivalence, runtime exploitability or release readiness."
+}
