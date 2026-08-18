@@ -1,0 +1,122 @@
+name: P79 Exact Windows Historical Audit Customer Path
+
+on:
+  push:
+    branches:
+      - velmere-p79-historical-audit-customer-path-20260818
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p79-historical-audit-customer-path-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p79-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P79 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 parent bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Expand pinned P77 support bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim(); $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Exact P79 source engineering and regressions
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          ./p79-runtime/run-p79-exact-windows.ps1
+
+      - name: Capture P79 Windows boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Continue'
+          New-Item -ItemType Directory -Force -Path p79-out | Out-Null
+          function Status([string]$path,[string]$expected='PASS'){
+            if(!(Test-Path $path)){return 'MISSING'}
+            try{$x=Get-Content $path -Raw|ConvertFrom-Json; if($x.status-eq$expected){return 'PASS'}; return [string]$x.status}catch{return 'INVALID'}
+          }
+          $eng=Status 'p79-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'
+          $patch=Status 'p79-out/P79_SOURCE_PATCH.json'
+          $post=Status 'p79-out/P79_POST_REGRESSION_PROJECTION.json'
+          $p77static=Status 'p79-out/P77_STATIC_CONTROL_PARENT.json'
+          $p73=Status 'p79-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'
+          $p75=Status 'p79-out/P75_ADVANCED_MEMORY_RUNTIME.json'
+          $p76=Status 'p79-out/P76_RELEASE_ENVELOPE_RUNTIME.json'
+          $p76r2=Status 'p79-out/P76R2_RELEASE_ENVELOPE_RUNTIME.json'
+          $p77=Status 'p79-out/P77_DETERMINISTIC_DELIVERY_RUNTIME.json'
+          $p78static=Status 'p79-out/p78-current/P78_REAL_AUDIT_DATAFLOW_STATIC.json'
+          $p78static2=Status 'p79-out/p78-current/P78R3_CUSTOMER_PATH_STATIC.json'
+          $p78private=Status 'p79-out/p78-current/P78_PRIVATE_PROVIDER_EVIDENCE_RUNTIME.json'
+          $p78json=Status 'p79-out/p78-current/P78_STANDARD_JSON_CUSTOMER_PATH_RUNTIME.json'
+          $p78corpus=Status 'p79-out/p78-current/P78_THIRDWEB_DEVELOPMENT_MICRO_CORPUS_RUNTIME.json'
+          $p79static=Status 'p79-out/p79-current/P79_HISTORICAL_GROUND_TRUTH_STATIC.json'
+          $p79hist=Status 'p79-out/p79-current/P79_DOMINOTT_HISTORICAL_EXPLOIT_GROUND_TRUTH_RUNTIME.json' 'PASS_BOUNDED'
+          $p79registry=Status 'p79-out/p79-current/P79_REGISTRY_CUSTOMER_PATH_RUNTIME.json' 'PASS_BOUNDED'
+          $p79pdf=Status 'p79-out/p79-current/P79_BASIC_PDF_HISTORICAL_ARTIFACT_RUNTIME.json' 'PASS_BOUNDED'
+          $manifest=$null;if(Test-Path 'p79-out/P79_BUILD_PROJECTION_MANIFEST.json'){$manifest=Get-Content 'p79-out/P79_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
+          $all=@($eng,$patch,$post,$p77static,$p73,$p75,$p76,$p76r2,$p77,$p78static,$p78static2,$p78private,$p78json,$p78corpus,$p79static,$p79hist,$p79registry,$p79pdf)
+          $status=if($all -notcontains 'MISSING' -and $all -notcontains 'INVALID' -and ($all|Where-Object{$_ -ne 'PASS'}).Count-eq0){'PASS_BOUNDED'}else{'FAIL_CLOSED'}
+          [ordered]@{
+            schemaVersion='velmere.p79.windows-boundary.v1';status=$status;runId='${{ github.run_id }}';sha='${{ github.sha }}';
+            projection=if($manifest){$manifest.projection}else{$null};
+            sourcePatch=$patch;engineering=$eng;postRegressionProjection=$post;
+            regressions=[ordered]@{p77Static=$p77static;p73Authority=$p73;p75Automation=$p75;p76Release=$p76;p76r2HumanGate=$p76r2;p77Delivery=$p77};
+            p78=[ordered]@{staticDataflow=$p78static;staticCustomerPath=$p78static2;privateProvider=$p78private;standardJsonCustomerPath=$p78json;thirdwebDevelopmentMicroCorpus=$p78corpus};
+            p79=[ordered]@{staticHistorical=$p79static;historicalExploitGroundTruth=$p79hist;registryCustomerPath=$p79registry;basicPdfCandidate=$p79pdf};
+            historicalExploitedDeploymentGroundTruth=if($p79hist-eq'PASS'){1}else{0};currentExploitability=0;
+            customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;
+            pdfAccessibility='OPEN_TAGGED_PDF_NOT_PROVEN';
+            truthBoundary='P79 may credit one exact historical exploited-deployment ground-truth case plus exact-Windows engineering only if all listed gates pass. It does not prove current exploitability, Customer FINAL, Audit FINAL PDF accessibility, rights, paid value, sale eligibility, LIVE or WORLD_CLASS.'
+          }|ConvertTo-Json -Depth 14|Set-Content p79-out/P79_WINDOWS_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P79 Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p79-historical-audit-customer-path-exact-windows
+          path: p79-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
