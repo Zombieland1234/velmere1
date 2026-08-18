@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "velmere.p78r6.import-symbol-binding-runtime.v1",
+  "status": "PASS",
+  "measuredParentRegression": {
+    "parentP78R5ObservedState": "confirmed_source_pattern",
+    "repairedState": "blocked",
+    "falsePositiveStillObserved": false,
+    "authenticity": {
+      "state": "unverified_name_only",
+      "evidenceUnitIds": [
+        "verified-source.sol"
+      ]
+    }
+  },
+  "importBindingControls": {
+    "plain": {
+      "state": "confirmed_source_pattern",
+      "authenticity": "verified_openzeppelin_import"
+    },
+    "selective": {
+      "state": "confirmed_source_pattern",
+      "authenticity": "verified_openzeppelin_import"
+    },
+    "selectiveAliasUsed": {
+      "state": "confirmed_source_pattern",
+      "authenticity": "verified_openzeppelin_import"
+    },
+    "namespaceUsed": {
+      "state": "confirmed_source_pattern",
+      "authenticity": "verified_openzeppelin_import"
+    },
+    "legacyNamespaceUsed": {
+      "state": "confirmed_source_pattern",
+      "authenticity": "verified_openzeppelin_import"
+    },
+    "unusedAliasDecoy": {
+      "state": "not_detected",
+      "authenticity": "not_present"
+    }
+  },
+  "inheritedPrecisionControls": {
+    "sourceSemanticFallback": {
+      "state": "confirmed_source_pattern",
+      "authenticity": "verified_source_semantics"
+    },
+    "crossUnitAmbiguous": "blocked",
+    "crossUnitExactMeta": "blocked",
+    "crossUnitExactBatch": "not_detected"
+  },
+  "productChain": {
+    "authenticatedClaimCreated": true,
+    "aliasDecoyClaimCreated": false,
+    "riskFloorPromoted": false
+  },
+  "thirdwebPinnedPair": {
+    "vulnerable": {
+      "state": "confirmed_source_pattern",
+      "contextAuthenticity": {
+        "state": "verified_openzeppelin_import",
+        "evidenceUnitIds": [
+          "contracts/infra/TWFactory.sol"
+        ]
+      },
+      "correlation": {
+        "targetSelection": "etherscan_contract_name",
+        "targetContractName": "TWFactory",
+        "analyzedContractNames": [
+          "TWFactory",
+          "Multicall"
+        ],
+        "sourceUnitIds": [
+          "contracts/infra/TWFactory.sol",
+          "contracts/extension/Multicall.sol"
+        ]
+      },
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      }
+    },
+    "fixed": {
+      "state": "mitigated_source_pattern",
+      "contextAuthenticity": {
+        "state": "verified_openzeppelin_import",
+        "evidenceUnitIds": [
+          "contracts/infra/TWFactory.sol"
+        ]
+      },
+      "correlation": {
+        "targetSelection": "etherscan_contract_name",
+        "targetContractName": "TWFactory",
+        "analyzedContractNames": [
+          "TWFactory",
+          "Multicall"
+        ],
+        "sourceUnitIds": [
+          "contracts/infra/TWFactory.sol",
+          "contracts/extension/Multicall.sol"
+        ]
+      },
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": true
+      }
+    }
+  },
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD_SYMBOL_BINDING_REGRESSIONS_AND_PINNED_PAIR_ONLY",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "PASS proves the measured import-alias decoy false positive is removed while legitimate plain/selective/alias/namespace bindings and source-semantic fallback remain detectable, R4/R5 precision controls are preserved, and the pinned historical thirdweb pair remains separated. It does not prove population accuracy or deployed runtime exploitability."
+}
