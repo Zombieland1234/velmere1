@@ -1,0 +1,77 @@
+name: P78R2 DAO Exact Compiler Replay
+
+on:
+  push:
+    branches:
+      - velmere-p78r2-dao-exact-compiler-20260818
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p78r2-exact-compiler:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact P78R2 head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+
+      - name: Execute direct-cwrap exact compiler replay
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p78r2-out | Out-Null
+          node p78-runtime/probe-p78r2-exact-compiler.mjs p78r2-out
+
+      - name: Capture P78R2 boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path p78r2-out | Out-Null
+          $r=$null
+          if(Test-Path 'p78r2-out/P78R2_DAO_EXACT_COMPILER_REPLAY.json'){$r=Get-Content 'p78r2-out/P78R2_DAO_EXACT_COMPILER_REPLAY.json' -Raw|ConvertFrom-Json}
+          [ordered]@{
+            schemaVersion='velmere.p78r2.exact-compiler-boundary.v1'
+            runId='${{ github.run_id }}'
+            sha='${{ github.sha }}'
+            parentProductCheckpoint='P77R3'
+            productBytesChanged=$false
+            replayStatus=if($r){$r.status}else{'NOT_PRODUCED'}
+            currentRuntime=if($r){$r.currentRuntime}else{$null}
+            compiler=if($r){$r.compiler}else{$null}
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            sale='0/20'
+            live=$false
+            truthBoundary='P78R2 is exact compiler/source/deployment diagnostic only; no product checkpoint or FINAL/PDF/value/rights/sale/LIVE promotion.'
+          }|ConvertTo-Json -Depth 20|Set-Content p78r2-out/P78R2_WINDOWS_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P78R2 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78r2-dao-exact-compiler-replay
+          path: p78r2-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
