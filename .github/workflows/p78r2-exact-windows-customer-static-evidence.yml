@@ -1,0 +1,96 @@
+name: P78R2 Exact Windows Customer Static Evidence
+
+on:
+  push:
+    branches:
+      - velmere-p78r2-customer-static-evidence-20260818
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p78r2-customer-static-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p78r2-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P78R2 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 parent bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Expand pinned P77 support bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim(); $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Exact P78R2 source engineering and regressions
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          ./p78-runtime/run-p78r2-exact-windows.ps1
+
+      - name: Capture P78R2 Windows boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path p78-out | Out-Null
+          $engineering='FAIL';$sourcePatch='FAIL';$runtime='FAIL';$p73='FAIL';$p75='FAIL';$p76='FAIL';$p76r2='FAIL';$p77='FAIL';$p77static='FAIL';$m=$null
+          if(Test-Path 'p78-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p78-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$engineering='PASS'}}
+          if(Test-Path 'p78-out/P78R2_SOURCE_PATCH.json'){$x=Get-Content 'p78-out/P78R2_SOURCE_PATCH.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$sourcePatch='PASS'}}
+          if(Test-Path 'p78-out/P78R2_CUSTOMER_STATIC_EVIDENCE_RUNTIME.json'){$x=Get-Content 'p78-out/P78R2_CUSTOMER_STATIC_EVIDENCE_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$runtime='PASS'}}
+          if(Test-Path 'p78-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'){$x=Get-Content 'p78-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p73='PASS'}}
+          if(Test-Path 'p78-out/P75_ADVANCED_MEMORY_RUNTIME.json'){$x=Get-Content 'p78-out/P75_ADVANCED_MEMORY_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p75='PASS'}}
+          if(Test-Path 'p78-out/P76_RELEASE_ENVELOPE_RUNTIME.json'){$x=Get-Content 'p78-out/P76_RELEASE_ENVELOPE_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p76='PASS'}}
+          if(Test-Path 'p78-out/P76R2_RELEASE_ENVELOPE_RUNTIME.json'){$x=Get-Content 'p78-out/P76R2_RELEASE_ENVELOPE_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p76r2='PASS'}}
+          if(Test-Path 'p78-out/P77_DETERMINISTIC_DELIVERY_RUNTIME.json'){$x=Get-Content 'p78-out/P77_DETERMINISTIC_DELIVERY_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p77='PASS'}}
+          if(Test-Path 'p78-out/P77_STATIC_CONTROL.json'){$x=Get-Content 'p78-out/P77_STATIC_CONTROL.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p77static='PASS'}}
+          if(Test-Path 'p78-out/P78R2_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p78-out/P78R2_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
+          [ordered]@{schemaVersion='velmere.p78r2.windows-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';projection=if($m){$m.projection}else{$null};sourcePatch=$sourcePatch;engineering=$engineering;customerStaticEvidenceRuntime=$runtime;p73AuthorityRegression=$p73;p75AutomationRegression=$p75;p76ReleaseRegression=$p76;p76r2HumanGateRegression=$p76r2;p77DeliveryRegression=$p77;p77StaticRegression=$p77static;vulnerabilityGroundTruth='1/1 calibration reference from P78R1; no customer credit';customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;truthBoundary='P78R2 credits a build-relevant customer Audit repair only if exact Windows and the server-private source-evidence runtime pass. No real customer FINAL/PDF/rights/value/sale/LIVE promotion.'}|ConvertTo-Json -Depth 12|Set-Content p78-out/P78R2_WINDOWS_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P78R2 Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78r2-customer-static-evidence-exact-windows
+          path: p78-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
