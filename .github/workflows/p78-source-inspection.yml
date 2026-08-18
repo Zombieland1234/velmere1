@@ -11,10 +11,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: p78-source-inspection-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   inspect-bootstrap:
-    runs-on: windows-2025
-    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Checkout inspection branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -23,50 +27,53 @@ jobs:
           persist-credentials: true
 
       - name: Expand pinned P75 parent bundle
-        shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
-          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
-          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
-          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
-          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
-          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
-          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          if len(parts)!=7: raise SystemExit(f'P75 bundle part count mismatch: {len(parts)}')
+          joined=''.join(p.read_text(encoding='ascii').strip() for p in parts)
+          raw=base64.b64decode(joined, validate=True)
+          sha=hashlib.sha256(raw).hexdigest()
+          expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          if sha!=expected: raise SystemExit(f'P75 CI bundle SHA mismatch: {sha}')
+          z=Path('p75-runtime/p75-ci-bundle.zip'); z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a: a.extractall('p75-runtime')
+          print('PASS P75 support',len(raw),sha)
+          PY
 
       - name: Expand pinned P77 support bundle
-        shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+          set -euo pipefail
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
 
       - name: Capture exact extracted support inventory and scripts
-        shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          New-Item -ItemType Directory -Force -Path p78-inspection-results | Out-Null
-          Get-ChildItem p77-runtime -Recurse -File | Sort-Object FullName | ForEach-Object {
-            $rel=$_.FullName.Substring((Resolve-Path '.').Path.Length+1).Replace('\','/')
-            $sha=(Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$rel`t$($_.Length)`t$sha"
-          } | Set-Content p78-inspection-results/P78_P77_SUPPORT_INVENTORY.tsv -Encoding utf8
-          Get-ChildItem p77-runtime -Recurse -File -Include *.py,*.ps1 | Sort-Object FullName | ForEach-Object {
-            "===== $($_.FullName.Substring((Resolve-Path '.').Path.Length+1).Replace('\','/')) ====="
-            Get-Content $_.FullName -Raw
-          } | Set-Content p78-inspection-results/P78_P77_SUPPORT_SCRIPTS.txt -Encoding utf8
-          Get-ChildItem p75-runtime -Recurse -File -Include *.py,*.ps1 | Sort-Object FullName | ForEach-Object {
-            "===== $($_.FullName.Substring((Resolve-Path '.').Path.Length+1).Replace('\','/')) ====="
-            Get-Content $_.FullName -Raw
-          } | Set-Content p78-inspection-results/P78_P75_SUPPORT_SCRIPTS.txt -Encoding utf8
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          out=Path('p78-inspection-results'); out.mkdir(parents=True,exist_ok=True)
+          rows=[]
+          for p in sorted(x for x in Path('p77-runtime').rglob('*') if x.is_file()):
+              b=p.read_bytes(); rows.append(f'{p.as_posix()}\t{len(b)}\t{hashlib.sha256(b).hexdigest()}')
+          (out/'P78_P77_SUPPORT_INVENTORY.tsv').write_text('\n'.join(rows)+'\n',encoding='utf-8')
+          for root,name in [(Path('p77-runtime'),'P78_P77_SUPPORT_SCRIPTS.txt'),(Path('p75-runtime'),'P78_P75_SUPPORT_SCRIPTS.txt')]:
+              chunks=[]
+              for p in sorted(x for x in root.rglob('*') if x.is_file() and x.suffix.lower() in {'.py','.ps1'}):
+                  chunks.append(f'===== {p.as_posix()} =====\n{p.read_text(encoding="utf-8",errors="replace")}')
+              (out/name).write_text('\n'.join(chunks),encoding='utf-8')
+          PY
 
       - name: Publish bootstrap inspection
-        shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- p78-inspection-results
-          if(-not (git diff --cached --quiet)){
+          if ! git diff --cached --quiet; then
             git commit -m 'P78 publish support reconstruction inspection'
             git push origin HEAD:velmere-p78-source-inspection-20260818
-          }
+          fi
