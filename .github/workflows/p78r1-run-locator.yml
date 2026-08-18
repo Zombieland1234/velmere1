@@ -1,0 +1,35 @@
+name: P78R1 Run Locator
+
+on:
+  push:
+    branches:
+      - velmere-p78-real-dao-ground-truth-20260818
+
+permissions:
+  contents: read
+  actions: read
+  statuses: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Publish exact P78R1 run URL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${REPO}/actions/workflows/p78r1-dao-qualification.yml/runs?head_sha=${HEAD_SHA}&per_page=10"
+          target=""
+          for i in $(seq 1 60); do
+            target="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' "$api" | python -c 'import json,sys; r=json.load(sys.stdin).get("workflow_runs",[]); print(r[0]["html_url"] if r else "")')"
+            [ -n "$target" ] && break
+            sleep 2
+          done
+          [ -n "$target" ] || { echo 'P78R1 run not found'; exit 1; }
+          payload="$(TARGET="$target" python -c 'import json,os; print(json.dumps({"state":"pending","target_url":os.environ["TARGET"],"description":"P78R1 DAO qualification diagnostic","context":"velmere/P78R1-diagnostic"}))')"
+          curl -fsSL -X POST -H "Authorization: Bearer ${GH_TOKEN}" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' -H 'Content-Type: application/json' -d "$payload" "https://api.github.com/repos/${REPO}/statuses/${HEAD_SHA}" >/dev/null
