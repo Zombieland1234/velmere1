@@ -61,44 +61,48 @@ jobs:
           print('PASS exact P78R2',got)
           PY
 
-      - name: Extract bounded current-code inspection
+      - name: Extract bounded readable current-code inspection
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           import hashlib,json,re
           root=Path('p75-work/source')
+          outdir=Path('p78r3-out/snippets'); outdir.mkdir(parents=True,exist_ok=True)
           specs={
-            'lib/security/audit-claim-ledger.ts':['type ClaimLedgerInput','export function buildPass2574','authorityEvidence','claims.push','return {'],
-            'lib/security/audit-report-assembler.ts':['type AssemblerInput','function findingFromAdverseClaim','confirmedAdverseClaims','topFindings','return {'],
-            'lib/security/audit-customer-report-pipeline.ts':['type CustomerReportPipelineInput','authorityEvidence','remediation','retest','export function'],
+            'lib/security/audit-claim-ledger.ts':['export type Pass2574AuditClaim =','type ClaimLedgerInput','export function buildPass2574AuditClaimLedgerReport','const authorityClaims','const claims =','advancedQueue:'],
+            'lib/security/audit-report-assembler.ts':['type AssemblerInput','function findingFromAdverseClaim','const confirmedAdverseClaims','const topFindings','advancedQueue:'],
+            'lib/security/audit-customer-report-pipeline.ts':['type CustomerReportPipelineInput','authorityEvidence','remediation','retest','export function build'],
             'lib/security/contract-source-abi-extraction.ts':['type ContractSource','verifiedStaticEvidence','sourceGate','export function buildPass2583'],
-            'lib/security/audit-watch-post-handler.ts':['pass2572VerifiedStaticEvidence','pass2574AuditClaimLedger','pass2576AuditPermissionParser','pass2583ContractSourceAbiExtraction','pass2578AuditReportAssembler'],
+            'lib/security/audit-watch-post-handler.ts':['pass2572VerifiedStaticEvidence','pass2574AuditClaimLedger','pass2576AuditPermissionParser','pass2578AuditReportAssembler','pass2583ContractSourceAbiExtraction'],
           }
-          def context(text, needle, radius=900):
-            i=text.find(needle)
-            if i<0:return None
-            return text[max(0,i-radius):min(len(text),i+len(needle)+radius)]
-          out={'schemaVersion':'velmere.p78r3.current-spine-inspection.v1','parent':'P78R2/V17','projection':json.load(open('p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json'))['projection'],'files':{}}
+          manifest={'schemaVersion':'velmere.p78r3.current-spine-inspection.v2','parent':'P78R2/V17','projection':json.load(open('p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json'))['projection'],'files':{}}
           for rel,needles in specs.items():
-            p=root/rel
-            b=p.read_bytes(); t=b.decode('utf-8')
-            out['files'][rel]={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'contexts':{n:context(t,n) for n in needles}}
+            p=root/rel; b=p.read_bytes(); t=b.decode('utf-8')
+            chunks=[]
+            for needle in needles:
+              i=t.find(needle)
+              chunks.append(f'===== {needle} =====\n'+('NOT_FOUND' if i<0 else t[max(0,i-1300):min(len(t),i+len(needle)+2200)]))
+            safe=rel.replace('/','__')+'.txt'
+            (outdir/safe).write_text('\n\n'.join(chunks)+'\n',encoding='utf-8')
+            manifest['files'][rel]={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'snippetPath':'p78r3-inspection/snippets/'+safe}
           names=[]
           for p in (root/'lib/security').glob('*.ts'):
             n=p.name.lower()
             if any(x in n for x in ('remedi','retest','finding','claim','report','source-abi')): names.append(p.name)
-          out['relatedFiles']=sorted(names)
-          Path('p78r3-out/P78R3_CURRENT_SPINE_INSPECTION.json').write_text(json.dumps(out,indent=2)+'\n',encoding='utf-8')
+          (outdir/'RELATED_SECURITY_FILES.txt').write_text('\n'.join(sorted(names))+'\n',encoding='utf-8')
+          Path('p78r3-out/P78R3_CURRENT_SPINE_INSPECTION.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
           PY
 
       - name: Publish bounded inspection receipt
         run: |
           set -euo pipefail
+          rm -rf p78r3-inspection/snippets
           mkdir -p p78r3-inspection
           cp p78r3-out/P78R3_CURRENT_SPINE_INSPECTION.json p78r3-inspection/
+          cp -R p78r3-out/snippets p78r3-inspection/
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- p78r3-inspection
-          git commit -m 'P78R3 publish exact current finding spine inspection'
+          git commit -m 'P78R3 publish readable current finding spine inspection'
           git push origin HEAD:velmere-p78r3-erc2771-multicall-20260818
