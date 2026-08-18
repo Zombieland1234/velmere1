@@ -1,0 +1,125 @@
+name: P78R1 Exact Windows Audit Authority Customer Path
+
+on:
+  push:
+    branches:
+      - velmere-p78-real-audit-customer-final-20260818
+    paths:
+      - 'p78-runtime/apply-p78r1-audit-authority-customer-path.py'
+      - 'p78-runtime/test-p78r1-static.py'
+      - 'p78-runtime/test-p78r1-runtime.mts'
+      - 'p78-runtime/verify-p78r1-projection.py'
+      - 'p78-runtime/run-p78r1-exact-windows.ps1'
+      - '.github/workflows/p78r1-exact-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p78r1-exact-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-windows:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout P78R1 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Expand pinned P75 support
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Expand pinned P77 support
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Execute P78R1 exact Windows engineering and regressions
+        id: engineering
+        continue-on-error: true
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          ./p78-runtime/run-p78r1-exact-windows.ps1
+
+      - name: Publish P78R1 Windows outcome
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p78r1-windows-results | Out-Null
+          if(Test-Path p78r1-windows-out){
+            Get-ChildItem p78r1-windows-out -File -Filter '*.json' | Copy-Item -Destination p78r1-windows-results -Force
+          }
+          [ordered]@{
+            schemaVersion='velmere.p78r1.windows-workflow-boundary.v1'
+            runId='${{ github.run_id }}'
+            sha='${{ github.sha }}'
+            engineeringOutcome='${{ steps.engineering.outcome }}'
+            parent='P77R3/V17'
+            candidate='P78R1/V17'
+            aggregateSha256='ea3c19a193d44055e00c3ca952d279f15b4df1813f977789e6ebcea203870a08'
+            customerFinal='0/20'
+            auditFinalPdf='0/3'
+            rights='2/203'
+            paidValue='0/10'
+            saleEligible='0/20'
+            live=$false
+          } | ConvertTo-Json -Depth 10 | Set-Content p78r1-windows-results/P78R1_WINDOWS_WORKFLOW_BOUNDARY.json -Encoding utf8
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78r1-windows-results
+          if(-not (git diff --cached --quiet)){
+            git commit -m 'P78R1 publish exact Windows engineering outcome'
+            git push origin HEAD:velmere-p78-real-audit-customer-final-20260818
+          }
+
+      - name: Upload P78R1 Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78r1-exact-windows
+          path: p78r1-windows-out
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14
+
+      - name: Enforce P78R1 engineering success
+        if: always()
+        shell: pwsh
+        run: |
+          if('${{ steps.engineering.outcome }}' -ne 'success'){throw 'P78R1 exact Windows engineering failed; inspect committed receipt/logs'}
