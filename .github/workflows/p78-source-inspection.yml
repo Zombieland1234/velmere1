@@ -18,7 +18,7 @@ concurrency:
 jobs:
   inspect-bootstrap:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout inspection branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -48,7 +48,60 @@ jobs:
           set -euo pipefail
           python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
 
-      - name: Capture exact extracted support inventory and scripts
+      - name: Reconstruct exact P77R3 source only
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78-source-out
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78-source-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78-source-out/P75_PARENT_SOURCE_PATCH.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78-source-out/P76_SOURCE_PATCH.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78-source-out/P76R2_SOURCE_PATCH.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78-source-out/P77_SOURCE_PATCH.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('p75-work/P77_BUILD_PROJECTION_MANIFEST.json',encoding='utf-8'))['projection']
+          expected=(1601,21037233,'40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59','354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032')
+          got=(int(p['fileCount']),int(p['payloadBytes']),p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          if got!=expected: raise SystemExit(f'P77 source-only identity mismatch {got} != {expected}')
+          print('PASS exact P77 source-only identity',got)
+          PY
+
+      - name: Capture exact current source spine and audit it
+        run: |
+          set -euo pipefail
+          mkdir -p p78-inspection-results/current-source
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, shutil
+          src=Path('p75-work/source')
+          out=Path('p78-inspection-results/current-source')
+          paths=[
+            'lib/security/audit-adjudicated-authority-evidence.ts',
+            'lib/security/audit-claim-ledger.ts',
+            'lib/security/audit-provider-runtime-client.ts',
+            'lib/security/audit-paid-evidence-readiness.ts',
+            'lib/security/audit-customer-report-pipeline.ts',
+            'lib/security/audit-report-assembler.ts',
+            'lib/server/security-route-modules/audit-report-assembler.ts',
+            'lib/security/audit-evidence-qa-release-gate-matrix.ts',
+            'lib/security/audit-watch-post-handler.ts',
+            'lib/security/final-delivery-gate.ts',
+          ]
+          manifest=[]
+          for rel in paths:
+              p=src/rel
+              if not p.is_file(): raise SystemExit(f'missing requested current source {rel}')
+              b=p.read_bytes(); target=out/rel
+              target.parent.mkdir(parents=True,exist_ok=True); shutil.copyfile(p,target)
+              manifest.append({'path':rel,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          Path('p78-inspection-results/P78_CURRENT_SOURCE_SPINE_MANIFEST.json').write_text(json.dumps({'schemaVersion':'velmere.p78.current-source-spine.v1','parent':'P77R3/V17','projectionAggregateSha256':'354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032','files':manifest},indent=2)+'\n',encoding='utf-8')
+          PY
+          python3 p78-runtime/audit-three-files.py --source-root p75-work/source --output p78-inspection-results/P78_THREE_FILE_AUDIT_SOURCE_ONLY.json
+
+      - name: Capture exact extracted support scripts
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -59,33 +112,20 @@ jobs:
           for p in sorted(x for x in Path('p77-runtime').rglob('*') if x.is_file()):
               b=p.read_bytes(); rows.append(f'{p.as_posix()}\t{len(b)}\t{hashlib.sha256(b).hexdigest()}')
           (out/'P78_P77_SUPPORT_INVENTORY.tsv').write_text('\n'.join(rows)+'\n',encoding='utf-8')
-          for root,name in [(Path('p77-runtime'),'P78_P77_SUPPORT_SCRIPTS.txt'),(Path('p75-runtime'),'P78_P75_SUPPORT_SCRIPTS.txt')]:
-              chunks=[]
-              for p in sorted(x for x in root.rglob('*') if x.is_file() and x.suffix.lower() in {'.py','.ps1'}):
-                  chunks.append(f'===== {p.as_posix()} =====\n{p.read_text(encoding="utf-8",errors="replace")}')
-              (out/name).write_text('\n'.join(chunks),encoding='utf-8')
           exact=out/'exact-scripts'; exact.mkdir(exist_ok=True)
-          wanted=[
-            Path('p77-runtime/apply-p77-deterministic-final-delivery.py'),
-            Path('p77-runtime/run-p77-exact-windows.ps1'),
-            Path('p77-runtime/patch-p77-reconciled-runner.py'),
-            Path('p77-runtime/test-p77-static.py'),
-            Path('p77-runtime/test-p77-deterministic-delivery.mts'),
-          ]
+          wanted=[Path('p77-runtime/apply-p77-deterministic-final-delivery.py'),Path('p77-runtime/run-p77-exact-windows.ps1'),Path('p77-runtime/patch-p77-reconciled-runner.py'),Path('p77-runtime/test-p77-static.py'),Path('p77-runtime/test-p77-deterministic-delivery.mts')]
           wanted += sorted(x for x in Path('p75-runtime').rglob('*') if x.is_file() and x.suffix.lower() in {'.py','.ps1'})
           for p in wanted:
-              if p.is_file():
-                  target=exact/(p.parent.name+'__'+p.name)
-                  shutil.copyfile(p,target)
+              if p.is_file(): shutil.copyfile(p,exact/(p.parent.name+'__'+p.name))
           PY
 
-      - name: Publish bootstrap inspection
+      - name: Publish exact source inspection
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- p78-inspection-results
           if ! git diff --cached --quiet; then
-            git commit -m 'P78 publish extracted reconstruction scripts'
+            git commit -m 'P78 publish exact P77 current source spine inspection'
             git push origin HEAD:velmere-p78-source-inspection-20260818
           fi
