@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "velmere.p78r4.target-contract-correlation-source-patch.v1",
+  "status": "PASS",
+  "parentProjection": {
+    "fileCount": 1602,
+    "payloadBytes": 21059203,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "6570f1ef462dcc2d84daf30576a84b2acc518d6ec16f6030b7f670280780b79f"
+  },
+  "projection": {
+    "fileCount": 1602,
+    "payloadBytes": 21065534,
+    "pathSetSha256": "214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f",
+    "sourceContentAggregateSha256": "280fa6aa59b39e52c695951664664d525d12ab46124becd8c1ac1ff3539d6432"
+  },
+  "changedFiles": [
+    {
+      "path": "lib/security/audit-provider-runtime-client.ts",
+      "beforeBytes": 41486,
+      "beforeSha256": "4fcea40b07d60cf2f7535e8e0da8779fd5da0f3d8c3b5c137c40087575a7847e",
+      "afterBytes": 41682,
+      "afterSha256": "937a207d388bc357133330a76a5f3d9daebd6f5aeff5eefa4cc9c4312a922c80"
+    },
+    {
+      "path": "lib/security/erc2771-multicall-source-detector.ts",
+      "beforeBytes": 16053,
+      "beforeSha256": "1ddc6c380edc01e73b5d36394c6f659aa9c37711c408607a5b4bfac38397e6be",
+      "afterBytes": 22188,
+      "afterSha256": "98f2dc5e278d55f2c32de44be1e665b5350213b97663de3f8dbe2c5dcfcc2728"
+    }
+  ],
+  "rootCause": "P78R3 aggregated pattern signals across all verified source units, allowing unrelated contracts in one explorer bundle to compose a false positive.",
+  "repair": [
+    "carry exact Etherscan ContractName inside the existing digest-bound private verified-static-evidence envelope",
+    "parse bounded Solidity contract declarations and inheritance edges after prose stripping",
+    "select exact ContractName when present; otherwise require exactly one concrete contract",
+    "analyze pattern signals only inside the selected target contract inheritance closure",
+    "fail closed on ambiguous/missing target selection and bind evidence refs only to correlated source units"
+  ],
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "P78R4 is a precision/correlation repair. It may reduce false positives but does not establish formal accuracy or runtime exploitability and does not promote customer/commercial release numerators."
+}
