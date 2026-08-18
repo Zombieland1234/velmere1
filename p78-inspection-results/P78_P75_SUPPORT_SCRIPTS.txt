@@ -122,4 +122,3 @@ failed=[c for c in checks if c['status']=='FAIL']
 r={'schemaVersion':'velmere.p75.static-control.v1','status':'FAIL' if failed else 'PASS','checks':checks,'zeroFakeCredit':{'customerFinal':'0/20','auditFinalPdf':'0/3','paidValue':'0/10','saleEligible':'0/20','live':False,'worldClassProven':False,'note':'P75 is execution/runtime repair only; no vulnerability ground truth or customer-final credit.'}}
 Path(a.receipt).write_text(json.dumps(r,indent=2)+'\n',encoding='utf-8');print(json.dumps(r,indent=2))
 if failed: raise SystemExit('P75 static controls failed: '+','.join(c['name'] for c in failed))
-

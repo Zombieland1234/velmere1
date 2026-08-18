@@ -154,4 +154,3 @@ c('drawer_copy_mark_ready_non_authoritative','mark_ready does not authorize deli
 c('redacted_details_copy_deterministic','deterministic customer-safe delivery gates' in t['details'] and 'mark_ready is optional metadata only' in t['details'])
 failed=[x for x in checks if x['status']!='PASS'];receipt={'schemaVersion':'velmere.p77.static-control.v1','status':'PASS' if not failed else 'FAIL','checks':checks,'checkCount':len(checks),'zeroFakeCredit':{'customerFinal':'0/20','auditFinalPdf':'0/3','rights':'2/203','paidValue':'0/10','saleEligible':'0/20','live':False}}
 Path(a.receipt).write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8');print(json.dumps(receipt,indent=2));raise SystemExit(1 if failed else 0)
-
