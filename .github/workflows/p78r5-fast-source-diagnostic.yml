@@ -1,3 +1,4 @@
+# Rerun marker: multiline authenticity static sentinel fixed; product bytes unchanged.
 name: P78R5 Fast Deterministic Source Diagnostic
 
 on:
@@ -88,7 +89,8 @@ jobs:
           m=pathlib.Path('p75-work/P78R5_BUILD_PROJECTION_MANIFEST.json')
           p=json.loads(m.read_text())['projection'] if m.exists() else None
           pathlib.Path('p78r5-fast-results/P78R5_FAST_BOUNDARY.json').write_text(json.dumps({
-            'schemaVersion':'velmere.p78r5.fast-source-diagnostic.v1','runId':os.environ.get('GITHUB_RUN_ID'),'sha':os.environ.get('GITHUB_SHA'),
+            'schemaVersion':'velmere.p78r5.fast-source-diagnostic.v2','runId':os.environ.get('GITHUB_RUN_ID'),'sha':os.environ.get('GITHUB_SHA'),
+            'rerunReason':'multiline_authenticity_static_sentinel_fixed_product_bytes_unchanged',
             'applyOutcome':os.environ.get('APPLY_OUTCOME'),'staticOutcome':os.environ.get('STATIC_OUTCOME'),'projection':p,
             'zeroFakeCredit':{'runtimeExploitability':0,'deployedBytecodeEquivalence':0,'formalDetectorAccuracy':'WITHHELD','customerFinal':'0/20','auditFinalPdf':'0/3','rights':'2/203','paidValue':'0/10','saleEligible':'0/20','live':False}
           },indent=2)+'\n')
@@ -96,7 +98,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- p78r5-fast-results
-          git commit -m 'P78R5 publish fast source diagnostic'
+          git commit -m 'P78R5 publish fast source diagnostic after sentinel fix'
           git fetch origin velmere-p78r5-context-authenticity-20260818
           git rebase origin/velmere-p78r5-context-authenticity-20260818
           git push origin HEAD:velmere-p78r5-context-authenticity-20260818
