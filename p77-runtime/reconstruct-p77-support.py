@@ -1,6 +1,6 @@
 from pathlib import Path
 import argparse,base64,hashlib,zipfile
-EXPECTED_SHA="26e0fddc72d8f64479cb82eba898251536be6447577be19e5a9a371557977a24"
+EXPECTED_SHA="844d0790fbc239bb892073740bdea7691f6d02faead7c4b88f1ba4d08e389eb8"
 EXPECTED_PARTS=1
 ap=argparse.ArgumentParser();ap.add_argument('--parts-dir',default='p77-runtime');ap.add_argument('--output-dir',default='p77-runtime');a=ap.parse_args();d=Path(a.parts_dir);parts=sorted(d.glob('support.part*'))
 if len(parts)!=EXPECTED_PARTS:raise SystemExit(f'P77 support part count mismatch:{len(parts)}/{EXPECTED_PARTS}')
