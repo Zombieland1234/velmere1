@@ -1,0 +1,56 @@
+name: P78 ERC2771 Multicall Detector Micro Corpus
+
+on:
+  push:
+    branches:
+      - velmere-p78-thirdweb-groundtruth-probe-20260818
+    paths:
+      - 'p78-groundtruth/detect-erc2771-multicall.py'
+      - '.github/workflows/p78-erc2771-detector-micro-corpus.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p78-erc2771-detector-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detector-micro-corpus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout detector branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Execute pinned vulnerable fixed hard-negative micro corpus
+        run: |
+          set -euo pipefail
+          mkdir -p p78-detector-out
+          python3 p78-groundtruth/detect-erc2771-multicall.py --output p78-detector-out/P78_ERC2771_MULTICALL_DETECTOR_MICRO_CORPUS.json
+
+      - name: Publish detector diagnostic receipt
+        run: |
+          set -euo pipefail
+          mkdir -p p78-detector-results
+          cp p78-detector-out/P78_ERC2771_MULTICALL_DETECTOR_MICRO_CORPUS.json p78-detector-results/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78-detector-results
+          if ! git diff --cached --quiet; then
+            git commit -m 'P78 publish ERC2771 Multicall detector micro-corpus receipt'
+            git push origin HEAD:velmere-p78-thirdweb-groundtruth-probe-20260818
+          fi
+
+      - name: Upload detector evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78-erc2771-multicall-detector-micro-corpus
+          path: p78-detector-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
