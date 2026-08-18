@@ -1,0 +1,212 @@
+name: P78R3 ERC2771 Multicall Source Pattern Proof
+
+on:
+  push:
+    branches:
+      - velmere-p78r3-erc2771-multicall-20260818
+    paths:
+      - 'p78-runtime/apply-p78r3-erc2771-multicall-detector.py'
+      - 'p78-runtime/test-p78r3-static.py'
+      - 'p78-runtime/test-p78r3-runtime.mts'
+      - '.github/workflows/p78r3-source-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p78r3-source-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout P78R3 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Expand pinned P75 and P77 support
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          if len(parts)!=7: raise SystemExit(f'P75 part count mismatch:{len(parts)}')
+          raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+          expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          observed=hashlib.sha256(raw).hexdigest()
+          if observed!=expected: raise SystemExit(f'P75 support mismatch:{observed}')
+          z=Path('p75-runtime/p75-ci-bundle.zip');z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a:a.extractall('p75-runtime')
+          PY
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Reconstruct exact P78R2 parent
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78r3-out p78r3-groundtruth
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78r3-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P75_PARENT_SOURCE_PATCH.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P76_SOURCE_PATCH.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P76R2_SOURCE_PATCH.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P77_SOURCE_PATCH.json
+          python3 p78-runtime/apply-p78r1-audit-authority-customer-path.py --source-root p75-work/source --parent-manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P78R1_SOURCE_PATCH.json
+          python3 p78-runtime/apply-p78r2-verified-static-evidence-handoff.py --source-root p75-work/source --parent-manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P78R2_SOURCE_PATCH.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json',encoding='utf-8'))['projection']
+          expected=(1601,21040272,'40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59','7f161ad862642233a7f7984bd681353f4a1aced3a0f14e1492400a4609c0146f')
+          got=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          if got!=expected: raise SystemExit(f'P78R2 parent identity mismatch:{got}')
+          print('PASS exact P78R2 parent',got)
+          PY
+
+      - name: Apply P78R3 detector product delta
+        run: |
+          set -euo pipefail
+          python3 p78-runtime/apply-p78r3-erc2771-multicall-detector.py \
+            --source-root p75-work/source \
+            --parent-manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json \
+            --manifest p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json \
+            --receipt p78r3-out/P78R3_SOURCE_PATCH.json
+
+      - name: Run P78R3 static controls
+        run: |
+          set -euo pipefail
+          python3 p78-runtime/test-p78r3-static.py \
+            --source-root p75-work/source \
+            --parent-manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json \
+            --manifest p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json \
+            --source-receipt p78r3-out/P78R3_SOURCE_PATCH.json \
+            --receipt p78r3-out/P78R3_STATIC_CONTROL.json
+
+      - name: Fetch exact pinned thirdweb vulnerable/fixed source pair
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,urllib.request
+          repo='thirdweb-dev/contracts'
+          vuln='745afa8537dbc577f72bfa75a718a2b781d0379d'
+          fixed='efd2218ff9cbbfe326c33ce661042d7c19c17317'
+          rows=[
+            ('vulnerable-Multicall.sol',vuln,'contracts/extension/Multicall.sol','d3507b964169c50f878881b1fbafc87b8316616994bc8e85312cab578eff4f81'),
+            ('vulnerable-TWFactory.sol',vuln,'contracts/infra/TWFactory.sol','d270d7968366c8fec8ed404536778093080c139ad22923cb6915f2e7834f1e8f'),
+            ('fixed-Multicall.sol',fixed,'contracts/extension/Multicall.sol','78167133f656827b1b76bf6c86456fe917dc7b60d3c27ccd8e4c3169085e5e9c'),
+            ('fixed-TWFactory.sol',fixed,'contracts/infra/TWFactory.sol','816c1896093f70680f37a0a5c8a4a254cd3794fabf4cfcddfb3ca184e3ce46cf'),
+          ]
+          out=Path('p78r3-groundtruth');out.mkdir(exist_ok=True)
+          for name,commit,rel,expected in rows:
+            url=f'https://raw.githubusercontent.com/{repo}/{commit}/{rel}'
+            req=urllib.request.Request(url,headers={'User-Agent':'Velmere-P78R3-Pinned-GroundTruth/1.0'})
+            with urllib.request.urlopen(req,timeout=30) as response: raw=response.read()
+            observed=hashlib.sha256(raw).hexdigest()
+            if observed!=expected: raise SystemExit(f'pinned thirdweb mismatch:{name}:{observed}:{expected}')
+            (out/name).write_bytes(raw)
+            print('PASS',name,len(raw),observed)
+          PY
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin npm and install exact dependency closure
+        run: |
+          set -euo pipefail
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          cd p75-work/source
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          npm ls --all
+
+      - name: Semantic TypeScript and zero-warning ESLint
+        run: |
+          set -euo pipefail
+          cd p75-work/source
+          node ./node_modules/typescript/bin/tsc --noEmit --pretty false
+          node ./node_modules/eslint/bin/eslint.js app components lib store i18n.ts navigation.ts proxy.ts routing.ts tailwind.config.ts next.config.mjs --ext .js,.mjs,.cjs,.ts,.tsx --max-warnings 0
+
+      - name: Execute P78R3 product runtime controls with pinned thirdweb pair
+        id: runtime
+        continue-on-error: true
+        env:
+          P78R3_RESULT_DIR: ${{ github.workspace }}/p78r3-out
+          P78R3_GROUNDTRUTH_DIR: ${{ github.workspace }}/p78r3-groundtruth
+        run: |
+          set -o pipefail
+          cd p75-work/source
+          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r3-runtime.mts 2>&1 | tee ../../p78r3-out/P78R3_RUNTIME_LOG.txt
+          code=${PIPESTATUS[0]}
+          printf '%s\n' "$code" > ../../p78r3-out/P78R3_RUNTIME_EXIT.txt
+          exit "$code"
+
+      - name: Enforce runtime result
+        if: steps.runtime.outcome != 'success'
+        run: |
+          cat p78r3-out/P78R3_RUNTIME_LOG.txt || true
+          exit 1
+
+      - name: Publish P78R3 exact source candidate receipts
+        if: always()
+        env:
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p p78r3-results
+          if [ -f p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json ]; then cp p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json p78r3-results/; fi
+          find p78r3-out -maxdepth 1 -type f \( -name '*.json' -o -name '*.txt' \) -exec cp {} p78r3-results/ \;
+          python3 - <<'PY'
+          import json,pathlib,os
+          manifest=pathlib.Path('p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json')
+          projection=json.loads(manifest.read_text())['projection'] if manifest.exists() else None
+          pathlib.Path('p78r3-results/P78R3_SOURCE_WORKFLOW_BOUNDARY.json').write_text(json.dumps({
+            'schemaVersion':'velmere.p78r3.source-workflow-boundary.v1',
+            'runId':os.environ.get('GITHUB_RUN_ID'),
+            'sha':os.environ.get('GITHUB_SHA'),
+            'parent':'P78R2/V17',
+            'candidate':'P78R3/V17',
+            'projection':projection,
+            'runtimeOutcome':os.environ.get('RUNTIME_OUTCOME','not_run'),
+            'zeroFakeCredit':{
+              'runtimeExploitability':0,
+              'deployedBytecodeEquivalence':0,
+              'formalDetectorAccuracy':'WITHHELD',
+              'customerFinal':'0/20',
+              'auditFinalPdf':'0/3',
+              'rights':'2/203',
+              'paidValue':'0/10',
+              'saleEligible':'0/20',
+              'live':False,
+            }
+          },indent=2)+'\n',encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78r3-results
+          if ! git diff --cached --quiet; then
+            git commit -m 'P78R3 publish ERC2771 Multicall source proof outcome'
+            git fetch origin velmere-p78r3-erc2771-multicall-20260818
+            git rebase origin/velmere-p78r3-erc2771-multicall-20260818
+            git push origin HEAD:velmere-p78r3-erc2771-multicall-20260818
+          fi
+
+      - name: Upload P78R3 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78r3-erc2771-multicall-source-proof
+          path: p78r3-out
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14
