@@ -1,0 +1,203 @@
+name: P78R4 Target Contract Correlation Source Proof
+
+on:
+  push:
+    branches:
+      - velmere-p78r4-cross-unit-correlation-20260818
+    paths:
+      - 'p78-runtime/apply-p78r4-contract-correlation.py'
+      - 'p78-runtime/test-p78r4-static.py'
+      - 'p78-runtime/test-p78r4-runtime.mts'
+      - '.github/workflows/p78r4-source-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p78r4-source-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Expand pinned support
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          if len(parts)!=7: raise SystemExit(f'P75 part count mismatch:{len(parts)}')
+          raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+          observed=hashlib.sha256(raw).hexdigest(); expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          if observed!=expected: raise SystemExit(f'P75 support mismatch:{observed}')
+          z=Path('p75-runtime/p75-ci-bundle.zip');z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a:a.extractall('p75-runtime')
+          PY
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Reconstruct exact P78R3 parent
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78r4-out p78r4-groundtruth
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78r4-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P75.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P76.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P76R2.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P77.json
+          python3 p78-runtime/apply-p78r1-audit-authority-customer-path.py --source-root p75-work/source --parent-manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P78R1.json
+          python3 p78-runtime/apply-p78r2-verified-static-evidence-handoff.py --source-root p75-work/source --parent-manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P78R2.json
+          python3 p78-runtime/apply-p78r3-erc2771-multicall-detector.py --source-root p75-work/source --parent-manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P78R3_SOURCE_PATCH.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json'))['projection']
+          e=(1602,21059203,'214c0ad793a36a61c5290baeb104d2e671387df5c07e42862143861aa13ef66f','6570f1ef462dcc2d84daf30576a84b2acc518d6ec16f6030b7f670280780b79f')
+          g=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          if g!=e: raise SystemExit(f'P78R3 parent mismatch:{g}:{e}')
+          print('PASS exact P78R3 parent',g)
+          PY
+          python3 p78-runtime/test-p78r3-static.py --source-root p75-work/source --parent-manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json --source-receipt p78r4-out/P78R3_SOURCE_PATCH.json --receipt p78r4-out/P78R3_STATIC_PARENT.json
+
+      - name: Apply P78R4 target correlation repair
+        id: apply
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python3 p78-runtime/apply-p78r4-contract-correlation.py --source-root p75-work/source --parent-manifest p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R4_BUILD_PROJECTION_MANIFEST.json --receipt p78r4-out/P78R4_SOURCE_PATCH.json 2>&1 | tee p78r4-out/P78R4_APPLY_LOG.txt
+          code=${PIPESTATUS[0]}; printf '%s\n' "$code" > p78r4-out/P78R4_APPLY_EXIT.txt; exit "$code"
+
+      - name: Run P78R4 static controls
+        id: static
+        if: steps.apply.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python3 p78-runtime/test-p78r4-static.py --source-root p75-work/source --parent-manifest p75-work/P78R3_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R4_BUILD_PROJECTION_MANIFEST.json --source-receipt p78r4-out/P78R4_SOURCE_PATCH.json --receipt p78r4-out/P78R4_STATIC_CONTROL.json 2>&1 | tee p78r4-out/P78R4_STATIC_LOG.txt
+          code=${PIPESTATUS[0]}; printf '%s\n' "$code" > p78r4-out/P78R4_STATIC_EXIT.txt; exit "$code"
+
+      - name: Fetch exact pinned thirdweb source pair
+        if: steps.static.outcome == 'success'
+        run: |
+          set -euo pipefail
+          python3 p78-runtime/fetch-p78r3-thirdweb-pinned.py --output-dir p78r4-groundtruth --receipt p78r4-out/P78R4_THIRDWEB_PINNED_SOURCE_TRANSPORT.json
+
+      - name: Setup exact Node 24.18.0
+        if: steps.static.outcome == 'success'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin npm and install exact dependency closure
+        if: steps.static.outcome == 'success'
+        run: |
+          set -euo pipefail
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          cd p75-work/source
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          npm ls --all
+
+      - name: Semantic TypeScript and zero-warning ESLint
+        id: semantic
+        if: steps.static.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd p75-work/source
+          { node ./node_modules/typescript/bin/tsc --noEmit --pretty false && node ./node_modules/eslint/bin/eslint.js app components lib store i18n.ts navigation.ts proxy.ts routing.ts tailwind.config.ts next.config.mjs --ext .js,.mjs,.cjs,.ts,.tsx --max-warnings 0; } 2>&1 | tee ../../p78r4-out/P78R4_SEMANTIC_LOG.txt
+          code=${PIPESTATUS[0]}; printf '%s\n' "$code" > ../../p78r4-out/P78R4_SEMANTIC_EXIT.txt; exit "$code"
+
+      - name: Execute inherited P78R2 private-evidence runtime regression
+        id: r2runtime
+        if: steps.semantic.outcome == 'success'
+        continue-on-error: true
+        env:
+          P78R2_RESULT_DIR: ${{ github.workspace }}/p78r4-out
+        run: |
+          set -o pipefail
+          cd p75-work/source
+          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r2-runtime.mts 2>&1 | tee ../../p78r4-out/P78R4_R2_RUNTIME_LOG.txt
+          code=${PIPESTATUS[0]}; printf '%s\n' "$code" > ../../p78r4-out/P78R4_R2_RUNTIME_EXIT.txt; exit "$code"
+
+      - name: Execute inherited P78R3 local detector regression without ambiguous pinned bundle
+        id: r3runtime
+        if: steps.r2runtime.outcome == 'success'
+        continue-on-error: true
+        env:
+          P78R3_RESULT_DIR: ${{ github.workspace }}/p78r4-out
+        run: |
+          set -o pipefail
+          cd p75-work/source
+          unset P78R3_GROUNDTRUTH_DIR
+          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r3-runtime.mts 2>&1 | tee ../../p78r4-out/P78R4_R3_RUNTIME_LOG.txt
+          code=${PIPESTATUS[0]}; printf '%s\n' "$code" > ../../p78r4-out/P78R4_R3_RUNTIME_EXIT.txt; exit "$code"
+
+      - name: Execute P78R4 target correlation runtime and pinned pair
+        id: runtime
+        if: steps.r3runtime.outcome == 'success'
+        continue-on-error: true
+        env:
+          P78R4_RESULT_DIR: ${{ github.workspace }}/p78r4-out
+          P78R4_GROUNDTRUTH_DIR: ${{ github.workspace }}/p78r4-groundtruth
+        run: |
+          set -o pipefail
+          cd p75-work/source
+          node ./node_modules/tsx/dist/cli.mjs ../../p78-runtime/test-p78r4-runtime.mts 2>&1 | tee ../../p78r4-out/P78R4_RUNTIME_LOG.txt
+          code=${PIPESTATUS[0]}; printf '%s\n' "$code" > ../../p78r4-out/P78R4_RUNTIME_EXIT.txt; exit "$code"
+
+      - name: Publish P78R4 source proof outcome
+        if: always()
+        env:
+          APPLY_OUTCOME: ${{ steps.apply.outcome }}
+          STATIC_OUTCOME: ${{ steps.static.outcome }}
+          SEMANTIC_OUTCOME: ${{ steps.semantic.outcome }}
+          R2_RUNTIME_OUTCOME: ${{ steps.r2runtime.outcome }}
+          R3_RUNTIME_OUTCOME: ${{ steps.r3runtime.outcome }}
+          R4_RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+        run: |
+          set -euo pipefail
+          rm -rf p78r4-source-results
+          mkdir -p p78r4-source-results
+          find p78r4-out -maxdepth 1 -type f \( -name '*.json' -o -name '*.txt' \) -exec cp {} p78r4-source-results/ \;
+          [ -f p75-work/P78R4_BUILD_PROJECTION_MANIFEST.json ] && cp p75-work/P78R4_BUILD_PROJECTION_MANIFEST.json p78r4-source-results/ || true
+          python3 - <<'PY'
+          import json,os,pathlib
+          m=pathlib.Path('p75-work/P78R4_BUILD_PROJECTION_MANIFEST.json')
+          p=json.loads(m.read_text())['projection'] if m.exists() else None
+          pathlib.Path('p78r4-source-results/P78R4_SOURCE_WORKFLOW_BOUNDARY.json').write_text(json.dumps({
+            'schemaVersion':'velmere.p78r4.source-workflow-boundary.v1','runId':os.environ.get('GITHUB_RUN_ID'),'sha':os.environ.get('GITHUB_SHA'),
+            'parent':'P78R3/V17','candidate':'P78R4/V17','projection':p,
+            'outcomes':{'apply':os.environ.get('APPLY_OUTCOME'),'static':os.environ.get('STATIC_OUTCOME'),'semantic':os.environ.get('SEMANTIC_OUTCOME'),'r2Runtime':os.environ.get('R2_RUNTIME_OUTCOME'),'r3Runtime':os.environ.get('R3_RUNTIME_OUTCOME'),'r4Runtime':os.environ.get('R4_RUNTIME_OUTCOME')},
+            'zeroFakeCredit':{'runtimeExploitability':0,'deployedBytecodeEquivalence':0,'formalDetectorAccuracy':'WITHHELD','customerFinal':'0/20','auditFinalPdf':'0/3','rights':'2/203','paidValue':'0/10','saleEligible':'0/20','live':False}
+          },indent=2)+'\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78r4-source-results
+          git commit -m 'P78R4 publish target contract correlation source proof'
+          git fetch origin velmere-p78r4-cross-unit-correlation-20260818
+          git rebase origin/velmere-p78r4-cross-unit-correlation-20260818
+          git push origin HEAD:velmere-p78r4-cross-unit-correlation-20260818
+
+      - name: Enforce full source proof success
+        if: always()
+        run: |
+          test '${{ steps.apply.outcome }}' = 'success'
+          test '${{ steps.static.outcome }}' = 'success'
+          test '${{ steps.semantic.outcome }}' = 'success'
+          test '${{ steps.r2runtime.outcome }}' = 'success'
+          test '${{ steps.r3runtime.outcome }}' = 'success'
+          test '${{ steps.runtime.outcome }}' = 'success'
