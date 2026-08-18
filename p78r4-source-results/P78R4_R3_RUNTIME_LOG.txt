@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "velmere.p78r3.erc2771-multicall-runtime-controls.v1",
+  "status": "PASS",
+  "caseCount": 7,
+  "cases": [
+    {
+      "id": "minimal_vulnerable_plain",
+      "state": "confirmed_source_pattern",
+      "confidence": 92,
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      },
+      "blockerCount": 2,
+      "remediationCount": 3,
+      "retestRequired": true
+    },
+    {
+      "id": "minimal_fixed_sender_preserved",
+      "state": "mitigated_source_pattern",
+      "confidence": 88,
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": true
+      },
+      "blockerCount": 0,
+      "remediationCount": 0,
+      "retestRequired": false
+    },
+    {
+      "id": "comment_string_lookalike",
+      "state": "not_detected",
+      "confidence": 70,
+      "signals": {
+        "erc2771LogicalSenderContext": false,
+        "arbitrarySelfDelegatecallBatch": false,
+        "authorizationUsesLogicalSender": false,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      },
+      "blockerCount": 0,
+      "remediationCount": 0,
+      "retestRequired": false
+    },
+    {
+      "id": "etherscan_double_brace_standard_json",
+      "state": "confirmed_source_pattern",
+      "confidence": 92,
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      },
+      "blockerCount": 2,
+      "remediationCount": 3,
+      "retestRequired": true
+    },
+    {
+      "id": "contract_identity_tamper",
+      "state": "blocked",
+      "confidence": 0,
+      "signals": {
+        "erc2771LogicalSenderContext": false,
+        "arbitrarySelfDelegatecallBatch": false,
+        "authorizationUsesLogicalSender": false,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      },
+      "blockerCount": 1,
+      "remediationCount": 0,
+      "retestRequired": false
+    },
+    {
+      "id": "missing_verified_source",
+      "state": "blocked",
+      "confidence": 0,
+      "signals": {
+        "erc2771LogicalSenderContext": false,
+        "arbitrarySelfDelegatecallBatch": false,
+        "authorizationUsesLogicalSender": false,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      },
+      "blockerCount": 1,
+      "remediationCount": 0,
+      "retestRequired": false
+    },
+    {
+      "id": "invalid_target_not_applicable",
+      "state": "not_applicable",
+      "confidence": 0,
+      "signals": {
+        "erc2771LogicalSenderContext": false,
+        "arbitrarySelfDelegatecallBatch": false,
+        "authorizationUsesLogicalSender": false,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      },
+      "blockerCount": 0,
+      "remediationCount": 0,
+      "retestRequired": false
+    }
+  ],
+  "productChain": {
+    "sourcePatternClaimFirst": true,
+    "structuredEvidenceRefs": 5,
+    "structuredRemediation": 3,
+    "structuredRetest": true,
+    "topFindingSeverity": "elevated",
+    "riskFloorPromoted": false
+  },
+  "thirdwebPinnedPair": "NOT_EXECUTED_NO_GROUNDTRUTH_DIR",
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD_DEVELOPMENT_AND_PINNED_PAIR_ONLY",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "Runtime controls prove detector behavior on bounded development cases plus an exact pinned vulnerable/fixed source pair when supplied. They do not prove population accuracy, deployed runtime exploitability, customer FINAL, commercial readiness or LIVE."
+}

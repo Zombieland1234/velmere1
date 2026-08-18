@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "velmere.p78r4.target-contract-correlation-runtime.v1",
+  "status": "PASS",
+  "crossUnitRegression": {
+    "oldP78R3ObservedState": "confirmed_source_pattern",
+    "noContractName": "blocked",
+    "exactMetaOnly": "not_detected",
+    "exactBatchOnly": "not_detected",
+    "falsePositiveStillObserved": false
+  },
+  "targetSelectionControls": {
+    "vulnerableExact": {
+      "targetSelection": "etherscan_contract_name",
+      "targetContractName": "TargetVulnerable",
+      "analyzedContractNames": [
+        "TargetVulnerable",
+        "ERC2771Context"
+      ],
+      "sourceUnitIds": [
+        "verified-source.sol"
+      ]
+    },
+    "fixedExact": {
+      "targetSelection": "etherscan_contract_name",
+      "targetContractName": "TargetFixed",
+      "analyzedContractNames": [
+        "TargetFixed",
+        "ERC2771Context"
+      ],
+      "sourceUnitIds": [
+        "verified-source.sol"
+      ]
+    },
+    "missingTarget": "blocked",
+    "duplicateTarget": "blocked",
+    "indirectInheritance": {
+      "state": "confirmed_source_pattern",
+      "correlation": {
+        "targetSelection": "etherscan_contract_name",
+        "targetContractName": "CombinedTarget",
+        "analyzedContractNames": [
+          "CombinedTarget",
+          "MetaBase",
+          "ERC2771Context",
+          "BatchBase"
+        ],
+        "sourceUnitIds": [
+          "verified-source.sol"
+        ]
+      }
+    }
+  },
+  "providerHandoff": {
+    "etherscanFetches": 2,
+    "privateContractNameBound": true,
+    "publicPrivateEvidenceLeak": false,
+    "detectorState": "confirmed_source_pattern"
+  },
+  "productChain": {
+    "sourcePatternClaimPresent": true,
+    "riskFloorPromoted": false
+  },
+  "thirdwebPinnedPair": {
+    "vulnerable": {
+      "state": "confirmed_source_pattern",
+      "correlation": {
+        "targetSelection": "etherscan_contract_name",
+        "targetContractName": "TWFactory",
+        "analyzedContractNames": [
+          "TWFactory",
+          "Multicall"
+        ],
+        "sourceUnitIds": [
+          "contracts/infra/TWFactory.sol",
+          "contracts/extension/Multicall.sol"
+        ]
+      },
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": false
+      }
+    },
+    "fixed": {
+      "state": "mitigated_source_pattern",
+      "correlation": {
+        "targetSelection": "etherscan_contract_name",
+        "targetContractName": "TWFactory",
+        "analyzedContractNames": [
+          "TWFactory",
+          "Multicall"
+        ],
+        "sourceUnitIds": [
+          "contracts/infra/TWFactory.sol",
+          "contracts/extension/Multicall.sol"
+        ]
+      },
+      "signals": {
+        "erc2771LogicalSenderContext": true,
+        "arbitrarySelfDelegatecallBatch": true,
+        "authorizationUsesLogicalSender": true,
+        "logicalSenderPreservedAcrossDelegatecall": true
+      }
+    }
+  },
+  "zeroFakeCredit": {
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "formalDetectorAccuracy": "WITHHELD_CORRELATION_REGRESSION_AND_PINNED_PAIR_ONLY",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  },
+  "truthBoundary": "PASS proves the measured cross-unit false positive is removed by target/inheritance correlation and the pinned historical thirdweb pair remains separated. It does not prove population accuracy or deployed runtime exploitability."
+}
