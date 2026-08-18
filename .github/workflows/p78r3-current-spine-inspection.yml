@@ -1,0 +1,104 @@
+name: P78R3 Current Finding Spine Inspection
+
+on:
+  push:
+    branches:
+      - velmere-p78r3-erc2771-multicall-20260818
+    paths:
+      - '.github/workflows/p78r3-current-spine-inspection.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Expand pinned support
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*'))
+          if len(parts)!=7: raise SystemExit(f'P75 part count mismatch:{len(parts)}')
+          raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+          expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          if hashlib.sha256(raw).hexdigest()!=expected: raise SystemExit('P75 support mismatch')
+          z=Path('p75-runtime/p75-ci-bundle.zip'); z.write_bytes(raw)
+          with zipfile.ZipFile(z) as a: a.extractall('p75-runtime')
+          PY
+          python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Reconstruct exact P78R2 candidate
+        run: |
+          set -euo pipefail
+          git config core.autocrlf false
+          git config core.eol lf
+          mkdir -p p78r3-out
+          python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p78r3-out
+          python3 p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P75_PARENT_SOURCE_PATCH.json
+          python3 p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python3 p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P76_SOURCE_PATCH.json
+          python3 p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P76R2_SOURCE_PATCH.json
+          python3 p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P77_SOURCE_PATCH.json
+          python3 p78-runtime/apply-p78r1-audit-authority-customer-path.py --source-root p75-work/source --parent-manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P78R1_SOURCE_PATCH.json
+          python3 p78-runtime/apply-p78r2-verified-static-evidence-handoff.py --source-root p75-work/source --parent-manifest p75-work/P78R1_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json --receipt p78r3-out/P78R2_SOURCE_PATCH.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json',encoding='utf-8'))['projection']
+          expected=(1601,21040272,'40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59','7f161ad862642233a7f7984bd681353f4a1aced3a0f14e1492400a4609c0146f')
+          got=(p['fileCount'],p['payloadBytes'],p['pathSetSha256'],p['sourceContentAggregateSha256'])
+          if got!=expected: raise SystemExit(f'P78R2 identity mismatch:{got}')
+          print('PASS exact P78R2',got)
+          PY
+
+      - name: Extract bounded current-code inspection
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,re
+          root=Path('p75-work/source')
+          specs={
+            'lib/security/audit-claim-ledger.ts':['type ClaimLedgerInput','export function buildPass2574','authorityEvidence','claims.push','return {'],
+            'lib/security/audit-report-assembler.ts':['type AssemblerInput','function findingFromAdverseClaim','confirmedAdverseClaims','topFindings','return {'],
+            'lib/security/audit-customer-report-pipeline.ts':['type CustomerReportPipelineInput','authorityEvidence','remediation','retest','export function'],
+            'lib/security/contract-source-abi-extraction.ts':['type ContractSource','verifiedStaticEvidence','sourceGate','export function buildPass2583'],
+            'lib/security/audit-watch-post-handler.ts':['pass2572VerifiedStaticEvidence','pass2574AuditClaimLedger','pass2576AuditPermissionParser','pass2583ContractSourceAbiExtraction','pass2578AuditReportAssembler'],
+          }
+          def context(text, needle, radius=900):
+            i=text.find(needle)
+            if i<0:return None
+            return text[max(0,i-radius):min(len(text),i+len(needle)+radius)]
+          out={'schemaVersion':'velmere.p78r3.current-spine-inspection.v1','parent':'P78R2/V17','projection':json.load(open('p75-work/P78R2_BUILD_PROJECTION_MANIFEST.json'))['projection'],'files':{}}
+          for rel,needles in specs.items():
+            p=root/rel
+            b=p.read_bytes(); t=b.decode('utf-8')
+            out['files'][rel]={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'contexts':{n:context(t,n) for n in needles}}
+          names=[]
+          for p in (root/'lib/security').glob('*.ts'):
+            n=p.name.lower()
+            if any(x in n for x in ('remedi','retest','finding','claim','report','source-abi')): names.append(p.name)
+          out['relatedFiles']=sorted(names)
+          Path('p78r3-out/P78R3_CURRENT_SPINE_INSPECTION.json').write_text(json.dumps(out,indent=2)+'\n',encoding='utf-8')
+          PY
+
+      - name: Publish bounded inspection receipt
+        run: |
+          set -euo pipefail
+          mkdir -p p78r3-inspection
+          cp p78r3-out/P78R3_CURRENT_SPINE_INSPECTION.json p78r3-inspection/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78r3-inspection
+          git commit -m 'P78R3 publish exact current finding spine inspection'
+          git push origin HEAD:velmere-p78r3-erc2771-multicall-20260818
