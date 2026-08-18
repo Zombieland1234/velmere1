@@ -1,0 +1,145 @@
+===== type CustomerReportPipelineInput =====
+NOT_FOUND
+
+===== authorityEvidence =====
+.test(String(args.accountBindingHash ?? ""))
+    ? String(args.accountBindingHash).slice(0, 64)
+    : seed.slice(0, 40);
+  const manualReviewReceiptId = args.manualReviewVerified
+    ? normalizeVerifiedManualReviewReceiptId(args.manualReviewReceiptId)
+    : null;
+  return {
+    accountId: `server:${accountHex}`,
+    serverReceiptId: `vlm_receipt_${seed.slice(0, 32)}`,
+    reportToken: `vlm_rpt_${seed.slice(8, 48)}`,
+    payloadHash: args.payloadDigest,
+    manualReviewReceiptId,
+    accessVerification: {
+      accountBound: true,
+      serverReceiptVerified: true,
+      reportTokenVerified: true,
+      payloadHashBound: true,
+      manualReviewVerified: args.manualReviewVerified && Boolean(manualReviewReceiptId),
+      source: "server_entitlement" as const,
+    },
+  };
+}
+
+export function buildPass4820AuditCustomerReportPipeline(args: {
+  report: Pass2578AuditReportAssemblerReport;
+  providerRuntime: Pass2572AuditProviderRuntimeReport;
+  requestedTier: AuditTierId;
+  paymentVerified: boolean;
+  evidenceLedgerVerified: boolean;
+  accountBindingHash?: string | null;
+  entitlementId?: string | null;
+  paidEntitlementBinding?: string | null;
+  paidTokenNonce?: string | null;
+  manualReviewReceiptId?: string | null;
+  manualReviewVerified?: boolean;
+  monitoringConfigured?: boolean;
+  authorityEvidence?: AuditAdjudicatedAuthorityEvidence | null;
+}) {
+  const reportRiskScore = requireRiskScore(
+    args.report.finalVerdict.riskScore,
+    "audit_customer_report",
+  );
+  // A boolean from an upstream adapter is not customer-facing quality-control authority.
+  // The legacy receipt can support internal evaluation only; it never unlocks Advanced,
+  // human-review copy, operator sign-off, certification or public sale.
+  const manualReviewReceiptId = normalizeVerifiedManualReviewReceiptId(args.manualReviewReceiptId);
+  const manualReviewVerified = args.manualReviewVerified === true && Boolean(manualReviewReceiptId);
+  const monitoringConfigured = manualReviewVerified && args.monitoringConfigured === true;
+  const authorityEvidence = verifyAuditAdjudicatedAuthorityEvidence(args.authorityEvidence) ? args.authorityEvidence ?? null : null;
+  const readiness = {
+    basic: evaluateAuditPaidEvidenceReadiness({ lanes: args.providerRuntime.lanes, tier: "basic", tierContract: getAuditTierContract("basic"), evidenceRows: args.report.summary.totalEvidence, authorityEvidence }),
+    pro: evaluateAuditPaidEvidenceReadiness({ lanes: args.providerRuntime.lanes, tier: "pro", tierContract: getAuditTierContract("pro"), evidenceRows: args.report.summary.totalEvidence, authorityEvidence: null }),
+    advanced: evaluateAuditPaidEvidenceReadiness({ lanes: args.providerRuntime.lanes, tier: "advanced", tierContract: getAuditTierContract("advanced"), evidenceRows: args.report.summary.totalEvidence, authorityEvidence: null }),
+  };
+  const invitationOrLegacyEntitlementVerified = args.paymentVerified;
+  const evidenceEligibleTier: AuditTierId = args.requestedTier === "advanced"
+    ? readiness.pro.met && invitationOrLegacyEntitlementVerified ? "pro" : "basic"
+    : args.requestedTier === "pro"
+      ? readiness.pro.met && invitationOrLegacyEntitlementVerified ? "pro" : "basic"
+      : "basic";
+  const target = normalizedTarget(args.report);
+  const strictLanes = args.providerRuntime.lanes.filter(isStrictAuditEvidenceLane);
+  const providerReceipts = args.providerRuntime.lanes.map((lane) => receiptFromLane(lane, target, args.report.generatedAt));
+  const strictUpstreams = Array.from(new Set(s
+
+===== remediation =====
+NOT_FOUND
+
+===== retest =====
+NOT_FOUND
+
+===== export function build =====
+nce?: string | null;
+  payloadDigest: string;
+  manualReviewReceiptId?: string | null;
+  manualReviewVerified: boolean;
+}) {
+  if (args.requestedTier === "basic" || !args.paymentVerified) return {};
+  const seed = sha256Digest(canonicalJson({
+    account: args.accountBindingHash ?? "",
+    entitlement: args.entitlementId ?? "",
+    entitlementBinding: args.paidEntitlementBinding ?? args.paidTokenNonce ?? "",
+    payload: args.payloadDigest,
+  })).replace(/^sha256:/, "");
+  const accountHex = /^[a-f0-9]{18,64}$/i.test(String(args.accountBindingHash ?? ""))
+    ? String(args.accountBindingHash).slice(0, 64)
+    : seed.slice(0, 40);
+  const manualReviewReceiptId = args.manualReviewVerified
+    ? normalizeVerifiedManualReviewReceiptId(args.manualReviewReceiptId)
+    : null;
+  return {
+    accountId: `server:${accountHex}`,
+    serverReceiptId: `vlm_receipt_${seed.slice(0, 32)}`,
+    reportToken: `vlm_rpt_${seed.slice(8, 48)}`,
+    payloadHash: args.payloadDigest,
+    manualReviewReceiptId,
+    accessVerification: {
+      accountBound: true,
+      serverReceiptVerified: true,
+      reportTokenVerified: true,
+      payloadHashBound: true,
+      manualReviewVerified: args.manualReviewVerified && Boolean(manualReviewReceiptId),
+      source: "server_entitlement" as const,
+    },
+  };
+}
+
+export function buildPass4820AuditCustomerReportPipeline(args: {
+  report: Pass2578AuditReportAssemblerReport;
+  providerRuntime: Pass2572AuditProviderRuntimeReport;
+  requestedTier: AuditTierId;
+  paymentVerified: boolean;
+  evidenceLedgerVerified: boolean;
+  accountBindingHash?: string | null;
+  entitlementId?: string | null;
+  paidEntitlementBinding?: string | null;
+  paidTokenNonce?: string | null;
+  manualReviewReceiptId?: string | null;
+  manualReviewVerified?: boolean;
+  monitoringConfigured?: boolean;
+  authorityEvidence?: AuditAdjudicatedAuthorityEvidence | null;
+}) {
+  const reportRiskScore = requireRiskScore(
+    args.report.finalVerdict.riskScore,
+    "audit_customer_report",
+  );
+  // A boolean from an upstream adapter is not customer-facing quality-control authority.
+  // The legacy receipt can support internal evaluation only; it never unlocks Advanced,
+  // human-review copy, operator sign-off, certification or public sale.
+  const manualReviewReceiptId = normalizeVerifiedManualReviewReceiptId(args.manualReviewReceiptId);
+  const manualReviewVerified = args.manualReviewVerified === true && Boolean(manualReviewReceiptId);
+  const monitoringConfigured = manualReviewVerified && args.monitoringConfigured === true;
+  const authorityEvidence = verifyAuditAdjudicatedAuthorityEvidence(args.authorityEvidence) ? args.authorityEvidence ?? null : null;
+  const readiness = {
+    basic: evaluateAuditPaidEvidenceReadiness({ lanes: args.providerRuntime.lanes, tier: "basic", tierContract: getAuditTierContract("basic"), evidenceRows: args.report.summary.totalEvidence, authorityEvidence }),
+    pro: evaluateAuditPaidEvidenceReadiness({ lanes: args.providerRuntime.lanes, tier: "pro", tierContract: getAuditTierContract("pro"), evidenceRows: args.report.summary.totalEvidence, authorityEvidence: null }),
+    advanced: evaluateAuditPaidEvidenceReadiness({ lanes: args.providerRuntime.lanes, tier: "advanced", tierContract: getAuditTierContract("advanced"), evidenceRows: args.report.summary.totalEvidence, authorityEvidence: null }),
+  };
+  const invitationOrLegacyEntitlementVerified = args.paymentVerified;
+  const evidenceEligibleTier: AuditTierId = args.requestedTier === "advanced"
+    ? read

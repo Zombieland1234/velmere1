@@ -1,0 +1,446 @@
+===== type AssemblerInput =====
+slot: string;
+    dataPath: string;
+    visualOwner: "user" | "assistant" | "shared";
+    notes: string;
+  }>;
+};
+
+export type Pass2578AuditReportAssemblerReport = {
+  passId: typeof PASS2578_AUDIT_REPORT_ASSEMBLER_ID;
+  generatedAt: string;
+  locale: string;
+  target: {
+    contractAddress?: string;
+    projectName?: string;
+    chain: string;
+  };
+  rule: string;
+  reportMode: string;
+  finalVerdict: {
+    riskScore: number | null;
+    riskLabel: string;
+    reviewPriorityScore: number;
+    sourceConfidence: number;
+    readinessScore: number;
+    basicState: Pass2578ReportSectionState;
+    proState: Pass2578ReportSectionState;
+    advancedState: Pass2578ReportSectionState;
+    publicVerdict: string;
+    proVerdict: string;
+    advancedVerdict: string;
+  };
+  summary: {
+    totalSections: number;
+    ready: number;
+    partial: number;
+    missing: number;
+    blocked: number;
+    manualReview: number;
+    totalEvidence: number;
+    totalMissing: number;
+    proPdfSections: number;
+    advancedActions: number;
+  };
+  sections: Pass2578ReportSection[];
+  basicSections: Pass2578ReportSection[];
+  proPdfSections: Pass2578ReportSection[];
+  advancedQueue: string[];
+  topFindings: Pass2578TopFinding[];
+  proPdfLines: string[];
+  visualMergeContract: Pass2578VisualMergeContract;
+};
+
+type AssemblerInput = Partial<AuditReviewSubmission> & {
+  locale?: string;
+  providerRuntime?: Pass2572AuditProviderRuntimeReport | null;
+  runtimeConfidence?: Pass2573AuditRuntimeConfidenceReport | null;
+  claimLedger?: Pass2574AuditClaimLedgerReport | null;
+  sourceFreshness?: Pass2575AuditSourceFreshnessReport | null;
+  permissionParser?: Pass2576AuditPermissionParserReport | null;
+  liquidityHolderRisk?: Pass2577AuditLiquidityHolderLockRiskReport | null;
+};
+
+function t(locale: string, pl: string, de: string, en: string) {
+  return locale === "pl" ? pl : locale === "de" ? de : en;
+}
+
+function clean(value: unknown, max = 180) {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(C0_OR_BRACE_ANGLE_PATTERN, " ").replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, max) : undefined;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function sectionState(ready: number, partial: number, missing: number, blocked: number, manual = 0): Pass2578ReportSectionState {
+  if (manual > 0) return "manual_review";
+  if (blocked > 0) return "blocked";
+  if (ready > 0 && missing === 0 && partial === 0) return "ready";
+  if (ready > 0 || partial > 0) return "partial";
+  return "missing";
+}
+
+function severityFor(state: Pass2578ReportSectionState, impact: number): Pass2578ReportFindingSeverity {
+  if (state === "ready") return "info";
+  if (state === "blocked" || impact >= 18) return "critical";
+  if (state === "manual_review" || impact >= 12) return "elevated";
+  return "watch";
+}
+
+function sourceFamilies(...families: Array<string | undefined | null | string[]>) {
+  return Array.from(new Set(families.flat().filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim()))).slice(0, 8);
+}
+
+function section(args: {
+  id: string;
+  tier: Pass2578ReportTier;
+  title: string;
+  state: Pass2578ReportSectionState;
+  scoreImpact: number;
+  confidenceImpact: number;
+  customerSummary: string;
+  proPdfSummary: string;
+  advancedAction: string;
+  evidenceCount: number;
+  missingCount: number;
+  sourceFamilies: string[];
+}): Pass2578ReportSection {
+  return {
+
+
+===== function findingFromAdverseClaim =====
+
+  sourceFamilies: string[];
+}): Pass2578ReportSection {
+  return {
+    ...args,
+    scoreImpact: clamp(args.scoreImpact, -30, 40),
+    confidenceImpact: clamp(args.confidenceImpact, -30, 30),
+    evidenceCount: clamp(args.evidenceCount, 0, 200),
+    missingCount: clamp(args.missingCount, 0, 200),
+    sourceFamilies: args.sourceFamilies.slice(0, 8),
+  };
+}
+
+function stateWord(locale: string, state: Pass2578ReportSectionState) {
+  if (state === "ready") return t(locale, "gotowe", "bereit", "ready");
+  if (state === "partial") return t(locale, "częściowe", "teilweise", "partial");
+  if (state === "blocked") return t(locale, "zablokowane", "blockiert", "blocked");
+  if (state === "manual_review") return t(locale, "manual review", "Manual Review", "manual review");
+  return t(locale, "brak danych", "fehlende Daten", "missing");
+}
+
+function findingFromSection(locale: string, item: Pass2578ReportSection): Pass2578TopFinding {
+  const sourceFamily = item.sourceFamilies[0] ?? "velmere-engine";
+  return {
+    id: `finding-${item.id}`,
+    severity: severityFor(item.state, item.scoreImpact),
+    title: `${item.title} · ${stateWord(locale, item.state)}`,
+    publicLine: item.customerSummary,
+    proLine: item.proPdfSummary,
+    advancedAction: item.advancedAction,
+    sourceFamily,
+  };
+}
+
+function findingFromAdverseClaim(claim: Pass2574AuditClaimLedgerReport["claims"][number]): Pass2578TopFinding {
+  const riskFloor = Math.max(0, Math.min(100, Math.round(claim.adverseRiskFloor ?? 0)));
+  return {
+    id: `finding-${claim.id}`,
+    severity: riskFloor >= 85 ? "critical" : riskFloor >= 65 ? "elevated" : "watch",
+    title: claim.adverseKind === "deployment_identity" ? "Deployment identity mismatch · confirmed" : `${claim.label} · confirmed`,
+    publicLine: claim.customerLine,
+    proLine: claim.proPdfLine,
+    advancedAction: claim.advancedAction,
+    sourceFamily: claim.sourceFamily,
+  };
+}
+
+function visualContract(locale: string): Pass2578VisualMergeContract {
+  return {
+    purpose: t(
+      locale,
+      "Kontrakt do połączenia Twojej wizualnej wersji audytu z aktualnym silnikiem bez gubienia danych.",
+      "Vertrag, um dein visuelles Audit mit der aktuellen Engine zu verbinden, ohne Daten zu verlieren.",
+      "Contract for merging your visual audit design with the current engine without losing data.",
+    ),
+    doNotBreak: [
+      "claim -> source -> grade -> freshness -> confidence -> verdict",
+      "Basic stays public/passive and never claims full safety",
+      "Pro PDF uses the same report assembler payload as the page",
+      "Advanced remains automated-only: no human-review or operator-signoff claim may be introduced by a deeper tier",
+      "Missing evidence is a first-class output, not hidden copy",
+      "No seed phrase, no private key, no wallet custody request",
+    ],
+    uiSlots: [
+      {
+        slot: "hero_score_card",
+        dataPath: "pass2578AuditReportAssembler.finalVerdict",
+        visualOwner: "user",
+        notes: "Use your premium visual design here; keep riskScore, riskLabel, sourceConfidence and readinessScore wired.",
+      },
+      {
+        slot: "basic_public_rows",
+        dataPath: "pass2578AuditReportAssembler.basicSections",
+        visualOwner: "shared",
+        notes: "Can be condensed visually, but keep state badges and missing evidence visible.",
+      },
+      {
+        slot: "pro_pdf_sections",
+        dataPath: "pass2578AuditReportAssembler.proPdfSections",
+        visualOwner: "assistant",
+        notes: "This is backend/PDF 
+
+===== const confirmedAdverseClaims =====
+tions",
+        dataPath: "pass2578AuditReportAssembler.advancedQueue",
+        visualOwner: "assistant",
+        notes: "Expose only bounded automated evidence-resolution and retest actions; never imply human review or operator sign-off.",
+      },
+      {
+        slot: "top_findings",
+        dataPath: "pass2578AuditReportAssembler.topFindings",
+        visualOwner: "shared",
+        notes: "Best place for minimal luxury cards in your visual pass.",
+      },
+    ],
+  };
+}
+
+export function buildPass2578AuditReportAssemblerReport(input: AssemblerInput): Pass2578AuditReportAssemblerReport {
+  const locale = input.locale === "pl" || input.locale === "de" || input.locale === "en" ? input.locale : "en";
+  const chain = clean(input.chain, 40) ?? input.providerRuntime?.target.chain ?? input.runtimeConfidence?.target.chain ?? "ethereum";
+  const contractAddress = clean(input.contractAddress, 96) ?? input.providerRuntime?.target.contractAddress ?? input.runtimeConfidence?.target.contractAddress;
+  const projectName = clean(input.projectName, 90) ?? input.providerRuntime?.target.projectName ?? input.runtimeConfidence?.target.projectName;
+
+  const confidence = input.runtimeConfidence?.overall.sourceConfidence ?? 42;
+  const riskScore = input.runtimeConfidence?.overall.riskScore ?? null;
+  const confirmedAdverseClaims = (input.claimLedger?.claims ?? []).filter((claim) =>
+    claim.grade === "confirmed" && claim.canShowAsFact && Number.isFinite(claim.adverseRiskFloor) && Number(claim.adverseRiskFloor) > 0);
+  const adverseRiskFloor = confirmedAdverseClaims.length > 0
+    ? Math.max(...confirmedAdverseClaims.map((claim) => Math.max(0, Math.min(100, Math.round(Number(claim.adverseRiskFloor))))))
+    : null;
+  const baseReviewPriority = input.runtimeConfidence?.overall.reviewPriorityScore ?? 38;
+
+  const runtimeState = sectionState(
+    input.providerRuntime?.summary.confirmed ?? 0,
+    input.providerRuntime?.summary.partial ?? 0,
+    (input.providerRuntime?.summary.missing ?? 0),
+    input.providerRuntime?.summary.blocked ?? 0,
+  );
+  const claimState = sectionState(
+    input.claimLedger?.summary.confirmed ?? 0,
+    input.claimLedger?.summary.partial ?? 0,
+    input.claimLedger?.summary.missing ?? 0,
+    input.claimLedger?.summary.blocked ?? 0,
+  );
+  const freshnessState = sectionState(
+    (input.sourceFreshness?.summary.fresh ?? 0) + (input.sourceFreshness?.summary.acceptable ?? 0),
+    input.sourceFreshness?.summary.stale ?? 0,
+    (input.sourceFreshness?.summary.expired ?? 0) + (input.sourceFreshness?.summary.unknown ?? 0),
+    input.sourceFreshness?.summary.blocked ?? 0,
+  );
+  const permissionState = sectionState(
+    input.permissionParser?.summary.detected ?? 0,
+    input.permissionParser?.summary.notDetected ?? 0,
+    input.permissionParser?.summary.unknown ?? 0,
+    input.permissionParser?.summary.blocked ?? 0,
+    0,
+  );
+  const liquidityState = sectionState(
+    input.liquidityHolderRisk?.summary.confirmed ?? 0,
+    input.liquidityHolderRisk?.summary.partial ?? 0,
+    input.liquidityHolderRisk?.summary.missing ?? 0,
+    input.liquidityHolderRisk?.summary.blocked ?? 0,
+    0,
+  );
+
+  const sections: Pass2578ReportSection[] = [
+    section({
+      id: "provider-runtime",
+      tier: "basic",
+      title: "Live provider runtime",
+      state: runtimeState,
+      scoreImpact: ((input.providerRuntime?.summary.blocked ?? 0) + (input.providerRuntime?.summary.timedOut ?? 0) + (input.providerRuntime?.summary.errors ?? 0)) * 5 || 8,
+      confidenceImpact: runtimeState ===
+
+===== const topFindings =====
+ic risk floor, but only
+  // after the claim ledger has verified its independent authority receipt bundle.
+  const finalRisk = adverseRiskFloor === null
+    ? riskScore
+    : riskScore === null
+      ? adverseRiskFloor
+      : Math.max(riskScore, adverseRiskFloor);
+  const reviewPriorityScore = clamp(baseReviewPriority + missing * 8 + blocked * 12 + manualReview * 6 + totalMissing * 2 - ready * 3, 0, 100);
+  const finalRiskLabel = finalRisk === null
+    ? "Unknown - evidence incomplete"
+    : finalRisk >= 72 ? "High watch" : finalRisk >= 55 ? "Elevated" : finalRisk >= 35 ? "Limited" : "Low watch";
+  const basicState = ready + partial >= 2 ? "partial" : "missing";
+  const proState = totalMissing + blocked > 3 ? "partial" : "ready";
+  const advancedState = blocked > 0 ? "blocked" : missing > 0 ? "missing" : partial > 0 ? "partial" : "ready";
+
+  const adverseFindings = confirmedAdverseClaims
+    .sort((a, b) => Number(b.adverseRiskFloor ?? 0) - Number(a.adverseRiskFloor ?? 0))
+    .map((claim) => findingFromAdverseClaim(claim));
+  const sectionFindings = sections
+    .filter((item) => item.state !== "ready" || item.scoreImpact > 8)
+    .sort((a, b) => (b.scoreImpact + b.missingCount * 3) - (a.scoreImpact + a.missingCount * 3))
+    .map((item) => findingFromSection(locale, item));
+  const topFindings = [...adverseFindings, ...sectionFindings]
+    .filter((finding, index, rows) => rows.findIndex((candidate) => candidate.id === finding.id) === index)
+    .slice(0, 7);
+
+  const advancedQueue = sections
+    .filter((item) => item.state !== "ready")
+    .map((item) => `${item.title}: ${item.advancedAction}`)
+    .concat(input.permissionParser?.advancedQueue ?? [], input.liquidityHolderRisk?.advancedQueue ?? [])
+    .filter(Boolean)
+    .slice(0, 18);
+
+  const proPdfSections = sections.filter((item) => item.tier === "pro" || item.state !== "ready");
+  const proPdfLines = [
+    `PASS2578 report assembler: readiness=${readinessScore}/100; risk=${finalRisk === null ? "unavailable" : `${finalRiskLabel} ${finalRisk}/100`}; reviewPriority=${reviewPriorityScore}/100; confidence=${finalConfidence}/100`,
+    `Target: ${contractAddress ?? projectName ?? "unknown"}; chain=${chain}`,
+    `Sections: ready=${ready}; partial=${partial}; missing=${missing}; blocked=${blocked}; manualReview=${manualReview}`,
+    `Evidence: evidence=${totalEvidence}; missing=${totalMissing}; topFindings=${topFindings.length}; advancedActions=${advancedQueue.length}`,
+    ...proPdfSections.flatMap((item, index) => [
+      `${index + 1}. ${item.title} - ${item.state} - tier=${item.tier}`,
+      `   ${item.proPdfSummary}`,
+    ]),
+  ];
+
+  return {
+    passId: PASS2578_AUDIT_REPORT_ASSEMBLER_ID,
+    generatedAt: new Date().toISOString(),
+    locale,
+    target: { contractAddress, projectName, chain },
+    rule: t(
+      locale,
+      "PASS2578 składa wynik audytu w jeden kontrakt: Basic prescreen, Pro rozszerzony PDF, Advanced zautomatyzowany evidence/retest appendix bez human review.",
+      "PASS2578 baut das Audit in einen Vertrag: Basic Prescreen, erweitertes Pro-PDF und automatisierter Advanced Evidence/Retest-Anhang ohne Human Review.",
+      "PASS2578 assembles one audit contract: Basic prescreen, extended Pro PDF, and an automated Advanced evidence/retest appendix with no human review.",
+    ),
+    reportMode: "visual-independent backend report contract; ready for later UI merge",
+    finalVerdict: {
+      riskScore: finalRisk,
+      riskLabel: finalRiskLabel,
+      reviewPriorityScore,
+      
+
+===== advancedQueue: =====
+ing;
+  sourceFamily: string;
+};
+
+export type Pass2578VisualMergeContract = {
+  purpose: string;
+  doNotBreak: string[];
+  uiSlots: Array<{
+    slot: string;
+    dataPath: string;
+    visualOwner: "user" | "assistant" | "shared";
+    notes: string;
+  }>;
+};
+
+export type Pass2578AuditReportAssemblerReport = {
+  passId: typeof PASS2578_AUDIT_REPORT_ASSEMBLER_ID;
+  generatedAt: string;
+  locale: string;
+  target: {
+    contractAddress?: string;
+    projectName?: string;
+    chain: string;
+  };
+  rule: string;
+  reportMode: string;
+  finalVerdict: {
+    riskScore: number | null;
+    riskLabel: string;
+    reviewPriorityScore: number;
+    sourceConfidence: number;
+    readinessScore: number;
+    basicState: Pass2578ReportSectionState;
+    proState: Pass2578ReportSectionState;
+    advancedState: Pass2578ReportSectionState;
+    publicVerdict: string;
+    proVerdict: string;
+    advancedVerdict: string;
+  };
+  summary: {
+    totalSections: number;
+    ready: number;
+    partial: number;
+    missing: number;
+    blocked: number;
+    manualReview: number;
+    totalEvidence: number;
+    totalMissing: number;
+    proPdfSections: number;
+    advancedActions: number;
+  };
+  sections: Pass2578ReportSection[];
+  basicSections: Pass2578ReportSection[];
+  proPdfSections: Pass2578ReportSection[];
+  advancedQueue: string[];
+  topFindings: Pass2578TopFinding[];
+  proPdfLines: string[];
+  visualMergeContract: Pass2578VisualMergeContract;
+};
+
+type AssemblerInput = Partial<AuditReviewSubmission> & {
+  locale?: string;
+  providerRuntime?: Pass2572AuditProviderRuntimeReport | null;
+  runtimeConfidence?: Pass2573AuditRuntimeConfidenceReport | null;
+  claimLedger?: Pass2574AuditClaimLedgerReport | null;
+  sourceFreshness?: Pass2575AuditSourceFreshnessReport | null;
+  permissionParser?: Pass2576AuditPermissionParserReport | null;
+  liquidityHolderRisk?: Pass2577AuditLiquidityHolderLockRiskReport | null;
+};
+
+function t(locale: string, pl: string, de: string, en: string) {
+  return locale === "pl" ? pl : locale === "de" ? de : en;
+}
+
+function clean(value: unknown, max = 180) {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(C0_OR_BRACE_ANGLE_PATTERN, " ").replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, max) : undefined;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function sectionState(ready: number, partial: number, missing: number, blocked: number, manual = 0): Pass2578ReportSectionState {
+  if (manual > 0) return "manual_review";
+  if (blocked > 0) return "blocked";
+  if (ready > 0 && missing === 0 && partial === 0) return "ready";
+  if (ready > 0 || partial > 0) return "partial";
+  return "missing";
+}
+
+function severityFor(state: Pass2578ReportSectionState, impact: number): Pass2578ReportFindingSeverity {
+  if (state === "ready") return "info";
+  if (state === "blocked" || impact >= 18) return "critical";
+  if (state === "manual_review" || impact >= 12) return "elevated";
+  return "watch";
+}
+
+function sourceFamilies(...families: Array<string | undefined | null | string[]>) {
+  return Array.from(new Set(families.flat().filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim()))).slice(0, 8);
+}
+
+function section(args: {
+  id: string;
+  tier: Pass2578ReportTier;
+  title: string;
+  state: Pass2578ReportSectionState;
+  scoreImpact: number;
+  confidenceImpact: number;
+  customerSummary: string;
+  proPdfSummary: st

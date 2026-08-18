@@ -1,0 +1,313 @@
+===== type ContractSource =====
+NOT_FOUND
+
+===== verifiedStaticEvidence =====
+  abiRule: string;
+    selectorRule: string;
+    proxyRule: string;
+    safetyBoundary: string;
+  };
+  sourceGate: {
+    state: Pass2583ExtractionState;
+    verified: boolean;
+    sourceAvailable: boolean;
+    abiAvailable: boolean;
+    bytecodeAvailable: boolean;
+    compilerVersion?: string;
+    proxyLike: boolean;
+    confidenceCap: number;
+    output: string;
+  };
+  functionSurfaces: Pass2583FunctionSurface[];
+  proxyHints: Pass2583ProxyHint[];
+  summary: {
+    totalFunctions: number;
+    ownerAdminFunctions: number;
+    supplyControlFunctions: number;
+    transferRestrictionFunctions: number;
+    proxyUpgradeFunctions: number;
+    customerVisibleRows: number;
+    /** PASS4143 compatibility alias for unresolved/queued permission extraction surfaces. */
+    queued: number;
+    proOnlyRows: number;
+    operatorActions: number;
+    extractionReadiness: number;
+    nextCriticalStep: string;
+    canFeedPermissionParser: boolean;
+    canFinalSignFromStaticExtraction: boolean;
+  };
+  publicRows: Pass2583ExtractionRow[];
+  proPdfRows: Pass2583ExtractionRow[];
+  operatorRows: Pass2583ExtractionRow[];
+  nextImplementationBacklog: string[];
+};
+
+type BuilderInput = Partial<AuditReviewSubmission> & {
+  locale?: string;
+  sourceText?: string;
+  abiText?: string;
+  bytecodeText?: string;
+  verifiedStaticEvidence?: Pass2576VerifiedStaticEvidence | null;
+  providerRuntime?: Pass2572AuditProviderRuntimeReport | null;
+  permissionParser?: Pass2576AuditPermissionParserReport | null;
+  realProviderAdapterHardening?: Pass2582RealProviderAdapterHardeningReport | null;
+};
+
+const CHAIN_ID_BY_NAME: Record<string, string> = {
+  eth: "1",
+  ethereum: "1",
+  mainnet: "1",
+  bsc: "56",
+  binance: "56",
+  bnb: "56",
+  polygon: "137",
+  matic: "137",
+  arbitrum: "42161",
+  optimism: "10",
+  base: "8453",
+  avalanche: "43114",
+  avax: "43114",
+  fantom: "250",
+  linea: "59144",
+  mantle: "5000",
+};
+
+const KNOWN_SELECTORS: Record<string, string> = {
+  "owner()": "0x8da5cb5b",
+  "transferOwnership(address)": "0xf2fde38b",
+  "renounceOwnership()": "0x715018a6",
+  "pause()": "0x8456cb59",
+  "unpause()": "0x3f4ba83a",
+  "mint(address,uint256)": "0x40c10f19",
+  "burn(uint256)": "0x42966c68",
+  "approve(address,uint256)": "0x095ea7b3",
+  "transfer(address,uint256)": "0xa9059cbb",
+  "transferFrom(address,address,uint256)": "0x23b872dd",
+  "allowance(address,address)": "0xdd62ed3e",
+  "balanceOf(address)": "0x70a08231",
+  "totalSupply()": "0x18160ddd",
+  "symbol()": "0x95d89b41",
+  "name()": "0x06fdde03",
+  "decimals()": "0x313ce567",
+  "upgradeTo(address)": "0x3659cfe6",
+  "upgradeToAndCall(address,bytes)": "0x4f1ef286",
+  "implementation()": "0x5c60da1b",
+  "admin()": "0xf851a440",
+  "grantRole(bytes32,address)": "0x2f2ff15d",
+  "revokeRole(bytes32,address)": "0xd547741f",
+  "renounceRole(bytes32,address)": "0x36568abe",
+  "hasRole(bytes32,address)": "0x91d14854",
+};
+
+function t(locale: string, pl: string, de: string, en: string) {
+  return locale === "pl" ? pl : locale === "de" ? de : en;
+}
+
+function clean(value: unknown, max = 180) {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(C0_OR_TEMPLATE_META_PATTERN, " ").replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, max) : undefined;
+}
+
+function safeText(value: unknown, max = 140_000) {
+  if (typeof value !== "string") return "";
+  return value.replace(JSON_CONTROL_NO_DELETE_PATTERN, " ").slice(0, max);
+}
+
+function chainIdFrom(chain: string | undefined) {
+  const normalized = String(chain || "ethereum").
+
+===== sourceGate =====
+calSignature: string;
+  selector: string;
+  selectorState: "known" | "queued" | "not_applicable";
+  source: "abi" | "source" | "bytecode";
+  mutability: "view" | "pure" | "payable" | "nonpayable" | "unknown";
+  visibility: "public" | "external" | "internal" | "private" | "unknown";
+  riskFamily: Pass2583FunctionRisk;
+  customerSafeLine: string;
+  proPdfLine: string;
+  operatorAction: string;
+};
+
+export type Pass2583ProxyHint = {
+  id: string;
+  label: string;
+  state: "detected" | "not_detected" | "unknown" | "blocked";
+  evidence: string[];
+  missing: string[];
+  customerLine: string;
+  proPdfLine: string;
+  operatorAction: string;
+};
+
+export type Pass2583ExtractionRow = {
+  label: string;
+  state: Pass2583ExtractionState;
+  output: string;
+};
+
+export type Pass2583ContractSourceAbiExtractionReport = {
+  passId: typeof PASS2583_CONTRACT_SOURCE_ABI_EXTRACTION_ID;
+  generatedAt: string;
+  locale: string;
+  target: {
+    contractAddress?: string;
+    projectName?: string;
+    chain: string;
+    chainId: string;
+  };
+  rule: string;
+  customerRule: string;
+  proRule: string;
+  operatorRule: string;
+  extractionContract: {
+    schemaVersion: string;
+    explorerSourceRule: string;
+    abiRule: string;
+    selectorRule: string;
+    proxyRule: string;
+    safetyBoundary: string;
+  };
+  sourceGate: {
+    state: Pass2583ExtractionState;
+    verified: boolean;
+    sourceAvailable: boolean;
+    abiAvailable: boolean;
+    bytecodeAvailable: boolean;
+    compilerVersion?: string;
+    proxyLike: boolean;
+    confidenceCap: number;
+    output: string;
+  };
+  functionSurfaces: Pass2583FunctionSurface[];
+  proxyHints: Pass2583ProxyHint[];
+  summary: {
+    totalFunctions: number;
+    ownerAdminFunctions: number;
+    supplyControlFunctions: number;
+    transferRestrictionFunctions: number;
+    proxyUpgradeFunctions: number;
+    customerVisibleRows: number;
+    /** PASS4143 compatibility alias for unresolved/queued permission extraction surfaces. */
+    queued: number;
+    proOnlyRows: number;
+    operatorActions: number;
+    extractionReadiness: number;
+    nextCriticalStep: string;
+    canFeedPermissionParser: boolean;
+    canFinalSignFromStaticExtraction: boolean;
+  };
+  publicRows: Pass2583ExtractionRow[];
+  proPdfRows: Pass2583ExtractionRow[];
+  operatorRows: Pass2583ExtractionRow[];
+  nextImplementationBacklog: string[];
+};
+
+type BuilderInput = Partial<AuditReviewSubmission> & {
+  locale?: string;
+  sourceText?: string;
+  abiText?: string;
+  bytecodeText?: string;
+  verifiedStaticEvidence?: Pass2576VerifiedStaticEvidence | null;
+  providerRuntime?: Pass2572AuditProviderRuntimeReport | null;
+  permissionParser?: Pass2576AuditPermissionParserReport | null;
+  realProviderAdapterHardening?: Pass2582RealProviderAdapterHardeningReport | null;
+};
+
+const CHAIN_ID_BY_NAME: Record<string, string> = {
+  eth: "1",
+  ethereum: "1",
+  mainnet: "1",
+  bsc: "56",
+  binance: "56",
+  bnb: "56",
+  polygon: "137",
+  matic: "137",
+  arbitrum: "42161",
+  optimism: "10",
+  base: "8453",
+  avalanche: "43114",
+  avax: "43114",
+  fantom: "250",
+  linea: "59144",
+  mantle: "5000",
+};
+
+const KNOWN_SELECTORS: Record<string, string> = {
+  "owner()": "0x8da5cb5b",
+  "transferOwnership(address)": "0xf2fde38b",
+  "renounceOwnership()": "0x715018a6",
+  "pause()": "0x8456cb59",
+  "unpause()": "0x3f4ba83a",
+  "mint(address,uint256)": "0x40c10f19",
+  "burn(uint256)": "0x42966c68",
+  "approve(address,uint256)": "0x095ea7b3",
+  "transfer(address,uint256)": "0xa9059cbb",
+  "transferFrom(address,addr
+
+===== export function buildPass2583 =====
+    : t(locale, `${spec.label}: brak danych do oceny proxy.`, `${spec.label}: keine Daten fuer Proxy-Bewertung.`, `${spec.label}: no data to assess proxy surface.`);
+    return {
+      id: spec.id,
+      label: spec.label,
+      state,
+      evidence,
+      missing: detected ? spec.missing : ["verified source/ABI", ...spec.missing].slice(0, 3),
+      customerLine,
+      proPdfLine: `${spec.label}; state=${state}; missing=${(detected ? spec.missing : ["verified source/ABI", ...spec.missing]).join(" | ")}`,
+      operatorAction: t(locale, "Jeśli wykryto: pobrać implementation, admin slot, owner/multisig i porównać ABI proxy vs implementation.", "Wenn erkannt: Implementation, Admin Slot, Owner/Multisig holen und Proxy ABI vs Implementation ABI vergleichen.", "If detected: fetch implementation, admin slot, owner/multisig and compare proxy ABI vs implementation ABI."),
+    };
+  });
+}
+
+function stateTone(state: Pass2583ExtractionState) {
+  if (state === "verified") return 100;
+  if (state === "partial") return 70;
+  if (state === "queued") return 48;
+  if (state === "needs_key") return 34;
+  if (state === "missing_input") return 24;
+  return 18;
+}
+
+function row(label: string, state: Pass2583ExtractionState, output: string): Pass2583ExtractionRow {
+  return { label, state, output };
+}
+
+export function buildPass2583ContractSourceAbiExtractionReport(input: BuilderInput): Pass2583ContractSourceAbiExtractionReport {
+  const locale = input.locale === "pl" || input.locale === "de" || input.locale === "en" ? input.locale : "en";
+  const chain = clean(input.chain, 40) ?? input.providerRuntime?.target.chain ?? "ethereum";
+  const chainId = chainIdFrom(chain);
+  const contractAddress = clean(input.contractAddress, 96) ?? input.providerRuntime?.target.contractAddress;
+  const projectName = clean(input.projectName, 90) ?? input.providerRuntime?.target.projectName;
+  const staticEvidence = identityBoundStaticEvidence(input, contractAddress, chain);
+  const sourceText = verifiedSourceText(staticEvidence?.sourceText);
+  const rawAbiText = safeText(staticEvidence?.abiText);
+  const parsedAbi = abiItems(rawAbiText);
+  const abiText = parsedAbi.length ? rawAbiText : "";
+  const bytecodeText = verifiedBytecode(staticEvidence?.bytecodeText);
+  const hasContract = Boolean(contractAddress && /^0x[a-fA-F0-9]{40}$/.test(contractAddress));
+  const sourceAvailable = Boolean(sourceText);
+  const abiAvailable = parsedAbi.length > 0;
+  const bytecodeAvailable = Boolean(bytecodeText);
+  const adapterNeedsKey = Boolean(input.realProviderAdapterHardening?.providerAdapters.some((lane) => lane.id.includes("etherscan") && lane.state === "needs_key"));
+  const compilerVersion = clean(sourceText.match(/CompilerVersion["':\s]+([^",}\s]+)/i)?.[1] || sourceText.match(/pragma\s+solidity\s+([^;]+);/i)?.[1], 80);
+
+  const functionSurfaces = dedupeFunctions([
+    ...fromAbi(locale, abiText),
+    ...fromSource(locale, sourceText),
+    ...fromBytecode(locale, bytecodeText),
+  ]).slice(0, 90);
+
+  const hints = proxyHints(locale, sourceText, abiText, bytecodeText);
+  const proxyLike = hints.some((hint) => hint.state === "detected") || functionSurfaces.some((item) => item.riskFamily === "proxy_upgrade");
+  const sourceGateState: Pass2583ExtractionState = !hasContract
+    ? "missing_input"
+    : sourceAvailable && abiAvailable
+      ? "verified"
+      : sourceAvailable || abiAvailable || bytecodeAvailable
+        ? "partial"
+        : adapterNeedsKey
+          ? "needs_key"
+          : "blocked";
+  const readiness = clam

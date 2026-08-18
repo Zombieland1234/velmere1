@@ -1,0 +1,413 @@
+===== pass2572VerifiedStaticEvidence =====
+onst accountDeliveryInput = buildPass4422AuditAccountDeliveryInput({
+    message: accountMessage,
+    accountId: account?.accountId,
+    accountEmail: account?.email,
+    contactEmail: normalized.contactEmail,
+    locale,
+    reviewLevel: auditReviewLevel,
+    projectName: customerProjectName,
+    contractAddress: customerContractAddress,
+    publicReportRoute: queueRecord.publicRoute,
+    adminRoute: queueRecord.adminRoute,
+    exportRoute: exportPayload.exportRoute,
+    auditQueueId: pass2362PaidAccessReceipt?.entitlement?.auditQueueId,
+    auditCaseRef: pass2362PaidAccessReceipt?.entitlement?.context.auditCaseRef,
+  });
+  const accountMessageReadinessPreview = buildAuditAccountMessageRecord(accountDeliveryInput, "memory");
+  const pass2570AuditSourceQuorum = buildPass2570AuditSourceQuorumReport({ ...normalized, locale });
+  const pass2571AuditProviderIntelligence = buildPass2571AuditProviderIntelligenceReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+  });
+  const pass2572AuditProviderRuntimeExecution = await buildPass2572AuditProviderRuntimeExecution({
+    ...normalized,
+    locale,
+    providerIntelligence: pass2571AuditProviderIntelligence,
+  });
+  const pass2572AuditProviderRuntime = pass2572AuditProviderRuntimeExecution.report;
+  const pass2572VerifiedStaticEvidence = pass2572AuditProviderRuntimeExecution.verifiedStaticEvidence ?? null;
+  const pass2573AuditRuntimeConfidence = buildPass2573AuditRuntimeConfidenceReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+  });
+  // V17/P78: authority evidence must travel through the real customer route.
+  // Unknown targets short-circuit to not_applicable without network access.
+  const pass5001AuditAdjudicatedAuthorityEvidence = await buildAuditAdjudicatedAuthorityEvidence({
+    chain: normalized.chain,
+    contractAddress: customerContractAddress,
+  });
+  const pass2574AuditClaimLedger = buildPass2574AuditClaimLedgerReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    authorityEvidence: pass5001AuditAdjudicatedAuthorityEvidence,
+  });
+  const pass2575AuditSourceFreshness = buildPass2575AuditSourceFreshnessReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+  });
+  const pass2576AuditPermissionParser = buildPass2576AuditPermissionParserReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    verifiedStaticEvidence: pass2572VerifiedStaticEvidence,
+  });
+  const pass2577AuditLiquidityHolderLockRisk = buildPass2577AuditLiquidityHolderLockRiskReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+  });
+  const pass2578AuditReportAssembler = buildPass2578AuditReportAssemblerReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+    liquidity
+
+===== pass2574AuditClaimLedger =====
+eview = buildAuditAccountMessageRecord(accountDeliveryInput, "memory");
+  const pass2570AuditSourceQuorum = buildPass2570AuditSourceQuorumReport({ ...normalized, locale });
+  const pass2571AuditProviderIntelligence = buildPass2571AuditProviderIntelligenceReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+  });
+  const pass2572AuditProviderRuntimeExecution = await buildPass2572AuditProviderRuntimeExecution({
+    ...normalized,
+    locale,
+    providerIntelligence: pass2571AuditProviderIntelligence,
+  });
+  const pass2572AuditProviderRuntime = pass2572AuditProviderRuntimeExecution.report;
+  const pass2572VerifiedStaticEvidence = pass2572AuditProviderRuntimeExecution.verifiedStaticEvidence ?? null;
+  const pass2573AuditRuntimeConfidence = buildPass2573AuditRuntimeConfidenceReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+  });
+  // V17/P78: authority evidence must travel through the real customer route.
+  // Unknown targets short-circuit to not_applicable without network access.
+  const pass5001AuditAdjudicatedAuthorityEvidence = await buildAuditAdjudicatedAuthorityEvidence({
+    chain: normalized.chain,
+    contractAddress: customerContractAddress,
+  });
+  const pass2574AuditClaimLedger = buildPass2574AuditClaimLedgerReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    authorityEvidence: pass5001AuditAdjudicatedAuthorityEvidence,
+  });
+  const pass2575AuditSourceFreshness = buildPass2575AuditSourceFreshnessReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+  });
+  const pass2576AuditPermissionParser = buildPass2576AuditPermissionParserReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    verifiedStaticEvidence: pass2572VerifiedStaticEvidence,
+  });
+  const pass2577AuditLiquidityHolderLockRisk = buildPass2577AuditLiquidityHolderLockRiskReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+  });
+  const pass2578AuditReportAssembler = buildPass2578AuditReportAssemblerReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+    liquidityHolderRisk: pass2577AuditLiquidityHolderLockRisk,
+  });
+  const pass2579AdvancedManualReviewQueue = buildPass2579AdvancedManualReviewQueueReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+  });
+  const pass2580CustomerSafeDeliveryDecision = buildPass2580CustomerSafeDeliveryDecisionReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    advancedManualReviewQueue: pass2579AdvancedManualReviewQueue,
+  });
+  const pass2581AuditVersionedRecheckReceipt = buildPass2581AuditVersionedRecheckReceiptReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAsse
+
+===== pass2576AuditPermissionParser =====
+});
+  const pass2572AuditProviderRuntime = pass2572AuditProviderRuntimeExecution.report;
+  const pass2572VerifiedStaticEvidence = pass2572AuditProviderRuntimeExecution.verifiedStaticEvidence ?? null;
+  const pass2573AuditRuntimeConfidence = buildPass2573AuditRuntimeConfidenceReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+  });
+  // V17/P78: authority evidence must travel through the real customer route.
+  // Unknown targets short-circuit to not_applicable without network access.
+  const pass5001AuditAdjudicatedAuthorityEvidence = await buildAuditAdjudicatedAuthorityEvidence({
+    chain: normalized.chain,
+    contractAddress: customerContractAddress,
+  });
+  const pass2574AuditClaimLedger = buildPass2574AuditClaimLedgerReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    authorityEvidence: pass5001AuditAdjudicatedAuthorityEvidence,
+  });
+  const pass2575AuditSourceFreshness = buildPass2575AuditSourceFreshnessReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+  });
+  const pass2576AuditPermissionParser = buildPass2576AuditPermissionParserReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    verifiedStaticEvidence: pass2572VerifiedStaticEvidence,
+  });
+  const pass2577AuditLiquidityHolderLockRisk = buildPass2577AuditLiquidityHolderLockRiskReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+  });
+  const pass2578AuditReportAssembler = buildPass2578AuditReportAssemblerReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+    liquidityHolderRisk: pass2577AuditLiquidityHolderLockRisk,
+  });
+  const pass2579AdvancedManualReviewQueue = buildPass2579AdvancedManualReviewQueueReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+  });
+  const pass2580CustomerSafeDeliveryDecision = buildPass2580CustomerSafeDeliveryDecisionReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    advancedManualReviewQueue: pass2579AdvancedManualReviewQueue,
+  });
+  const pass2581AuditVersionedRecheckReceipt = buildPass2581AuditVersionedRecheckReceiptReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    customerSafeDeliveryDecision: pass2580CustomerSafeDeliveryDecision,
+  });
+  const pass2582RealProviderAdapterHardening = buildPass2582RealProviderAdapterHardeningReport({
+    ...normalized,
+    locale,
+    providerIntelligence: pass2571AuditProviderIntelligence,
+    providerRuntime: pass2572AuditProviderRuntime,
+    versionedRecheckReceipt: pass2581AuditVersionedRecheckReceipt,
+  });
+  const pass2583ContractSourceAbiExtraction = buildPass2583ContractSourceAbiExtractionReport({
+    ...normalized,
+    locale,
+    providerRuntime:
+
+===== pass2578AuditReportAssembler =====
+rityEvidence({
+    chain: normalized.chain,
+    contractAddress: customerContractAddress,
+  });
+  const pass2574AuditClaimLedger = buildPass2574AuditClaimLedgerReport({
+    ...normalized,
+    locale,
+    sourceQuorum: pass2570AuditSourceQuorum,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    authorityEvidence: pass5001AuditAdjudicatedAuthorityEvidence,
+  });
+  const pass2575AuditSourceFreshness = buildPass2575AuditSourceFreshnessReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+  });
+  const pass2576AuditPermissionParser = buildPass2576AuditPermissionParserReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    verifiedStaticEvidence: pass2572VerifiedStaticEvidence,
+  });
+  const pass2577AuditLiquidityHolderLockRisk = buildPass2577AuditLiquidityHolderLockRiskReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+  });
+  const pass2578AuditReportAssembler = buildPass2578AuditReportAssemblerReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+    liquidityHolderRisk: pass2577AuditLiquidityHolderLockRisk,
+  });
+  const pass2579AdvancedManualReviewQueue = buildPass2579AdvancedManualReviewQueueReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+  });
+  const pass2580CustomerSafeDeliveryDecision = buildPass2580CustomerSafeDeliveryDecisionReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    advancedManualReviewQueue: pass2579AdvancedManualReviewQueue,
+  });
+  const pass2581AuditVersionedRecheckReceipt = buildPass2581AuditVersionedRecheckReceiptReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    customerSafeDeliveryDecision: pass2580CustomerSafeDeliveryDecision,
+  });
+  const pass2582RealProviderAdapterHardening = buildPass2582RealProviderAdapterHardeningReport({
+    ...normalized,
+    locale,
+    providerIntelligence: pass2571AuditProviderIntelligence,
+    providerRuntime: pass2572AuditProviderRuntime,
+    versionedRecheckReceipt: pass2581AuditVersionedRecheckReceipt,
+  });
+  const pass2583ContractSourceAbiExtraction = buildPass2583ContractSourceAbiExtractionReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    permissionParser: pass2576AuditPermissionParser,
+    realProviderAdapterHardening: pass2582RealProviderAdapterHardening,
+    verifiedStaticEvidence: pass2572VerifiedStaticEvidence,
+  });
+  const pass2584HolderLiquidityDepthEvidence = buildPass2584HolderLiquidityDepthEvidenceReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    liquidityHolderRisk: pass2577AuditLiquidityHolderLockRisk,
+    realProviderAdapterHardening: pass2582RealProviderAdapterHardening,
+    contractSourceAbiExtraction: pass2583ContractSourceAbiExtraction,
+  });
+  const pass2585PremiumProPdfTemplateContrac
+
+===== pass2583ContractSourceAbiExtraction =====
+uditProviderRuntime,
+    runtimeConfidence: pass2573AuditRuntimeConfidence,
+    claimLedger: pass2574AuditClaimLedger,
+    sourceFreshness: pass2575AuditSourceFreshness,
+    permissionParser: pass2576AuditPermissionParser,
+    liquidityHolderRisk: pass2577AuditLiquidityHolderLockRisk,
+  });
+  const pass2579AdvancedManualReviewQueue = buildPass2579AdvancedManualReviewQueueReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+  });
+  const pass2580CustomerSafeDeliveryDecision = buildPass2580CustomerSafeDeliveryDecisionReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    advancedManualReviewQueue: pass2579AdvancedManualReviewQueue,
+  });
+  const pass2581AuditVersionedRecheckReceipt = buildPass2581AuditVersionedRecheckReceiptReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    customerSafeDeliveryDecision: pass2580CustomerSafeDeliveryDecision,
+  });
+  const pass2582RealProviderAdapterHardening = buildPass2582RealProviderAdapterHardeningReport({
+    ...normalized,
+    locale,
+    providerIntelligence: pass2571AuditProviderIntelligence,
+    providerRuntime: pass2572AuditProviderRuntime,
+    versionedRecheckReceipt: pass2581AuditVersionedRecheckReceipt,
+  });
+  const pass2583ContractSourceAbiExtraction = buildPass2583ContractSourceAbiExtractionReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    permissionParser: pass2576AuditPermissionParser,
+    realProviderAdapterHardening: pass2582RealProviderAdapterHardening,
+    verifiedStaticEvidence: pass2572VerifiedStaticEvidence,
+  });
+  const pass2584HolderLiquidityDepthEvidence = buildPass2584HolderLiquidityDepthEvidenceReport({
+    ...normalized,
+    locale,
+    providerRuntime: pass2572AuditProviderRuntime,
+    liquidityHolderRisk: pass2577AuditLiquidityHolderLockRisk,
+    realProviderAdapterHardening: pass2582RealProviderAdapterHardening,
+    contractSourceAbiExtraction: pass2583ContractSourceAbiExtraction,
+  });
+  const pass2585PremiumProPdfTemplateContract = buildPass2585PremiumProPdfTemplateContractReport({
+    ...normalized,
+    locale,
+    reportAssembler: pass2578AuditReportAssembler,
+    customerSafeDeliveryDecision: pass2580CustomerSafeDeliveryDecision,
+    versionedRecheckReceipt: pass2581AuditVersionedRecheckReceipt,
+    realProviderAdapterHardening: pass2582RealProviderAdapterHardening,
+    contractSourceAbiExtraction: pass2583ContractSourceAbiExtraction,
+    holderLiquidityDepthEvidence: pass2584HolderLiquidityDepthEvidence,
+  });
+  const pass2586AdvancedOperatorConsoleMerge = buildPass2586AdvancedOperatorConsoleMergeReport({
+    ...normalized,
+    locale,
+    paymentVerified: Boolean(pass2362PaidAccessReceipt?.ok),
+    advancedManualReviewQueue: pass2579AdvancedManualReviewQueue,
+    customerSafeDeliveryDecision: pass2580CustomerSafeDeliveryDecision,
+    versionedRecheckReceipt: pass2581AuditVersionedRecheckReceipt,
+    premiumProPdfTemplateContract: pass2585PremiumProPdfTemplateContract,
+  });
+  const pass2587ServerPaymentAccountDeliveryGate = buildPass2587ServerPaymentAccountDeliveryGateReport({
+    ...normalized,
+    locale,
+    paidAccessReceipt: pass2362PaidAccessReceipt,
+    accountMessage: accountMessageReadinessPreview,
+    versionedRecheckReceipt: pass2581AuditVersionedRecheckReceipt,
+    advancedOperatorConsoleMerge: pass2586AdvancedOperatorConsoleMerge,
+  });
+  const pass2588AuditCaseVaultPrivateDeliveryLedger = buildPass2588AuditCaseVaultPrivate
