@@ -1,0 +1,54 @@
+name: P78 Thirdweb Ground Truth Probe
+
+on:
+  push:
+    branches:
+      - velmere-p78-thirdweb-groundtruth-probe-20260818
+    paths-ignore:
+      - 'p78-groundtruth-results/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p78-thirdweb-groundtruth-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ground-truth-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout probe head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Verify pinned real-target ground truth
+        run: |
+          set -euo pipefail
+          python3 p78-groundtruth/verify-thirdweb-erc2771-multicall.py p78-groundtruth-out
+
+      - name: Publish bounded ground-truth receipt
+        run: |
+          set -euo pipefail
+          mkdir -p p78-groundtruth-results
+          cp p78-groundtruth-out/P78_THIRDWEB_ERC2771_MULTICALL_GROUND_TRUTH.json p78-groundtruth-results/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- p78-groundtruth-results/P78_THIRDWEB_ERC2771_MULTICALL_GROUND_TRUTH.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'P78 publish bounded thirdweb ground-truth receipt'
+            git push origin HEAD:velmere-p78-thirdweb-groundtruth-probe-20260818
+          fi
+
+      - name: Upload probe artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p78-thirdweb-groundtruth-probe
+          path: p78-groundtruth-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
