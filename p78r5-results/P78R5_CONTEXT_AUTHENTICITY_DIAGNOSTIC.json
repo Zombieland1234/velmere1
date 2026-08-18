@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "velmere.p78r5.context-authenticity-diagnostic.v1",
+  "status": "MEASURED",
+  "case": "custom_contract_named_ERC2771Context_without_trusted_forwarder_semantics",
+  "expectedSafeInterpretation": "not_detected_or_blocked_because_logical_sender_is_plain_msg_sender_and_no_erc2771_forwarder_semantics_exist",
+  "observedState": "confirmed_source_pattern",
+  "falsePositiveObserved": true,
+  "correlation": {
+    "targetSelection": "etherscan_contract_name",
+    "targetContractName": "HarmlessNamedContext",
+    "analyzedContractNames": [
+      "HarmlessNamedContext",
+      "ERC2771Context"
+    ],
+    "sourceUnitIds": [
+      "verified-source.sol"
+    ]
+  },
+  "signals": {
+    "erc2771LogicalSenderContext": true,
+    "arbitrarySelfDelegatecallBatch": true,
+    "authorizationUsesLogicalSender": true,
+    "logicalSenderPreservedAcrossDelegatecall": false
+  },
+  "trustedForwarderSignals": {
+    "containsIsTrustedForwarder": false,
+    "containsForwarderImport": false,
+    "containsCalldataSenderSuffixDecode": false
+  },
+  "truthBoundary": "Diagnostic only. A confirmed source pattern here would demonstrate that class-name matching alone is insufficient to establish ERC-2771 semantics. No formal accuracy or exploitability credit is granted.",
+  "zeroFakeCredit": {
+    "formalDetectorAccuracy": "WITHHELD",
+    "runtimeExploitability": 0,
+    "deployedBytecodeEquivalence": 0,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  }
+}
