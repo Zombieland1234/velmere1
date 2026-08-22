@@ -1,0 +1,153 @@
+name: R5 Exact Current Lock Dependency Bundle
+
+on:
+  push:
+    branches:
+      - velmere-r5-exact-current-dependencies-20260823
+    paths:
+      - '.github/workflows/r5-exact-current-dependency-bundle.yml'
+      - 'R5_CURRENT_ROOT_DEPENDENCY_BINDING.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  exact-current-lock-dependency-bundle:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P41 bridge plus R5 binding
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Set up exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Execute exact lock closure and offline replay
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p41-runtime/run-p41-wrapper.mjs
+
+      - name: Bind historical exact lock closure to current R4 root dependency graph
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const cp = require('node:child_process');
+          const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex');
+          const binding = JSON.parse(fs.readFileSync('R5_CURRENT_ROOT_DEPENDENCY_BINDING.json', 'utf8'));
+          const bridgePackageBytes = fs.readFileSync('p41-out/project/package.json');
+          const bridgeLockBytes = fs.readFileSync('p41-out/project/package-lock.json');
+          const bridgePackage = JSON.parse(bridgePackageBytes);
+          const exactEqual = (a, b) => JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
+          if (sha256(bridgeLockBytes) !== binding.currentPackageLockSha256) throw new Error('Current package-lock binding mismatch');
+          if (!exactEqual(bridgePackage.dependencies, binding.dependencies)) throw new Error('Current dependencies differ from exact P41 bridge');
+          if (!exactEqual(bridgePackage.devDependencies, binding.devDependencies)) throw new Error('Current devDependencies differ from exact P41 bridge');
+          const closure = JSON.parse(fs.readFileSync('p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json', 'utf8'));
+          const manifest = JSON.parse(fs.readFileSync('p41-out/dependency-cas-manifest.json', 'utf8'));
+          if (closure.status !== 'PASS') throw new Error('P41 exact dependency closure did not pass');
+          if (manifest.denominator.uniqueTarballs !== 618 || manifest.denominator.downloadedUniqueTarballs !== 618 || manifest.denominator.failedUniqueTarballs !== 0) throw new Error('Expected exact 618/618 CAS closure');
+          const receipt = {
+            schemaVersion: 'velmere.r5.exact-current-lock-dependency-bundle.v1',
+            generatedAt: new Date().toISOString(),
+            status: 'PASS',
+            runtime: {
+              platform: process.platform,
+              arch: process.arch,
+              node: process.version,
+              npm: cp.execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(),
+              os: cp.execFileSync('cmd.exe', ['/d', '/s', '/c', 'ver'], { encoding: 'utf8' }).trim(),
+              runnerImage: process.env.ImageOS ?? null
+            },
+            binding: {
+              currentPackageJsonSha256: binding.currentPackageJsonSha256,
+              currentPackageLockSha256: binding.currentPackageLockSha256,
+              historicalBridgePackageJsonSha256: sha256(bridgePackageBytes),
+              dependencyMapsExactMatch: true,
+              workflowSourceSha: process.env.GITHUB_SHA,
+              runId: process.env.GITHUB_RUN_ID
+            },
+            closure: {
+              uniqueTarballs: manifest.denominator.uniqueTarballs,
+              downloadedUniqueTarballs: manifest.denominator.downloadedUniqueTarballs,
+              failedUniqueTarballs: manifest.denominator.failedUniqueTarballs,
+              onlineNpmCi: closure.npmCi?.online?.status ?? 'PASS',
+              offlineNpmCi: closure.npmCi?.offline?.status ?? 'PASS',
+              installScriptsDisabled: true
+            },
+            artifactContents: {
+              lockBoundTarballCas: true,
+              exactWindowsNodeModules: true,
+              currentApplicationSource: false
+            },
+            credits: {
+              exactCurrentLockDependencySourceClosure: true,
+              exactWindowsDependencyClosure: true,
+              exactWindowsApplicationBuild: false,
+              customerFinal: false
+            },
+            limitations: [
+              'The current R4 package.json differs from the historical bridge in non-dependency content; dependency and devDependency maps are byte-equivalent JSON values and the package-lock bytes are identical.',
+              'Application source was not present in this workflow, so this is not exact-current-byte application build or row-level Customer FINAL credit.'
+            ]
+          };
+          fs.writeFileSync('p41-out/VELMERE_R5_EXACT_CURRENT_LOCK_DEPENDENCY_BUNDLE_RECEIPT.json', `${JSON.stringify(receipt, null, 2)}\n`);
+          '@ | node
+
+      - name: Upload exact current lock dependency source and Windows modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: r5-exact-current-lock-dependency-bundle
+          path: |
+            p41-out/VELMERE_R5_EXACT_CURRENT_LOCK_DEPENDENCY_BUNDLE_RECEIPT.json
+            p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json
+            p41-out/dependency-cas-manifest.json
+            p41-out/derived-dependency-list.json
+            p41-out/cas
+            p41-out/logs
+            p41-out/project/package.json
+            p41-out/project/package-lock.json
+            p41-out/project/node_modules
+            R5_CURRENT_ROOT_DEPENDENCY_BINDING.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish run pointer without retriggering workflow
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pointer = [ordered]@{
+            schemaVersion = 'velmere.r5.dependency-run-pointer.v1'
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            workflowSourceSha = $env:GITHUB_SHA
+            branch = $env:GITHUB_REF_NAME
+            packageJsonSha256 = 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
+            packageLockSha256 = 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
+            status = 'PASS'
+          }
+          $pointer | ConvertTo-Json | Set-Content -Encoding utf8 R5_DEPENDENCY_RUN_POINTER.json
+          git config user.name 'Velmere R5 Dependency Bot'
+          git config user.email 'velmere141@gmail.com'
+          git add R5_DEPENDENCY_RUN_POINTER.json
+          git commit -m 'R5: publish dependency run pointer [skip ci]'
+          git pull --rebase origin $env:GITHUB_REF_NAME
+          git push origin "HEAD:$env:GITHUB_REF_NAME"
