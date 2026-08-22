@@ -6,13 +6,18 @@ on:
       - velmere-r5-dependency-bridge-20260823
     paths:
       - .github/workflows/r5-exact-current-dependency-bridge.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/r5-exact-current-dependency-bridge.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: r5-exact-current-dependency-bridge
+  group: r5-exact-current-dependency-bridge-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -36,15 +41,12 @@ jobs:
             target="r5-exact-deps/${filename}"
             curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 --max-time 300 \
               --silent --show-error "$url" --output "$target"
-
             actual_size="$(stat -c '%s' "$target")"
             actual_sha256="$(sha256sum "$target" | awk '{print $1}')"
             actual_integrity="sha512-$(openssl dgst -sha512 -binary "$target" | openssl base64 -A)"
-
             test "$actual_size" = "$expected_size"
             test "$actual_sha256" = "$expected_sha256"
             test "$actual_integrity" = "$expected_integrity"
-
             tar -xOf "$target" package/package.json > /tmp/package.json
             node - "$name" "$version" <<'NODE'
           const fs = require('node:fs');
@@ -58,7 +60,7 @@ jobs:
 
           cp /tmp/r5-deps.tsv r5-exact-deps/expected.tsv
           python3 - <<'PY'
-          import csv, hashlib, json, pathlib, subprocess
+          import base64, csv, hashlib, json, pathlib, subprocess
           root = pathlib.Path('r5-exact-deps')
           rows = []
           with open('/tmp/r5-deps.tsv', newline='', encoding='utf-8') as fh:
@@ -66,6 +68,7 @@ jobs:
                   path = root / filename
                   data = path.read_bytes()
                   pkg = json.loads(subprocess.check_output(['tar', '-xOf', str(path), 'package/package.json']))
+                  actual_integrity = 'sha512-' + base64.b64encode(hashlib.sha512(data).digest()).decode()
                   rows.append({
                       'name': name,
                       'version': version,
@@ -73,13 +76,9 @@ jobs:
                       'registryUrl': url,
                       'byteLength': len(data),
                       'sha256': hashlib.sha256(data).hexdigest(),
-                      'integrity': 'sha512-' + __import__('base64').b64encode(hashlib.sha512(data).digest()).decode(),
+                      'integrity': actual_integrity,
                       'packageJson': {'name': pkg.get('name'), 'version': pkg.get('version'), 'license': pkg.get('license')},
-                      'verifiedAgainstCurrentLock': (
-                          len(data) == int(size)
-                          and hashlib.sha256(data).hexdigest() == sha256
-                          and ('sha512-' + __import__('base64').b64encode(hashlib.sha512(data).digest()).decode()) == integrity
-                      ),
+                      'verifiedAgainstCurrentLock': len(data) == int(size) and hashlib.sha256(data).hexdigest() == sha256 and actual_integrity == integrity,
                   })
           receipt = {
               'schema': 'velmere.r5.exact-current-dependency-bridge.v1',
