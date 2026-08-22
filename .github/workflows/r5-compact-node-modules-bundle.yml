@@ -1,0 +1,171 @@
+name: R5 Compact Exact Windows Node Modules Bundle
+
+on:
+  push:
+    branches:
+      - velmere-r5-exact-current-dependencies-20260823
+    paths:
+      - '.github/workflows/r5-compact-node-modules-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compact-exact-windows-node-modules:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact dependency bridge
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Publish STARTED pointer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pointer = [ordered]@{
+            schemaVersion = 'velmere.r5.compact-node-modules-run-pointer.v1'
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            workflowSourceSha = $env:GITHUB_SHA
+            branch = $env:GITHUB_REF_NAME
+            packageLockSha256 = 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
+            status = 'STARTED'
+          }
+          $pointer | ConvertTo-Json | Set-Content -Encoding utf8 R5_COMPACT_NODE_MODULES_RUN_POINTER.json
+          git config user.name 'Velmere R5 Dependency Bot'
+          git config user.email 'velmere141@gmail.com'
+          git add R5_COMPACT_NODE_MODULES_RUN_POINTER.json
+          git commit -m 'R5: publish compact node_modules run STARTED [skip ci]'
+          git pull --rebase origin $env:GITHUB_REF_NAME
+          git push origin "HEAD:$env:GITHUB_REF_NAME"
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Assert exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Rebuild exact lock dependency tree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p41-runtime/run-p41-wrapper.mjs
+
+      - name: Validate current lock binding and compact tree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const cp = require('node:child_process');
+          const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex');
+          const binding = JSON.parse(fs.readFileSync('R5_CURRENT_ROOT_DEPENDENCY_BINDING.json', 'utf8'));
+          const projectPackage = fs.readFileSync('p41-out/project/package.json');
+          const projectLock = fs.readFileSync('p41-out/project/package-lock.json');
+          const closure = JSON.parse(fs.readFileSync('p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json', 'utf8'));
+          const manifest = JSON.parse(fs.readFileSync('p41-out/dependency-cas-manifest.json', 'utf8'));
+          if (sha256(projectLock) !== binding.currentPackageLockSha256) throw new Error('Current lock binding mismatch');
+          if (closure.status !== 'PASS') throw new Error('Exact dependency closure not PASS');
+          if (manifest.denominator.uniqueTarballs !== 618 || manifest.denominator.downloadedUniqueTarballs !== 618 || manifest.denominator.failedUniqueTarballs !== 0) throw new Error('Expected 618/618 exact tarballs');
+          const receipt = {
+            schemaVersion: 'velmere.r5.compact-exact-windows-node-modules-bundle.v1',
+            generatedAt: new Date().toISOString(),
+            status: 'PASS',
+            runtime: {
+              platform: process.platform,
+              arch: process.arch,
+              node: process.version,
+              npm: closure.runtime.npmVersion,
+              os: cp.execFileSync('cmd.exe', ['/d', '/s', '/c', 'ver'], { encoding: 'utf8' }).trim(),
+              imageOs: process.env.ImageOS ?? null,
+              runId: process.env.GITHUB_RUN_ID,
+              workflowSourceSha: process.env.GITHUB_SHA
+            },
+            binding: {
+              currentPackageJsonSha256: binding.currentPackageJsonSha256,
+              currentPackageLockSha256: binding.currentPackageLockSha256,
+              reconstructedPackageJsonSha256: sha256(projectPackage),
+              reconstructedPackageLockSha256: sha256(projectLock)
+            },
+            closure: {
+              uniqueTarballs: manifest.denominator.uniqueTarballs,
+              downloadedUniqueTarballs: manifest.denominator.downloadedUniqueTarballs,
+              failedUniqueTarballs: manifest.denominator.failedUniqueTarballs,
+              installedPackageCount: closure.npmCi.installedPackageCount,
+              onlineNpmCi: closure.npmCi.online.status === 0 ? 'PASS' : 'FAIL',
+              offlineNpmCi: closure.npmCi.offlineReplay.status === 0 ? 'PASS' : 'FAIL',
+              lifecycleScriptsExecuted: false
+            },
+            credits: {
+              compactDependencyTransfer: true,
+              exactWindowsApplicationBuild: false,
+              customerFinal: false
+            },
+            limitations: [
+              'The bundle contains exact Windows dependency bytes only, not current application source.',
+              'npm ci used --ignore-scripts; application lifecycle and native build remain separate gates.'
+            ]
+          };
+          fs.writeFileSync('p41-out/VELMERE_R5_COMPACT_EXACT_WINDOWS_NODE_MODULES_RECEIPT.json', `${JSON.stringify(receipt, null, 2)}\n`);
+          '@ | node
+          tar.exe -czf p41-out/R5_EXACT_WINDOWS_NODE_MODULES_COMPACT.tar.gz -C p41-out/project node_modules package.json package-lock.json
+          @'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const p = 'p41-out/R5_EXACT_WINDOWS_NODE_MODULES_COMPACT.tar.gz';
+          const r = 'p41-out/VELMERE_R5_COMPACT_EXACT_WINDOWS_NODE_MODULES_RECEIPT.json';
+          const receipt = JSON.parse(fs.readFileSync(r, 'utf8'));
+          receipt.transferFile = {
+            path: 'R5_EXACT_WINDOWS_NODE_MODULES_COMPACT.tar.gz',
+            byteLength: fs.statSync(p).size,
+            sha256: crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')
+          };
+          fs.writeFileSync(r, `${JSON.stringify(receipt, null, 2)}\n`);
+          '@ | node
+
+      - name: Upload compact dependency bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: r5-compact-exact-windows-node-modules
+          path: |
+            p41-out/R5_EXACT_WINDOWS_NODE_MODULES_COMPACT.tar.gz
+            p41-out/VELMERE_R5_COMPACT_EXACT_WINDOWS_NODE_MODULES_RECEIPT.json
+            p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json
+            R5_CURRENT_ROOT_DEPENDENCY_BINDING.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish PASS pointer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git reset --hard HEAD
+          git pull --rebase origin $env:GITHUB_REF_NAME
+          $pointer = [ordered]@{
+            schemaVersion = 'velmere.r5.compact-node-modules-run-pointer.v1'
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            workflowSourceSha = $env:GITHUB_SHA
+            branch = $env:GITHUB_REF_NAME
+            packageLockSha256 = 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
+            artifactName = 'r5-compact-exact-windows-node-modules'
+            status = 'PASS'
+          }
+          $pointer | ConvertTo-Json | Set-Content -Encoding utf8 R5_COMPACT_NODE_MODULES_RUN_POINTER.json
+          git add R5_COMPACT_NODE_MODULES_RUN_POINTER.json
+          git commit -m 'R5: publish compact node_modules run PASS [skip ci]'
+          git push origin "HEAD:$env:GITHUB_REF_NAME"
