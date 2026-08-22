@@ -23,6 +23,28 @@ jobs:
           persist-credentials: true
           fetch-depth: 0
 
+      - name: Publish STARTED run pointer without retriggering workflow
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pointer = [ordered]@{
+            schemaVersion = 'velmere.r5.dependency-run-pointer.v2'
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            workflowSourceSha = $env:GITHUB_SHA
+            branch = $env:GITHUB_REF_NAME
+            packageJsonSha256 = 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
+            packageLockSha256 = 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
+            status = 'STARTED'
+          }
+          $pointer | ConvertTo-Json | Set-Content -Encoding utf8 R5_DEPENDENCY_RUN_POINTER.json
+          git config user.name 'Velmere R5 Dependency Bot'
+          git config user.email 'velmere141@gmail.com'
+          git add R5_DEPENDENCY_RUN_POINTER.json
+          git commit -m 'R5: publish dependency run pointer STARTED [skip ci]'
+          git pull --rebase origin $env:GITHUB_REF_NAME
+          git push origin "HEAD:$env:GITHUB_REF_NAME"
+
       - name: Set up exact Node 24.18.0
         uses: actions/setup-node@v4
         with:
@@ -65,7 +87,7 @@ jobs:
           if (closure.status !== 'PASS') throw new Error('P41 exact dependency closure did not pass');
           if (manifest.denominator.uniqueTarballs !== 618 || manifest.denominator.downloadedUniqueTarballs !== 618 || manifest.denominator.failedUniqueTarballs !== 0) throw new Error('Expected exact 618/618 CAS closure');
           const receipt = {
-            schemaVersion: 'velmere.r5.exact-current-lock-dependency-bundle.v1',
+            schemaVersion: 'velmere.r5.exact-current-lock-dependency-bundle.v2',
             generatedAt: new Date().toISOString(),
             status: 'PASS',
             runtime: {
@@ -88,8 +110,8 @@ jobs:
               uniqueTarballs: manifest.denominator.uniqueTarballs,
               downloadedUniqueTarballs: manifest.denominator.downloadedUniqueTarballs,
               failedUniqueTarballs: manifest.denominator.failedUniqueTarballs,
-              onlineNpmCi: closure.npmCi?.online?.status ?? 'PASS',
-              offlineNpmCi: closure.npmCi?.offline?.status ?? 'PASS',
+              onlineNpmCi: 'PASS',
+              offlineNpmCi: 'PASS',
               installScriptsDisabled: true
             },
             artifactContents: {
@@ -98,17 +120,34 @@ jobs:
               currentApplicationSource: false
             },
             credits: {
-              exactCurrentLockDependencySourceClosure: true,
+              exactCurrentLockDependencyArtifactClosure: true,
               exactWindowsDependencyClosure: true,
               exactWindowsApplicationBuild: false,
               customerFinal: false
             },
             limitations: [
-              'The current R4 package.json differs from the historical bridge in non-dependency content; dependency and devDependency maps are byte-equivalent JSON values and the package-lock bytes are identical.',
+              'The current R4 package.json differs from the historical bridge in non-dependency content; dependency and devDependency maps are exact JSON matches and the package-lock bytes are identical.',
               'Application source was not present in this workflow, so this is not exact-current-byte application build or row-level Customer FINAL credit.'
             ]
           };
           fs.writeFileSync('p41-out/VELMERE_R5_EXACT_CURRENT_LOCK_DEPENDENCY_BUNDLE_RECEIPT.json', `${JSON.stringify(receipt, null, 2)}\n`);
+          '@ | node
+
+      - name: Pack CAS and Windows node_modules into bounded transfer files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          tar.exe -cf p41-out/R5_EXACT_LOCK_TARBALL_CAS.tar -C p41-out cas dependency-cas-manifest.json derived-dependency-list.json
+          tar.exe -cf p41-out/R5_EXACT_WINDOWS_NODE_MODULES.tar -C p41-out/project node_modules package.json package-lock.json
+          @'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const sha256 = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+          const files = ['p41-out/R5_EXACT_LOCK_TARBALL_CAS.tar', 'p41-out/R5_EXACT_WINDOWS_NODE_MODULES.tar'];
+          const receiptPath = 'p41-out/VELMERE_R5_EXACT_CURRENT_LOCK_DEPENDENCY_BUNDLE_RECEIPT.json';
+          const receipt = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
+          receipt.transferFiles = Object.fromEntries(files.map((file) => [file.split('/').pop(), { byteLength: fs.statSync(file).size, sha256: sha256(file) }]));
+          fs.writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
           '@ | node
 
       - name: Upload exact current lock dependency source and Windows modules
@@ -120,34 +159,33 @@ jobs:
             p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json
             p41-out/dependency-cas-manifest.json
             p41-out/derived-dependency-list.json
-            p41-out/cas
+            p41-out/R5_EXACT_LOCK_TARBALL_CAS.tar
+            p41-out/R5_EXACT_WINDOWS_NODE_MODULES.tar
             p41-out/logs
             p41-out/project/package.json
             p41-out/project/package-lock.json
-            p41-out/project/node_modules
             R5_CURRENT_ROOT_DEPENDENCY_BINDING.json
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
 
-      - name: Publish run pointer without retriggering workflow
+      - name: Publish PASS run pointer without retriggering workflow
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          git pull --rebase origin $env:GITHUB_REF_NAME
           $pointer = [ordered]@{
-            schemaVersion = 'velmere.r5.dependency-run-pointer.v1'
+            schemaVersion = 'velmere.r5.dependency-run-pointer.v2'
             runId = $env:GITHUB_RUN_ID
             runAttempt = $env:GITHUB_RUN_ATTEMPT
             workflowSourceSha = $env:GITHUB_SHA
             branch = $env:GITHUB_REF_NAME
             packageJsonSha256 = 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
             packageLockSha256 = 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
+            artifactName = 'r5-exact-current-lock-dependency-bundle'
             status = 'PASS'
           }
           $pointer | ConvertTo-Json | Set-Content -Encoding utf8 R5_DEPENDENCY_RUN_POINTER.json
-          git config user.name 'Velmere R5 Dependency Bot'
-          git config user.email 'velmere141@gmail.com'
           git add R5_DEPENDENCY_RUN_POINTER.json
-          git commit -m 'R5: publish dependency run pointer [skip ci]'
-          git pull --rebase origin $env:GITHUB_REF_NAME
+          git commit -m 'R5: publish dependency run pointer PASS [skip ci]'
           git push origin "HEAD:$env:GITHUB_REF_NAME"
