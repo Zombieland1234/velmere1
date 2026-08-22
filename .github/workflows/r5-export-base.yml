@@ -6,6 +6,11 @@ on:
       - velmere-r5-current-byte-dependency-windows-20260823
     paths:
       - '.github/workflows/r5-export-base.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/r5-export-base.yml'
   workflow_dispatch:
 
 permissions:
@@ -45,7 +50,7 @@ jobs:
           body=''.join(f'{h}\t{s}\t{p}\n' for p,s,h in rows).encode()
           receipt={
             'schema':'velmere.r5.base-source-export.v1',
-            'branch':os.environ.get('GITHUB_REF_NAME'),
+            'branch':os.environ.get('GITHUB_HEAD_REF') or os.environ.get('GITHUB_REF_NAME'),
             'sourceSha':os.environ.get('GITHUB_SHA'),
             'fileCount':len(rows),
             'totalBytes':sum(r[1] for r in rows),
