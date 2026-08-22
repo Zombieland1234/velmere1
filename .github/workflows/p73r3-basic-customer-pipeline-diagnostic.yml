@@ -1,0 +1,106 @@
+name: P73R3 Basic Customer Pipeline Diagnostic
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p73r3-basic-customer-pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout P73 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Reconstruct exact P72R3 product bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v24.18.0"
+          mkdir -p p73-work p73-out
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p73-work --output-root p73-out
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p73-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p73-work/P66.json
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p73-work/source --manifest p73-work/P66.json
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p73-work/source --manifest p73-work/P66.json
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p73-work/source --manifest p73-work/P66.json --output-manifest p73-work/P68.json
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p73-work/source --manifest p73-work/P68.json --output-manifest p73-work/P69.json
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p73-work/source --manifest p73-work/P69.json --output-manifest p73-work/P69R2.json --receipt p73-out/P69R2.json
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p73-work/source --manifest p73-work/P69R2.json --output-manifest p73-work/P71.json --receipt p73-out/P71.json
+          python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p73-work/source --manifest p73-work/P71.json --output-manifest p73-work/P71R1.json --receipt p73-out/P71R1.json
+          python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p73-work/source --manifest p73-work/P71R1.json --output-manifest p73-work/P71R2.json --receipt p73-out/P71R2.json
+          python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p73-work/source --manifest p73-work/P71R2.json --output-manifest p73-work/P71R5.json --receipt p73-out/P71R3.json
+          python p72-runtime/apply-p72-commercial-topology-measurement.py --source-root p73-work/source --manifest p73-work/P71R5.json --output-manifest p73-work/P72.json --receipt p73-out/P72_SOURCE_PATCH.json
+          python p72-runtime/apply-p72r3-typescript-contract-repair.py --source-root p73-work/source --manifest p73-work/P72.json --output-manifest p73-work/P72R3_BUILD_PROJECTION_MANIFEST.json --receipt p73-out/P72R3_SOURCE_PATCH.json
+          python - <<'PY'
+          import json
+          m=json.load(open('p73-work/P72R3_BUILD_PROJECTION_MANIFEST.json',encoding='utf-8'))['projection']
+          expected=(1597,20988569,'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73','4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252')
+          actual=(m['fileCount'],m['payloadBytes'],m['pathSetSha256'],m['sourceContentAggregateSha256'])
+          if actual != expected: raise SystemExit(f'P72R3 identity mismatch:{actual}')
+          print('P72R3 exact identity PASS',actual)
+          PY
+
+      - name: Install exact dependency closure
+        shell: bash
+        working-directory: p73-work/source
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --include=dev --audit=false --fund=false
+          npm ls --all >/dev/null
+
+      - name: Execute zero-credit Basic customer pipeline diagnostic
+        shell: bash
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}/p73-out
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}/p73-work/source/tsconfig.json
+        run: |
+          set -euo pipefail
+          node p73-work/source/node_modules/tsx/dist/cli.mjs p73-runtime/diagnose-p73-basic-customer-pipeline.ts | tee p73-out/P73R3_BASIC_CUSTOMER_PIPELINE_DIAGNOSTIC.log
+
+      - name: Bind diagnostic truth boundary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs');
+          let diagnostic=null;
+          try { diagnostic=JSON.parse(fs.readFileSync('p73-out/P73R3_BASIC_CUSTOMER_PIPELINE_DIAGNOSTIC.json','utf8')); } catch {}
+          fs.writeFileSync('p73-out/P73R3_DIAGNOSTIC_BOUNDARY.json', JSON.stringify({
+            schemaVersion:'velmere.p73r3.basic-customer-pipeline-diagnostic-boundary.v1',
+            runId:process.env.GITHUB_RUN_ID,
+            sha:process.env.GITHUB_SHA,
+            parent:{revision:'P72R3',projectionAggregateSha256:'4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252'},
+            diagnosticStatus:diagnostic?.status??'MISSING',
+            customerFinal:'0/20',auditFinalPdf:'0/3',rights:'2/203',paidValue:'0/10',sale:'0/20',live:false,
+            truthBoundary:'Diagnostic only. No customer-final, PDF, rights, value, sale or LIVE credit; simulated evidence-ledger branch may only isolate blockers.'
+          },null,2)+'\n');
+          NODE
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r3-basic-customer-pipeline-diagnostic
+          path: p73-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

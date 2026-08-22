@@ -1,0 +1,49 @@
+name: P42 Exact Linux Node24 Toolchain Snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/p42-node24-linux-toolchain-snapshot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Capture exact toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+          NODE_BIN="$(readlink -f "$(command -v node)")"
+          NODE_ROOT="$(dirname "$(dirname "$NODE_BIN")")"
+          mkdir -p p42-node24
+          tar -C "$(dirname "$NODE_ROOT")" -czf p42-node24/node-v24.18.0-linux-x64-toolcache.tar.gz "$(basename "$NODE_ROOT")"
+          sha256sum p42-node24/node-v24.18.0-linux-x64-toolcache.tar.gz > p42-node24/node-v24.18.0-linux-x64-toolcache.sha256
+          printf 'node=%s\nnpm=%s\nplatform=%s\narch=%s\nroot=%s\n' "$(node --version)" "$(npm --version)" "$(node -p 'process.platform')" "$(node -p 'process.arch')" "$NODE_ROOT" > p42-node24/toolchain.txt
+
+      - name: Upload exact toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: p42-node-v24.18.0-linux-x64-toolchain
+          path: p42-node24
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

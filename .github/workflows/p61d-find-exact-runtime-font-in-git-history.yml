@@ -1,0 +1,109 @@
+name: P61D Find Exact Runtime PDF Font In Git History
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p61d-find-exact-runtime-font-in-git-history.yml'
+
+concurrency:
+  group: p61d-find-exact-runtime-font-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  find-exact-runtime-font:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout complete repository history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Fetch every branch and scan every reachable blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p61d-out
+          git fetch --prune --no-recurse-submodules origin '+refs/heads/*:refs/remotes/origin/*'
+          git for-each-ref --sort=refname --format='%(refname)%09%(objectname)' refs/remotes/origin > p61d-out/ALL_REMOTE_REFS.tsv
+          git rev-list --objects --all > p61d-out/ALL_REACHABLE_OBJECTS.txt
+          python - <<'PY'
+          from __future__ import annotations
+          import hashlib
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          out = pathlib.Path('p61d-out')
+          expected_sha = 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa'
+          expected_bytes = 46464
+          expected_name = 'manrope-pdf-latin-plus-ext.ttf'
+          objects = []
+          for line in (out / 'ALL_REACHABLE_OBJECTS.txt').read_text(encoding='utf-8', errors='replace').splitlines():
+              object_id, _, object_path = line.partition(' ')
+              if object_id:
+                  objects.append((object_id, object_path))
+
+          exact = []
+          named = []
+          size_candidates = []
+          for object_id, object_path in objects:
+              kind = subprocess.run(['git', 'cat-file', '-t', object_id], capture_output=True, text=True)
+              if kind.returncode != 0 or kind.stdout.strip() != 'blob':
+                  continue
+              size_probe = subprocess.run(['git', 'cat-file', '-s', object_id], capture_output=True, text=True)
+              if size_probe.returncode != 0:
+                  continue
+              try:
+                  size = int(size_probe.stdout.strip())
+              except ValueError:
+                  continue
+              if expected_name.lower() in object_path.lower():
+                  named.append({'objectId': object_id, 'path': object_path, 'byteLength': size})
+              if size != expected_bytes:
+                  continue
+              size_candidates.append({'objectId': object_id, 'path': object_path, 'byteLength': size})
+              data = subprocess.check_output(['git', 'cat-file', 'blob', object_id])
+              digest = hashlib.sha256(data).hexdigest()
+              if digest == expected_sha:
+                  exact.append({'objectId': object_id, 'path': object_path, 'byteLength': len(data), 'sha256': digest})
+
+          refs = [line for line in (out / 'ALL_REMOTE_REFS.tsv').read_text().splitlines() if line]
+          receipt = {
+              'schemaVersion': 'velmere.p61d.exact-runtime-font-git-history-discovery.v1',
+              'status': 'PASS' if exact else 'FAIL',
+              'decision': 'PASS_EXACT_RUNTIME_FONT_FOUND_IN_REACHABLE_GIT_HISTORY' if exact else 'FAIL_CLOSED_EXACT_RUNTIME_FONT_NOT_FOUND_IN_REACHABLE_GIT_HISTORY',
+              'expected': {'fileName': expected_name, 'byteLength': expected_bytes, 'sha256': expected_sha},
+              'remoteRefCount': len(refs),
+              'reachableObjectCount': len(objects),
+              'namedCandidates': named,
+              'sizeCandidateCount': len(size_candidates),
+              'sizeCandidates': size_candidates,
+              'exactMatches': exact,
+              'truthBoundary': 'PASS proves only that exact previously recovered PDF font bytes are reachable in Git history. It grants no license, Browser, PDF, customer, rights, sale, GO or WORLD_CLASS credit. FAIL does not invalidate the separately preserved parent-materials recovery provenance.',
+          }
+          core = json.dumps(receipt, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = hashlib.sha256(core).hexdigest()
+          (out / 'P61D_EXACT_RUNTIME_FONT_GIT_HISTORY_DISCOVERY.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n')
+          print(json.dumps(receipt, ensure_ascii=False, indent=2))
+          sys.exit(0 if exact else 2)
+          PY
+
+      - name: Upload P61D discovery evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p61d-exact-runtime-font-git-history-discovery
+          path: p61d-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

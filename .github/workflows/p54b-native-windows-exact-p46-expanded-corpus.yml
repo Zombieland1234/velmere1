@@ -1,0 +1,302 @@
+name: P54B Native Windows Exact P46 Expanded Corpus
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p54b-native-windows-exact-p46-expanded-corpus.yml'
+      - 'p54-runtime/**'
+
+concurrency:
+  group: p54b-native-windows-exact-p46-expanded-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  expanded-corpus-native-windows:
+    runs-on: windows-2025
+    timeout-minutes: 210
+    steps:
+      - name: Checkout P54B control branch
+        id: checkout
+        continue-on-error: true
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Initialize P54B boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p54b-out | Out-Null
+          [ordered]@{
+            schemaVersion = 'velmere.p54b.workflow-boundary.v1'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            sha = '${{ github.sha }}'
+            ref = '${{ github.ref }}'
+            target = [ordered]@{
+              fileCount = 1597
+              payloadBytes = 20952834
+              pathSetSha256 = 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
+              sourceContentAggregateSha256 = '83fd00183e9d8a6c5ec1c27dba81ab99679e204b50e8f45f414a45abd2bd21b7'
+            }
+            truthBoundary = 'Internal exact P46 build-evidence lane only. Browser, PDF, customer outputs, rights, material value, sale eligibility and LIVE remain excluded.'
+          } | ConvertTo-Json -Depth 12 | Set-Content p54b-out/P54B_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Set up exact Node 24.18.0
+        id: setup_node
+        continue-on-error: true
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Set up exact npm 11.16.0 and zstandard decoder
+        id: toolchain
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          python -m pip install --disable-pip-version-check --no-input --no-deps zstandard==0.23.0
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
+          if (-not $IsWindows) { throw 'Native Windows runner required' }
+          [ordered]@{
+            schemaVersion = 'velmere.p54b.toolchain.v1'
+            status = 'PASS'
+            node = $nodeVersion
+            npm = $npmVersion
+            python = (python --version 2>&1).Trim()
+            runnerOs = $env:RUNNER_OS
+            runnerArch = $env:RUNNER_ARCH
+            imageOs = $env:ImageOS
+          } | ConvertTo-Json -Depth 8 | Set-Content p54b-out/P54B_TOOLCHAIN_RECEIPT.json -Encoding utf8
+
+      - name: Download expanded GitHub-hosted source corpus
+        id: transport
+        continue-on-error: true
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $artifacts = @(
+            [ordered]@{ id = 9244498847; name = 'p51-all-refs-blob-corpus' },
+            [ordered]@{ id = 9247359383; name = 'p53-all-heads-git-base' },
+            [ordered]@{ id = 9243844560; name = 'p51-current-branch-tracked-snapshot' },
+            [ordered]@{ id = 9215504066; name = 'p42-branch-source-snapshot' },
+            [ordered]@{ id = 9217803514; name = 'p43-github-branch-source-inventory' },
+            [ordered]@{ id = 9225444344; name = 'p43-exact-windows-current-source-closure' },
+            [ordered]@{ id = 9236169616; name = 'p46-native-windows-current-source-semantic-dual-build' },
+            [ordered]@{ id = 9247242322; name = 'p53-r36-full-source-base' }
+          )
+          New-Item -ItemType Directory -Force p54b-input/corpus | Out-Null
+          $headers = @(
+            '-H', "Authorization: Bearer $env:GH_TOKEN",
+            '-H', 'Accept: application/vnd.github+json',
+            '-H', 'X-GitHub-Api-Version: 2022-11-28'
+          )
+          $rows = [System.Collections.Generic.List[object]]::new()
+          foreach ($artifact in $artifacts) {
+            $dir = Join-Path 'p54b-input/corpus' ("artifact-" + $artifact.id)
+            $zip = Join-Path 'p54b-input' ("artifact-" + $artifact.id + '.zip')
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            $url = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/artifacts/$($artifact.id)/zip"
+            & curl.exe --fail-with-body -L --retry 5 --retry-all-errors @headers $url -o $zip
+            if ($LASTEXITCODE -ne 0) { throw "Artifact $($artifact.id) download failed: $LASTEXITCODE" }
+            Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force
+            $rows.Add([ordered]@{
+              id = $artifact.id
+              name = $artifact.name
+              zipBytes = (Get-Item $zip).Length
+              zipSha256 = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+              extractedFiles = @(Get-ChildItem $dir -File -Recurse).Count
+              extractedBytes = (@(Get-ChildItem $dir -File -Recurse | Measure-Object Length -Sum).Sum)
+            })
+          }
+          [ordered]@{
+            schemaVersion = 'velmere.p54b.expanded-artifact-transport.v1'
+            status = 'PASS'
+            artifactCount = $rows.Count
+            artifacts = @($rows)
+          } | ConvertTo-Json -Depth 16 | Set-Content p54b-out/P54B_EXPANDED_TRANSPORT_RECEIPT.json -Encoding utf8
+
+      - name: Reconstruct exact 1597-file P46 projection from expanded corpus
+        id: reconstruct
+        if: steps.checkout.outcome == 'success' && steps.transport.outcome == 'success'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          python p54-runtime/reconstruct-p54-from-corpus.py `
+            --checkout-root . `
+            --corpus-root p54b-input/corpus `
+            --output-root p54b-work/source `
+            --work-root p54b-work/reconstruction `
+            --receipt p54b-out/P54B_EXACT_P46_RECONSTRUCTION_RECEIPT.json
+          exit $LASTEXITCODE
+
+      - name: Execute exact native Windows lifecycle, semantics, lint and dual build
+        id: native_build
+        if: steps.toolchain.outcome == 'success' && steps.reconstruct.outcome == 'success'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          & p54-runtime/run-p54-native-windows.ps1 `
+            -SourceRoot p54b-work/source `
+            -OutRoot p54b-out `
+            -ReconstructionReceipt p54b-out/P54B_EXACT_P46_RECONSTRUCTION_RECEIPT.json
+          exit $LASTEXITCODE
+
+      - name: Adjudicate P54B fail-closed
+        id: adjudicate
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $reconPath = 'p54b-out/P54B_EXACT_P46_RECONSTRUCTION_RECEIPT.json'
+          $buildPath = 'p54b-out/P54_NATIVE_WINDOWS_EXACT_P46_BUILD_EXECUTION_RECEIPT.json'
+          $recon = $null
+          $build = $null
+          if (Test-Path $reconPath) { $recon = Get-Content $reconPath -Raw -Encoding utf8 | ConvertFrom-Json }
+          if (Test-Path $buildPath) { $build = Get-Content $buildPath -Raw -Encoding utf8 | ConvertFrom-Json }
+          $pass = (
+            '${{ steps.checkout.outcome }}' -eq 'success' -and
+            '${{ steps.setup_node.outcome }}' -eq 'success' -and
+            '${{ steps.toolchain.outcome }}' -eq 'success' -and
+            '${{ steps.transport.outcome }}' -eq 'success' -and
+            '${{ steps.reconstruct.outcome }}' -eq 'success' -and
+            '${{ steps.native_build.outcome }}' -eq 'success' -and
+            $null -ne $recon -and $recon.status -eq 'PASS' -and
+            $null -ne $build -and $build.status -eq 'PASS'
+          )
+          $receipt = [ordered]@{
+            schemaVersion = 'velmere.p54b.workflow-adjudication.v1'
+            status = $(if ($pass) { 'PASS' } else { 'FAIL' })
+            decision = $(if ($pass) { 'P54B_EXACT_NATIVE_WINDOWS_P46_BUILD_PASS' } else { 'P54B_FAIL_CLOSED' })
+            credit = $(if ($pass) { 'P46_BUILD_RELEVANT_NATIVE_WINDOWS_EXECUTION_ONLY' } else { 'WITHHELD' })
+            run = [ordered]@{
+              id = '${{ github.run_id }}'
+              attempt = '${{ github.run_attempt }}'
+              sha = '${{ github.sha }}'
+              ref = '${{ github.ref }}'
+            }
+            stepOutcomes = [ordered]@{
+              checkout = '${{ steps.checkout.outcome }}'
+              setupNode = '${{ steps.setup_node.outcome }}'
+              toolchain = '${{ steps.toolchain.outcome }}'
+              transport = '${{ steps.transport.outcome }}'
+              reconstruct = '${{ steps.reconstruct.outcome }}'
+              nativeBuild = '${{ steps.native_build.outcome }}'
+            }
+            reconstructionStatus = $(if ($null -ne $recon) { [string]$recon.status } else { 'MISSING' })
+            nativeBuildStatus = $(if ($null -ne $build) { [string]$build.status } else { 'MISSING' })
+            unchangedOpenGates = [ordered]@{
+              browser = '0/3'
+              pdfIndependentReplay = '0/1'
+              customerOutputs = '0/17'
+              providerRightsFields = '0/176'
+              materialDeltas = '0/6'
+              saleEligibility = '0/17'
+              globalStatus = 'NO_GO'
+            }
+            truthBoundary = 'No Browser, PDF, customer-output, provider-rights, material-value, sale or LIVE credit is granted by P54B.'
+          }
+          $receipt | ConvertTo-Json -Depth 20 | Set-Content p54b-out/P54B_WORKFLOW_ADJUDICATION_RECEIPT.json -Encoding utf8
+          $receipt | ConvertTo-Json -Depth 20
+          if (-not $pass) { exit 2 }
+
+      - name: Publish fixed P54B status back to branch
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $dest = 'p54-results/p54b-latest'
+          Remove-Item $dest -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item p54b-out/*.json $dest -Force -ErrorAction SilentlyContinue
+          $adjPath = 'p54b-out/P54B_WORKFLOW_ADJUDICATION_RECEIPT.json'
+          $adj = $null
+          if (Test-Path $adjPath) { $adj = Get-Content $adjPath -Raw -Encoding utf8 | ConvertFrom-Json }
+          $status = [ordered]@{
+            schemaVersion = 'velmere.p54b.latest-status.v1'
+            status = $(if ($null -ne $adj) { [string]$adj.status } else { 'FAIL' })
+            decision = $(if ($null -ne $adj) { [string]$adj.decision } else { 'P54B_ADJUDICATION_MISSING' })
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            sha = '${{ github.sha }}'
+            ref = '${{ github.ref }}'
+            workflowStepOutcomes = [ordered]@{
+              checkout = '${{ steps.checkout.outcome }}'
+              setupNode = '${{ steps.setup_node.outcome }}'
+              toolchain = '${{ steps.toolchain.outcome }}'
+              transport = '${{ steps.transport.outcome }}'
+              reconstruct = '${{ steps.reconstruct.outcome }}'
+              nativeBuild = '${{ steps.native_build.outcome }}'
+              adjudicate = '${{ steps.adjudicate.outcome }}'
+            }
+            globalStatus = 'NO_GO'
+            saleEligibility = '0/17'
+          }
+          $status | ConvertTo-Json -Depth 16 | Set-Content p54-results/P54B_LATEST_STATUS.json -Encoding utf8
+          @(
+            'P54B LATEST STATUS'
+            "status=$($status.status)"
+            "decision=$($status.decision)"
+            "runId=$($status.runId)"
+            "sha=$($status.sha)"
+            "checkout=$($status.workflowStepOutcomes.checkout)"
+            "toolchain=$($status.workflowStepOutcomes.toolchain)"
+            "transport=$($status.workflowStepOutcomes.transport)"
+            "reconstruct=$($status.workflowStepOutcomes.reconstruct)"
+            "nativeBuild=$($status.workflowStepOutcomes.nativeBuild)"
+            "adjudicate=$($status.workflowStepOutcomes.adjudicate)"
+            'browser=0/3'
+            'pdfIndependentReplay=0/1'
+            'customerOutputs=0/17'
+            'providerRightsFields=0/176'
+            'materialDeltas=0/6'
+            'saleEligibility=0/17'
+            'globalStatus=NO_GO'
+          ) | Set-Content p54-results/P54B_LATEST_STATUS.txt -Encoding utf8
+          git config user.name 'velmere-p54b-runner'
+          git config user.email 'velmere141@gmail.com'
+          git add p54-results
+          if (git diff --cached --quiet) { exit 0 }
+          git commit -m "P54B: publish exact native Windows expanded-corpus adjudication"
+          for ($attempt = 1; $attempt -le 4; $attempt++) {
+            git push origin "HEAD:${{ github.ref_name }}"
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            git pull --rebase origin '${{ github.ref_name }}'
+            Start-Sleep -Seconds ($attempt * 2)
+          }
+          throw 'Unable to publish P54B status after retries'
+
+      - name: Upload P54B evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p54b-native-windows-exact-p46-expanded-${{ github.run_id }}
+          path: p54b-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Enforce final P54B result
+        if: always()
+        shell: pwsh
+        run: |
+          $path = 'p54b-out/P54B_WORKFLOW_ADJUDICATION_RECEIPT.json'
+          if (-not (Test-Path $path)) { throw 'P54B adjudication receipt is missing' }
+          $receipt = Get-Content $path -Raw -Encoding utf8 | ConvertFrom-Json
+          if ($receipt.status -ne 'PASS') { throw "P54B fail-closed: $($receipt.decision)" }
