@@ -1,0 +1,111 @@
+name: R5 Exact Current Dependency Bridge
+
+on:
+  push:
+    branches:
+      - velmere-r5-dependency-bridge-20260823
+    paths:
+      - .github/workflows/r5-exact-current-dependency-bridge.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/r5-exact-current-dependency-bridge.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r5-exact-current-dependency-bridge-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Fetch and verify exact current dependency archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r5-exact-deps
+          cat > /tmp/r5-deps.tsv <<'EOF'
+          typescript	5.9.3	typescript-5.9.3.tgz	https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz	4377468	10e108c9cf7d5f2879053dff18515fb405abf2ccef63eaaf017d9c571687a1d3	sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==
+          react	19.2.7	react-19.2.7.tgz	https://registry.npmjs.org/react/-/react-19.2.7.tgz	24805	d0065884db7670ffb89046826995cf0d7754a31653d23908532e52671bf83d7d	sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==
+          react-dom	19.2.7	react-dom-19.2.7.tgz	https://registry.npmjs.org/react-dom/-/react-dom-19.2.7.tgz	1276388	e47bae602149b38b90b452c89e53d2d60639fee09361d90374983a6aac62739e	sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==
+          scheduler	0.27.0	scheduler-0.27.0.tgz	https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz	10015	ab26ce35ce4032f04b78cfc5bbb4cfe13358e9fe7a5433a8aa6315c3debc5095	sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==
+          @electric-sql/pglite	0.5.4	electric-sql-pglite-0.5.4.tgz	https://registry.npmjs.org/@electric-sql/pglite/-/pglite-0.5.4.tgz	8778518	2c0114a4d836358733a8414be1d1670b85e18cac561c598ad9de8cdb884fbd18	sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==
+          EOF
+
+          while IFS=$'\t' read -r name version filename url expected_size expected_sha256 expected_integrity; do
+            target="r5-exact-deps/${filename}"
+            curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 --max-time 300 \
+              --silent --show-error "$url" --output "$target"
+            actual_size="$(stat -c '%s' "$target")"
+            actual_sha256="$(sha256sum "$target" | awk '{print $1}')"
+            actual_integrity="sha512-$(openssl dgst -sha512 -binary "$target" | openssl base64 -A)"
+            test "$actual_size" = "$expected_size"
+            test "$actual_sha256" = "$expected_sha256"
+            test "$actual_integrity" = "$expected_integrity"
+            tar -xOf "$target" package/package.json > /tmp/package.json
+            node - "$name" "$version" <<'NODE'
+          const fs = require('node:fs');
+          const expectedName = process.argv[2];
+          const expectedVersion = process.argv[3];
+          const pkg = JSON.parse(fs.readFileSync('/tmp/package.json', 'utf8'));
+          if (pkg.name !== expectedName) throw new Error(`name mismatch: ${pkg.name} != ${expectedName}`);
+          if (pkg.version !== expectedVersion) throw new Error(`version mismatch: ${pkg.version} != ${expectedVersion}`);
+          NODE
+          done < /tmp/r5-deps.tsv
+
+          cp /tmp/r5-deps.tsv r5-exact-deps/expected.tsv
+          python3 - <<'PY'
+          import base64, csv, hashlib, json, pathlib, subprocess
+          root = pathlib.Path('r5-exact-deps')
+          rows = []
+          with open('/tmp/r5-deps.tsv', newline='', encoding='utf-8') as fh:
+              for name, version, filename, url, size, sha256, integrity in csv.reader(fh, delimiter='\t'):
+                  path = root / filename
+                  data = path.read_bytes()
+                  pkg = json.loads(subprocess.check_output(['tar', '-xOf', str(path), 'package/package.json']))
+                  actual_integrity = 'sha512-' + base64.b64encode(hashlib.sha512(data).digest()).decode()
+                  rows.append({
+                      'name': name,
+                      'version': version,
+                      'filename': filename,
+                      'registryUrl': url,
+                      'byteLength': len(data),
+                      'sha256': hashlib.sha256(data).hexdigest(),
+                      'integrity': actual_integrity,
+                      'packageJson': {'name': pkg.get('name'), 'version': pkg.get('version'), 'license': pkg.get('license')},
+                      'verifiedAgainstCurrentLock': len(data) == int(size) and hashlib.sha256(data).hexdigest() == sha256 and actual_integrity == integrity,
+                  })
+          receipt = {
+              'schema': 'velmere.r5.exact-current-dependency-bridge.v1',
+              'status': 'PASS' if all(r['verifiedAgainstCurrentLock'] for r in rows) else 'FAIL',
+              'source': 'npm registry exact immutable package archives',
+              'workflowRef': '${{ github.workflow_ref }}',
+              'runId': '${{ github.run_id }}',
+              'runAttempt': '${{ github.run_attempt }}',
+              'headSha': '${{ github.sha }}',
+              'archives': rows,
+              'limitations': [
+                  'This artifact proves exact archive acquisition and lock-bound integrity only.',
+                  'Product runtime and migration tests must execute separately on the exact extracted archives.',
+                  'No Customer FINAL credit is granted by this bridge alone.'
+              ],
+          }
+          (root / 'R5_EXACT_CURRENT_DEPENDENCY_BRIDGE_RECEIPT.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          if receipt['status'] != 'PASS':
+              raise SystemExit(1)
+          PY
+
+      - name: Upload exact verified archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: r5-exact-current-dependency-bridge
+          path: r5-exact-deps
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
