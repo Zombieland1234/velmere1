@@ -1,0 +1,54 @@
+name: R7 Windows Zstd Availability Probe
+
+on:
+  push:
+    branches:
+      - velmere-r7-merged-current-source-20260823
+    paths:
+      - '.github/workflows/r7-windows-zstd-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - name: Probe native execution tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path r7-probe | Out-Null
+          $tools = [ordered]@{}
+          foreach ($name in @('zstd','tar','python','git','node','npm')) {
+            $cmd = Get-Command $name -ErrorAction SilentlyContinue
+            $tools[$name] = if ($cmd) { $cmd.Source } else { $null }
+          }
+          $zstdVersion = $null
+          if ($tools.zstd) { $zstdVersion = (& zstd --version 2>&1 | Out-String).Trim() }
+          $receipt = [ordered]@{
+            schemaVersion = 'velmere.r7.windows-zstd-probe.v1'
+            status = if ($tools.zstd) { 'PASS' } else { 'FAIL_ZSTD_MISSING' }
+            runnerOs = $env:RUNNER_OS
+            runnerArch = $env:RUNNER_ARCH
+            imageOs = $env:ImageOS
+            imageVersion = $env:ImageVersion
+            githubSha = $env:GITHUB_SHA
+            tools = $tools
+            zstdVersion = $zstdVersion
+          }
+          $receipt | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 r7-probe/R7_WINDOWS_ZSTD_PROBE.json
+          Get-Content r7-probe/R7_WINDOWS_ZSTD_PROBE.json
+          if (-not $tools.zstd) { throw 'zstd is not available on windows-2025' }
+
+      - name: Upload probe receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-windows-zstd-probe
+          path: r7-probe
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
