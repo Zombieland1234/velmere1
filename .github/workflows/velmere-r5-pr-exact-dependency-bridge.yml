@@ -1,0 +1,49 @@
+name: Velmere R5 PR Exact Dependency Bridge
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/r5-exact-dependency-bridge.mjs
+      - .github/workflows/velmere-r5-pr-exact-dependency-bridge.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-exact-dependency-bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Build and verify exact bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/r5-exact-dependency-bridge.mjs
+          zip -0 -q -r r5-exact-dependency-bridge.zip r5-exact-dependency-bridge
+          sha256sum r5-exact-dependency-bridge.zip > r5-exact-dependency-bridge.zip.sha256
+
+      - name: Upload exact bridge
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-r5-exact-dependency-bridge
+          path: |
+            r5-exact-dependency-bridge.zip
+            r5-exact-dependency-bridge.zip.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
