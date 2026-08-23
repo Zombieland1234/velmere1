@@ -1,0 +1,112 @@
+name: R5 Exact Windows PGlite Writeback
+
+on:
+  push:
+    branches:
+      - velmere-r5-exact-windows-pglite-closure-20260823
+    paths:
+      - '.github/workflows/r5-exact-windows-pglite-writeback.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prove-and-write-back:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - name: Checkout dependency bridge
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Set up exact Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Reconstruct exact package and lock
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node version mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm version mismatch' }
+          New-Item -ItemType Directory -Force -Path r5-out/project,r5-out/npm-cache,r5-out/logs,evidence/r5 | Out-Null
+          @'
+          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),zlib=require('node:zlib');
+          const base=path.resolve('p41-runtime'),out=path.resolve('r5-out/project');
+          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const repaired=['payload.fix-02-0','payload.fix-02-1'].map(n=>fs.readFileSync(path.join(base,n),'utf8').trim()).join('');
+          if(sha(Buffer.from(repaired))!=='a0955da49c4e98bde742ddd4fcaa9a384edf3a29a93097d47267b799bfd63568')throw new Error('repair fragment mismatch');
+          fs.writeFileSync(path.join(base,'payload.part-02'),repaired);
+          const b64=Array.from({length:7},(_,i)=>path.join(base,`payload.part-${String(i).padStart(2,'0')}`)).map(p=>fs.readFileSync(p,'utf8').trim()).join('');
+          const compressed=Buffer.from(b64,'base64');
+          if(sha(compressed)!=='5b1423b61d346fdbff9d92c0ce4f30be40357f8edb09f36bf77e44025acdb061')throw new Error('payload mismatch');
+          const payload=JSON.parse(zlib.brotliDecompressSync(compressed).toString('utf8'));
+          const pkg=Buffer.from(payload.packageJson,'utf8'),lock=Buffer.from(payload.packageLock,'utf8');
+          if(sha(pkg)!=='04aa4b393337fffa6e02ef54ad7668fe8136b038b0d924b208158a095b6f70a5')throw new Error('package mismatch');
+          if(sha(lock)!=='e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb')throw new Error('lock mismatch');
+          fs.writeFileSync(path.join(out,'package.json'),pkg);fs.writeFileSync(path.join(out,'package-lock.json'),lock);
+          '@ | Set-Content r5-decode.cjs -Encoding utf8
+          node r5-decode.cjs
+
+      - name: Install exact graph and execute PGlite
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location r5-out/project
+          try {
+            npm ci --ignore-scripts --audit=false --fund=false --prefer-online --cache ../npm-cache --loglevel=notice 1> ../logs/npm-ci.stdout.log 2> ../logs/npm-ci.stderr.log
+            @'
+            import fs from 'node:fs';
+            import path from 'node:path';
+            import crypto from 'node:crypto';
+            import { fileURLToPath } from 'node:url';
+            import { execFileSync } from 'node:child_process';
+            import { PGlite } from '@electric-sql/pglite';
+            const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+            const db=new PGlite();
+            await db.exec("CREATE TABLE r5_probe(id integer PRIMARY KEY, tenant text NOT NULL, value integer NOT NULL); INSERT INTO r5_probe VALUES (1,'a',7)");
+            await db.transaction(async tx=>{await tx.exec("UPDATE r5_probe SET value=12 WHERE id=1");await tx.exec("INSERT INTO r5_probe VALUES (2,'b',9)")});
+            const q=await db.query('SELECT id,tenant,value FROM r5_probe ORDER BY id');
+            if(q.rows.length!==2||q.rows[0].tenant!=='a'||Number(q.rows[0].value)!==12||q.rows[1].tenant!=='b'||Number(q.rows[1].value)!==9)throw new Error('readback mismatch');
+            await db.close();
+            const entry=fileURLToPath(import.meta.resolve('@electric-sql/pglite'));
+            const root=path.resolve(path.dirname(entry),'..');
+            const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+            if(pkg.version!=='0.5.4')throw new Error(`PGlite version ${pkg.version}`);
+            const assets={};for(const n of ['pglite.wasm','initdb.wasm','pglite.data']){const p=path.join(root,'dist',n);if(!fs.existsSync(p))throw new Error(`missing ${n}`);assets[n]={bytes:fs.statSync(p).size,sha256:sha(p)}}
+            const receipt={schema:'velmere.r5.exact-windows-pglite-writeback.v1',status:'PASS',generatedAt:new Date().toISOString(),github:{repository:process.env.GITHUB_REPOSITORY,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT},runtime:{platform:process.platform,arch:process.arch,node:process.version,npm:execFileSync('npm',['--version'],{encoding:'utf8'}).trim(),runnerOs:process.env.RUNNER_OS,runnerArch:process.env.RUNNER_ARCH},binding:{packageJsonSha256:sha('package.json'),packageLockSha256:sha('package-lock.json'),pgliteVersion:pkg.version},proof:{databaseInitialization:'PASS',ddl:'PASS',transactionCommit:'PASS',orderedReadback:'PASS',rows:q.rows},assets,limitations:['Dependency and real PGlite execution proof only; not full-source Customer FINAL.']};
+            fs.writeFileSync('../../evidence/r5/R5_EXACT_WINDOWS_PGLITE_WRITEBACK_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+            '@ | Set-Content r5-smoke.mjs -Encoding utf8
+            node r5-smoke.mjs 1> ../logs/pglite.stdout.log 2> ../logs/pglite.stderr.log
+          } finally { Pop-Location }
+
+      - name: Upload exact package and cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: r5-exact-windows-pglite-writeback
+          path: |
+            evidence/r5/R5_EXACT_WINDOWS_PGLITE_WRITEBACK_RECEIPT.json
+            r5-out/project/package.json
+            r5-out/project/package-lock.json
+            r5-out/project/node_modules/@electric-sql/pglite
+            r5-out/npm-cache
+            r5-out/logs
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Commit immutable receipt to proof branch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config user.name 'velmere-actions-proof'
+          git config user.email 'velmere-actions-proof@users.noreply.github.com'
+          git add -- evidence/r5/R5_EXACT_WINDOWS_PGLITE_WRITEBACK_RECEIPT.json
+          git commit -m 'R5: exact Windows PGlite closure receipt'
+          git push origin HEAD:velmere-r5-exact-windows-pglite-closure-20260823
