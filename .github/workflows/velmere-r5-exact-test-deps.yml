@@ -1,0 +1,166 @@
+name: Velmere R5 Exact Test Dependencies
+
+on:
+  push:
+    paths:
+      - ".github/workflows/velmere-r5-exact-test-deps.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/velmere-r5-exact-test-deps.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export-exact-test-deps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated workflow branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Set up exact npm 11.16.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+
+      - name: Pack and verify lock-bound packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/velmere-r5-exact-deps"
+          OUT="$GITHUB_WORKSPACE/velmere-r5-exact-deps"
+          rm -rf "$WORK" "$OUT"
+          mkdir -p "$WORK" "$OUT/tarballs" "$OUT/node_modules"
+          cd "$WORK"
+          cat > package.json <<'JSON'
+          {
+            "name": "velmere-r5-exact-dependency-export",
+            "private": true,
+            "version": "1.0.0",
+            "dependencies": {
+              "@electric-sql/pglite": "0.5.4",
+              "react": "19.2.7",
+              "react-dom": "19.2.7",
+              "scheduler": "0.27.0",
+              "typescript": "5.9.3"
+            }
+          }
+          JSON
+          npm install --ignore-scripts --audit=false --fund=false --package-lock=true --save-exact
+          npm ls --all --json > "$OUT/npm-ls.json"
+          cp package.json package-lock.json "$OUT/"
+          cp -a node_modules/. "$OUT/node_modules/"
+
+          npm pack react@19.2.7 --pack-destination "$OUT/tarballs" --json > "$WORK/react-pack.json"
+          npm pack react-dom@19.2.7 --pack-destination "$OUT/tarballs" --json > "$WORK/react-dom-pack.json"
+          npm pack scheduler@0.27.0 --pack-destination "$OUT/tarballs" --json > "$WORK/scheduler-pack.json"
+          npm pack typescript@5.9.3 --pack-destination "$OUT/tarballs" --json > "$WORK/typescript-pack.json"
+          npm pack @electric-sql/pglite@0.5.4 --pack-destination "$OUT/tarballs" --json > "$WORK/pglite-pack.json"
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const cp = require('node:child_process');
+          const out = path.join(process.env.GITHUB_WORKSPACE, 'velmere-r5-exact-deps');
+          const expected = {
+            'react@19.2.7': 'sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==',
+            'react-dom@19.2.7': 'sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==',
+            'scheduler@0.27.0': 'sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==',
+            'typescript@5.9.3': 'sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==',
+            '@electric-sql/pglite@0.5.4': 'sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==',
+          };
+          const files = fs.readdirSync(path.join(out, 'tarballs')).filter((name) => name.endsWith('.tgz')).sort();
+          const rows = [];
+          for (const file of files) {
+            const filePath = path.join(out, 'tarballs', file);
+            const bytes = fs.readFileSync(filePath);
+            const extract = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP, 'velmere-r5-pack-'));
+            cp.execFileSync('tar', ['-xzf', filePath, '-C', extract]);
+            const pkg = JSON.parse(fs.readFileSync(path.join(extract, 'package', 'package.json'), 'utf8'));
+            const key = `${pkg.name}@${pkg.version}`;
+            const integrity = `sha512-${crypto.createHash('sha512').update(bytes).digest('base64')}`;
+            if (!(key in expected)) throw new Error(`Unexpected package ${key}`);
+            if (integrity !== expected[key]) throw new Error(`Integrity mismatch for ${key}`);
+            rows.push({
+              package: pkg.name,
+              version: pkg.version,
+              file,
+              byteLength: bytes.length,
+              sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+              integrity,
+              expectedIntegrity: expected[key],
+              status: 'PASS',
+            });
+          }
+          if (rows.length !== Object.keys(expected).length) throw new Error(`Expected ${Object.keys(expected).length} packages, received ${rows.length}`);
+          const receipt = {
+            schemaVersion: 'velmere.r5.exact-test-dependency-export.v1',
+            generatedAt: new Date().toISOString(),
+            status: 'PASS',
+            runtime: {
+              node: process.version,
+              npm: cp.execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(),
+              platform: process.platform,
+              arch: process.arch,
+              runner: 'ubuntu-24.04',
+            },
+            packages: rows,
+            lockAuthority: {
+              source: 'P101R1 R4 exact package-lock.json values embedded in workflow',
+              currentPackageLockSha256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb',
+            },
+            customerFinalCredit: false,
+            exactWindowsCredit: false,
+            stagingCredit: false,
+            truthBoundary: 'Exact npm package bytes and a disposable installed node_modules export only. No product-source, staging, Windows, customer or FINAL credit.',
+          };
+          fs.writeFileSync(path.join(out, 'VELMERE_R5_EXACT_TEST_DEPENDENCY_EXPORT_RECEIPT.json'), JSON.stringify(receipt, null, 2) + '\n');
+          NODE
+
+      - name: Execute package runtime smokes
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/velmere-r5-exact-deps"
+          cd "$OUT"
+          node --input-type=module <<'NODE'
+          import React from 'react';
+          import * as ReactDOM from 'react-dom';
+          import ts from 'typescript';
+          import { PGlite } from '@electric-sql/pglite';
+          import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
+          if (React.version !== '19.2.7') throw new Error(`React mismatch: ${React.version}`);
+          if (typeof ReactDOM.createPortal !== 'function') throw new Error('ReactDOM import missing createPortal');
+          if (ts.version !== '5.9.3') throw new Error(`TypeScript mismatch: ${ts.version}`);
+          const db = new PGlite({ extensions: { pgcrypto } });
+          await db.waitReady;
+          const result = await db.query('select 1::int as ok, encode(digest(\'velmere-r5\', \'sha256\'), \'hex\') as digest');
+          if (result.rows?.[0]?.ok !== 1 || String(result.rows?.[0]?.digest ?? '').length !== 64) {
+            throw new Error(`PGlite smoke mismatch: ${JSON.stringify(result.rows)}`);
+          }
+          await db.close();
+          console.log(JSON.stringify({ status: 'PASS', react: React.version, typescript: ts.version, pglitePgcrypto: 'PASS' }));
+          NODE
+
+      - name: Upload exact dependency export
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-r5-exact-test-deps
+          path: velmere-r5-exact-deps
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
