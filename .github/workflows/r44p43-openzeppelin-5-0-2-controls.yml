@@ -1,0 +1,131 @@
+name: R44P43 Pinned OpenZeppelin 5.0.2 Control Candidates
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p43-openzeppelin-5-0-2-controls.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+      - name: Freeze package and preregister control candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          mkdir -p r44p43-openzeppelin/work r44p43-openzeppelin/evidence
+          cd r44p43-openzeppelin/work
+          npm pack @openzeppelin/contracts@5.0.2 --registry=https://registry.npmjs.org --ignore-scripts
+          TARBALL=$(find . -maxdepth 1 -type f -name '*.tgz' -print -quit)
+          test -n "$TARBALL"
+          sha256sum "$TARBALL" > ../evidence/NPM_TARBALL_SHA256SUMS.txt
+          tar -xzf "$TARBALL"
+          cd ../..
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, shutil
+
+          package = Path('r44p43-openzeppelin/work/package')
+          out = Path('r44p43-openzeppelin/corpus')
+          out.mkdir(parents=True, exist_ok=True)
+          roots = [
+              'access/AccessControl.sol',
+              'access/Ownable.sol',
+              'access/Ownable2Step.sol',
+              'finance/VestingWallet.sol',
+              'governance/TimelockController.sol',
+              'metatx/ERC2771Context.sol',
+              'token/ERC20/ERC20.sol',
+              'token/ERC20/extensions/ERC20Burnable.sol',
+              'token/ERC20/extensions/ERC20Capped.sol',
+              'token/ERC20/extensions/ERC20FlashMint.sol',
+              'token/ERC20/extensions/ERC20Pausable.sol',
+              'token/ERC20/extensions/ERC20Permit.sol',
+              'token/ERC20/extensions/ERC20Votes.sol',
+              'token/ERC721/ERC721.sol',
+              'token/ERC721/extensions/ERC721Burnable.sol',
+              'token/ERC721/extensions/ERC721Enumerable.sol',
+              'token/ERC721/extensions/ERC721Pausable.sol',
+              'token/ERC1155/ERC1155.sol',
+              'token/ERC1155/extensions/ERC1155Burnable.sol',
+              'token/ERC1155/extensions/ERC1155Pausable.sol',
+              'utils/Address.sol',
+              'utils/Arrays.sol',
+              'utils/Create2.sol',
+              'utils/Multicall.sol',
+              'utils/Nonces.sol',
+              'utils/Pausable.sol',
+              'utils/ReentrancyGuard.sol',
+              'utils/cryptography/ECDSA.sol',
+              'utils/cryptography/EIP712.sol',
+          ]
+          missing = [path for path in roots if not (package/path).is_file()]
+          if missing:
+              raise SystemExit(f'missing selected roots: {missing}')
+          shutil.copytree(package, out/'package', dirs_exist_ok=True)
+          def sha(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+          rows=[]
+          for index, rel in enumerate(roots, start=1):
+              path=package/rel
+              rows.append({
+                  'caseId': f'OZ5_CONTROL_{index:02d}',
+                  'rootPath': rel,
+                  'byteLength': path.stat().st_size,
+                  'sha256': sha(path),
+                  'expectedSupportedSignals': [],
+                  'labelClass': 'PUBLIC_CONTROL_CANDIDATE_NO_INDEPENDENT_SAFETY_CLAIM',
+              })
+          package_json=json.loads((package/'package.json').read_text())
+          manifest={
+              'schemaVersion':'velmere.r44p43.openzeppelin-control-candidates.v1',
+              'package':'@openzeppelin/contracts',
+              'version':'5.0.2',
+              'roots':rows,
+              'cases':len(rows),
+              'selectionFrozenBeforeAnalyzerExecution':True,
+              'independentHumanReview':False,
+              'formalTrueNegativeCredit':False,
+              'metricName':'candidate_control_alert_rate_not_formal_fpr',
+              'license':package_json.get('license'),
+              'licenseBoundary':'OpenZeppelin package metadata declares MIT. This temporary artifact is for evaluation and does not imply independent safety adjudication of selected roots.',
+              'customerCredit':False,
+              'saleCredit':False,
+              'liveCredit':False,
+              'worldClassCredit':False,
+          }
+          payload=(json.dumps(manifest,sort_keys=True,separators=(',',':'))+'\n').encode()
+          (out/'R44P43_OPENZEPPELIN_CONTROL_MANIFEST.json').write_bytes(payload)
+          (out/'LICENSE_BOUNDARY.txt').write_text(manifest['licenseBoundary']+'\n')
+          (Path('r44p43-openzeppelin/evidence')/'MANIFEST_SHA256.txt').write_text(hashlib.sha256(payload).hexdigest()+'  R44P43_OPENZEPPELIN_CONTROL_MANIFEST.json\n')
+          (Path('r44p43-openzeppelin/evidence')/'ROOT_COUNT.txt').write_text(str(len(rows))+'\n')
+          PY
+          find r44p43-openzeppelin/corpus -type f -print0 | sort -z | xargs -0 sha256sum > r44p43-openzeppelin/evidence/ALL_FILES_SHA256SUMS.txt
+          tar --sort=name --mtime='UTC 2026-08-10 00:00:00' --owner=0 --group=0 --numeric-owner \
+            -czf r44p43-openzeppelin/r44p43-openzeppelin-5.0.2-controls.tar.gz \
+            r44p43-openzeppelin/corpus r44p43-openzeppelin/evidence
+          sha256sum r44p43-openzeppelin/r44p43-openzeppelin-5.0.2-controls.tar.gz \
+            > r44p43-openzeppelin/R44P43_OPENZEPPELIN_ARCHIVE_SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p43-openzeppelin-5.0.2-controls
+          path: |
+            r44p43-openzeppelin/r44p43-openzeppelin-5.0.2-controls.tar.gz
+            r44p43-openzeppelin/R44P43_OPENZEPPELIN_ARCHIVE_SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
