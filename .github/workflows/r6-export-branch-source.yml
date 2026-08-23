@@ -1,0 +1,47 @@
+name: R6 Export Branch Source
+
+on:
+  push:
+    branches:
+      - velmere-r6-exact-r5-execution-20260823
+    paths:
+      - '.github/workflows/r6-export-branch-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  R6_BRANCH: velmere-r6-exact-r5-execution-20260823
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Assert branch and archive tracked bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "${R6_BRANCH}"
+          git archive --format=tar.gz --output=r6-branch-source.tar.gz "${GITHUB_SHA}"
+          sha256sum r6-branch-source.tar.gz > r6-branch-source.tar.gz.sha256
+          git rev-parse HEAD > r6-branch-source.commit.txt
+
+      - name: Upload exact tracked source
+        uses: actions/upload-artifact@v4
+        with:
+          name: r6-branch-source-${{ github.sha }}
+          path: |
+            r6-branch-source.tar.gz
+            r6-branch-source.tar.gz.sha256
+            r6-branch-source.commit.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
