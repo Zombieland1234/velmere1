@@ -1,0 +1,54 @@
+name: R44P38 Exact solc-js 0.8.30 Runtime Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p38-solc-0-8-30-artifact.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-solc:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+      - name: Install exact solc-js runtime closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          mkdir -p r44p38-toolchain/install
+          npm install --ignore-scripts --no-audit --no-fund --progress=false \
+            --prefix r44p38-toolchain/install \
+            solc@0.8.30
+          node -e "const solc=require('./r44p38-toolchain/install/node_modules/solc'); const v=solc.version(); if(!v.startsWith('0.8.30+')) throw new Error(v); console.log(v)" \
+            > r44p38-toolchain/SOLC_VERSION.txt
+          tar --sort=name \
+            --mtime='UTC 2026-08-09 00:00:00' \
+            --owner=0 --group=0 --numeric-owner \
+            -czf r44p38-toolchain/solc-0.8.30-runtime.tar.gz \
+            -C r44p38-toolchain/install node_modules package.json package-lock.json
+          sha256sum r44p38-toolchain/solc-0.8.30-runtime.tar.gz \
+            > r44p38-toolchain/SOLC_RUNTIME_SHA256SUMS.txt
+          printf '%s\n' "$GITHUB_SHA" > r44p38-toolchain/GITHUB_CHECKOUT_SHA.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p38-solc-0.8.30-runtime
+          path: |
+            r44p38-toolchain/solc-0.8.30-runtime.tar.gz
+            r44p38-toolchain/SOLC_VERSION.txt
+            r44p38-toolchain/SOLC_RUNTIME_SHA256SUMS.txt
+            r44p38-toolchain/GITHUB_CHECKOUT_SHA.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
