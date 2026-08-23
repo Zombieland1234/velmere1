@@ -1,0 +1,140 @@
+name: P71R5 Current Runtime Proof
+
+on:
+  push:
+    branches:
+      - velmere-p71-v17-advanced-automation-truth-20260817
+  workflow_dispatch:
+
+concurrency:
+  group: p71r5-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p71r5-runtime:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact current product bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p71r5-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --runner p49-build-projection/run-p47-product-windows-projection.mjs --parts-root p49-build-projection/parts --work-root p71r5-work --output-root p71r5-out
+          if ($LASTEXITCODE -ne 0) { throw 'P46 reconstruction failed' }
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p71r5-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p71r5-work/P66.json
+          if ($LASTEXITCODE -ne 0) { throw 'P66 stage1 failed' }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p71r5-work/source --manifest p71r5-work/P66.json
+          if ($LASTEXITCODE -ne 0) { throw 'P66 stage2 failed' }
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p71r5-work/source --manifest p71r5-work/P66.json
+          if ($LASTEXITCODE -ne 0) { throw 'P66 stage3 failed' }
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p71r5-work/source --manifest p71r5-work/P66.json --output-manifest p71r5-work/P68.json
+          if ($LASTEXITCODE -ne 0) { throw 'P68 failed' }
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p71r5-work/source --manifest p71r5-work/P68.json --output-manifest p71r5-work/P69.json
+          if ($LASTEXITCODE -ne 0) { throw 'P69 failed' }
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py --source-root p71r5-work/source --manifest p71r5-work/P69.json --output-manifest p71r5-work/P69R2.json --receipt p71r5-out/P69R2_REPLAY.json
+          if ($LASTEXITCODE -ne 0) { throw 'P69R2 failed' }
+          python p71-runtime/apply-p71-owner-truth-advanced-automation.py --source-root p71r5-work/source --manifest p71r5-work/P69R2.json --output-manifest p71r5-work/P71.json --receipt p71r5-out/P71_REPLAY.json
+          if ($LASTEXITCODE -ne 0) { throw 'P71 failed' }
+          python p71-runtime/apply-p71r1-expanded-advanced-automation.py --source-root p71r5-work/source --manifest p71r5-work/P71.json --output-manifest p71r5-work/P71R1.json --receipt p71r5-out/P71R1_REPLAY.json
+          if ($LASTEXITCODE -ne 0) { throw 'P71R1 failed' }
+          python p71-runtime/apply-p71r2-optional-qa-status.py --source-root p71r5-work/source --manifest p71r5-work/P71R1.json --output-manifest p71r5-work/P71R2.json --receipt p71r5-out/P71R2_REPLAY.json
+          if ($LASTEXITCODE -ne 0) { throw 'P71R2 failed' }
+          python p71-runtime/apply-p71r3-remove-stale-disclosure.py --source-root p71r5-work/source --manifest p71r5-work/P71R2.json --output-manifest p71r5-work/P71R5_BUILD_PROJECTION_MANIFEST.json --receipt p71r5-out/P71R3_REPLAY.json
+          if ($LASTEXITCODE -ne 0) { throw 'P71R3 failed' }
+          $m=Get-Content p71r5-work/P71R5_BUILD_PROJECTION_MANIFEST.json -Raw | ConvertFrom-Json
+          if($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20981047 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne 'ad00eb69fef750a106ed36828dfa22e5590181e9903d062132596519f494af5d'){ throw 'P71R5 exact product identity mismatch' }
+          Copy-Item p71r5-work/P71R5_BUILD_PROJECTION_MANIFEST.json p71r5-out/
+
+      - name: Install exact current dependencies
+        shell: pwsh
+        env:
+          npm_config_audit: 'false'
+          npm_config_fund: 'false'
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p71r5-work/source
+          try {
+            node "${{ steps.npmcli.outputs.npm_cli }}" ci --ignore-scripts --audit=false --fund=false
+            if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Execute current runtime truth and projection regression
+        shell: pwsh
+        env:
+          P71_SOURCE_ROOT: ${{ github.workspace }}\p71r5-work\source
+          P71_RESULT_DIR: ${{ github.workspace }}\p71r5-out
+          P71_PRODUCT_ONLY: '1'
+        run: |
+          $ErrorActionPreference='Stop'
+          node p71-runtime/test-p71-owner-bound-advanced-automation.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Static owner-truth invariant failed' }
+          Push-Location p71r5-work/source
+          try {
+            node ./node_modules/tsx/dist/cli.mjs ../../p71-runtime/test-p71-runtime-semantics.ts | Tee-Object ../..\p71r5-out\P71R5_BASE_RUNTIME.log
+            if ($LASTEXITCODE -ne 0) { throw 'Base runtime semantics failed' }
+            node ./node_modules/tsx/dist/cli.mjs ../../p71-runtime/test-p71r1-expanded-semantics.ts | Tee-Object ../..\p71r5-out\P71R5_EXPANDED_RUNTIME.log
+            if ($LASTEXITCODE -ne 0) { throw 'Expanded runtime semantics failed' }
+            node ./node_modules/tsx/dist/cli.mjs ../../p71-runtime/test-p71r5-current-projection-audit-regression.ts | Tee-Object ../..\p71r5-out\P71R5_CURRENT_PROJECTION_REGRESSION.log
+            if ($LASTEXITCODE -ne 0) { throw 'Current projection regression failed' }
+          } finally { Pop-Location }
+
+      - name: Bind prior exact engineering to identical product bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $r=[ordered]@{
+            schemaVersion='velmere.p71r5.exact-byte-proof-join.v1'
+            status='PASS'
+            currentRunId='${{ github.run_id }}'
+            currentHead='${{ github.sha }}'
+            productProjectionFileCount=1597
+            productProjectionPayloadBytes=20981047
+            productProjectionPathSetSha256='b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
+            productProjectionAggregateSha256='ad00eb69fef750a106ed36828dfa22e5590181e9903d062132596519f494af5d'
+            exactEngineeringProofRun=32021345742
+            exactEngineeringProof='Windows Server 2025 / Node 24.18.0 / npm 11.16.0 / TypeScript PASS / zero-warning ESLint PASS / Webpack PASS / Turbopack PASS'
+            productBytesChangedSinceEngineeringProof=$false
+            failedCheckpointRunsZeroCredit=@(32017932946,32019595944,32020195719,32020625726,32021345742)
+            truthBoundary='The prior engineering proof is reused only because this run physically reconstructs and verifies the identical exact 1597-file product aggregate. P71R5 adds current runtime-negative-control and current-projection regression proof only. No final-output, rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
+          }
+          $r|ConvertTo-Json -Depth 8|Set-Content p71r5-out/P71R5_EXACT_BYTE_PROOF_JOIN.json -Encoding utf8
+
+      - name: Upload P71R5 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p71r5-current-runtime-proof
+          path: p71r5-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

@@ -1,0 +1,97 @@
+name: P53 Exact P49 Payload Admission Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p53-p49-payload-admission.yml'
+      - 'p49-build-projection/**'
+
+concurrency:
+  group: p53-p49-payload-admission-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  exact-payload-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify exact add-only P49 payload path and content identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p53-admission-out
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os
+
+          expected = {
+            '.github/workflows/p49-native-windows-p46-build-relevant-projection.yml': '8ae1ee62e5ae929c2fb3347a6634066c06b09822802651f6c52d09d53908826b',
+            'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json': '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b',
+            'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json': 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f',
+            'p49-build-projection/parts/part-00.b64': '1d25a9b0bc67084d937a4ec326b42d8b874f6db0a2abbf39bc6e6407e06f4a5d',
+            'p49-build-projection/parts/part-01.b64': 'f2e4799dea92837503edfc484fa6387249c2d2522631b991b3fc9dbd2cc90de1',
+            'p49-build-projection/parts/part-02.b64': '84fed8bf01a13a1e109482c31f2a156b7f941f707d012c5c3138b891d0d0469b',
+            'p49-build-projection/parts/part-03.b64': '42d93888ef78dca0f7ad1693f578098fce40337f712bf97f38c2682829471ec0',
+            'p49-build-projection/parts/part-04.b64': '542f373a7148762ab752b1db34f4e6304f189028ed45060c4b55dbc6690c22ac',
+            'p49-build-projection/parts/part-05.b64': '3dbeb885cdf1403405857fbade2b0aa5543d87d153666e947a060ae9f5fa792a',
+            'p49-build-projection/parts/part-06.b64': '1dbf423a7759b7544ed90f208ab2425a2e4329530aa716ae138b03e7413511d8',
+            'p49-build-projection/parts/part-07.b64': '405c18defe34aed83acd65ef7d335f28124cf24822f38908b47d85bf1a9ac2fe',
+            'p49-build-projection/parts/part-08.b64': '8fb889455781a6a0d6f29a8ba15f568db93b1b783d14faf28541724c6c08cb68',
+            'p49-build-projection/parts/part-09.b64': '56d7df9e92c10256685deb3932cd7d1a6586806a7ad7e0990e663804cda0a3cd',
+            'p49-build-projection/reconstruct-p49-direct-projection.py': '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8',
+            'p49-build-projection/run-p47-product-windows-projection.mjs': '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4',
+          }
+          rows=[]
+          for path, wanted in sorted(expected.items()):
+              p=Path(path)
+              if not p.is_file():
+                  rows.append({'path':path,'state':'MISSING','expectedSha256':wanted})
+                  continue
+              actual=hashlib.sha256(p.read_bytes()).hexdigest()
+              rows.append({'path':path,'state':'MATCH' if actual==wanted else 'MISMATCH','expectedSha256':wanted,'actualSha256':actual,'byteLength':p.stat().st_size})
+          match=sum(r['state']=='MATCH' for r in rows)
+          missing=sum(r['state']=='MISSING' for r in rows)
+          mismatch=sum(r['state']=='MISMATCH' for r in rows)
+          admitted=match==len(expected) and missing==0 and mismatch==0
+          receipt={
+            'schemaVersion':'velmere.p53.p49-payload-admission.v1',
+            'status':'PASS_EXACT_PAYLOAD_ADMITTED' if admitted else 'BLOCKED_EXACT_PAYLOAD_NOT_ADMITTED',
+            'branch':'${{ github.ref_name }}',
+            'headSha':'${{ github.sha }}',
+            'runId':'${{ github.run_id }}',
+            'expectedFileCount':len(expected),
+            'matchingFileCount':match,
+            'missingFileCount':missing,
+            'mismatchFileCount':mismatch,
+            'nativeWindowsWorkflowDispatchable':admitted,
+            'rows':rows,
+            'globalStatus':'NO_GO',
+            'truthBoundary':'Admission verifies only exact repository transport bytes. It does not execute Windows or grant Browser, PDF, customer-output, rights, value, sale or release credit.',
+          }
+          core=json.dumps(receipt,sort_keys=True,separators=(',',':')).encode()
+          receipt['integritySha256']=hashlib.sha256(core).hexdigest()
+          Path('p53-admission-out/P53_P49_PAYLOAD_ADMISSION_RECEIPT.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          Path('p53-admission-out/P53_P49_PAYLOAD_ADMISSION_STATE.txt').write_text(receipt['status']+'\n')
+          print(json.dumps(receipt,indent=2))
+          PY
+
+      - name: Upload exact admission evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p53-p49-payload-admission
+          path: p53-admission-out
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 14

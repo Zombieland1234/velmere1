@@ -1,0 +1,41 @@
+name: P50 Export Manifest Parts For Exact Repair
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p50-export-manifest-parts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export-manifest-parts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Create exact inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p50-export
+          find p50-existing-branch/manifest-parts -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > p50-export/P50_MANIFEST_PARTS_SHA256.txt
+          find p50-existing-branch/manifest-parts -maxdepth 1 -type f -printf '%s %p\n' | sort > p50-export/P50_MANIFEST_PARTS_SIZES.txt
+          cp -a p50-existing-branch/manifest-parts p50-export/manifest-parts
+
+      - name: Upload exact branch manifest parts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p50-exported-manifest-parts
+          path: p50-export
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

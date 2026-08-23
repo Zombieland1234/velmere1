@@ -1,0 +1,40 @@
+name: P42 Branch Source Snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/p42-branch-source-snapshot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Build deterministic-enough diagnostic source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p42-snapshot
+          git ls-files -z | sort -z | tar --null -T - -czf p42-snapshot/branch-source-tracked.tar.gz
+          git ls-files | LC_ALL=C sort > p42-snapshot/tracked-paths.txt
+          sha256sum p42-snapshot/branch-source-tracked.tar.gz > p42-snapshot/branch-source-tracked.sha256
+          git rev-parse HEAD > p42-snapshot/head-sha.txt
+
+      - name: Upload branch source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: p42-branch-source-snapshot
+          path: p42-snapshot
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
