@@ -1,0 +1,221 @@
+name: R5 Exact Windows PGlite Closure
+
+on:
+  push:
+    branches:
+      - velmere-r5-exact-windows-pglite-closure-20260823
+    paths:
+      - '.github/workflows/r5-exact-windows-pglite-closure.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-windows-pglite:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact dependency bridge
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Assert exact Node and npm
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Unexpected Node: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Unexpected npm: $npmVersion" }
+          New-Item -ItemType Directory -Force -Path r5-out/project,r5-out/npm-cache,r5-out/logs | Out-Null
+          "node=$nodeVersion`nnpm=$npmVersion" | Set-Content -LiteralPath r5-out/logs/runtime.txt -Encoding utf8
+
+      - name: Reconstruct exact current package and lock payload
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const zlib = require('node:zlib');
+          const base = path.resolve('p41-runtime');
+          const out = path.resolve('r5-out/project');
+          const sha = b => crypto.createHash('sha256').update(b).digest('hex');
+          const repaired = ['payload.fix-02-0','payload.fix-02-1']
+            .map(n => fs.readFileSync(path.join(base,n),'utf8').trim()).join('');
+          if (sha(Buffer.from(repaired)) !== 'a0955da49c4e98bde742ddd4fcaa9a384edf3a29a93097d47267b799bfd63568') {
+            throw new Error('repair fragment mismatch');
+          }
+          fs.writeFileSync(path.join(base,'payload.part-02'), repaired);
+          const parts = Array.from({length:7},(_,i)=>path.join(base,`payload.part-${String(i).padStart(2,'0')}`));
+          const b64 = parts.map(p=>fs.readFileSync(p,'utf8').trim()).join('');
+          const compressed = Buffer.from(b64,'base64');
+          if (sha(compressed) !== '5b1423b61d346fdbff9d92c0ce4f30be40357f8edb09f36bf77e44025acdb061') {
+            throw new Error('compressed payload mismatch');
+          }
+          const payload = JSON.parse(zlib.brotliDecompressSync(compressed).toString('utf8'));
+          const pkg = Buffer.from(payload.packageJson,'utf8');
+          const lock = Buffer.from(payload.packageLock,'utf8');
+          if (sha(pkg) !== '04aa4b393337fffa6e02ef54ad7668fe8136b038b0d924b208158a095b6f70a5') throw new Error('package mismatch');
+          if (sha(lock) !== 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb') throw new Error('lock mismatch');
+          fs.writeFileSync(path.join(out,'package.json'),pkg);
+          fs.writeFileSync(path.join(out,'package-lock.json'),lock);
+          '@ | Set-Content -LiteralPath r5-decode.cjs -Encoding utf8
+          node r5-decode.cjs
+
+      - name: Install the exact dependency graph on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location r5-out/project
+          try {
+            npm ci --ignore-scripts --audit=false --fund=false --prefer-online --cache ../npm-cache --loglevel=notice 1> ../logs/npm-ci.stdout.log 2> ../logs/npm-ci.stderr.log
+            npm ls --all --json 1> ../logs/npm-ls.json 2> ../logs/npm-ls.stderr.log
+          } finally {
+            Pop-Location
+          }
+
+      - name: Prove real PGlite execution and transaction semantics
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import { fileURLToPath } from 'node:url';
+          import { execFileSync } from 'node:child_process';
+          import { PGlite } from '@electric-sql/pglite';
+
+          const shaFile = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+          const db = new PGlite();
+          await db.exec(`
+            CREATE TABLE velmere_r5_probe (
+              id integer PRIMARY KEY,
+              owner_id text NOT NULL,
+              value integer NOT NULL CHECK (value >= 0)
+            );
+            INSERT INTO velmere_r5_probe(id, owner_id, value) VALUES (1, 'tenant-a', 7);
+          `);
+          await db.transaction(async tx => {
+            await tx.exec("UPDATE velmere_r5_probe SET value = value + 5 WHERE id = 1");
+            await tx.exec("INSERT INTO velmere_r5_probe(id, owner_id, value) VALUES (2, 'tenant-b', 9)");
+          });
+          const result = await db.query("SELECT id, owner_id, value FROM velmere_r5_probe ORDER BY id");
+          if (!Array.isArray(result.rows) || result.rows.length !== 2) throw new Error('unexpected row count');
+          if (result.rows[0].owner_id !== 'tenant-a' || Number(result.rows[0].value) !== 12) throw new Error('transaction update mismatch');
+          if (result.rows[1].owner_id !== 'tenant-b' || Number(result.rows[1].value) !== 9) throw new Error('transaction insert mismatch');
+          await db.close();
+
+          const entry = fileURLToPath(import.meta.resolve('@electric-sql/pglite'));
+          const packageRoot = path.resolve(path.dirname(entry), '..');
+          const pkg = JSON.parse(fs.readFileSync(path.join(packageRoot,'package.json'),'utf8'));
+          if (pkg.version !== '0.5.4') throw new Error(`unexpected PGlite version ${pkg.version}`);
+          const assets = ['pglite.wasm','initdb.wasm','pglite.data'];
+          const assetReceipt = {};
+          for (const asset of assets) {
+            const p = path.join(packageRoot,'dist',asset);
+            if (!fs.existsSync(p)) throw new Error(`missing runtime asset ${asset}`);
+            assetReceipt[asset] = { bytes: fs.statSync(p).size, sha256: shaFile(p) };
+          }
+          const receipt = {
+            schema: 'velmere.r5.exact-windows-pglite-closure.v1',
+            status: 'PASS',
+            generatedAt: new Date().toISOString(),
+            github: {
+              repository: process.env.GITHUB_REPOSITORY,
+              sha: process.env.GITHUB_SHA,
+              ref: process.env.GITHUB_REF,
+              runId: process.env.GITHUB_RUN_ID,
+              runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+            },
+            runtime: {
+              platform: process.platform,
+              arch: process.arch,
+              node: process.version,
+              npm: execFileSync('npm',['--version'],{encoding:'utf8'}).trim(),
+              runnerOs: process.env.RUNNER_OS,
+              runnerArch: process.env.RUNNER_ARCH,
+              runnerName: process.env.RUNNER_NAME,
+            },
+            binding: {
+              packageJsonSha256: shaFile('package.json'),
+              packageLockSha256: shaFile('package-lock.json'),
+              pgliteVersion: pkg.version,
+              pgliteEntry: path.relative(process.cwd(), entry).replaceAll('\\','/'),
+            },
+            proof: {
+              realDatabaseInitialization: 'PASS',
+              ddl: 'PASS',
+              insert: 'PASS',
+              transactionCommit: 'PASS',
+              orderedReadback: 'PASS',
+              rows: result.rows,
+            },
+            assets: assetReceipt,
+            limitations: [
+              'This proves exact Windows dependency installation and real PGlite database execution.',
+              'It does not by itself prove current full-source Customer FINAL or production Supabase/RLS.'
+            ]
+          };
+          fs.writeFileSync('../R5_EXACT_WINDOWS_PGLITE_CLOSURE_RECEIPT.json', JSON.stringify(receipt,null,2)+'\n');
+          '@ | Set-Content -LiteralPath r5-out/project/r5-pglite-smoke.mjs -Encoding utf8
+          Push-Location r5-out/project
+          try {
+            node r5-pglite-smoke.mjs 1> ../logs/pglite-smoke.stdout.log 2> ../logs/pglite-smoke.stderr.log
+          } finally {
+            Pop-Location
+          }
+
+      - name: Hash exported dependency payload
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          const fs=require('node:fs');
+          const path=require('node:path');
+          const crypto=require('node:crypto');
+          const root=path.resolve('r5-out');
+          const targets=[
+            path.join(root,'project','package.json'),
+            path.join(root,'project','package-lock.json'),
+            path.join(root,'R5_EXACT_WINDOWS_PGLITE_CLOSURE_RECEIPT.json')
+          ];
+          const walk=d=>{for(const n of fs.readdirSync(d)){const p=path.join(d,n);const s=fs.statSync(p);if(s.isDirectory())walk(p);else targets.push(p)}};
+          walk(path.join(root,'project','node_modules','@electric-sql','pglite'));
+          const rows=[...new Set(targets)].sort().map(p=>({
+            path:path.relative(root,p).replaceAll('\\','/'),
+            bytes:fs.statSync(p).size,
+            sha256:crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')
+          }));
+          const aggregate=crypto.createHash('sha256').update(rows.map(r=>`${r.sha256}  ${r.bytes}  ${r.path}`).join('\n')+'\n').digest('hex');
+          fs.writeFileSync(path.join(root,'R5_EXPORTED_PAYLOAD_MANIFEST.json'),JSON.stringify({schema:'velmere.r5.exported-payload-manifest.v1',status:'PASS',fileCount:rows.length,aggregateSha256:aggregate,files:rows},null,2)+'\n');
+          '@ | Set-Content -LiteralPath r5-manifest.cjs -Encoding utf8
+          node r5-manifest.cjs
+
+      - name: Upload exact Windows PGlite closure artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: r5-exact-windows-pglite-closure
+          path: |
+            r5-out/R5_EXACT_WINDOWS_PGLITE_CLOSURE_RECEIPT.json
+            r5-out/R5_EXPORTED_PAYLOAD_MANIFEST.json
+            r5-out/project/package.json
+            r5-out/project/package-lock.json
+            r5-out/project/node_modules/@electric-sql/pglite
+            r5-out/npm-cache
+            r5-out/logs
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
