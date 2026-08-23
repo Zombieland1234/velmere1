@@ -1,0 +1,53 @@
+name: R44P44 Exact Chrome for Testing 148 Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p44-chrome-for-testing-148.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Download and verify exact Chrome for Testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p44-browser/evidence r44p44-browser/work
+          cd r44p44-browser/work
+          curl --fail --location --retry 4 --retry-all-errors \
+            --output chrome-linux64.zip \
+            https://storage.googleapis.com/chrome-for-testing-public/148.0.7778.96/linux64/chrome-linux64.zip
+          sha256sum chrome-linux64.zip > ../evidence/CHROME_ARCHIVE_SHA256SUMS.txt
+          unzip -q chrome-linux64.zip
+          test -x chrome-linux64/chrome
+          chrome-linux64/chrome --version | grep -F '148.0.7778.96'
+          chrome-linux64/chrome --version > ../evidence/CHROME_VERSION.txt
+          sha256sum chrome-linux64/chrome > ../evidence/CHROME_EXECUTABLE_SHA256SUMS.txt
+          printf '%s\n' "$GITHUB_SHA" > ../evidence/GITHUB_CHECKOUT_SHA.txt
+          cd ..
+          tar --sort=name \
+            --mtime='UTC 2026-08-10 00:00:00' \
+            --owner=0 --group=0 --numeric-owner \
+            -czf r44p44-chrome-for-testing-148.0.7778.96-linux64.tar.gz \
+            -C work chrome-linux64
+          sha256sum r44p44-chrome-for-testing-148.0.7778.96-linux64.tar.gz \
+            > evidence/BROWSER_BUNDLE_SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p44-chrome-for-testing-148.0.7778.96-linux64
+          path: |
+            r44p44-browser/r44p44-chrome-for-testing-148.0.7778.96-linux64.tar.gz
+            r44p44-browser/evidence
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
