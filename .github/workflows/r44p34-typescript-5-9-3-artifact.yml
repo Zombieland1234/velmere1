@@ -1,0 +1,43 @@
+name: R44P34 Exact TypeScript 5.9.3 Artifact
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p34-typescript-5-9-3-artifact.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-typescript:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+      - name: Pack exact TypeScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          mkdir -p r44p34-toolchain
+          cd r44p34-toolchain
+          npm pack typescript@5.9.3 --registry=https://registry.npmjs.org --ignore-scripts
+          test -f typescript-5.9.3.tgz
+          sha256sum typescript-5.9.3.tgz > TYPESCRIPT_5_9_3_SHA256SUMS.txt
+          printf '%s\n' 'typescript@5.9.3' > TYPESCRIPT_PACKAGE_IDENTITY.txt
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p34-typescript-5.9.3
+          path: r44p34-toolchain
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
