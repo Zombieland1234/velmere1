@@ -1,0 +1,48 @@
+--- p42-package.json
++++ package.json
+@@ -6,12 +6,12 @@
+   "a102r40A79BrowserRowsRequired": 56,
+   "a102r40A79ScreenshotsRequired": 29,
+   "allowScripts": {
+-    "@parcel/watcher@2.5.6": true,
++    "@parcel/watcher@2.6.0": false,
+     "@reown/appkit@1.8.17-wc-circular-dependencies-fix.0": false,
+-    "@swc/core@1.15.41": true,
+-    "esbuild@0.28.1": true,
+-    "sharp@0.35.3": true,
+-    "unrs-resolver@1.12.2": true
++    "@swc/core@1.15.47": false,
++    "esbuild@0.28.1": false,
++    "fsevents@2.3.2": false,
++    "fsevents@2.3.3": false
+   },
+   "dependencies": {
+     "@stripe/stripe-js": "7.9.0",
+@@ -127,6 +127,7 @@
+     "audit:source:a44": "node scripts/a44-source-integrity-audit.mjs",
+     "bootstrap:offline:a62": "node scripts/a62-offline-exact-runtime-dependency-bootstrap.mjs",
+     "build": "npm run build:turbopack",
++    "build:pass4816:observability-receipt": "tsx scripts/pass4816/build-observability-incident-receipt.ts",
+     "build:a102r12:descendant": "node scripts/pass36/build-a102r12-current-root-descendant-manifest.mjs",
+     "build:a102r13:descendant": "node scripts/pass36/build-a102r13-current-root-descendant-manifest.mjs",
+     "build:a102r14:descendant": "node scripts/pass36/build-a102r14-current-root-descendant-manifest.mjs",
+@@ -656,6 +657,9 @@
+     "test:pass36:a88r2": "node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass36/test-a88r2-behavioral-handler-mutations.ts",
+     "test:pass36:a89": "node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass36/test-a89-account-auth-tenant-privacy-red-team.ts",
+     "test:pass36:a94r1-css": "node scripts/pass36/test-a94-css-parser-corruption-boundary.mjs",
++    "test:pass4816": "npm run test:pass4816:incident && npm run test:pass4816:tooling",
++    "test:pass4816:incident": "tsx scripts/pass4816/test-observability-incident.ts",
++    "test:pass4816:tooling": "tsx scripts/pass4816/test-observability-tooling.ts",
+     "test:pass4826": "node --test scripts/pass4826/test-world-class-gate-contract.mjs scripts/pass4826/test-world-class-evidence-index-contract.mjs scripts/pass4826/test-process-network-deny-preload.mjs scripts/pass4826/test-release-package-contract.mjs scripts/pass4826/test-dual-build-gate-contract.mjs scripts/pass4826/test-suppression-policy-contract.mjs scripts/pass4826/test-repeated-determinism-contract.mjs && node scripts/pass4826/test-durable-market-snapshot.cjs && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass4826/test-durable-market-snapshot-broker-boundary.ts && node scripts/pass4826/verify-durable-market-snapshot-contract.cjs && node scripts/pass4826/test-binance-fallback-contract.cjs && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass4826/test-risk-input-fail-closed.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass4826/test-risk-calibration-invariants.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass4826/test-lens-paid-scope.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass4826/test-provider-provenance-quorum-p0.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-account-artifact-route-hardening.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-paid-surface-truth.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-payment-auth-hardening.ts && node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/security-hardening/test-production-security-db-hardening.ts && node scripts/security-hardening/check-soft-rate-limit-migration.mjs --self-test-detection",
+     "test:pass6:critical": "node scripts/pass6/run-critical-offline-gate.mjs --output artifacts/pass6/PASS6_CRITICAL_OFFLINE_GATE.json",
+     "test:pass6:critical:current-root": "node scripts/pass6/run-critical-offline-gate.mjs --lineage-mode current-root",
+@@ -680,7 +684,9 @@
+     "typecheck": "node scripts/pass13/run-partitioned-typescript.mjs",
+     "typecheck:direct": "tsc --noEmit",
+     "typecheck:pass35:audit-a01-a05": "tsc -p tsconfig.pass35-audit-a01-a05.json --noEmit",
++    "typecheck:pass4816": "tsc -p tsconfig.pass4816-observability.json --noEmit",
+     "vercel:preflight": "node scripts/vercel-preflight.mjs",
++    "verify:pass4816:observability-receipt": "tsx scripts/pass4816/verify-observability-incident-receipt.ts",
+     "verify:a102r10:authority": "node scripts/pass36/verify-a102r10-action-required-authority.mjs",
+     "verify:a102r10:descendant": "node scripts/pass36/verify-a102r10-current-root-descendant.mjs",
+     "verify:a102r10:receipt": "node scripts/pass36/verify-a102r10-local-regression-receipt.mjs",
