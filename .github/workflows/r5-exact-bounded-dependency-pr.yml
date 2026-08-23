@@ -1,0 +1,64 @@
+name: R5 Exact Bounded Dependency Recovery
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/r5-exact-bounded-dependency-trigger.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Recover exact lock-bound package bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r5-exact-bounded-deps/cas
+          node <<'NODE'
+          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+          const rows=[
+            ['react','19.2.7','https://registry.npmjs.org/react/-/react-19.2.7.tgz','sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==','d0065884db7670ffb89046826995cf0d7754a31653d23908532e52671bf83d7d',24805],
+            ['react-dom','19.2.7','https://registry.npmjs.org/react-dom/-/react-dom-19.2.7.tgz','sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==','e47bae602149b38b90b452c89e53d2d60639fee09361d90374983a6aac62739e',1276388],
+            ['scheduler','0.27.0','https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz','sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==','ab26ce35ce4032f04b78cfc5bbb4cfe13358e9fe7a5433a8aa6315c3debc5095',10015],
+            ['typescript','5.9.3','https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz','sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==','10e108c9cf7d5f2879053dff18515fb405abf2ccef63eaaf017d9c571687a1d3',4377468],
+            ['@electric-sql/pglite','0.5.4','https://registry.npmjs.org/@electric-sql/pglite/-/pglite-0.5.4.tgz','sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==','2c0114a4d836358733a8414be1d1670b85e18cac561c598ad9de8cdb884fbd18',8778518],
+          ];
+          const digest=(a,b,e='hex')=>crypto.createHash(a).update(b).digest(e);
+          (async()=>{
+            const verified=[];
+            for(const [name,version,url,integrity,sha256,byteLength] of rows){
+              const r=await fetch(url,{redirect:'error',headers:{'user-agent':'Velmere-R5-Exact-Recovery/1.0'}});
+              if(!r.ok)throw new Error(`download_failed:${name}:${r.status}`);
+              const bytes=Buffer.from(await r.arrayBuffer());
+              const actualSha256=digest('sha256',bytes),actualIntegrity=`sha512-${digest('sha512',bytes,'base64')}`;
+              if(bytes.length!==byteLength||actualSha256!==sha256||actualIntegrity!==integrity)throw new Error(`identity_mismatch:${name}`);
+              const casFile=`cas/${sha256}.tgz`;
+              fs.writeFileSync(path.join('r5-exact-bounded-deps',casFile),bytes);
+              verified.push({name,version,url,integrity,sha256,byteLength,actualIntegrity,actualSha256,casFile,status:'PASS_EXACT_BYTES'});
+            }
+            const aggregate=crypto.createHash('sha256');
+            for(const row of [...verified].sort((a,b)=>a.casFile.localeCompare(b.casFile))){aggregate.update(row.casFile);aggregate.update('\0');aggregate.update(fs.readFileSync(path.join('r5-exact-bounded-deps',row.casFile)));aggregate.update('\0');}
+            const receipt={schemaVersion:'velmere.r5.exact-bounded-dependency-cas.v1',generatedAt:new Date().toISOString(),github:{runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,sha:process.env.GITHUB_SHA,ref:process.env.GITHUB_REF},runtime:{node:process.version,platform:process.platform,arch:process.arch},sourceBinding:{packageLockSha256:'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb',historicalManifestSha256:'5c4fb690b19371b87da6252abce586f346648434aefec65222d02ef2cf675c3c'},denominator:{required:5,downloaded:verified.length,failed:0},aggregateSha256:aggregate.digest('hex'),rows:verified,status:'PASS_EXACT_BOUNDED_DEPENDENCY_BYTES',truthBoundary:'Five exact tarballs only; no full 618-tarball graph, lifecycle, application build, staging, Windows, Customer FINAL, paid-value, sale or LIVE credit.'};
+            fs.writeFileSync('r5-exact-bounded-deps/VELMERE_R5_EXACT_BOUNDED_DEPENDENCY_CAS_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+            console.log(JSON.stringify({status:receipt.status,denominator:receipt.denominator,aggregateSha256:receipt.aggregateSha256},null,2));
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r5-exact-bounded-dependency-cas
+          path: r5-exact-bounded-deps
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
