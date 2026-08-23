@@ -1,0 +1,70 @@
+name: P53 Export All-Heads Git Base For Thin Projection Delta
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p53-export-all-heads-git-base.yml'
+
+concurrency:
+  group: p53-export-all-heads-git-base-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  export-all-heads-git-base:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository with complete branch history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Fetch every branch and create complete heads bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune --no-recurse-submodules origin '+refs/heads/*:refs/remotes/origin/*'
+          mkdir -p p53-out
+          git bundle create p53-out/P53_ALL_HEADS_GIT_BASE.bundle --remotes=origin
+          git bundle verify p53-out/P53_ALL_HEADS_GIT_BASE.bundle > p53-out/P53_ALL_HEADS_GIT_BASE_VERIFY.stdout 2> p53-out/P53_ALL_HEADS_GIT_BASE_VERIFY.stderr
+          git for-each-ref --sort=refname --format='%(refname)%09%(objectname)' refs/remotes/origin > p53-out/P53_ALL_HEADS_REFS.tsv
+          git count-objects -vH > p53-out/P53_ALL_HEADS_COUNT_OBJECTS.txt
+          python - <<'PY'
+          import hashlib, json, pathlib, subprocess
+          out = pathlib.Path('p53-out')
+          bundle = out / 'P53_ALL_HEADS_GIT_BASE.bundle'
+          h = hashlib.sha256()
+          with bundle.open('rb') as f:
+              for chunk in iter(lambda: f.read(1024 * 1024), b''):
+                  h.update(chunk)
+          refs = [line for line in (out / 'P53_ALL_HEADS_REFS.tsv').read_text().splitlines() if line]
+          receipt = {
+              'schemaVersion': 'velmere.p53.all-heads-git-base-export.v1',
+              'status': 'PASS',
+              'remoteBranchRefCount': len(refs),
+              'bundle': {'byteLength': bundle.stat().st_size, 'sha256': h.hexdigest()},
+              'workflowCommit': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+              'truthBoundary': 'This bundle is a historical/current Git base corpus only. It receives no P46 source, Windows build, Browser, PDF, value, rights or sale credit.',
+          }
+          core = json.dumps(receipt, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = hashlib.sha256(core).hexdigest()
+          (out / 'P53_ALL_HEADS_GIT_BASE_EXPORT_RECEIPT.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Upload all-heads Git base
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p53-all-heads-git-base
+          path: p53-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

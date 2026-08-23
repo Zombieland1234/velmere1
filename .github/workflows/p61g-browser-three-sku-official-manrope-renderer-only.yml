@@ -1,0 +1,480 @@
+name: P61G Browser Three SKU Official Manrope Renderer Only
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - 'p61-browser/P61G_**'
+      - 'p61-browser/run-p61g-official-manrope-renderer-engineering.mjs'
+      - '.github/workflows/p61g-browser-three-sku-official-manrope-renderer-only.yml'
+
+concurrency:
+  group: p61g-browser-three-sku-official-manrope-renderer-only-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  browser-basic-pro-advanced-official-font-renderer-only:
+    runs-on: windows-2025
+    timeout-minutes: 210
+    steps:
+      - name: Checkout isolated projection branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Materialize and verify exact P49 P60 P61G controls
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p61g-out | Out-Null
+          git config core.autocrlf false
+          git config core.eol lf
+          git checkout --force HEAD -- p49-build-projection
+          $paths = @(
+            'p60-runtime/build-p60-reconciled-runner.py',
+            'p61-browser/run-p61-browser-sku-executions.mjs',
+            'p61-browser/P61_VISIBLE_LOCATOR_FIX.patch',
+            'p61-browser/P61_HTTPS_CANONICAL_ORIGIN_FIX.patch',
+            'p61-browser/run-p61-https-proxy.mjs',
+            'p61-browser/P61_TRUSTED_CLIENT_QA_FIX.patch',
+            'p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY_ACQUISITION.json',
+            'p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY.patch',
+            'p61-browser/P61G_BROWSER_RECEIPT_SOURCE_BINDING.patch',
+            'p61-browser/run-p61g-official-manrope-renderer-engineering.mjs'
+          )
+          python -c "import pathlib,subprocess; paths=$($paths | ConvertTo-Json -Compress); [(pathlib.Path(p).parent.mkdir(parents=True, exist_ok=True), pathlib.Path(p).write_bytes(subprocess.check_output(['git','show',f'HEAD:{p}']))) for p in paths]"
+          if ($LASTEXITCODE -ne 0) { throw "Exact Git blob materialization failed: ${LASTEXITCODE}" }
+
+          $checks = @(
+            @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
+            @{ Path = 'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json'; Sha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b' },
+            @{ Path = 'p49-build-projection/reconstruct-p49-direct-projection.py'; Sha256 = '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8' },
+            @{ Path = 'p49-build-projection/run-p47-product-windows-projection.mjs'; Sha256 = '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4' },
+            @{ Path = 'p60-runtime/build-p60-reconciled-runner.py'; Sha256 = 'b1ebefec74d5c1d50895c01c9092d8e49fde46314eba1f3cdd41e4f570d9e433' },
+            @{ Path = 'p61-browser/run-p61-browser-sku-executions.mjs'; Sha256 = '7a51aa87be9c2bc97d0f73a874c2dc1eb23ad54a375ccfbd3cfe4c3c4848c3f5' },
+            @{ Path = 'p61-browser/P61_VISIBLE_LOCATOR_FIX.patch'; Sha256 = '5582e586e2c9deeecb9bae37e82113d4a14190b5d2894f1d05e11a0dbe2fb051' },
+            @{ Path = 'p61-browser/P61_HTTPS_CANONICAL_ORIGIN_FIX.patch'; Sha256 = '6c871324a234db853e7ca534f30f093273617e2efa78cbaa6416e313ba139404' },
+            @{ Path = 'p61-browser/run-p61-https-proxy.mjs'; Sha256 = 'eb93b33f07cf382154ee0a2239c10b82c70fe59dfba3a161d0427ecd56d03ee5' },
+            @{ Path = 'p61-browser/P61_TRUSTED_CLIENT_QA_FIX.patch'; Sha256 = '7d32f58deef155418de17e43540f4aa40ed16e68de2399772ef51100483542ab' }
+          )
+          foreach ($check in $checks) {
+            if (-not (Test-Path -LiteralPath $check.Path -PathType Leaf)) { throw "Required P61G file missing: $($check.Path)" }
+            $actual = (Get-FileHash -LiteralPath $check.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $check.Sha256) { throw "P61G byte mismatch for $($check.Path): $actual != $($check.Sha256)" }
+          }
+          foreach ($path in $paths) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "P61G materialized control missing: $path" }
+          }
+          $attribute = (git check-attr text -- p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "git check-attr failed with exit code ${LASTEXITCODE}" }
+          if ($attribute -notmatch 'text: unset$') { throw "P49 byte-preservation attribute is not active: $attribute" }
+
+          foreach ($patch in @('p61-browser/P61_VISIBLE_LOCATOR_FIX.patch', 'p61-browser/P61_HTTPS_CANONICAL_ORIGIN_FIX.patch')) {
+            git apply --check --whitespace=nowarn $patch
+            if ($LASTEXITCODE -ne 0) { throw "Harness patch check failed for ${patch}: ${LASTEXITCODE}" }
+            git apply --whitespace=nowarn $patch
+            if ($LASTEXITCODE -ne 0) { throw "Harness patch apply failed for ${patch}: ${LASTEXITCODE}" }
+          }
+          $preBindingHarnessSha = (Get-FileHash -LiteralPath p61-browser/run-p61-browser-sku-executions.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($preBindingHarnessSha -ne 'd59126094e3c4aefbd88828be9b5e3d66176eec378b7274005af19f099df0291') { throw "P61G pre-binding harness mismatch: $preBindingHarnessSha" }
+          git apply --check --whitespace=nowarn p61-browser/P61G_BROWSER_RECEIPT_SOURCE_BINDING.patch
+          if ($LASTEXITCODE -ne 0) { throw "P61G Browser receipt patch check failed: ${LASTEXITCODE}" }
+          git apply --whitespace=nowarn p61-browser/P61G_BROWSER_RECEIPT_SOURCE_BINDING.patch
+          if ($LASTEXITCODE -ne 0) { throw "P61G Browser receipt patch apply failed: ${LASTEXITCODE}" }
+
+          git apply --check --whitespace=nowarn p61-browser/P61_TRUSTED_CLIENT_QA_FIX.patch
+          if ($LASTEXITCODE -ne 0) { throw "Proxy patch check failed: ${LASTEXITCODE}" }
+          git apply --whitespace=nowarn p61-browser/P61_TRUSTED_CLIENT_QA_FIX.patch
+          if ($LASTEXITCODE -ne 0) { throw "Proxy patch apply failed: ${LASTEXITCODE}" }
+          $proxySha = (Get-FileHash -LiteralPath p61-browser/run-p61-https-proxy.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($proxySha -ne '25da75d90eb9bc02a15051a716c06dd0d191461a435006f63b17e3f935eda49a') { throw "P61G patched proxy mismatch: $proxySha" }
+
+          node --check p61-browser/run-p61-browser-sku-executions.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P61G Browser harness parse check failed: ${LASTEXITCODE}" }
+          node --check p61-browser/run-p61-https-proxy.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P61G proxy parse check failed: ${LASTEXITCODE}" }
+          node --check p61-browser/run-p61g-official-manrope-renderer-engineering.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P61G source engineering runner parse check failed: ${LASTEXITCODE}" }
+
+          python - <<'PY'
+          import hashlib, json, pathlib
+          paths = [
+              pathlib.Path('p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY_ACQUISITION.json'),
+              pathlib.Path('p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY.patch'),
+              pathlib.Path('p61-browser/P61G_BROWSER_RECEIPT_SOURCE_BINDING.patch'),
+              pathlib.Path('p61-browser/run-p61g-official-manrope-renderer-engineering.mjs'),
+              pathlib.Path('p61-browser/run-p61-browser-sku-executions.mjs'),
+              pathlib.Path('p61-browser/run-p61-https-proxy.mjs'),
+          ]
+          contract = json.loads(paths[0].read_text(encoding='utf-8'))
+          assert contract['upstream']['fontSha256'] == '67d5c238a5058f56a361c7fea054cf3be26d602bd03b418a09bff73a25a17250'
+          assert contract['upstream']['licenseId'] == 'OFL-1.1'
+          assert contract['projectionMutation']['path'] == 'lib/search/lens-pdf-renderer.ts'
+          assert contract['projectionMutation']['externalPolicyFileMutation'] is False
+          rows = []
+          for path in paths:
+              data = path.read_bytes()
+              rows.append({'path': path.as_posix(), 'byteLength': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+          receipt = {
+              'schemaVersion': 'velmere.p61g.control-identity.v1',
+              'status': 'PASS',
+              'decision': 'PASS_P61G_CONTROLS_BOUND_TO_WORKFLOW_COMMIT',
+              'githubSha': '${{ github.sha }}',
+              'files': rows,
+              'truthBoundary': 'This receipt binds control bytes to the workflow commit. It grants no Browser, PDF, customer, sale, GO, LIVE or WORLD_CLASS credit.',
+          }
+          core = json.dumps(receipt, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = hashlib.sha256(core).hexdigest()
+          pathlib.Path('p61g-out/P61G_CONTROL_IDENTITY.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, indent=2))
+          PY
+          if ($LASTEXITCODE -ne 0) { throw "P61G semantic control binding failed: ${LASTEXITCODE}" }
+          Write-Host 'P61G exact control preflight: PASS'
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0 and locate CLI
+        id: toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
+          $npmRoot = (npm root --global).Trim()
+          $npmCli = (Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          if (-not (Test-Path -LiteralPath $npmCli -PathType Leaf)) { throw "npm CLI missing: $npmCli" }
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct exact 1597-file P46 projection and check renderer-only delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p49-work `
+            --output-root p61g-out/reconstruction
+          if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: ${LASTEXITCODE}" }
+          git apply --check --whitespace=nowarn --directory=p49-work/source p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY.patch
+          if ($LASTEXITCODE -ne 0) { throw "P61G renderer-only source patch check failed: ${LASTEXITCODE}" }
+
+      - name: Generate exact P60 reconciled engineering runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p60-runtime/build-p60-reconciled-runner.py `
+            --input p49-build-projection/run-p47-product-windows-projection.mjs `
+            --output p49-work/run-p60-reconciled-windows-projection.mjs `
+            --receipt p61g-out/P60_RECONCILED_RUNNER_BUILD_RECEIPT.json
+          if ($LASTEXITCODE -ne 0) { throw "P60 runner generation failed: ${LASTEXITCODE}" }
+          node --check p49-work/run-p60-reconciled-windows-projection.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P60 runner parse check failed: ${LASTEXITCODE}" }
+
+      - name: Re-establish exact P60 Windows baseline
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.toolchain.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p49-work/run-p60-reconciled-windows-projection.mjs `
+            --source-root p49-work/source `
+            --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --output-dir p61g-out/p60-engineering
+          if ($LASTEXITCODE -ne 0) { throw "P60 engineering prerequisite failed: ${LASTEXITCODE}" }
+
+      - name: Execute P61G renderer-only semantic lint and dual-build campaign
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.toolchain.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p61-browser/run-p61g-official-manrope-renderer-engineering.mjs `
+            --source-root p49-work/source `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --acquisition-contract p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY_ACQUISITION.json `
+            --source-patch p61-browser/P61G_OFFICIAL_MANROPE_RENDERER_ONLY.patch `
+            --output-dir p61g-out
+          if ($LASTEXITCODE -ne 0) { throw "P61G renderer-only source engineering failed: ${LASTEXITCODE}" }
+
+      - name: Acquire exact official runtime font outside artifact root
+        id: font
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_REPOSITORY: terrapkg/pkg-manrope-fonts
+          UPSTREAM_FONT_BLOB_SHA: cf7cea3879019206c6e084ac14ada8e2d3e4dd70
+          UPSTREAM_FONT_EXPECTED_BYTES: '134800'
+          UPSTREAM_FONT_SHA256: 67d5c238a5058f56a361c7fea054cf3be26d602bd03b418a09bff73a25a17250
+          UPSTREAM_LICENSE_BLOB_SHA: 472064afc4b8dec9079fab03b8ffafb617a1b2d8
+          UPSTREAM_LICENSE_SHA256: e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python - <<'PY'
+          from __future__ import annotations
+          import base64
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import urllib.request
+
+          repo = os.environ['UPSTREAM_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          output_root = pathlib.Path('p61g-out')
+          output_root.mkdir(parents=True, exist_ok=True)
+          runtime_font = pathlib.Path(os.environ['RUNNER_TEMP']) / 'p61g-Manrope-ExtraLight.ttf'
+
+          def github_blob(blob_sha: str) -> bytes:
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/{repo}/git/blobs/{blob_sha}',
+                  headers={
+                      'Accept': 'application/vnd.github+json',
+                      'Authorization': f'Bearer {token}',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'User-Agent': 'velmere-p61g-runtime-font',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  payload = json.loads(response.read())
+              if payload.get('sha') != blob_sha or payload.get('encoding') != 'base64':
+                  raise RuntimeError(f'github_blob_identity_mismatch:{blob_sha}:{payload.get("sha")}:{payload.get("encoding")}')
+              return base64.b64decode(str(payload['content']).replace('\n', ''), validate=True)
+
+          font_blob = os.environ['UPSTREAM_FONT_BLOB_SHA']
+          font_bytes = github_blob(font_blob)
+          font_sha256 = hashlib.sha256(font_bytes).hexdigest()
+          if len(font_bytes) != int(os.environ['UPSTREAM_FONT_EXPECTED_BYTES']):
+              raise RuntimeError(f'font_byte_length_mismatch:{len(font_bytes)}')
+          if font_sha256 != os.environ['UPSTREAM_FONT_SHA256']:
+              raise RuntimeError(f'font_sha256_mismatch:{font_sha256}')
+          runtime_font.write_bytes(font_bytes)
+
+          license_blob = os.environ['UPSTREAM_LICENSE_BLOB_SHA']
+          license_bytes = github_blob(license_blob)
+          license_sha256 = hashlib.sha256(license_bytes).hexdigest()
+          license_text = license_bytes.decode('utf-8')
+          if license_sha256 != os.environ['UPSTREAM_LICENSE_SHA256']:
+              raise RuntimeError(f'license_sha256_mismatch:{license_sha256}')
+          if 'SIL OPEN FONT LICENSE' not in license_text.upper() or 'Version 1.1' not in license_text:
+              raise RuntimeError('license_not_recognized_as_ofl_1_1')
+
+          receipt = {
+              'schemaVersion': 'velmere.p61g.runtime-font-acquisition.v1',
+              'status': 'PASS',
+              'decision': 'PASS_EXACT_OFFICIAL_MANROPE_RUNTIME_FONT_ACQUIRED_OUTSIDE_ARTIFACT_ROOT',
+              'upstream': {
+                  'repository': repo,
+                  'fontGitBlobSha1': font_blob,
+                  'fontByteLength': len(font_bytes),
+                  'fontSha256': font_sha256,
+                  'licenseGitBlobSha1': license_blob,
+                  'licenseByteLength': len(license_bytes),
+                  'licenseSha256': license_sha256,
+                  'licenseId': 'OFL-1.1',
+              },
+              'retention': {
+                  'runtimePathClass': 'RUNNER_TEMP_OUTSIDE_ARTIFACT_ROOT',
+                  'fontCommittedToSource': False,
+                  'fontCommittedToMaterials': False,
+                  'fontUploadedAsEvidence': False,
+                  'deleteBeforeArtifactUploadRequired': True,
+              },
+              'truthBoundary': 'PASS proves acquisition identity and an exact OFL-1.1 text match only. Browser, independent PDF replay, customer value, sale, GO, LIVE and WORLD_CLASS remain separate.',
+          }
+          core = json.dumps(receipt, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = hashlib.sha256(core).hexdigest()
+          (output_root / 'P61G_RUNTIME_FONT_ACQUISITION_RECEIPT.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f'RUNTIME_FONT_PATH={runtime_font}\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
+              handle.write(f'path={runtime_font}\n')
+              handle.write(f'sha256={font_sha256}\n')
+          print(json.dumps(receipt, indent=2))
+          PY
+          if ($LASTEXITCODE -ne 0) { throw "P61G official runtime font acquisition failed: ${LASTEXITCODE}" }
+          if (-not (Test-Path -LiteralPath $env:RUNTIME_FONT_PATH -PathType Leaf)) { throw 'P61G runtime font missing after acquisition' }
+
+      - name: Locate installed Chromium browser
+        id: browser
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $candidates = @(
+            'C:\Program Files\Google\Chrome\Application\chrome.exe',
+            'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+            'C:\Program Files\Microsoft\Edge\Application\msedge.exe',
+            'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+          )
+          $browser = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+          if (-not $browser) { throw 'No installed Chrome/Edge executable found on windows-2025' }
+          $sha = (Get-FileHash -LiteralPath $browser -Algorithm SHA256).Hash.ToLowerInvariant()
+          $bytes = (Get-Item -LiteralPath $browser).Length
+          "path=$browser" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "sha256=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "bytes=$bytes" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Browser: $browser"
+          Write-Host "SHA-256: $sha"
+
+      - name: Start P61G server through HTTPS QA boundary and execute three Browser SKUs
+        shell: pwsh
+        env:
+          NODE_ENV: development
+          NEXT_TELEMETRY_DISABLED: '1'
+          VELMERE_CANONICAL_ORIGIN: 'https://localhost:3443'
+          NEXT_PUBLIC_SITE_URL: 'https://localhost:3443'
+          VELMERE_TRUSTED_PROXY_PROFILE: 'vercel'
+          VERCEL: '1'
+          VERCEL_ENV: 'preview'
+          P61_BASE_URL: 'https://localhost:3443'
+          P61_OUTPUT_ROOT: 'p61g-out/browser'
+          P61_NODE_MODULES_ROOT: 'p49-work/source/node_modules'
+          P61_BROWSER_EXECUTABLE_PATH: ${{ steps.browser.outputs.path }}
+          P61_PROXY_LISTEN_HOST: '127.0.0.1'
+          P61_PROXY_LISTEN_PORT: '3443'
+          P61_PROXY_PUBLIC_HOST: 'localhost:3443'
+          P61_PROXY_UPSTREAM_HOST: '127.0.0.1'
+          P61_PROXY_UPSTREAM_PORT: '3110'
+          P61_PROXY_PFX_PASSPHRASE: 'p61g-runtime-only-pfx-passphrase-2026'
+          VELMERE_LENS_SOURCE_TOKEN_SECRET_CURRENT: 'p61g-source-token-fixture-secret-2026-08-16-0123456789abcdef'
+          VELMERE_LENS_SOURCE_TOKEN_KEY_ID: 'p61g-browser-current-execution'
+          VELMERE_LENS_RENDER_TOKEN_SECRET_CURRENT: 'p61g-render-token-fixture-secret-2026-08-16-fedcba9876543210'
+          VELMERE_LENS_RENDER_TOKEN_KEY_ID: 'p61g-browser-render-execution'
+          NEXTAUTH_SECRET: 'p61g-nextauth-fixture-secret-2026-08-16-0123456789abcdef'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:RUNTIME_FONT_PATH) { throw 'P61G RUNTIME_FONT_PATH missing' }
+          if (-not (Test-Path -LiteralPath $env:RUNTIME_FONT_PATH -PathType Leaf)) { throw 'P61G runtime font path is not a file' }
+          $runtimeFontSha = (Get-FileHash -LiteralPath $env:RUNTIME_FONT_PATH -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($runtimeFontSha -ne '67d5c238a5058f56a361c7fea054cf3be26d602bd03b418a09bff73a25a17250') { throw "P61G runtime font SHA mismatch: $runtimeFontSha" }
+          $env:VELMERE_PDF_FONT_PATH = $env:RUNTIME_FONT_PATH
+
+          New-Item -ItemType Directory -Force p61g-out/server | Out-Null
+          $serverDir = (Resolve-Path -LiteralPath p61g-out/server).Path
+          $sourceRoot = (Resolve-Path -LiteralPath p49-work/source).Path
+          $nextCli = (Resolve-Path -LiteralPath (Join-Path $sourceRoot 'node_modules/next/dist/bin/next')).Path
+          $nextStdout = Join-Path $serverDir 'next-start.stdout.log'
+          $nextStderr = Join-Path $serverDir 'next-start.stderr.log'
+          $proxyStdout = Join-Path $serverDir 'https-proxy.stdout.log'
+          $proxyStderr = Join-Path $serverDir 'https-proxy.stderr.log'
+          $pfxPath = Join-Path $serverDir 'p61g-runtime-certificate.pfx'
+          $securePassword = ConvertTo-SecureString $env:P61_PROXY_PFX_PASSPHRASE -AsPlainText -Force
+          $cert = New-SelfSignedCertificate -DnsName 'localhost' -CertStoreLocation 'Cert:\CurrentUser\My' -KeyExportPolicy Exportable -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -NotAfter (Get-Date).AddDays(1)
+          Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $securePassword | Out-Null
+          Remove-Item -LiteralPath "Cert:\CurrentUser\My\$($cert.Thumbprint)" -Force -ErrorAction SilentlyContinue
+          if (-not (Test-Path -LiteralPath $pfxPath -PathType Leaf)) { throw 'P61G runtime PFX export failed' }
+          $env:P61_PROXY_PFX_PATH = $pfxPath
+
+          $nextProcess = Start-Process -FilePath (Get-Command node).Source -ArgumentList @($nextCli, 'start', '-H', '127.0.0.1', '-p', '3110') -WorkingDirectory $sourceRoot -RedirectStandardOutput $nextStdout -RedirectStandardError $nextStderr -PassThru
+          $proxyProcess = $null
+          try {
+            $nextReady = $false
+            for ($i = 0; $i -lt 120; $i++) {
+              if ($nextProcess.HasExited) { throw "Next server exited early with code $($nextProcess.ExitCode)" }
+              try {
+                $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3110/en/search' -UseBasicParsing -TimeoutSec 5
+                if ($response.StatusCode -eq 200) { $nextReady = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            if (-not $nextReady) { throw 'Next server did not become ready within 120 seconds' }
+
+            $proxyProcess = Start-Process -FilePath (Get-Command node).Source -ArgumentList @('p61-browser/run-p61-https-proxy.mjs') -WorkingDirectory (Resolve-Path -LiteralPath '.').Path -RedirectStandardOutput $proxyStdout -RedirectStandardError $proxyStderr -PassThru
+            $proxyReady = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              if ($proxyProcess.HasExited) { throw "HTTPS proxy exited early with code $($proxyProcess.ExitCode)" }
+              try {
+                $response = Invoke-WebRequest -Uri 'https://localhost:3443/en/search' -SkipCertificateCheck -UseBasicParsing -TimeoutSec 5
+                if ($response.StatusCode -eq 200) { $proxyReady = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            if (-not $proxyReady) { throw 'P61G HTTPS proxy did not become ready within 60 seconds' }
+            Write-Host "P61G exact built server and HTTPS QA proxy ready. NextPID=$($nextProcess.Id) ProxyPID=$($proxyProcess.Id)"
+            node p61-browser/run-p61-browser-sku-executions.mjs
+            if ($LASTEXITCODE -ne 0) { throw "P61G Browser campaign failed: ${LASTEXITCODE}" }
+          } finally {
+            if ($proxyProcess) { Stop-Process -Id $proxyProcess.Id -Force -ErrorAction SilentlyContinue }
+            Stop-Process -Id $nextProcess.Id -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $pfxPath -Force -ErrorAction SilentlyContinue
+            Get-Content $nextStdout -ErrorAction SilentlyContinue
+            Get-Content $nextStderr -ErrorAction SilentlyContinue
+            Get-Content $proxyStdout -ErrorAction SilentlyContinue
+            Get-Content $proxyStderr -ErrorAction SilentlyContinue
+          }
+
+      - name: Enforce runtime font non-retention
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RUNTIME_FONT_PATH) {
+            Remove-Item -LiteralPath $env:RUNTIME_FONT_PATH -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $env:RUNTIME_FONT_PATH) { throw 'P61G runtime font retention cleanup failed' }
+          }
+          $fontCandidates = Get-ChildItem -LiteralPath p61g-out -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '^\.(ttf|otf|woff|woff2|eot)$' }
+          if ($fontCandidates) { throw "Font binary leaked into artifact root: $($fontCandidates.FullName -join ', ')" }
+          Write-Host 'P61G runtime font non-retention: PASS'
+
+      - name: Capture P61G workflow boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p61g-out | Out-Null
+          $boundary = [ordered]@{
+            schemaVersion = 'velmere.p61g.github-browser-three-sku-official-font-renderer-only-boundary.v1'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            workflow = '${{ github.workflow }}'
+            ref = '${{ github.ref }}'
+            sha = '${{ github.sha }}'
+            runnerOs = '${{ runner.os }}'
+            runnerArch = '${{ runner.arch }}'
+            imageOs = $env:ImageOS
+            node = (node --version 2>$null)
+            npm = (npm --version 2>$null)
+            browserExecutablePath = '${{ steps.browser.outputs.path }}'
+            browserExecutableSha256 = '${{ steps.browser.outputs.sha256 }}'
+            canonicalOrigin = 'https://localhost:3443'
+            rateLimitRuntime = 'QA nonproduction memory adapter; no production readiness credit'
+            p60ProjectionManifestSha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b'
+            p61gRendererBaselineSha256 = '1e18d849d232e48cf12b40f5b274141f21353b2d7038d40d3f69103ed71380d3'
+            p61gRendererPatchedSha256 = '18142581dc6f858df800c684c90bb6c444683758664f45f5eb7b87932f0bd647'
+            p61gRuntimeFontSha256 = '67d5c238a5058f56a361c7fea054cf3be26d602bd03b418a09bff73a25a17250'
+            p61gRuntimeFontGitBlobSha1 = 'cf7cea3879019206c6e084ac14ada8e2d3e4dd70'
+            p61gLicenseId = 'OFL-1.1'
+            p61gFontCommittedToSource = $false
+            p61gFontUploadedAsEvidence = $false
+            fixtureEvidenceClass = 'FIXTURE_INTERNAL_ONLY'
+            truthBoundary = 'Credit is limited to the one-file same-length renderer hash transition, its native Windows semantic/lint/dual-build execution, exact-hash runtime font acquisition and three physically distinct Browser paths. Production rate-limit, live data, external legal opinion, independent PDF replay, customer value, sale, GO, LIVE and WORLD_CLASS remain excluded.'
+            timestampUtc = [DateTime]::UtcNow.ToString('o')
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content p61g-out/P61G_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P61G evidence without font bytes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p61g-browser-three-sku-official-manrope-renderer-only
+          path: p61g-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

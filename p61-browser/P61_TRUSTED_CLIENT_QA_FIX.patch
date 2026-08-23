@@ -1,0 +1,12 @@
+--- a/p61-browser/run-p61-https-proxy.mjs
++++ b/p61-browser/run-p61-https-proxy.mjs
+@@ -44,6 +44,9 @@ const server = https.createServer(
+     headers.host = publicHost;
+     headers['x-forwarded-host'] = publicHost;
+     headers['x-forwarded-proto'] = 'https';
++    headers['x-forwarded-for'] = '127.0.0.1';
++    headers['x-vercel-forwarded-for'] = '127.0.0.1';
++    headers['x-real-ip'] = '127.0.0.1';
+     delete headers.forwarded;
+ 
+     const upstream = http.request({
