@@ -1,0 +1,219 @@
+name: Velmere R5 Exact Dependency Bridge
+
+on:
+  push:
+    branches:
+      - velmere-r5-exact-dependency-bridge-20260823
+    paths:
+      - .github/workflows/velmere-r5-exact-dependency-bridge.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-dependency-bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout bridge branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Assert exact runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+          mkdir -p r5-exact-dependency-bridge/logs
+          node --version | tee r5-exact-dependency-bridge/logs/node-version.txt
+          npm --version | tee r5-exact-dependency-bridge/logs/npm-version.txt
+
+      - name: Download and verify official Node Linux x64 archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd r5-exact-dependency-bridge
+          curl --fail --silent --show-error --location --retry 4 --retry-all-errors \
+            --output node-v24.18.0-linux-x64.tar.xz \
+            https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-x64.tar.xz
+          curl --fail --silent --show-error --location --retry 4 --retry-all-errors \
+            --output SHASUMS256.txt \
+            https://nodejs.org/dist/v24.18.0/SHASUMS256.txt
+          grep ' node-v24.18.0-linux-x64.tar.xz$' SHASUMS256.txt > node-linux-x64-sha256.txt
+          sha256sum --check node-linux-x64-sha256.txt | tee logs/node-archive-verification.txt
+
+      - name: Download exact npm tarballs and verify lock integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const https = require('node:https');
+          const { execFileSync } = require('node:child_process');
+
+          const out = path.resolve('r5-exact-dependency-bridge');
+          const packagesDir = path.join(out, 'packages');
+          const extractDir = path.join(out, '.extract');
+          fs.mkdirSync(packagesDir, { recursive: true });
+          fs.mkdirSync(extractDir, { recursive: true });
+
+          const specs = [
+            {
+              name: 'react',
+              version: '19.2.7',
+              file: 'react-19.2.7.tgz',
+              url: 'https://registry.npmjs.org/react/-/react-19.2.7.tgz',
+              integrity: 'HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==',
+            },
+            {
+              name: 'react-dom',
+              version: '19.2.7',
+              file: 'react-dom-19.2.7.tgz',
+              url: 'https://registry.npmjs.org/react-dom/-/react-dom-19.2.7.tgz',
+              integrity: 't0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==',
+            },
+            {
+              name: 'scheduler',
+              version: '0.27.0',
+              file: 'scheduler-0.27.0.tgz',
+              url: 'https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz',
+              integrity: 'eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==',
+            },
+            {
+              name: 'typescript',
+              version: '5.9.3',
+              file: 'typescript-5.9.3.tgz',
+              url: 'https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz',
+              integrity: 'jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==',
+            },
+            {
+              name: '@electric-sql/pglite',
+              version: '0.5.4',
+              file: 'electric-sql-pglite-0.5.4.tgz',
+              url: 'https://registry.npmjs.org/@electric-sql/pglite/-/pglite-0.5.4.tgz',
+              integrity: 'yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g==',
+            },
+          ];
+
+          function download(url, redirects = 0) {
+            if (redirects > 8) throw new Error(`too_many_redirects:${url}`);
+            return new Promise((resolve, reject) => {
+              https.get(url, { headers: { 'User-Agent': 'Velmere-R5-Exact-Dependency-Bridge/1.0' } }, (res) => {
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                  res.resume();
+                  const next = new URL(res.headers.location, url).toString();
+                  resolve(download(next, redirects + 1));
+                  return;
+                }
+                if (res.statusCode !== 200) {
+                  res.resume();
+                  reject(new Error(`http_${res.statusCode}:${url}`));
+                  return;
+                }
+                const chunks = [];
+                res.on('data', (chunk) => chunks.push(chunk));
+                res.on('end', () => resolve(Buffer.concat(chunks)));
+                res.on('error', reject);
+              }).on('error', reject);
+            });
+          }
+
+          (async () => {
+            const packages = [];
+            for (const spec of specs) {
+              const bytes = await download(spec.url);
+              const sha512Base64 = crypto.createHash('sha512').update(bytes).digest('base64');
+              if (sha512Base64 !== spec.integrity) {
+                throw new Error(`integrity_mismatch:${spec.name}@${spec.version}:${sha512Base64}`);
+              }
+              const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+              const archive = path.join(packagesDir, spec.file);
+              fs.writeFileSync(archive, bytes);
+
+              const target = path.join(extractDir, spec.file.replace(/\.tgz$/u, ''));
+              fs.rmSync(target, { recursive: true, force: true });
+              fs.mkdirSync(target, { recursive: true });
+              execFileSync('tar', ['-xzf', archive, '-C', target]);
+              const packageJsonPath = path.join(target, 'package', 'package.json');
+              const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+              if (packageJson.name !== spec.name || packageJson.version !== spec.version) {
+                throw new Error(`package_identity_mismatch:${spec.name}@${spec.version}:${packageJson.name}@${packageJson.version}`);
+              }
+              packages.push({
+                name: spec.name,
+                version: spec.version,
+                sourceUrl: spec.url,
+                file: `packages/${spec.file}`,
+                byteLength: bytes.length,
+                sha256,
+                sha512Base64,
+                lockIntegrity: `sha512-${spec.integrity}`,
+                packageJsonName: packageJson.name,
+                packageJsonVersion: packageJson.version,
+                license: packageJson.license ?? null,
+              });
+            }
+
+            const nodeArchive = path.join(out, 'node-v24.18.0-linux-x64.tar.xz');
+            const nodeBytes = fs.readFileSync(nodeArchive);
+            const receipt = {
+              schemaVersion: 'velmere.r5.exact-dependency-bridge.v1',
+              generatedAt: new Date().toISOString(),
+              sourceCommit: process.env.GITHUB_SHA,
+              sourceBranch: process.env.GITHUB_REF_NAME,
+              runner: {
+                os: process.env.RUNNER_OS,
+                arch: process.arch,
+                node: process.version,
+                npm: execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(),
+              },
+              nodeArchive: {
+                version: '24.18.0',
+                platform: 'linux-x64',
+                file: 'node-v24.18.0-linux-x64.tar.xz',
+                byteLength: nodeBytes.length,
+                sha256: crypto.createHash('sha256').update(nodeBytes).digest('hex'),
+                checksumSource: 'https://nodejs.org/dist/v24.18.0/SHASUMS256.txt',
+                checksumVerification: 'PASS',
+              },
+              packages,
+              status: 'PASS_EXACT_LOCK_INTEGRITY_AND_PACKAGE_IDENTITY',
+              customerFinalCredit: false,
+              exactWindowsCredit: false,
+              truthBoundary: 'Exact official Linux Node archive and exact npm tarballs needed by the bounded R5 local tests. This is not npm ci, not a complete dependency tree, not Windows Server 2025 and not row-level Customer FINAL.',
+            };
+            fs.writeFileSync(path.join(out, 'VELMERE_R5_EXACT_DEPENDENCY_BRIDGE_RECEIPT.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+            fs.rmSync(extractDir, { recursive: true, force: true });
+            process.stdout.write(`${JSON.stringify({ status: receipt.status, packageCount: packages.length, node: receipt.runner.node, npm: receipt.runner.npm }, null, 2)}\n`);
+          })().catch((error) => {
+            console.error(error);
+            process.exit(2);
+          });
+          NODE
+
+      - name: Upload exact dependency bridge
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-r5-exact-dependency-bridge
+          path: |
+            r5-exact-dependency-bridge/VELMERE_R5_EXACT_DEPENDENCY_BRIDGE_RECEIPT.json
+            r5-exact-dependency-bridge/node-v24.18.0-linux-x64.tar.xz
+            r5-exact-dependency-bridge/SHASUMS256.txt
+            r5-exact-dependency-bridge/node-linux-x64-sha256.txt
+            r5-exact-dependency-bridge/packages
+            r5-exact-dependency-bridge/logs
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
