@@ -1,0 +1,65 @@
+name: R44P42 Exact Multi-Version solc-js Toolchain
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p42-solc-multiversion.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-compilers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+      - name: Build exact compiler closures
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = 'v24.18.0'
+          test "$(npm --version)" = '11.16.0'
+          versions=(0.4.10 0.4.11 0.4.13 0.4.15 0.4.16 0.4.18 0.4.19 0.4.21 0.4.22 0.4.23 0.4.24 0.4.25)
+          mkdir -p r44p42-solc-multiversion/compilers r44p42-solc-multiversion/evidence
+          : > r44p42-solc-multiversion/evidence/VERSIONS.txt
+          for version in "${versions[@]}"; do
+            root="r44p42-solc-multiversion/compilers/${version}"
+            mkdir -p "$root"
+            (
+              cd "$root"
+              npm init -y >/dev/null
+              npm install --ignore-scripts --no-audit --no-fund --save-exact "solc@${version}"
+              actual=$(node -e "console.log(require('solc').version())")
+              case "$actual" in
+                "${version}"+commit.*) ;;
+                *) echo "unexpected compiler version $actual for $version" >&2; exit 1;;
+              esac
+              printf '%s\n' "$actual" > SOLC_VERSION.txt
+              npm ls --all --json > NPM_LS_ALL.json
+            )
+            printf '%s\n' "$version" >> r44p42-solc-multiversion/evidence/VERSIONS.txt
+          done
+          find r44p42-solc-multiversion/compilers -type f -print0 | sort -z | xargs -0 sha256sum \
+            > r44p42-solc-multiversion/evidence/ALL_COMPILER_FILES_SHA256SUMS.txt
+          tar --sort=name --mtime='UTC 2026-08-09 00:00:00' --owner=0 --group=0 --numeric-owner \
+            -czf r44p42-solc-multiversion/r44p42-solc-js-multiversion-linux-x64.tar.gz \
+            -C r44p42-solc-multiversion compilers evidence
+          sha256sum r44p42-solc-multiversion/r44p42-solc-js-multiversion-linux-x64.tar.gz \
+            > r44p42-solc-multiversion/evidence/TOOLCHAIN_ARCHIVE_SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p42-solc-js-multiversion-linux-x64
+          path: |
+            r44p42-solc-multiversion/r44p42-solc-js-multiversion-linux-x64.tar.gz
+            r44p42-solc-multiversion/evidence
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

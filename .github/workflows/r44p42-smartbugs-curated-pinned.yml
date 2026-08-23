@@ -1,0 +1,153 @@
+name: R44P42 Pinned SmartBugs Curated 69-Case Corpus
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p42-smartbugs-curated-pinned.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package-corpus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SMARTBUGS_COMMIT: '230e649123477eff332742a59a1c7cc6dc286cab'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Freeze upstream corpus and build manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/smartbugs/smartbugs-curated.git r44p42-smartbugs-upstream
+          git -C r44p42-smartbugs-upstream fetch --depth=1 origin "$SMARTBUGS_COMMIT"
+          git -C r44p42-smartbugs-upstream checkout --detach "$SMARTBUGS_COMMIT"
+          test "$(git -C r44p42-smartbugs-upstream rev-parse HEAD)" = "$SMARTBUGS_COMMIT"
+
+          mkdir -p r44p42-smartbugs-corpus/sources r44p42-smartbugs-corpus/evidence
+          cp r44p42-smartbugs-upstream/ICSE2020_curated_69.txt r44p42-smartbugs-corpus/
+          cp r44p42-smartbugs-upstream/vulnerabilities.json r44p42-smartbugs-corpus/
+          cp r44p42-smartbugs-upstream/versions.csv r44p42-smartbugs-corpus/
+          cp r44p42-smartbugs-upstream/LICENSE r44p42-smartbugs-corpus/SMARTBUGS_DATASET_LICENSE
+          cp r44p42-smartbugs-upstream/README.md r44p42-smartbugs-corpus/SMARTBUGS_README.md
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import csv, hashlib, json, re, shutil
+
+          upstream = Path('r44p42-smartbugs-upstream')
+          out = Path('r44p42-smartbugs-corpus')
+          selection = []
+          for line in (upstream/'ICSE2020_curated_69.txt').read_text().splitlines():
+              line = line.strip()
+              if not line.startswith('./dataset/'):
+                  continue
+              original = line
+              moved = re.search(r'\[MOVED TO:\s*([^\]]+)\]', line)
+              effective = moved.group(1).strip() if moved else line.split(' [', 1)[0]
+              selection.append({'selectionLine': original, 'effectivePath': effective})
+
+          vulnerabilities = json.loads((upstream/'vulnerabilities.json').read_text())
+          version_rows = {}
+          with (upstream/'versions.csv').open(newline='') as handle:
+              rows_raw = list(csv.reader(handle))
+          if rows_raw:
+              header = rows_raw[0]
+              for raw in rows_raw[1:]:
+                  if not raw:
+                      continue
+                  row = dict(zip(header, raw))
+                  key = row.get('file') or row.get('path') or row.get('contract') or raw[0]
+                  version_rows[str(key).replace('\\','/').lstrip('./')] = row
+
+          def sha256(data: bytes) -> str:
+              return hashlib.sha256(data).hexdigest()
+
+          vuln_by_name = {}
+          if isinstance(vulnerabilities, list):
+              for row in vulnerabilities:
+                  if isinstance(row, dict):
+                      key = row.get('path') or row.get('file') or row.get('name')
+                      if key:
+                          vuln_by_name[str(key).replace('\\','/').lstrip('./')] = row
+          elif isinstance(vulnerabilities, dict):
+              for key, value in vulnerabilities.items():
+                  vuln_by_name[str(key).replace('\\','/').lstrip('./')] = value
+
+          rows = []
+          missing = []
+          for item in selection:
+              raw = item['selectionLine']
+              rel = item['effectivePath'].replace('\\','/').lstrip('./')
+              candidates = [upstream/rel, upstream/'dataset'/rel]
+              src = next((p for p in candidates if p.is_file()), None)
+              if src is None:
+                  matches = list((upstream/'dataset').rglob(Path(rel).name))
+                  src = matches[0] if len(matches) == 1 else None
+              if src is None:
+                  missing.append(rel)
+                  continue
+              canonical_rel = src.relative_to(upstream).as_posix()
+              target = out/'sources'/canonical_rel
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(src, target)
+              data = src.read_bytes()
+              text = data.decode('utf-8', errors='replace')
+              pragma = re.search(r'pragma\s+solidity\s+([^;]+);', text)
+              annotations = sorted(set(re.findall(r'<yes>\s*<report>\s*([A-Z0-9_]+)', text)))
+              lookup_keys = [canonical_rel, rel, Path(rel).name]
+              vuln = next((vuln_by_name.get(key) for key in lookup_keys if vuln_by_name.get(key) is not None), None)
+              version = next((version_rows.get(key) for key in lookup_keys if version_rows.get(key) is not None), None)
+              rows.append({
+                  'selectionLine': raw,
+                  'sourcePath': canonical_rel,
+                  'byteLength': len(data),
+                  'sha256': sha256(data),
+                  'pragma': pragma.group(1).strip() if pragma else None,
+                  'annotations': annotations,
+                  'vulnerabilityMetadata': vuln,
+                  'versionMetadata': version,
+              })
+
+          if missing or len(rows) != 69:
+              raise SystemExit(f'corpus mismatch: selection={len(selection)} rows={len(rows)} missing={missing}')
+
+          manifest = {
+              'schemaVersion': 'velmere.r44p42.smartbugs-curated-corpus.v1',
+              'repository': 'smartbugs/smartbugs-curated',
+              'commit': '230e649123477eff332742a59a1c7cc6dc286cab',
+              'selection': 'ICSE2020_curated_69.txt',
+              'cases': len(rows),
+              'rows': sorted(rows, key=lambda r: r['sourcePath'].encode('utf-8')),
+              'licenseBoundary': 'Dataset metadata is Apache-2.0; individual contracts retain source-specific licenses. This temporary artifact is for local evaluation and is not approved for redistribution in Velmere customer materials.',
+              'customerCredit': False,
+              'saleCredit': False,
+              'liveCredit': False,
+          }
+          payload = json.dumps(manifest, sort_keys=True, separators=(',',':')).encode() + b'\n'
+          (out/'SMARTBUGS_69_MANIFEST.json').write_bytes(payload)
+          (out/'evidence'/'UPSTREAM_COMMIT.txt').write_text(manifest['commit']+'\n')
+          (out/'evidence'/'SOURCE_COUNT.txt').write_text(str(len(rows))+'\n')
+          (out/'evidence'/'MANIFEST_SHA256.txt').write_text(sha256(payload)+'  SMARTBUGS_69_MANIFEST.json\n')
+          PY
+
+          find r44p42-smartbugs-corpus -type f -print0 | sort -z | xargs -0 sha256sum > r44p42-smartbugs-corpus/evidence/ALL_FILES_SHA256SUMS.txt
+          tar --sort=name --mtime='UTC 2026-08-09 00:00:00' --owner=0 --group=0 --numeric-owner \
+            -czf r44p42-smartbugs-curated-69-pinned.tar.gz r44p42-smartbugs-corpus
+          sha256sum r44p42-smartbugs-curated-69-pinned.tar.gz > R44P42_CORPUS_ARCHIVE_SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p42-smartbugs-curated-69-pinned
+          path: |
+            r44p42-smartbugs-curated-69-pinned.tar.gz
+            R44P42_CORPUS_ARCHIVE_SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
