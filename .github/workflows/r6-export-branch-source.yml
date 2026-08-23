@@ -8,14 +8,17 @@ on:
       - '.github/workflows/r6-export-branch-source.yml'
       - 'r6-runtime/r6-blob-probe.sh'
       - 'r6-runtime/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv.xz.b64.part-*'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/r6-export-branch-source.yml'
+      - 'r6-runtime/r6-blob-probe.sh'
+      - 'r6-runtime/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv.xz.b64.part-*'
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: r6-blob-availability-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   probe:
@@ -28,9 +31,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Probe R6 changed Git blobs
+      - name: Probe exact R6 Git object availability
         shell: bash
-        run: bash r6-runtime/R6-blob-probe.sh
+        run: bash r6-runtime/r6-blob-probe.sh
 
       - name: Upload R6 blob availability evidence
         if: always()
