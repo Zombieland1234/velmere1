@@ -1,0 +1,74 @@
+name: P42 Exact NPM Cache Export
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/p42-exact-npm-cache-export.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - name: Checkout dependency bridge
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Assert exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Execute exact dependency closure and npm-cache export
+        shell: pwsh
+        run: node p41-runtime/run-p41-wrapper.mjs
+
+      - name: Write cache export receipt
+        if: always()
+        shell: pwsh
+        run: |
+          $cache = 'p41-out/npm-cache'
+          if (-not (Test-Path $cache)) { throw 'npm cache missing' }
+          $files = Get-ChildItem -Path $cache -Recurse -File
+          $bytes = ($files | Measure-Object Length -Sum).Sum
+          $receipt = [ordered]@{
+            schema = 'velmere.p42.exact-npm-cache-export.v1'
+            generatedAt = (Get-Date).ToUniversalTime().ToString('o')
+            nodeVersion = (node --version).Trim()
+            npmVersion = (npm --version).Trim()
+            packageJsonSha256 = '04aa4b393337fffa6e02ef54ad7668fe8136b038b0d924b208158a095b6f70a5'
+            packageLockSha256 = 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
+            fileCount = $files.Count
+            byteLength = [int64]$bytes
+            source = 'P41 exact Windows online/offline npm ci cache'
+          }
+          $receipt | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 p41-out/P42_EXACT_NPM_CACHE_EXPORT_RECEIPT.json
+
+      - name: Upload exact npm cache only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p42-exact-npm-cache-only
+          path: |
+            p41-out/P42_EXACT_NPM_CACHE_EXPORT_RECEIPT.json
+            p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json
+            p41-out/npm-cache
+            p41-out/project/package.json
+            p41-out/project/package-lock.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
