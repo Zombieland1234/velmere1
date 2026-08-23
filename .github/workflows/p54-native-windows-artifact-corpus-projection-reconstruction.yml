@@ -1,0 +1,445 @@
+name: P54 Native Windows Artifact-Corpus Projection Reconstruction
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p54-native-windows-artifact-corpus-projection-reconstruction.yml'
+
+concurrency:
+  group: p54-native-windows-artifact-corpus-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  reconstruct-and-build:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      TARGET_FILE_COUNT: '1597'
+      TARGET_PAYLOAD_BYTES: '20952834'
+      TARGET_PATH_SET_SHA256: 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73'
+      TARGET_CONTENT_AGGREGATE_SHA256: '83fd00183e9d8a6c5ec1c27dba81ab99679e204b50e8f45f414a45abd2bd21b7'
+    steps:
+      - name: Checkout control branch with full reachable history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Bind exact npm 11.16.0
+        id: toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $node = (node --version).Trim()
+          $npm = (npm --version).Trim()
+          if ($node -ne 'v24.18.0') { throw "Exact Node mismatch: $node" }
+          if ($npm -ne '11.16.0') { throw "Exact npm mismatch: $npm" }
+          $npmRoot = (npm root --global).Trim()
+          $npmCli = (Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Materialize exact P46 projection manifest transport
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -c "from pathlib import Path; import hashlib; root=Path('p50-existing-branch/manifest-parts'); p3=(root/'part-03.b64').read_bytes()[:9201]+(root/'part-03-suffix-from-9201.b64').read_bytes(); p56=bytearray((root/'part-05-06.b64').read_bytes()); assert len(p56)==20000; p56[17052]=105; chunks=[(root/'part-00.b64').read_bytes(),(root/'part-01-02.b64').read_bytes(),p3,(root/'part-04.b64').read_bytes()[:10000],bytes(p56),(root/'part-07-08.b64').read_bytes(),(root/'part-09.b64').read_bytes()]; data=b''.join(chunks); assert len(data)==99080, len(data); digest=hashlib.sha256(data).hexdigest(); assert digest=='b8a5b2770d17b894b5622c595a364c55fb2b14eb634b85c82a75b0fa1c3f7806', digest; Path('P54_TARGET_MANIFEST.tsv.xz.b64').write_bytes(data)"
+
+      - name: Download bounded source-corpus artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p54-artifacts | Out-Null
+          $ids = @(
+            9244498847,
+            9243844560,
+            9241088047,
+            9247359383,
+            9247242322,
+            9215504066,
+            9217803514,
+            9225444344,
+            9236169616
+          )
+          foreach ($id in $ids) {
+            $out = "p54-artifacts/$id.zip"
+            $uri = "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$id/zip"
+            Invoke-WebRequest -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' } -Uri $uri -OutFile $out
+            if (-not (Test-Path -LiteralPath $out -PathType Leaf)) { throw "Artifact download missing: $id" }
+          }
+
+      - name: Mine all reachable bytes and reconstruct exact projection
+        id: reconstruct
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p54-out,p54-pool,p54-source | Out-Null
+          @'
+          from __future__ import annotations
+          import base64, csv, hashlib, io, json, lzma, os, pathlib, shutil, subprocess, sys, tarfile, zipfile
+          from collections import defaultdict
+
+          ROOT = pathlib.Path.cwd()
+          ART = ROOT / 'p54-artifacts'
+          POOL = ROOT / 'p54-pool'
+          OUT = ROOT / 'p54-out'
+          TARGET = ROOT / 'p54-source'
+          EXPECTED_COUNT = 1597
+          EXPECTED_BYTES = 20952834
+          MAX_UNPACK_ROUNDS = 4
+
+          def sha256(data: bytes) -> str:
+              return hashlib.sha256(data).hexdigest()
+
+          def write_json(path: pathlib.Path, value) -> None:
+              path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          def safe_join(root: pathlib.Path, name: str) -> pathlib.Path:
+              name = name.replace('\\', '/')
+              if name.startswith('/') or '..' in pathlib.PurePosixPath(name).parts:
+                  raise ValueError(f'unsafe archive path: {name}')
+              return root / pathlib.PurePosixPath(name)
+
+          def unpack_zip(src: pathlib.Path, dest: pathlib.Path) -> bool:
+              try:
+                  with zipfile.ZipFile(src) as z:
+                      for info in z.infolist():
+                          if info.is_dir():
+                              continue
+                          target = safe_join(dest, info.filename)
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          with z.open(info) as r, target.open('wb') as w:
+                              shutil.copyfileobj(r, w)
+                  return True
+              except Exception:
+                  return False
+
+          def unpack_tar(src: pathlib.Path, dest: pathlib.Path) -> bool:
+              try:
+                  with tarfile.open(src, mode='r:*') as t:
+                      for member in t.getmembers():
+                          if not member.isfile():
+                              continue
+                          target = safe_join(dest, member.name)
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          r = t.extractfile(member)
+                          if r is None:
+                              continue
+                          with r, target.open('wb') as w:
+                              shutil.copyfileobj(r, w)
+                  return True
+              except Exception:
+                  return False
+
+          # Outer artifact ZIPs.
+          for archive in sorted(ART.glob('*.zip')):
+              dest = POOL / archive.stem
+              dest.mkdir(parents=True, exist_ok=True)
+              if not unpack_zip(archive, dest):
+                  raise RuntimeError(f'cannot unpack downloaded artifact: {archive}')
+
+          # Recursively open nested ZIP/TAR/XZ source transports. Preserve originals.
+          seen = set()
+          for round_no in range(MAX_UNPACK_ROUNDS):
+              changed = False
+              for src in sorted(p for p in POOL.rglob('*') if p.is_file()):
+                  key = (str(src), src.stat().st_size)
+                  if key in seen:
+                      continue
+                  seen.add(key)
+                  suffix = ''.join(src.suffixes).lower()
+                  dest = src.parent / (src.name + '.unpacked')
+                  ok = False
+                  if suffix.endswith('.zip'):
+                      dest.mkdir(parents=True, exist_ok=True)
+                      ok = unpack_zip(src, dest)
+                  elif any(suffix.endswith(x) for x in ('.tar', '.tar.xz', '.txz', '.tar.gz', '.tgz')):
+                      dest.mkdir(parents=True, exist_ok=True)
+                      ok = unpack_tar(src, dest)
+                  elif suffix.endswith('.xz') and not suffix.endswith('.tar.xz'):
+                      try:
+                          data = lzma.decompress(src.read_bytes())
+                          dest.parent.mkdir(parents=True, exist_ok=True)
+                          dest.write_bytes(data)
+                          ok = True
+                      except Exception:
+                          ok = False
+                  if ok:
+                      changed = True
+              if not changed:
+                  break
+
+          manifest_b64 = (ROOT / 'P54_TARGET_MANIFEST.tsv.xz.b64').read_bytes()
+          manifest_xz = base64.b64decode(manifest_b64, validate=True)
+          manifest_tsv = lzma.decompress(manifest_xz)
+          (OUT / 'P54_TARGET_MANIFEST.tsv').write_bytes(manifest_tsv)
+
+          rows = []
+          for raw in manifest_tsv.decode('utf-8').splitlines():
+              if not raw.strip():
+                  continue
+              fields = raw.split('\t')
+              digest = next((f.lower() for f in fields if len(f) == 64 and all(c in '0123456789abcdefABCDEF' for c in f)), None)
+              number = next((int(f) for f in fields if f.isdigit()), None)
+              path_field = next((f for f in fields if '/' in f or f.startswith('.')), fields[0] if fields else None)
+              if digest and number is not None and path_field:
+                  rows.append({'path': path_field.replace('\\', '/'), 'byteLength': number, 'sha256': digest})
+          # Header heuristics can produce no false row because it lacks 64-hex digest.
+          if len(rows) != EXPECTED_COUNT:
+              raise RuntimeError(f'manifest row count mismatch: {len(rows)}')
+          if sum(r['byteLength'] for r in rows) != EXPECTED_BYTES:
+              raise RuntimeError('manifest payload-byte mismatch')
+
+          wanted = {r['sha256'] for r in rows}
+          by_hash: dict[str, pathlib.Path] = {}
+          path_candidates: dict[str, list[pathlib.Path]] = defaultdict(list)
+          scanned_files = 0
+          scanned_bytes = 0
+
+          def consider(path: pathlib.Path, logical_path: str | None = None) -> None:
+              nonlocal scanned_files, scanned_bytes
+              try:
+                  if not path.is_file() or path.stat().st_size > 250_000_000:
+                      return
+                  data = path.read_bytes()
+              except Exception:
+                  return
+              scanned_files += 1
+              scanned_bytes += len(data)
+              digest = sha256(data)
+              if digest in wanted and digest not in by_hash:
+                  by_hash[digest] = path
+              rels = []
+              if logical_path:
+                  rels.append(logical_path.replace('\\', '/'))
+              try:
+                  rels.append(path.relative_to(POOL).as_posix())
+              except Exception:
+                  pass
+              for rel in rels:
+                  for row in rows:
+                      if rel == row['path'] or rel.endswith('/' + row['path']):
+                          path_candidates[row['path']].append(path)
+
+          for p in sorted(x for x in POOL.rglob('*') if x.is_file()):
+              consider(p)
+          for p in sorted(x for x in ROOT.rglob('*') if x.is_file() and '.git' not in x.parts and not str(x).startswith(str(POOL)) and not str(x).startswith(str(TARGET)) and not str(x).startswith(str(OUT))):
+              try:
+                  rel = p.relative_to(ROOT).as_posix()
+              except Exception:
+                  rel = None
+              consider(p, rel)
+
+          # Mine every Git blob reachable from checkout and every downloaded bundle.
+          git_repos = [ROOT]
+          for bundle in sorted(POOL.rglob('*.bundle')):
+              repo = bundle.parent / (bundle.stem + '.gitrepo')
+              if repo.exists():
+                  shutil.rmtree(repo)
+              subprocess.run(['git', 'clone', '--mirror', str(bundle), str(repo)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+              if repo.exists():
+                  git_repos.append(repo)
+          git_blob_count = 0
+          for repo in git_repos:
+              try:
+                  revs = subprocess.check_output(['git', '-C', str(repo), 'rev-list', '--objects', '--all'], text=True, errors='replace')
+              except Exception:
+                  continue
+              object_ids = []
+              for line in revs.splitlines():
+                  oid = line.split(' ', 1)[0].strip()
+                  if oid:
+                      object_ids.append(oid)
+              seen_oids = set()
+              for oid in object_ids:
+                  if oid in seen_oids:
+                      continue
+                  seen_oids.add(oid)
+                  try:
+                      typ = subprocess.check_output(['git', '-C', str(repo), 'cat-file', '-t', oid], text=True, stderr=subprocess.DEVNULL).strip()
+                      if typ != 'blob':
+                          continue
+                      size = int(subprocess.check_output(['git', '-C', str(repo), 'cat-file', '-s', oid], text=True, stderr=subprocess.DEVNULL).strip())
+                      if size > 250_000_000:
+                          continue
+                      data = subprocess.check_output(['git', '-C', str(repo), 'cat-file', 'blob', oid], stderr=subprocess.DEVNULL)
+                  except Exception:
+                      continue
+                  git_blob_count += 1
+                  digest = sha256(data)
+                  if digest in wanted and digest not in by_hash:
+                      cache = OUT / 'git-blobs' / digest
+                      cache.parent.mkdir(parents=True, exist_ok=True)
+                      cache.write_bytes(data)
+                      by_hash[digest] = cache
+
+          resolved = []
+          missing = []
+          for row in rows:
+              src = None
+              for candidate in path_candidates.get(row['path'], []):
+                  try:
+                      if candidate.stat().st_size == row['byteLength'] and sha256(candidate.read_bytes()) == row['sha256']:
+                          src = candidate
+                          break
+                  except Exception:
+                      pass
+              if src is None:
+                  src = by_hash.get(row['sha256'])
+              if src is None:
+                  missing.append(row)
+                  continue
+              data = src.read_bytes()
+              if len(data) != row['byteLength'] or sha256(data) != row['sha256']:
+                  missing.append(row)
+                  continue
+              dest = safe_join(TARGET, row['path'])
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(data)
+              resolved.append({**row, 'source': str(src.relative_to(ROOT)) if src.is_relative_to(ROOT) else str(src)})
+
+          receipt = {
+              'schemaVersion': 'velmere.p54.native-windows-artifact-corpus-projection-reconstruction.v1',
+              'status': 'PASS' if not missing else 'FAIL',
+              'classification': 'EXACT_P46_BUILD_RELEVANT_PROJECTION_FROM_REACHABLE_GIT_AND_ARTIFACT_CORPUS',
+              'expected': {'fileCount': EXPECTED_COUNT, 'payloadBytes': EXPECTED_BYTES},
+              'actual': {
+                  'resolvedFileCount': len(resolved),
+                  'resolvedPayloadBytes': sum(r['byteLength'] for r in resolved),
+                  'missingFileCount': len(missing),
+                  'scannedRegularFileCount': scanned_files,
+                  'scannedRegularBytes': scanned_bytes,
+                  'scannedGitBlobCount': git_blob_count,
+              },
+              'missing': missing,
+              'resolved': resolved,
+              'truthBoundary': 'PASS may credit only exact reconstruction of the 1597-file P46 build-relevant projection. Full 6666-file source, Browser, PDF, customer outputs, provider rights, value and sale remain excluded.',
+          }
+          core = json.dumps(receipt, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = sha256(core)
+          write_json(OUT / 'P54_PROJECTION_RECONSTRUCTION_RECEIPT.json', receipt)
+          (OUT / 'P54_MISSING_SHA256.txt').write_text('\n'.join(r['sha256'] + '\t' + str(r['byteLength']) + '\t' + r['path'] for r in missing) + ('\n' if missing else ''), encoding='utf-8')
+          print(json.dumps(receipt['actual'], indent=2))
+          if missing:
+              sys.exit(2)
+          '@ | Set-Content -LiteralPath p54-reconstruct.py -Encoding utf8
+          python p54-reconstruct.py
+
+      - name: Verify reconstructed projection with canonical P50 verifier
+        if: steps.reconstruct.outcome == 'success'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p50-existing-branch/reconstruct-p50-existing-branch-projection.py `
+            --checkout-root p54-source `
+            --manifest-b64 P54_TARGET_MANIFEST.tsv.xz.b64 `
+            --meta p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_META.json `
+            --output-root p54-verified-source `
+            --receipt p54-out/P54_CANONICAL_PROJECTION_VERIFICATION_RECEIPT.json
+          if ($LASTEXITCODE -ne 0) { throw "Canonical projection verification failed: $LASTEXITCODE" }
+
+      - name: Native Windows clean install, semantic checks and dual build
+        id: build
+        if: steps.reconstruct.outcome == 'success'
+        shell: pwsh
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          CI: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = (Resolve-Path -LiteralPath p54-verified-source).Path
+          $npmCli = '${{ steps.toolchain.outputs.npm_cli }}'
+          $receipt = [ordered]@{
+            schemaVersion = 'velmere.p54.native-windows-exact-projection-build.v1'
+            runtime = [ordered]@{ node = (node --version).Trim(); npm = (npm --version).Trim(); os = [Environment]::OSVersion.VersionString; image = $env:ImageOS }
+            stages = [ordered]@{}
+            status = 'FAIL'
+            truthBoundary = 'This receipt can credit only native Windows install, semantic checks and dual Next.js build on the exact 1597-file P46 build-relevant projection.'
+          }
+          function Invoke-Stage([string]$Name, [scriptblock]$Command) {
+            $started = [DateTime]::UtcNow.ToString('o')
+            $log = "p54-out/$Name.log"
+            try {
+              & $Command *>&1 | Tee-Object -FilePath $log
+              $code = $LASTEXITCODE
+              if ($null -eq $code) { $code = 0 }
+            } catch {
+              $_ | Out-String | Add-Content -LiteralPath $log
+              $code = 1
+            }
+            $receipt.stages[$Name] = [ordered]@{ exitCode = $code; startedAtUtc = $started; endedAtUtc = [DateTime]::UtcNow.ToString('o'); log = $log }
+            $receipt | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath p54-out/P54_NATIVE_WINDOWS_EXACT_PROJECTION_BUILD_RECEIPT.json -Encoding utf8
+            if ($code -ne 0) { throw "Stage failed: $Name ($code)" }
+          }
+          Push-Location $source
+          try {
+            Invoke-Stage 'npm-ci' { node $npmCli ci --ignore-scripts --audit=false --fund=false }
+            Invoke-Stage 'typescript' { node node_modules/typescript/bin/tsc --noEmit }
+            Invoke-Stage 'eslint' { node node_modules/eslint/bin/eslint.js . }
+            if (Test-Path -LiteralPath .next) { Remove-Item -Recurse -Force .next }
+            Invoke-Stage 'next-webpack' { node node_modules/next/dist/bin/next build --webpack }
+            if (Test-Path -LiteralPath .next) { Remove-Item -Recurse -Force .next }
+            Invoke-Stage 'next-turbopack' { node node_modules/next/dist/bin/next build --turbopack }
+            $receipt.status = 'PASS'
+          } finally {
+            Pop-Location
+            $receipt | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath p54-out/P54_NATIVE_WINDOWS_EXACT_PROJECTION_BUILD_RECEIPT.json -Encoding utf8
+          }
+
+      - name: Emit fail-closed P54 adjudication
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          New-Item -ItemType Directory -Force p54-out | Out-Null
+          $reconstruction = $null
+          $build = $null
+          if (Test-Path p54-out/P54_PROJECTION_RECONSTRUCTION_RECEIPT.json) { $reconstruction = Get-Content p54-out/P54_PROJECTION_RECONSTRUCTION_RECEIPT.json -Raw | ConvertFrom-Json }
+          if (Test-Path p54-out/P54_NATIVE_WINDOWS_EXACT_PROJECTION_BUILD_RECEIPT.json) { $build = Get-Content p54-out/P54_NATIVE_WINDOWS_EXACT_PROJECTION_BUILD_RECEIPT.json -Raw | ConvertFrom-Json }
+          $projectionPass = ($null -ne $reconstruction -and $reconstruction.status -eq 'PASS')
+          $buildPass = ($null -ne $build -and $build.status -eq 'PASS')
+          $decision = if ($projectionPass -and $buildPass) { 'PASS_EXACT_P46_BUILD_RELEVANT_PROJECTION_NATIVE_WINDOWS_DUAL_BUILD' } elseif (-not $projectionPass) { 'FAIL_EXACT_PROJECTION_BYTES_STILL_MISSING_FROM_REACHABLE_CORPUS' } else { 'FAIL_NATIVE_WINDOWS_BUILD_STAGE' }
+          $adjudication = [ordered]@{
+            schemaVersion = 'velmere.p54.fail-closed-adjudication.v1'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            sha = '${{ github.sha }}'
+            ref = '${{ github.ref }}'
+            projectionPass = $projectionPass
+            buildPass = $buildPass
+            decision = $decision
+            credit = if ($projectionPass -and $buildPass) { 'P46_BUILD_RELEVANT_WINDOWS_CREDIT_ONLY' } else { 'WITHHELD' }
+            frozen = [ordered]@{ fullP46Source = '0/1'; browser = '0/3'; pdfReplay = '0/1'; customerOutputs = '0/17'; providerRights = '0/176'; materialDeltas = '0/6'; saleEligible = '0/17'; global = 'NO_GO' }
+            truthBoundary = 'No Browser, PDF, customer-output, provider-rights, material-value, sale, production or world-class credit is granted by this pass.'
+            timestampUtc = [DateTime]::UtcNow.ToString('o')
+          }
+          $adjudication | ConvertTo-Json -Depth 12 | Set-Content p54-out/P54_FAIL_CLOSED_ADJUDICATION.json -Encoding utf8
+          if (-not ($projectionPass -and $buildPass)) { Write-Error $decision }
+
+      - name: Upload P54 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p54-native-windows-artifact-corpus-projection-reconstruction
+          path: |
+            p54-out
+            P54_TARGET_MANIFEST.tsv.xz.b64
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

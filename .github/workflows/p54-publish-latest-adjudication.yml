@@ -1,0 +1,138 @@
+name: P54 Publish Latest Adjudication
+
+on:
+  workflow_run:
+    workflows:
+      - P54 Native Windows Artifact-Corpus Projection Reconstruction
+    types:
+      - completed
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p54-publish-latest-adjudication.yml'
+
+concurrency:
+  group: p54-publish-latest-adjudication
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Resolve source P54 run
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_run" && -n "${EVENT_RUN_ID:-}" ]]; then
+            run_id="$EVENT_RUN_ID"
+          else
+            payload="$(curl -fsSL \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              'https://api.github.com/repos/${{ github.repository }}/actions/workflows/p54-native-windows-artifact-corpus-projection-reconstruction.yml/runs?branch=velmere-p47-p46-build-projection-windows-20260815&per_page=20')"
+            run_id="$(python -c 'import json,sys; d=json.load(sys.stdin); rows=[r for r in d.get("workflow_runs",[]) if r.get("status")=="completed"]; print(rows[0]["id"] if rows else "")' <<<"$payload")"
+          fi
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download source evidence artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.source.outputs.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source-artifact extracted publish
+          artifacts="$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID/artifacts?per_page=100")"
+          artifact_id="$(python -c 'import json,sys; d=json.load(sys.stdin); rows=[a for a in d.get("artifacts",[]) if a.get("name")=="p54-native-windows-artifact-corpus-projection-reconstruction" and not a.get("expired")]; print(rows[0]["id"] if rows else "")' <<<"$artifacts")"
+          test -n "$artifact_id"
+          curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$artifact_id/zip" \
+            -o source-artifact/p54.zip
+          unzip -q source-artifact/p54.zip -d extracted
+          find extracted -maxdepth 4 -type f -print
+          for name in \
+            P54_FAIL_CLOSED_ADJUDICATION.json \
+            P54_PROJECTION_RECONSTRUCTION_RECEIPT.json \
+            P54_CANONICAL_PROJECTION_VERIFICATION_RECEIPT.json \
+            P54_NATIVE_WINDOWS_EXACT_PROJECTION_BUILD_RECEIPT.json \
+            P54_MISSING_SHA256.txt; do
+            found="$(find extracted -type f -name "$name" -print -quit)"
+            if [[ -n "$found" ]]; then cp "$found" "publish/$name"; fi
+          done
+          python - <<'PY'
+          import hashlib, json, os, pathlib, urllib.request
+          root = pathlib.Path('publish')
+          run_id = os.environ['RUN_ID']
+          req = urllib.request.Request(
+              f'https://api.github.com/repos/${{ github.repository }}/actions/runs/{run_id}',
+              headers={'Authorization': f'Bearer {os.environ["GH_TOKEN"]}', 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'},
+          )
+          with urllib.request.urlopen(req) as r:
+              run = json.load(r)
+          files = []
+          for p in sorted(root.glob('*')):
+              if p.is_file():
+                  b = p.read_bytes()
+                  files.append({'name':p.name,'byteLength':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          summary = {
+              'schemaVersion':'velmere.p54.published-result-index.v1',
+              'sourceRun':{'id':run.get('id'),'status':run.get('status'),'conclusion':run.get('conclusion'),'headSha':run.get('head_sha'),'runStartedAt':run.get('run_started_at'),'updatedAt':run.get('updated_at')},
+              'files':files,
+              'truthBoundary':'Published evidence only. It does not independently grant Browser, PDF, customer-output, rights, value, sale, production or world-class credit.',
+          }
+          core=json.dumps(summary,sort_keys=True,separators=(',',':')).encode()
+          summary['integritySha256']=hashlib.sha256(core).hexdigest()
+          (root/'P54_PUBLISHED_RESULT_INDEX.json').write_text(json.dumps(summary,indent=2)+'\n')
+          PY
+
+      - name: Publish bounded receipts to branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: velmere-p47-p46-build-projection-windows-20260815
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64, json, os, pathlib, urllib.error, urllib.request
+          repo='${{ github.repository }}'
+          branch=os.environ['BRANCH']
+          token=os.environ['GH_TOKEN']
+          headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'}
+          for p in sorted(pathlib.Path('publish').glob('*')):
+              if not p.is_file(): continue
+              remote=f'p54-results/latest/{p.name}'
+              api=f'https://api.github.com/repos/{repo}/contents/{remote}'
+              sha=None
+              try:
+                  req=urllib.request.Request(api+'?ref='+branch,headers=headers)
+                  with urllib.request.urlopen(req) as r: sha=json.load(r).get('sha')
+              except urllib.error.HTTPError as e:
+                  if e.code != 404: raise
+              body={'message':f'P54: publish latest receipt {p.name}','content':base64.b64encode(p.read_bytes()).decode(),'branch':branch}
+              if sha: body['sha']=sha
+              req=urllib.request.Request(api,data=json.dumps(body).encode(),headers=headers,method='PUT')
+              with urllib.request.urlopen(req) as r:
+                  result=json.load(r)
+                  print(remote, result.get('commit',{}).get('sha'))
+          PY

@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+git config core.autocrlf false
+git config core.eol lf
+git fetch --force --prune origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
+
+mkdir -p r6-runtime/decoded r6-probe
+cat r6-runtime/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv.xz.b64.part-* \
+  | base64 --decode \
+  | xz --decompress --stdout \
+  > r6-runtime/decoded/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv
+observed="$(sha256sum r6-runtime/decoded/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv | awk '{print $1}')"
+test "$observed" = '6f51a12150c8b422642ac0e196c48397666156f9c50143a4619ff60fe51376c6'
+test "$(wc -l < r6-runtime/decoded/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv)" = '811'
+
+python3 - <<'PY'
+import base64, hashlib, pathlib, zipfile
+parts=sorted(pathlib.Path('p75-runtime').glob('bundle.part*'))
+if len(parts)!=7:
+    raise SystemExit(f'P75 bundle part count mismatch:{len(parts)}')
+raw=base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts),validate=True)
+observed=hashlib.sha256(raw).hexdigest()
+expected='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+if observed!=expected:
+    raise SystemExit(f'P75 bundle SHA mismatch:{observed}')
+out=pathlib.Path('p75-runtime/p75-ci-bundle.zip')
+out.write_bytes(raw)
+with zipfile.ZipFile(out) as z:
+    z.extractall('p75-runtime')
+PY
+
+python3 p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+python3 p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root r6-probe
+python3 p75-runtime/apply-p75-advanced-automation-runtime.py \
+  --source-root p75-work/source \
+  --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json \
+  --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json \
+  --receipt r6-probe/P75_SOURCE_PATCH.json
+python3 p76r2-runtime/reconstruct-p76-base-apply.py \
+  --parts-dir p76-runtime \
+  --output p76-runtime/apply-p76-advanced-release-automation.py
+python3 p76-runtime/apply-p76-advanced-release-automation.py \
+  --source-root p75-work/source \
+  --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json \
+  --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json \
+  --receipt r6-probe/P76_SOURCE_PATCH.json
+python3 p76r2-runtime/apply-p76r2-typescript-repair.py \
+  --source-root p75-work/source \
+  --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json \
+  --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json \
+  --receipt r6-probe/P76R2_SOURCE_PATCH.json
+python3 p77-runtime/apply-p77-deterministic-final-delivery.py \
+  --source-root p75-work/source \
+  --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json \
+  --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json \
+  --receipt r6-probe/P77_SOURCE_PATCH.json
+
+python3 - <<'PY'
+import hashlib, json, os, pathlib, subprocess
+source=pathlib.Path('p75-work/source')
+rows=[]
+for p in sorted((p for p in source.rglob('*') if p.is_file()),key=lambda p:p.relative_to(source).as_posix().encode()):
+    rel=p.relative_to(source).as_posix(); data=p.read_bytes()
+    rows.append((rel,len(data),hashlib.sha256(data).hexdigest()))
+path_body=''.join(f'{p}\n' for p,_,_ in rows).encode()
+body=''.join(f'{p}\t{n}\t{h}\n' for p,n,h in rows).encode()
+baseline={
+    'fileCount':len(rows),
+    'totalBytes':sum(n for _,n,_ in rows),
+    'pathSetSha256':hashlib.sha256(path_body).hexdigest(),
+    'aggregateIdentitySha256':hashlib.sha256(body).hexdigest(),
+}
+expected={
+    'fileCount':1601,
+    'totalBytes':21037233,
+    'pathSetSha256':'9728cab20a7c7738f35115dc44bba4c29c3929896759d055251c68eb287434fd',
+    'aggregateIdentitySha256':'558c35a8ca49b4666d46bf6d7080ee34647d70fe2f60d6d8eaf57d75a189a53d',
+}
+if baseline!=expected:
+    raise SystemExit(f'P77 baseline identity mismatch:{baseline}')
+manifest=pathlib.Path('r6-runtime/decoded/R6_CHANGED_BLOB_MANIFEST_COMPACT.tsv')
+entries=[]
+for line in manifest.read_text(encoding='utf-8').splitlines():
+    sha,n,mode,path=line.split('\t',3)
+    entries.append({'gitBlobSha1':sha,'bytes':int(n),'mode':mode,'path':path})
+missing=[]; existing=[]
+for e in entries:
+    ok=subprocess.run(
+        ['git','cat-file','-e',f"{e['gitBlobSha1']}^{{blob}}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode==0
+    (existing if ok else missing).append(e)
+out=pathlib.Path('r6-probe'); out.mkdir(exist_ok=True)
+def write_tsv(path,items):
+    path.write_text(
+        'git_blob_sha1\tbytes\tmode\tpath\n'+
+        ''.join(f"{e['gitBlobSha1']}\t{e['bytes']}\t{e['mode']}\t{e['path']}\n" for e in items),
+        encoding='utf-8',
+    )
+write_tsv(out/'R6_EXISTING_BLOBS.tsv',existing)
+write_tsv(out/'R6_MISSING_BLOBS.tsv',missing)
+receipt={
+    'schemaVersion':'velmere.r6.git-blob-availability-probe.v1',
+    'status':'ALL_PRESENT' if not missing else 'MISSING_BLOBS',
+    'runId':os.environ.get('GITHUB_RUN_ID','local'),
+    'controlSha':os.environ.get('GITHUB_SHA','local'),
+    'p77Baseline':baseline,
+    'changedBlobManifestSha256':hashlib.sha256(manifest.read_bytes()).hexdigest(),
+    'changedEntries':len(entries),
+    'existingEntries':len(existing),
+    'missingEntries':len(missing),
+    'existingBytes':sum(e['bytes'] for e in existing),
+    'missingBytes':sum(e['bytes'] for e in missing),
+    'target':{
+        'fileCount':2261,
+        'totalBytes':30971788,
+        'pathSetSha256':'dd21304e0baa1c18e5ebe8c28c9399878eb040c0d8dc1f74823ea2b5cdcbb63c',
+        'aggregateIdentitySha256':'30875fe901f7c7d405285d584f8da0f1127cb68a677c63d253d434d7492c304c',
+    },
+    'truthBoundary':'Object availability only. No runtime, staging, Customer FINAL, paid-value, sale or LIVE credit.',
+}
+(out/'R6_BLOB_AVAILABILITY_RECEIPT.json').write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8')
+print(json.dumps(receipt,indent=2))
+PY

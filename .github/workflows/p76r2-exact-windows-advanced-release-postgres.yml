@@ -1,0 +1,171 @@
+name: P76R2 Exact Windows Automated Release + PostgreSQL
+
+on:
+  push:
+    branches:
+      - velmere-p76-advanced-release-automation-postgres-20260818
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p76r2-advanced-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p76r2-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P76R2 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 parent bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 CI bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim(); $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Exact P76R2 source engineering and regressions
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          ./p76r2-runtime/run-p76r2-exact-windows.ps1
+
+      - name: Capture P76R2 Windows boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $eng='FAIL';$static='FAIL';$release='FAIL';$r2='FAIL';$p75='FAIL';$p73='FAIL';$m=$null
+          if(Test-Path 'p76r2-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p76r2-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$eng='PASS'}}
+          if(Test-Path 'p76r2-out/P76R2_STATIC_CONTROL.json'){$x=Get-Content 'p76r2-out/P76R2_STATIC_CONTROL.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$static='PASS'}}
+          if(Test-Path 'p76r2-out/P76_RELEASE_ENVELOPE_RUNTIME.json'){$x=Get-Content 'p76r2-out/P76_RELEASE_ENVELOPE_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$release='PASS'}}
+          if(Test-Path 'p76r2-out/P76R2_RELEASE_ENVELOPE_RUNTIME.json'){$x=Get-Content 'p76r2-out/P76R2_RELEASE_ENVELOPE_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$r2='PASS'}}
+          if(Test-Path 'p76r2-out/P75_ADVANCED_MEMORY_RUNTIME.json'){$x=Get-Content 'p76r2-out/P75_ADVANCED_MEMORY_RUNTIME.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p75='PASS'}}
+          if(Test-Path 'p76r2-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'){$x=Get-Content 'p76r2-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$p73='PASS'}}
+          if(Test-Path 'p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
+          [ordered]@{schemaVersion='velmere.p76r2.windows-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';projection=if($m){$m.projection}else{$null};engineering=$eng;staticControl=$static;p76ReleaseRuntime=$release;p76r2Runtime=$r2;p75AutomationRegression=$p75;p73AuthorityRegression=$p73;customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;truthBoundary='P76R2 credits only exact engineering plus automated release-authority correctness and regressions. No customer FINAL/PDF/right/value/sale/LIVE credit.'}|ConvertTo-Json -Depth 10|Set-Content p76r2-out/P76R2_WINDOWS_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P76R2 Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p76r2-advanced-release-exact-windows
+          path: p76r2-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  p76r2-postgres-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: velmere
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d velmere"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/velmere
+    steps:
+      - name: Checkout exact P76R2 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand and verify exact P75 migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,zipfile
+          parts=sorted(Path('p75-runtime').glob('bundle.part*')); assert len(parts)==7
+          raw=base64.b64decode(''.join(p.read_text().strip() for p in parts)); assert hashlib.sha256(raw).hexdigest()=='467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'
+          Path('p75-runtime/p75-ci-bundle.zip').write_bytes(raw)
+          with zipfile.ZipFile('p75-runtime/p75-ci-bundle.zip') as z:z.extractall('p75-runtime')
+          mig=Path('p75-runtime/P75_ADVANCED_AUTOMATION_MIGRATION.sql').read_bytes(); assert hashlib.sha256(mig).hexdigest()=='fa56abf0a1dc4d72794ea916e7569f06fe5b601865fee1cd23198737a1773cc2'
+          PY
+
+      - name: Apply bootstrap and exact P75 migration to real PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f p76-runtime/P76_POSTGRES_BOOTSTRAP.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f p75-runtime/P75_ADVANCED_AUTOMATION_MIGRATION.sql
+
+      - name: Execute transaction, retry, idempotence and immutability proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p76r2-postgres-out
+          result="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -Aqt -f p76-runtime/P76_POSTGRES_RUNTIME_TEST.sql | tail -n 1)"
+          printf '%s\n' "$result" | tee p76r2-postgres-out/P76R2_POSTGRES_RUNTIME.json
+          python - <<'PY'
+          import json
+          x=json.load(open('p76r2-postgres-out/P76R2_POSTGRES_RUNTIME.json'))
+          assert x['status']=='PASS' and x['reviewState']=='completed' and x['snapshotCount']==1 and x['humanReviewRequired'] is False,x
+          assert x['historyEvents']==['automation_claimed','review_requeued','automation_claimed','automation_completed'],x
+          assert all(q=='advanced_automation' for q in x['queueLanes']),x
+          PY
+
+      - name: Capture P76R2 PostgreSQL boundary
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p p76r2-postgres-out
+          python - <<'PY'
+          import json,os
+          p='p76r2-postgres-out/P76R2_POSTGRES_RUNTIME.json';ok=False
+          if os.path.exists(p):
+            try:ok=json.load(open(p)).get('status')=='PASS'
+            except Exception:pass
+          json.dump({'schemaVersion':'velmere.p76r2.postgres-boundary.v1','status':'PASS' if ok else 'FAIL','realPostgreSQLTransactionProof':ok,'liveProductionSupabaseDeployment':False,'customerFinal':'0/20','auditFinalPdf':'0/3','rights':'2/203','paidValue':'0/10','sale':'0/20','live':False,'truthBoundary':'This proves the exact P75 SQL on PostgreSQL 16 on the same P76R2 GitHub head. It does not claim production Supabase deployment or customer/release credit.'},open('p76r2-postgres-out/P76R2_POSTGRES_BOUNDARY.json','w'),indent=2)
+          PY
+
+      - name: Upload P76R2 PostgreSQL evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p76r2-postgres-transaction-proof
+          path: p76r2-postgres-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

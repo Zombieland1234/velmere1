@@ -1,0 +1,228 @@
+name: P50 Native Windows Exact Projection With Persisted Pointer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p50-native-windows-pointer-run.yml'
+      - 'p50-existing-branch/reconstruct-p50-by-selection.py'
+      - 'p50-existing-branch/run-p47-product-windows-projection.mjs'
+      - 'p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_META.json'
+
+concurrency:
+  group: p50-native-windows-pointer-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  exact-projection-engineering:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout isolated P47 branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0 and locate CLI
+        id: toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
+          $npmRoot = (npm root --global).Trim()
+          $npmCli = (Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          if (-not (Test-Path -LiteralPath $npmCli -PathType Leaf)) { throw "npm CLI missing: $npmCli" }
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Materialize exact P46 projection source candidate
+        id: materialize
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p50-out | Out-Null
+          $commit = '2d37f3c711aaf63b7f263971fccc93c5748f654e'
+          $mode = 'UNSET'
+          $direct = $false
+          git fetch --no-tags --depth=1 origin $commit 2>&1 | Tee-Object -FilePath p50-out/01-exact-commit-fetch.log
+          if ($LASTEXITCODE -eq 0) {
+            git cat-file -e "$commit^{commit}"
+            if ($LASTEXITCODE -eq 0) {
+              New-Item -ItemType Directory -Force p50-work | Out-Null
+              git worktree add --detach p50-work/full $commit 2>&1 | Tee-Object -FilePath p50-out/02-exact-worktree.log
+              if ($LASTEXITCODE -eq 0) {
+                $observed = (git -C p50-work/full rev-parse HEAD).Trim()
+                if ($observed -eq $commit) {
+                  $direct = $true
+                  $mode = 'EXACT_P46_COMMIT_WORKTREE'
+                }
+              }
+            }
+          }
+          if (-not $direct) {
+            Write-Host 'Direct exact-commit worktree unavailable; using hash-verified three-blob overlay candidate.'
+            if (Test-Path p50-work/full) { Remove-Item -Recurse -Force p50-work/full }
+            git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*' 2>&1 | Tee-Object -FilePath p50-out/03-all-ref-fetch.log
+            if ($LASTEXITCODE -ne 0) { throw "All-ref fallback fetch failed: $LASTEXITCODE" }
+            New-Item -ItemType Directory -Force p50-work | Out-Null
+            git worktree add --detach p50-work/full HEAD 2>&1 | Tee-Object -FilePath p50-out/04-fallback-worktree.log
+            if ($LASTEXITCODE -ne 0) { throw "Fallback worktree failed: $LASTEXITCODE" }
+            python -c "from pathlib import Path; import subprocess; rows=[('4d2c2d51a2ab2cde2d293195960fded6462456e8','config/pass36/a59-build-graph-route-css-budget-recovery.json'),('3f15e90c86c315b0b934bd741be260d2c7eab797','scripts/a60-exact-final-byte-build-browser-acceptance.mjs'),('83025b8122ae726e1f23ad6ea62dab1f71ca3fb8','scripts/pass36/a79-exact-build-browser-lib.mjs')]; root=Path('p50-work/full'); [(root/p).parent.mkdir(parents=True,exist_ok=True) or (root/p).write_bytes(subprocess.check_output(['git','cat-file','blob',s])) for s,p in rows]"
+            if ($LASTEXITCODE -ne 0) { throw "Exact three-blob overlay failed: $LASTEXITCODE" }
+            $mode = 'HASH_VERIFIED_THREE_BLOB_OVERLAY_ON_CURRENT_BRANCH'
+          }
+          $materialization = [ordered]@{
+            schemaVersion = 'velmere.p50.exact-projection-materialization.v1'
+            status = 'PASS_CANDIDATE_READY_FOR_EXACT_IDENTITY_CHECK'
+            mode = $mode
+            exactP46Commit = $commit
+            branchSha = '${{ github.sha }}'
+            directExactCommitWorktree = $direct
+            overlayBlobs = @(
+              [ordered]@{ path='config/pass36/a59-build-graph-route-css-budget-recovery.json'; gitBlobSha1='4d2c2d51a2ab2cde2d293195960fded6462456e8'; expectedSha256='57a70edc4c68dcffa036d2c14deef3b7f86b764d62e745e0e1e04803f038553b' },
+              [ordered]@{ path='scripts/a60-exact-final-byte-build-browser-acceptance.mjs'; gitBlobSha1='3f15e90c86c315b0b934bd741be260d2c7eab797'; expectedSha256='f2240f4c6ab0f014a6d570045cc822fb9ae31ce56c448339acdbe7b81608fc2f' },
+              [ordered]@{ path='scripts/pass36/a79-exact-build-browser-lib.mjs'; gitBlobSha1='83025b8122ae726e1f23ad6ea62dab1f71ca3fb8'; expectedSha256='2581b18b6212f3191171e1083465bf1a5a227f391e8ee603df6979af1909bbb4' }
+            )
+            truthBoundary = 'Candidate materialization earns no source or build credit until the exact 1597-file P46 projection identity and all native-Windows engineering gates pass.'
+          }
+          $materialization | ConvertTo-Json -Depth 8 | Set-Content p50-out/P50_EXACT_PROJECTION_MATERIALIZATION_RECEIPT.json -Encoding utf8
+          "mode=$mode" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact projection by deterministic P46 selection
+        id: reconstruct
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p50-existing-branch/reconstruct-p50-by-selection.py `
+            --checkout-root p50-work/full `
+            --meta p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_META.json `
+            --output-root p50-work/source `
+            --receipt p50-out/P50_EXISTING_BRANCH_PROJECTION_RECONSTRUCTION_RECEIPT.json `
+            --rows-output p50-out/P50_OBSERVED_BRANCH_PROJECTION_ROWS.json
+          if ($LASTEXITCODE -ne 0) { throw "Exact P46 projection reconstruction failed: $LASTEXITCODE" }
+
+      - name: Execute dependency, SWC, semantic, lint and dual-build campaign
+        id: campaign
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.toolchain.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p50-existing-branch/run-p47-product-windows-projection.mjs `
+            --source-root p50-work/source `
+            --manifest p50-work/P50_RUNTIME_PROJECTION_MANIFEST.json `
+            --output-dir p50-out
+          if ($LASTEXITCODE -ne 0) { throw "Native Windows projection campaign failed: $LASTEXITCODE" }
+
+      - name: Capture workflow boundary
+        id: boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p50-out | Out-Null
+          $boundary = [ordered]@{
+            schemaVersion = 'velmere.p50.github-native-windows-workflow-boundary.v2'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            workflow = '${{ github.workflow }}'
+            ref = '${{ github.ref }}'
+            refName = '${{ github.ref_name }}'
+            branchSha = '${{ github.sha }}'
+            exactP46Commit = '2d37f3c711aaf63b7f263971fccc93c5748f654e'
+            runnerOs = '${{ runner.os }}'
+            runnerArch = '${{ runner.arch }}'
+            imageOs = $env:ImageOS
+            node = (node --version 2>$null)
+            npm = (npm --version 2>$null)
+            outcomes = [ordered]@{
+              toolchain = '${{ steps.toolchain.outcome }}'
+              materialize = '${{ steps.materialize.outcome }}'
+              reconstruct = '${{ steps.reconstruct.outcome }}'
+              campaign = '${{ steps.campaign.outcome }}'
+            }
+            materializationMode = '${{ steps.materialize.outputs.mode }}'
+            timestampUtc = [DateTime]::UtcNow.ToString('o')
+            truthBoundary = 'Credit is limited to the exact 1597-file P46 build-relevant projection. Full 6666-file P46 source, Browser, PDF, customer outputs, rights, value and sale remain excluded.'
+          }
+          $boundary | ConvertTo-Json -Depth 8 | Set-Content p50-out/P50_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P50 evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p50-native-windows-exact-p46-build-projection-${{ github.run_id }}
+          path: p50-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      - name: Persist machine-readable run pointer on branch
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $resultDir = 'p50-results/latest'
+          New-Item -ItemType Directory -Force $resultDir | Out-Null
+          $pointer = [ordered]@{
+            schemaVersion = 'velmere.p50.persisted-run-pointer.v1'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            branchShaAtStart = '${{ github.sha }}'
+            refName = '${{ github.ref_name }}'
+            artifactId = '${{ steps.upload.outputs.artifact-id }}'
+            artifactUrl = '${{ steps.upload.outputs.artifact-url }}'
+            artifactOutcome = '${{ steps.upload.outcome }}'
+            outcomes = [ordered]@{
+              toolchain = '${{ steps.toolchain.outcome }}'
+              materialize = '${{ steps.materialize.outcome }}'
+              reconstruct = '${{ steps.reconstruct.outcome }}'
+              campaign = '${{ steps.campaign.outcome }}'
+              boundary = '${{ steps.boundary.outcome }}'
+            }
+            materializationMode = '${{ steps.materialize.outputs.mode }}'
+            engineeringPass = ('${{ steps.campaign.outcome }}' -eq 'success')
+            globalStatus = 'NO_GO'
+            browserDistinctSkus = '0/3'
+            pdfIndependentReplay = '0/1'
+            saleEligible = '0/17'
+            createdAtUtc = [DateTime]::UtcNow.ToString('o')
+          }
+          $pointer | ConvertTo-Json -Depth 8 | Set-Content "$resultDir/P50_RUN_POINTER.json" -Encoding utf8
+          if (Test-Path p50-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json) {
+            Copy-Item p50-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json "$resultDir/P50_ENGINEERING_RECEIPT.json" -Force
+          }
+          if (Test-Path p50-out/P50_EXISTING_BRANCH_PROJECTION_RECONSTRUCTION_RECEIPT.json) {
+            Copy-Item p50-out/P50_EXISTING_BRANCH_PROJECTION_RECONSTRUCTION_RECEIPT.json "$resultDir/P50_RECONSTRUCTION_RECEIPT.json" -Force
+          }
+          if (Test-Path p50-out/P50_GITHUB_WORKFLOW_BOUNDARY.json) {
+            Copy-Item p50-out/P50_GITHUB_WORKFLOW_BOUNDARY.json "$resultDir/P50_WORKFLOW_BOUNDARY.json" -Force
+          }
+          git config user.name 'velmere-p50-evidence-bot'
+          git config user.email 'velmere-p50-evidence-bot@users.noreply.github.com'
+          git add p50-results/latest
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "P50: persist native Windows run ${{ github.run_id }} receipts [skip ci]"
+            git push origin "HEAD:${{ github.ref_name }}"
+          } else {
+            Write-Host 'No run-pointer delta to persist.'
+          }

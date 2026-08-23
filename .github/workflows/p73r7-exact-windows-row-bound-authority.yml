@@ -1,0 +1,130 @@
+name: P73R7 Exact Windows Row-Bound Authority
+
+on:
+  push:
+    branches:
+      - velmere-p73-audit-ancient8-ground-truth-20260817
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p73r7-exact-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p73r7-current-product:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout exact P73R7 control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Reconstruct exact P73R7 product bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          python p73-runtime/reconstruct-p73r7-exact.py --work-root p73r7-work --out-root p73r7-out
+          if ($LASTEXITCODE -ne 0) { throw 'P73R7 exact reconstruction failed' }
+          Copy-Item p73r7-work/P73R7_BUILD_PROJECTION_MANIFEST.json p73r7-out/
+
+      - name: Static row-bound lint and fail-closed invariants
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $a=Get-Content 'p73r7-work/source/lib/security/audit-adjudicated-authority-evidence.ts' -Raw
+          if($a-match'addressesNearProject'){throw 'stale proximity parser remains'}
+          if($a-notmatch'addressesBoundToProjectLabel'){throw 'row-bound parser missing'}
+          if($a-notmatch'projectBoundAddresses'){throw 'row-bound call missing'}
+          if($a-match'const ADDRESS_PATTERN'){throw 'stale unused ADDRESS_PATTERN remains'}
+          if($a-match'\[:=\\-'){throw 'unnecessary escaped hyphen remains'}
+          if($a-notmatch'raw\.githubusercontent\.com'){throw 'pinned maintainer host missing'}
+          if($a-notmatch'b667d67ecfa5361a81e8f110234ce242613b0012'){throw 'pinned maintainer commit missing'}
+          if($a-notmatch'current_runtime_bytecode_quorum_unavailable'){throw 'runtime-bytecode blocker missing'}
+          if($a-notmatch'new Set\(value\.receipts\.map\(\(item\) => item\.upstreamRoot\)\)\.size < 2'){throw 'independent authority root quorum missing'}
+
+      - name: Exact Windows TypeScript ESLint Webpack Turbopack
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.npmcli.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference='Stop'
+          function Run([string]$cmd){ Invoke-Expression $cmd; if($LASTEXITCODE-ne0){throw "failed: $cmd"} }
+          Run "python p60-runtime/build-p60-reconciled-runner.py --input p49-build-projection/run-p47-product-windows-projection.mjs --output p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P60.json"
+          Run "python p66-runtime/patch-p66-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P66.json"
+          Run "python p68-runtime/patch-p68-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P68.json"
+          Run "python p69-runtime/patch-p69-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P69.json"
+          Run "python p69-runtime/patch-p69r2-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P69R2.json"
+          Run "python p71-runtime/patch-p71-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P71.json"
+          Run "python p71-runtime/patch-p71r1-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P71R1.json"
+          Run "python p71-runtime/patch-p71r3-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P71R3.json"
+          Run "python p72-runtime/patch-p72-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P72.json"
+          Run "python p72-runtime/patch-p72r3-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P72R3.json"
+          Run "python p73-runtime/patch-p73r4-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --receipt p73r7-out/RUNNER_P73R4.json"
+          Run "python p73-runtime/patch-p73r7-reconciled-runner.py --runner p73r7-work/run-p73r7.mjs --manifest p73r7-work/P73R7_BUILD_PROJECTION_MANIFEST.json --receipt p73r7-out/RUNNER_P73R7.json"
+          Run "node --check p73r7-work/run-p73r7.mjs"
+          Run "node p73r7-work/run-p73r7.mjs --source-root p73r7-work/source --manifest p73r7-work/P73R7_BUILD_PROJECTION_MANIFEST.json --output-dir p73r7-out"
+
+      - name: Execute live full authority integration
+        shell: pwsh
+        env:
+          P73_RESULT_DIR: ${{ github.workspace }}\p73r7-out
+          P73_SOURCE_ROOT: ${{ github.workspace }}\p73r7-work\source
+          TSX_TSCONFIG_PATH: ${{ github.workspace }}\p73r7-work\source\tsconfig.json
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p73r7-work/source
+          try {
+            node ./node_modules/tsx/dist/cli.mjs ../../p73-runtime/test-p73r7-full-authority.ts | Tee-Object ../..\p73r7-out\P73R7_INTEGRATION.log
+            if($LASTEXITCODE-ne0){throw 'P73R7 full authority integration failed'}
+          } finally { Pop-Location }
+
+      - name: Capture zero-fake-credit boundary
+        if: always()
+        shell: pwsh
+        run: |
+          $eng='NOT_EXECUTED_OR_FAILED';$runtime='NOT_EXECUTED_OR_FAILED';$ground=0;$m=$null
+          if(Test-Path 'p73r7-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json'){$x=Get-Content 'p73r7-out/P47_EXACT_WINDOWS_BUILD_RELEVANT_PROJECTION_RECEIPT.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$eng='PASS'}}
+          if(Test-Path 'p73r7-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json'){$x=Get-Content 'p73r7-out/P73R7_FULL_AUTHORITY_INTEGRATION_TEST.json' -Raw|ConvertFrom-Json;if($x.status-eq'PASS'){$runtime='PASS';$ground=1}}
+          if(Test-Path 'p73r7-work/P73R7_BUILD_PROJECTION_MANIFEST.json'){$m=Get-Content 'p73r7-work/P73R7_BUILD_PROJECTION_MANIFEST.json' -Raw|ConvertFrom-Json}
+          [ordered]@{
+            schemaVersion='velmere.p73r7.github-boundary.v1';runId='${{ github.run_id }}';sha='${{ github.sha }}';
+            projectionFileCount=if($m){$m.projection.fileCount}else{0};projectionPayloadBytes=if($m){$m.projection.payloadBytes}else{0};projectionPathSetSha256=if($m){$m.projection.pathSetSha256}else{$null};projectionAggregateSha256=if($m){$m.projection.sourceContentAggregateSha256}else{$null};
+            engineering=$eng;authorityIntegration=$runtime;deploymentGroundTruthCases=$ground;currentRuntimeBytecodeCases=0;vulnerabilityGroundTruthCases=0;
+            customerFinal='0/20';auditFinalPdf='0/3';rights='2/203';paidValue='0/10';sale='0/20';live=$false;worldClassProven=$false;
+            truthBoundary='One deployment-identity authority case is credited only if both exact engineering and the live full integration receipt pass. Current runtime bytecode remains unverified, vulnerability/exploitability ground truth remains zero, and no customer FINAL/PDF/rights/value/sale/LIVE numerator is promoted.'
+          }|ConvertTo-Json -Depth 8|Set-Content p73r7-out/P73R7_GITHUB_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P73R7 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p73r7-row-bound-authority-exact-windows
+          path: p73r7-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
