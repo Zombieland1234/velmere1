@@ -1,0 +1,75 @@
+name: R44P32 Stripe TEST Admission Preflight
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p32-stripe-test-admission.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stripe-test-admission:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Fail-closed admission without exposing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, sys
+
+          secret = os.environ.get('STRIPE_SECRET_KEY', '')
+          webhook = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+          publishable = os.environ.get('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', '')
+
+          checks = {
+              'secretPresent': bool(secret),
+              'secretIsTest': secret.startswith('sk_test_') and not secret.startswith('sk_live_'),
+              'secretLength': len(secret) >= 24,
+              'webhookPresent': bool(webhook),
+              'webhookShape': webhook.startswith('whsec_') and len(webhook) >= 16,
+              'publishablePresent': bool(publishable),
+              'publishableIsTest': publishable.startswith('pk_test_') and not publishable.startswith('pk_live_'),
+              'publishableLength': len(publishable) >= 24,
+          }
+          admitted = all(checks.values())
+          receipt = {
+              'schemaVersion': 'velmere.pass36.a102r44p32.stripe-test-admission.v1',
+              'classification': 'GITHUB_ACTIONS_SECRET_PRESENCE_PREFLIGHT_ONLY',
+              'checks': checks,
+              'admitted': admitted,
+              'externalStripeRequests': 0,
+              'stripeTestCredit': False,
+              'saleCredit': False,
+              'liveCredit': False,
+              'secretFingerprints': {
+                  'secret': hashlib.sha256(secret.encode()).hexdigest() if secret else None,
+                  'webhook': hashlib.sha256(webhook.encode()).hexdigest() if webhook else None,
+                  'publishable': hashlib.sha256(publishable.encode()).hexdigest() if publishable else None,
+              },
+          }
+          pathlib.Path('evidence/R44P32_STRIPE_TEST_ADMISSION.json').write_text(
+              json.dumps(receipt, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8'
+          )
+          if not admitted:
+              print('ACTION_REQUIRED_STRIPE_TEST_SECRETS_MISSING_OR_INVALID')
+              sys.exit(1)
+          print('PASS_STRIPE_TEST_SECRETS_ADMITTED')
+          PY
+
+      - name: Upload redacted admission evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p32-stripe-test-admission
+          path: evidence/R44P32_STRIPE_TEST_ADMISSION.json
+          if-no-files-found: error
+          retention-days: 7
