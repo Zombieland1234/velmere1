@@ -148,6 +148,7 @@ jobs:
           if (ts.version !== '5.9.3') throw new Error(`TypeScript mismatch: ${ts.version}`);
           const db = new PGlite({ extensions: { pgcrypto } });
           await db.waitReady;
+          await db.exec('create extension if not exists pgcrypto');
           const result = await db.query('select 1::int as ok, encode(digest(\'velmere-r5\', \'sha256\'), \'hex\') as digest');
           if (result.rows?.[0]?.ok !== 1 || String(result.rows?.[0]?.digest ?? '').length !== 64) {
             throw new Error(`PGlite smoke mismatch: ${JSON.stringify(result.rows)}`);
@@ -157,6 +158,7 @@ jobs:
           NODE
 
       - name: Upload exact dependency export
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: velmere-r5-exact-test-deps
