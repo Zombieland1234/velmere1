@@ -1,0 +1,56 @@
+name: P42 Exact Dependency Cache Export
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/p42-exact-dependency-cache-export.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - name: Checkout dependency bridge
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Assert exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Execute exact dependency closure and cache export
+        shell: pwsh
+        run: node p41-runtime/run-p41-wrapper.mjs
+
+      - name: Upload exact dependency cache
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p42-exact-dependency-cas-and-npm-cache
+          path: |
+            p41-out/P41_EXACT_WINDOWS_NODE24_DEPENDENCY_CLOSURE_RECEIPT.json
+            p41-out/dependency-cas-manifest.json
+            p41-out/derived-dependency-list.json
+            p41-out/cas
+            p41-out/npm-cache
+            p41-out/logs
+            p41-out/project/package.json
+            p41-out/project/package-lock.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

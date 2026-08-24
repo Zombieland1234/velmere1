@@ -1,0 +1,72 @@
+name: P43 Current Source Reconstruction Coverage
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p43-current-source-reconstruction-20260814
+    paths:
+      - p43-bridge/trigger-source-coverage.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p43-current-source-reconstruction-coverage-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-reconstruction-coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout bridge branch with history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Fetch every accessible repository branch and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --force --tags origin '+refs/tags/*:refs/tags/*'
+          git for-each-ref --format='%(refname)' refs/remotes refs/tags | sort
+
+      - name: Decode exact compact P43 source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat p43-bridge/identity.part-* > p43-bridge/P43_SOURCE_IDENTITY.compact.json.gz.b64
+          python - <<'PY'
+          import base64, gzip
+          from pathlib import Path
+          encoded = Path('p43-bridge/P43_SOURCE_IDENTITY.compact.json.gz.b64').read_text(encoding='ascii')
+          compressed = base64.b64decode(encoded, validate=True)
+          if not compressed:
+              raise SystemExit('empty_identity_payload')
+          identity = gzip.decompress(compressed)
+          Path('p43-bridge/P43_SOURCE_IDENTITY.compact.json').write_bytes(identity)
+          print(f'decoded_identity_bytes={len(identity)}')
+          PY
+          sha256sum p43-bridge/P43_SOURCE_IDENTITY.compact.json
+
+      - name: Measure all-ref exact source blob coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          python p43-bridge/measure-source-coverage.py \
+            --repo . \
+            --identity p43-bridge/P43_SOURCE_IDENTITY.compact.json \
+            --output-dir p43-out
+
+      - name: Upload reconstruction coverage receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p43-current-source-reconstruction-coverage
+          path: p43-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

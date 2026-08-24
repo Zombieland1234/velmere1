@@ -1,0 +1,79 @@
+name: P53 Export R36 Full-Source Base For Exact P46 Delta
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p53-export-r36-full-source-base.yml'
+
+concurrency:
+  group: p53-export-r36-full-source-base-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  export-r36-full-source-base:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact historical full-source branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: velmere-a102r36-exact-deps-20260731
+          path: r36-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Create deterministic tracked-source archive and receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p53-out
+          commit="$(git -C r36-source rev-parse HEAD)"
+          git -C r36-source archive --format=tar --prefix=r36-source/ "$commit" > p53-out/R36_FULL_SOURCE_BASE.tar
+          xz --threads=1 --check=crc64 --lzma2=preset=9e,dict=64MiB p53-out/R36_FULL_SOURCE_BASE.tar
+          python - <<'PY'
+          import hashlib, json, pathlib, subprocess
+          out = pathlib.Path('p53-out')
+          archive = out / 'R36_FULL_SOURCE_BASE.tar.xz'
+          commit = subprocess.check_output(['git','-C','r36-source','rev-parse','HEAD'], text=True).strip()
+          files = subprocess.check_output(['git','-C','r36-source','ls-files','-z']).split(b'\0')
+          files = [x.decode('utf-8') for x in files if x]
+          total = sum((pathlib.Path('r36-source') / p).stat().st_size for p in files)
+          h = hashlib.sha256()
+          with archive.open('rb') as f:
+              for chunk in iter(lambda: f.read(1024 * 1024), b''):
+                  h.update(chunk)
+          receipt = {
+              'schemaVersion': 'velmere.p53.r36-full-source-base-export.v1',
+              'status': 'PASS',
+              'branch': 'velmere-a102r36-exact-deps-20260731',
+              'commit': commit,
+              'trackedFileCount': len(files),
+              'trackedPayloadBytes': total,
+              'archive': {
+                  'path': archive.name,
+                  'byteLength': archive.stat().st_size,
+                  'sha256': h.hexdigest(),
+                  'format': 'deterministic-git-archive-tar-xz',
+              },
+              'truthBoundary': 'This is a historical Git branch source base only. It receives no current P46, Windows build, Browser, PDF, value, rights or sale credit until exact delta reconstruction and current execution pass.',
+          }
+          encoded = json.dumps(receipt, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
+          receipt['integritySha256'] = hashlib.sha256(encoded).hexdigest()
+          (out / 'P53_R36_FULL_SOURCE_BASE_EXPORT_RECEIPT.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Upload exact historical source base
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p53-r36-full-source-base
+          path: p53-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

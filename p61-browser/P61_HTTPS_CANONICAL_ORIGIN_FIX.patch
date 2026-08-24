@@ -1,0 +1,19 @@
+--- a/p61-browser/run-p61-browser-sku-executions.mjs
++++ b/p61-browser/run-p61-browser-sku-executions.mjs
+@@ -252,7 +252,7 @@ async function inspectLayout(page) {
+ }
+ 
+ const browserExecutable = { path: EXECUTABLE_PATH, byteLength: fs.statSync(EXECUTABLE_PATH).size, sha256: sha256File(EXECUTABLE_PATH) };
+-const browser = await chromium.launch({ headless: true, executablePath: EXECUTABLE_PATH, args: ['--disable-gpu', '--no-first-run', '--disable-background-networking'] });
++const browser = await chromium.launch({ headless: true, executablePath: EXECUTABLE_PATH, args: ['--disable-gpu', '--no-first-run', '--disable-background-networking', '--ignore-certificate-errors'] });
+ const browserVersion = browser.version();
+ const rows = [];
+ let topLevelError = null;
+@@ -268,6 +268,7 @@ try {
+       colorScheme: 'dark',
+       reducedMotion: 'reduce',
+       acceptDownloads: true,
++      ignoreHTTPSErrors: true,
+     });
+     const consoleErrors = [];
+     const pageErrors = [];

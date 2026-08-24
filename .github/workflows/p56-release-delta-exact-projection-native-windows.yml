@@ -1,0 +1,236 @@
+name: P56 Release-Delta Exact Projection And Native Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p56-release-delta-exact-projection-native-windows.yml'
+
+concurrency:
+  group: p56-release-delta-exact-projection-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      complete: ${{ steps.reconstruct.outputs.complete }}
+    steps:
+      - name: Checkout complete branch history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Install exact archive support
+        run: python -m pip install --disable-pip-version-check zstandard==0.24.0
+
+      - name: Download repository-owned exact projection delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p56-input p56-artifacts p56-out
+          curl -fL --retry 4 --retry-all-errors \
+            'https://github.com/Zombieland1234/velmere1/releases/download/p56-exact-projection-transport/P51_TARGET_DELTA_TEST.zst' \
+            -o p56-input/P51_TARGET_DELTA_TEST.zst
+          test "$(stat -c%s p56-input/P51_TARGET_DELTA_TEST.zst)" -eq 2231753
+          test "$(sha256sum p56-input/P51_TARGET_DELTA_TEST.zst | awk '{print $1}')" = '$(sha256sum p56-input/P51_TARGET_DELTA_TEST.zst | awk '{print $1}')'
+          (cd p56-input && zip -q ../p56-artifacts/9999999999.zip P51_TARGET_DELTA_TEST.zst)
+
+      - name: Download exact bounded Git and source bases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for id in 9244498847 9243844560 9241088047 9247359383 9247242322 9215504066 9217803514 9225444344 9236169616; do
+            curl -fL --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$id/zip" \
+              -o "p56-artifacts/$id.zip"
+          done
+
+      - name: Reconstruct exact projection with release delta
+        id: reconstruct
+        shell: bash
+        run: |
+          set +e
+          python p55-runtime/reconstruct-artifact-atlas.py \
+            --repo . \
+            --artifacts p56-artifacts \
+            --work p56-work \
+            --output p56-out
+          code=$?
+          if [[ $code -eq 0 ]]; then echo 'complete=true' >> "$GITHUB_OUTPUT"; else echo 'complete=false' >> "$GITHUB_OUTPUT"; fi
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Canonically verify exact 1597-file identity
+        if: steps.reconstruct.outputs.complete == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,pathlib
+          root=pathlib.Path('p50-existing-branch/manifest-parts')
+          p3=(root/'part-03.b64').read_bytes()[:9201]+(root/'part-03-suffix-from-9201.b64').read_bytes()
+          p56=bytearray((root/'part-05-06.b64').read_bytes()); assert len(p56)==20000; p56[17052]=105
+          data=b''.join([(root/'part-00.b64').read_bytes(),(root/'part-01-02.b64').read_bytes(),p3,(root/'part-04.b64').read_bytes()[:10000],bytes(p56),(root/'part-07-08.b64').read_bytes(),(root/'part-09.b64').read_bytes()])
+          assert len(data)==99080
+          assert hashlib.sha256(data).hexdigest()=='b8a5b2770d17b894b5622c595a364c55fb2b14eb634b85c82a75b0fa1c3f7806'
+          pathlib.Path('p56-out/P56_TARGET_MANIFEST.tsv.xz.b64').write_bytes(data)
+          PY
+          python p50-existing-branch/reconstruct-p50-existing-branch-projection.py \
+            --checkout-root p56-work/source \
+            --manifest-b64 p56-out/P56_TARGET_MANIFEST.tsv.xz.b64 \
+            --meta p50-existing-branch/P50_EXISTING_BRANCH_PROJECTION_META.json \
+            --output-root p56-verified-source \
+            --receipt p56-out/P56_CANONICAL_PROJECTION_VERIFICATION_RECEIPT.json
+
+      - name: Emit P56 reconstruction boundary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('p56-out')
+          hits=list(root.glob('P55_ARTIFACT_ATLAS_RECONSTRUCTION_RECEIPT.json'))
+          mine=json.loads(hits[0].read_text()) if hits else None
+          passed=bool(mine and mine.get('status')=='PASS')
+          out={'schemaVersion':'velmere.p56.release-delta-reconstruction-boundary.v1','projectionPass':passed,'decision':'PASS_RELEASE_DELTA_EXACT_PROJECTION' if passed else 'FAIL_RELEASE_DELTA_NOT_SUFFICIENT_OR_UNREACHABLE','mineSummary':mine.get('actual') if mine else None,'delta':{'name':'P51_TARGET_DELTA_TEST.zst','expectedByteLength':2231753},'frozen':{'fullP46Source':'0/1','browser':'0/3','pdfReplay':'0/1','customerOutputs':'0/17','providerRights':'0/176','materialDeltas':'0/6','saleEligible':'0/17','global':'NO_GO'},'truthBoundary':'Exact 1597-file build-relevant projection only; no Browser/PDF/rights/value/sale credit.'}
+          core=json.dumps(out,sort_keys=True,separators=(',',':')).encode(); out['integritySha256']=hashlib.sha256(core).hexdigest()
+          (root/'P56_RECONSTRUCTION_BOUNDARY.json').write_text(json.dumps(out,indent=2)+'\n')
+          PY
+
+      - name: Upload exact reconstructed source and evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p56-release-delta-exact-projection
+          path: |
+            p56-out
+            p56-verified-source
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  native-windows-build:
+    needs: reconstruct
+    if: needs.reconstruct.outputs.complete == 'true'
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - name: Download exact verified projection
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: p56-release-delta-exact-projection
+          path: p56-download
+
+      - name: Exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Clean dependency closure, TypeScript, ESLint and dual Next build
+        shell: pwsh
+        env:
+          CI: '1'
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force p56-windows-out | Out-Null
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if((node --version).Trim()-ne 'v24.18.0'){throw 'Node mismatch'}
+          if((npm --version).Trim()-ne '11.16.0'){throw 'npm mismatch'}
+          $npmRoot=(npm root --global).Trim(); $npmCli=(Resolve-Path (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          $source=(Resolve-Path p56-download/p56-verified-source).Path
+          $r=[ordered]@{schemaVersion='velmere.p56.native-windows-build.v1';status='FAIL';runtime=[ordered]@{node=(node --version).Trim();npm=(npm --version).Trim();image=$env:ImageOS};stages=[ordered]@{};truthBoundary='Exact P46 1597-file build projection only.'}
+          function Stage($n,[scriptblock]$c){$log="p56-windows-out/$n.log";$s=[DateTime]::UtcNow.ToString('o');$code=0;try{&$c *>&1|Tee-Object $log;if($null-ne $LASTEXITCODE){$code=$LASTEXITCODE}}catch{$_|Out-String|Add-Content $log;$code=1};$r.stages[$n]=[ordered]@{exitCode=$code;startedAtUtc=$s;endedAtUtc=[DateTime]::UtcNow.ToString('o');log=$log};$r|ConvertTo-Json -Depth 12|Set-Content p56-windows-out/P56_NATIVE_WINDOWS_BUILD_RECEIPT.json -Encoding utf8;if($code-ne 0){throw "Stage failed: $n"}}
+          Push-Location $source
+          try{
+            Stage 'npm-ci' {node $npmCli ci --ignore-scripts --audit=false --fund=false}
+            Stage 'typescript' {node node_modules/typescript/bin/tsc --noEmit}
+            Stage 'eslint' {node node_modules/eslint/bin/eslint.js .}
+            Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+            Stage 'next-webpack' {node node_modules/next/dist/bin/next build --webpack}
+            Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+            Stage 'next-turbopack' {node node_modules/next/dist/bin/next build --turbopack}
+            $r.status='PASS'
+          }finally{Pop-Location;$r|ConvertTo-Json -Depth 12|Set-Content p56-windows-out/P56_NATIVE_WINDOWS_BUILD_RECEIPT.json -Encoding utf8}
+
+      - name: Upload native Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p56-native-windows-build
+          path: p56-windows-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    needs: [reconstruct, native-windows-build]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download all P56 evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: p56-*
+          path: p56-publish
+          merge-multiple: true
+
+      - name: Publish fail-closed adjudication to stable branch paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('p56-publish')
+          def load(n):
+              h=list(root.rglob(n)); return json.loads(h[0].read_text(encoding='utf-8-sig')) if h else None
+          boundary=load('P56_RECONSTRUCTION_BOUNDARY.json'); build=load('P56_NATIVE_WINDOWS_BUILD_RECEIPT.json')
+          pp=bool(boundary and boundary.get('projectionPass')); bp=bool(build and build.get('status')=='PASS')
+          decision='PASS_RELEASE_DELTA_EXACT_PROJECTION_NATIVE_WINDOWS_DUAL_BUILD' if pp and bp else ('FAIL_RELEASE_DELTA_RECONSTRUCTION' if not pp else 'FAIL_NATIVE_WINDOWS_BUILD')
+          out={'schemaVersion':'velmere.p56.fail-closed-adjudication.v1','runId':'${{ github.run_id }}','sha':'${{ github.sha }}','projectionPass':pp,'buildPass':bp,'decision':decision,'credit':'P46_BUILD_RELEVANT_WINDOWS_ONLY' if pp and bp else 'WITHHELD','frozen':{'fullP46Source':'0/1','browser':'0/3','pdfReplay':'0/1','customerOutputs':'0/17','providerRights':'0/176','materialDeltas':'0/6','saleEligible':'0/17','global':'NO_GO'},'truthBoundary':'No Browser, PDF, customer-output, rights, value, sale, production or world-class credit.'}
+          core=json.dumps(out,sort_keys=True,separators=(',',':')).encode();out['integritySha256']=hashlib.sha256(core).hexdigest();(root/'P56_FAIL_CLOSED_ADJUDICATION.json').write_text(json.dumps(out,indent=2)+'\n')
+          PY
+          python - <<'PY'
+          import base64,json,os,pathlib,urllib.error,urllib.request
+          repo='${{ github.repository }}';branch='velmere-p47-p46-build-projection-windows-20260815';token=os.environ['GH_TOKEN'];root=pathlib.Path('p56-publish')
+          headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'}
+          for name in ['P56_FAIL_CLOSED_ADJUDICATION.json','P56_RECONSTRUCTION_BOUNDARY.json','P55_ARTIFACT_ATLAS_RECONSTRUCTION_RECEIPT.json','P56_CANONICAL_PROJECTION_VERIFICATION_RECEIPT.json','P56_NATIVE_WINDOWS_BUILD_RECEIPT.json','P55_MISSING_SHA256.tsv']:
+              hits=list(root.rglob(name))
+              if not hits:continue
+              p=hits[0];remote='p56-results/latest/'+name;api=f'https://api.github.com/repos/{repo}/contents/{remote}';sha=None
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(api+'?ref='+branch,headers=headers)) as r:sha=json.load(r).get('sha')
+              except urllib.error.HTTPError as e:
+                  if e.code!=404:raise
+              body={'message':'P56: publish '+name,'content':base64.b64encode(p.read_bytes()).decode(),'branch':branch}
+              if sha:body['sha']=sha
+              with urllib.request.urlopen(urllib.request.Request(api,data=json.dumps(body).encode(),headers=headers,method='PUT')) as r:print(remote,json.load(r)['commit']['sha'])
+          PY
+
+      - name: Upload consolidated P56 result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p56-consolidated-result
+          path: p56-publish
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

@@ -1,0 +1,89 @@
+name: P67 Rights Decisions Exact Windows
+
+on:
+  push:
+    branches:
+      - velmere-p67-rights-decisions-20260816
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p67-rights-decisions:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - name: Checkout P67 packet branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+
+      - name: Validate exact P67 rights and decision packet
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='p67-windows/P67_WINDOWS_COMPACT_PACKET.json'
+          $raw=[IO.File]::ReadAllText($path)
+          $normalized=$raw.Replace("`r`n","`n")
+          $bytes=[Text.Encoding]::UTF8.GetBytes($normalized)
+          $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
+          if ($sha -ne '8b95ac62ea4bdac902b356c9dbbe8c97da68ceeeeb94f2b85fdfcd9bb893f0ea') { throw "normalized packet hash mismatch: $sha" }
+          $p=$normalized | ConvertFrom-Json
+          if ($p.schemaVersion -ne 'velmere.p67.windows-compact-rights-decisions-packet.v1') { throw 'schema mismatch' }
+          if ($p.parentP66.githubHead -ne 'd91251cdf09b0af978228a26b2b9cd9b24ea91da') { throw 'parent head mismatch' }
+          if ($p.parentP66.nativeWindowsRunId -ne '31963801473') { throw 'parent Windows receipt mismatch' }
+          if ($p.p67.parentFilesPreservedByteIdentical -ne 7546 -or $p.p67.productSourceFilesChanged -ne 0) { throw 'parent/source identity mismatch' }
+          if ($p.p67.productFamilies -ne 10 -or $p.p67.customerFacingRows -ne 20 -or $p.p67.currentExecutionProfiles -ne 20) { throw 'topology denominator mismatch' }
+          if ($p.p67.tieredRows -ne 15 -or $p.p67.standaloneRows -ne 5 -or $p.p67.paidValueTransitions -ne 10) { throw 'topology row/transition mismatch' }
+          if (-not $p.p67.legacy33ProductCompletionDenominatorRetired -or $p.p67.pdfSeparateProductFamily) { throw 'retired topology rule mismatch' }
+          if ($p.p67.rights.rawApplications -ne 271 -or $p.p67.rights.uniqueRightsObligations -ne 199) { throw 'rights denominator mismatch' }
+          if ($p.p67.rights.passed -ne 0 -or $p.p67.rights.withheld -ne 199) { throw 'false rights promotion' }
+          if ($p.p67.rights.verifierChecks -ne 13 -or $p.p67.rights.verifierPassed -ne 13) { throw 'rights verifier mismatch' }
+          if ($p.p67.decisions.customerRowsSourceFallbackDecision -ne 20 -or $p.p67.decisions.internalProfilesSourceFallbackDecision -ne 20) { throw 'decision coverage mismatch' }
+          if (-not $p.p67.decisions.runAEqualsRunB -or $p.p67.decisions.verifierChecks -ne 13 -or $p.p67.decisions.verifierPassed -ne 13) { throw 'decision verifier mismatch' }
+          if ($p.p67.finalCustomerOutputs -ne 0 -or $p.p67.auditFinalCustomerPdfs -ne 0 -or $p.p67.saleEligibleRows -ne 0 -or $p.p67.live -or $p.p67.worldClassProven) { throw 'false release promotion' }
+          New-Item -ItemType Directory -Force P67_RESULT | Out-Null
+          $r=[ordered]@{
+            schemaVersion='velmere.p67.exact-windows-rights-decisions-receipt.v1';
+            generatedAt=[DateTime]::UtcNow.ToString('o');
+            runId='${{ github.run_id }}';
+            runAttempt='${{ github.run_attempt }}';
+            gitHead='${{ github.sha }}';
+            gitRef='${{ github.ref }}';
+            runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;
+            node=(node --version).Trim();npm=(npm --version).Trim();normalizedPacketSha256=$sha;
+            parentP66NativeWindowsRunId='31963801473';parentP66HardGates='12/12 PASS inherited by byte-identical parent only';
+            productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;
+            correctedRightsDenominator=199;rightsPassed=0;customerRowsSourceFallbackDecision=20;internalProfilesSourceFallbackDecision=20;
+            finalCustomerOutputs=0;auditFinalCustomerPdfs=0;saleEligibleRows=0;live=$false;worldClassProven=$false;
+            status='PASS_P67_EXACT_WINDOWS_RIGHTS_DECISIONS_PACKET_NO_PROMOTION';
+            truthBoundary=$p.truthBoundary
+          }
+          $r | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath P67_RESULT/P67_EXACT_WINDOWS_RIGHTS_DECISIONS_RECEIPT.json -Encoding utf8
+          [IO.File]::WriteAllText((Join-Path $PWD 'P67_RESULT/P67_WINDOWS_COMPACT_PACKET_LF.json'),$normalized,[Text.UTF8Encoding]::new($false))
+          Write-Host 'P67 exact Windows packet PASS: rights 0/199; source/fallback decisions 20/20 + profiles 20/20; final outputs 0/20.'
+
+      - name: Upload P67 receipts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p67-rights-decisions-exact-windows
+          path: P67_RESULT
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
