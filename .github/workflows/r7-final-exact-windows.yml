@@ -25,16 +25,24 @@ jobs:
     env:
       R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
       R7_PART_COUNT: '36'
-      R7_FILE_COUNT: '3491'
-      R7_PAYLOAD_BYTE_LENGTH: '62839480'
-      R7_BUNDLE_SHA256: '885d9aaa52a70fc748b718dda66a11bbc63e17dc7e0cae9b38465b1f9d7894ba'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: 'a53e2a1eee263f360a8bf6a44860df6b0a4f7936e28447544dc8b099caab9a64'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'e11df45e7aedcd928daa37f2e2ba755f3a3f24687f74a7fa9b556715fec3224a'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: '4855e5397d97a1d8624d7ea256210b552a6d6218009ac75e82ec044eda6e219f'
-      R7_FULL_SOURCE_MANIFEST_SHA256: 'd0c6b1f4f3316e18bf69427e7ae268ab6a1aa51faf8e295a4cd790598b520133'
+      R7_FILE_COUNT: '3498'
+      R7_PAYLOAD_BYTE_LENGTH: '62922218'
+      R7_BUNDLE_SHA256: '2195cd534b4344570048a73489247491747489574acbfeb7678b8f952683fc4b'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '6ebc878a99ad5a2384c45ab9986bbda6db65cb286dccf9edeed447805bdceb85'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: '4c19f11cb539d18c067f60ab5e1d22d62223149a0f544cc9130e59f5052eeb6b'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: '310a10fe5f0b06bda42c0dfd7e29e2b71577adfb26a8f4384fad982b533b4065'
+      R7_FULL_SOURCE_MANIFEST_SHA256: 'd10bb8d10fa66a5a3e8ed89ecc2626e1af10cbb68f91bd012ffddd5676611fc8'
       R7_PACKAGE_JSON_SHA256: 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
       R7_PACKAGE_LOCK_SHA256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
-      R7_TRANSPORT_RECEIPT_SHA256: '274a1d29a74ab8db62227cd2cae7336ea11c7018856b6036e407399ada2faf74'
+      R7_TRANSPORT_RECEIPT_SHA256: '88ed5093b8211a56a229c8083bb5ccf3e439b246780eb9b4a1b133010abdab1f'
+      R7_PDF_FONT_PATH: 'r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf'
+      R7_PDF_FONT_BYTE_LENGTH: '46464'
+      R7_PDF_FONT_SHA256: 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa'
+      R7_PDF_FONT_GIT_BLOB_SHA1: '716393b0614fdceaf6f5578694479466ed495b14'
+      R7_PDF_FONT_LICENSE_PATH: 'r7-runtime/external-assets/OFL-Manrope.txt'
+      R7_PDF_FONT_LICENSE_BYTE_LENGTH: '4384'
+      R7_PDF_FONT_LICENSE_SHA256: 'e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c'
+      R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1: '472064afc4b8dec9079fab03b8ffafb617a1b2d8'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
     steps:
@@ -116,6 +124,41 @@ jobs:
           New-Item -ItemType Directory -Force -Path 'r7-work' | Out-Null
           tar.exe -xf 'r7-runtime/R7_EXECUTION_SLICE.tar' -C 'r7-work'
           if ($LASTEXITCODE -ne 0) { throw "tar extraction failed: $LASTEXITCODE" }
+
+      - name: Verify exact external runtime PDF font and license
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Surface = Get-Content -LiteralPath 'R7_GITHUB_EXECUTION_SURFACE_RECEIPT.json' -Raw | ConvertFrom-Json
+          $Transport = Get-Content -LiteralPath 'r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json' -Raw | ConvertFrom-Json
+          $SurfaceAssets = $Surface.externalRuntimeAssets
+          $TransportAssets = $Transport.externalRuntimeAssets
+          foreach ($Assets in @($SurfaceAssets, $TransportAssets)) {
+            if ([string]$Assets.mode -ne 'EXTERNAL_RUNTIME_FONT_EXACT_HASH_REQUIRED') { throw 'external PDF font mode mismatch' }
+            if ([string]$Assets.environmentVariable -ne 'VELMERE_PDF_FONT_PATH') { throw 'external PDF font environment contract mismatch' }
+            if ([bool]$Assets.fontBytesIncludedInSource -or [bool]$Assets.fontBytesIncludedInExecutionSlice -or -not [bool]$Assets.transportedInGitHubExecutionSurface) { throw 'external PDF font source/slice boundary mismatch' }
+            if ([string]$Assets.pdfFont.logicalPath -ne $env:R7_PDF_FONT_PATH -or [int64]$Assets.pdfFont.byteLength -ne [int64]$env:R7_PDF_FONT_BYTE_LENGTH -or [string]$Assets.pdfFont.sha256 -ne $env:R7_PDF_FONT_SHA256 -or [string]$Assets.pdfFont.gitBlobSha1 -ne $env:R7_PDF_FONT_GIT_BLOB_SHA1) { throw 'external PDF font receipt binding mismatch' }
+            if ([string]$Assets.license.logicalPath -ne $env:R7_PDF_FONT_LICENSE_PATH -or [int64]$Assets.license.byteLength -ne [int64]$env:R7_PDF_FONT_LICENSE_BYTE_LENGTH -or [string]$Assets.license.sha256 -ne $env:R7_PDF_FONT_LICENSE_SHA256 -or [string]$Assets.license.gitBlobSha1 -ne $env:R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1) { throw 'external PDF font license receipt binding mismatch' }
+          }
+          if ((ConvertTo-Json $SurfaceAssets -Depth 8 -Compress) -ne (ConvertTo-Json $TransportAssets -Depth 8 -Compress)) { throw 'surface/transport external PDF font binding mismatch' }
+          foreach ($Asset in @(
+            @{ Label = 'font'; Path = $env:R7_PDF_FONT_PATH; Bytes = [int64]$env:R7_PDF_FONT_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_SHA256; GitBlob = $env:R7_PDF_FONT_GIT_BLOB_SHA1 },
+            @{ Label = 'license'; Path = $env:R7_PDF_FONT_LICENSE_PATH; Bytes = [int64]$env:R7_PDF_FONT_LICENSE_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_LICENSE_SHA256; GitBlob = $env:R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1 }
+          )) {
+            if (-not (Test-Path -LiteralPath $Asset.Path -PathType Leaf)) { throw "external PDF $($Asset.Label) missing" }
+            if ((Get-Item -LiteralPath $Asset.Path).Length -ne $Asset.Bytes) { throw "external PDF $($Asset.Label) byte length mismatch" }
+            $ObservedSha = (Get-FileHash -LiteralPath $Asset.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($ObservedSha -ne $Asset.Sha256) { throw "external PDF $($Asset.Label) SHA mismatch" }
+            $ObservedGitBlob = (& git hash-object -- $Asset.Path).Trim()
+            if ($LASTEXITCODE -ne 0 -or $ObservedGitBlob -ne $Asset.GitBlob) { throw "external PDF $($Asset.Label) Git blob mismatch" }
+          }
+          $LicenseText = Get-Content -LiteralPath $env:R7_PDF_FONT_LICENSE_PATH -Raw
+          if ($LicenseText -notmatch 'Copyright 2018 The Manrope Project Authors' -or $LicenseText -notmatch 'SIL OPEN FONT LICENSE Version 1\.1 - 26 February 2007') { throw 'external PDF font license identity mismatch' }
+          $AbsoluteFontPath = (Resolve-Path -LiteralPath $env:R7_PDF_FONT_PATH).Path
+          if (-not [IO.Path]::IsPathFullyQualified($AbsoluteFontPath)) { throw 'external PDF font path is not absolute' }
+          if (-not $env:GITHUB_ENV) { throw 'GitHub environment file is unavailable for external PDF font path' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VELMERE_PDF_FONT_PATH=$AbsoluteFontPath" -Encoding utf8
+          Write-Host 'External Manrope PDF font and exact OFL verified; absolute runtime path exported.'
 
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -294,7 +337,24 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           npm run lint 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_ESLINT.log'
-          if ($LASTEXITCODE -ne 0) { throw "ESLint failed: $LASTEXITCODE" }
+          $ESLintExitCode = $LASTEXITCODE
+          if ($ESLintExitCode -ne 0) {
+            $ESLintReceipt = 'artifacts/pass13/PASS13_PARTITIONED_ESLINT.json'
+            if (Test-Path -LiteralPath $ESLintReceipt -PathType Leaf) {
+              Write-Host '=== ESLint exact diagnostics receipt ==='
+              $ESLintResult = Get-Content -LiteralPath $ESLintReceipt -Raw | ConvertFrom-Json
+              foreach ($Message in @($ESLintResult.messages)) {
+                Write-Host ($Message | ConvertTo-Json -Depth 20 -Compress)
+              }
+              foreach ($ProcessFailure in @($ESLintResult.processFailures)) {
+                Write-Host ($ProcessFailure | ConvertTo-Json -Depth 20 -Compress)
+              }
+              Write-Host '=== End ESLint exact diagnostics receipt ==='
+            } else {
+              Write-Warning 'ESLint diagnostics receipt was not found'
+            }
+            throw "ESLint failed: $ESLintExitCode"
+          }
 
       - name: Exact Turbopack production build
         shell: pwsh
@@ -365,7 +425,7 @@ jobs:
           const workflowSha=sha(workflowPath);
           if(workflowSha!==surface.workflow.sha256)throw new Error('runtime_workflow_sha_mismatch');
           const treeSha=cp.execFileSync('git',['-C','..','rev-parse','HEAD^{tree}'],{encoding:'utf8'}).trim();
-          const receipt={schemaVersion:'velmere.r7.final-exact-windows-current-source.v2',candidate:process.env.R7_CANDIDATE,status:'PASS_EXACT_WINDOWS_52_X2',finalPass:true,github:{sha:process.env.GITHUB_SHA,treeSha,ref:process.env.GITHUB_REF,runId:process.env.GITHUB_RUN_ID,runAttempt,workflowSha256:workflowSha,surfaceReceiptSha256:sha('../R7_GITHUB_EXECUTION_SURFACE_RECEIPT.json'),transportReceiptSha256:sha('../r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json')},source:{fullSourceAggregateSha256:process.env.R7_FULL_SOURCE_AGGREGATE_SHA256,fullSourceManifestSha256:process.env.R7_FULL_SOURCE_MANIFEST_SHA256,executionSliceAggregateSha256:process.env.R7_EXECUTION_SLICE_AGGREGATE_SHA256,executionSliceManifestSha256:process.env.R7_EXECUTION_SLICE_MANIFEST_SHA256,executionBundleSha256:process.env.R7_BUNDLE_SHA256,packageJsonSha256:process.env.R7_PACKAGE_JSON_SHA256,packageLockSha256:process.env.R7_PACKAGE_LOCK_SHA256,fileCount:manifest.fileCount,payloadByteLength:manifest.payloadByteLength,testDenominator:manifest.testDenominator},runtime:{campaign:one.environment,exactWindowsServer2025:exactOs.osIdentity,exactTarget:exactOs.exactTarget},runs:[{label:one.runLabel,summary:one.summary},{label:two.runLabel,summary:two.summary}],repeatability:{classificationStable:repeat.classificationStable,exitCodeStable:repeat.exitCodeStable,stdoutStable:repeat.stdoutStable,stderrStable:repeat.stderrStable,aggregateSha256:repeat.aggregateSha256},evidence:{transportedSliceVerificationSha256:sha('artifacts/r7/windows/R7_EXACT_TRANSPORTED_SLICE_VERIFICATION.json'),dependencyReceiptSha256:sha('artifacts/r7/windows/R7_EXACT_WINDOWS_DEPENDENCY_RECEIPT.json'),exactOsReceiptSha256:sha('current-execution-out/EXACT_WINDOWS_SERVER_2025_IDENTITY.json'),secretScanReceiptSha256:sha('../r7-runtime/R7_SUCCESSOR_SECRET_SCAN_RECEIPT.json'),secrets:0},customerFinalCredit:false,truthBoundary:'Exact Windows engineering and 52/52 x2 proof only. Server-side source authority and customer product-route FINAL remain separate gates.'};
+          const receipt={schemaVersion:'velmere.r7.final-exact-windows-current-source.v2',candidate:process.env.R7_CANDIDATE,status:'PASS_EXACT_WINDOWS_52_X2',finalPass:true,github:{sha:process.env.GITHUB_SHA,treeSha,ref:process.env.GITHUB_REF,runId:process.env.GITHUB_RUN_ID,runAttempt,workflowSha256:workflowSha,surfaceReceiptSha256:sha('../R7_GITHUB_EXECUTION_SURFACE_RECEIPT.json'),transportReceiptSha256:sha('../r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json')},source:{fullSourceAggregateSha256:process.env.R7_FULL_SOURCE_AGGREGATE_SHA256,fullSourceManifestSha256:process.env.R7_FULL_SOURCE_MANIFEST_SHA256,executionSliceAggregateSha256:process.env.R7_EXECUTION_SLICE_AGGREGATE_SHA256,executionSliceManifestSha256:process.env.R7_EXECUTION_SLICE_MANIFEST_SHA256,executionBundleSha256:process.env.R7_BUNDLE_SHA256,packageJsonSha256:process.env.R7_PACKAGE_JSON_SHA256,packageLockSha256:process.env.R7_PACKAGE_LOCK_SHA256,fileCount:manifest.fileCount,payloadByteLength:manifest.payloadByteLength,testDenominator:manifest.testDenominator},runtime:{campaign:one.environment,exactWindowsServer2025:exactOs.osIdentity,exactTarget:exactOs.exactTarget},runs:[{label:one.runLabel,summary:one.summary},{label:two.runLabel,summary:two.summary}],repeatability:{classificationStable:repeat.classificationStable,exitCodeStable:repeat.exitCodeStable,stdoutStable:repeat.stdoutStable,stderrStable:repeat.stderrStable,aggregateSha256:repeat.aggregateSha256},evidence:{transportedSliceVerificationSha256:sha('artifacts/r7/windows/R7_EXACT_TRANSPORTED_SLICE_VERIFICATION.json'),dependencyReceiptSha256:sha('artifacts/r7/windows/R7_EXACT_WINDOWS_DEPENDENCY_RECEIPT.json'),exactOsReceiptSha256:sha('current-execution-out/EXACT_WINDOWS_SERVER_2025_IDENTITY.json'),secretScanReceiptSha256:sha('../r7-runtime/R7_SUCCESSOR_SECRET_SCAN_RECEIPT.json'),externalRuntimeAssets:surface.externalRuntimeAssets,secrets:0},customerFinalCredit:false,truthBoundary:'Exact Windows engineering and 52/52 x2 proof only. Server-side source authority and customer product-route FINAL remain separate gates.'};
           fs.writeFileSync('artifacts/r7/windows/R7_FINAL_EXACT_WINDOWS_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
           console.log(JSON.stringify(receipt,null,2));
           '@ | node
@@ -379,6 +439,7 @@ jobs:
           path: |
             r7-work/artifacts/r7/windows
             r7-work/artifacts/r7/current-execution
+            r7-work/artifacts/pass13/PASS13_PARTITIONED_ESLINT.json
             r7-work/artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json
             r7-work/current-execution-out
             r7-work/.velmere/deployment-builds
@@ -389,6 +450,7 @@ jobs:
             .github/workflows/r7-final-exact-windows.yml
             r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json
             r7-runtime/R7_SUCCESSOR_SECRET_SCAN_RECEIPT.json
+            r7-runtime/external-assets
           if-no-files-found: error
           include-hidden-files: true
           compression-level: 0
