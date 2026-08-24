@@ -1,0 +1,66 @@
+name: R7 V3 Candidate Branch Atlas Export
+
+on:
+  push:
+    branches:
+      - velmere-r7-v3-source-export-20260824
+    paths:
+      - '.github/workflows/r7-v3-source-export.yml'
+  pull_request:
+    branches:
+      - velmere-r7-merged-current-source-20260823
+    paths:
+      - '.github/workflows/r7-v3-source-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-r7-candidate-heads:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Export exact tracked bytes from every R7 candidate branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p exports
+          branches=(
+            main
+            velmere-r7-blob-authority-probe-20260824
+            velmere-r7-current-blob-probe-20260824
+            velmere-r7-exact-dependency-closure-20260823
+            velmere-r7-final-exact-windows-20260824
+            velmere-r7-merged-current-source-20260823
+            velmere-r7-merged-exact-execution-20260823
+            velmere-r7-merged-exact-execution-20260824
+            velmere-r7-p77-base-export-20260824
+            velmere-r7-transport-staging-20260823
+          )
+          : > exports/R7_BRANCH_ATLAS.tsv
+          for branch in "${branches[@]}"; do
+            git fetch --no-tags --depth=1 origin "refs/heads/${branch}:refs/remotes/origin/${branch}"
+            sha="$(git rev-parse "refs/remotes/origin/${branch}")"
+            safe="${branch//\//__}"
+            out="exports/${safe}.zip"
+            git archive --format=zip --output="$out" "refs/remotes/origin/${branch}"
+            digest="$(sha256sum "$out" | awk '{print $1}')"
+            bytes="$(stat -c%s "$out")"
+            printf '%s\t%s\t%s\t%s\n' "$branch" "$sha" "$bytes" "$digest" | tee -a exports/R7_BRANCH_ATLAS.tsv
+          done
+
+      - name: Upload exact branch atlas
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v3-candidate-branch-atlas-${{ github.sha }}
+          path: exports
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
