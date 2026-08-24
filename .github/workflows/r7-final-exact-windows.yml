@@ -26,15 +26,15 @@ jobs:
       R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
       R7_PART_COUNT: '36'
       R7_FILE_COUNT: '3490'
-      R7_PAYLOAD_BYTE_LENGTH: '62826612'
-      R7_BUNDLE_SHA256: 'f9b4e0ed73ca120d4751b34cb7245479745fd136ebee98675ea54423ca4dd5f1'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '791f2d4a378e9871f605ec0a0613a8be59963eebe1430e8b3c4650f1ba72e5ed'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'cdd35a7f5ff367615a45dccacf6dbcf1c3dfb5cd1991933fd1cd31384570847c'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: 'f5da6a4fec3cd1dcb6bc7855f96e6658d47dd6e26ff8ea2fd33d6902cbd3d599'
-      R7_FULL_SOURCE_MANIFEST_SHA256: '4508395e4d2bef12ddcee335146db3990d20d3c30fed5e9707e994a3ebc3f5da'
+      R7_PAYLOAD_BYTE_LENGTH: '62828290'
+      R7_BUNDLE_SHA256: 'f8c4ea6f29524cdf3e8cf88473fc362e3dbb9abbaee85ec2bd00fb3b7d220332'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '15e080617442d2839d225628378ca11037c6be2d794625357c4263cfae86d632'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: '1ce3d6de7a503510590d5a3c9dd579e2911a9fec0d17338cbf8ef3ef69e74be5'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: 'c051b4746c78246534f7a0c8f4e8e996929b0b3c796d07a1859e1900dbb54039'
+      R7_FULL_SOURCE_MANIFEST_SHA256: '39e4b6e37f002c53af2d8f2c3fce6746e56c2e81db683d05d47ef27267a4e4b1'
       R7_PACKAGE_JSON_SHA256: 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
       R7_PACKAGE_LOCK_SHA256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
-      R7_TRANSPORT_RECEIPT_SHA256: '063c2a81eb731fd7da5173ac1eee6f6eaa494eeb9dd1a5f154b919dbf1c542da'
+      R7_TRANSPORT_RECEIPT_SHA256: '50909c3f23ea338fd018c66126ea742b512142abf5704fb4351d40b79c7ab14b'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
     steps:
@@ -248,7 +248,22 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Remove-Item -Recurse -Force '.next' -ErrorAction SilentlyContinue
           npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_WEBPACK.log'
-          if ($LASTEXITCODE -ne 0) { throw "Webpack build failed: $LASTEXITCODE" }
+          $WebpackExitCode = $LASTEXITCODE
+          if ($WebpackExitCode -ne 0) {
+            try {
+              $CompilerLog = Get-ChildItem -LiteralPath '.velmere/deployment-builds' -Filter '*-webpack-compile.log' -File -ErrorAction Stop | Sort-Object -Property LastWriteTimeUtc -Descending | Select-Object -First 1
+              if ($null -ne $CompilerLog) {
+                Write-Host '=== Webpack compiler output tail ==='
+                Get-Content -LiteralPath $CompilerLog.FullName -Tail 300 -ErrorAction Stop
+                Write-Host '=== End Webpack compiler output tail ==='
+              } else {
+                Write-Warning 'Webpack compiler log was not found'
+              }
+            } catch {
+              Write-Warning 'Webpack compiler log tail unavailable'
+            }
+            throw "Webpack build failed: $WebpackExitCode"
+          }
 
       - name: TypeScript zero-error after generated-route types
         shell: pwsh
@@ -273,7 +288,22 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Remove-Item -Recurse -Force '.next' -ErrorAction SilentlyContinue
           npm run build:turbopack 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_TURBOPACK.log'
-          if ($LASTEXITCODE -ne 0) { throw "Turbopack build failed: $LASTEXITCODE" }
+          $TurbopackExitCode = $LASTEXITCODE
+          if ($TurbopackExitCode -ne 0) {
+            try {
+              $CompilerLog = Get-ChildItem -LiteralPath '.velmere/deployment-builds' -Filter '*-turbopack-compile.log' -File -ErrorAction Stop | Sort-Object -Property LastWriteTimeUtc -Descending | Select-Object -First 1
+              if ($null -ne $CompilerLog) {
+                Write-Host '=== Turbopack compiler output tail ==='
+                Get-Content -LiteralPath $CompilerLog.FullName -Tail 300 -ErrorAction Stop
+                Write-Host '=== End Turbopack compiler output tail ==='
+              } else {
+                Write-Warning 'Turbopack compiler log was not found'
+              }
+            } catch {
+              Write-Warning 'Turbopack compiler log tail unavailable'
+            }
+            throw "Turbopack build failed: $TurbopackExitCode"
+          }
 
       - name: Full merged 52-test campaign run 1
         shell: pwsh
@@ -335,6 +365,7 @@ jobs:
             r7-work/artifacts/r7/windows
             r7-work/artifacts/r7/current-execution
             r7-work/current-execution-out
+            r7-work/.velmere/deployment-builds
             r7-work/R7_EXECUTION_SLICE_MANIFEST.json
             r7-work/R7_EXECUTION_SLICE_MANIFEST.tsv
             r7-work/R7_NPM_CI.log
@@ -343,5 +374,6 @@ jobs:
             r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json
             r7-runtime/R7_SUCCESSOR_SECRET_SCAN_RECEIPT.json
           if-no-files-found: error
+          include-hidden-files: true
           compression-level: 0
           retention-days: 14
