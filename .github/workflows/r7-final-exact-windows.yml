@@ -26,15 +26,15 @@ jobs:
       R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
       R7_PART_COUNT: '36'
       R7_FILE_COUNT: '3498'
-      R7_PAYLOAD_BYTE_LENGTH: '62922218'
-      R7_BUNDLE_SHA256: '2195cd534b4344570048a73489247491747489574acbfeb7678b8f952683fc4b'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '6ebc878a99ad5a2384c45ab9986bbda6db65cb286dccf9edeed447805bdceb85'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: '4c19f11cb539d18c067f60ab5e1d22d62223149a0f544cc9130e59f5052eeb6b'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: '310a10fe5f0b06bda42c0dfd7e29e2b71577adfb26a8f4384fad982b533b4065'
-      R7_FULL_SOURCE_MANIFEST_SHA256: 'd10bb8d10fa66a5a3e8ed89ecc2626e1af10cbb68f91bd012ffddd5676611fc8'
+      R7_PAYLOAD_BYTE_LENGTH: '62925509'
+      R7_BUNDLE_SHA256: '6cac66ee916ca5cac596749c88101734fe70840461fcce3020b9ef7aad13ee7e'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '329872919d0b63d56dcc1efe1dc0748994c68cdbd22c99b40952734cc1d4c123'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'c399d5caaef4f0a2c096a53a8bd6ed9a9c4ecd80c04077c0ecff993946a8238c'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: 'e98de701971c24139d5dfba6bf393e4c6e0e72ae7a2e351354a97d4ac552f687'
+      R7_FULL_SOURCE_MANIFEST_SHA256: '12385417801edc322cfe84f0cbd43813379855f4183a5a7dcad69a75cb67f2eb'
       R7_PACKAGE_JSON_SHA256: 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
       R7_PACKAGE_LOCK_SHA256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
-      R7_TRANSPORT_RECEIPT_SHA256: '88ed5093b8211a56a229c8083bb5ccf3e439b246780eb9b4a1b133010abdab1f'
+      R7_TRANSPORT_RECEIPT_SHA256: '14cb987244fd9bc0cc66436072a2972302ef61f9d3e1728ed484e7f0ddfbfd53'
       R7_PDF_FONT_PATH: 'r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf'
       R7_PDF_FONT_BYTE_LENGTH: '46464'
       R7_PDF_FONT_SHA256: 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa'
@@ -137,6 +137,7 @@ jobs:
             if ([string]$Assets.mode -ne 'EXTERNAL_RUNTIME_FONT_EXACT_HASH_REQUIRED') { throw 'external PDF font mode mismatch' }
             if ([string]$Assets.environmentVariable -ne 'VELMERE_PDF_FONT_PATH') { throw 'external PDF font environment contract mismatch' }
             if ([bool]$Assets.fontBytesIncludedInSource -or [bool]$Assets.fontBytesIncludedInExecutionSlice -or -not [bool]$Assets.transportedInGitHubExecutionSurface) { throw 'external PDF font source/slice boundary mismatch' }
+            if (-not [bool]$Assets.materializedIntoRuntimeProjectBeforeBuild) { throw 'external PDF font runtime-project materialization contract mismatch' }
             if ([string]$Assets.pdfFont.logicalPath -ne $env:R7_PDF_FONT_PATH -or [int64]$Assets.pdfFont.byteLength -ne [int64]$env:R7_PDF_FONT_BYTE_LENGTH -or [string]$Assets.pdfFont.sha256 -ne $env:R7_PDF_FONT_SHA256 -or [string]$Assets.pdfFont.gitBlobSha1 -ne $env:R7_PDF_FONT_GIT_BLOB_SHA1) { throw 'external PDF font receipt binding mismatch' }
             if ([string]$Assets.license.logicalPath -ne $env:R7_PDF_FONT_LICENSE_PATH -or [int64]$Assets.license.byteLength -ne [int64]$env:R7_PDF_FONT_LICENSE_BYTE_LENGTH -or [string]$Assets.license.sha256 -ne $env:R7_PDF_FONT_LICENSE_SHA256 -or [string]$Assets.license.gitBlobSha1 -ne $env:R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1) { throw 'external PDF font license receipt binding mismatch' }
           }
@@ -154,11 +155,27 @@ jobs:
           }
           $LicenseText = Get-Content -LiteralPath $env:R7_PDF_FONT_LICENSE_PATH -Raw
           if ($LicenseText -notmatch 'Copyright 2018 The Manrope Project Authors' -or $LicenseText -notmatch 'SIL OPEN FONT LICENSE Version 1\.1 - 26 February 2007') { throw 'external PDF font license identity mismatch' }
-          $AbsoluteFontPath = (Resolve-Path -LiteralPath $env:R7_PDF_FONT_PATH).Path
+          $RuntimeAssetDirectory = 'r7-work/r7-runtime/external-assets'
+          New-Item -ItemType Directory -Force -Path $RuntimeAssetDirectory | Out-Null
+          $RuntimeFontPath = Join-Path $RuntimeAssetDirectory 'manrope-pdf-latin-plus-ext.ttf'
+          $RuntimeLicensePath = Join-Path $RuntimeAssetDirectory 'OFL-Manrope.txt'
+          Copy-Item -LiteralPath $env:R7_PDF_FONT_PATH -Destination $RuntimeFontPath -Force
+          Copy-Item -LiteralPath $env:R7_PDF_FONT_LICENSE_PATH -Destination $RuntimeLicensePath -Force
+          foreach ($RuntimeAsset in @(
+            @{ Label = 'font'; Path = $RuntimeFontPath; Bytes = [int64]$env:R7_PDF_FONT_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_SHA256; GitBlob = $env:R7_PDF_FONT_GIT_BLOB_SHA1 },
+            @{ Label = 'license'; Path = $RuntimeLicensePath; Bytes = [int64]$env:R7_PDF_FONT_LICENSE_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_LICENSE_SHA256; GitBlob = $env:R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1 }
+          )) {
+            if ((Get-Item -LiteralPath $RuntimeAsset.Path).Length -ne $RuntimeAsset.Bytes) { throw "materialized external PDF $($RuntimeAsset.Label) byte length mismatch" }
+            $MaterializedSha = (Get-FileHash -LiteralPath $RuntimeAsset.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($MaterializedSha -ne $RuntimeAsset.Sha256) { throw "materialized external PDF $($RuntimeAsset.Label) SHA mismatch" }
+            $MaterializedGitBlob = (& git hash-object -- $RuntimeAsset.Path).Trim()
+            if ($LASTEXITCODE -ne 0 -or $MaterializedGitBlob -ne $RuntimeAsset.GitBlob) { throw "materialized external PDF $($RuntimeAsset.Label) Git blob mismatch" }
+          }
+          $AbsoluteFontPath = (Resolve-Path -LiteralPath $RuntimeFontPath).Path
           if (-not [IO.Path]::IsPathFullyQualified($AbsoluteFontPath)) { throw 'external PDF font path is not absolute' }
           if (-not $env:GITHUB_ENV) { throw 'GitHub environment file is unavailable for external PDF font path' }
           Add-Content -LiteralPath $env:GITHUB_ENV -Value "VELMERE_PDF_FONT_PATH=$AbsoluteFontPath" -Encoding utf8
-          Write-Host 'External Manrope PDF font and exact OFL verified; absolute runtime path exported.'
+          Write-Host 'External Manrope PDF font and exact OFL verified, materialized into the runtime project, and the absolute runtime path exported.'
 
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
