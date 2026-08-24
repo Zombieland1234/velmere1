@@ -1,0 +1,43 @@
+name: R7 V3 Existing Branch Exact Source Export
+
+on:
+  push:
+    branches:
+      - velmere-r7-v3-source-export-20260824
+    paths:
+      - '.github/workflows/r7-v3-source-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-current-head:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Export exact tracked bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=zip --output=R7_GITHUB_BRANCH_EXPORT.zip HEAD
+          sha256sum R7_GITHUB_BRANCH_EXPORT.zip | tee R7_GITHUB_BRANCH_EXPORT.sha256
+          git rev-parse HEAD | tee R7_GITHUB_BRANCH_EXPORT.commit
+
+      - name: Upload exact branch export
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v3-existing-branch-export-${{ github.sha }}
+          path: |
+            R7_GITHUB_BRANCH_EXPORT.zip
+            R7_GITHUB_BRANCH_EXPORT.sha256
+            R7_GITHUB_BRANCH_EXPORT.commit
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
