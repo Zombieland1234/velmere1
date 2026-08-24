@@ -26,15 +26,15 @@ jobs:
       R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
       R7_PART_COUNT: '36'
       R7_FILE_COUNT: '3490'
-      R7_PAYLOAD_BYTE_LENGTH: '62825140'
-      R7_BUNDLE_SHA256: '245df36ec21d9ca47dcb66f66953f1ef9b2133af9d3127b6a489a84ec016e0c6'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '4c8e2703cefe4e5016dac0ac883629f1b460de2f06697958b1a56e97893897eb'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: '62db9756f50222f5eff64e866f6eb44e2c8d32578b9d29f3e89c4f936e46dd29'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: '12f9541116577180c3e6a0efc2ed9133cb87c349bc5656a5e7980a0a0ee2e49a'
-      R7_FULL_SOURCE_MANIFEST_SHA256: '804df5857dcc7ab37c04e58abbdf6caec4edf619267dccf151b359d6000e4f5c'
+      R7_PAYLOAD_BYTE_LENGTH: '62826612'
+      R7_BUNDLE_SHA256: 'f9b4e0ed73ca120d4751b34cb7245479745fd136ebee98675ea54423ca4dd5f1'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '791f2d4a378e9871f605ec0a0613a8be59963eebe1430e8b3c4650f1ba72e5ed'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'cdd35a7f5ff367615a45dccacf6dbcf1c3dfb5cd1991933fd1cd31384570847c'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: 'f5da6a4fec3cd1dcb6bc7855f96e6658d47dd6e26ff8ea2fd33d6902cbd3d599'
+      R7_FULL_SOURCE_MANIFEST_SHA256: '4508395e4d2bef12ddcee335146db3990d20d3c30fed5e9707e994a3ebc3f5da'
       R7_PACKAGE_JSON_SHA256: 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
       R7_PACKAGE_LOCK_SHA256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
-      R7_TRANSPORT_RECEIPT_SHA256: 'de11650dc20961e5b256fa02d624b414a93ae798ae299131dfbca0b89b7a67cf'
+      R7_TRANSPORT_RECEIPT_SHA256: '063c2a81eb731fd7da5173ac1eee6f6eaa494eeb9dd1a5f154b919dbf1c542da'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
     steps:
@@ -200,22 +200,37 @@ jobs:
           } finally {
             Pop-Location
           }
-          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
-          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $ObservedNodeVersion = (node --version).Trim()
+          if ($ObservedNodeVersion -ne 'v24.18.0') { throw "Node mismatch: $ObservedNodeVersion" }
+          $ObservedNpmVersion = (npm --version).Trim()
+          if ($ObservedNpmVersion -ne '11.16.0') { throw "npm mismatch: $ObservedNpmVersion" }
           $env:npm_config_ignore_scripts = 'false'
           $EffectiveIgnoreScripts = (npm config get ignore-scripts).Trim().ToLowerInvariant()
           if ($EffectiveIgnoreScripts -ne 'false') { throw "ignore-scripts override failed: $EffectiveIgnoreScripts" }
           npm ci --ignore-scripts=false --audit=false --fund=false 2>&1 | Tee-Object -FilePath 'R7_NPM_CI.log'
           if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $LASTEXITCODE" }
           if (-not (Select-String -LiteralPath 'R7_NPM_CI.log' -SimpleMatch 'Velmere runtime OK: v24.18.0 / npm 11.16.0' -Quiet)) { throw 'root preinstall lifecycle marker missing' }
+          # Pass only values already observed and fail-closed above to the Node
+          # receipt process. Directly spawning the Windows npm shim from Node 24
+          # can fail with spawnSync EINVAL even after npm ci itself succeeded.
+          $env:R7_VERIFIED_NODE_VERSION = $ObservedNodeVersion
+          $env:R7_VERIFIED_NPM_VERSION = $ObservedNpmVersion
+          $env:R7_VERIFIED_NPM_IGNORE_SCRIPTS = $EffectiveIgnoreScripts
+          if (-not $env:GITHUB_ENV) { throw 'GitHub environment file is unavailable' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "R7_VERIFIED_NODE_VERSION=$ObservedNodeVersion" -Encoding utf8
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "R7_VERIFIED_NPM_VERSION=$ObservedNpmVersion" -Encoding utf8
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "R7_VERIFIED_NPM_IGNORE_SCRIPTS=$EffectiveIgnoreScripts" -Encoding utf8
           @'
-          const fs=require('node:fs'),crypto=require('node:crypto'),cp=require('node:child_process');
+          const fs=require('node:fs'),crypto=require('node:crypto');
           const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
           const pkg=n=>JSON.parse(fs.readFileSync(`node_modules/${n}/package.json`,'utf8')).version;
           const lock=JSON.parse(fs.readFileSync('package-lock.json','utf8'));
           const hasInstallScript=Object.entries(lock.packages||{}).filter(([,value])=>value?.hasInstallScript===true).map(([name])=>name);
-          const npm=cp.execFileSync('npm.cmd',['--version'],{encoding:'utf8'}).trim();
-          const effectiveIgnoreScripts=cp.execFileSync('npm.cmd',['config','get','ignore-scripts'],{encoding:'utf8'}).trim().toLowerCase();
+          const node=process.env.R7_VERIFIED_NODE_VERSION;
+          const npm=process.env.R7_VERIFIED_NPM_VERSION;
+          const effectiveIgnoreScripts=process.env.R7_VERIFIED_NPM_IGNORE_SCRIPTS;
+          if(node!=='v24.18.0')throw new Error(`verified_node_version_missing_or_invalid:${node??'missing'}`);
+          if(npm!=='11.16.0')throw new Error(`verified_npm_version_missing_or_invalid:${npm??'missing'}`);
           if(effectiveIgnoreScripts!=='false')throw new Error('effective_ignore_scripts_not_false');
           const packages={pglite:pkg('@electric-sql/pglite'),react:pkg('react'),reactDom:pkg('react-dom'),typescript:pkg('typescript'),next:pkg('next')};
           if(packages.pglite!=='0.5.4'||packages.react!=='19.2.7'||packages.reactDom!=='19.2.7'||packages.typescript!=='5.9.3'||packages.next!=='16.2.12')throw new Error(`exact_package_version_mismatch:${JSON.stringify(packages)}`);
@@ -226,7 +241,16 @@ jobs:
           '@ | node
           if ($LASTEXITCODE -ne 0) { throw "dependency receipt failed: $LASTEXITCODE" }
 
-      - name: TypeScript zero-error
+      - name: Exact Webpack production build
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item -Recurse -Force '.next' -ErrorAction SilentlyContinue
+          npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_WEBPACK.log'
+          if ($LASTEXITCODE -ne 0) { throw "Webpack build failed: $LASTEXITCODE" }
+
+      - name: TypeScript zero-error after generated-route types
         shell: pwsh
         working-directory: r7-work
         run: |
@@ -241,15 +265,6 @@ jobs:
           $ErrorActionPreference = 'Stop'
           npm run lint 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_ESLINT.log'
           if ($LASTEXITCODE -ne 0) { throw "ESLint failed: $LASTEXITCODE" }
-
-      - name: Exact Webpack production build
-        shell: pwsh
-        working-directory: r7-work
-        run: |
-          $ErrorActionPreference = 'Stop'
-          Remove-Item -Recurse -Force '.next' -ErrorAction SilentlyContinue
-          npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_WEBPACK.log'
-          if ($LASTEXITCODE -ne 0) { throw "Webpack build failed: $LASTEXITCODE" }
 
       - name: Exact Turbopack production build
         shell: pwsh
