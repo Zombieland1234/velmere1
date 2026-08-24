@@ -1,0 +1,84 @@
+name: R7 All Repository Blob Inventory
+
+on:
+  push:
+    branches:
+      - velmere-r7-current-blob-probe-20260824
+    paths:
+      - '.github/workflows/r7-all-repository-blobs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-all-repository-blobs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout probe branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch every repository head and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --prune origin \
+            '+refs/heads/*:refs/remotes/origin/*' \
+            '+refs/tags/*:refs/tags/*'
+
+      - name: Enumerate exact available blob object IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r7-blob-inventory
+          git rev-list --objects --all \
+            | awk '{print $1}' \
+            | sort -u \
+            | git cat-file --batch-check='%(objectname) %(objecttype)' \
+            | awk '$2 == "blob" {print $1}' \
+            | sort -u > r7-blob-inventory/R7_REPOSITORY_BLOB_SHA1S.txt
+
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          out = pathlib.Path('r7-blob-inventory')
+          p = out / 'R7_REPOSITORY_BLOB_SHA1S.txt'
+          lines = [x for x in p.read_text(encoding='ascii').splitlines() if x]
+          if lines != sorted(set(lines)):
+              raise SystemExit('blob inventory is not sorted unique')
+          if any(len(x) != 40 or any(c not in '0123456789abcdef' for c in x) for x in lines):
+              raise SystemExit('invalid git blob object id')
+          receipt = {
+              'schemaVersion': 'velmere.r7.repository-blob-inventory.v1',
+              'status': 'PASS_REPOSITORY_BLOB_INVENTORY',
+              'github': {
+                  'runId': os.environ.get('GITHUB_RUN_ID'),
+                  'runAttempt': os.environ.get('GITHUB_RUN_ATTEMPT'),
+                  'sha': os.environ.get('GITHUB_SHA'),
+                  'ref': os.environ.get('GITHUB_REF'),
+              },
+              'blobCount': len(lines),
+              'inventoryByteLength': p.stat().st_size,
+              'inventorySha256': hashlib.sha256(p.read_bytes()).hexdigest(),
+              'refCount': len(subprocess.check_output(['git','for-each-ref','--format=%(refname)'], text=True).splitlines()),
+              'truthBoundary': 'Inventory of blob object IDs reachable after fetching every repository head and tag. No current-source, Windows, staging, Customer FINAL, paid-value, sale or LIVE credit.',
+          }
+          (out / 'R7_REPOSITORY_BLOB_INVENTORY_RECEIPT.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Upload repository blob inventory
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-all-repository-blob-inventory
+          path: r7-blob-inventory
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
