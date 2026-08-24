@@ -25,16 +25,16 @@ jobs:
     env:
       R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
       R7_PART_COUNT: '36'
-      R7_FILE_COUNT: '3498'
-      R7_PAYLOAD_BYTE_LENGTH: '62925509'
-      R7_BUNDLE_SHA256: '6cac66ee916ca5cac596749c88101734fe70840461fcce3020b9ef7aad13ee7e'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '329872919d0b63d56dcc1efe1dc0748994c68cdbd22c99b40952734cc1d4c123'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'c399d5caaef4f0a2c096a53a8bd6ed9a9c4ecd80c04077c0ecff993946a8238c'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: 'e98de701971c24139d5dfba6bf393e4c6e0e72ae7a2e351354a97d4ac552f687'
-      R7_FULL_SOURCE_MANIFEST_SHA256: '12385417801edc322cfe84f0cbd43813379855f4183a5a7dcad69a75cb67f2eb'
+      R7_FILE_COUNT: '3500'
+      R7_PAYLOAD_BYTE_LENGTH: '62977796'
+      R7_BUNDLE_SHA256: 'badd137acddc50df4fe556b059cdd70198e4ec6ad93ce32f216c422b7957d287'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '68505471bbf2fd71aae5474f6bcda8808bb926cdbe5d7c97340da1e4cce0ad86'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: '2ed9c0ec7fba3fa4f25b18f241fa0ab4aaffebb409b7c34132832a43b3863cf2'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: '2c127228cef359c160adb148252e5a72048e2ffaa238d09ba8437adc7b70e35d'
+      R7_FULL_SOURCE_MANIFEST_SHA256: 'b388e83abc67e111b31b7e731930fc0f5a43db757455467d13a05e71414fcbe9'
       R7_PACKAGE_JSON_SHA256: 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
       R7_PACKAGE_LOCK_SHA256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
-      R7_TRANSPORT_RECEIPT_SHA256: '14cb987244fd9bc0cc66436072a2972302ef61f9d3e1728ed484e7f0ddfbfd53'
+      R7_TRANSPORT_RECEIPT_SHA256: 'e864ecd35bdf782081c8cdb4674d45b1d3df0797e4b3127dc732a67940a036a8'
       R7_PDF_FONT_PATH: 'r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf'
       R7_PDF_FONT_BYTE_LENGTH: '46464'
       R7_PDF_FONT_SHA256: 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa'
@@ -155,27 +155,7 @@ jobs:
           }
           $LicenseText = Get-Content -LiteralPath $env:R7_PDF_FONT_LICENSE_PATH -Raw
           if ($LicenseText -notmatch 'Copyright 2018 The Manrope Project Authors' -or $LicenseText -notmatch 'SIL OPEN FONT LICENSE Version 1\.1 - 26 February 2007') { throw 'external PDF font license identity mismatch' }
-          $RuntimeAssetDirectory = 'r7-work/r7-runtime/external-assets'
-          New-Item -ItemType Directory -Force -Path $RuntimeAssetDirectory | Out-Null
-          $RuntimeFontPath = Join-Path $RuntimeAssetDirectory 'manrope-pdf-latin-plus-ext.ttf'
-          $RuntimeLicensePath = Join-Path $RuntimeAssetDirectory 'OFL-Manrope.txt'
-          Copy-Item -LiteralPath $env:R7_PDF_FONT_PATH -Destination $RuntimeFontPath -Force
-          Copy-Item -LiteralPath $env:R7_PDF_FONT_LICENSE_PATH -Destination $RuntimeLicensePath -Force
-          foreach ($RuntimeAsset in @(
-            @{ Label = 'font'; Path = $RuntimeFontPath; Bytes = [int64]$env:R7_PDF_FONT_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_SHA256; GitBlob = $env:R7_PDF_FONT_GIT_BLOB_SHA1 },
-            @{ Label = 'license'; Path = $RuntimeLicensePath; Bytes = [int64]$env:R7_PDF_FONT_LICENSE_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_LICENSE_SHA256; GitBlob = $env:R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1 }
-          )) {
-            if ((Get-Item -LiteralPath $RuntimeAsset.Path).Length -ne $RuntimeAsset.Bytes) { throw "materialized external PDF $($RuntimeAsset.Label) byte length mismatch" }
-            $MaterializedSha = (Get-FileHash -LiteralPath $RuntimeAsset.Path -Algorithm SHA256).Hash.ToLowerInvariant()
-            if ($MaterializedSha -ne $RuntimeAsset.Sha256) { throw "materialized external PDF $($RuntimeAsset.Label) SHA mismatch" }
-            $MaterializedGitBlob = (& git hash-object -- $RuntimeAsset.Path).Trim()
-            if ($LASTEXITCODE -ne 0 -or $MaterializedGitBlob -ne $RuntimeAsset.GitBlob) { throw "materialized external PDF $($RuntimeAsset.Label) Git blob mismatch" }
-          }
-          $AbsoluteFontPath = (Resolve-Path -LiteralPath $RuntimeFontPath).Path
-          if (-not [IO.Path]::IsPathFullyQualified($AbsoluteFontPath)) { throw 'external PDF font path is not absolute' }
-          if (-not $env:GITHUB_ENV) { throw 'GitHub environment file is unavailable for external PDF font path' }
-          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VELMERE_PDF_FONT_PATH=$AbsoluteFontPath" -Encoding utf8
-          Write-Host 'External Manrope PDF font and exact OFL verified, materialized into the runtime project, and the absolute runtime path exported.'
+          Write-Host 'External Manrope PDF font and exact OFL verified at the transport boundary.'
 
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -244,6 +224,32 @@ jobs:
           console.log(JSON.stringify(receipt,null,2));
           '@ | node
           if ($LASTEXITCODE -ne 0) { throw "execution-slice verification failed: $LASTEXITCODE" }
+
+      - name: Materialize verified external PDF font inside runtime project
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $RuntimeAssetDirectory = 'r7-work/r7-runtime/external-assets'
+          New-Item -ItemType Directory -Force -Path $RuntimeAssetDirectory | Out-Null
+          $RuntimeFontPath = Join-Path $RuntimeAssetDirectory 'manrope-pdf-latin-plus-ext.ttf'
+          $RuntimeLicensePath = Join-Path $RuntimeAssetDirectory 'OFL-Manrope.txt'
+          Copy-Item -LiteralPath $env:R7_PDF_FONT_PATH -Destination $RuntimeFontPath -Force
+          Copy-Item -LiteralPath $env:R7_PDF_FONT_LICENSE_PATH -Destination $RuntimeLicensePath -Force
+          foreach ($RuntimeAsset in @(
+            @{ Label = 'font'; Path = $RuntimeFontPath; Bytes = [int64]$env:R7_PDF_FONT_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_SHA256; GitBlob = $env:R7_PDF_FONT_GIT_BLOB_SHA1 },
+            @{ Label = 'license'; Path = $RuntimeLicensePath; Bytes = [int64]$env:R7_PDF_FONT_LICENSE_BYTE_LENGTH; Sha256 = $env:R7_PDF_FONT_LICENSE_SHA256; GitBlob = $env:R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1 }
+          )) {
+            if ((Get-Item -LiteralPath $RuntimeAsset.Path).Length -ne $RuntimeAsset.Bytes) { throw "materialized external PDF $($RuntimeAsset.Label) byte length mismatch" }
+            $MaterializedSha = (Get-FileHash -LiteralPath $RuntimeAsset.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($MaterializedSha -ne $RuntimeAsset.Sha256) { throw "materialized external PDF $($RuntimeAsset.Label) SHA mismatch" }
+            $MaterializedGitBlob = (& git hash-object -- $RuntimeAsset.Path).Trim()
+            if ($LASTEXITCODE -ne 0 -or $MaterializedGitBlob -ne $RuntimeAsset.GitBlob) { throw "materialized external PDF $($RuntimeAsset.Label) Git blob mismatch" }
+          }
+          $AbsoluteFontPath = (Resolve-Path -LiteralPath $RuntimeFontPath).Path
+          if (-not [IO.Path]::IsPathFullyQualified($AbsoluteFontPath)) { throw 'external PDF font path is not absolute' }
+          if (-not $env:GITHUB_ENV) { throw 'GitHub environment file is unavailable for external PDF font path' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VELMERE_PDF_FONT_PATH=$AbsoluteFontPath" -Encoding utf8
+          Write-Host 'Verified external Manrope PDF font and exact OFL materialized after source verification; absolute runtime path exported.'
 
       - name: Pin exact npm 11.16.0 and run full lifecycle npm ci
         shell: pwsh
