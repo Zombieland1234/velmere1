@@ -1,0 +1,232 @@
+name: R7 Final Exact Windows Current-Source Campaign
+
+on:
+  push:
+    branches:
+      - velmere-r7-final-exact-windows-20260824
+    paths:
+      - '.github/workflows/r7-final-exact-windows.yml'
+  pull_request:
+    branches:
+      - velmere-r7-merged-current-source-20260823
+    paths:
+      - '.github/workflows/r7-final-exact-windows.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-final-exact-windows-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  exact-windows-current-source:
+    runs-on: windows-2025
+    timeout-minutes: 210
+    env:
+      R7_BUNDLE_SHA256: 9ee4ecb377f5b3158e44462b152a1fc3307687a19318e242c46aaa0f78b8da17
+      R7_SLICE_AGGREGATE_SHA256: 168860aa96f6777ee118950dbc6b177f53ae121bac211af677207666c693db1d
+      R7_PACKAGE_SHA256: de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c
+      R7_LOCK_SHA256: e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      R7_EXECUTION_COMMIT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      R7_EXECUTION_REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+      R7_OIDC_TRANSPORT_URL: https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-execution-transport-oidc
+    steps:
+      - name: Checkout exact R7 execution control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.R7_EXECUTION_COMMIT_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Acquire OIDC-bound exact transport and reconstruct R7 execution slice
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path 'r7-runtime/parts' | Out-Null
+          $audience = [Uri]::EscapeDataString('velmere-r7-exact-windows')
+          $oidcResponse = Invoke-RestMethod -Method Get -Uri "$env:ACTIONS_ID_TOKEN_REQUEST_URL&audience=$audience" -Headers @{ Authorization = "Bearer $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN" } -TimeoutSec 30
+          if ([string]::IsNullOrWhiteSpace($oidcResponse.value)) { throw 'GitHub OIDC token acquisition failed' }
+          $transport = Invoke-RestMethod -Method Get -Uri $env:R7_OIDC_TRANSPORT_URL -Headers @{ Authorization = "Bearer $($oidcResponse.value)" } -TimeoutSec 60
+          if ($transport.status -ne 'PASS_EXACT_PARTS_READY' -or [int]$transport.expectedPartCount -ne 36) { throw 'OIDC transport is not exact-ready' }
+          $parts = @($transport.parts | Sort-Object name)
+          if ($parts.Count -ne 36) { throw "R7 signed part count mismatch: $($parts.Count)/36" }
+          $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+          foreach ($part in $parts) {
+            $name = [string]$part.name
+            if ($name -notmatch '^R7_EXECUTION_SLICE\.tar\.zst\.part-[0-9]{2}\.b64$') { throw "Invalid transport part name: $name" }
+            if (-not $seen.Add($name)) { throw "Duplicate transport part: $name" }
+            if ([string]::IsNullOrWhiteSpace([string]$part.signedUrl)) { throw "Missing signed URL: $name" }
+            Invoke-WebRequest -UseBasicParsing -Uri ([string]$part.signedUrl) -OutFile (Join-Path 'r7-runtime/parts' $name) -TimeoutSec 120
+          }
+          $localParts = Get-ChildItem -LiteralPath 'r7-runtime/parts' -Filter '*.b64' | Sort-Object Name
+          if ($localParts.Count -ne 36) { throw "Downloaded R7 part count mismatch: $($localParts.Count)/36" }
+          $encoded = ($localParts | ForEach-Object { (Get-Content -LiteralPath $_.FullName -Raw).Trim() }) -join ''
+          [IO.File]::WriteAllBytes('r7-runtime/R7_EXECUTION_SLICE.tar.zst', [Convert]::FromBase64String($encoded))
+          $bundleSha = (Get-FileHash -LiteralPath 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($bundleSha -ne $env:R7_BUNDLE_SHA256) { throw "R7 bundle SHA mismatch: $bundleSha" }
+          $transportReceipt = [ordered]@{
+            schemaVersion = 'velmere.r7.github-oidc-transport-receipt.v1'
+            status = 'PASS_EXACT_OIDC_TRANSPORT'
+            repository = [string]$transport.repository
+            eventName = [string]$transport.eventName
+            ref = [string]$transport.ref
+            headRef = [string]$transport.headRef
+            executionCommitSha = $env:R7_EXECUTION_COMMIT_SHA
+            partCount = $localParts.Count
+            bundleSha256 = $bundleSha
+            rawSecretsReturned = $false
+            signedUrlsPersisted = $false
+            customerFinalCredit = $false
+          }
+          New-Item -ItemType Directory -Force -Path 'r7-runtime/evidence' | Out-Null
+          $transportReceipt | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath 'r7-runtime/evidence/R7_GITHUB_OIDC_TRANSPORT_RECEIPT.json' -Encoding utf8
+          $zstd = (Get-Command zstd.exe -ErrorAction Stop).Source
+          & $zstd -d -f 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -o 'r7-runtime/R7_EXECUTION_SLICE.tar'
+          if ($LASTEXITCODE -ne 0) { throw "zstd failed: $LASTEXITCODE" }
+          New-Item -ItemType Directory -Force -Path 'r7-work' | Out-Null
+          tar.exe -xf 'r7-runtime/R7_EXECUTION_SLICE.tar' -C 'r7-work'
+          if ($LASTEXITCODE -ne 0) { throw "tar failed: $LASTEXITCODE" }
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Verify every execution-slice byte
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const manifest = JSON.parse(fs.readFileSync('R7_EXECUTION_SLICE_MANIFEST.json', 'utf8'));
+          const digest = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
+          let body = '';
+          for (const row of manifest.files) {
+            if (!fs.existsSync(row.path)) throw new Error(`missing:${row.path}`);
+            const bytes = fs.readFileSync(row.path);
+            const observed = digest(bytes);
+            if (bytes.length !== row.byteLength || observed !== row.sha256) throw new Error(`identity_mismatch:${row.path}`);
+            body += `${row.sha256}\t${row.byteLength}\t${row.path}\n`;
+          }
+          const aggregate = digest(Buffer.from(body));
+          if (manifest.fileCount !== 3478 || manifest.testDenominator !== 52) throw new Error('denominator_mismatch');
+          if (aggregate !== process.env.R7_SLICE_AGGREGATE_SHA256 || manifest.aggregateIdentitySha256 !== aggregate) throw new Error(`aggregate_mismatch:${aggregate}`);
+          if (digest(fs.readFileSync('package.json')) !== process.env.R7_PACKAGE_SHA256) throw new Error('package_sha_mismatch');
+          if (digest(fs.readFileSync('package-lock.json')) !== process.env.R7_LOCK_SHA256) throw new Error('lock_sha_mismatch');
+          console.log(JSON.stringify({status:'PASS_EXACT_R7_EXECUTION_SLICE',fileCount:manifest.fileCount,payloadByteLength:manifest.payloadByteLength,aggregateIdentitySha256:aggregate,testDenominator:manifest.testDenominator},null,2));
+          '@ | node
+
+      - name: Pin exact npm 11.16.0 and run full lifecycle npm ci
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          npm ci --audit=false --fund=false 2>&1 | Tee-Object -FilePath 'R7_NPM_CI.log'
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $LASTEXITCODE" }
+          @'
+          const fs=require('node:fs'),crypto=require('node:crypto'),cp=require('node:child_process');
+          const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+          const pkg=n=>JSON.parse(fs.readFileSync(`node_modules/${n}/package.json`,'utf8')).version;
+          const receipt={schemaVersion:'velmere.r7.exact-windows-dependency.v1',status:'PASS',runtime:{platform:process.platform,arch:process.arch,node:process.version,npm:cp.execFileSync('npm.cmd',['--version'],{encoding:'utf8'}).trim(),imageOs:process.env.ImageOS,runnerOs:process.env.RUNNER_OS},source:{packageJsonSha256:sha('package.json'),packageLockSha256:sha('package-lock.json')},packages:{pglite:pkg('@electric-sql/pglite'),react:pkg('react'),reactDom:pkg('react-dom'),typescript:pkg('typescript'),next:pkg('next')},lifecycleScriptsExecuted:true,customerFinalCredit:false};
+          fs.mkdirSync('artifacts/r7/windows',{recursive:true});fs.writeFileSync('artifacts/r7/windows/R7_EXACT_WINDOWS_DEPENDENCY_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+          '@ | node
+
+      - name: TypeScript zero-error
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm run typecheck 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_TYPESCRIPT.log'
+          if ($LASTEXITCODE -ne 0) { throw "TypeScript failed: $LASTEXITCODE" }
+
+      - name: ESLint zero-warning
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm run lint 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_ESLINT.log'
+          if ($LASTEXITCODE -ne 0) { throw "ESLint failed: $LASTEXITCODE" }
+
+      - name: Exact Webpack build
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item -Recurse -Force '.next' -ErrorAction SilentlyContinue
+          npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_WEBPACK.log'
+          if ($LASTEXITCODE -ne 0) { throw "Webpack build failed: $LASTEXITCODE" }
+
+      - name: Exact Turbopack build
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Remove-Item -Recurse -Force '.next' -ErrorAction SilentlyContinue
+          npm run build:turbopack 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_TURBOPACK.log'
+          if ($LASTEXITCODE -ne 0) { throw "Turbopack build failed: $LASTEXITCODE" }
+
+      - name: Full merged 52-test campaign run 1
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node scripts/r7/run-r7-current-execution-campaign.mjs --run-label windows-run1 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_CAMPAIGN_RUN1.log'
+          if ($LASTEXITCODE -ne 0) { throw "campaign run1 failed: $LASTEXITCODE" }
+
+      - name: Full merged 52-test campaign run 2
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node scripts/r7/run-r7-current-execution-campaign.mjs --run-label windows-run2 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_CAMPAIGN_RUN2.log'
+          if ($LASTEXITCODE -ne 0) { throw "campaign run2 failed: $LASTEXITCODE" }
+
+      - name: Verify repeatability and exact Windows identity
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node scripts/r7/compare-r7-campaigns.mjs `
+            artifacts/r7/current-execution/R7_CURRENT_EXECUTION_CAMPAIGN_windows-run1.json `
+            artifacts/r7/current-execution/R7_CURRENT_EXECUTION_CAMPAIGN_windows-run2.json
+          if ($LASTEXITCODE -ne 0) { throw "repeatability failed: $LASTEXITCODE" }
+          @'
+          const fs=require('node:fs'),crypto=require('node:crypto');
+          const one=JSON.parse(fs.readFileSync('artifacts/r7/current-execution/R7_CURRENT_EXECUTION_CAMPAIGN_windows-run1.json','utf8'));
+          const two=JSON.parse(fs.readFileSync('artifacts/r7/current-execution/R7_CURRENT_EXECUTION_CAMPAIGN_windows-run2.json','utf8'));
+          const repeat=JSON.parse(fs.readFileSync('artifacts/r7/current-execution/R7_CURRENT_EXECUTION_REPEATABILITY.json','utf8'));
+          if(one.selectedTests!==52||two.selectedTests!==52||one.summary.PASS!==52||two.summary.PASS!==52)throw new Error('windows_campaign_not_52_pass');
+          if(!one.exactWindowsCredit||!two.exactWindowsCredit||repeat.status!=='PASS_OUTCOME_REPEATABLE')throw new Error('windows_repeatability_or_identity_missing');
+          const workflow=fs.readFileSync('../.github/workflows/r7-final-exact-windows.yml');
+          const receipt={schemaVersion:'velmere.r7.final-exact-windows-current-source.v1',status:'PASS_EXACT_WINDOWS_52_X2',github:{sha:process.env.R7_EXECUTION_COMMIT_SHA,ref:process.env.R7_EXECUTION_REF,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,workflowSha256:crypto.createHash('sha256').update(workflow).digest('hex')},source:{executionSliceAggregateSha256:process.env.R7_SLICE_AGGREGATE_SHA256,packageJsonSha256:process.env.R7_PACKAGE_SHA256,packageLockSha256:process.env.R7_LOCK_SHA256,bundleSha256:process.env.R7_BUNDLE_SHA256},runtime:one.environment,runs:[{label:one.runLabel,summary:one.summary},{label:two.runLabel,summary:two.summary}],repeatability:{classificationStable:repeat.classificationStable,exitCodeStable:repeat.exitCodeStable,stdoutStable:repeat.stdoutStable,stderrStable:repeat.stderrStable},customerFinalCredit:false,truthBoundary:'Exact Windows engineering and 52x2 campaign only. Owner-authorized staging and row FINAL remain separate gates.'};
+          fs.writeFileSync('artifacts/r7/windows/R7_FINAL_EXACT_WINDOWS_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+          const binding={schemaVersion:'velmere.r7.source-authority-binding-input.v1',candidate:'R7_MERGED_CURRENT_SOURCE',sourceAggregateSha256:process.env.R7_SLICE_AGGREGATE_SHA256,executionBundleSha256:process.env.R7_BUNDLE_SHA256,githubSha:process.env.R7_EXECUTION_COMMIT_SHA,workflowSha256:receipt.github.workflowSha256,exactWindowsRunId:process.env.GITHUB_RUN_ID,exactWindowsStatus:'PASS',customerFinalCredit:false};
+          fs.writeFileSync('artifacts/r7/windows/R7_SOURCE_AUTHORITY_BINDING_INPUT.json',JSON.stringify(binding,null,2)+'\n');
+          console.log(JSON.stringify(receipt,null,2));
+          '@ | node
+
+      - name: Upload exact Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-final-exact-windows-current-source-${{ github.sha }}
+          path: |
+            r7-work/artifacts/r7/windows
+            r7-work/artifacts/r7/current-execution
+            r7-work/current-execution-out/r7
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.json
+            r7-work/R7_NPM_CI.log
+            r7-runtime/evidence/R7_GITHUB_OIDC_TRANSPORT_RECEIPT.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
