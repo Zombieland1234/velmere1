@@ -26,15 +26,15 @@ jobs:
       R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
       R7_PART_COUNT: '36'
       R7_FILE_COUNT: '3491'
-      R7_PAYLOAD_BYTE_LENGTH: '62838207'
-      R7_BUNDLE_SHA256: '0687d937edcba67157bd61b07405883375f45c2a570a90cb7c87729bbffb0996'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: 'da5eb707f449534e02a8188dfe89dc7c9ff028d78a19b171587343fc145f18f8'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: '213447733e9e8ec59d6f1ca96e3ce43bc388b889d234060e7939f843ef74f1fc'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: '3789858ad183eb39de00a0fda7cb04d3b6cb8a91d50459aaf836c311584aed55'
-      R7_FULL_SOURCE_MANIFEST_SHA256: 'c3e582877299cbe70be4000924d3ec726fe05178e6ab69f8de3492f80ad41209'
+      R7_PAYLOAD_BYTE_LENGTH: '62839471'
+      R7_BUNDLE_SHA256: 'df6005d298025a1946789945e4292c216d78f5a99c12fc2a9f43e6d9fe0c2977'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '4094445089204c3b7fb056cbada62aca51305eca420db135b6116cae36ca1289'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: '8bfb4be592873ab1806ff9c9af51546158c040082fb3a746306fae5ff6163cc4'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: '1de4865453668ef952f84c1fcb31575efb13f5fb5adecc52c71b8350ef1f61ec'
+      R7_FULL_SOURCE_MANIFEST_SHA256: '4d3e46fa55b125e743b3b3d9b1da58a50014251efad7a0a39d5764aa17fd818c'
       R7_PACKAGE_JSON_SHA256: 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c'
       R7_PACKAGE_LOCK_SHA256: 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb'
-      R7_TRANSPORT_RECEIPT_SHA256: '9c04bd031f20754aac678c761702ed97cdbcd0a758d2a4f69b9ae654dd5d73ad'
+      R7_TRANSPORT_RECEIPT_SHA256: 'd926d18bdd6c4934e71062474c6036c070a0110b816b0de26cb29140adaff8ca'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
     steps:
@@ -271,7 +271,22 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           npm run typecheck 2>&1 | Tee-Object -FilePath 'artifacts/r7/windows/R7_TYPESCRIPT.log'
-          if ($LASTEXITCODE -ne 0) { throw "TypeScript failed: $LASTEXITCODE" }
+          $TypeScriptExitCode = $LASTEXITCODE
+          if ($TypeScriptExitCode -ne 0) {
+            $TypeScriptReceipt = 'artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json'
+            if (Test-Path -LiteralPath $TypeScriptReceipt -PathType Leaf) {
+              Write-Host '=== TypeScript exact diagnostics receipt ==='
+              $TypeScriptResult = Get-Content -LiteralPath $TypeScriptReceipt -Raw | ConvertFrom-Json
+              foreach ($Partition in $TypeScriptResult.partitions) {
+                foreach ($Diagnostic in $Partition.diagnostics) { Write-Host ([string]$Diagnostic) }
+              }
+              foreach ($Diagnostic in $TypeScriptResult.toolingSyntaxErrors) { Write-Host ([string]$Diagnostic) }
+              Write-Host '=== End TypeScript exact diagnostics receipt ==='
+            } else {
+              Write-Warning 'TypeScript diagnostics receipt was not found'
+            }
+            throw "TypeScript failed: $TypeScriptExitCode"
+          }
 
       - name: ESLint zero-warning
         shell: pwsh
@@ -364,6 +379,7 @@ jobs:
           path: |
             r7-work/artifacts/r7/windows
             r7-work/artifacts/r7/current-execution
+            r7-work/artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json
             r7-work/current-execution-out
             r7-work/.velmere/deployment-builds
             r7-work/R7_EXECUTION_SLICE_MANIFEST.json
