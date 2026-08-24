@@ -1,0 +1,143 @@
+name: P70 Real Deployed Audit Reference Evidence
+
+on:
+  push:
+    branches:
+      - velmere-p69-ecb-reference-fx-customer-envelope-20260816
+  workflow_dispatch:
+
+concurrency:
+  group: p70-real-deployed-audit-reference-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  p70-real-deployed-reference:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout P70 control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0
+        id: npmcli
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          $npmRoot=(npm root --global).Trim()
+          $npmCli=(Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct exact P69R2 current product projection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          New-Item -ItemType Directory -Force p70-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p70-work `
+            --output-root p70-out
+          if ($LASTEXITCODE -ne 0) { throw "P46 reconstruction failed: $LASTEXITCODE" }
+          python p66-runtime/apply-p66-audit-pdf-delta.py --source-root p70-work/source --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json --output-manifest p70-work/P66.json | Out-File p70-out/P66_STAGE1.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage1 failed: $LASTEXITCODE" }
+          python p66-runtime/finalize-p66-shield-pro-row-id.py --source-root p70-work/source --manifest p70-work/P66.json | Out-File p70-out/P66_STAGE2.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage2 failed: $LASTEXITCODE" }
+          python p66-runtime/fix-p66-topology-ts-const.py --source-root p70-work/source --manifest p70-work/P66.json | Out-File p70-out/P66_STAGE3.log
+          if ($LASTEXITCODE -ne 0) { throw "P66 stage3 failed: $LASTEXITCODE" }
+          python p68-runtime/apply-p68-audit-customer-truth.py --source-root p70-work/source --manifest p70-work/P66.json --output-manifest p70-work/P68.json | Out-File p70-out/P68_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P68 stage failed: $LASTEXITCODE" }
+          python p69-runtime/apply-p69-ecb-reference-fx.py --source-root p70-work/source --manifest p70-work/P68.json --output-manifest p70-work/P69.json | Out-File p70-out/P69_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P69 stage failed: $LASTEXITCODE" }
+          python p69-runtime/fix-p69r2-node24-pinned-egress.py `
+            --source-root p70-work/source `
+            --manifest p70-work/P69.json `
+            --output-manifest p70-work/P69R2.json `
+            --receipt p70-out/P70_P69R2_RECONSTRUCTION_RECEIPT.json | Out-File p70-out/P69R2_STAGE.log
+          if ($LASTEXITCODE -ne 0) { throw "P69R2 stage failed: $LASTEXITCODE" }
+          $m=Get-Content p70-work/P69R2.json -Raw | ConvertFrom-Json
+          if ($m.projection.fileCount -ne 1597 -or $m.projection.payloadBytes -ne 20973109 -or $m.projection.pathSetSha256 -ne 'b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73' -or $m.projection.sourceContentAggregateSha256 -ne 'e0b5f045c7c20f87c0704b6c8fff8be70655ec98e69c5cf2f4f588207b0bab6f') { throw 'P70 parent projection identity mismatch' }
+          Copy-Item p70-work/P69R2.json p70-out/P70_PARENT_P69R2_BUILD_PROJECTION_MANIFEST.json
+
+      - name: Install current source dependencies and pinned solc toolchain
+        shell: pwsh
+        env:
+          npm_config_audit: 'false'
+          npm_config_fund: 'false'
+        run: |
+          $ErrorActionPreference='Stop'
+          Push-Location p70-work/source
+          try {
+            node "${{ steps.npmcli.outputs.npm_cli }}" ci --ignore-scripts --audit=false --fund=false
+            if ($LASTEXITCODE -ne 0) { throw "current source npm ci failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+          New-Item -ItemType Directory -Force p70-toolchain | Out-Null
+          '{"private":true}' | Set-Content p70-toolchain/package.json -Encoding utf8
+          node "${{ steps.npmcli.outputs.npm_cli }}" install --prefix p70-toolchain solc@0.8.12 --ignore-scripts --audit=false --fund=false --save-exact
+          if ($LASTEXITCODE -ne 0) { throw "solc 0.8.12 install failed: $LASTEXITCODE" }
+          $v=node -e "const s=require('./p70-toolchain/node_modules/solc'); process.stdout.write(s.version())"
+          if (-not $v.StartsWith('0.8.12+commit.f00d7308')) { throw "solc mismatch: $v" }
+          $v | Set-Content p70-out/P70_SOLC_VERSION.txt -Encoding utf8
+
+      - name: Execute real deployed Audit reference evidence
+        shell: pwsh
+        env:
+          P69_SOURCE_ROOT: ${{ github.workspace }}\p70-work\source
+          P70_SOURCE_ROOT: ${{ github.workspace }}\p70-work\source
+          P70_RESULT_DIR: ${{ github.workspace }}\p70-out
+          P70_SOLC_ROOT: ${{ github.workspace }}\p70-toolchain
+        run: |
+          $ErrorActionPreference='Stop'
+          node --import ./p69-runtime/register-p69-ts-loader.mjs ./p70-runtime/run-p70-real-multicall3-audit-expanded-rpc.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P70 real deployed Audit reference failed: $LASTEXITCODE" }
+
+      - name: Capture P70 workflow boundary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p70-out | Out-Null
+          $state='NOT_EXECUTED_OR_FAILED'
+          $evidence='p70-out/P70_REAL_DEPLOYED_AUDIT_REFERENCE_EVIDENCE.json'
+          if(Test-Path -LiteralPath $evidence){
+            $r=Get-Content -LiteralPath $evidence -Raw | ConvertFrom-Json
+            if($r.credit.realDeployedReferenceTarget -eq 1 -and $r.credit.realChainProviderQuorum -eq $true -and $r.credit.sourceRuntimeBinding -eq $true -and $r.credit.realTargetAuditPdfCases -eq 9){ $state='PASS_REAL_REFERENCE_NO_PROMOTION' }
+          }
+          $b=[ordered]@{
+            schemaVersion='velmere.p70.github-workflow-boundary.v2';runId='${{ github.run_id }}';runAttempt='${{ github.run_attempt }}';sha='${{ github.sha }}';ref='${{ github.ref }}';runnerOs='${{ runner.os }}';runnerArch='${{ runner.arch }}';imageOs=$env:ImageOS;node=(node --version 2>$null);npm=(npm --version 2>$null);
+            productSourceChangedSinceP69R2=$false;parentP69R2ProjectionFileCount=1597;parentP69R2ProjectionPayloadBytes=20973109;parentP69R2ProjectionAggregateSha256='e0b5f045c7c20f87c0704b6c8fff8be70655ec98e69c5cf2f4f588207b0bab6f';realReferenceState=$state;
+            productFamilies=10;customerFacingRows=20;currentExecutionProfiles=20;paidValueTransitions=10;rightsPassed=2;rightsDenominator=203;customerFinalOutputs=0;auditFinalCustomerPdfs=0;saleEligibleRows=0;live=$false;worldClassProven=$false;
+            truthBoundary='P70 executes one real deployed public Audit reference target on exact P69R2 product bytes. It may credit only real-reference source/chain/compiler/deployment/PDF evidence. No customer-final, Audit-final-PDF, provider-rights, paid-value, sale, LIVE or WORLD_CLASS promotion.'
+          }
+          $b | ConvertTo-Json -Depth 8 | Set-Content p70-out/P70_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P70 real deployed Audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p70-real-deployed-audit-reference
+          path: p70-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

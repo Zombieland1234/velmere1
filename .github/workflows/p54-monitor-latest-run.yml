@@ -1,0 +1,252 @@
+name: P54 Monitor Latest Native Windows Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - '.github/workflows/p54-monitor-latest-run.yml'
+
+concurrency:
+  group: p54-monitor-latest-native-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  monitor-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 190
+    steps:
+      - name: Checkout control branch with publish credential
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Wait for latest P54 run, download evidence and publish fixed status
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import time
+          import urllib.error
+          import urllib.request
+          import zipfile
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          token = os.environ['GH_TOKEN']
+          branch = os.environ['TARGET_BRANCH']
+          api = f'https://api.github.com/repos/{repo}'
+          workflow = 'p54-native-windows-exact-p46-projection-build.yml'
+          out = Path('p54-results')
+          latest = out / 'latest'
+          shutil.rmtree(latest, ignore_errors=True)
+          latest.mkdir(parents=True, exist_ok=True)
+
+          def request_json(url: str):
+              req = urllib.request.Request(url, headers={
+                  'Authorization': f'Bearer {token}',
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'velmere-p54-monitor/1.0',
+              })
+              with urllib.request.urlopen(req, timeout=90) as response:
+                  return json.load(response)
+
+          def download(url: str, destination: Path):
+              req = urllib.request.Request(url, headers={
+                  'Authorization': f'Bearer {token}',
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'velmere-p54-monitor/1.0',
+              })
+              with urllib.request.urlopen(req, timeout=180) as response, destination.open('wb') as handle:
+                  shutil.copyfileobj(response, handle)
+
+          status = {
+              'schemaVersion': 'velmere.p54.latest-run-monitor.v1',
+              'status': 'FAIL',
+              'targetWorkflow': workflow,
+              'targetBranch': branch,
+              'monitorRunId': os.environ.get('GITHUB_RUN_ID'),
+              'truthBoundary': 'Monitoring and transport only. Browser, PDF, customer outputs, rights, material value, sale eligibility and LIVE remain excluded.',
+          }
+
+          try:
+              runs_url = f'{api}/actions/workflows/{workflow}/runs?branch={branch}&per_page=10'
+              selected = None
+              deadline = time.time() + 10_200
+              while time.time() < deadline:
+                  runs = request_json(runs_url).get('workflow_runs', [])
+                  if runs:
+                      selected = runs[0]
+                      if selected.get('status') == 'completed':
+                          break
+                  time.sleep(15)
+              if selected is None:
+                  raise RuntimeError('No P54 workflow run was found')
+              if selected.get('status') != 'completed':
+                  raise TimeoutError(f"P54 run {selected.get('id')} did not complete before monitor timeout")
+
+              run_id = int(selected['id'])
+              run = request_json(f'{api}/actions/runs/{run_id}')
+              jobs_payload = request_json(f'{api}/actions/runs/{run_id}/jobs?per_page=100')
+              jobs = jobs_payload.get('jobs', [])
+              artifacts_payload = request_json(f'{api}/actions/runs/{run_id}/artifacts?per_page=100')
+              artifacts = artifacts_payload.get('artifacts', [])
+              target_artifacts = [a for a in artifacts if a.get('name', '').startswith('p54-native-windows-exact-p46-projection-build-')]
+
+              status['run'] = {
+                  'id': run_id,
+                  'status': run.get('status'),
+                  'conclusion': run.get('conclusion'),
+                  'headSha': run.get('head_sha'),
+                  'headBranch': run.get('head_branch'),
+                  'createdAt': run.get('created_at'),
+                  'updatedAt': run.get('updated_at'),
+                  'htmlUrl': run.get('html_url'),
+              }
+              status['jobs'] = [
+                  {
+                      'id': job.get('id'),
+                      'name': job.get('name'),
+                      'status': job.get('status'),
+                      'conclusion': job.get('conclusion'),
+                      'startedAt': job.get('started_at'),
+                      'completedAt': job.get('completed_at'),
+                      'steps': [
+                          {
+                              'number': step.get('number'),
+                              'name': step.get('name'),
+                              'status': step.get('status'),
+                              'conclusion': step.get('conclusion'),
+                          }
+                          for step in job.get('steps', [])
+                      ],
+                  }
+                  for job in jobs
+              ]
+              status['artifacts'] = [
+                  {
+                      'id': a.get('id'),
+                      'name': a.get('name'),
+                      'sizeBytes': a.get('size_in_bytes'),
+                      'expired': a.get('expired'),
+                      'digest': a.get('digest'),
+                  }
+                  for a in artifacts
+              ]
+
+              receipts = {}
+              if target_artifacts:
+                  artifact = sorted(target_artifacts, key=lambda a: a.get('created_at', ''), reverse=True)[0]
+                  archive = latest / 'p54-evidence.zip'
+                  download(f"{api}/actions/artifacts/{artifact['id']}/zip", archive)
+                  extract = latest / 'evidence'
+                  extract.mkdir(parents=True, exist_ok=True)
+                  with zipfile.ZipFile(archive) as zf:
+                      zf.extractall(extract)
+                  for path in sorted(extract.rglob('*.json')):
+                      try:
+                          value = json.loads(path.read_text(encoding='utf-8-sig'))
+                      except Exception as error:
+                          receipts[path.name] = {'parseError': str(error)}
+                          continue
+                      receipts[path.name] = value
+                      shutil.copy2(path, latest / path.name)
+                  status['downloadedArtifact'] = {
+                      'id': artifact.get('id'),
+                      'name': artifact.get('name'),
+                      'archiveBytes': archive.stat().st_size,
+                      'receiptNames': sorted(receipts),
+                  }
+              else:
+                  status['downloadedArtifact'] = None
+
+              status['receipts'] = receipts
+              adjudication = receipts.get('P54_WORKFLOW_ADJUDICATION_RECEIPT.json')
+              reconstruction = receipts.get('P54_EXACT_P46_CORPUS_RECONSTRUCTION_RECEIPT.json')
+              native_build = receipts.get('P54_NATIVE_WINDOWS_EXACT_P46_BUILD_EXECUTION_RECEIPT.json')
+              pass_state = (
+                  run.get('conclusion') == 'success'
+                  and isinstance(adjudication, dict) and adjudication.get('status') == 'PASS'
+                  and isinstance(reconstruction, dict) and reconstruction.get('status') == 'PASS'
+                  and isinstance(native_build, dict) and native_build.get('status') == 'PASS'
+              )
+              status['status'] = 'PASS' if pass_state else 'FAIL'
+              status['decision'] = 'P54_EXACT_NATIVE_WINDOWS_BUILD_PROJECTION_PASS' if pass_state else 'P54_FAIL_CLOSED'
+          except Exception as error:
+              status['status'] = 'FAIL'
+              status['decision'] = 'P54_MONITOR_OR_TARGET_FAILURE'
+              status['failure'] = {'type': type(error).__name__, 'message': str(error)}
+
+          latest_json = out / 'P54_LATEST_STATUS.json'
+          latest_json.write_text(json.dumps(status, ensure_ascii=False, sort_keys=True, indent=2) + '\n', encoding='utf-8')
+
+          lines = [
+              'P54 LATEST NATIVE WINDOWS STATUS',
+              f"status={status.get('status')}",
+              f"decision={status.get('decision')}",
+          ]
+          run = status.get('run') or {}
+          lines += [
+              f"runId={run.get('id')}",
+              f"runConclusion={run.get('conclusion')}",
+              f"headSha={run.get('headSha')}",
+          ]
+          for job in status.get('jobs', []):
+              lines.append(f"job={job.get('name')} conclusion={job.get('conclusion')}")
+              for step in job.get('steps', []):
+                  if step.get('conclusion') not in (None, 'success', 'skipped'):
+                      lines.append(f"failedStep={step.get('number')} {step.get('name')} conclusion={step.get('conclusion')}")
+          for name, receipt in (status.get('receipts') or {}).items():
+              if isinstance(receipt, dict):
+                  lines.append(f"receipt={name} status={receipt.get('status')} decision={receipt.get('decision')}")
+                  failure = receipt.get('failure')
+                  if failure:
+                      lines.append(f"receiptFailure={name} {failure}")
+          if status.get('failure'):
+              lines.append(f"monitorFailure={status['failure']}")
+          lines += [
+              'browser=0/3',
+              'pdfIndependentReplay=0/1',
+              'customerOutputs=0/17',
+              'providerRightsFields=0/176',
+              'materialDeltas=0/6',
+              'saleEligibility=0/17',
+              'globalStatus=NO_GO',
+          ]
+          (out / 'P54_LATEST_STATUS.txt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          print('\n'.join(lines))
+          PY
+
+          git config user.name 'velmere-p54-monitor'
+          git config user.email 'velmere141@gmail.com'
+          git add p54-results
+          if git diff --cached --quiet; then
+            echo 'No P54 status delta to publish.'
+            exit 0
+          fi
+          git commit -m "P54: publish latest native Windows adjudication"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:${TARGET_BRANCH}"; then
+              exit 0
+            fi
+            git pull --rebase origin "${TARGET_BRANCH}"
+            sleep $((attempt * 2))
+          done
+          echo 'Failed to publish P54 status after retries.' >&2
+          exit 1

@@ -1,0 +1,82 @@
+--- a/p61-browser/run-p61-browser-sku-executions.mjs
++++ b/p61-browser/run-p61-browser-sku-executions.mjs
+@@ -297,2 +297,17 @@
+     const page = await context.newPage();
++    await page.addInitScript(() => {
++      const registry = new Map();
++      const originalCreateObjectUrl = URL.createObjectURL.bind(URL);
++      URL.createObjectURL = (value) => {
++        const url = originalCreateObjectUrl(value);
++        if (value instanceof Blob) registry.set(url, value);
++        return url;
++      };
++      Object.defineProperty(globalThis, '__p61PdfBlobRegistry', {
++        value: registry,
++        configurable: false,
++        enumerable: false,
++        writable: false,
++      });
++    });
+     page.on('console', (message) => { if (message.type() === 'error' && !/React DevTools/i.test(message.text())) consoleErrors.push(sanitizedConsoleText(message.text())); });
+@@ -359,17 +374,24 @@
+       await page.waitForTimeout(1200);
+       page.off('response', listener);
+       const downloadLink = visibleTestId(page, 'lens-download-link');
++      const pdfToggle = visibleTestId(page, 'lens-pdf-toggle');
++      await pdfToggle.waitFor({ state: 'visible', timeout: 30_000 });
++      await pdfToggle.click();
+       const frame = visibleTestId(page, 'lens-pdf-frame');
++      await frame.waitFor({ state: 'visible', timeout: 30_000 });
+       const downloadHref = await downloadLink.getAttribute('href');
+       const frameSrc = await frame.getAttribute('src');
+       const downloadName = await downloadLink.getAttribute('download');
+       const blobEvidence = await page.evaluate(async ({ href, frameUrl, suggestedName }) => {
+         if (!href) return { available: false };
+-        const response = await fetch(href);
+-        const bytes = new Uint8Array(await response.arrayBuffer());
++        const registry = globalThis.__p61PdfBlobRegistry;
++        const blob = registry instanceof Map ? registry.get(href) : null;
++        if (!(blob instanceof Blob)) return { available: false, source: 'url-create-object-registry', reason: 'blob_not_observed' };
++        const bytes = new Uint8Array(await blob.arrayBuffer());
+         let binary = '';
+         for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+-        return { available: true, hrefScheme: new URL(href).protocol, frameSameUrl: frameUrl === href, download: suggestedName, base64: btoa(binary), byteLength: bytes.length };
++        const frameBaseUrl = String(frameUrl ?? '').split('#', 1)[0];
++        return { available: true, source: 'url-create-object-registry', hrefScheme: new URL(href).protocol, frameSameUrl: frameBaseUrl === href, download: suggestedName, base64: btoa(binary), byteLength: bytes.length, blobType: blob.type };
+       }, { href: downloadHref, frameUrl: frameSrc, suggestedName: downloadName });
+       let blobFile = null;
+       if (blobEvidence.available) {
+@@ -451,9 +473,9 @@
+ const tiers = ['basic', 'pro', 'advanced'].map(summarizeTier);
+ const allPass = !topLevelError && rows.length === cases.length && rows.every((row) => row.ok) && tiers.every((tier) => tier.pass);
+ const receipt = {
+-  schemaVersion: 'velmere.p61.browser-three-physical-sku-executions.v1',
++  schemaVersion: 'velmere.p61g.browser-three-physical-sku-executions-official-runtime-font.v1',
+   status: allPass ? 'PASS' : 'FAIL',
+-  decision: allPass ? 'PASS_BROWSER_BASIC_PRO_ADVANCED_PHYSICAL_EXECUTIONS_CURRENT_TRUTH_BOUNDED' : 'FAIL_CLOSED_BROWSER_THREE_SKU_EXECUTION',
++  decision: allPass ? 'PASS_P61G_BROWSER_BASIC_PRO_ADVANCED_PHYSICAL_EXECUTIONS_OFFICIAL_RUNTIME_FONT_TRUTH_BOUNDED' : 'FAIL_CLOSED_P61G_BROWSER_THREE_SKU_EXECUTION',
+   executedAt: new Date().toISOString(),
+   sourceBinding: {
+     projectionManifestSha256: EXPECTED_PROJECTION_MANIFEST_SHA256,
+@@ -461,3 +483,12 @@
+     projection: EXPECTED_PROJECTION,
+     p60EngineeringDecision: 'PASS_NATIVE_WINDOWS_EXACT_BUILD_RELEVANT_PROJECTION_SEMANTIC_LINT_DUAL_BUILD_WITH_CONTROLLED_NEXT_ENV_RECONCILIATION',
++    controlledP61gSourceDelta: {
++      path: 'lib/search/lens-pdf-renderer.ts',
++      mode: 'ONE_EXISTING_FILE_SAME_LENGTH_HASH_TRANSITION',
++      baselineByteLength: 76847,
++      baselineSha256: '1e18d849d232e48cf12b40f5b274141f21353b2d7038d40d3f69103ed71380d3',
++      patchedByteLength: 76847,
++      patchedSha256: '18142581dc6f858df800c684c90bb6c444683758664f45f5eb7b87932f0bd647',
++      sourceEngineeringReceipt: 'P61G_OFFICIAL_MANROPE_RENDERER_SOURCE_ENGINEERING_RECEIPT.json',
++    },
+   },
+@@ -504,7 +535,7 @@
+   tiers,
+   rows,
+   topLevelError,
+-  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection and native Windows runtime. Basic is exercised through a real source-token JSON/PDF preview path; Pro and Advanced are exercised as exact fail-closed current commercial states. The source input is an owned deterministic fixture. This grants no live/current provider, rights, customer value, independent PDF replay, sale, GO or WORLD_CLASS credit.',
++  truthBoundary: 'PASS proves three physically distinct Browser Basic/Pro/Advanced execution paths on the exact P60-bound 1597-file projection plus the one-file same-length P61G renderer hash transition, using an exact-hash official runtime font acquired under an internal OFL-1.1 text match. Basic is exercised through a real source-token JSON/PDF preview path; QA-only URL.createObjectURL registry instrumentation reads the exact in-memory preview/download Blob without a second network fetch and without changing product source. Pro and Advanced execute their current fail-closed commercial states. This grants no production rate-limit, live/current provider, external legal opinion, customer value, independent PDF replay, sale, GO, LIVE or WORLD_CLASS credit.',
+ };
+ receipt.integritySha256 = stableSha(receipt);
+ writeJson('P61_BROWSER_THREE_PHYSICAL_SKU_EXECUTIONS.json', receipt);
