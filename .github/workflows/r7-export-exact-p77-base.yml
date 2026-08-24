@@ -1,0 +1,86 @@
+name: R7 Export Exact P77 Base
+
+on:
+  push:
+    branches:
+      - velmere-r7-p77-base-export-20260824
+    paths:
+      - '.github/workflows/r7-export-exact-p77-base.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-export-p77-base-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  export-p77-base:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact control head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Expand pinned P75 and P77 support
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $parts=Get-ChildItem 'p75-runtime/bundle.part*' | Sort-Object Name
+          if($parts.Count-ne7){throw "P75 bundle part count mismatch: $($parts.Count)"}
+          $b64=''; foreach($part in $parts){$b64 += (Get-Content $part.FullName -Raw).Trim()}
+          [IO.File]::WriteAllBytes('p75-runtime/p75-ci-bundle.zip',[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash 'p75-runtime/p75-ci-bundle.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha-ne'467026e4c5751d42c6fb06fb4425d640f911a3990fc3f05fd2de99c03e68ffad'){throw "P75 bundle SHA mismatch: $sha"}
+          Expand-Archive -LiteralPath 'p75-runtime/p75-ci-bundle.zip' -DestinationPath 'p75-runtime' -Force
+          python p77-runtime/reconstruct-p77-support.py --parts-dir p77-runtime --output-dir p77-runtime
+
+      - name: Reconstruct exact P77 source only
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path p77-export | Out-Null
+          python p73-runtime/reconstruct-p73r7-exact.py --work-root p75-work --out-root p77-export
+          python p75-runtime/apply-p75-advanced-automation-runtime.py --source-root p75-work/source --parent-manifest p75-work/P73R7_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --receipt p77-export/P75_SOURCE_PATCH.json
+          python p76r2-runtime/reconstruct-p76-base-apply.py --parts-dir p76-runtime --output p76-runtime/apply-p76-advanced-release-automation.py
+          python p76-runtime/apply-p76-advanced-release-automation.py --source-root p75-work/source --parent-manifest p75-work/P75_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --receipt p77-export/P76_SOURCE_PATCH.json
+          python p76r2-runtime/apply-p76r2-typescript-repair.py --source-root p75-work/source --parent-manifest p75-work/P76_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --receipt p77-export/P76R2_SOURCE_PATCH.json
+          python p77-runtime/apply-p77-deterministic-final-delivery.py --source-root p75-work/source --parent-manifest p75-work/P76R2_BUILD_PROJECTION_MANIFEST.json --manifest p75-work/P77_BUILD_PROJECTION_MANIFEST.json --receipt p77-export/P77_SOURCE_PATCH.json
+
+      - name: Bind and archive exact P77 source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          @'
+          import hashlib,json,os,pathlib,tarfile
+          root=pathlib.Path('p75-work/source')
+          manifest=json.loads(pathlib.Path('p75-work/P77_BUILD_PROJECTION_MANIFEST.json').read_text(encoding='utf-8'))
+          files=[]
+          for p in sorted(root.rglob('*')):
+              if p.is_file():
+                  b=p.read_bytes(); files.append({'path':p.relative_to(root).as_posix(),'byteLength':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          body=''.join(f"{r['sha256']}\t{r['byteLength']}\t{r['path']}\n" for r in files).encode()
+          identity={'schemaVersion':'velmere.r7.p77-base-export.v1','status':'PASS','githubSha':os.environ['GITHUB_SHA'],'fileCount':len(files),'payloadByteLength':sum(r['byteLength'] for r in files),'aggregateIdentitySha256':hashlib.sha256(body).hexdigest(),'p77Projection':manifest['projection'],'files':files,'customerFinalCredit':False}
+          pathlib.Path('p77-export/P77_BASE_SOURCE_IDENTITY.json').write_text(json.dumps(identity,indent=2)+'\n',encoding='utf-8')
+          pathlib.Path('p77-export/P77_BASE_SOURCE_MANIFEST.tsv').write_bytes(body)
+          with tarfile.open('p77-export/P77_BASE_SOURCE.tar.gz','w:gz',compresslevel=9) as tf:
+              for r in files:
+                  p=root/r['path']; info=tf.gettarinfo(str(p),arcname=r['path']); info.mtime=315532800; info.uid=info.gid=0; info.uname=info.gname='';
+                  with p.open('rb') as fh: tf.addfile(info,fh)
+          archive=pathlib.Path('p77-export/P77_BASE_SOURCE.tar.gz').read_bytes()
+          pathlib.Path('p77-export/P77_BASE_SOURCE.tar.gz.sha256').write_text(hashlib.sha256(archive).hexdigest()+'  P77_BASE_SOURCE.tar.gz\n',encoding='ascii')
+          print(json.dumps({k:identity[k] for k in ('fileCount','payloadByteLength','aggregateIdentitySha256')},indent=2))
+          '@ | python
+
+      - name: Upload exact P77 base
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-exact-p77-base-${{ github.sha }}
+          path: p77-export
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
