@@ -1,0 +1,49 @@
+name: R7 Browser Basic Authenticated Successor E2E v2
+
+on:
+  push:
+    branches:
+      - velmere-r7-v15-diagnostic-extract-20260825
+    paths:
+      - '.github/workflows/r7-browser-authenticated-successor-e2e-v2.yml'
+      - 'diagnostic-scripts/r7-browser-successor-e2e-v2.ps1'
+      - 'diagnostic-scripts/r7-browser-successor-live-e2e.mts'
+      - 'diagnostic-patches/successor-v3.patch.gz.b64'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  browser-basic-e2e-v2:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout diagnostic control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Execute zero-Vercel Browser Basic product-route E2E
+        shell: pwsh
+        run: ./diagnostic-scripts/r7-browser-successor-e2e-v2.ps1
+
+      - name: Upload E2E evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-browser-basic-successor-e2e-v2-${{ github.run_id }}
+          path: |
+            r7-work/R7_BROWSER_BASIC_AUTHENTICATED_SUCCESSOR_E2E.json
+            r7-work/R7_BROWSER_E2E_NEXT_STDOUT.log
+            r7-work/R7_BROWSER_E2E_NEXT_STDERR.log
+          if-no-files-found: warn
+          retention-days: 2
