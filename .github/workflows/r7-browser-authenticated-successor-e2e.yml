@@ -70,9 +70,9 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'patch gzip CRC failed'}
           gzip -d -f successor-v3.patch.gz
           if((Get-FileHash 'successor-v3.patch' -Algorithm SHA256).Hash.ToLowerInvariant() -ne '147435282063175d633d06ce5c313c9c8b9887bbe389645c292dbf2596884a54'){throw 'patch SHA mismatch'}
-          git -C r7-work apply --check ..\successor-v3.patch
+          git apply --check --directory=r7-work successor-v3.patch
           if($LASTEXITCODE -ne 0){throw 'successor patch check failed'}
-          git -C r7-work apply ..\successor-v3.patch
+          git apply --directory=r7-work successor-v3.patch
           if($LASTEXITCODE -ne 0){throw 'successor patch apply failed'}
 
       - name: Materialize exact PDF font and setup Node
@@ -228,58 +228,26 @@ jobs:
           const readbackAgain=await fetch(jsonUrl,{headers:signed(a,jsonUrl)});
           assert(readbackAgain.status===200,"repeat_readback_failed");
 
-          const receipt={
-            schemaVersion:"velmere.r7.browser-basic-authenticated-successor-e2e.v1",
-            status:"PASS_BROWSER_BASIC_PRODUCT_ROUTE_E2E",
-            source:"ECB_OFFICIAL_REFERENCE_RATE",
-            externalProvider:"ECB",
-            providerNetworkReal:true,
-            sourceResponseSha256:result.officialReferenceSnapshot.responseSha256,
-            rightsReceiptSha256:preview.report.deliveryAuthority.rightsReceiptSha256,
-            accountAOwnReadback:true,
-            accountBCrossAccountDenied:true,
-            durableComputation:"supabase",
-            exactPdfByteParity:true,
-            pdfSha256:`sha256:${pdfSha}`,
-            pdfByteLength:pdf.length,
-            artifactId,
-            serviceRoleInApplication:false,
-            serverCapabilityUsed:true,
-            vercelUsed:false,
-            customerFinalCredit:false,
-          };
+          const receipt={schemaVersion:"velmere.r7.browser-basic-authenticated-successor-e2e.v1",status:"PASS_BROWSER_BASIC_PRODUCT_ROUTE_E2E",source:"ECB_OFFICIAL_REFERENCE_RATE",externalProvider:"ECB",providerNetworkReal:true,sourceResponseSha256:result.officialReferenceSnapshot.responseSha256,rightsReceiptSha256:preview.report.deliveryAuthority.rightsReceiptSha256,accountAOwnReadback:true,accountBCrossAccountDenied:true,durableComputation:"supabase",exactPdfByteParity:true,pdfSha256:`sha256:${pdfSha}`,pdfByteLength:pdf.length,artifactId,serviceRoleInApplication:false,serverCapabilityUsed:true,vercelUsed:false,customerFinalCredit:false};
           await import("node:fs/promises").then(fs=>fs.writeFile("R7_BROWSER_BASIC_AUTHENTICATED_SUCCESSOR_E2E.json",JSON.stringify(receipt,null,2)+"\n"));
           console.log(JSON.stringify({...receipt,artifactId:"<redacted-id>",sourceResponseSha256:"<sha256>",rightsReceiptSha256:"<sha256>",pdfSha256:"<sha256>"},null,2));
           '@ | Set-Content -LiteralPath 'scripts/current-execution/r7-browser-successor-live-e2e.mts' -Encoding utf8
           npx tsx scripts/current-execution/r7-browser-successor-live-e2e.mts
-          if($LASTEXITCODE -ne 0){
-            Get-Content 'R7_BROWSER_E2E_NEXT_STDOUT.log' -Tail 160 -ErrorAction SilentlyContinue
-            Get-Content 'R7_BROWSER_E2E_NEXT_STDERR.log' -Tail 160 -ErrorAction SilentlyContinue
-            throw "Browser live E2E failed: $LASTEXITCODE"
-          }
+          if($LASTEXITCODE -ne 0){Get-Content 'R7_BROWSER_E2E_NEXT_STDOUT.log' -Tail 160 -ErrorAction SilentlyContinue;Get-Content 'R7_BROWSER_E2E_NEXT_STDERR.log' -Tail 160 -ErrorAction SilentlyContinue;throw "Browser live E2E failed: $LASTEXITCODE"}
 
       - name: Stop local Next runtime
         if: always()
         shell: pwsh
         working-directory: r7-work
         run: |
-          if(Test-Path 'R7_BROWSER_E2E_NEXT_PID.txt'){
-            $PidValue=[int](Get-Content 'R7_BROWSER_E2E_NEXT_PID.txt' -Raw).Trim()
-            Stop-Process -Id $PidValue -Force -ErrorAction SilentlyContinue
-          }
+          if(Test-Path 'R7_BROWSER_E2E_NEXT_PID.txt'){$PidValue=[int](Get-Content 'R7_BROWSER_E2E_NEXT_PID.txt' -Raw).Trim();Stop-Process -Id $PidValue -Force -ErrorAction SilentlyContinue}
 
       - name: Cleanup ephemeral Supabase E2E users
         if: always()
         shell: pwsh
         run: |
           if(-not $env:R7_E2E_USER_A_ID -or -not $env:R7_E2E_USER_B_ID){exit 0}
-          try {
-            $OidcUrl="$env:ACTIONS_ID_TOKEN_REQUEST_URL&audience=velmere-r7-browser-e2e"
-            $Oidc=(Invoke-RestMethod -Uri $OidcUrl -Headers @{Authorization="Bearer $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN"}).value
-            $Body=@{action='cleanup';userIds=@($env:R7_E2E_USER_A_ID,$env:R7_E2E_USER_B_ID)} | ConvertTo-Json -Compress
-            $Cleanup=Invoke-RestMethod -Method Post -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-e2e-oidc-session' -Headers @{Authorization="Bearer $Oidc"} -ContentType 'application/json' -Body $Body
-            Write-Host "Ephemeral E2E users cleaned: $($Cleanup.deleted)/$($Cleanup.requested)"
-          } catch { Write-Warning 'Ephemeral E2E cleanup request failed; follow-up cleanup required.' }
+          try {$OidcUrl="$env:ACTIONS_ID_TOKEN_REQUEST_URL&audience=velmere-r7-browser-e2e";$Oidc=(Invoke-RestMethod -Uri $OidcUrl -Headers @{Authorization="Bearer $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN"}).value;$Body=@{action='cleanup';userIds=@($env:R7_E2E_USER_A_ID,$env:R7_E2E_USER_B_ID)} | ConvertTo-Json -Compress;$Cleanup=Invoke-RestMethod -Method Post -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-e2e-oidc-session' -Headers @{Authorization="Bearer $Oidc"} -ContentType 'application/json' -Body $Body;Write-Host "Ephemeral E2E users cleaned: $($Cleanup.deleted)/$($Cleanup.requested)"} catch {Write-Warning 'Ephemeral E2E cleanup request failed; follow-up cleanup required.'}
 
       - name: Upload Browser E2E evidence
         if: always()
