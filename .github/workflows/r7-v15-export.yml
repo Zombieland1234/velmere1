@@ -32,18 +32,24 @@ jobs:
           root=pathlib.Path('r7-export')
           m=json.loads((root/'R7_EXECUTION_SLICE_MANIFEST.json').read_text())
           body=bytearray()
+          expected=[]
           for row in m['files']:
               p=root/row['path']; b=p.read_bytes(); h=hashlib.sha256(b).hexdigest()
               assert len(b)==row['byteLength'] and h==row['sha256'], row['path']
               body.extend(f"{h}\t{len(b)}\t{row['path']}\n".encode())
+              expected.append(row['path'])
+          expected.extend(m['archiveAdditionalPaths'])
+          observed=sorted(str(p.relative_to(root)).replace('\\','/') for p in root.rglob('*') if p.is_file())
+          assert observed==sorted(expected), (len(observed),len(expected),sorted(set(observed)^set(expected))[:20])
           assert hashlib.sha256(body).hexdigest()==m['aggregateIdentitySha256']
-          print(json.dumps({'status':'PASS_V15_EXACT_SLICE_EXPORT','fileCount':m['fileCount'],'aggregate':m['aggregateIdentitySha256']}))
+          print(json.dumps({'status':'PASS_V15_EXACT_SLICE_EXPORT','fileCount':m['fileCount'],'physicalFileCount':len(observed),'aggregate':m['aggregateIdentitySha256']}))
           PY
 
-      - name: Upload exact v15 slice
+      - name: Upload exact v15 slice including hidden paths
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-v15-exact-execution-slice
+          name: r7-v15-exact-execution-slice-hidden
           path: r7-export
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 1
