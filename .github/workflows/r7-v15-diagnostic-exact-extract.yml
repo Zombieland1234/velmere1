@@ -1,0 +1,80 @@
+name: R7 v15 Diagnostic Exact Extract
+
+on:
+  push:
+    branches:
+      - velmere-r7-v15-diagnostic-extract-20260825
+    paths:
+      - '.github/workflows/r7-v15-diagnostic-exact-extract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-extract:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Reconstruct exact R7 v15 execution slice and extract Browser files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Parts = @(Get-ChildItem -LiteralPath 'r7-runtime/parts' -File | Sort-Object Name)
+          if ($Parts.Count -ne 36) { throw "expected 36 transport parts, got $($Parts.Count)" }
+          $EncodedParts = [System.Collections.Generic.List[string]]::new()
+          foreach ($PartFile in $Parts) {
+            $EncodedParts.Add((Get-Content -LiteralPath $PartFile.FullName -Raw).TrimEnd("`r", "`n"))
+          }
+          $Encoded = [string]::Concat($EncodedParts)
+          [IO.File]::WriteAllBytes('r7-runtime/R7_EXECUTION_SLICE.tar.zst', [Convert]::FromBase64String($Encoded))
+          $BundleHash = (Get-FileHash -LiteralPath 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($BundleHash -ne 'fb4c3d2a9524ec4f60f2d21cb430131bf11cfc99b108c96d2ad7d8543c941c87') { throw "bundle SHA mismatch: $BundleHash" }
+          $Zstd = (Get-Command zstd.exe -ErrorAction Stop).Source
+          & $Zstd -d -f 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -o 'r7-runtime/R7_EXECUTION_SLICE.tar'
+          if ($LASTEXITCODE -ne 0) { throw "zstd failed: $LASTEXITCODE" }
+          New-Item -ItemType Directory -Force -Path 'r7-work' | Out-Null
+          tar.exe -xf 'r7-runtime/R7_EXECUTION_SLICE.tar' -C 'r7-work'
+          if ($LASTEXITCODE -ne 0) { throw "tar extraction failed: $LASTEXITCODE" }
+
+          $Expected = @{
+            'scripts/current-execution/r7-browser-basic-product-route-runtime-closure-regression.mjs' = '3bb26b77867b454e49df4aff12e5ed3a07f6c516d9feae36a93f3e2901624841'
+            'lib/server/search-route-modules/lens-report.ts' = 'a02010604b65e3e2aca834298156b48ef105acdb193cd87b43de422621aa7578'
+            'lib/search/browser-delivery-policy.ts' = 'ea4ad9cad05e667c9f16e86ff9d2a3f7cec23a6469a6d2160e9893cbf3adcf57'
+            'lib/search/lens-report-request-contract.ts' = 'a9ecae15b617ca55e4dcc0bc1441c752f3d03a61697e427a90ef74e440cdce7c'
+            'scripts/current-execution/test-r7-browser-basic-account-artifact-policy.mts' = '2c25cd9a26b1542469be2ea01ed8e8fad817655f03becbeed1670378c66b1006'
+            'lib/search/browser-account-artifact-policy.ts' = 'a04cde6fe3694208a12df4dee939821407336c41e33bb1c034684ad74a05f3d4'
+          }
+          New-Item -ItemType Directory -Force -Path 'diagnostic-out' | Out-Null
+          $Rows = @()
+          foreach ($Relative in $Expected.Keys) {
+            $Source = Join-Path 'r7-work' $Relative
+            if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) { throw "missing exact file: $Relative" }
+            $Hash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($Hash -ne $Expected[$Relative]) { throw "exact file SHA mismatch: $Relative => $Hash" }
+            $Dest = Join-Path 'diagnostic-out' $Relative
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Dest) | Out-Null
+            Copy-Item -LiteralPath $Source -Destination $Dest
+            $Rows += [ordered]@{ path = $Relative; byteLength = (Get-Item -LiteralPath $Source).Length; sha256 = $Hash }
+          }
+          [ordered]@{
+            schemaVersion = 'velmere.r7.v15.diagnostic-extract.v1'
+            sourceCandidate = 'R7_MERGED_CURRENT_SOURCE'
+            sourceAuthorityGithubSha = '5bcba78e697e2bd0c6584289a72ffa153502affb'
+            executionBundleSha256 = $BundleHash
+            files = $Rows
+          } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath 'diagnostic-out/EXACT_EXTRACT_RECEIPT.json' -Encoding utf8
+
+      - name: Upload exact diagnostic extract
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v15-browser-basic-exact-diagnostic-${{ github.run_id }}
+          path: diagnostic-out
+          if-no-files-found: error
+          retention-days: 2
