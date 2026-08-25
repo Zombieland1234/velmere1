@@ -1,0 +1,193 @@
+name: R7 v15 Successor Browser Static Validation v3
+
+on:
+  push:
+    branches:
+      - velmere-r7-v15-diagnostic-extract-20260825
+    paths:
+      - '.github/workflows/r7-v15-successor-browser-static-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-successor-v3:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - name: Checkout diagnostic control branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Reconstruct exact R7 v15 execution slice
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Parts = @(Get-ChildItem -LiteralPath 'r7-runtime/parts' -File | Sort-Object Name)
+          if ($Parts.Count -ne 36) { throw "expected 36 transport parts, got $($Parts.Count)" }
+          $EncodedParts = [System.Collections.Generic.List[string]]::new()
+          foreach ($PartFile in $Parts) { $EncodedParts.Add((Get-Content -LiteralPath $PartFile.FullName -Raw).TrimEnd("`r", "`n")) }
+          [IO.File]::WriteAllBytes('r7-runtime/R7_EXECUTION_SLICE.tar.zst', [Convert]::FromBase64String([string]::Concat($EncodedParts)))
+          $BundleHash = (Get-FileHash -LiteralPath 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($BundleHash -ne 'fb4c3d2a9524ec4f60f2d21cb430131bf11cfc99b108c96d2ad7d8543c941c87') { throw "bundle SHA mismatch: $BundleHash" }
+          $Zstd = (Get-Command zstd.exe -ErrorAction Stop).Source
+          & $Zstd -d -f 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -o 'r7-runtime/R7_EXECUTION_SLICE.tar'
+          if ($LASTEXITCODE -ne 0) { throw "zstd failed: $LASTEXITCODE" }
+          New-Item -ItemType Directory -Force -Path 'r7-work' | Out-Null
+          tar.exe -xf 'r7-runtime/R7_EXECUTION_SLICE.tar' -C 'r7-work'
+          if ($LASTEXITCODE -ne 0) { throw "tar extraction failed: $LASTEXITCODE" }
+
+      - name: Assemble verified successor v3 patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Expected = [ordered]@{
+            'part-00.txt'='e39368d03e2ee3c5805bfb7205d017115faa521f927ed252122c4ecdef5e4db5'
+            'part-01.txt'='50a6ff7c6dca043d99957cc81decf85e8e836873ca3962ff60752d2911c6606e'
+            'part-02.txt'='8eb4150e86e5fde7e20f235a07cb9442861c16f744cf0da3cb76343cf860ff75'
+            'part-03.txt'='ef5b36a35005a506e59fc8827c0f5be83be9f30ced431cbcb5a0299ac90586c0'
+            'part-04.txt'='70d5449534ba5bffc54895a6c67168d709fc05c829d84f3ac5b1d5151a56f659'
+            'part-05.txt'='541db5da57af86ed06b0a796a77eede62ded2b5e9c7e11fc4ca881779b47e171'
+          }
+          $Segments = [System.Collections.Generic.List[string]]::new()
+          foreach ($Name in $Expected.Keys) {
+            $Path = Join-Path 'diagnostic-patches/v3-parts' $Name
+            if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "missing patch chunk: $Name" }
+            $Hash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($Hash -ne $Expected[$Name]) { throw "patch chunk SHA mismatch: $Name => $Hash" }
+            $Segments.Add((Get-Content -LiteralPath $Path -Raw).Trim())
+          }
+          $Joined = [string]::Concat($Segments)
+          if ($Joined.Length -ne 10788) { throw "patch base64 length mismatch: $($Joined.Length)" }
+          [IO.File]::WriteAllBytes('successor-v3.patch.gz', [Convert]::FromBase64String($Joined))
+          $GzipHash = (Get-FileHash -LiteralPath 'successor-v3.patch.gz' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($GzipHash -ne 'cf34c02b25c7077c45f95eafe88b0b3ae184c6ce6e66ffdc7c4f63ef0aa7b7c4') { throw "gzip SHA mismatch: $GzipHash" }
+          gzip -t 'successor-v3.patch.gz'
+          if ($LASTEXITCODE -ne 0) { throw "gzip CRC failed: $LASTEXITCODE" }
+          gzip -d -f 'successor-v3.patch.gz'
+          if ($LASTEXITCODE -ne 0) { throw "gzip decode failed: $LASTEXITCODE" }
+          $PatchHash = (Get-FileHash -LiteralPath 'successor-v3.patch' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($PatchHash -ne '147435282063175d633d06ce5c313c9c8b9887bbe389645c292dbf2596884a54') { throw "patch SHA mismatch: $PatchHash" }
+          git -C r7-work apply --check ..\successor-v3.patch
+          if ($LASTEXITCODE -ne 0) { throw "successor patch check failed: $LASTEXITCODE" }
+          git -C r7-work apply ..\successor-v3.patch
+          if ($LASTEXITCODE -ne 0) { throw "successor patch apply failed: $LASTEXITCODE" }
+
+      - name: Verify successor v3 exact changed bytes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Expected = [ordered]@{
+            'r7-work/lib/jobs/durable-computation-replay.ts'='193c1a8afa8bc2c508fe533b22a254c5a2713163fd1bca7e54ffbcd4eb9fb26c'
+            'r7-work/lib/reporting/account-customer-artifact-store.ts'='285a7d92fc4dc741cb68722f8b44f89296c8013252a0435c277ec45c9d23a91e'
+            'r7-work/lib/server/search-route-modules/lens-report.ts'='89b2f78454661c0f32f67358d7663541a26d65211bfc89403533d5b1e8b5c336'
+            'r7-work/supabase/migrations/20260825054159_r7_browser_basic_user_authenticated_atomic_store.sql'='8f5ed1c95487a014e41bf291e2f09a49a162e7204074412733e83046d5b2f18e'
+            'r7-work/supabase/migrations/20260825054301_r7_browser_basic_user_authenticated_durable_computation.sql'='ddcbcb20f8e8f5ed6353b2a19fac0e85b630f486f69a9436a7233094b0bf5d30'
+            'r7-work/supabase/migrations/20260825060000_r7_browser_basic_authenticated_rpc_abuse_hardening.sql'='333c938e48148c3428f2663324dbe3873cb511665b143d152e6e79281c001ab3'
+            'r7-work/supabase/migrations/20260825063000_r7_browser_basic_server_capability_hardening.sql'='ae69781f26e771ccc77332ebc5457e567f1c10479c8fdd89645655e630060845'
+          }
+          foreach ($Path in $Expected.Keys) {
+            if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "missing successor file: $Path" }
+            $Hash=(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($Hash -ne $Expected[$Path]) { throw "successor file SHA mismatch: $Path => $Hash" }
+          }
+
+      - name: Materialize exact external PDF font
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path 'r7-work/r7-runtime/external-assets' | Out-Null
+          Copy-Item -LiteralPath 'r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf' -Destination 'r7-work/r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf' -Force
+          Copy-Item -LiteralPath 'r7-runtime/external-assets/OFL-Manrope.txt' -Destination 'r7-work/r7-runtime/external-assets/OFL-Manrope.txt' -Force
+          $FontHash=(Get-FileHash -LiteralPath 'r7-work/r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($FontHash -ne 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa') { throw 'font SHA mismatch' }
+          $AbsoluteFont=(Resolve-Path 'r7-work/r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf').Path
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "VELMERE_PDF_FONT_PATH=$AbsoluteFont" -Encoding utf8
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Exact npm 11.16.0 and npm ci
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location $env:RUNNER_TEMP
+          try {
+            npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+            if ($LASTEXITCODE -ne 0) { throw "npm pin failed: $LASTEXITCODE" }
+          } finally { Pop-Location }
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'npm mismatch' }
+          npm ci --ignore-scripts=false --audit=false --fund=false
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $LASTEXITCODE" }
+
+      - name: TypeScript zero-error
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          npm run typecheck
+          if ($LASTEXITCODE -ne 0) { throw "TypeScript failed: $LASTEXITCODE" }
+
+      - name: Targeted ESLint zero-warning
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          npx eslint --max-warnings=0 lib/jobs/durable-computation-replay.ts lib/reporting/account-customer-artifact-store.ts lib/server/search-route-modules/lens-report.ts
+          if ($LASTEXITCODE -ne 0) { throw "ESLint failed: $LASTEXITCODE" }
+
+      - name: Existing Browser Basic contracts
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/test-r7-browser-basic-account-artifact-policy.mts
+          if ($LASTEXITCODE -ne 0) { throw "account artifact policy failed: $LASTEXITCODE" }
+          node scripts/current-execution/test-r7-browser-basic-e2e-contract.mjs
+          if ($LASTEXITCODE -ne 0) { throw "Browser E2E contract failed: $LASTEXITCODE" }
+
+      - name: Capability-gated successor assertions
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          @'
+          const fs=require('node:fs');
+          const durable=fs.readFileSync('lib/jobs/durable-computation-replay.ts','utf8');
+          const store=fs.readFileSync('lib/reporting/account-customer-artifact-store.ts','utf8');
+          const hard=fs.readFileSync('supabase/migrations/20260825063000_r7_browser_basic_server_capability_hardening.sql','utf8');
+          const checks=[
+            durable.includes('VELMERE_BROWSER_SERVER_CAPABILITY'),
+            durable.includes('p_server_capability: serverCapability'),
+            store.includes('VELMERE_BROWSER_SERVER_CAPABILITY'),
+            store.includes('p_server_capability: browserServerCapability()'),
+            hard.includes('vault.decrypted_secrets'),
+            hard.includes('r7_assert_browser_server_capability'),
+            hard.includes('velmere_r7_read_browser_server_capability_for_oidc'),
+            hard.includes("from public, anon, authenticated, service_role"),
+            hard.includes("j.kind='lens_pdf_render'"),
+            hard.includes('durable_computation_result_integrity_invalid'),
+            hard.includes('extensions.digest(v_decoded'),
+          ];
+          if(checks.some(v=>!v))throw new Error(`capability_assertion_failed:${checks.map((v,i)=>v?null:i).filter(v=>v!==null)}`);
+          console.log(JSON.stringify({status:'PASS_R7_BROWSER_SUCCESSOR_V3_CAPABILITY_STATIC',checks:checks.length,serviceRoleInApplicationRequired:false,serverCapabilityRequired:true,customerFinalCredit:false},null,2));
+          '@ | node
+          if ($LASTEXITCODE -ne 0) { throw "successor assertions failed: $LASTEXITCODE" }
+
+      - name: Upload v3 validation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v15-browser-successor-v3-static-${{ github.run_id }}
+          path: |
+            r7-work/artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json
+            r7-work/supabase/migrations/20260825063000_r7_browser_basic_server_capability_hardening.sql
+          if-no-files-found: warn
+          retention-days: 2
