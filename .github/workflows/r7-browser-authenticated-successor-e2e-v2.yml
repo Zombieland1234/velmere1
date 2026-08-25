@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/r7-browser-authenticated-successor-e2e-v2.yml'
       - 'diagnostic-scripts/r7-browser-successor-e2e-v2.ps1'
+      - 'diagnostic-scripts/r7-browser-successor-e2e-v2-fixed.ps1'
       - 'diagnostic-scripts/r7-browser-successor-live-e2e.mts'
       - 'diagnostic-patches/successor-v3.patch.gz.b64'
   workflow_dispatch:
@@ -34,7 +35,7 @@ jobs:
 
       - name: Execute zero-Vercel Browser Basic product-route E2E
         shell: pwsh
-        run: ./diagnostic-scripts/r7-browser-successor-e2e-v2.ps1
+        run: ./diagnostic-scripts/r7-browser-successor-e2e-v2-fixed.ps1
 
       - name: Upload E2E evidence
         if: always()
