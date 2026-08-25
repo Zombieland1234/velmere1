@@ -50,9 +50,9 @@ jobs:
       R7_PDF_FONT_LICENSE_BYTE_LENGTH: '4384'
       R7_PDF_FONT_LICENSE_SHA256: 'e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c'
       R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1: '472064afc4b8dec9079fab03b8ffafb617a1b2d8'
-      R7_RUNNER_SHA256: '09c41203b88ad144b36e2b01cce6004b2d08ff88cb2fb788388902beac416b27'
-      R7_RUNNER_GZIP_SHA256: '6f8937e99a6ee15693a4208662880dd5598ee979f5b7c8f254c29841f4948b66'
-      R7_RUNNER_GZIP_BYTE_LENGTH: '8215'
+      R7_RUNNER_SHA256: 'fc646421e5919d8e6fb8299d4e007f212d16e401df500adb57a010f7315deb37'
+      R7_RUNNER_GZIP_SHA256: '57278f976ffd2e577c82340320d2399b803073fbb1574784d1e5d7b004de6a87'
+      R7_RUNNER_GZIP_BYTE_LENGTH: '8249'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
     steps:
@@ -73,8 +73,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $Parts = @(
-            @{ Name='part-00.bin'; Bytes=4500; Sha='8ba8d83c0cb420d0e87063b04d24f613e538a23b7da83ce264cd4b460cfc98ef' },
-            @{ Name='part-01.bin'; Bytes=3715; Sha='e3a361e01121149e3f646d56c6b10087a541dcbef33ae93e39a4c55f308a975d' }
+            @{ Name='part-00.bin'; Bytes=4500; Sha='ce1066d4c403aadcab94543c71579d5bffdda299ef0374bea3d9ef898fe72201' },
+            @{ Name='part-01.bin'; Bytes=3749; Sha='b006f3f77c1d210d5a5a330a39f0422b9e396355dfbeffc6a9d9bf58521c9405' }
           )
           $Observed = @(Get-ChildItem -LiteralPath 'r7-delta/runner-gzip-parts' -File | Sort-Object Name)
           if ($Observed.Count -ne $Parts.Count) { throw 'runner chunk denominator mismatch' }
