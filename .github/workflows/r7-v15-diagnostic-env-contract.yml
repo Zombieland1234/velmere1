@@ -1,0 +1,104 @@
+name: R7 v15 Diagnostic Env Contract
+
+on:
+  push:
+    branches:
+      - velmere-r7-v15-diagnostic-extract-20260825
+    paths:
+      - '.github/workflows/r7-v15-diagnostic-env-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  env-contract:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    env:
+      CHECK_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      CHECK_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      CHECK_NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      CHECK_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      CHECK_NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      CHECK_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      CHECK_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Reconstruct exact R7 v15 and inspect env names
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Parts = @(Get-ChildItem -LiteralPath 'r7-runtime/parts' -File | Sort-Object Name)
+          if ($Parts.Count -ne 36) { throw "expected 36 transport parts, got $($Parts.Count)" }
+          $EncodedParts = [System.Collections.Generic.List[string]]::new()
+          foreach ($PartFile in $Parts) { $EncodedParts.Add((Get-Content -LiteralPath $PartFile.FullName -Raw).TrimEnd("`r", "`n")) }
+          [IO.File]::WriteAllBytes('r7-runtime/R7_EXECUTION_SLICE.tar.zst', [Convert]::FromBase64String([string]::Concat($EncodedParts)))
+          $BundleHash = (Get-FileHash -LiteralPath 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($BundleHash -ne 'fb4c3d2a9524ec4f60f2d21cb430131bf11cfc99b108c96d2ad7d8543c941c87') { throw "bundle SHA mismatch: $BundleHash" }
+          $Zstd = (Get-Command zstd.exe -ErrorAction Stop).Source
+          & $Zstd -d -f 'r7-runtime/R7_EXECUTION_SLICE.tar.zst' -o 'r7-runtime/R7_EXECUTION_SLICE.tar'
+          if ($LASTEXITCODE -ne 0) { throw "zstd failed: $LASTEXITCODE" }
+          New-Item -ItemType Directory -Force -Path 'r7-work' | Out-Null
+          tar.exe -xf 'r7-runtime/R7_EXECUTION_SLICE.tar' -C 'r7-work'
+          if ($LASTEXITCODE -ne 0) { throw "tar extraction failed: $LASTEXITCODE" }
+
+          New-Item -ItemType Directory -Force -Path 'diagnostic-env' | Out-Null
+          $Wanted = @(
+            'lib/auth/account-session.ts',
+            'lib/db/customer-owned-write-boundary.ts',
+            'lib/reporting/account-customer-artifact-store.ts',
+            '.env.example'
+          )
+          foreach ($Relative in $Wanted) {
+            $Source = Join-Path 'r7-work' $Relative
+            if (Test-Path -LiteralPath $Source -PathType Leaf) {
+              $Dest = Join-Path 'diagnostic-env' $Relative
+              New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Dest) | Out-Null
+              Copy-Item -LiteralPath $Source -Destination $Dest
+            }
+          }
+
+          $EnvNames = Get-ChildItem -LiteralPath 'r7-work/lib' -Recurse -File -Include '*.ts','*.tsx','*.mts','*.mjs' |
+            Select-String -Pattern 'process\.env\.[A-Z0-9_]+' -AllMatches |
+            ForEach-Object { $_.Matches.Value.Substring('process.env.'.Length) } |
+            Sort-Object -Unique |
+            Where-Object { $_ -match 'SUPABASE|DATABASE|POSTGRES|VELMERE' }
+
+          $CandidateScripts = Get-ChildItem -LiteralPath 'r7-work/scripts' -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match 'browser|lens|customer.*artifact|product.*route' } |
+            ForEach-Object { $_.FullName.Substring((Resolve-Path 'r7-work').Path.Length + 1).Replace('\','/') } |
+            Sort-Object
+
+          $SecretPresence = [ordered]@{
+            SUPABASE_SERVICE_ROLE_KEY = -not [string]::IsNullOrWhiteSpace($env:CHECK_SUPABASE_SERVICE_ROLE_KEY)
+            SUPABASE_URL = -not [string]::IsNullOrWhiteSpace($env:CHECK_SUPABASE_URL)
+            NEXT_PUBLIC_SUPABASE_URL = -not [string]::IsNullOrWhiteSpace($env:CHECK_NEXT_PUBLIC_SUPABASE_URL)
+            SUPABASE_ANON_KEY = -not [string]::IsNullOrWhiteSpace($env:CHECK_SUPABASE_ANON_KEY)
+            NEXT_PUBLIC_SUPABASE_ANON_KEY = -not [string]::IsNullOrWhiteSpace($env:CHECK_NEXT_PUBLIC_SUPABASE_ANON_KEY)
+            SUPABASE_PUBLISHABLE_KEY = -not [string]::IsNullOrWhiteSpace($env:CHECK_SUPABASE_PUBLISHABLE_KEY)
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = -not [string]::IsNullOrWhiteSpace($env:CHECK_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+          }
+          [ordered]@{
+            schemaVersion = 'velmere.r7.v15.runtime-env-contract-diagnostic.v1'
+            sourceAuthorityGithubSha = '5bcba78e697e2bd0c6584289a72ffa153502affb'
+            executionBundleSha256 = $BundleHash
+            envNames = @($EnvNames)
+            secretPresence = $SecretPresence
+            candidateScripts = @($CandidateScripts)
+            rawSecretsReturned = $false
+            customerFinalCredit = $false
+          } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath 'diagnostic-env/RUNTIME_ENV_CONTRACT.json' -Encoding utf8
+
+      - name: Upload env contract diagnostic
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v15-runtime-env-contract-${{ github.run_id }}
+          path: diagnostic-env
+          if-no-files-found: error
+          retention-days: 2
