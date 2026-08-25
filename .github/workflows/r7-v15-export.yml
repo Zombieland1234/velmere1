@@ -1,0 +1,49 @@
+name: R7 v15 Exact Slice Export
+
+on:
+  push:
+    branches:
+      - velmere-r7-v15-export-20260825
+
+permissions:
+  contents: read
+
+jobs:
+  export-v15-slice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact v15 control tree
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Reconstruct and verify exact v15 execution slice
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/r7-v15 r7-export
+          find r7-runtime/parts -type f -name 'R7_EXECUTION_SLICE.tar.zst.part-*.b64' -print0 | sort -z | xargs -0 cat | tr -d '\r\n' | base64 --decode > /tmp/r7-v15/R7_EXECUTION_SLICE.tar.zst
+          expected="$(python -c 'import json; print(json.load(open("r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json"))["bundle"]["sha256"])')"
+          observed="$(sha256sum /tmp/r7-v15/R7_EXECUTION_SLICE.tar.zst | awk '{print $1}')"
+          test "$observed" = "$expected"
+          zstd -d --quiet /tmp/r7-v15/R7_EXECUTION_SLICE.tar.zst -o /tmp/r7-v15/R7_EXECUTION_SLICE.tar
+          tar -xf /tmp/r7-v15/R7_EXECUTION_SLICE.tar -C r7-export
+          python - <<'PY'
+          import hashlib, json, pathlib
+          root=pathlib.Path('r7-export')
+          m=json.loads((root/'R7_EXECUTION_SLICE_MANIFEST.json').read_text())
+          body=bytearray()
+          for row in m['files']:
+              p=root/row['path']; b=p.read_bytes(); h=hashlib.sha256(b).hexdigest()
+              assert len(b)==row['byteLength'] and h==row['sha256'], row['path']
+              body.extend(f"{h}\t{len(b)}\t{row['path']}\n".encode())
+          assert hashlib.sha256(body).hexdigest()==m['aggregateIdentitySha256']
+          print(json.dumps({'status':'PASS_V15_EXACT_SLICE_EXPORT','fileCount':m['fileCount'],'aggregate':m['aggregateIdentitySha256']}))
+          PY
+
+      - name: Upload exact v15 slice
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v15-exact-execution-slice
+          path: r7-export
+          if-no-files-found: error
+          retention-days: 1
