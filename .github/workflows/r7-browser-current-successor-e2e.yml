@@ -46,15 +46,15 @@ jobs:
           node-version: 24.18.0
           check-latest: false
 
-      - name: Execute full zero-Vercel Browser Basic current-product E2E
+      - name: Execute candidate-only zero-Vercel Browser Basic E2E
         shell: pwsh
-        run: ./diagnostic-current/run-r7-browser-current-e2e-fixed.ps1
+        run: ./diagnostic-current/run-r7-browser-current-e2e-authfix-candidate.ps1
 
-      - name: Upload Browser Basic current E2E evidence
+      - name: Upload Browser Basic candidate E2E evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-browser-basic-current-zero-vercel-${{ github.sha }}-${{ github.run_id }}
+          name: r7-browser-basic-authfix-candidate-${{ github.sha }}-${{ github.run_id }}
           path: |
             r7-work/R7_BROWSER_BASIC_CURRENT_SUCCESSOR_ZERO_VERCEL_E2E.json
             r7-work/R7_BROWSER_CURRENT_E2E_NEXT_STDOUT.log
