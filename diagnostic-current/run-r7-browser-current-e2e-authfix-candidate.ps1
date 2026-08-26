@@ -11,7 +11,8 @@ $OldApply = 'git apply --no-index $PatchPath'
 $NewApply = 'git -c core.autocrlf=false apply --no-index $PatchPath'
 $OldBase = "$env:R7_E2E_BASE_URL = 'http://127.0.0.1:3100'"
 $NewBase = "$env:R7_E2E_BASE_URL = 'http://localhost:3100'"
-$InjectionAnchor = '  # Materialize exact licensed PDF font outside source authority.'
+$HotfixAnchor = '  # Materialize exact licensed PDF font outside source authority.'
+$JwtProbeAnchor = "  `$env:NEXT_PUBLIC_SUPABASE_ANON_KEY = 'sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'"
 
 foreach ($Pair in @(
   @{ Old = $OldCheck; New = $NewCheck; Label = 'patch check' },
@@ -23,8 +24,11 @@ foreach ($Pair in @(
   }
   $Text = $Text.Replace([string]$Pair.Old, [string]$Pair.New)
 }
-if (([regex]::Matches($Text, [regex]::Escape($InjectionAnchor))).Count -ne 1) {
+if (([regex]::Matches($Text, [regex]::Escape($HotfixAnchor))).Count -ne 1) {
   throw 'candidate wrapper hotfix injection anchor mismatch'
+}
+if (([regex]::Matches($Text, [regex]::Escape($JwtProbeAnchor))).Count -ne 1) {
+  throw 'candidate wrapper jwt probe injection anchor mismatch'
 }
 
 $PatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-basic-paid-guard-auth-nonce-candidate.mjs')).Path
@@ -36,8 +40,38 @@ $HotfixBlock = @"
   if (`$LASTEXITCODE -ne 0) { throw "Basic paid-guard auth-nonce candidate patch failed: `$LASTEXITCODE" }
   `$env:R7_E2E_HOTFIX_CANDIDATE = 'basic_paid_guard_auth_nonce_fix_v1'
 "@
+$Text = $Text.Replace($HotfixAnchor, $HotfixBlock + "`r`n" + $HotfixAnchor)
 
-$Text = $Text.Replace($InjectionAnchor, $HotfixBlock + "`r`n" + $InjectionAnchor)
+$JwtProbeBlock = @'
+  # Safe split probe: validate the exact same ephemeral USER_A JWT directly against
+  # Supabase Auth and the user-RLS account-binding RPC before Next.js sees it.
+  # Never print or persist the JWT itself.
+  $JwtProbeHeaders = @{
+    Authorization = "Bearer $([string]$Provision.a.accessToken)"
+    apikey = $env:NEXT_PUBLIC_SUPABASE_ANON_KEY
+  }
+  $AuthProbe = Invoke-WebRequest -Uri "$env:NEXT_PUBLIC_SUPABASE_URL/auth/v1/user" -Headers $JwtProbeHeaders -Method Get -SkipHttpErrorCheck -TimeoutSec 15
+  if ([int]$AuthProbe.StatusCode -ne 200) {
+    throw "direct_supabase_auth_probe_failed:$([int]$AuthProbe.StatusCode)"
+  }
+  $RpcProbeHeaders = @{
+    Authorization = "Bearer $([string]$Provision.a.accessToken)"
+    apikey = $env:NEXT_PUBLIC_SUPABASE_ANON_KEY
+    'content-type' = 'application/json'
+  }
+  $RpcProbe = Invoke-WebRequest -Uri "$env:NEXT_PUBLIC_SUPABASE_URL/rest/v1/rpc/velmere_current_account_id" -Headers $RpcProbeHeaders -Method Post -Body '{}' -SkipHttpErrorCheck -TimeoutSec 15
+  if ([int]$RpcProbe.StatusCode -ne 200) {
+    $SafeRpcError = ([string]$RpcProbe.Content).Replace([string]$Provision.a.accessToken, '<redacted>')
+    throw "direct_supabase_binding_rpc_failed:$([int]$RpcProbe.StatusCode):$($SafeRpcError.Substring(0,[Math]::Min(240,$SafeRpcError.Length)))"
+  }
+  $RpcAccount = [string](ConvertFrom-Json ([string]$RpcProbe.Content))
+  if ($RpcAccount -ne [string]$Provision.a.accountId) {
+    throw 'direct_supabase_binding_rpc_account_mismatch'
+  }
+  Write-Host 'Direct Supabase USER_A JWT Auth + user-RLS account-binding RPC PASS.'
+'@
+$Text = $Text.Replace($JwtProbeAnchor, $JwtProbeAnchor + "`r`n" + $JwtProbeBlock)
+
 Set-Content -LiteralPath $Candidate -Value $Text -Encoding utf8
 
 & $Candidate
