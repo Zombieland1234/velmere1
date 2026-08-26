@@ -55,6 +55,8 @@ jobs:
       R7_RUNNER_GZIP_BYTE_LENGTH: '8249'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
+      # Prevent git apply inside reconstructed r7-work from discovering the outer checkout repo.
+      GIT_CEILING_DIRECTORIES: ${{ github.workspace }}
     steps:
       - name: Checkout v15 base plus exact successor delta
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
