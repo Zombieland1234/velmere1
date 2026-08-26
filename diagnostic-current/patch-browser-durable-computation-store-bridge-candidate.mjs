@@ -5,7 +5,7 @@ const root = process.argv[2];
 if (!root) throw new Error("work_root_required");
 const target = `${root}/lib/jobs/durable-computation-replay.ts`;
 const expectedBefore = "7b4a96c90541ddf82bdaeec58bf2bdf25781fc70bf5fad297633db44f11427cc";
-const expectedAfter = "b8027f3427029bc73fbefb92116262c5b9951df780f881b5c813b11834e8a23e";
+const expectedAfter = "83852a4246c00ca4407463b6330e8a31fc738c91b8f5d9b9a642deb76ddc5fee";
 const sha = (value) => crypto.createHash("sha256").update(value).digest("hex");
 function replaceOnce(text, oldValue, newValue, label) {
   const count = text.split(oldValue).length - 1;
@@ -71,7 +71,7 @@ async function callBrowserDurableComputationBridge(args: {
     response = await fetch(args.bridge.url, {
       method: "POST",
       headers: {
-        authorization: `Bearer ${args.bridge.userAccessToken}`,
+        authorization: "Bearer " + args.bridge.userAccessToken,
         "x-velmere-browser-server-capability": args.bridge.serverCapability,
         "content-type": "application/json",
         accept: "application/json",
