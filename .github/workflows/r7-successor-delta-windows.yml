@@ -50,7 +50,8 @@ jobs:
       R7_PDF_FONT_LICENSE_BYTE_LENGTH: '4384'
       R7_PDF_FONT_LICENSE_SHA256: 'e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c'
       R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1: '472064afc4b8dec9079fab03b8ffafb617a1b2d8'
-      R7_RUNNER_SHA256: 'fc646421e5919d8e6fb8299d4e007f212d16e401df500adb57a010f7315deb37'
+      R7_RUNNER_TRANSPORT_SHA256: 'fc646421e5919d8e6fb8299d4e007f212d16e401df500adb57a010f7315deb37'
+      R7_RUNNER_SHA256: 'ea58a198b7aa4b931346e6623858076eb7cfbec2cf3c075bb0ed5696a027b0de'
       R7_RUNNER_GZIP_SHA256: '57278f976ffd2e577c82340320d2399b803073fbb1574784d1e5d7b004de6a87'
       R7_RUNNER_GZIP_BYTE_LENGTH: '8249'
       NEXT_TELEMETRY_DISABLED: '1'
@@ -97,7 +98,18 @@ jobs:
           $Ps='r7-runner-work/run-r7-successor-current-windows.ps1'
           $Input=[IO.File]::OpenRead($Gz); $Zip=[IO.Compression.GzipStream]::new($Input,[IO.Compression.CompressionMode]::Decompress); $Output=[IO.File]::Create($Ps)
           try{$Zip.CopyTo($Output)}finally{$Output.Dispose();$Zip.Dispose();$Input.Dispose()}
-          if((Get-FileHash -LiteralPath $Ps -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_SHA256){throw 'runner source SHA mismatch'}
+          if((Get-FileHash -LiteralPath $Ps -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_TRANSPORT_SHA256){throw 'runner transported source SHA mismatch'}
+          # Successor verify-runtime-contract now emits an explicit EXACT_WINDOWS_OR_LOCAL marker.
+          # Patch only the two stale marker literals in the already hash-verified transported runner,
+          # then bind and execute the effective runner SHA recorded in the final receipt.
+          $RunnerText=[IO.File]::ReadAllText($Ps,[Text.Encoding]::UTF8)
+          $OldMarker='Velmere runtime OK: v24.18.0 / npm 11.16.0'
+          $NewMarker='Velmere EXACT_WINDOWS_OR_LOCAL runtime OK: v24.18.0 / npm 11.16.0'
+          $MarkerCount=([regex]::Matches($RunnerText,[regex]::Escape($OldMarker))).Count
+          if($MarkerCount -ne 2){throw "runner lifecycle marker compatibility count mismatch: $MarkerCount"}
+          $RunnerText=$RunnerText.Replace($OldMarker,$NewMarker)
+          [IO.File]::WriteAllText($Ps,$RunnerText,[Text.UTF8Encoding]::new($false))
+          if((Get-FileHash -LiteralPath $Ps -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_SHA256){throw 'effective runner source SHA mismatch'}
           & pwsh -NoProfile -File $Ps
           if($LASTEXITCODE -ne 0){throw "exact Windows runner failed: $LASTEXITCODE"}
 
