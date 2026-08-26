@@ -1,0 +1,67 @@
+name: R7 Browser Basic Current Successor Zero-Vercel E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-browser-current-successor-e2e.yml'
+      - 'diagnostic-current/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-browser-current-successor-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  browser-basic-current-e2e:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
+      R7_FILE_COUNT: '3505'
+      R7_PAYLOAD_BYTE_LENGTH: '63043880'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '73644f6e7dfd2ecff3bc84f2c290d457b099d3a06c695fcb31cc1d7495541b42'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'bb5e580aedca4cdc5a839e37f9c9ab96b550dc01af103afdb46082e0bb4e4c47'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: 'b9f4b0de35a04b785987670a16b08a33622f9f41082ec6d5d7b116e96d1b518c'
+      R7_FULL_SOURCE_MANIFEST_SHA256: '100d2611b029fe3d9f13409a04b63b7eff1d2cb61cb2956fe0db3d6133c8081c'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - name: Checkout current successor control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Execute full zero-Vercel Browser Basic current-product E2E
+        shell: pwsh
+        run: ./diagnostic-current/run-r7-browser-current-e2e.ps1
+
+      - name: Upload Browser Basic current E2E evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-browser-basic-current-zero-vercel-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            r7-work/R7_BROWSER_BASIC_CURRENT_SUCCESSOR_ZERO_VERCEL_E2E.json
+            r7-work/R7_BROWSER_CURRENT_E2E_NEXT_STDOUT.log
+            r7-work/R7_BROWSER_CURRENT_E2E_NEXT_STDERR.log
+            r7-work/R7_NPM_CI.log
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.json
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.tsv
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
