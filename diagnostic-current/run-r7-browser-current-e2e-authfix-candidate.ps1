@@ -29,16 +29,23 @@ foreach ($Anchor in @($HotfixAnchor, $JwtProbeAnchor, $BridgeEnvAnchor)) {
   if (([regex]::Matches($Text, [regex]::Escape($Anchor))).Count -ne 1) { throw "candidate wrapper injection anchor mismatch:$Anchor" }
 }
 
-$PatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-browser-zero-vercel-durable-bridge-candidate.mjs')).Path
+$ArtifactPatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-browser-zero-vercel-durable-bridge-candidate.mjs')).Path
+$ComputationPatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-browser-durable-computation-store-bridge-candidate.mjs')).Path
 $HotfixBlock = @"
   # Candidate-only validation. Exact current bytes were verified immediately above.
   # Modify only the disposable workflow workspace; this is not current-source FINAL evidence.
-  & node '$PatchScript' `$Work
-  if (`$LASTEXITCODE -ne 0) { throw "Browser zero-Vercel durable-bridge candidate patch failed: `$LASTEXITCODE" }
-  `$env:R7_E2E_HOTFIX_CANDIDATE = 'lens_clone_plus_authenticated_edge_durable_bridge_v1'
+  & node '$ArtifactPatchScript' `$Work
+  if (`$LASTEXITCODE -ne 0) { throw "Browser zero-Vercel artifact durable-bridge candidate patch failed: `$LASTEXITCODE" }
+  & node '$ComputationPatchScript' `$Work
+  if (`$LASTEXITCODE -ne 0) { throw "Browser zero-Vercel computation durable-bridge candidate patch failed: `$LASTEXITCODE" }
+  `$env:R7_E2E_HOTFIX_CANDIDATE = 'lens_clone_plus_authenticated_artifact_and_computation_bridges_v2'
 "@
 $Text = $Text.Replace($HotfixAnchor, $HotfixBlock + "`r`n" + $HotfixAnchor)
-$Text = $Text.Replace($BridgeEnvAnchor, $BridgeEnvAnchor + "`r`n  `$env:VELMERE_ACCOUNT_ARTIFACT_WRITE_BRIDGE_URL = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-artifact-write-bridge'")
+$Text = $Text.Replace(
+  $BridgeEnvAnchor,
+  $BridgeEnvAnchor + "`r`n  `$env:VELMERE_ACCOUNT_ARTIFACT_WRITE_BRIDGE_URL = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-artifact-write-bridge'" +
+    "`r`n  `$env:VELMERE_DURABLE_COMPUTATION_BRIDGE_URL = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-durable-computation-bridge'"
+)
 
 $JwtProbeBlock = @'
   # Safe split probe: validate the exact same ephemeral USER_A JWT directly against
@@ -74,10 +81,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $ReceiptPath = Join-Path (Join-Path (Get-Location).Path 'r7-work') 'R7_BROWSER_BASIC_CURRENT_SUCCESSOR_ZERO_VERCEL_E2E.json'
 if (-not (Test-Path -LiteralPath $ReceiptPath -PathType Leaf)) { throw 'candidate_e2e_receipt_missing' }
 $Receipt = Get-Content -LiteralPath $ReceiptPath -Raw | ConvertFrom-Json
-$Receipt.status = 'PASS_BROWSER_BASIC_ZERO_VERCEL_DURABLE_BRIDGE_CANDIDATE_E2E_NOT_CURRENT_BYTES'
+$Receipt.status = 'PASS_BROWSER_BASIC_ZERO_VERCEL_DURABLE_BRIDGES_CANDIDATE_E2E_NOT_CURRENT_BYTES'
 $Receipt.customerFinalCredit = $false
-$Receipt | Add-Member -NotePropertyName hotfixCandidate -NotePropertyValue 'lens_clone_plus_authenticated_edge_durable_bridge_v1' -Force
+$Receipt | Add-Member -NotePropertyName hotfixCandidate -NotePropertyValue 'lens_clone_plus_authenticated_artifact_and_computation_bridges_v2' -Force
 $Receipt | Add-Member -NotePropertyName exactCurrentSourceBytesAtProductExecution -NotePropertyValue $false -Force
 $Receipt | Add-Member -NotePropertyName promotionRequiredBeforeFinal -NotePropertyValue $true -Force
 $Receipt | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $ReceiptPath -Encoding utf8
-Write-Host 'Browser Basic durable-bridge candidate E2E PASS. Current-source FINAL credit remains forbidden until the fix is promoted and exact Windows/source authority are re-bound.'
+Write-Host 'Browser Basic artifact+computation durable-bridge candidate E2E PASS. Current-source FINAL credit remains forbidden until the fixes are promoted and exact Windows/source authority are re-bound.'
