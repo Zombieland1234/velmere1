@@ -34,7 +34,7 @@ jobs:
       R7_PATCH_GZIP_BYTE_LENGTH: '22553'
       R7_FILE_COUNT: '3505'
       R7_PAYLOAD_BYTE_LENGTH: '63043880'
-      R7_TARGET_BUNDLE_SHA256: '03490c7b895b47f67d83606b67124bdbff45f88b3eb3f3d9e5cdc864b5f91c7d'
+      R7_TARGET_BUNDLE_SHA256: '03490c7b895b47f67d83606b67124bdbff45f88b3eb3d9e5cdc864b5f91c7d'
       R7_EXECUTION_SLICE_AGGREGATE_SHA256: '73644f6e7dfd2ecff3bc84f2c290d457b099d3a06c695fcb31cc1d7495541b42'
       R7_EXECUTION_SLICE_MANIFEST_SHA256: 'bb5e580aedca4cdc5a839e37f9c9ab96b550dc01af103afdb46082e0bb4e4c47'
       R7_FULL_SOURCE_AGGREGATE_SHA256: 'b9f4b0de35a04b785987670a16b08a33622f9f41082ec6d5d7b116e96d1b518c'
@@ -51,7 +51,7 @@ jobs:
       R7_PDF_FONT_LICENSE_SHA256: 'e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c'
       R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1: '472064afc4b8dec9079fab03b8ffafb617a1b2d8'
       R7_RUNNER_TRANSPORT_SHA256: 'fc646421e5919d8e6fb8299d4e007f212d16e401df500adb57a010f7315deb37'
-      R7_RUNNER_SHA256: '871e4816ed24b99287fe453387ad238e39ad83278176ae7b336447a5da98b90f'
+      R7_RUNNER_SHA256: 'e53e0efdc3b9f828e89e3fed00dee2cd2fee79800f005755b92c56ac61e27c09'
       R7_RUNNER_GZIP_SHA256: '57278f976ffd2e577c82340320d2399b803073fbb1574784d1e5d7b004de6a87'
       R7_RUNNER_GZIP_BYTE_LENGTH: '8249'
       NEXT_TELEMETRY_DISABLED: '1'
@@ -101,9 +101,9 @@ jobs:
           $Input=[IO.File]::OpenRead($Gz); $Zip=[IO.Compression.GzipStream]::new($Input,[IO.Compression.CompressionMode]::Decompress); $Output=[IO.File]::Create($Ps)
           try{$Zip.CopyTo($Output)}finally{$Output.Dispose();$Zip.Dispose();$Input.Dispose()}
           if((Get-FileHash -LiteralPath $Ps -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_TRANSPORT_SHA256){throw 'runner transported source SHA mismatch'}
-          # Patch two stale lifecycle-marker literals plus a harness-only cleanup of build outputs.
-          # The cleanup occurs only after both 52-test runs and before rebuilding the deterministic
-          # source transport, so it removes non-source runtime outputs without changing product bytes.
+          # Patch two stale lifecycle-marker literals plus harness-only evidence isolation.
+          # Freeze a clean pre-execution source snapshot, keep all build/test evidence in r7-work,
+          # and rebuild the deterministic target only from that byte-identical clean snapshot.
           $RunnerText=[IO.File]::ReadAllText($Ps,[Text.Encoding]::UTF8)
           $OldMarker='Velmere runtime OK: v24.18.0 / npm 11.16.0'
           $NewMarker='Velmere EXACT_WINDOWS_OR_LOCAL runtime OK: v24.18.0 / npm 11.16.0'
@@ -111,11 +111,21 @@ jobs:
           if($MarkerCount -ne 2){throw "runner lifecycle marker compatibility count mismatch: $MarkerCount"}
           $RunnerText=$RunnerText.Replace($OldMarker,$NewMarker)
           $LF=[char]10
+          $SnapshotAnchor='} finally { Pop-Location }'+$LF+$LF+'# === Verify exact external runtime PDF font and license ==='
+          $SnapshotReplacement='} finally { Pop-Location }'+$LF+$LF+'# === Freeze an untouched exact-source snapshot for deterministic rebuild ==='+$LF+'# All subsequent build/test receipts remain in r7-work as evidence. The rebuild'+$LF+'# consumes only this byte-identical pre-execution snapshot, preventing runtime'+$LF+'# evidence from being mistaken for source-authority bytes.'+$LF+'Remove-Item -Recurse -Force ''r7-clean-source'' -ErrorAction SilentlyContinue'+$LF+'Copy-Item -LiteralPath ''r7-work'' -Destination ''r7-clean-source'' -Recurse -Force'+$LF+$LF+'# === Verify exact external runtime PDF font and license ==='
+          $SnapshotCount=([regex]::Matches($RunnerText,[regex]::Escape($SnapshotAnchor))).Count
+          if($SnapshotCount -ne 1){throw "runner clean-source snapshot anchor mismatch: $SnapshotCount"}
+          $RunnerText=$RunnerText.Replace($SnapshotAnchor,$SnapshotReplacement)
           $CleanupAnchor='if ($LASTEXITCODE -ne 0) { throw "campaign run2 failed: $LASTEXITCODE" }'+$LF+$LF+'# === Rebuild deterministic full current bundle from verified target bytes ==='
           $CleanupReplacement='if ($LASTEXITCODE -ne 0) { throw "campaign run2 failed: $LASTEXITCODE" }'+$LF+$LF+'# Build outputs are runtime evidence, not source-authority bytes. Remove them before'+$LF+'# rebuilding the deterministic source transport so exact path-set verification sees'+$LF+'# only the verified current source tree.'+$LF+'Remove-Item -Recurse -Force ''.next'' -ErrorAction SilentlyContinue'+$LF+'Remove-Item -Recurse -Force ''.next-pass25-webpack'' -ErrorAction SilentlyContinue'+$LF+'Remove-Item -Recurse -Force ''.next-pass25-turbopack'' -ErrorAction SilentlyContinue'+$LF+$LF+'# === Rebuild deterministic full current bundle from verified target bytes ==='
           $CleanupCount=([regex]::Matches($RunnerText,[regex]::Escape($CleanupAnchor))).Count
           if($CleanupCount -ne 1){throw "runner deterministic-rebuild cleanup anchor mismatch: $CleanupCount"}
           $RunnerText=$RunnerText.Replace($CleanupAnchor,$CleanupReplacement)
+          $SliceAnchor='  --slice . `'+$LF+'  --surface ../r7-target-rebuild `'
+          $SliceReplacement='  --slice ../r7-clean-source `'+$LF+'  --surface ../r7-target-rebuild `'
+          $SliceCount=([regex]::Matches($RunnerText,[regex]::Escape($SliceAnchor))).Count
+          if($SliceCount -ne 1){throw "runner deterministic-rebuild slice anchor mismatch: $SliceCount"}
+          $RunnerText=$RunnerText.Replace($SliceAnchor,$SliceReplacement)
           [IO.File]::WriteAllText($Ps,$RunnerText,[Text.UTF8Encoding]::new($false))
           if((Get-FileHash -LiteralPath $Ps -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_SHA256){throw 'effective runner source SHA mismatch'}
           & pwsh -NoProfile -File $Ps
