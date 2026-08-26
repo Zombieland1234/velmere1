@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $Source = Join-Path $PSScriptRoot 'run-r7-browser-current-e2e.ps1'
-$Candidate = Join-Path $env:RUNNER_TEMP 'run-r7-browser-current-e2e-authfix-candidate-runtime.ps1'
+$Candidate = Join-Path $env:RUNNER_TEMP 'run-r7-browser-current-e2e-account-clone-candidate-runtime.ps1'
 $Text = Get-Content -LiteralPath $Source -Raw
 
 # Keep transport semantics identical to the verified exact-Windows runner.
@@ -31,14 +31,14 @@ if (([regex]::Matches($Text, [regex]::Escape($JwtProbeAnchor))).Count -ne 1) {
   throw 'candidate wrapper jwt probe injection anchor mismatch'
 }
 
-$PatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-basic-paid-guard-auth-nonce-candidate.mjs')).Path
+$PatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-lens-account-request-clone-candidate.mjs')).Path
 $HotfixBlock = @"
   # Candidate-only validation. Exact current bytes were verified immediately above.
   # Modify only the disposable workflow workspace; this is not current-source FINAL evidence.
-  `$PolicyPath = Join-Path `$Work 'lib/commerce/vlm-advanced-only-access-policy.ts'
-  & node '$PatchScript' `$PolicyPath
-  if (`$LASTEXITCODE -ne 0) { throw "Basic paid-guard auth-nonce candidate patch failed: `$LASTEXITCODE" }
-  `$env:R7_E2E_HOTFIX_CANDIDATE = 'basic_paid_guard_auth_nonce_fix_v1'
+  `$LensRoutePath = Join-Path `$Work 'lib/server/search-route-modules/lens-report.ts'
+  & node '$PatchScript' `$LensRoutePath
+  if (`$LASTEXITCODE -ne 0) { throw "Lens account-request clone candidate patch failed: `$LASTEXITCODE" }
+  `$env:R7_E2E_HOTFIX_CANDIDATE = 'lens_account_request_clone_before_body_read_v1'
 "@
 $Text = $Text.Replace($HotfixAnchor, $HotfixBlock + "`r`n" + $HotfixAnchor)
 
@@ -81,10 +81,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $ReceiptPath = Join-Path (Join-Path (Get-Location).Path 'r7-work') 'R7_BROWSER_BASIC_CURRENT_SUCCESSOR_ZERO_VERCEL_E2E.json'
 if (-not (Test-Path -LiteralPath $ReceiptPath -PathType Leaf)) { throw 'candidate_e2e_receipt_missing' }
 $Receipt = Get-Content -LiteralPath $ReceiptPath -Raw | ConvertFrom-Json
-$Receipt.status = 'PASS_BROWSER_BASIC_AUTH_NONCE_FIX_CANDIDATE_E2E_NOT_CURRENT_BYTES'
+$Receipt.status = 'PASS_BROWSER_BASIC_ACCOUNT_REQUEST_CLONE_CANDIDATE_E2E_NOT_CURRENT_BYTES'
 $Receipt.customerFinalCredit = $false
-$Receipt | Add-Member -NotePropertyName hotfixCandidate -NotePropertyValue 'basic_paid_guard_auth_nonce_fix_v1' -Force
+$Receipt | Add-Member -NotePropertyName hotfixCandidate -NotePropertyValue 'lens_account_request_clone_before_body_read_v1' -Force
 $Receipt | Add-Member -NotePropertyName exactCurrentSourceBytesAtProductExecution -NotePropertyValue $false -Force
 $Receipt | Add-Member -NotePropertyName promotionRequiredBeforeFinal -NotePropertyValue $true -Force
 $Receipt | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $ReceiptPath -Encoding utf8
-Write-Host 'Browser Basic candidate E2E PASS. Current-source FINAL credit remains forbidden until the fix is promoted and exact Windows/source authority are re-bound.'
+Write-Host 'Browser Basic account-request-clone candidate E2E PASS. Current-source FINAL credit remains forbidden until the fix is promoted and exact Windows/source authority are re-bound.'
