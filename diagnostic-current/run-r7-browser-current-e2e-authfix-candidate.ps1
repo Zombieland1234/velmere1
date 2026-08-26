@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $Source = Join-Path $PSScriptRoot 'run-r7-browser-current-e2e.ps1'
-$Candidate = Join-Path $env:RUNNER_TEMP 'run-r7-browser-current-e2e-account-clone-candidate-runtime.ps1'
+$Candidate = Join-Path $env:RUNNER_TEMP 'run-r7-browser-current-e2e-durable-bridge-candidate-runtime.ps1'
 $Text = Get-Content -LiteralPath $Source -Raw
 
 # Keep transport semantics identical to the verified exact-Windows runner.
@@ -13,6 +13,7 @@ $OldBase = "$env:R7_E2E_BASE_URL = 'http://127.0.0.1:3100'"
 $NewBase = "$env:R7_E2E_BASE_URL = 'http://localhost:3100'"
 $HotfixAnchor = '  # Materialize exact licensed PDF font outside source authority.'
 $JwtProbeAnchor = "  `$env:NEXT_PUBLIC_SUPABASE_ANON_KEY = 'sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'"
+$BridgeEnvAnchor = '  $env:VELMERE_BROWSER_SERVER_CAPABILITY = [string]$Provision.serverCapability'
 
 foreach ($Pair in @(
   @{ Old = $OldCheck; New = $NewCheck; Label = 'patch check' },
@@ -24,23 +25,20 @@ foreach ($Pair in @(
   }
   $Text = $Text.Replace([string]$Pair.Old, [string]$Pair.New)
 }
-if (([regex]::Matches($Text, [regex]::Escape($HotfixAnchor))).Count -ne 1) {
-  throw 'candidate wrapper hotfix injection anchor mismatch'
-}
-if (([regex]::Matches($Text, [regex]::Escape($JwtProbeAnchor))).Count -ne 1) {
-  throw 'candidate wrapper jwt probe injection anchor mismatch'
+foreach ($Anchor in @($HotfixAnchor, $JwtProbeAnchor, $BridgeEnvAnchor)) {
+  if (([regex]::Matches($Text, [regex]::Escape($Anchor))).Count -ne 1) { throw "candidate wrapper injection anchor mismatch:$Anchor" }
 }
 
-$PatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-lens-account-request-clone-candidate.mjs')).Path
+$PatchScript = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'patch-browser-zero-vercel-durable-bridge-candidate.mjs')).Path
 $HotfixBlock = @"
   # Candidate-only validation. Exact current bytes were verified immediately above.
   # Modify only the disposable workflow workspace; this is not current-source FINAL evidence.
-  `$LensRoutePath = Join-Path `$Work 'lib/server/search-route-modules/lens-report.ts'
-  & node '$PatchScript' `$LensRoutePath
-  if (`$LASTEXITCODE -ne 0) { throw "Lens account-request clone candidate patch failed: `$LASTEXITCODE" }
-  `$env:R7_E2E_HOTFIX_CANDIDATE = 'lens_account_request_clone_before_body_read_v1'
+  & node '$PatchScript' `$Work
+  if (`$LASTEXITCODE -ne 0) { throw "Browser zero-Vercel durable-bridge candidate patch failed: `$LASTEXITCODE" }
+  `$env:R7_E2E_HOTFIX_CANDIDATE = 'lens_clone_plus_authenticated_edge_durable_bridge_v1'
 "@
 $Text = $Text.Replace($HotfixAnchor, $HotfixBlock + "`r`n" + $HotfixAnchor)
+$Text = $Text.Replace($BridgeEnvAnchor, $BridgeEnvAnchor + "`r`n  `$env:VELMERE_ACCOUNT_ARTIFACT_WRITE_BRIDGE_URL = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-artifact-write-bridge'")
 
 $JwtProbeBlock = @'
   # Safe split probe: validate the exact same ephemeral USER_A JWT directly against
@@ -51,9 +49,7 @@ $JwtProbeBlock = @'
     apikey = $env:NEXT_PUBLIC_SUPABASE_ANON_KEY
   }
   $AuthProbe = Invoke-WebRequest -Uri "$env:NEXT_PUBLIC_SUPABASE_URL/auth/v1/user" -Headers $JwtProbeHeaders -Method Get -SkipHttpErrorCheck -TimeoutSec 15
-  if ([int]$AuthProbe.StatusCode -ne 200) {
-    throw "direct_supabase_auth_probe_failed:$([int]$AuthProbe.StatusCode)"
-  }
+  if ([int]$AuthProbe.StatusCode -ne 200) { throw "direct_supabase_auth_probe_failed:$([int]$AuthProbe.StatusCode)" }
   $RpcProbeHeaders = @{
     Authorization = "Bearer $([string]$Provision.a.accessToken)"
     apikey = $env:NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -65,15 +61,12 @@ $JwtProbeBlock = @'
     throw "direct_supabase_binding_rpc_failed:$([int]$RpcProbe.StatusCode):$($SafeRpcError.Substring(0,[Math]::Min(240,$SafeRpcError.Length)))"
   }
   $RpcAccount = [string](ConvertFrom-Json ([string]$RpcProbe.Content))
-  if ($RpcAccount -ne [string]$Provision.a.accountId) {
-    throw 'direct_supabase_binding_rpc_account_mismatch'
-  }
+  if ($RpcAccount -ne [string]$Provision.a.accountId) { throw 'direct_supabase_binding_rpc_account_mismatch' }
   Write-Host 'Direct Supabase USER_A JWT Auth + user-RLS account-binding RPC PASS.'
 '@
 $Text = $Text.Replace($JwtProbeAnchor, $JwtProbeAnchor + "`r`n" + $JwtProbeBlock)
 
 Set-Content -LiteralPath $Candidate -Value $Text -Encoding utf8
-
 & $Candidate
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -81,10 +74,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $ReceiptPath = Join-Path (Join-Path (Get-Location).Path 'r7-work') 'R7_BROWSER_BASIC_CURRENT_SUCCESSOR_ZERO_VERCEL_E2E.json'
 if (-not (Test-Path -LiteralPath $ReceiptPath -PathType Leaf)) { throw 'candidate_e2e_receipt_missing' }
 $Receipt = Get-Content -LiteralPath $ReceiptPath -Raw | ConvertFrom-Json
-$Receipt.status = 'PASS_BROWSER_BASIC_ACCOUNT_REQUEST_CLONE_CANDIDATE_E2E_NOT_CURRENT_BYTES'
+$Receipt.status = 'PASS_BROWSER_BASIC_ZERO_VERCEL_DURABLE_BRIDGE_CANDIDATE_E2E_NOT_CURRENT_BYTES'
 $Receipt.customerFinalCredit = $false
-$Receipt | Add-Member -NotePropertyName hotfixCandidate -NotePropertyValue 'lens_account_request_clone_before_body_read_v1' -Force
+$Receipt | Add-Member -NotePropertyName hotfixCandidate -NotePropertyValue 'lens_clone_plus_authenticated_edge_durable_bridge_v1' -Force
 $Receipt | Add-Member -NotePropertyName exactCurrentSourceBytesAtProductExecution -NotePropertyValue $false -Force
 $Receipt | Add-Member -NotePropertyName promotionRequiredBeforeFinal -NotePropertyValue $true -Force
 $Receipt | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $ReceiptPath -Encoding utf8
-Write-Host 'Browser Basic account-request-clone candidate E2E PASS. Current-source FINAL credit remains forbidden until the fix is promoted and exact Windows/source authority are re-bound.'
+Write-Host 'Browser Basic durable-bridge candidate E2E PASS. Current-source FINAL credit remains forbidden until the fix is promoted and exact Windows/source authority are re-bound.'
