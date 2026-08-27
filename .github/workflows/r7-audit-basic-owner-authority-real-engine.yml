@@ -1,0 +1,96 @@
+name: R7 Audit Basic Owner Authority Real Engine
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-owner-authority-real-engine.yml'
+      - 'diagnostic-current/patch-audit-a01-a05-owner-authority-v1.mjs'
+      - 'diagnostic-current/r7-audit-basic-owner-authority-real-engine.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-basic-owner-authority-real-engine:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+
+    steps:
+      - name: Checkout controls and adjudication packet
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current product source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Apply hash-bound owner-authority engine alignment
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node ../diagnostic-current/patch-audit-a01-a05-owner-authority-v1.mjs | Tee-Object -FilePath ../R7_AUDIT_A01_A05_OWNER_AUTHORITY_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw "audit_owner_authority_patch_failed:$LASTEXITCODE" }
+
+      - name: Typecheck patched Audit engine
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm run typecheck
+          if ($LASTEXITCODE -ne 0) { throw "audit_owner_authority_typecheck_failed:$LASTEXITCODE" }
+
+      - name: Install exact solc 0.8.12 in isolated analysis workspace
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path 'r7-audit-engine-deps' | Out-Null
+          Push-Location 'r7-audit-engine-deps'
+          try {
+            npm init -y | Out-Null
+            npm install --audit=false --fund=false solc@0.8.12
+            if ($LASTEXITCODE -ne 0) { throw 'solc_0_8_12_install_failed' }
+            $Version = node -e "const s=require('solc'); process.stdout.write(s.version())"
+            if (-not $Version.StartsWith('0.8.12+commit.f00d7308')) { throw "solc_version_mismatch:$Version" }
+          } finally { Pop-Location }
+
+      - name: Execute owner-authority real A01-A04 and A05 boundary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --experimental-strip-types diagnostic-current/r7-audit-basic-owner-authority-real-engine.mjs
+          if ($LASTEXITCODE -ne 0) { throw "audit_owner_authority_real_engine_failed:$LASTEXITCODE" }
+
+      - name: Upload owner-authority Audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-owner-authority-real-engine-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            R7_AUDIT_A01_A05_OWNER_AUTHORITY_PATCH.json
+            artifacts/r7/audit-basic/owner-authority-real-engine/R7_AUDIT_BASIC_OWNER_AUTHORITY_REAL_ENGINE.json
+          if-no-files-found: warn
+          retention-days: 30
