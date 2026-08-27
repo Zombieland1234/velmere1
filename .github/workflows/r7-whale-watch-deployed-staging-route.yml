@@ -1,0 +1,91 @@
+name: R7 Whale Watch Deployed Staging Route
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-whale-watch-deployed-staging-route.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  whale-watch-deployed-staging-route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ROUTE: 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-whale-watch-public-staging'
+    steps:
+      - name: Execute deployed PL EN DE fail-closed route
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          for locale in pl en de; do
+            code=$(curl -sS -o "evidence/${locale}.json" -w '%{http_code}' "$ROUTE?assetKey=USDT&locale=$locale")
+            test "$code" = "424"
+            jq -e --arg locale "$locale" '
+              .ok == false and
+              .schemaVersion == "velmere.r7.whale-watch-public-staging.v1" and
+              .productId == "whale-watch" and
+              .availability == "WITHHELD" and
+              .mode == "customer_safe_unavailable" and
+              .assetKey == "USDT" and
+              .locale == $locale and
+              .liveClaimed == false and
+              .numbersPublished == false and
+              .providerTopologyDisclosed == false and
+              .transferIsTradeClaimAllowed == false and
+              .buyOrSellIntentClaimAllowed == false and
+              .unverifiedDisplayLabel == "UNCLASSIFIED" and
+              .stagingOnly == true and
+              .customerFinalCredit == false and
+              .paidValueCredit == false and
+              .serviceRoleUsed == false and
+              .providerNetworkCalls == 0 and
+              (.customerMessage | type == "string" and length > 20)
+            ' "evidence/${locale}.json" >/dev/null
+            if grep -Eiq 'etherscan|alchemy|infura|quicknode|providerId|service[_-]?role|secret|token=' "evidence/${locale}.json"; then
+              echo "forbidden topology/secret term in $locale response" >&2; exit 1
+            fi
+          done
+
+          code=$(curl -sS -o evidence/bad-locale.json -w '%{http_code}' "$ROUTE?assetKey=USDT&locale=xx")
+          test "$code" = "400"
+          jq -e '.error == "locale_invalid"' evidence/bad-locale.json >/dev/null
+          code=$(curl -sS -o evidence/bad-asset.json -w '%{http_code}' "$ROUTE?assetKey=%20%20&locale=en")
+          test "$code" = "400"
+          jq -e '.error == "asset_key_invalid"' evidence/bad-asset.json >/dev/null
+          code=$(curl -sS -X POST -o evidence/bad-method.json -w '%{http_code}' "$ROUTE?assetKey=USDT&locale=en")
+          test "$code" = "405"
+          jq -e '.error == "method_not_allowed"' evidence/bad-method.json >/dev/null
+
+          jq -n --arg run "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" '{
+            schemaVersion:"velmere.r7.whale-watch-deployed-staging-route-e2e.v1",
+            status:"PASS_DEPLOYED_STAGING_FAIL_CLOSED_ROUTE",
+            githubRunId:$run,
+            githubHeadSha:$sha,
+            endpointClass:"SUPABASE_EDGE_STAGING",
+            locales:["pl","en","de"],
+            customerSafeUnavailable:true,
+            numericWhaleDataPublished:false,
+            providerNetworkCalls:0,
+            badLocaleDenied:true,
+            badAssetDenied:true,
+            badMethodDenied:true,
+            stagingOnly:true,
+            customerFinalCredit:false,
+            paidValueCredit:false,
+            truthBoundary:"This proves a real externally reachable staging route for the customer-safe unavailable state. It does not prove live Whale provider rights, continuous monitoring, real external customer outcomes or Customer FINAL."
+          }' > evidence/receipt.json
+          cat evidence/receipt.json
+
+      - name: Upload deployed route receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-whale-watch-deployed-staging-route-${{ github.sha }}-${{ github.run_id }}
+          path: evidence/**
+          if-no-files-found: error
+          retention-days: 30
