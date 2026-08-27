@@ -1,0 +1,42 @@
+name: R7 Hash V2 Workflow Control
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-hash-v2-control.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hash-v2-workflow:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - name: Checkout control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Hash exact v2 workflow
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Path = '.github/workflows/r7-successor-v2-exact-windows.yml'
+          if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw 'v2_workflow_missing' }
+          $Sha = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+          $Bytes = (Get-Item -LiteralPath $Path).Length
+          if ($Sha -notmatch '^[a-f0-9]{64}$') { throw 'workflow_sha_invalid' }
+          Write-Host "R7_V2_WORKFLOW_SHA256=$Sha"
+          Write-Host "R7_V2_WORKFLOW_BYTE_LENGTH=$Bytes"
+          @{ schemaVersion='velmere.r7.workflow-control-hash.v1'; workflowPath=$Path; sha256=$Sha; byteLength=$Bytes; productSourceModified=$false } | ConvertTo-Json | Set-Content -LiteralPath 'R7_V2_WORKFLOW_CONTROL_HASH.json' -Encoding utf8
+      - name: Upload workflow hash receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-v2-workflow-control-hash-${{ github.sha }}
+          path: R7_V2_WORKFLOW_CONTROL_HASH.json
+          if-no-files-found: error
+          retention-days: 14
