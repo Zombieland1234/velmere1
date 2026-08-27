@@ -1,0 +1,51 @@
+name: R7 Market Impact Finalizer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-market-impact-finalizer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize-market-impact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Finalize only exact proven Market Impact candidate
+        env:
+          AUDIENCE: velmere-r7-market-impact-finalizer
+          FINALIZER_URL: https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-market-impact-finalizer-oidc
+        shell: bash
+        run: |
+          set -euo pipefail
+          separator='?'
+          case "$ACTIONS_ID_TOKEN_REQUEST_URL" in *\?*) separator='&' ;; esac
+          oidc_json=$(curl -fsS \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}${separator}audience=${AUDIENCE}")
+          oidc=$(printf '%s' "$oidc_json" | jq -er '.value')
+          echo "::add-mask::$oidc"
+          code=$(curl -sS -o R7_MARKET_IMPACT_FINALIZER_RESPONSE.json -w '%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer $oidc" \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            "$FINALIZER_URL" \
+            -d '{"action":"finalize"}')
+          cat R7_MARKET_IMPACT_FINALIZER_RESPONSE.json
+          if [ "$code" != "200" ]; then exit 1; fi
+          jq -e '.ok == true and .result.finalStatus == "FINAL" and .result.productSlug == "market-impact"' R7_MARKET_IMPACT_FINALIZER_RESPONSE.json >/dev/null
+
+      - name: Upload finalization receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-market-impact-finalizer-${{ github.sha }}-${{ github.run_id }}
+          path: R7_MARKET_IMPACT_FINALIZER_RESPONSE.json
+          if-no-files-found: warn
+          retention-days: 30
