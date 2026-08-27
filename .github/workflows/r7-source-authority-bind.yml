@@ -1,0 +1,111 @@
+name: R7 Source Authority Bind Canonical Windows
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-source-authority-bind.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-source-authority-bind-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bind-latest-canonical-success:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout binder control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind latest successful canonical Windows source authority
+        shell: pwsh
+        env:
+          BINDER_AUDIENCE: 'velmere-r7-source-authority'
+          SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
+        run: |
+          $ErrorActionPreference='Stop'
+          $Headers=@{ Accept='application/vnd.github+json'; 'User-Agent'='velmere-r7-source-authority-binder' }
+          $RunsUrl='https://api.github.com/repos/Zombieland1234/velmere1/actions/workflows/r7-successor-v3-exact-windows.yml/runs?branch=velmere-r7-successor-delta-20260825&status=success&per_page=10'
+          $Runs=Invoke-RestMethod -Uri $RunsUrl -Headers $Headers -Method Get -TimeoutSec 20
+          $Source=@($Runs.workflow_runs | Where-Object { $_.name -eq 'R7 Successor V3 Exact Windows Canonical' -and $_.status -eq 'completed' -and $_.conclusion -eq 'success' } | Sort-Object {[DateTime]$_.updated_at} -Descending | Select-Object -First 1)
+          if ($Source.Count -ne 1) { throw 'canonical_windows_success_not_found' }
+          $SourceRun=$Source[0]
+          $SourceRunId=[string]$SourceRun.id
+          $SourceAttempt=[int]$SourceRun.run_attempt
+          $SourceHeadSha=([string]$SourceRun.head_sha).ToLowerInvariant()
+          if ($SourceHeadSha -notmatch '^[a-f0-9]{40}$' -or $SourceRunId -notmatch '^\d{1,20}$' -or $SourceAttempt -lt 1) { throw 'canonical_windows_success_identity_invalid' }
+          $WorkflowRaw='https://raw.githubusercontent.com/Zombieland1234/velmere1/'+$SourceHeadSha+'/.github/workflows/r7-successor-v3-exact-windows.yml'
+          $WorkflowResponse=Invoke-WebRequest -Uri $WorkflowRaw -Headers @{ 'User-Agent'='velmere-r7-source-authority-binder' } -Method Get -TimeoutSec 20
+          if ([int]$WorkflowResponse.StatusCode -ne 200) { throw 'canonical_workflow_fetch_failed' }
+          $WorkflowBytes=[Text.Encoding]::UTF8.GetBytes([string]$WorkflowResponse.Content)
+          $WorkflowSha=([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($WorkflowBytes))).Replace('-','').ToLowerInvariant()
+          if ($WorkflowSha -notmatch '^[a-f0-9]{64}$') { throw 'canonical_workflow_sha_invalid' }
+          if (-not $env:ACTIONS_ID_TOKEN_REQUEST_URL -or -not $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN) { throw 'github_oidc_environment_missing' }
+          $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
+          $OidcResponse=Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:BINDER_AUDIENCE)) -Headers @{ Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -Method Get -TimeoutSec 20
+          $Oidc=[string]$OidcResponse.value
+          if (-not $Oidc) { throw 'github_oidc_token_missing' }
+          $Body=[ordered]@{
+            schemaVersion='velmere.r7.source-authority-oidc-bind.v2'
+            sourceRunId=$SourceRunId
+            sourceRunAttempt=$SourceAttempt
+            sourceHeadSha=$SourceHeadSha
+            workflowSha256=$WorkflowSha
+            candidate='R7_MERGED_CURRENT_SOURCE'
+            fullSourceAggregateSha256='d3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'
+            executionSliceAggregateSha256='504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'
+            executionSliceManifestSha256='cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9'
+            executionBundleSha256='9154d6be2d62bc07cb786136fe0586b72bcef5e8afabb1e848de759a000d0190'
+            packageJsonSha256='384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+            packageLockSha256='5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+            testDenominator=52
+            exactWindowsStatus='PASS'
+          } | ConvertTo-Json -Depth 10 -Compress
+          $Bind=Invoke-WebRequest -Uri ($env:SUPABASE_URL+'/functions/v1/r7-source-authority-oidc-binder') -Method Post -Headers @{ Authorization='Bearer '+$Oidc; Accept='application/json' } -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 30
+          Write-Host ('sourceRunId='+$SourceRunId)
+          Write-Host ('sourceHeadSha='+$SourceHeadSha)
+          Write-Host ('workflowSha256='+$WorkflowSha)
+          Write-Host ('binderStatus='+[int]$Bind.StatusCode)
+          Write-Host ([string]$Bind.Content)
+          if ([int]$Bind.StatusCode -ne 200) { throw 'source_authority_bind_failed' }
+          $Result=$Bind.Content | ConvertFrom-Json -Depth 20
+          if ($Result.ok -ne $true -or $Result.githubRunVerifiedSuccess -ne $true -or $Result.sourceIdentityBound -ne $true -or $Result.exactWindowsBound -ne $true -or $Result.serviceRoleReturned -ne $false) { throw 'source_authority_bind_contract_invalid' }
+          $Receipt=[ordered]@{
+            schemaVersion='velmere.r7.source-authority-binder-receipt.v1'
+            status='PASS_GITHUB_VERIFIED_CANONICAL_WINDOWS_AUTHORITY_BOUND'
+            sourceRunId=$SourceRunId
+            sourceRunAttempt=$SourceAttempt
+            sourceHeadSha=$SourceHeadSha
+            workflowSha256=$WorkflowSha
+            fullSourceAggregateSha256='d3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'
+            executionSliceAggregateSha256='504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'
+            executionSliceManifestSha256='cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9'
+            executionBundleSha256='9154d6be2d62bc07cb786136fe0586b72bcef5e8afabb1e848de759a000d0190'
+            testDenominator=52
+            githubRunVerifiedSuccess=$true
+            sourceIdentityBound=$true
+            exactWindowsBound=$true
+            serviceRoleInWorkflow=$false
+            customerFinalCredit=$false
+          }
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/source-authority' | Out-Null
+          $Receipt | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath 'artifacts/r7/source-authority/R7_SOURCE_AUTHORITY_BINDER_RECEIPT.json' -Encoding utf8
+
+      - name: Upload source authority binder receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-source-authority-binder-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/source-authority/R7_SOURCE_AUTHORITY_BINDER_RECEIPT.json
+          if-no-files-found: warn
+          retention-days: 14
