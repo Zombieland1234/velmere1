@@ -1,0 +1,65 @@
+name: R7 Source Authority Bind Canonical Windows V2
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-source-authority-bind-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-source-authority-bind-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bind-latest-canonical-success:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind GitHub-verified canonical Windows authority and adjudicate Browser Basic
+        shell: pwsh
+        env:
+          AUDIENCE: 'velmere-r7-source-authority'
+          SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
+        run: |
+          $ErrorActionPreference='Stop'
+          $Headers=@{Accept='application/vnd.github+json';'User-Agent'='velmere-r7-source-authority-binder'}
+          $Runs=Invoke-RestMethod -Uri 'https://api.github.com/repos/Zombieland1234/velmere1/actions/workflows/r7-successor-v3-exact-windows.yml/runs?branch=velmere-r7-successor-delta-20260825&status=success&per_page=10' -Headers $Headers -TimeoutSec 20
+          $Source=@($Runs.workflow_runs|Where-Object{$_.name-eq'R7 Successor V3 Exact Windows Canonical'-and$_.status-eq'completed'-and$_.conclusion-eq'success'}|Sort-Object{[DateTime]$_.updated_at}-Descending|Select-Object -First 1)
+          if($Source.Count-ne1){throw'canonical_windows_success_not_found'}
+          $R=$Source[0];$RunId=[string]$R.id;$Attempt=[int]$R.run_attempt;$Head=([string]$R.head_sha).ToLowerInvariant()
+          if($RunId-notmatch'^\d{1,20}$'-or$Attempt-lt1-or$Head-notmatch'^[a-f0-9]{40}$'){throw'canonical_windows_identity_invalid'}
+          $Raw=Invoke-WebRequest -Uri ('https://raw.githubusercontent.com/Zombieland1234/velmere1/'+$Head+'/.github/workflows/r7-successor-v3-exact-windows.yml') -Headers @{'User-Agent'='velmere-r7-source-authority-binder'} -TimeoutSec 20
+          if([int]$Raw.StatusCode-ne200){throw'canonical_workflow_fetch_failed'}
+          $WorkflowSha=([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$Raw.Content)))).Replace('-','').ToLowerInvariant()
+          $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
+          $TR=Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:AUDIENCE)) -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20
+          $Oidc=[string]$TR.value;if(-not$Oidc){throw'github_oidc_token_missing'}
+          $Body=[ordered]@{schemaVersion='velmere.r7.source-authority-oidc-bind.v3';sourceRunId=$RunId;sourceRunAttempt=$Attempt;sourceHeadSha=$Head;workflowSha256=$WorkflowSha;candidate='R7_MERGED_CURRENT_SOURCE';fullSourceAggregateSha256='d3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0';executionSliceAggregateSha256='504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5';executionSliceManifestSha256='cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9';executionBundleSha256='9154d6be2d62bc07cb786136fe0586b72bcef5e8afabb1e848de759a000d0190';packageJsonSha256='384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61';packageLockSha256='5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61';testDenominator=52;exactWindowsStatus='PASS'}|ConvertTo-Json -Compress
+          $B=Invoke-WebRequest -Uri ($env:SUPABASE_URL+'/functions/v1/r7-source-authority-oidc-binder') -Method Post -Headers @{Authorization='Bearer '+$Oidc;Accept='application/json'} -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 40
+          Write-Host('sourceRunId='+$RunId);Write-Host('workflowSha256='+$WorkflowSha);Write-Host('binderStatus='+[int]$B.StatusCode);Write-Host([string]$B.Content)
+          if([int]$B.StatusCode-ne200){throw'source_authority_bind_failed'}
+          $J=$B.Content|ConvertFrom-Json -Depth 20
+          if($J.ok-ne$true-or$J.githubRunVerifiedSuccess-ne$true-or$J.sourceIdentityBound-ne$true-or$J.authorityReceiptPersisted-ne$true){throw'binder_contract_invalid'}
+          $Receipt=[ordered]@{schemaVersion='velmere.r7.source-authority-binder-receipt.v2';status='PASS_GITHUB_VERIFIED_CANONICAL_WINDOWS_AUTHORITY_BOUND';sourceRunId=$RunId;sourceRunAttempt=$Attempt;sourceHeadSha=$Head;workflowSha256=$WorkflowSha;browserAdjudication=$J.browserAdjudication;serviceRoleInWorkflow=$false}
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/source-authority'|Out-Null;$Receipt|ConvertTo-Json -Depth 20|Set-Content 'artifacts/r7/source-authority/R7_SOURCE_AUTHORITY_BINDER_RECEIPT_V2.json' -Encoding utf8
+
+      - name: Upload authority/adjudication receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-source-authority-binder-v2-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/source-authority/R7_SOURCE_AUTHORITY_BINDER_RECEIPT_V2.json
+          if-no-files-found: warn
+          retention-days: 14
