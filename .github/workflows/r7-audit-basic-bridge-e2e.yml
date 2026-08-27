@@ -61,20 +61,21 @@ jobs:
           if (-not $A.accessToken -or -not $B.accessToken -or $Capability.Length -ne 96) { throw 'provision_contract_invalid' }
           $AHeaders=@{ Authorization='Bearer '+[string]$A.accessToken; 'x-velmere-audit-server-capability'=$Capability; Accept='application/json' }
           $BHeaders=@{ Authorization='Bearer '+[string]$B.accessToken; 'x-velmere-audit-server-capability'=$Capability; Accept='application/json' }
-          $CaseRef='AB-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
           $CaseId='audit-basic-e2e-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
           $RequestId='audit-basic-request-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
           $Target='0x3333333333333333333333333333333333333333'
           $TargetHash='sha256:'+(Sha256HexText ('velmere-audit-contract-target-v1:56:'+$Target.ToLowerInvariant()))
           $CaseInput=@{
-            caseId=$CaseId; caseRef=$CaseRef; requestId=$RequestId; targetKind='contract'; targetPrivate=$Target.ToLowerInvariant(); targetHash=$TargetHash;
+            caseId=$CaseId; caseRef='server-generated'; requestId=$RequestId; targetKind='contract'; targetPrivate=$Target.ToLowerInvariant(); targetHash=$TargetHash;
             targetChainId='56'; targetChainName='BSC'; displayLabel='Audit Basic bridge E2E'; tier='basic'; locale='en'; status='queued_basic_prescreen';
             accountId=[string]$A.accountId; accountEmail=$null; entitlementRequired=$false; entitlementVerified=$false; analysisStarted=$false;
-            intakeReceipt=@{ schemaVersion='velmere.r7.audit-basic-bridge-e2e-intake.v1'; runId=$env:GITHUB_RUN_ID; syntheticHarness=$true; customerFinalCredit=$false };
+            intakeReceipt=@{ schemaVersion='velmere.r7.audit-basic-bridge-e2e-intake.v2'; runId=$env:GITHUB_RUN_ID; syntheticHarness=$true; customerFinalCredit=$false };
             sourceCandidatesProtected=@{ auditUrl=$null; docsUrl=$null; githubUrl=$null; website=$null };
           }
           $Created=Invoke-JsonPost $BridgeUrl $AHeaders @{ schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1'; action='create_case'; caseInput=$CaseInput }
           if ($Created.Status -ne 200 -or $Created.Body.ok -ne $true) { throw ('create_case_failed:'+($Created.Raw.Substring(0,[Math]::Min(500,$Created.Raw.Length)))) }
+          $CaseRef=[string]$Created.Body.data.caseRef
+          if ($CaseRef -notmatch '^AUD-[A-F0-9]{10}$') { throw 'server_generated_case_ref_invalid' }
           $ReadA=Invoke-JsonPost $BridgeUrl $AHeaders @{ schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1'; action='get_case'; caseRef=$CaseRef }
           if ($ReadA.Status -ne 200 -or $ReadA.Body.ok -ne $true -or [string]$ReadA.Body.data.accountId -ne [string]$A.accountId) { throw 'owner_case_read_failed' }
           $ReadB=Invoke-JsonPost $BridgeUrl $BHeaders @{ schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1'; action='get_case'; caseRef=$CaseRef }
@@ -129,8 +130,8 @@ jobs:
           $RowsB=$RB.Content | ConvertFrom-Json -Depth 20
           if ($RowsB.Count -ne 0) { throw 'cross_account_artifact_not_denied' }
           $Receipt=[ordered]@{
-            schemaVersion='velmere.r7.audit-basic-bridge-e2e.v1'; status='PASS_SECURE_BRIDGE_E2E'; runId=$env:GITHUB_RUN_ID; caseRef=$CaseRef;
-            createCase='PASS_ACCOUNT_BOUND'; ownerCaseRead='PASS'; crossAccountCaseRead='PASS_DENIED_404'; workerClaim='PASS_EPHEMERAL_LEASE';
+            schemaVersion='velmere.r7.audit-basic-bridge-e2e.v2'; status='PASS_SECURE_BRIDGE_E2E'; runId=$env:GITHUB_RUN_ID; caseRef=$CaseRef;
+            createCase='PASS_ACCOUNT_BOUND_SERVER_IDENTITY'; ownerCaseRead='PASS'; crossAccountCaseRead='PASS_DENIED_404'; workerClaim='PASS_EPHEMERAL_LEASE';
             completion='PASS_ATOMIC_IMMUTABLE_PDF'; ownerArtifactRls='PASS'; crossAccountArtifactRls='PASS_EMPTY'; pdfDigest=$PdfDigest; pdfByteLength=$PdfLen; recordDigest=$RecordDigest;
             serviceRoleInWorkflow=$false; serviceRoleReturnedByOidc=$false; auditCapabilitySeparated=$true; customerFinalCredit=$false;
             truthBoundary='Secure Audit Basic service bridge is proven end-to-end with ephemeral owner-bound users and an exact immutable PDF artifact. This is bridge/storage evidence only; real audit findings, provider rights, retest and customer PDF route remain separate FINAL gates.'
