@@ -1,0 +1,92 @@
+name: R7 Audit Basic Real Target Multicall3 Authority
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-real-target-multicall3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-real-rights-safe-target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Build rights-safe real BSC target evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Repo='mds1/multicall3'
+          $Expected='0xca11bde05977b3631167028862be2a173976ca11'
+          $Headers=@{Accept='application/vnd.github+json';'User-Agent'='velmere-r7-audit-target-authority'}
+          $Meta=Invoke-RestMethod -Uri('https://api.github.com/repos/'+$Repo)-Headers$Headers-TimeoutSec20
+          $Branch=[string]$Meta.default_branch
+          $Commit=Invoke-RestMethod -Uri('https://api.github.com/repos/'+$Repo+'/commits/'+$Branch)-Headers$Headers-TimeoutSec20
+          $Sha=([string]$Commit.sha).ToLowerInvariant()
+          if($Sha-notmatch'^[a-f0-9]{40}$'){throw'upstream_commit_invalid'}
+          $Tree=Invoke-RestMethod -Uri('https://api.github.com/repos/'+$Repo+'/git/trees/'+$Sha+'?recursive=1')-Headers$Headers-TimeoutSec20
+          $Paths=@($Tree.tree|Where-Object{$_.type-eq'blob'}|ForEach-Object{[string]$_.path})
+          $SourcePath=@($Paths|Where-Object{$_ -match '(^|/)Multicall3\.sol$'}|Select-Object -First 1)
+          $LicensePath=@($Paths|Where-Object{($_ -match '(^|/)LICENSE(\.md|\.txt)?$')}|Select-Object -First 1)
+          if($SourcePath.Count-ne1-or$LicensePath.Count-ne1){throw'upstream_source_or_license_missing'}
+          $RawBase='https://raw.githubusercontent.com/'+$Repo+'/'+$Sha+'/'
+          $Source=[string](Invoke-WebRequest -Uri($RawBase+$SourcePath[0])-Headers@{'User-Agent'='velmere-r7-audit-target-authority'}-TimeoutSec20).Content
+          $License=[string](Invoke-WebRequest -Uri($RawBase+$LicensePath[0])-Headers@{'User-Agent'='velmere-r7-audit-target-authority'}-TimeoutSec20).Content
+          if($Source-notmatch'SPDX-License-Identifier:\s*MIT'){throw'source_spdx_not_mit'}
+          if($License-notmatch'MIT License'){throw'license_not_mit'}
+          $ReadmePath=@($Paths|Where-Object{$_ -match '(^|/)README\.md$'}|Select-Object -First 1)
+          if($ReadmePath.Count-ne1){throw'readme_missing'}
+          $Readme=[string](Invoke-WebRequest -Uri($RawBase+$ReadmePath[0])-Headers@{'User-Agent'='velmere-r7-audit-target-authority'}-TimeoutSec20).Content
+          $DeploymentFiles=@($Paths|Where-Object{$_ -match '(?i)(deploy|address).*\.(json|md|txt)$'})
+          $DeploymentText=$Readme
+          foreach($P in $DeploymentFiles|Select-Object -First 12){try{$DeploymentText+="`n"+[string](Invoke-WebRequest -Uri($RawBase+$P)-Headers@{'User-Agent'='velmere-r7-audit-target-authority'}-TimeoutSec15).Content}catch{}}
+          if($DeploymentText.ToLowerInvariant()-notlike('*'+$Expected+'*')){throw'canonical_multicall3_address_not_documented'}
+          $RpcBody=@{jsonrpc='2.0';id=1;method='eth_getCode';params=@($Expected,'latest')}|ConvertTo-Json -Compress
+          $Rpc=Invoke-WebRequest -Uri 'https://bsc-dataseed.binance.org/' -Method Post -ContentType 'application/json' -Body $RpcBody -SkipHttpErrorCheck -TimeoutSec20
+          if([int]$Rpc.StatusCode-ne200){throw'bsc_currentness_rpc_unavailable'}
+          $RJ=$Rpc.Content|ConvertFrom-Json
+          $Code=([string]$RJ.result).ToLowerInvariant()
+          if($Code-notmatch'^0x[0-9a-f]{200,}$'){throw'bsc_deployment_code_missing'}
+          function Sha([byte[]]$B){return([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($B))).Replace('-','').ToLowerInvariant()}
+          $SourceSha=Sha([Text.Encoding]::UTF8.GetBytes($Source));$LicenseSha=Sha([Text.Encoding]::UTF8.GetBytes($License));$BytecodeSha=Sha([Text.Encoding]::UTF8.GetBytes($Code))
+          $Receipt=[ordered]@{
+            schemaVersion='velmere.r7.audit-basic-real-target-authority.v1'
+            status='PASS_RIGHTS_SAFE_REAL_TARGET'
+            chainId='56'
+            chainName='BSC'
+            contractAddress=$Expected
+            upstreamRepository=$Repo
+            upstreamCommit=$Sha
+            sourcePath=$SourcePath[0]
+            sourceSha256=$SourceSha
+            licensePath=$LicensePath[0]
+            license='MIT'
+            licenseSha256=$LicenseSha
+            canonicalAddressDocumented=$true
+            liveCodeObserved=$true
+            liveCodeSha256=$BytecodeSha
+            liveCodeByteLength=[int](($Code.Length-2)/2)
+            liveCurrentnessProvider='https://bsc-dataseed.binance.org/'
+            liveRpcRawCustomerRedistribution=$false
+            sourceCustomerUseBasis='MIT_LICENSE_PINNED_UPSTREAM_COMMIT'
+            derivedFindingsCustomerPublishable=$true
+            rawSourceRedistributionRequiresLicenseNotice=$true
+            paidProviderRequired=$false
+            customerFinalCredit=$false
+            truthBoundary='This receipt proves a real BSC deployment target, pinned MIT-licensed source authority and a live non-empty code observation. It does not prove Velmere findings, source-to-bytecode equivalence, retest, or a final customer report.'
+          }
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/audit-basic'|Out-Null
+          $Receipt|ConvertTo-Json -Depth20|Set-Content 'artifacts/r7/audit-basic/R7_AUDIT_BASIC_REAL_TARGET_MULTICALL3_AUTHORITY.json' -Encoding utf8
+          Write-Host($Receipt|ConvertTo-Json -Depth20)
+
+      - name: Upload target authority receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-real-target-multicall3-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/audit-basic/R7_AUDIT_BASIC_REAL_TARGET_MULTICALL3_AUTHORITY.json
+          if-no-files-found: error
+          retention-days: 30
