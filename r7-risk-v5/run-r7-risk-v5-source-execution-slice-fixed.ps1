@@ -9,9 +9,9 @@ $Fixed = Join-Path $env:RUNNER_TEMP 'run-r7-risk-v5-source-execution-slice-fixed
 $Text = Get-Content -LiteralPath $Source -Raw
 
 # The Risk overlay is a full-source patch, while r7-work is the smaller execution slice.
-# These two identity files intentionally live only in the full source tree. Ignore only
-# those paths during slice application; the resulting execution manifest, aggregate,
-# dependency hashes and deterministic bundle are still verified fail-closed afterwards.
+# Two identity files intentionally live only in the full source tree. Ignore only those
+# paths during slice application, then deterministically regenerate the execution
+# manifest/TSV and require the exact target aggregate, payload and manifest SHA.
 $OldCheck = 'git -c core.autocrlf=false apply --check --no-index $PatchPath'
 $NewCheck = 'git -c core.autocrlf=false apply --check --no-index --exclude=VELMERE_R7_CURRENT_SOURCE_MANIFEST.tsv --exclude=artifacts/r7/VELMERE_R7_SOURCE_IDENTITY.json $PatchPath'
 $OldApply = 'git -c core.autocrlf=false apply --no-index $PatchPath'
@@ -25,9 +25,7 @@ if (([regex]::Matches($Text, [regex]::Escape($OldApply))).Count -ne 1) {
 }
 $Text = $Text.Replace($OldCheck, $NewCheck).Replace($OldApply, $NewApply)
 
-# Repair four legacy command-style SHA calls. PowerShell functions are invoked with
-# whitespace, not JavaScript-style parentheses; the old form becomes a parser error
-# when it follows a boolean operator.
+# Repair four legacy command-style SHA calls.
 $ShaRepairs = @(
   @{ Old = 'Sha256($ReceiptPath)'; New = '(Sha256 $ReceiptPath)'; Label = 'receipt' },
   @{ Old = 'Sha256($Chunk)'; New = '(Sha256 $Chunk)'; Label = 'chunk' },
@@ -39,6 +37,12 @@ foreach ($Repair in $ShaRepairs) {
   if ($Count -ne 1) { throw "risk_v5_source_sha_call_anchor_mismatch:$($Repair.Label):$Count" }
   $Text = $Text.Replace([string]$Repair.Old, [string]$Repair.New)
 }
+
+$RegenerationAnchor = "  Assert-Exit 'Risk v5 patch apply'`n} finally { Pop-Location }`n`n# Verify every exact target byte and dependency/source binding."
+$RegenerationBlock = "  Assert-Exit 'Risk v5 patch apply'`n} finally { Pop-Location }`n`n& node (Join-Path `$Root 'r7-risk-v5/regenerate-risk-v5-execution-manifest.mjs') `$Work `$ReceiptPath`nAssert-Exit 'Risk v5 execution manifest regeneration'`n`n# Verify every exact target byte and dependency/source binding."
+$AnchorCount = ([regex]::Matches($Text, [regex]::Escape($RegenerationAnchor))).Count
+if ($AnchorCount -ne 1) { throw "risk_v5_manifest_regeneration_anchor_mismatch:$AnchorCount" }
+$Text = $Text.Replace($RegenerationAnchor, $RegenerationBlock)
 
 [IO.File]::WriteAllText($Fixed, $Text, [Text.UTF8Encoding]::new($false))
 
