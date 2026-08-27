@@ -1,0 +1,112 @@
+name: R7 Audit Basic External Slither Family
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-slither-external.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  slither-exact-deployed-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Fetch exact deployed Multicall3 source from Sourcify v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/r7/audit-basic/slither/input
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const chainId='56';
+          const address='0xca11bde05977b3631167028862be2a173976ca11';
+          const expectedSourceSha='3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e';
+          const url=`https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=all`;
+          const res=await fetch(url,{headers:{accept:'application/json','user-agent':'velmere-r7-slither'},signal:AbortSignal.timeout(25000)});
+          if(!res.ok) throw new Error(`sourcify_fetch_failed:${res.status}`);
+          const raw=await res.text(); const c=JSON.parse(raw);
+          if(c.match!=='exact_match') throw new Error(`sourcify_not_exact_match:${String(c.match)}`);
+          const rows=Object.entries(c.sources??{}).filter(([p,v])=>/Multicall3\.sol$/i.test(p)&&v&&typeof v==='object'&&typeof v.content==='string');
+          if(rows.length!==1) throw new Error(`source_denominator:${rows.length}`);
+          const [path,record]=rows[0]; const source=record.content;
+          const sha=createHash('sha256').update(Buffer.from(source,'utf8')).digest('hex');
+          if(sha!==expectedSourceSha) throw new Error(`exact_source_sha_mismatch:${sha}`);
+          if(!/SPDX-License-Identifier:\s*MIT/.test(source)) throw new Error('source_not_mit');
+          fs.writeFileSync('artifacts/r7/audit-basic/slither/input/Multicall3.sol',source);
+          fs.writeFileSync('artifacts/r7/audit-basic/slither/input/SOURCIFY_IDENTITY.json',JSON.stringify({chainId,address,sourcifyMatch:c.match,sourcePath:path,sourceSha256:sha,compilerVersion:c.compilation?.compilerVersion??null},null,2)+'\n');
+          NODE
+
+      - name: Install pinned Slither and exact solc
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv-slither
+          . .venv-slither/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install 'slither-analyzer==0.11.6' 'solc-select==1.2.0'
+          solc-select install 0.8.12
+          solc-select use 0.8.12
+          slither --version | tee artifacts/r7/audit-basic/slither/SLITHER_VERSION.txt
+          solc --version | tee artifacts/r7/audit-basic/slither/SOLC_VERSION.txt
+
+      - name: Execute independent Slither analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          . .venv-slither/bin/activate
+          set +e
+          timeout 300 slither artifacts/r7/audit-basic/slither/input/Multicall3.sol --json artifacts/r7/audit-basic/slither/SLITHER_RAW.json --disable-color > artifacts/r7/audit-basic/slither/SLITHER_STDOUT.log 2> artifacts/r7/audit-basic/slither/SLITHER_STDERR.log
+          CODE=$?
+          set -e
+          echo "$CODE" > artifacts/r7/audit-basic/slither/SLITHER_EXIT_CODE.txt
+          if [ "$CODE" -eq 124 ]; then echo 'Slither timed out' >&2; exit 124; fi
+          if [ ! -s artifacts/r7/audit-basic/slither/SLITHER_RAW.json ]; then echo "Slither JSON missing; exit=$CODE" >&2; cat artifacts/r7/audit-basic/slither/SLITHER_STDERR.log >&2 || true; exit 1; fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const rawBytes=fs.readFileSync('artifacts/r7/audit-basic/slither/SLITHER_RAW.json');
+          const raw=JSON.parse(rawBytes.toString('utf8'));
+          if(raw.success!==true) throw new Error(`slither_json_success_false:${JSON.stringify(raw.error??null).slice(0,300)}`);
+          const detectors=Array.isArray(raw.results?.detectors)?raw.results.detectors:[];
+          const byCheck={},byImpact={},byConfidence={};
+          for(const d of detectors){const check=String(d.check??'unknown'); const impact=String(d.impact??'unknown'); const confidence=String(d.confidence??'unknown'); byCheck[check]=(byCheck[check]??0)+1; byImpact[impact]=(byImpact[impact]??0)+1; byConfidence[confidence]=(byConfidence[confidence]??0)+1;}
+          const relevant=detectors.filter((d)=>{
+            const check=String(d.check??'').toLowerCase(); const desc=String(d.description??'').toLowerCase();
+            return check.includes('unchecked-lowlevel')||check.includes('low-level')||desc.includes('low level')||desc.includes('low-level')||desc.includes('unchecked');
+          }).map((d)=>({check:d.check,impact:d.impact,confidence:d.confidence,description:String(d.description??'').slice(0,1200),elements:(d.elements??[]).slice(0,12)}));
+          const sourceIdentity=JSON.parse(fs.readFileSync('artifacts/r7/audit-basic/slither/input/SOURCIFY_IDENTITY.json','utf8'));
+          const version=fs.readFileSync('artifacts/r7/audit-basic/slither/SLITHER_VERSION.txt','utf8').trim();
+          const solc=fs.readFileSync('artifacts/r7/audit-basic/slither/SOLC_VERSION.txt','utf8').trim();
+          const exitCode=Number(fs.readFileSync('artifacts/r7/audit-basic/slither/SLITHER_EXIT_CODE.txt','utf8').trim());
+          const receipt={
+            schemaVersion:'velmere.r7.audit-basic-external-analyzer.v1',status:'PASS_EXTERNAL_ANALYZER_EXECUTED',family:'slither',tool:'slither-analyzer',toolVersion:version,pinnedPackageVersion:'0.11.6',solcSelectVersion:'1.2.0',compilerOutput:solc,
+            exactDeployedSourceSha256:sourceIdentity.sourceSha256,chainId:sourceIdentity.chainId,contractAddress:sourceIdentity.address,sourcifyMatch:sourceIdentity.sourcifyMatch,
+            processExitCode:exitCode,detectorCount:detectors.length,byCheck,byImpact,byConfidence,uncheckedLowLevelCorrelation:relevant,uncheckedLowLevelCorrelationCount:relevant.length,
+            rawOutputSha256:createHash('sha256').update(rawBytes).digest('hex'),independentExternalFamily:true,paidProviderRequired:false,customerFinalCredit:false,
+            truthBoundary:'Slither executed independently on the exact Sourcify-verified deployed MIT source with pinned Slither and exact solc 0.8.12. Detector output is evidence for correlation, not an automatic customer vulnerability claim.'
+          };
+          fs.writeFileSync('artifacts/r7/audit-basic/slither/R7_AUDIT_BASIC_SLITHER_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({...receipt,uncheckedLowLevelCorrelation:relevant.map(r=>({check:r.check,impact:r.impact,confidence:r.confidence,description:r.description}))},null,2));
+          NODE
+
+      - name: Upload Slither external-family evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-slither-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/r7/audit-basic/slither/R7_AUDIT_BASIC_SLITHER_RECEIPT.json
+            artifacts/r7/audit-basic/slither/SLITHER_RAW.json
+            artifacts/r7/audit-basic/slither/SLITHER_STDOUT.log
+            artifacts/r7/audit-basic/slither/SLITHER_STDERR.log
+            artifacts/r7/audit-basic/slither/SLITHER_VERSION.txt
+            artifacts/r7/audit-basic/slither/SOLC_VERSION.txt
+            artifacts/r7/audit-basic/slither/SLITHER_EXIT_CODE.txt
+            artifacts/r7/audit-basic/slither/input/SOURCIFY_IDENTITY.json
+          if-no-files-found: error
+          retention-days: 30
