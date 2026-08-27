@@ -5,6 +5,13 @@ if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) { throw 'base_browser_
 $Runtime = Join-Path $env:RUNNER_TEMP 'run-r7-browser-promoted-successor-e2e-runtime.ps1'
 $Text = Get-Content -LiteralPath $Source -Raw
 
+# The promoted workflow has its own narrowly bound OIDC helper. Keep the legacy
+# current-successor helper unchanged so neither workflow broadens the other's trust boundary.
+$OldHelper = "$HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-e2e-current-oidc'"
+$NewHelper = "$HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-e2e-promoted-oidc'"
+if (([regex]::Matches($Text, [regex]::Escape($OldHelper))).Count -ne 1) { throw 'promoted_oidc_helper_anchor_mismatch' }
+$Text = $Text.Replace($OldHelper, $NewHelper)
+
 # Replace only transport/harness plumbing. No product source is patched here.
 $StartMarker = '  # Reconstruct and apply the exact current successor patch.'
 $EndMarker = '  # Verify every exact current successor byte, not merely the patch application exit code.'
@@ -109,6 +116,7 @@ if ($Text.Contains('r7-delta/R7_DELTA_SUCCESSOR_PATCH_RECEIPT.json')) { throw 'l
 if ($Text.Contains('run-r7-browser-current-e2e-authfix-candidate')) { throw 'candidate_wrapper_reference_remained' }
 if ($Text.Contains('patch-browser-zero-vercel-durable-bridge-candidate')) { throw 'candidate_product_patch_reference_remained' }
 if ($Text.Contains('patch-browser-durable-computation-store-bridge-candidate')) { throw 'candidate_product_patch_reference_remained' }
+if ($Text.Contains('r7-browser-e2e-current-oidc')) { throw 'legacy_oidc_helper_reference_remained' }
 
 [IO.File]::WriteAllText($Runtime, $Text, [Text.UTF8Encoding]::new($false))
 & pwsh -NoProfile -File $Runtime
