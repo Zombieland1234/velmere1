@@ -22,8 +22,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           @'
-          const { createHash } = require('node:crypto');
-          const fs = require('node:fs');
+          import { createHash } from 'node:crypto';
+          import fs from 'node:fs';
           const address = '0xca11bde05977b3631167028862be2a173976ca11';
           const chainId = '56';
           const repo = 'mds1/multicall3';
@@ -116,7 +116,7 @@ jobs:
           fs.mkdirSync('artifacts/r7/audit-basic', { recursive: true });
           fs.writeFileSync('artifacts/r7/audit-basic/R7_AUDIT_BASIC_REAL_TARGET_SOURCIFY_FULL_MATCH.json', JSON.stringify(receipt, null, 2) + '\n');
           console.log(JSON.stringify(receipt, null, 2));
-          '@ | node
+          '@ | node --input-type=module
           if ($LASTEXITCODE -ne 0) { throw "sourcify_v2_exact_match_failed:$LASTEXITCODE" }
 
       - name: Upload source equivalence receipt
