@@ -26,10 +26,11 @@ function bridgeUrl(): string {
   const explicit = process.env.VELMERE_AUDIT_CUSTOMER_BRIDGE_URL?.trim() ?? '';
   if (explicit) return explicit;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? '';
-  if (!/^https:\/\/[a-z0-9.-]+$/i.test(base)) {
+  if (!base.startsWith('https://')) {
     throw new Error('AUDIT_CUSTOMER_BRIDGE_URL_REQUIRED');
   }
-  return base.replace(/\/$/, '') + '/functions/v1/r7-audit-basic-customer-bridge';
+  const normalized = base.endsWith('/') ? base.slice(0, -1) : base;
+  return normalized + '/functions/v1/r7-audit-basic-customer-bridge';
 }
 
 function bearer(value: string | null): string {
@@ -210,4 +211,4 @@ for (const [relative, content] of writes) {
   fs.writeFileSync(target, content, 'utf8');
   changed.push({ path: relative, sha256: crypto.createHash('sha256').update(content).digest('hex'), bytes: Buffer.byteLength(content) });
 }
-console.log(JSON.stringify({ schemaVersion: 'velmere.r7.audit-basic-zero-vercel-app-route-candidate.v2', status: 'PASS_PATCH_APPLIED', changed, customerFinalCredit: false }, null, 2));
+console.log(JSON.stringify({ schemaVersion: 'velmere.r7.audit-basic-zero-vercel-app-route-candidate.v3', status: 'PASS_PATCH_APPLIED', changed, customerFinalCredit: false }, null, 2));
