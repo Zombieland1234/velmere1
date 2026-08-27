@@ -121,10 +121,7 @@ jobs:
             expectedCompilerVersionPrefix: '0.8.12+commit.f00d7308',
             compilerOutput,
           });
-          const astVerification = verifySolidityCompilerAstEvidence(astEvidence, {
-            sourceFiles,
-            expectedCompilerVersionPrefix: '0.8.12+commit.f00d7308',
-          });
+          const astVerification = verifySolidityCompilerAstEvidence(astEvidence, sourceFiles);
           if (astVerification.ok !== true) throw new Error(`compiler_ast_evidence_verification_failed:${JSON.stringify(astVerification)}`);
 
           const onchain = String(sc.runtimeBytecode?.onchainBytecode ?? '').toLowerCase();
@@ -183,7 +180,7 @@ jobs:
           }
 
           const envelope = {
-            schemaVersion: 'velmere.r7.audit-basic-real-engine-exact-current-source.v1',
+            schemaVersion: 'velmere.r7.audit-basic-real-engine-exact-current-source.v2',
             status: 'PASS_REAL_ENGINE_EXECUTED_ON_EXACT_CURRENT_SOURCE',
             github: { runId: process.env.GITHUB_RUN_ID, headSha: process.env.GITHUB_SHA, runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) },
             exactCurrentSource: {
@@ -193,7 +190,7 @@ jobs:
               executionBundleSha256: process.env.R7_RISK_BUNDLE_SHA256,
             },
             target: { chainId: '56', address, exactDeployedSourceSha256: sourceSha, runtimeSha256: runtimeSha, sourcifyMatch: sc.match },
-            compilerAst: { verification: astVerification, selfDigestSha256: astEvidence.selfDigestSha256, findings: astEvidence.findings.length },
+            compilerAst: { verification: astVerification, evidenceSha256: astEvidence.evidenceSha256, findings: astEvidence.findings.length },
             twoIndependentExternalFamiliesAvailable: true,
             humanReviewStillRequired: true,
             customerFinalCredit: false,
