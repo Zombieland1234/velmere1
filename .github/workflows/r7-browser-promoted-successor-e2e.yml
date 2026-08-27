@@ -1,0 +1,76 @@
+name: R7 Browser Basic Promoted Successor Zero-Vercel E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-browser-promoted-successor-e2e.yml'
+      - 'r7-harness/**'
+      - 'r7-delta-v2/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-browser-promoted-successor-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  browser-basic-promoted-e2e:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
+      R7_FILE_COUNT: '3506'
+      R7_PAYLOAD_BYTE_LENGTH: '63055068'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: 'd3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'
+      R7_FULL_SOURCE_MANIFEST_SHA256: 'b76d26819db32d5cd7eb17258d3c9c1bf4d6b1345c9df985b20e074786f7fd5f'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      R7_PATCH_RECEIPT_SHA256: 'f8ebec356391f46b308bd8b32beffccd7a554c29466d0309506eec3e6ac6e0de'
+      R7_PATCH_SHA256: '7f32287ca6a13ffb365bcf7eaa2e2b7e522f1316c64a7fb9033c2cd17f3634f0'
+      R7_PATCH_BYTE_LENGTH: '112009'
+      R7_PATCH_CHUNK_COUNT: '5'
+      R7_PATCH_GZIP_SHA256: '920b9fb291384c317cc28662379af9ea463b7d07b4e767d620b8c83b0a2169ea'
+      R7_PATCH_GZIP_BYTE_LENGTH: '29661'
+      R7_PATCH_BASE64_BYTE_LENGTH: '39548'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - name: Checkout promoted successor control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Execute promoted-source zero-Vercel Browser Basic E2E
+        shell: pwsh
+        run: ./r7-harness/run-r7-browser-promoted-successor-e2e.ps1
+
+      - name: Upload promoted Browser Basic E2E evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-browser-basic-promoted-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            r7-work/R7_BROWSER_BASIC_CURRENT_SUCCESSOR_ZERO_VERCEL_E2E.json
+            r7-work/R7_BROWSER_CURRENT_E2E_NEXT_STDOUT.log
+            r7-work/R7_BROWSER_CURRENT_E2E_NEXT_STDERR.log
+            r7-work/R7_NPM_CI.log
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.json
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.tsv
+            r7-delta-v2/R7_DELTA_SUCCESSOR_PATCH_RECEIPT_V4.json
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
