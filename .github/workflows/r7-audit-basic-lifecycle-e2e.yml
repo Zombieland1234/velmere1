@@ -6,6 +6,7 @@ on:
       - velmere-r7-successor-delta-20260825
     paths:
       - '.github/workflows/r7-audit-basic-lifecycle-e2e.yml'
+      - 'r7-harness/run-r7-audit-basic-lifecycle-e2e-current.ps1'
   workflow_dispatch:
 
 permissions:
@@ -30,47 +31,15 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Execute Audit Basic full secure storage lifecycle
+      - name: Execute Audit Basic exact PDF lifecycle V2
         shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          function ShaBytes([byte[]]$Bytes){return ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($Bytes))).Replace('-','').ToLowerInvariant()}
-          function ShaText([string]$Text){return ShaBytes ([Text.Encoding]::UTF8.GetBytes($Text))}
-          function PostJson([string]$Uri,[hashtable]$Headers,[object]$Body){$Json=$Body|ConvertTo-Json -Depth 30 -Compress;$R=Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 30;$P=$null;try{$P=$R.Content|ConvertFrom-Json -Depth 40}catch{};return [pscustomobject]@{Status=[int]$R.StatusCode;Body=$P;Raw=[string]$R.Content}}
-          if(-not $env:ACTIONS_ID_TOKEN_REQUEST_URL -or -not $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN){throw 'github_oidc_environment_missing'}
-          $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
-          $TR=Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:AUDIT_OIDC_AUDIENCE)) -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -Method Get -TimeoutSec 20
-          $Oidc=[string]$TR.value;if(-not $Oidc){throw 'github_oidc_token_missing'}
-          $OidcUrl=$env:SUPABASE_URL+'/functions/v1/r7-audit-basic-e2e-oidc';$Bridge=$env:SUPABASE_URL+'/functions/v1/r7-audit-basic-customer-bridge';$OH=@{Authorization='Bearer '+$Oidc;Accept='application/json'}
-          $P=PostJson $OidcUrl $OH @{action='provision'};if($P.Status-ne 200-or$P.Body.ok-ne$true){throw('provision_failed:'+($P.Raw.Substring(0,[Math]::Min(400,$P.Raw.Length))))}
-          $A=$P.Body.a;$B=$P.Body.b;$Cap=[string]$P.Body.auditServerCapability;if($Cap.Length-ne96){throw'audit_capability_invalid'}
-          $AH=@{Authorization='Bearer '+[string]$A.accessToken;'x-velmere-audit-server-capability'=$Cap;Accept='application/json'};$BH=@{Authorization='Bearer '+[string]$B.accessToken;'x-velmere-audit-server-capability'=$Cap;Accept='application/json'}
-          $CaseRef='ABL-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$CaseId='audit-life-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$RequestId='audit-life-request-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$Target='0x5555555555555555555555555555555555555555';$TargetHash='sha256:'+(ShaText('velmere-audit-contract-target-v1:56:'+$Target.ToLowerInvariant()))
-          $Input=@{caseId=$CaseId;caseRef=$CaseRef;requestId=$RequestId;targetKind='contract';targetPrivate=$Target.ToLowerInvariant();targetHash=$TargetHash;targetChainId='56';targetChainName='BSC';displayLabel='Audit Basic lifecycle E2E';tier='basic';locale='en';status='queued_basic_prescreen';accountId=[string]$A.accountId;accountEmail=$null;entitlementRequired=$false;entitlementVerified=$false;analysisStarted=$false;intakeReceipt=@{schemaVersion='velmere.r7.audit-basic-lifecycle-e2e.v1';runId=$env:GITHUB_RUN_ID;syntheticHarness=$true;customerFinalCredit=$false};sourceCandidatesProtected=@{auditUrl=$null;docsUrl=$null;githubUrl=$null;website=$null}}
-          $Create=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='create_case';caseInput=$Input};if($Create.Status-ne200-or$Create.Body.ok-ne$true){throw('create_failed:'+($Create.Raw.Substring(0,[Math]::Min(500,$Create.Raw.Length))))}
-          $BCase=PostJson $Bridge $BH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='get_case';caseRef=$CaseRef};if($BCase.Status-ne404){throw'cross_account_case_read_not_denied'}
-          $Claim=PostJson $OidcUrl $OH @{action='claim';caseRef=$CaseRef};if($Claim.Status-ne200-or$Claim.Body.claim.ok-ne$true){throw('claim_failed:'+($Claim.Raw.Substring(0,[Math]::Min(500,$Claim.Raw.Length))))}
-          $CreatedAt=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ',[Globalization.CultureInfo]::InvariantCulture);$PdfText='%PDF-1.4'+"`n"+('C'*1700)+"`n%%EOF`n";$PdfBytes=[Text.Encoding]::UTF8.GetBytes($PdfText);$PdfDigest='sha256:'+(ShaBytes $PdfBytes);$PdfB64=[Convert]::ToBase64String($PdfBytes);$PdfLen=$PdfBytes.Length;$AccountHash=ShaText('velmere-account-binding-v1:'+[string]$A.accountId);$ReportId='audit-life-report-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$RV='sha256:'+(ShaText('rv:'+$CaseRef));$Snap='sha256:'+(ShaText('snap:'+$CaseRef));$Src='sha256:'+(ShaText('src:'+$CaseRef))
-          $Snapshot=@{requestId=$RequestId;tier='basic';digest=$Snap;sourceReceiptRoot=$Src;generatedAt=$CreatedAt;renderContract=@{id='pass4808-deterministic-latin-extended-pagination-v1';pdfDigest=$PdfDigest;pdfByteLength=$PdfLen};auditExecutionRelease=@{expectedTier='basic';caseRef=$CaseRef;decision='ALLOW_COMPLETE';completionAllowed=$true;persistAllowed=$true;packetDigest='sha256:'+(ShaText('packet:'+$CaseRef));currentDeploymentReceiptDigest='sha256:'+(ShaText('deploy:'+$CaseRef));matchedInputDigest='sha256:'+(ShaText('input:'+$CaseRef));releaseBindingDigest='sha256:'+(ShaText('release:'+$CaseRef))};customerEligibility=@{commercialUseReady=$true}}
-          $Mat=@('velmere.audit-basic-exact-immutable-pdf-artifact.v1',$ReportId,$CaseRef,$RequestId,$AccountHash,$TargetHash,$RV,$Snap,$Src,$PdfDigest,[string]$PdfLen,'pass4808-deterministic-latin-extended-pagination-v1',$CreatedAt)-join"`n";$Record='sha256:'+(ShaText $Mat)
-          $Payload=@{caseRef=$CaseRef;workerPrincipal=[string]$Claim.Body.workerPrincipal;leaseToken=[string]$Claim.Body.leaseToken;reasonCode='worker_result';reportId=$ReportId;requestId=$RequestId;accountIdHash=$AccountHash;targetHash=$TargetHash;reportVersionHash=$RV;snapshotDigest=$Snap;sourceReceiptRoot=$Src;pdfDigest=$PdfDigest;pdfByteLength=$PdfLen;renderContractId='pass4808-deterministic-latin-extended-pagination-v1';recordDigest=$Record;pdfBase64=$PdfB64;snapshotJson=$Snapshot;createdAt=$CreatedAt}
-          $Done=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='complete_pdf';caseRef=$CaseRef;payload=$Payload};if($Done.Status-ne200-or$Done.Body.data.ok-ne$true){throw('completion_failed:'+($Done.Raw.Substring(0,[Math]::Min(600,$Done.Raw.Length))))}
-          $PdfA=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='get_pdf';caseRef=$CaseRef};if($PdfA.Status-ne200-or$PdfA.Body.ok-ne$true){throw('owner_pdf_failed:'+($PdfA.Raw.Substring(0,[Math]::Min(500,$PdfA.Raw.Length))))};$Observed=[Convert]::FromBase64String([string]$PdfA.Body.pdfBase64);if((ShaBytes $Observed)-ne$PdfDigest.Substring(7)-or$Observed.Length-ne$PdfLen-or[string]$PdfA.Body.recordDigest-ne$Record){throw'owner_pdf_byte_identity_mismatch'}
-          $PdfB=PostJson $Bridge $BH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='get_pdf';caseRef=$CaseRef};if($PdfB.Status-ne404){throw'cross_account_pdf_not_denied'}
-          $Erase=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='backup_erase';caseRef=$CaseRef};if($Erase.Status-ne200-or$Erase.Body.ok-ne$true-or$Erase.Body.erasure.status-ne'PASS'){throw('backup_erase_failed:'+($Erase.Raw.Substring(0,[Math]::Min(600,$Erase.Raw.Length))))};$BackupId=[string]$Erase.Body.backupId
-          $AfterErase=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='get_pdf';caseRef=$CaseRef};if($AfterErase.Status-ne404){throw'owner_pdf_still_visible_after_erase'}
-          $Restore=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='restore';caseRef=$CaseRef;backupId=$BackupId};if($Restore.Status-ne200-or$Restore.Body.ok-ne$true-or$Restore.Body.restore.status-ne'PASS'){throw('restore_failed:'+($Restore.Raw.Substring(0,[Math]::Min(600,$Restore.Raw.Length))))}
-          $PdfA2=PostJson $Bridge $AH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='get_pdf';caseRef=$CaseRef};if($PdfA2.Status-ne200){throw'post_restore_owner_pdf_failed'};$Observed2=[Convert]::FromBase64String([string]$PdfA2.Body.pdfBase64);if((ShaBytes $Observed2)-ne$PdfDigest.Substring(7)-or$Observed2.Length-ne$PdfLen-or[string]$PdfA2.Body.recordDigest-ne$Record){throw'post_restore_pdf_identity_mismatch'}
-          $PdfB2=PostJson $Bridge $BH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='get_pdf';caseRef=$CaseRef};if($PdfB2.Status-ne404){throw'post_restore_cross_account_pdf_not_denied'}
-          $Receipt=[ordered]@{schemaVersion='velmere.r7.audit-basic-lifecycle-e2e.v1';status='PASS_SECURE_FULL_STORAGE_LIFECYCLE';runId=$env:GITHUB_RUN_ID;caseRef=$CaseRef;create='PASS';crossAccountCase='PASS_DENIED';workerLease='PASS';immutableCompletion='PASS';ownerPdf='PASS_BYTE_IDENTICAL';crossAccountPdf='PASS_DENIED';backup='PASS';erase='PASS_OWNER_404';restore='PASS';postRestorePdf='PASS_BYTE_IDENTICAL';postRestoreCrossAccount='PASS_DENIED';pdfDigest=$PdfDigest;pdfByteLength=$PdfLen;recordDigest=$Record;backupId=$BackupId;serviceRoleInWorkflow=$false;auditCapabilitySeparated=$true;customerFinalCredit=$false;truthBoundary='Audit Basic secure intake/storage/PDF/lifecycle is proven with ephemeral owner-bound users. Real audit findings/provider evidence/retest and application route remain separate FINAL gates.'}
-          New-Item -ItemType Directory -Force -Path 'artifacts/r7/audit-basic'|Out-Null;$Receipt|ConvertTo-Json -Depth 20|Set-Content 'artifacts/r7/audit-basic/R7_AUDIT_BASIC_LIFECYCLE_E2E.json' -Encoding utf8;Write-Host($Receipt|ConvertTo-Json -Depth 20)
-          $Cleanup=PostJson $OidcUrl $OH @{action='cleanup';userIds=@([string]$A.userId,[string]$B.userId)};if($Cleanup.Status-ne200){Write-Warning'ephemeral_cleanup_unconfirmed'}
+        run: ./r7-harness/run-r7-audit-basic-lifecycle-e2e-current.ps1
 
       - name: Upload Audit Basic lifecycle evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-audit-basic-lifecycle-${{ github.sha }}-${{ github.run_id }}
-          path: artifacts/r7/audit-basic/R7_AUDIT_BASIC_LIFECYCLE_E2E.json
+          name: r7-audit-basic-lifecycle-v2-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/audit-basic/lifecycle/R7_AUDIT_BASIC_LIFECYCLE_E2E_V2.json
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 30
