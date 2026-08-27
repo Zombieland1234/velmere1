@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "velmere.r7.audit-basic-real-case-adjudication-packet.v1",
+  "status": "PASS_AI_ASSISTED_ADJUDICATION_PACKET_READY_FOR_QUALIFIED_HUMAN_REVIEW",
+  "caseRef": "AUD-REAL-MULTICALL3-56",
+  "target": {
+    "chainId": "56",
+    "chainName": "BSC",
+    "contractAddress": "0xca11bde05977b3631167028862be2a173976ca11",
+    "projectName": "Multicall3",
+    "exactDeployedSourceSha256": "3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e",
+    "runtimeSha256": "2756d7c52baee85cacb504f6ee1df7aad6809ac8d94a4a111d76991f90d36d6e",
+    "sourceLicense": "MIT",
+    "deploymentAuthority": "Sourcify API v2 exact_match + fresh BSC runtime"
+  },
+  "evidence": {
+    "realTargetAuthority": {"githubRunId":"33031464740","githubArtifactId":"9630382416","status":"PASS_RIGHTS_SAFE_REAL_TARGET"},
+    "sourcifyExactEvidence": {"githubRunId":"33032112084","githubArtifactId":"9630621198","status":"PASS_EXACT_DEPLOYED_MIT_SOURCE_AND_CURRENT_RUNTIME_WITH_TRANSFORMATIONS"},
+    "compilerOutputAst": {"githubRunId":"33033244558","githubArtifactId":"9631029160","status":"PASS_EXACT_SOLC_0_8_12_STANDARD_JSON_OUTPUT","compilerVersion":"0.8.12+commit.f00d7308.Emscripten.clang"},
+    "slither": {"githubRunId":"33032427729","githubArtifactId":"9630742038","family":"slither","toolVersion":"0.11.6","status":"PASS_EXTERNAL_ANALYZER_EXECUTED"},
+    "aderyn": {"githubRunId":"33033011436","githubArtifactId":"9630946019","family":"aderyn","toolVersion":"0.6.8","status":"PASS_EXTERNAL_ANALYZER_EXECUTED"},
+    "mythril": {"githubRunId":"33032472589","family":"mythril","status":"TIMEOUT_NOT_COUNTED_AS_EXTERNAL_FAMILY"},
+    "valueBehavior": {"githubRunId":"33032817617","githubArtifactId":"9630881817","status":"PASS_VALUE_BEHAVIOR_PROVEN","tests":"6/6"},
+    "remediationRetest": {"githubRunId":"33033512581","githubArtifactId":"9631124669","status":"PASS_REMEDIATION_RETEST","tests":"6/6"}
+  },
+  "adjudications": [
+    {
+      "signal": "Velmere local heuristic: Unchecked low-level call result in aggregate",
+      "classification": "FALSE_POSITIVE",
+      "severity": "informational",
+      "confidence": 99,
+      "rationale": "The exact deployed source stores call success in `success` and immediately executes `require(success, \"Multicall3: call failed\")`. Slither reports the low-level call only as informational and Aderyn does not report an unchecked-low-level-call issue.",
+      "customerFinding": false
+    },
+    {
+      "signal": "Slither arbitrary-send-eth + Aderyn ETH transferred without address checks in aggregate3Value",
+      "classification": "GENERIC_SURFACE_SIGNAL_MERGED_INTO_CONFIRMED_VALUE_RETENTION_FINDING",
+      "severity": "informational",
+      "confidence": 95,
+      "rationale": "Arbitrary target/value forwarding is an intended multicall capability and alone is not unauthorized transfer. Both independent tools correctly highlight the high-risk value-sending surface. The customer-relevant issue is the separately reproduced failure-tolerant retained-value behavior.",
+      "customerFinding": false
+    },
+    {
+      "signal": "Aderyn Loop Contains require/revert + Slither calls-loop",
+      "classification": "EXPECTED_FAILURE_POLICY_DESIGN_OBSERVATION",
+      "severity": "informational",
+      "confidence": 96,
+      "rationale": "Functions intentionally provide strict and failure-tolerant variants. A strict call reverting the batch when failure is disallowed matches the documented API contract. This remains a gas/availability design consideration, not an independently demonstrated vulnerability.",
+      "customerFinding": false
+    },
+    {
+      "signal": "Aderyn Public Function Not Used Internally",
+      "classification": "CODE_QUALITY_GAS_OBSERVATION",
+      "severity": "informational",
+      "confidence": 99,
+      "rationale": "Visibility can potentially be external for gas/interface hygiene but no security impact is demonstrated.",
+      "customerFinding": false
+    }
+  ],
+  "confirmedFindings": [
+    {
+      "findingId": "MC3-VALUE-RETENTION-ON-ALLOWED-FAILED-CALL",
+      "state": "CONFIRMED_BEHAVIOR_REMEDIATION_RETESTED",
+      "severity": "medium",
+      "confidence": 98,
+      "title": "Value remains in Multicall3 when a value-bearing allowed subcall fails",
+      "affectedSurface": "aggregate3Value(Call3Value[])",
+      "sourceLines": [125,161],
+      "description": "When a Call3Value item has nonzero `value`, `allowFailure=true`, and the target subcall reverts, the EVM reverts the subcall value transfer but Multicall3 intentionally allows the outer batch to continue. Because final validation only checks `msg.value == sum(call.value)` and the ABI exposes no explicit withdraw/sweep/recover function, the failed call's value remains on Multicall3 instead of returning to the caller.",
+      "reproduction": {
+        "exactSourceLocalEvm": true,
+        "nonzeroValueWei": "77",
+        "outerTransactionSucceeded": true,
+        "failedTargetValueDeltaWei": "0",
+        "multicallRetainedValueDeltaWei": "77",
+        "noExplicitWithdrawalSurface": true
+      },
+      "impact": "A caller can lose access to the ETH allocated to a failure-tolerant subcall if that subcall fails. No attacker theft, privilege escalation, or unauthorized third-party transfer path has been established.",
+      "likelihoodBoundary": "Requires the caller/integrator to combine nonzero value with `allowFailure=true` and the target call to fail. Production frequency is not established.",
+      "currentDeploymentBalanceContext": "A non-zero deployed balance was observed, but the evidence does not attribute that balance to this exact failure path; forced ETH or other causes remain possible.",
+      "externalCorrelation": {
+        "slither": "arbitrary-send-eth on aggregate3Value",
+        "aderyn": "ETH transferred without address checks on aggregate3Value",
+        "note": "External analyzers identify the value-sending surface; behavioral reproduction proves the retained-value failure mode."
+      },
+      "remediation": {
+        "candidate": "Reject `allowFailure=true` when the corresponding call has nonzero value, or explicitly refund failed-call value to the caller.",
+        "boundedPatch": "require(!(calli.allowFailure && val != 0), \"Multicall3: value+allowFailure unsupported\")",
+        "retestStatus": "PASS_REMEDIATION_RETEST_6_OF_6",
+        "patchedSourceSha256": "789ca299f77e201a5737eba5a1bf9c3f74f127cc7c09d4f8dbc1c809986e6997",
+        "productionDeploymentModified": false
+      }
+    }
+  ],
+  "reviewState": {
+    "aiAssistedAdjudicationComplete": true,
+    "twoIndependentExternalFamiliesExecuted": true,
+    "compilerAstTransportPresent": true,
+    "behavioralReproductionPresent": true,
+    "remediationRetestPresent": true,
+    "qualifiedHumanArchitectureReview": false,
+    "qualifiedHumanSeverityApproval": false,
+    "humanReviewed": false
+  },
+  "customerFinalCredit": false,
+  "truthBoundary": "This is an AI-assisted evidence consolidation and review packet, not a qualified human architecture/security sign-off. The confirmed finding is backed by exact deployed source, two independent static analyzer families, deterministic behavioral reproduction and remediation retest; final human severity/business-logic approval remains mandatory under the current Velmere A03/A05 policy."
+}
