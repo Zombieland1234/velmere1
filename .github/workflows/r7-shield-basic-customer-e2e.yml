@@ -79,7 +79,15 @@ jobs:
             Assert ($Tile.eventDigest -eq 'sha256:0aa92b05d736f5a3691be2420b77a0da7ff800d27707cb6f976d4626deb4f65e') "shield_${Locale}_event_digest_invalid"
             Assert ([string]$Tile.evidenceDigest -match '^sha256:[a-f0-9]{64}$') "shield_${Locale}_evidence_digest_invalid"
             Assert ($Tile.publicationState -eq 'PUBLIC' -and $Tile.customerPublishable -eq $true) "shield_${Locale}_publication_invalid"
-            Assert ([string]$Tile.observedAt -match '^2026-' -and [string]$Tile.sourceAsOf -match '^2026-') "shield_${Locale}_currentness_invalid"
+            try {
+              $ObservedAt = [DateTimeOffset]$Tile.observedAt
+              $SourceAsOf = [DateTimeOffset]$Tile.sourceAsOf
+            } catch {
+              throw "shield_${Locale}_timestamp_parse_invalid"
+            }
+            $Now = [DateTimeOffset]::UtcNow
+            Assert ($ObservedAt -le $Now.AddMinutes(5) -and $SourceAsOf -le $Now.AddMinutes(5)) "shield_${Locale}_future_timestamp_invalid"
+            Assert ($ObservedAt -ge $Now.AddDays(-2) -and $SourceAsOf -ge $Now.AddDays(-2)) "shield_${Locale}_currentness_invalid"
             Assert ([string]$Tile.uncertaintyDisclosure -and [string]$Tile.uncertaintyDisclosure -notmatch '(?i)probability\s*[:=]\s*\d') "shield_${Locale}_uncertainty_invalid"
             Assert (@($Tile.currentDrivers).Count -ge 1 -and @($Tile.eventTypes).Count -ge 1) "shield_${Locale}_drivers_missing"
             $Serialized = $Result.Body | ConvertTo-Json -Depth 50 -Compress
@@ -90,8 +98,8 @@ jobs:
               title = [string]$Tile.title
               eventDigest = [string]$Tile.eventDigest
               evidenceDigest = [string]$Tile.evidenceDigest
-              observedAt = [string]$Tile.observedAt
-              sourceAsOf = [string]$Tile.sourceAsOf
+              observedAt = $ObservedAt.ToUniversalTime().ToString('o',[Globalization.CultureInfo]::InvariantCulture)
+              sourceAsOf = $SourceAsOf.ToUniversalTime().ToString('o',[Globalization.CultureInfo]::InvariantCulture)
             }
           }
 
@@ -164,9 +172,9 @@ jobs:
             fi
             sleep 2
           done
-          python3 - <<'PY' <<<"$response"
-          import json, sys
-          data = json.load(sys.stdin)
+          RESPONSE="$response" python3 - <<'PY'
+          import json, os
+          data = json.loads(os.environ['RESPONSE'])
           if data.get('ok') is not True:
               raise SystemExit(f"shield finalization failed: {data}")
           result = data.get('result') or {}
