@@ -32,6 +32,7 @@ jobs:
           const raw = await response.text();
           const c = JSON.parse(raw);
           if (c.match !== 'exact_match') throw new Error(`sourcify_not_exact_match:${String(c.match)}`);
+          if (c.runtimeMatch && c.runtimeMatch !== 'exact_match') throw new Error(`sourcify_runtime_not_exact_match:${String(c.runtimeMatch)}`);
           if (!c.sources || typeof c.sources !== 'object') throw new Error('sourcify_sources_missing');
           const sourceEntries = Object.entries(c.sources).filter(([path, value]) => /Multicall3\.sol$/i.test(path) && value && typeof value === 'object' && typeof value.content === 'string');
           if (sourceEntries.length !== 1) throw new Error(`multicall3_source_denominator_invalid:${sourceEntries.length}`);
@@ -46,7 +47,6 @@ jobs:
           const onchain = String(runtime.onchainBytecode ?? '').toLowerCase();
           const recompiled = String(runtime.recompiledBytecode ?? '').toLowerCase();
           if (!/^0x[0-9a-f]{200,}$/.test(onchain) || !/^0x[0-9a-f]{200,}$/.test(recompiled)) throw new Error('sourcify_runtime_bytecode_missing');
-          if (onchain !== recompiled) throw new Error('sourcify_exact_match_runtime_not_byte_identical_for_multicall3');
 
           const rpcBody = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getCode', params: [address, 'latest'] });
           const rpcRes = await fetch('https://bsc-dataseed.binance.org/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: rpcBody, signal: AbortSignal.timeout(20000) });
@@ -64,9 +64,11 @@ jobs:
 
           const settings = compiler.compilerSettings && typeof compiler.compilerSettings === 'object' ? compiler.compilerSettings : {};
           const optimizer = settings.optimizer && typeof settings.optimizer === 'object' ? settings.optimizer : {};
+          const transformations = Array.isArray(runtime.transformations) ? runtime.transformations : [];
+          const transformationValues = runtime.transformationValues && typeof runtime.transformationValues === 'object' ? runtime.transformationValues : {};
           const receipt = {
-            schemaVersion: 'velmere.r7.audit-basic-sourcify-exact-evidence-bundle.v1',
-            status: 'PASS_EXACT_DEPLOYED_MIT_SOURCE_AND_CURRENT_RUNTIME',
+            schemaVersion: 'velmere.r7.audit-basic-sourcify-exact-evidence-bundle.v2',
+            status: 'PASS_EXACT_DEPLOYED_MIT_SOURCE_AND_CURRENT_RUNTIME_WITH_TRANSFORMATIONS',
             observedAt: new Date().toISOString(),
             chainId,
             chainName: 'BSC',
@@ -108,18 +110,23 @@ jobs:
               sourcifyOnchainBytecode: onchain,
               sourcifyRecompiledBytecode: recompiled,
               currentBscBytecode: liveCode,
-              byteIdenticalRecompiledToSourcifyOnchain: true,
+              rawRecompiledEqualsOnchain: recompiled === onchain,
               byteIdenticalSourcifyOnchainToCurrentBsc: true,
               runtimeByteLength: (onchain.length - 2) / 2,
               runtimeSha256: sha(Buffer.from(onchain.slice(2), 'hex')),
+              recompiledRuntimeSha256: sha(Buffer.from(recompiled.slice(2), 'hex')),
+              transformations,
+              transformationValues,
+              transformationCount: transformations.length,
               currentnessProvider: 'https://bsc-dataseed.binance.org/',
+              truthBoundary: 'Sourcify exact_match may bind recompiled to onchain bytecode through documented library/immutable/auxdata/call-protection transformations. Raw equality is not asserted when transformations are present.',
             },
             upstreamHeadEqualityRequired: false,
             upstreamHeadDivergenceKnown: true,
             upstreamHeadDivergenceReason: 'The exact deployed source verified by Sourcify is authoritative for this deployment; current repository HEAD is a separate later source state and must not be substituted for the deployed source.',
             paidProviderRequired: false,
             customerFinalCredit: false,
-            truthBoundary: 'Exact-match Sourcify source, ABI/compiler settings, recompiled runtime and current BSC runtime are bound. Velmere findings, external analyzer families, retest and customer report remain separate gates.'
+            truthBoundary: 'Exact-match Sourcify source, ABI/compiler settings, recompiled runtime, documented runtime transformations and current BSC onchain runtime are bound. Velmere A02 independently adjudicates its supported normalization; findings, external analyzer families, retest and customer report remain separate gates.'
           };
           fs.mkdirSync('artifacts/r7/audit-basic', { recursive: true });
           fs.writeFileSync('artifacts/r7/audit-basic/R7_AUDIT_BASIC_SOURCIFY_EXACT_EVIDENCE_BUNDLE.json', JSON.stringify(receipt, null, 2) + '\n');
