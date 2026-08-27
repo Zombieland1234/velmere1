@@ -4,6 +4,47 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
+# Every caller of this runner must use the same hash-bound constants as the
+# already-green exact manifest probe. Load them from the checked-in workflow
+# when a narrower caller (for example the final 52x2 workflow) did not repeat
+# the full environment block. Existing explicit values are never overwritten.
+$Root = (Get-Location).Path
+$ProbePath = Join-Path $Root '.github/workflows/r7-risk-v5-manifest-probe.yml'
+if (-not (Test-Path -LiteralPath $ProbePath -PathType Leaf)) {
+  throw 'risk_v5_manifest_probe_environment_source_missing'
+}
+$ProbeText = [IO.File]::ReadAllText($ProbePath, [Text.Encoding]::UTF8)
+$Pairs = [regex]::Matches($ProbeText, "(?m)^      ([A-Z0-9_]+): '([^']*)'\s*$")
+if ($Pairs.Count -lt 30) {
+  throw "risk_v5_manifest_probe_environment_incomplete:$($Pairs.Count)"
+}
+foreach ($Pair in $Pairs) {
+  $Name = [string]$Pair.Groups[1].Value
+  if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name, 'Process'))) {
+    [Environment]::SetEnvironmentVariable($Name, [string]$Pair.Groups[2].Value, 'Process')
+  }
+}
+foreach ($Name in @(
+  'R7_CANDIDATE',
+  'R7_PROMOTED_EXECUTION_SLICE_MANIFEST_SHA256',
+  'R7_V4_EXECUTION_SLICE_MANIFEST_SHA256',
+  'R7_V4_EXECUTION_SLICE_AGGREGATE_SHA256',
+  'R7_V4_FULL_SOURCE_AGGREGATE_SHA256',
+  'R7_V4_FULL_SOURCE_MANIFEST_SHA256',
+  'R7_RISK_PATCH_RECEIPT_SHA256',
+  'R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256',
+  'R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256',
+  'R7_RISK_FULL_SOURCE_AGGREGATE_SHA256',
+  'R7_RISK_FULL_SOURCE_MANIFEST_SHA256',
+  'R7_RISK_BUNDLE_SHA256',
+  'R7_PACKAGE_JSON_SHA256',
+  'R7_PACKAGE_LOCK_SHA256'
+)) {
+  if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($Name, 'Process'))) {
+    throw "risk_v5_required_environment_missing:$Name"
+  }
+}
+
 $Source = Join-Path $PSScriptRoot 'run-r7-risk-v5-source.ps1'
 $Fixed = Join-Path $env:RUNNER_TEMP 'run-r7-risk-v5-source-execution-slice-fixed-runtime.ps1'
 $Text = Get-Content -LiteralPath $Source -Raw
