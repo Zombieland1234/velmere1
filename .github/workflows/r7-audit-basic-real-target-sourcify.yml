@@ -1,4 +1,4 @@
-# execution trigger: 2026-08-27 Sourcify full-match authority
+# Sourcify API v2 exact-match authority (legacy v1/full_match API retired in 2026)
 name: R7 Audit Basic Real Target Sourcify Full Match
 
 on:
@@ -17,72 +17,112 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Verify Sourcify full match against pinned MIT upstream
+      - name: Verify Sourcify API v2 exact match against pinned MIT upstream
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $Address = '0xca11bde05977b3631167028862be2a173976ca11'
-          $Chain = '56'
-          $Repo = 'mds1/multicall3'
-          $Headers = @{ 'User-Agent' = 'velmere-r7-audit-sourcify'; Accept = 'application/json' }
-          $MetaUrl = 'https://repo.sourcify.dev/contracts/full_match/' + $Chain + '/' + $Address + '/metadata.json'
-          $MetaResponse = Invoke-WebRequest -Uri $MetaUrl -Headers $Headers -SkipHttpErrorCheck -TimeoutSec 25
-          if ([int]$MetaResponse.StatusCode -ne 200) { throw 'sourcify_full_match_missing' }
-          $Meta = $MetaResponse.Content | ConvertFrom-Json -Depth 60
-          if ([string]$Meta.language -ne 'Solidity') { throw 'sourcify_language_invalid' }
-          if (-not $Meta.compiler.version) { throw 'sourcify_compiler_version_missing' }
-          $SourceProps = @($Meta.sources.PSObject.Properties)
-          $SourceProp = @($SourceProps | Where-Object { $_.Name -match '(^|/)Multicall3\.sol$' } | Select-Object -First 1)
-          if ($SourceProp.Count -ne 1) { throw 'sourcify_multicall3_source_missing' }
-          $SourcePath = [string]$SourceProp[0].Name
-          $EncodedPath = ($SourcePath.Split('/') | ForEach-Object { [Uri]::EscapeDataString($_) }) -join '/'
-          $SourceUrl = 'https://repo.sourcify.dev/contracts/full_match/' + $Chain + '/' + $Address + '/sources/' + $EncodedPath
-          $S = Invoke-WebRequest -Uri $SourceUrl -Headers @{ 'User-Agent' = 'velmere-r7-audit-sourcify' } -SkipHttpErrorCheck -TimeoutSec 25
-          if ([int]$S.StatusCode -ne 200) { throw 'sourcify_source_fetch_failed' }
-          $Source = [string]$S.Content
-          if ($Source -notmatch 'SPDX-License-Identifier:\s*MIT') { throw 'sourcify_source_not_mit' }
-          function Sha([byte[]]$B) { return ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($B))).Replace('-', '').ToLowerInvariant() }
-          $SourcifySha = Sha([Text.Encoding]::UTF8.GetBytes($Source))
-          $RepoMeta = Invoke-RestMethod -Uri ('https://api.github.com/repos/' + $Repo) -Headers @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'velmere-r7-audit-sourcify' } -TimeoutSec 20
-          $Commit = Invoke-RestMethod -Uri ('https://api.github.com/repos/' + $Repo + '/commits/' + [string]$RepoMeta.default_branch) -Headers @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'velmere-r7-audit-sourcify' } -TimeoutSec 20
-          $Head = ([string]$Commit.sha).ToLowerInvariant()
-          $Tree = Invoke-RestMethod -Uri ('https://api.github.com/repos/' + $Repo + '/git/trees/' + $Head + '?recursive=1') -Headers @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'velmere-r7-audit-sourcify' } -TimeoutSec 20
-          $UpPath = @($Tree.tree | Where-Object { $_.type -eq 'blob' -and $_.path -match '(^|/)Multicall3\.sol$' } | Select-Object -First 1)
-          if ($UpPath.Count -ne 1) { throw 'upstream_source_missing' }
-          $Up = [string](Invoke-WebRequest -Uri ('https://raw.githubusercontent.com/' + $Repo + '/' + $Head + '/' + [string]$UpPath[0].path) -Headers @{ 'User-Agent' = 'velmere-r7-audit-sourcify' } -TimeoutSec 20).Content
-          $UpSha = Sha([Text.Encoding]::UTF8.GetBytes($Up))
-          if ($UpSha -ne $SourcifySha) { throw 'sourcify_upstream_source_hash_mismatch' }
-          $MetadataBytes = [Text.Encoding]::UTF8.GetBytes([string]$MetaResponse.Content)
-          $Receipt = [ordered]@{
-            schemaVersion = 'velmere.r7.audit-basic-source-deployment-equivalence.v1'
-            status = 'PASS_SOURCIFY_FULL_MATCH_SOURCE_EQUIVALENCE'
-            chainId = $Chain
-            contractAddress = $Address
-            sourcifyMatch = 'full_match'
-            sourcifyMetadataUrl = $MetaUrl
-            metadataSha256 = Sha($MetadataBytes)
-            compilerVersion = [string]$Meta.compiler.version
-            sourcePath = $SourcePath
-            sourceSha256 = $SourcifySha
-            upstreamRepository = $Repo
-            upstreamCommit = $Head
-            upstreamSourcePath = [string]$UpPath[0].path
-            upstreamSourceSha256 = $UpSha
-            exactSourceHashEqual = $true
-            sourceLicense = 'MIT'
-            derivedFindingsCustomerPublishable = $true
-            paidProviderRequired = $false
-            customerFinalCredit = $false
-            truthBoundary = 'Sourcify full_match plus exact source-hash equality ties the verified deployment metadata to the pinned MIT upstream source. Velmere findings/retest/report remain separate gates.'
+          @'
+          const { createHash } = require('node:crypto');
+          const fs = require('node:fs');
+          const address = '0xca11bde05977b3631167028862be2a173976ca11';
+          const chainId = '56';
+          const repo = 'mds1/multicall3';
+          const ua = { 'user-agent': 'velmere-r7-audit-sourcify-v2', accept: 'application/json' };
+          const sha = (value) => createHash('sha256').update(value).digest('hex');
+          const apiUrl = `https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=all`;
+          const apiRes = await fetch(apiUrl, { headers: ua, signal: AbortSignal.timeout(25000) });
+          if (!apiRes.ok) throw new Error(`sourcify_v2_contract_missing:${apiRes.status}`);
+          const raw = await apiRes.text();
+          const contract = JSON.parse(raw);
+          if (contract.match !== 'exact_match') throw new Error(`sourcify_v2_not_exact_match:${String(contract.match)}`);
+          if (contract.runtimeMatch && contract.runtimeMatch !== 'exact_match') throw new Error(`sourcify_v2_runtime_not_exact_match:${String(contract.runtimeMatch)}`);
+
+          const sourceCandidates = [];
+          const visit = (node, path = '') => {
+            if (node == null) return;
+            if (Array.isArray(node)) { node.forEach((value, index) => visit(value, `${path}[${index}]`)); return; }
+            if (typeof node !== 'object') return;
+            for (const [key, value] of Object.entries(node)) {
+              const next = path ? `${path}/${key}` : key;
+              if (/Multicall3\.sol$/i.test(key)) {
+                if (typeof value === 'string') sourceCandidates.push({ path: key, content: value });
+                else if (value && typeof value === 'object' && typeof value.content === 'string') sourceCandidates.push({ path: key, content: value.content });
+              }
+              if (value && typeof value === 'object' && typeof value.path === 'string' && /Multicall3\.sol$/i.test(value.path) && typeof value.content === 'string') {
+                sourceCandidates.push({ path: value.path, content: value.content });
+              }
+              visit(value, next);
+            }
+          };
+          visit(contract);
+          const exactSources = sourceCandidates.filter((row) => typeof row.content === 'string' && row.content.includes('contract Multicall3'));
+          if (exactSources.length < 1) {
+            console.log(JSON.stringify({ sourcifyTopLevelKeys: Object.keys(contract), match: contract.match, runtimeMatch: contract.runtimeMatch ?? null }, null, 2));
+            throw new Error('sourcify_v2_multicall3_source_content_missing');
           }
-          New-Item -ItemType Directory -Force -Path 'artifacts/r7/audit-basic' | Out-Null
-          $Receipt | ConvertTo-Json -Depth 20 | Set-Content 'artifacts/r7/audit-basic/R7_AUDIT_BASIC_REAL_TARGET_SOURCIFY_FULL_MATCH.json' -Encoding utf8
-          Write-Host ($Receipt | ConvertTo-Json -Depth 20)
+          const sourcifySource = exactSources[0].content;
+          const sourcifySourcePath = exactSources[0].path;
+          if (!/SPDX-License-Identifier:\s*MIT/.test(sourcifySource)) throw new Error('sourcify_source_not_mit');
+          const sourcifySha = sha(Buffer.from(sourcifySource, 'utf8'));
+
+          const ghHeaders = { accept: 'application/vnd.github+json', 'user-agent': 'velmere-r7-audit-sourcify-v2' };
+          const repoMetaRes = await fetch(`https://api.github.com/repos/${repo}`, { headers: ghHeaders, signal: AbortSignal.timeout(20000) });
+          if (!repoMetaRes.ok) throw new Error(`upstream_repo_unavailable:${repoMetaRes.status}`);
+          const repoMeta = await repoMetaRes.json();
+          const commitRes = await fetch(`https://api.github.com/repos/${repo}/commits/${repoMeta.default_branch}`, { headers: ghHeaders, signal: AbortSignal.timeout(20000) });
+          if (!commitRes.ok) throw new Error(`upstream_commit_unavailable:${commitRes.status}`);
+          const commit = await commitRes.json();
+          const head = String(commit.sha || '').toLowerCase();
+          if (!/^[a-f0-9]{40}$/.test(head)) throw new Error('upstream_commit_invalid');
+          const treeRes = await fetch(`https://api.github.com/repos/${repo}/git/trees/${head}?recursive=1`, { headers: ghHeaders, signal: AbortSignal.timeout(20000) });
+          if (!treeRes.ok) throw new Error(`upstream_tree_unavailable:${treeRes.status}`);
+          const tree = await treeRes.json();
+          const upstreamPath = (tree.tree || []).find((row) => row.type === 'blob' && /(^|\/)Multicall3\.sol$/.test(String(row.path || '')))?.path;
+          if (!upstreamPath) throw new Error('upstream_source_missing');
+          const upRes = await fetch(`https://raw.githubusercontent.com/${repo}/${head}/${upstreamPath}`, { headers: { 'user-agent': 'velmere-r7-audit-sourcify-v2' }, signal: AbortSignal.timeout(20000) });
+          if (!upRes.ok) throw new Error(`upstream_source_fetch_failed:${upRes.status}`);
+          const upstreamSource = await upRes.text();
+          const upstreamSha = sha(Buffer.from(upstreamSource, 'utf8'));
+          if (upstreamSha !== sourcifySha) throw new Error(`sourcify_upstream_source_hash_mismatch:${sourcifySha}:${upstreamSha}`);
+
+          const compilerVersion = contract.compiler?.version ?? contract.compilerVersion ?? contract.compilation?.compiler?.version ?? null;
+          const receipt = {
+            schemaVersion: 'velmere.r7.audit-basic-source-deployment-equivalence.v2',
+            status: 'PASS_SOURCIFY_V2_EXACT_MATCH_SOURCE_EQUIVALENCE',
+            chainId,
+            contractAddress: address,
+            sourcifyApiVersion: 'v2',
+            sourcifyApiUrl: apiUrl,
+            sourcifyMatch: contract.match,
+            creationMatch: contract.creationMatch ?? null,
+            runtimeMatch: contract.runtimeMatch ?? null,
+            verifiedAt: contract.verifiedAt ?? null,
+            matchId: contract.matchId != null ? String(contract.matchId) : null,
+            apiResponseSha256: sha(Buffer.from(raw, 'utf8')),
+            compilerVersion,
+            sourcePath: sourcifySourcePath,
+            sourceSha256: sourcifySha,
+            upstreamRepository: repo,
+            upstreamCommit: head,
+            upstreamSourcePath: upstreamPath,
+            upstreamSourceSha256: upstreamSha,
+            exactSourceHashEqual: true,
+            sourceLicense: 'MIT',
+            derivedFindingsCustomerPublishable: true,
+            paidProviderRequired: false,
+            customerFinalCredit: false,
+            truthBoundary: 'Sourcify API v2 exact_match plus exact source-hash equality ties the verified BSC deployment to the pinned MIT upstream source. Velmere findings, retest and customer report remain separate gates.'
+          };
+          fs.mkdirSync('artifacts/r7/audit-basic', { recursive: true });
+          fs.writeFileSync('artifacts/r7/audit-basic/R7_AUDIT_BASIC_REAL_TARGET_SOURCIFY_FULL_MATCH.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log(JSON.stringify(receipt, null, 2));
+          '@ | node
+          if ($LASTEXITCODE -ne 0) { throw "sourcify_v2_exact_match_failed:$LASTEXITCODE" }
 
       - name: Upload source equivalence receipt
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-audit-basic-sourcify-full-match-${{ github.sha }}-${{ github.run_id }}
+          name: r7-audit-basic-sourcify-v2-exact-match-${{ github.sha }}-${{ github.run_id }}
           path: artifacts/r7/audit-basic/R7_AUDIT_BASIC_REAL_TARGET_SOURCIFY_FULL_MATCH.json
           if-no-files-found: error
           retention-days: 30
