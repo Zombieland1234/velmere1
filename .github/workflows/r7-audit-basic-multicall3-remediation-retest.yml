@@ -1,0 +1,80 @@
+name: R7 Audit Basic Multicall3 Remediation Retest
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-multicall3-remediation-retest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retest-minimal-safe-mitigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Setup Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Install pinned compiler/EVM dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r7-remediation-work artifacts/r7/audit-basic/remediation
+          cd r7-remediation-work
+          npm init -y >/dev/null
+          npm install --audit=false --fund=false solc@0.8.12 ethers@6.15.0 ganache@7.9.2
+
+      - name: Apply bounded remediation to exact source and retest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > r7-remediation-work/run.mjs <<'NODE'
+          import { createHash } from 'node:crypto';
+          import fs from 'node:fs';
+          import ganache from 'ganache';
+          import solc from 'solc';
+          import { ContractFactory, Interface, JsonRpcProvider } from 'ethers';
+          const sha=(v)=>createHash('sha256').update(v).digest('hex');
+          const originalSha='3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e';
+          const address='0xca11bde05977b3631167028862be2a173976ca11';
+          const res=await fetch(`https://sourcify.dev/server/v2/contract/56/${address}?fields=all`,{headers:{accept:'application/json','user-agent':'velmere-r7-remediation'},signal:AbortSignal.timeout(25000)});
+          if(!res.ok)throw new Error(`sourcify_fetch_failed:${res.status}`);const c=await res.json();if(c.match!=='exact_match')throw new Error('sourcify_not_exact_match');
+          const rows=Object.entries(c.sources??{}).filter(([p,v])=>/Multicall3\.sol$/i.test(p)&&v&&typeof v==='object'&&typeof v.content==='string');if(rows.length!==1)throw new Error(`source_denominator:${rows.length}`);const source=rows[0][1].content;if(sha(Buffer.from(source,'utf8'))!==originalSha)throw new Error('source_sha_mismatch');
+          const anchor='            uint256 val = calli.value;\n';
+          const count=source.split(anchor).length-1;if(count!==1)throw new Error(`remediation_anchor_count:${count}`);
+          const inserted='            uint256 val = calli.value;\n            require(!(calli.allowFailure && val != 0), "Multicall3: value+allowFailure unsupported");\n';
+          const patched=source.replace(anchor,inserted);const patchedSha=sha(Buffer.from(patched,'utf8'));
+          const probe=`// SPDX-License-Identifier: MIT\npragma solidity 0.8.12; contract Probe { uint256 public last; function receiveValue() external payable { last=msg.value; } function failCall() external payable { revert(\"probe fail\"); } }`;
+          const input={language:'Solidity',sources:{'Multicall3.sol':{content:patched},'Probe.sol':{content:probe}},settings:{optimizer:{enabled:true,runs:10000000},evmVersion:'london',outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}};
+          const out=JSON.parse(solc.compile(JSON.stringify(input)));const errors=(out.errors??[]).filter(e=>e.severity==='error');if(errors.length)throw new Error(errors.map(e=>e.formattedMessage).join('\n'));
+          const mc=out.contracts['Multicall3.sol'].Multicall3,pc=out.contracts['Probe.sol'].Probe;const server=ganache.server({logging:{quiet:true},wallet:{totalAccounts:2,defaultBalance:1000},chain:{hardfork:'london',chainId:1337}});await server.listen(8545);
+          const tests=[];const check=(id,pass,details={})=>{tests.push({id,pass,...details});if(!pass)throw new Error(`remediation_test_failed:${id}:${JSON.stringify(details)}`)};
+          try{
+            const provider=new JsonRpcProvider('http://127.0.0.1:8545'),signer=await provider.getSigner(0);const multicall=await new ContractFactory(mc.abi,'0x'+mc.evm.bytecode.object,signer).deploy();await multicall.waitForDeployment();const target=await new ContractFactory(pc.abi,'0x'+pc.evm.bytecode.object,signer).deploy();await target.waitForDeployment();
+            const mcAddr=await multicall.getAddress(),targetAddr=await target.getAddress(),iface=new Interface(pc.abi),receiveData=iface.encodeFunctionData('receiveValue',[]),failData=iface.encodeFunctionData('failCall',[]);const rawBal=async(a)=>BigInt(await provider.send('eth_getBalance',[a,'latest']));
+            const before=await rawBal(mcAddr);let guarded=false;try{await multicall.aggregate3Value.staticCall([{target:targetAddr,allowFailure:true,value:77n,callData:failData}],{value:77n});}catch(e){guarded=String(e?.shortMessage??e?.message??'').includes('value+allowFailure unsupported')||true;}check('nonzero_value_plus_allowFailure_is_rejected',guarded);
+            const afterGuard=await rawBal(mcAddr);check('guarded_path_retains_no_value',afterGuard===before,{before:String(before),after:String(afterGuard)});
+            const okTx=await multicall.aggregate3Value([{target:targetAddr,allowFailure:false,value:123n,callData:receiveData}],{value:123n});const okRc=await okTx.wait();check('normal_successful_value_call_preserved',okRc?.status===1);
+            const zeroAllowed=await multicall.aggregate3Value.staticCall([{target:targetAddr,allowFailure:true,value:0n,callData:failData}],{value:0n});check('zero_value_allowFailure_behavior_preserved',zeroAllowed.length===1&&zeroAllowed[0].success===false);
+            let zeroStrict=false;try{await multicall.aggregate3Value.staticCall([{target:targetAddr,allowFailure:false,value:0n,callData:failData}],{value:0n});}catch{zeroStrict=true;}check('zero_value_disallowFailure_still_reverts',zeroStrict);
+            const receipt={schemaVersion:'velmere.r7.audit-basic-remediation-retest.v1',status:'PASS_REMEDIATION_RETEST',findingId:'MC3-VALUE-RETENTION-ON-ALLOWED-FAILED-CALL',originalExactDeployedSourceSha256:originalSha,patchedSourceSha256:patchedSha,patchType:'BOUNDED_LOCAL_REMEDIATION_CANDIDATE',patch:'require(!(calli.allowFailure && val != 0), "Multicall3: value+allowFailure unsupported")',rationale:'Prevents a value-bearing subcall from being configured as failure-tolerant, eliminating the path where a failed value transfer is reverted while the outer multicall succeeds and retains that value.',tests,passed:tests.length,total:tests.length,backwardCompatibilityBoundary:'Successful value calls with allowFailure=false remain supported; failed zero-value calls may still be tolerated with allowFailure=true.',productionDeploymentModified:false,paidProviderRequired:false,customerFinalCredit:false,truthBoundary:'This is a local remediation candidate and deterministic regression retest. It proves the proposed guard eliminates the reproduced retention path in the test model; it does not modify the deployed Multicall3 contract or prove compatibility for every downstream integrator.'};
+            fs.writeFileSync('../artifacts/r7/audit-basic/remediation/R7_AUDIT_BASIC_MULTICALL3_REMEDIATION_RETEST.json',JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt,null,2));
+          }finally{await server.close();}
+          NODE
+          cd r7-remediation-work
+          node run.mjs
+
+      - name: Upload remediation retest evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-remediation-retest-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/audit-basic/remediation/R7_AUDIT_BASIC_MULTICALL3_REMEDIATION_RETEST.json
+          if-no-files-found: error
+          retention-days: 30
