@@ -1,0 +1,123 @@
+name: R7 Audit Basic External Aderyn Family
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-aderyn-external.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aderyn-exact-deployed-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Fetch exact deployed Multicall3 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r7-aderyn-work/src artifacts/r7/audit-basic/aderyn
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const chainId='56'; const address='0xca11bde05977b3631167028862be2a173976ca11';
+          const expected='3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e';
+          const url=`https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=all`;
+          const res=await fetch(url,{headers:{accept:'application/json','user-agent':'velmere-r7-aderyn'},signal:AbortSignal.timeout(25000)});
+          if(!res.ok) throw new Error(`sourcify_fetch_failed:${res.status}`);
+          const c=await res.json(); if(c.match!=='exact_match') throw new Error(`sourcify_not_exact_match:${String(c.match)}`);
+          const rows=Object.entries(c.sources??{}).filter(([p,v])=>/Multicall3\.sol$/i.test(p)&&v&&typeof v==='object'&&typeof v.content==='string');
+          if(rows.length!==1) throw new Error(`source_denominator:${rows.length}`);
+          const [sourcePath,record]=rows[0]; const source=record.content;
+          const sha=createHash('sha256').update(Buffer.from(source,'utf8')).digest('hex');
+          if(sha!==expected) throw new Error(`source_sha_mismatch:${sha}`);
+          if(!/SPDX-License-Identifier:\s*MIT/.test(source)) throw new Error('source_not_mit');
+          fs.writeFileSync('r7-aderyn-work/src/Multicall3.sol',source);
+          fs.writeFileSync('artifacts/r7/audit-basic/aderyn/SOURCE_IDENTITY.json',JSON.stringify({chainId,address,sourcifyMatch:c.match,sourcePath,sourceSha256:sha,compilerVersion:c.compilation?.compilerVersion??null},null,2)+'\n');
+          NODE
+          cat > r7-aderyn-work/foundry.toml <<'EOF'
+          [profile.default]
+          src = "src"
+          out = "out"
+          libs = ["lib"]
+          solc_version = "0.8.12"
+          optimizer = true
+          optimizer_runs = 10000000
+          evm_version = "london"
+          EOF
+
+      - name: Install exact Aderyn v0.6.8 binary by release checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://github.com/Cyfrin/aderyn/releases/download/aderyn-v0.6.8/aderyn-x86_64-unknown-linux-gnu.tar.xz'
+          EXPECTED='ffd6ca658962e211a3ac821c646f69c8e14bf1b1001cbfe091bcd4535a691e46'
+          curl --proto '=https' --tlsv1.2 -fL "$URL" -o /tmp/aderyn.tar.xz
+          OBSERVED="$(sha256sum /tmp/aderyn.tar.xz | awk '{print $1}')"
+          test "$OBSERVED" = "$EXPECTED" || { echo "Aderyn asset SHA mismatch $OBSERVED" >&2; exit 2; }
+          mkdir -p /tmp/aderyn-bin
+          tar -xJf /tmp/aderyn.tar.xz -C /tmp/aderyn-bin
+          BIN="$(find /tmp/aderyn-bin -type f -name aderyn -perm -u+x | head -n1)"
+          test -n "$BIN" || { echo 'Aderyn binary not found in release asset' >&2; find /tmp/aderyn-bin -maxdepth 3 -type f -print; exit 3; }
+          cp "$BIN" /usr/local/bin/aderyn
+          chmod +x /usr/local/bin/aderyn
+          aderyn --version | tee artifacts/r7/audit-basic/aderyn/ADERYN_VERSION.txt
+          aderyn --help > artifacts/r7/audit-basic/aderyn/ADERYN_HELP.txt
+          printf '%s\n' "$OBSERVED" > artifacts/r7/audit-basic/aderyn/ADERYN_ASSET_SHA256.txt
+
+      - name: Execute Aderyn and require structured report
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd r7-aderyn-work
+          set +e
+          timeout 300 aderyn . --output ../artifacts/r7/audit-basic/aderyn/ADERYN_RAW.json > ../artifacts/r7/audit-basic/aderyn/ADERYN_STDOUT.log 2> ../artifacts/r7/audit-basic/aderyn/ADERYN_STDERR.log
+          CODE=$?
+          set -e
+          printf '%s\n' "$CODE" > ../artifacts/r7/audit-basic/aderyn/ADERYN_EXIT_CODE.txt
+          if [ "$CODE" -eq 124 ]; then echo 'Aderyn timed out' >&2; exit 124; fi
+          if [ ! -s ../artifacts/r7/audit-basic/aderyn/ADERYN_RAW.json ]; then
+            echo "Aderyn structured report missing; exit=$CODE" >&2
+            cat ../artifacts/r7/audit-basic/aderyn/ADERYN_STDERR.log >&2 || true
+            cat ../artifacts/r7/audit-basic/aderyn/ADERYN_HELP.txt >&2 || true
+            exit 1
+          fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const rawBytes=fs.readFileSync('../artifacts/r7/audit-basic/aderyn/ADERYN_RAW.json');
+          let raw; try{raw=JSON.parse(rawBytes.toString('utf8'));}catch{throw new Error(`aderyn_invalid_json:${rawBytes.toString('utf8').slice(0,400)}`);}
+          const walk=[]; const seen=new Set();
+          const visit=(node,path='')=>{if(node==null)return;if(Array.isArray(node)){node.forEach((v,i)=>visit(v,`${path}[${i}]`));return;}if(typeof node!=='object')return;if(seen.has(node))return;seen.add(node);const keys=Object.keys(node);const title=node.title??node.name??node.detector??node.issue_title??null;const desc=node.description??node.body??node.message??null;const severity=node.severity??node.impact??node.criticality??null;if(title||desc||severity){walk.push({path,title,description:typeof desc==='string'?desc.slice(0,1600):desc,severity,raw:node});}for(const [k,v] of Object.entries(node))visit(v,path?`${path}/${k}`:k);};
+          visit(raw);
+          const likelyIssues=walk.filter((r)=>r.title||r.severity).map((r)=>({path:r.path,title:r.title??null,severity:r.severity??null,description:typeof r.description==='string'?r.description:null}));
+          const relevant=likelyIssues.filter((r)=>{const s=`${r.title??''} ${r.description??''}`.toLowerCase();return s.includes('low level')||s.includes('low-level')||s.includes('unchecked')||s.includes('arbitrary')||s.includes('ether')||s.includes('eth')||s.includes('value');});
+          const identity=JSON.parse(fs.readFileSync('../artifacts/r7/audit-basic/aderyn/SOURCE_IDENTITY.json','utf8'));
+          const version=fs.readFileSync('../artifacts/r7/audit-basic/aderyn/ADERYN_VERSION.txt','utf8').trim();
+          const exitCode=Number(fs.readFileSync('../artifacts/r7/audit-basic/aderyn/ADERYN_EXIT_CODE.txt','utf8').trim());
+          if(!Number.isInteger(exitCode)||exitCode<0) throw new Error('aderyn_exit_code_invalid');
+          const receipt={schemaVersion:'velmere.r7.audit-basic-external-analyzer.v1',status:'PASS_EXTERNAL_ANALYZER_EXECUTED',family:'aderyn',tool:'Cyfrin Aderyn',toolVersion:version,pinnedRelease:'aderyn-v0.6.8',releaseAsset:'aderyn-x86_64-unknown-linux-gnu.tar.xz',releaseAssetSha256:'ffd6ca658962e211a3ac821c646f69c8e14bf1b1001cbfe091bcd4535a691e46',releaseTargetCommit:'a288420403cb1ae5f38ce606c3a6d4e605b9c81d',exactDeployedSourceSha256:identity.sourceSha256,chainId:identity.chainId,contractAddress:identity.address,sourcifyMatch:identity.sourcifyMatch,processExitCode:exitCode,structuredIssueCandidateCount:likelyIssues.length,relevantSecurityCorrelation:relevant,relevantSecurityCorrelationCount:relevant.length,rawOutputSha256:createHash('sha256').update(rawBytes).digest('hex'),independentExternalFamily:true,paidProviderRequired:false,customerFinalCredit:false,truthBoundary:'Aderyn v0.6.8 executed independently on the exact Sourcify-verified deployed MIT source. Structured output is preserved raw; findings are correlation evidence and require manual adjudication before customer claims.'};
+          fs.writeFileSync('../artifacts/r7/audit-basic/aderyn/R7_AUDIT_BASIC_ADERYN_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({...receipt,relevantSecurityCorrelation:relevant.slice(0,30)},null,2));
+          NODE
+
+      - name: Upload Aderyn external-family evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-aderyn-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/r7/audit-basic/aderyn/R7_AUDIT_BASIC_ADERYN_RECEIPT.json
+            artifacts/r7/audit-basic/aderyn/ADERYN_RAW.json
+            artifacts/r7/audit-basic/aderyn/ADERYN_STDOUT.log
+            artifacts/r7/audit-basic/aderyn/ADERYN_STDERR.log
+            artifacts/r7/audit-basic/aderyn/ADERYN_VERSION.txt
+            artifacts/r7/audit-basic/aderyn/ADERYN_HELP.txt
+            artifacts/r7/audit-basic/aderyn/ADERYN_EXIT_CODE.txt
+            artifacts/r7/audit-basic/aderyn/ADERYN_ASSET_SHA256.txt
+            artifacts/r7/audit-basic/aderyn/SOURCE_IDENTITY.json
+          if-no-files-found: error
+          retention-days: 30
