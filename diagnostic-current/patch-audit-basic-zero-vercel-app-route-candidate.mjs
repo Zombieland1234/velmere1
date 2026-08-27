@@ -26,14 +26,14 @@ function bridgeUrl(): string {
   const explicit = process.env.VELMERE_AUDIT_CUSTOMER_BRIDGE_URL?.trim() ?? '';
   if (explicit) return explicit;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? '';
-  if (!/^https:\\/\\/[a-z0-9.-]+$/i.test(base)) {
+  if (!/^https:\/\/[a-z0-9.-]+$/i.test(base)) {
     throw new Error('AUDIT_CUSTOMER_BRIDGE_URL_REQUIRED');
   }
-  return base.replace(/\\/$/, '') + '/functions/v1/r7-audit-basic-customer-bridge';
+  return base.replace(/\/$/, '') + '/functions/v1/r7-audit-basic-customer-bridge';
 }
 
 function bearer(value: string | null): string {
-  const match = (value ?? '').trim().match(/^Bearer\\s+([A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,})$/i);
+  const match = (value ?? '').trim().match(/^Bearer\s+([A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,})$/i);
   if (!match) throw new Error('CUSTOMER_WRITE_AUTH_REQUIRED');
   return 'Bearer ' + match[1];
 }
@@ -143,7 +143,8 @@ export async function GET(request: NextRequest) {
       return json(502, { ok: false, error: 'pdf_integrity_failed' });
     }
     const safeName = reportId.replace(/[^A-Za-z0-9._-]+/g, '-').slice(0, 120) || 'velmere-audit-basic-report';
-    return new NextResponse(bytes, {
+    const responseBytes = Uint8Array.from(bytes);
+    return new NextResponse(responseBytes, {
       status: 200,
       headers: {
         'content-type': 'application/pdf',
@@ -209,4 +210,4 @@ for (const [relative, content] of writes) {
   fs.writeFileSync(target, content, 'utf8');
   changed.push({ path: relative, sha256: crypto.createHash('sha256').update(content).digest('hex'), bytes: Buffer.byteLength(content) });
 }
-console.log(JSON.stringify({ schemaVersion: 'velmere.r7.audit-basic-zero-vercel-app-route-candidate.v1', status: 'PASS_PATCH_APPLIED', changed, customerFinalCredit: false }, null, 2));
+console.log(JSON.stringify({ schemaVersion: 'velmere.r7.audit-basic-zero-vercel-app-route-candidate.v2', status: 'PASS_PATCH_APPLIED', changed, customerFinalCredit: false }, null, 2));
