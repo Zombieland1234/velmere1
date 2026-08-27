@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/r7-audit-basic-lifecycle-e2e.yml'
       - 'r7-harness/run-r7-audit-basic-lifecycle-e2e-current.ps1'
+      - 'r7-harness/run-r7-audit-basic-lifecycle-e2e-current-fixed.ps1'
   workflow_dispatch:
 
 permissions:
@@ -31,9 +32,9 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Execute Audit Basic exact PDF lifecycle V2
+      - name: Execute repaired Audit Basic exact PDF lifecycle V2
         shell: pwsh
-        run: ./r7-harness/run-r7-audit-basic-lifecycle-e2e-current.ps1
+        run: ./r7-harness/run-r7-audit-basic-lifecycle-e2e-current-fixed.ps1
 
       - name: Upload Audit Basic lifecycle evidence
         if: always()
