@@ -4,7 +4,7 @@ function Sha256HexText([string]$Text){return Sha256HexBytes([Text.Encoding]::UTF
 function PostJson([string]$Uri,[hashtable]$Headers,[object]$Body){$Json=$Body|ConvertTo-Json -Depth 40 -Compress;$R=Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 30;$P=$null;try{$P=$R.Content|ConvertFrom-Json -Depth 50}catch{};return[pscustomobject]@{Status=[int]$R.StatusCode;Body=$P;Raw=[string]$R.Content}}
 if(-not$env:ACTIONS_ID_TOKEN_REQUEST_URL-or-not$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN){throw'github_oidc_environment_missing'}
 $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
-$Oidc=[string](Invoke-RestMethod -Uri($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:AUDIT_OIDC_AUDIENCE))-Headers@{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN}-TimeoutSec20).value
+$Oidc=[string](Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:AUDIT_OIDC_AUDIENCE)) -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
 if(-not$Oidc){throw'oidc_missing'}
 $OidcUrl=$env:SUPABASE_URL+'/functions/v1/r7-audit-basic-e2e-oidc';$Bridge=$env:SUPABASE_URL+'/functions/v1/r7-audit-basic-customer-bridge';$Life=$env:SUPABASE_URL+'/functions/v1/r7-audit-basic-lifecycle-bridge';$OH=@{Authorization='Bearer '+$Oidc;Accept='application/json'}
 $A=$null;$B=$null;$CaseRef='';$BackupId='';$ReportId=''
