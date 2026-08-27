@@ -37,6 +37,42 @@ $CapabilityNew = '$Capability=[string]$CapabilityResponse.riskServerCapability'
 if (([regex]::Matches($Text,[regex]::Escape($CapabilityOld))).Count -ne 1) {
   throw 'risk_v5_capability_field_anchor_mismatch'
 }
+$BridgeBlockOld = @'
+  $env:VELMERE_RISK_HISTORY_PUBLIC_BRIDGE_URL='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-risk-history-public-bridge'
+  $env:VELMERE_RISK_HISTORY_SERVER_CAPABILITY=$Capability
+  $env:NEXT_TELEMETRY_DISABLED='1'
+  $env:CI='1'
+'@.TrimEnd()
+$BridgeBlockNew = @'
+  $env:VELMERE_RISK_HISTORY_PUBLIC_BRIDGE_URL='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-risk-history-public-bridge'
+  $env:VELMERE_RISK_HISTORY_SERVER_CAPABILITY=$Capability
+  # Provider-policy validates the Edge origin against the public Supabase project URL.
+  # Only the publishable key is exposed; service_role remains absent from the app.
+  $env:NEXT_PUBLIC_SUPABASE_URL='https://yljjyowcvjgjcamffnvd.supabase.co'
+  $env:NEXT_PUBLIC_SUPABASE_ANON_KEY='sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'
+  $env:NEXT_TELEMETRY_DISABLED='1'
+  $env:CI='1'
+
+  $DirectBridgeUri=$env:VELMERE_RISK_HISTORY_PUBLIC_BRIDGE_URL+'?id=multicall3-bsc&limit=10'
+  $DirectBridge=Invoke-WebRequest -Uri $DirectBridgeUri -Method Get -Headers @{
+    'x-velmere-risk-history-server-capability'=$Capability
+    accept='application/json'
+    'cache-control'='no-store'
+  } -UseBasicParsing -SkipHttpErrorCheck -TimeoutSec 20
+  if([int]$DirectBridge.StatusCode -ne 200){
+    $SafeDirectBody=([string]$DirectBridge.Content).Replace($Capability,'<redacted-capability>')
+    if($SafeDirectBody.Length -gt 500){$SafeDirectBody=$SafeDirectBody.Substring(0,500)}
+    throw "risk_v5_direct_bridge_status_$([int]$DirectBridge.StatusCode):$SafeDirectBody"
+  }
+  $DirectEnvelope=$DirectBridge.Content | ConvertFrom-Json -Depth 50
+  if($DirectEnvelope.ok -ne $true -or $DirectEnvelope.schemaVersion -ne 'velmere.r7.risk-history-public-bridge.v2' -or $DirectEnvelope.serviceRoleReturned -ne $false -or $DirectEnvelope.rawCapabilityReturned -ne $false){
+    throw 'risk_v5_direct_bridge_contract_invalid'
+  }
+  Write-Host 'Risk v5 direct Edge bridge GET/v2 probe PASS.'
+'@.TrimEnd()
+if (([regex]::Matches($Text,[regex]::Escape($BridgeBlockOld))).Count -ne 1) {
+  throw 'risk_v5_bridge_environment_anchor_mismatch'
+}
 $RouteOld = '  Assert ([int]$Response.StatusCode -eq 200) "risk_v5_route_status_$([int]$Response.StatusCode)"'
 $RouteNew = @'
   if ([int]$Response.StatusCode -ne 200) {
@@ -48,7 +84,7 @@ $RouteNew = @'
 if (([regex]::Matches($Text,[regex]::Escape($RouteOld))).Count -ne 1) {
   throw 'risk_v5_route_failure_anchor_mismatch'
 }
-$Text = $Text.Replace($Old,$New).Replace($CapabilityOld,$CapabilityNew).Replace($RouteOld,$RouteNew)
+$Text = $Text.Replace($Old,$New).Replace($CapabilityOld,$CapabilityNew).Replace($BridgeBlockOld,$BridgeBlockNew).Replace($RouteOld,$RouteNew)
 [IO.File]::WriteAllText($Fixed,$Text,[Text.UTF8Encoding]::new($false))
 & pwsh -NoProfile -File $Fixed
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
