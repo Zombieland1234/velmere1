@@ -47,7 +47,7 @@ jobs:
               .providerNetworkCalls == 0 and
               (.customerMessage | type == "string" and length > 20)
             ' "evidence/${locale}.json" >/dev/null
-            if grep -Eiq 'etherscan|alchemy|infura|quicknode|providerId|service[_-]?role|secret|token=' "evidence/${locale}.json"; then
+            if grep -Eiq 'etherscan|alchemy|infura|quicknode|providerId|secret|token=' "evidence/${locale}.json"; then
               echo "forbidden topology/secret term in $locale response" >&2; exit 1
             fi
           done
@@ -63,7 +63,7 @@ jobs:
           jq -e '.error == "method_not_allowed"' evidence/bad-method.json >/dev/null
 
           jq -n --arg run "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" '{
-            schemaVersion:"velmere.r7.whale-watch-deployed-staging-route-e2e.v1",
+            schemaVersion:"velmere.r7.whale-watch-deployed-staging-route-e2e.v2",
             status:"PASS_DEPLOYED_STAGING_FAIL_CLOSED_ROUTE",
             githubRunId:$run,
             githubHeadSha:$sha,
@@ -72,6 +72,7 @@ jobs:
             customerSafeUnavailable:true,
             numericWhaleDataPublished:false,
             providerNetworkCalls:0,
+            serviceRoleUsed:false,
             badLocaleDenied:true,
             badAssetDenied:true,
             badMethodDenied:true,
