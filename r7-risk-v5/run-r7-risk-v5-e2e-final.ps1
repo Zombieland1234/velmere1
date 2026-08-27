@@ -37,7 +37,18 @@ $CapabilityNew = '$Capability=[string]$CapabilityResponse.riskServerCapability'
 if (([regex]::Matches($Text,[regex]::Escape($CapabilityOld))).Count -ne 1) {
   throw 'risk_v5_capability_field_anchor_mismatch'
 }
-$Text = $Text.Replace($Old,$New).Replace($CapabilityOld,$CapabilityNew)
+$RouteOld = '  Assert ([int]$Response.StatusCode -eq 200) "risk_v5_route_status_$([int]$Response.StatusCode)"'
+$RouteNew = @'
+  if ([int]$Response.StatusCode -ne 200) {
+    $SafeRouteBody = ([string]$Response.Content).Replace($Capability,'<redacted-capability>')
+    if ($SafeRouteBody.Length -gt 500) { $SafeRouteBody = $SafeRouteBody.Substring(0,500) }
+    throw "risk_v5_route_status_$([int]$Response.StatusCode):$SafeRouteBody"
+  }
+'@.TrimEnd()
+if (([regex]::Matches($Text,[regex]::Escape($RouteOld))).Count -ne 1) {
+  throw 'risk_v5_route_failure_anchor_mismatch'
+}
+$Text = $Text.Replace($Old,$New).Replace($CapabilityOld,$CapabilityNew).Replace($RouteOld,$RouteNew)
 [IO.File]::WriteAllText($Fixed,$Text,[Text.UTF8Encoding]::new($false))
 & pwsh -NoProfile -File $Fixed
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
