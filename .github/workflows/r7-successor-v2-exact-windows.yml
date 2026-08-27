@@ -1,0 +1,138 @@
+name: R7 Successor V2 Exact Windows Browser Audit
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-successor-v2-exact-windows.yml'
+      - 'r7-delta-v2/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-successor-v2-exact-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-windows-promoted-source:
+    runs-on: windows-2025
+    timeout-minutes: 210
+    env:
+      R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
+      R7_BASE_PART_COUNT: '36'
+      R7_BASE_BUNDLE_SHA256: 'fb4c3d2a9524ec4f60f2d21cb430131bf11cfc99b108c96d2ad7d8543c941c87'
+      R7_BASE_EXECUTION_SLICE_AGGREGATE_SHA256: 'fb6b62ecea5e3f86a2d7b88a7afff427b77affd11823963ba983dc0e44021cc4'
+      R7_BASE_TRANSPORT_RECEIPT_SHA256: 'e7d16c41488c2dc72ee88edbdc250ad14a98d0dbbc188ae09c7fbebdae541e61'
+      R7_PATCH_RECEIPT_SHA256: 'f8ebec356391f46b308bd8b32beffccd7a554c29466d0309506eec3e6ac6e0de'
+      R7_PATCH_SHA256: '7f32287ca6a13ffb365bcf7eaa2e2b7e522f1316c64a7fb9033c2cd17f3634f0'
+      R7_PATCH_BYTE_LENGTH: '112009'
+      R7_PATCH_CHUNK_COUNT: '5'
+      R7_PATCH_GZIP_SHA256: '920b9fb291384c317cc28662379af9ea463b7d07b4e767d620b8c83b0a2169ea'
+      R7_PATCH_GZIP_BYTE_LENGTH: '29661'
+      R7_PATCH_BASE64_BYTE_LENGTH: '39548'
+      R7_FILE_COUNT: '3506'
+      R7_PAYLOAD_BYTE_LENGTH: '63055068'
+      R7_TARGET_BUNDLE_SHA256: '9154d6be2d62bc07cb786136fe0586b72bcef5e8afabb1e848de759a000d0190'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: 'd3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'
+      R7_FULL_SOURCE_MANIFEST_SHA256: 'b76d26819db32d5cd7eb17258d3c9c1bf4d6b1345c9df985b20e074786f7fd5f'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      R7_CURRENT_SECRET_SCAN_RECEIPT_SHA256: '3cf73d3b96b41cf876accc0e6229b0b79528f6a8797c94868ad53f12ee40af34'
+      R7_PDF_FONT_PATH: 'r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf'
+      R7_PDF_FONT_BYTE_LENGTH: '46464'
+      R7_PDF_FONT_SHA256: 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa'
+      R7_PDF_FONT_GIT_BLOB_SHA1: '716393b0614fdceaf6f5578694479466ed495b14'
+      R7_PDF_FONT_LICENSE_PATH: 'r7-runtime/external-assets/OFL-Manrope.txt'
+      R7_PDF_FONT_LICENSE_BYTE_LENGTH: '4384'
+      R7_PDF_FONT_LICENSE_SHA256: 'e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c'
+      R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1: '472064afc4b8dec9079fab03b8ffafb617a1b2d8'
+      R7_RUNNER_RECEIPT_SHA256: '2ae2715c8b21cb646f63147427eaab25cf364614d89b4c6c747c530c173ec898'
+      R7_RUNNER_SHA256: '2d2173bf4f9d24938d8b57cca3028f9941ca37ba75e429a6b028d028c5eb3be1'
+      R7_RUNNER_BYTE_LENGTH: '34213'
+      R7_RUNNER_GZIP_SHA256: '899b3e2d113952cec0c9e025e5adfb22d3aeca86b3c1b42acbcdf7c1d1e98116'
+      R7_RUNNER_GZIP_BYTE_LENGTH: '8427'
+      R7_RUNNER_GZIP_BASE64_BYTE_LENGTH: '11236'
+      R7_RUNNER_CHUNK_COUNT: '2'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      GIT_CEILING_DIRECTORIES: ${{ github.workspace }}
+      VELMERE_PDF_FONT_PATH: ${{ github.workspace }}\r7-work\r7-runtime\external-assets\manrope-pdf-latin-plus-ext.ttf
+    steps:
+      - name: Checkout exact promoted transport
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct and execute exact hash-bound Windows runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ReceiptPath = 'r7-delta-v2/R7_WINDOWS_RUNNER_V2_RECEIPT.json'
+          if ((Get-FileHash -LiteralPath $ReceiptPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_RECEIPT_SHA256) { throw 'runner_receipt_sha_mismatch' }
+          $Receipt = Get-Content -LiteralPath $ReceiptPath -Raw | ConvertFrom-Json
+          if ($Receipt.schemaVersion -ne 'velmere.r7.windows-runner-base64-transport.v1' -or $Receipt.status -ne 'PASS_DETERMINISTIC_RUNNER_BUILT') { throw 'runner_receipt_identity_mismatch' }
+          if ([int]$Receipt.source.byteLength -ne [int]$env:R7_RUNNER_BYTE_LENGTH -or [string]$Receipt.source.sha256 -ne $env:R7_RUNNER_SHA256) { throw 'runner_source_receipt_mismatch' }
+          if ([int]$Receipt.gzip.byteLength -ne [int]$env:R7_RUNNER_GZIP_BYTE_LENGTH -or [string]$Receipt.gzip.sha256 -ne $env:R7_RUNNER_GZIP_SHA256 -or [int]$Receipt.gzip.base64ByteLength -ne [int]$env:R7_RUNNER_GZIP_BASE64_BYTE_LENGTH -or [int]$Receipt.gzip.chunkCount -ne [int]$env:R7_RUNNER_CHUNK_COUNT) { throw 'runner_gzip_receipt_mismatch' }
+          $Observed = @(Get-ChildItem -LiteralPath 'r7-delta-v2/runner-gzip-b64' -File | Sort-Object Name)
+          $ExpectedNames = @($Receipt.gzip.chunks | ForEach-Object { [string]$_.name }) | Sort-Object
+          $ObservedNames = @($Observed | ForEach-Object { $_.Name }) | Sort-Object
+          if ($Observed.Count -ne [int]$env:R7_RUNNER_CHUNK_COUNT -or ($ExpectedNames -join "`n") -ne ($ObservedNames -join "`n")) { throw 'runner_chunk_path_set_mismatch' }
+          $EncodedParts = [System.Collections.Generic.List[string]]::new()
+          foreach ($Row in @($Receipt.gzip.chunks)) {
+            $P = 'r7-delta-v2/runner-gzip-b64/' + [string]$Row.name
+            if ((Get-Item -LiteralPath $P).Length -ne [int64]$Row.byteLength) { throw "runner_chunk_bytes_mismatch:$P" }
+            if ((Get-FileHash -LiteralPath $P -Algorithm SHA256).Hash.ToLowerInvariant() -ne [string]$Row.sha256) { throw "runner_chunk_sha_mismatch:$P" }
+            $EncodedParts.Add([IO.File]::ReadAllText($P, [Text.Encoding]::ASCII))
+          }
+          $Encoded = [string]::Concat($EncodedParts)
+          if ([Text.Encoding]::ASCII.GetByteCount($Encoded) -ne [int]$env:R7_RUNNER_GZIP_BASE64_BYTE_LENGTH) { throw 'runner_base64_length_mismatch' }
+          New-Item -ItemType Directory -Force -Path 'r7-runner-work' | Out-Null
+          $Gz = 'r7-runner-work/run-r7-successor-v2-windows.ps1.gz'
+          try { [IO.File]::WriteAllBytes($Gz, [Convert]::FromBase64String($Encoded)) } catch { throw 'runner_base64_decode_failed' }
+          if ((Get-Item -LiteralPath $Gz).Length -ne [int]$env:R7_RUNNER_GZIP_BYTE_LENGTH) { throw 'runner_gzip_length_mismatch' }
+          if ((Get-FileHash -LiteralPath $Gz -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_GZIP_SHA256) { throw 'runner_gzip_sha_mismatch' }
+          $Ps = 'r7-runner-work/run-r7-successor-v2-windows.ps1'
+          $Input = [IO.File]::OpenRead($Gz)
+          $Zip = [IO.Compression.GzipStream]::new($Input, [IO.Compression.CompressionMode]::Decompress)
+          $Output = [IO.File]::Create($Ps)
+          try { $Zip.CopyTo($Output) } finally { $Output.Dispose(); $Zip.Dispose(); $Input.Dispose() }
+          if ((Get-Item -LiteralPath $Ps).Length -ne [int]$env:R7_RUNNER_BYTE_LENGTH) { throw 'runner_source_length_mismatch' }
+          if ((Get-FileHash -LiteralPath $Ps -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:R7_RUNNER_SHA256) { throw 'runner_source_sha_mismatch' }
+          & pwsh -NoProfile -File $Ps
+          if ($LASTEXITCODE -ne 0) { throw "exact_windows_runner_failed:$LASTEXITCODE" }
+
+      - name: Upload exact promoted Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-successor-v2-exact-windows-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            r7-work/artifacts/r7/windows
+            r7-work/artifacts/r7/current-execution
+            r7-work/artifacts/pass13/PASS13_PARTITIONED_ESLINT.json
+            r7-work/artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json
+            r7-work/current-execution-out
+            r7-work/.velmere/deployment-builds
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.json
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.tsv
+            r7-work/R7_NPM_CI.log
+            r7-delta-v2/R7_DELTA_SUCCESSOR_PATCH_RECEIPT_V4.json
+            r7-delta-v2/R7_SUCCESSOR_SECRET_SCAN_RECEIPT.json
+            r7-delta-v2/R7_WINDOWS_RUNNER_V2_RECEIPT.json
+            r7-target-rebuild/r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json
+          if-no-files-found: warn
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 14
