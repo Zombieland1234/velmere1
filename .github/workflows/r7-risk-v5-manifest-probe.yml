@@ -1,0 +1,97 @@
+name: R7 Risk V5 Exact Manifest Probe
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-risk-v5-manifest-probe.yml'
+      - 'r7-risk-v5/run-r7-risk-v5-source-execution-slice-fixed.ps1'
+      - 'r7-risk-v5/regenerate-risk-v5-execution-manifest.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-risk-v5-manifest-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-risk-v5-manifest:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    env:
+      R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
+      R7_PROMOTED_FILE_COUNT: '3506'
+      R7_PROMOTED_PAYLOAD_BYTE_LENGTH: '63055068'
+      R7_PROMOTED_EXECUTION_SLICE_AGGREGATE_SHA256: '504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'
+      R7_PROMOTED_EXECUTION_SLICE_MANIFEST_SHA256: 'cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9'
+      R7_PROMOTED_FULL_SOURCE_AGGREGATE_SHA256: 'd3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'
+      R7_PROMOTED_FULL_SOURCE_MANIFEST_SHA256: 'b76d26819db32d5cd7eb17258d3c9c1bf4d6b1345c9df985b20e074786f7fd5f'
+      R7_FILE_COUNT: '3506'
+      R7_PAYLOAD_BYTE_LENGTH: '63055146'
+      R7_EXECUTION_SLICE_AGGREGATE_SHA256: 'cf97c3fec69622b9e6c002832c901083239cf22d42be509e336f11fe439a01b6'
+      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'e80977b39c688f1702bdb0476ab37972a0fecfe50efcdf24301f56b0ebec1149'
+      R7_FULL_SOURCE_AGGREGATE_SHA256: '27b823f68853513d4844383af4316f709e0e980e13de5c58373a59433f47f7db'
+      R7_FULL_SOURCE_MANIFEST_SHA256: 'd0e47f41ec7f451d5dc808660c84f614fa71e3a8961840f647b21b9fe45e0c5c'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      R7_PATCH_RECEIPT_SHA256: 'f8ebec356391f46b308bd8b32beffccd7a554c29466d0309506eec3e6ac6e0de'
+      R7_PATCH_SHA256: '7f32287ca6a13ffb365bcf7eaa2e2b7e522f1316c64a7fb9033c2cd17f3634f0'
+      R7_PATCH_BYTE_LENGTH: '112009'
+      R7_PATCH_CHUNK_COUNT: '5'
+      R7_PATCH_GZIP_SHA256: '920b9fb291384c317cc28662379af9ea463b7d07b4e767d620b8c83b0a2169ea'
+      R7_PATCH_GZIP_BYTE_LENGTH: '29661'
+      R7_PATCH_BASE64_BYTE_LENGTH: '39548'
+      R7_ENVFIX_RECEIPT_SHA256: '4e17fcd6ef23d8bd04fb4c8eab6789bd769e5152f0dea6bb39191482ae9384a0'
+      R7_ENVFIX_PATCH_SHA256: '620278df64fffa8f83600ab3998b0deb1dff6ea93e0ea65fc1b6fd6d7e155aac'
+      R7_ENVFIX_PATCH_BYTE_LENGTH: '10080'
+      R7_ENVFIX_GZIP_SHA256: '18d6957f2233574ea342bb1bfcc7f008c2d6ee27aa28e2f2455870d8dc4d023a'
+      R7_ENVFIX_GZIP_BYTE_LENGTH: '2912'
+      R7_ENVFIX_BASE64_BYTE_LENGTH: '3884'
+      R7_ENVFIX_CHUNK_COUNT: '1'
+      R7_V4_FILE_COUNT: '3506'
+      R7_V4_PAYLOAD_BYTE_LENGTH: '63055146'
+      R7_V4_EXECUTION_SLICE_AGGREGATE_SHA256: 'cf97c3fec69622b9e6c002832c901083239cf22d42be509e336f11fe439a01b6'
+      R7_V4_EXECUTION_SLICE_MANIFEST_SHA256: 'e80977b39c688f1702bdb0476ab37972a0fecfe50efcdf24301f56b0ebec1149'
+      R7_V4_FULL_SOURCE_AGGREGATE_SHA256: '27b823f68853513d4844383af4316f709e0e980e13de5c58373a59433f47f7db'
+      R7_V4_FULL_SOURCE_MANIFEST_SHA256: 'd0e47f41ec7f451d5dc808660c84f614fa71e3a8961840f647b21b9fe45e0c5c'
+      R7_RISK_PATCH_RECEIPT_SHA256: 'b67c04d0e0ae37e4e7179afd39ff089d864d7df6559b98827766d75e5fad8e8d'
+      R7_RISK_FILE_COUNT: '3506'
+      R7_RISK_PAYLOAD_BYTE_LENGTH: '63058137'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_FULL_SOURCE_MANIFEST_SHA256: 'af63491cf2922c6391d25fcf25a7d8efb6e76d128f4f9ca1dcf07b36471b0a2f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - name: Checkout exact Risk controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Reconstruct and verify exact Risk v5 manifest
+        shell: pwsh
+        run: ./r7-risk-v5/run-r7-risk-v5-source-execution-slice-fixed.ps1 -Mode Prepare
+      - name: Upload exact Risk manifest evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-risk-v5-manifest-probe-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.json
+            r7-work/R7_EXECUTION_SLICE_MANIFEST.tsv
+            r7-risk-v5/R7_RISK_V5_PATCH_RECEIPT.json
+            r7-risk-v5-target-rebuild/r7-runtime/R7_WINDOWS_EXECUTION_TRANSPORT_RECEIPT.json
+          if-no-files-found: warn
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 14
