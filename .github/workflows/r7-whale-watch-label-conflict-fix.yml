@@ -1,0 +1,93 @@
+name: R7 Whale Watch Label Conflict Fix
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-whale-watch-label-conflict-fix.yml'
+      - 'diagnostic-current/patch-whale-watch-conflicting-label-downgrade-v1.mjs'
+      - 'diagnostic-current/r7-whale-watch-label-identity-negatives.mts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  whale-watch-label-conflict-fix:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_FULL_SOURCE_MANIFEST_SHA256: 'af63491cf2922c6391d25fcf25a7d8efb6e76d128f4f9ca1dcf07b36471b0a2f'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+
+    steps:
+      - name: Checkout exact control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Apply hash-bound conflicting-label fix
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node ../diagnostic-current/patch-whale-watch-conflicting-label-downgrade-v1.mjs | Tee-Object -FilePath ../R7_WHALE_WATCH_LABEL_CONFLICT_PATCH.json
+          if ($LASTEXITCODE -ne 0) { throw "whale_label_conflict_patch_failed:$LASTEXITCODE" }
+
+      - name: Typecheck Whale current execution contract
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npx tsc -p scripts/current-execution/tsconfig-whale-watch-canonical-event-identity.json --noEmit
+          if ($LASTEXITCODE -ne 0) { throw "whale_label_conflict_typecheck_failed:$LASTEXITCODE" }
+
+      - name: Re-run canonical event regression
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/test-whale-watch-canonical-event-identity.mts | Tee-Object -FilePath ../R7_WHALE_WATCH_CANONICAL_REGRESSION_AFTER_LABEL_FIX.log
+          if ($LASTEXITCODE -ne 0) { throw "whale_canonical_regression_after_label_fix:$LASTEXITCODE" }
+
+      - name: Execute signed-label identity-negative suite after fix
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --import ./r7-work/scripts/pass11/register-offline-ts-loader.mjs diagnostic-current/r7-whale-watch-label-identity-negatives.mts
+          if ($LASTEXITCODE -ne 0) { throw "whale_label_identity_negatives_after_fix:$LASTEXITCODE" }
+          if (-not (Test-Path -LiteralPath 'R7_WHALE_WATCH_LABEL_IDENTITY_NEGATIVES.json' -PathType Leaf)) { throw 'label_negative_receipt_missing' }
+
+      - name: Upload Whale label fix evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-whale-watch-label-conflict-fix-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            R7_WHALE_WATCH_LABEL_CONFLICT_PATCH.json
+            R7_WHALE_WATCH_CANONICAL_REGRESSION_AFTER_LABEL_FIX.log
+            R7_WHALE_WATCH_LABEL_IDENTITY_NEGATIVES.json
+          if-no-files-found: warn
+          retention-days: 30
