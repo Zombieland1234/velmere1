@@ -1,0 +1,136 @@
+name: R7 Audit Basic Sourcify Exact Source Evidence Bundle
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-sourcify-evidence-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-exact-deployment-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Fetch exact Sourcify source, ABI, compiler and runtime evidence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import { createHash } from 'node:crypto';
+          import fs from 'node:fs';
+          const chainId = '56';
+          const address = '0xca11bde05977b3631167028862be2a173976ca11';
+          const apiUrl = `https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=all`;
+          const sha = (value) => createHash('sha256').update(value).digest('hex');
+          const response = await fetch(apiUrl, { headers: { accept: 'application/json', 'user-agent': 'velmere-r7-audit-real-evidence' }, signal: AbortSignal.timeout(25000) });
+          if (!response.ok) throw new Error(`sourcify_contract_lookup_failed:${response.status}`);
+          const raw = await response.text();
+          const c = JSON.parse(raw);
+          if (c.match !== 'exact_match') throw new Error(`sourcify_not_exact_match:${String(c.match)}`);
+          if (!c.sources || typeof c.sources !== 'object') throw new Error('sourcify_sources_missing');
+          const sourceEntries = Object.entries(c.sources).filter(([path, value]) => /Multicall3\.sol$/i.test(path) && value && typeof value === 'object' && typeof value.content === 'string');
+          if (sourceEntries.length !== 1) throw new Error(`multicall3_source_denominator_invalid:${sourceEntries.length}`);
+          const [sourcePath, sourceRecord] = sourceEntries[0];
+          const source = sourceRecord.content;
+          if (!source.includes('contract Multicall3')) throw new Error('multicall3_contract_missing');
+          if (!/SPDX-License-Identifier:\s*MIT/.test(source)) throw new Error('multicall3_source_not_mit');
+          if (!Array.isArray(c.abi) || !c.abi.some((row) => row?.type === 'function')) throw new Error('sourcify_abi_missing');
+          const compiler = c.compilation ?? {};
+          if (compiler.compiler !== 'solc' || typeof compiler.compilerVersion !== 'string') throw new Error('sourcify_compiler_invalid');
+          const runtime = c.runtimeBytecode ?? {};
+          const onchain = String(runtime.onchainBytecode ?? '').toLowerCase();
+          const recompiled = String(runtime.recompiledBytecode ?? '').toLowerCase();
+          if (!/^0x[0-9a-f]{200,}$/.test(onchain) || !/^0x[0-9a-f]{200,}$/.test(recompiled)) throw new Error('sourcify_runtime_bytecode_missing');
+          if (onchain !== recompiled) throw new Error('sourcify_exact_match_runtime_not_byte_identical_for_multicall3');
+
+          const rpcBody = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getCode', params: [address, 'latest'] });
+          const rpcRes = await fetch('https://bsc-dataseed.binance.org/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: rpcBody, signal: AbortSignal.timeout(20000) });
+          if (!rpcRes.ok) throw new Error(`bsc_live_rpc_failed:${rpcRes.status}`);
+          const rpc = await rpcRes.json();
+          const liveCode = String(rpc.result ?? '').toLowerCase();
+          if (!/^0x[0-9a-f]{200,}$/.test(liveCode)) throw new Error('bsc_live_code_missing');
+          if (liveCode !== onchain) throw new Error('sourcify_onchain_bytecode_not_current_bsc_code');
+
+          const sourceFiles = Object.entries(c.sources).map(([path, value]) => ({ path, content: typeof value?.content === 'string' ? value.content : '' })).filter((row) => row.content.length > 0);
+          sourceFiles.sort((a,b) => a.path.localeCompare(b.path));
+          if (sourceFiles.length < 1) throw new Error('source_bundle_empty');
+          const sourceBundleIdentity = sourceFiles.map((row) => ({ path: row.path, sha256: sha(Buffer.from(row.content, 'utf8')) }));
+          const sourceBundleSha256 = sha(Buffer.from(JSON.stringify(sourceBundleIdentity), 'utf8'));
+
+          const settings = compiler.compilerSettings && typeof compiler.compilerSettings === 'object' ? compiler.compilerSettings : {};
+          const optimizer = settings.optimizer && typeof settings.optimizer === 'object' ? settings.optimizer : {};
+          const receipt = {
+            schemaVersion: 'velmere.r7.audit-basic-sourcify-exact-evidence-bundle.v1',
+            status: 'PASS_EXACT_DEPLOYED_MIT_SOURCE_AND_CURRENT_RUNTIME',
+            observedAt: new Date().toISOString(),
+            chainId,
+            chainName: 'BSC',
+            contractAddress: address,
+            projectName: 'Multicall3',
+            sourcifyApiVersion: 'v2',
+            sourcifyApiUrl: apiUrl,
+            sourcifyMatch: c.match,
+            creationMatch: c.creationMatch ?? null,
+            runtimeMatch: c.runtimeMatch ?? null,
+            verifiedAt: c.verifiedAt ?? null,
+            matchId: c.matchId != null ? String(c.matchId) : null,
+            sourcifyResponseSha256: sha(Buffer.from(raw, 'utf8')),
+            sourceProvenance: {
+              provider: 'Sourcify API v2',
+              sourceReference: apiUrl,
+              verifiedSource: true,
+              responseSha256: sha(Buffer.from(raw, 'utf8')),
+              license: 'MIT',
+              customerDerivedFindingsAllowed: true,
+              rawSourceCustomerRedistributionRequiresMITNotice: true,
+            },
+            sourcePath,
+            exactDeployedSourceSha256: sha(Buffer.from(source, 'utf8')),
+            sourceBundleSha256,
+            sourceBundleIdentity,
+            sourceFiles,
+            abi: c.abi,
+            compiler: {
+              family: 'solc',
+              version: compiler.compilerVersion.replace(/^v/, ''),
+              optimizerEnabled: typeof optimizer.enabled === 'boolean' ? optimizer.enabled : null,
+              optimizerRuns: Number.isInteger(optimizer.runs) ? optimizer.runs : null,
+              evmVersion: typeof settings.evmVersion === 'string' ? settings.evmVersion : null,
+              viaIR: typeof settings.viaIR === 'boolean' ? settings.viaIR : null,
+              settings,
+            },
+            runtime: {
+              sourcifyOnchainBytecode: onchain,
+              sourcifyRecompiledBytecode: recompiled,
+              currentBscBytecode: liveCode,
+              byteIdenticalRecompiledToSourcifyOnchain: true,
+              byteIdenticalSourcifyOnchainToCurrentBsc: true,
+              runtimeByteLength: (onchain.length - 2) / 2,
+              runtimeSha256: sha(Buffer.from(onchain.slice(2), 'hex')),
+              currentnessProvider: 'https://bsc-dataseed.binance.org/',
+            },
+            upstreamHeadEqualityRequired: false,
+            upstreamHeadDivergenceKnown: true,
+            upstreamHeadDivergenceReason: 'The exact deployed source verified by Sourcify is authoritative for this deployment; current repository HEAD is a separate later source state and must not be substituted for the deployed source.',
+            paidProviderRequired: false,
+            customerFinalCredit: false,
+            truthBoundary: 'Exact-match Sourcify source, ABI/compiler settings, recompiled runtime and current BSC runtime are bound. Velmere findings, external analyzer families, retest and customer report remain separate gates.'
+          };
+          fs.mkdirSync('artifacts/r7/audit-basic', { recursive: true });
+          fs.writeFileSync('artifacts/r7/audit-basic/R7_AUDIT_BASIC_SOURCIFY_EXACT_EVIDENCE_BUNDLE.json', JSON.stringify(receipt, null, 2) + '\n');
+          console.log(JSON.stringify({ ...receipt, sourceFiles: sourceFiles.map((row) => ({ path: row.path, byteLength: Buffer.byteLength(row.content), sha256: sha(Buffer.from(row.content, 'utf8')) })), abi: `<${c.abi.length} ABI entries>`, runtime: { ...receipt.runtime, sourcifyOnchainBytecode: '<redacted-bytecode>', sourcifyRecompiledBytecode: '<redacted-bytecode>', currentBscBytecode: '<redacted-bytecode>' } }, null, 2));
+          '@ | node --input-type=module
+          if ($LASTEXITCODE -ne 0) { throw "audit_exact_evidence_bundle_failed:$LASTEXITCODE" }
+
+      - name: Upload exact deployed evidence bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-sourcify-exact-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/audit-basic/R7_AUDIT_BASIC_SOURCIFY_EXACT_EVIDENCE_BUNDLE.json
+          if-no-files-found: error
+          retention-days: 30
