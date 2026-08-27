@@ -1,0 +1,236 @@
+name: R7 Whale Watch Real BSC Finality Proof
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-whale-watch-real-bsc-finality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-whale-watch-real-bsc-finality-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  whale-watch-real-bsc-finality:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_FULL_SOURCE_MANIFEST_SHA256: 'af63491cf2922c6391d25fcf25a7d8efb6e76d128f4f9ca1dcf07b36471b0a2f'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+
+    steps:
+      - name: Checkout exact control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current product source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Execute real finalized BSC ERC20 event proof through current Whale identity engine
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import assert from 'node:assert/strict';
+          import crypto from 'node:crypto';
+          import fs from 'node:fs';
+          import { deduplicateCanonicalWhaleTransfers, canonicalWhaleEventId } from '../../r7-work/lib/market-integrity/whale-watch-onchain-event-identity.ts';
+          import type { WhaleTransferEvent } from '../../r7-work/lib/market-integrity/whale-watch-types.ts';
+
+          const RPCS = [
+            'https://bsc-dataseed.bnbchain.org',
+            'https://bsc-dataseed-public.bnbchain.org',
+          ];
+          const TOKEN = '0x55d398326f99059ff775485246999027b3197955';
+          const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+          const CHAIN = 'eip155:56';
+          const hexNum = (v:string) => Number(BigInt(v));
+          const sha = (v:unknown) => crypto.createHash('sha256').update(typeof v === 'string' ? v : JSON.stringify(v)).digest('hex');
+          const addressFromTopic = (v:string) => `0x${v.slice(-40).toLowerCase()}`;
+          const validHash = (v:unknown) => typeof v === 'string' && /^0x[a-f0-9]{64}$/i.test(v);
+
+          async function rpc(url:string, method:string, params:unknown[]) {
+            const res = await fetch(url, {
+              method:'POST',
+              headers:{'content-type':'application/json','user-agent':'velmere-r7-whale-finality-proof'},
+              body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),
+              signal:AbortSignal.timeout(20_000),
+            });
+            if(!res.ok) throw new Error(`rpc_http_${method}_${res.status}`);
+            const body = await res.json() as {result?:unknown;error?:unknown};
+            if(body.error || body.result === undefined || body.result === null) throw new Error(`rpc_result_${method}:${JSON.stringify(body.error??null).slice(0,300)}`);
+            return body.result as any;
+          }
+
+          for(const url of RPCS){
+            const chain = await rpc(url,'eth_chainId',[]);
+            assert.equal(String(chain).toLowerCase(),'0x38');
+          }
+
+          const latest = await rpc(RPCS[0],'eth_getBlockByNumber',['latest',false]);
+          const finalized = await rpc(RPCS[0],'eth_getBlockByNumber',['finalized',false]);
+          assert.ok(validHash(latest.hash));
+          assert.ok(validHash(finalized.hash));
+          const latestNumber=hexNum(latest.number), finalizedNumber=hexNum(finalized.number);
+          assert.ok(finalizedNumber <= latestNumber && finalizedNumber > 0);
+
+          const decimalsRaw = String(await rpc(RPCS[0],'eth_call',[{to:TOKEN,data:'0x313ce567'},'finalized']));
+          const decimals = hexNum(decimalsRaw);
+          assert.ok(Number.isSafeInteger(decimals) && decimals >= 0 && decimals <= 36);
+
+          let found:{block:any;tx:any;receipt:any;log:any}|null=null;
+          const maxBlocks=24;
+          for(let offset=0; offset<maxBlocks && !found; offset++){
+            const n=finalizedNumber-offset;
+            const tag=`0x${n.toString(16)}`;
+            const block=await rpc(RPCS[0],'eth_getBlockByNumber',[tag,true]);
+            if(!block || !Array.isArray(block.transactions) || !validHash(block.hash)) continue;
+            const direct=block.transactions.filter((tx:any)=>String(tx?.to??'').toLowerCase()===TOKEN).slice(0,80);
+            for(const tx of direct){
+              const receipt=await rpc(RPCS[0],'eth_getTransactionReceipt',[tx.hash]);
+              const log=(Array.isArray(receipt.logs)?receipt.logs:[]).find((row:any)=>String(row.address??'').toLowerCase()===TOKEN && String(row.topics?.[0]??'').toLowerCase()===TRANSFER_TOPIC && Array.isArray(row.topics) && row.topics.length>=3);
+              if(log){found={block,tx,receipt,log};break;}
+            }
+          }
+          if(!found) throw new Error(`no_finalized_usdt_transfer_found_within_${maxBlocks}_blocks`);
+
+          const {block,tx,receipt,log}=found;
+          const blockNumber=hexNum(log.blockNumber??receipt.blockNumber);
+          const blockHash=String(log.blockHash??receipt.blockHash??'').toLowerCase();
+          assert.ok(validHash(blockHash));
+          const canonicalBlock=await rpc(RPCS[0],'eth_getBlockByNumber',[`0x${blockNumber.toString(16)}`,false]);
+          assert.equal(String(canonicalBlock.hash).toLowerCase(),blockHash,'real log must still be on canonical block hash');
+          assert.ok(blockNumber<=finalizedNumber,'real transfer must be at or below BSC finalized head');
+          const confirmations=latestNumber-blockNumber+1;
+          assert.ok(confirmations>0);
+          const logIndex=hexNum(log.logIndex);
+          const rawAmount=BigInt(String(log.data));
+          const amountBase=Number(rawAmount)/10**decimals;
+          assert.ok(Number.isFinite(amountBase)&&amountBase>0);
+          const observedAt=new Date(hexNum(block.timestamp)*1000).toISOString();
+          const from=addressFromTopic(log.topics[1]);
+          const to=addressFromTopic(log.topics[2]);
+          const sourceDigest=sha({rpc:'bnb-chain',blockNumber,blockHash,txHash:tx.hash,logIndex,data:log.data,topics:log.topics});
+
+          const realEvent:WhaleTransferEvent={
+            eventId:'provider-supplied-ignored',
+            chainId:CHAIN,
+            contractAddress:TOKEN,
+            txHash:String(tx.hash).toLowerCase(),
+            logIndex,
+            blockNumber,
+            blockHash,
+            confirmations,
+            finality:'finalized',
+            reorgState:'canonical',
+            tokenDecimals:decimals,
+            observedAt,
+            amountBase,
+            fromHolderId:from,
+            toHolderId:to,
+            fromCategory:'unknown',
+            toCategory:'unknown',
+            kind:'transfer',
+            providerFamily:'bnb-chain',
+            providerFamilies:['bnb-chain'],
+            status:'verified_staging',
+            sourceDigest,
+            sourceDigests:[sourceDigest],
+          };
+          const expectedId=canonicalWhaleEventId({chainId:CHAIN,contractAddress:TOKEN,txHash:realEvent.txHash!,logIndex});
+          const canonical=deduplicateCanonicalWhaleTransfers([realEvent]);
+          assert.equal(canonical.transfers.length,1);
+          assert.equal(canonical.transfers[0]?.eventId,expectedId);
+          assert.equal(canonical.transfers[0]?.finality,'finalized');
+          assert.equal(canonical.transfers[0]?.reorgState,'canonical');
+
+          const receipt2=await rpc(RPCS[1],'eth_getTransactionReceipt',[tx.hash]);
+          const log2=(Array.isArray(receipt2.logs)?receipt2.logs:[]).find((row:any)=>String(row.address??'').toLowerCase()===TOKEN && hexNum(row.logIndex)===logIndex);
+          assert.ok(log2,'second official BNB endpoint must observe same physical log');
+          assert.equal(String(log2.blockHash).toLowerCase(),blockHash);
+          assert.equal(String(log2.data).toLowerCase(),String(log.data).toLowerCase());
+          const sourceDigest2=sha({rpc:'bnb-chain-secondary',blockHash:log2.blockHash,txHash:tx.hash,logIndex:log2.logIndex,data:log2.data,topics:log2.topics});
+          const duplicate={...realEvent,eventId:'secondary-provider-controlled-id',sourceDigest:sourceDigest2,sourceDigests:[sourceDigest2]};
+          const dual=deduplicateCanonicalWhaleTransfers([realEvent,duplicate]);
+          assert.equal(dual.transfers.length,1);
+          assert.equal(dual.duplicatesDropped,1);
+
+          const badBlockHash=`0x${blockHash.slice(2).replace(/^./, blockHash[2]==='0'?'1':'0')}`;
+          const physicalConflict=deduplicateCanonicalWhaleTransfers([realEvent,{...duplicate,blockHash:badBlockHash}]);
+          assert.equal(physicalConflict.transfers.length,0);
+          assert.ok(physicalConflict.blockers.includes('whale_transfer_physical_log_conflict'));
+          const reorgMutation=deduplicateCanonicalWhaleTransfers([realEvent,{...duplicate,reorgState:'reorged'}]);
+          assert.equal(reorgMutation.transfers.length,0);
+          assert.ok(reorgMutation.blockers.includes('whale_transfer_reorg_conflict'));
+          const unconfirmed=deduplicateCanonicalWhaleTransfers([{...realEvent,confirmations:0,finality:'unconfirmed'}]);
+          assert.equal(unconfirmed.transfers.length,0);
+          assert.ok(unconfirmed.blockers.includes('whale_transfer_not_confirmed'));
+          const badDecimals=deduplicateCanonicalWhaleTransfers([{...realEvent,tokenDecimals:255}]);
+          assert.equal(badDecimals.transfers.length,0);
+          assert.ok(badDecimals.blockers.includes('whale_transfer_token_decimals_invalid'));
+
+          const evidence={
+            schemaVersion:'velmere.r7.whale-watch-real-bsc-finality-proof.v1',
+            status:'PASS_REAL_BSC_FINALIZED_EVENT_AND_REORG_GUARDS',
+            github:{runId:process.env.GITHUB_RUN_ID,runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),headSha:process.env.GITHUB_SHA},
+            exactCurrentSource:{fullSourceAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,fullSourceManifestSha256:process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256,executionSliceAggregateSha256:process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256,executionSliceManifestSha256:process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256},
+            chainId:56,
+            chainIdentity:'eip155:56',
+            rpcAuthority:'BNB_CHAIN_PUBLIC_MAINNET_RPC',
+            rpcEndpointFamilies:['bnb-chain'],
+            finalizedHead:{number:finalizedNumber,hash:String(finalized.hash).toLowerCase()},
+            latestHeadNumber:latestNumber,
+            token:{contract:TOKEN,decimals},
+            realTransfer:{eventId:expectedId,blockNumber,blockHash,txHash:String(tx.hash).toLowerCase(),logIndex,confirmations,finality:'finalized',reorgState:'canonical',amountTokenUnits:amountBase,observedAt},
+            canonicalBlockHashRefetchMatch:true,
+            secondOfficialEndpointSamePhysicalLog:true,
+            duplicateOfficialEndpointObservationCollapsed:dual.duplicatesDropped===1,
+            adversarialGuards:{conflictingBlockHashWithheld:true,reorgMutationWithheld:true,unconfirmedWithheld:true,invalidDecimalsWithheld:true},
+            actualReorgObserved:false,
+            actualReorgClaimed:false,
+            rightsState:'INTERNAL_DIAGNOSTIC_ONLY',
+            customerVisibleNumbersAuthorized:false,
+            paidProviderRequired:false,
+            customerFinalCredit:false,
+            paidValueCredit:false,
+            truthBoundary:'A real BSC finalized ERC-20 Transfer log was observed through official public BNB Chain RPC endpoints and verified against its canonical block hash. Reorg/conflict behavior was tested by adversarial mutation of that real event; no real reorg was observed or claimed. This is internal validation only and does not authorize customer-visible provider data or Customer FINAL.'
+          };
+          fs.writeFileSync('../R7_WHALE_WATCH_REAL_BSC_FINALITY_PROOF.json',JSON.stringify(evidence,null,2)+'\n');
+          console.log(JSON.stringify(evidence,null,2));
+          '@ | Set-Content 'scripts/current-execution/.r7-whale-real-bsc-finality-proof.mts' -Encoding utf8
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/.r7-whale-real-bsc-finality-proof.mts
+          if ($LASTEXITCODE -ne 0) { throw "real_bsc_whale_finality_proof_failed:$LASTEXITCODE" }
+
+      - name: Upload real-chain Whale Watch evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-whale-watch-real-bsc-finality-${{ github.sha }}-${{ github.run_id }}
+          path: R7_WHALE_WATCH_REAL_BSC_FINALITY_PROOF.json
+          if-no-files-found: warn
+          retention-days: 30
