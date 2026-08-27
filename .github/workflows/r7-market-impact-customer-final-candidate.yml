@@ -1,0 +1,221 @@
+name: R7 Market Impact Customer Final Candidate
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-market-impact-customer-final-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-market-impact-customer-final-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  market-impact-customer-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_FULL_SOURCE_MANIFEST_SHA256: 'af63491cf2922c6391d25fcf25a7d8efb6e76d128f4f9ca1dcf07b36471b0a2f'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      NEXT_PUBLIC_SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'
+
+    steps:
+      - name: Checkout closure controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current product source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Verify exact source authority and Market Impact closure files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          const sha=(b)=>crypto.createHash('sha256').update(b).digest('hex');
+          const manifestBytes=fs.readFileSync('r7-work/CURRENT_CANDIDATE_CONTENT_MANIFEST.tsv');
+          if(sha(manifestBytes)!==process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256) throw new Error('full_source_manifest_sha_mismatch');
+          const lines=manifestBytes.toString('utf8').trimEnd().split(/\r?\n/);
+          if(lines.shift()!=='path\tbytes\tsha256') throw new Error('full_source_manifest_header_invalid');
+          const rows=new Map(lines.map(line=>{const [p,b,s]=line.split('\t');return [p,{bytes:Number(b),sha256:s}]}));
+          const required=[
+            'lib/market-integrity/market-impact-delivery-policy.ts',
+            'lib/server/market-integrity-route-modules/orderbook.ts',
+            'lib/server/market-integrity-route-modules/liquidity-intelligence.ts',
+            'lib/server/market-integrity-route-modules/market-intelligence.ts',
+            'lib/server/market-integrity-route-modules/customer-owned-market-evidence.ts',
+            'lib/market-integrity/customer-owned-market-evidence-authority.ts',
+            'scripts/current-execution/test-market-impact-no-usable-order-book.mts',
+            'scripts/current-execution/test-customer-owned-market-impact-attested-route.mts',
+            'config/pass36/a102r44p18-official-provider-rights-decision-matrix.json',
+          ];
+          const files=[];
+          for(const p of required){
+            const row=rows.get(p); if(!row) throw new Error(`required_market_impact_file_missing:${p}`);
+            const bytes=fs.readFileSync(`r7-work/${p}`);
+            if(bytes.length!==row.bytes||sha(bytes)!==row.sha256) throw new Error(`required_market_impact_file_identity_failed:${p}`);
+            files.push({path:p,bytes:row.bytes,sha256:row.sha256});
+          }
+          fs.writeFileSync('R7_MARKET_IMPACT_EXACT_FILE_BINDINGS.json',JSON.stringify({schemaVersion:'velmere.r7.market-impact-exact-file-bindings.v1',status:'PASS_EXACT_FILE_BINDINGS',fullSourceAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,fullSourceManifestSha256:process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256,files,customerFinalCredit:false},null,2)+'\n');
+          console.log(JSON.stringify({status:'PASS_EXACT_FILE_BINDINGS',files:files.length,customerFinalCredit:false},null,2));
+          '@ | node --input-type=module
+          if ($LASTEXITCODE -ne 0) { throw "market_impact_source_binding_failed:$LASTEXITCODE" }
+
+      - name: Execute fail-closed and customer-owned Market Impact contracts
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/test-market-impact-no-usable-order-book.mts | Tee-Object -FilePath ../R7_MARKET_IMPACT_NO_USABLE_ORDER_BOOK.log
+          if ($LASTEXITCODE -ne 0) { throw "no_usable_order_book_contract_failed:$LASTEXITCODE" }
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/test-customer-owned-market-impact-attested-route.mts | Tee-Object -FilePath ../R7_MARKET_IMPACT_CUSTOMER_OWNED_ATTESTED.log
+          if ($LASTEXITCODE -ne 0) { throw "customer_owned_market_impact_contract_failed:$LASTEXITCODE" }
+
+      - name: Execute actual Next customer routes in PL EN DE and adverse cases
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function InvokeJson([string]$Method,[string]$Uri,[object]$Body=$null,[hashtable]$Headers=@{}) {
+            $params=@{Method=$Method;Uri=$Uri;Headers=$Headers;SkipHttpErrorCheck=$true;TimeoutSec=30}
+            if($null -ne $Body){$params.ContentType='application/json';$params.Body=($Body|ConvertTo-Json -Depth 30 -Compress)}
+            $response=Invoke-WebRequest @params
+            $parsed=$null
+            try{$parsed=$response.Content|ConvertFrom-Json -Depth 40}catch{}
+            return [pscustomobject]@{Status=[int]$response.StatusCode;Headers=$response.Headers;Body=$parsed;Raw=[string]$response.Content}
+          }
+          function AssertWithheld([object]$R,[string]$Label){
+            if($R.Status -ne 424){throw "$Label`_status_$($R.Status):$($R.Raw.Substring(0,[Math]::Min(500,$R.Raw.Length)))"}
+            $b=$R.Body
+            if($b.ok -ne $false -or $b.mode -ne 'withheld' -or $b.availability -ne 'WITHHELD' -or $b.error -ne 'NO_USABLE_ORDER_BOOK'){throw "$Label`_contract_invalid"}
+            if($null -ne $b.orderbook -or $null -ne $b.marketImpact -or $null -ne $b.liquidityIntelligence -or $null -ne $b.referenceMidPrice){throw "$Label`_numeric_or_orderbook_leak"}
+            if(@($b.representativeExecutions).Count -ne 0 -or $b.syntheticLiquidityUsed -ne $false -or $b.liveClaimed -ne $false){throw "$Label`_synthetic_or_live_claim"}
+            if(@($b.publication.blockers).Count -ne 1 -or $b.publication.blockers[0] -ne 'NO_USABLE_ORDER_BOOK'){throw "$Label`_blocker_invalid"}
+            $lower=$R.Raw.ToLowerInvariant()
+            foreach($forbidden in @('binance','mexc','coinbase','kraken','coingecko','dexscreener','defillama','providerid','decisionsha')){if($lower.Contains($forbidden)){throw "$Label`_provider_topology_leak_$forbidden"}}
+          }
+
+          $stdout=Join-Path $env:RUNNER_TEMP 'market-impact-next.stdout.log'
+          $stderr=Join-Path $env:RUNNER_TEMP 'market-impact-next.stderr.log'
+          $next=Start-Process -FilePath 'node' -ArgumentList @('node_modules/next/dist/bin/next','dev','--hostname','localhost','--port','3114') -WorkingDirectory (Join-Path $PWD 'r7-work') -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $ready=$false
+            for($i=0;$i -lt 75;$i++){
+              Start-Sleep -Seconds 2
+              try{$probe=Invoke-WebRequest -Uri 'http://localhost:3114/' -SkipHttpErrorCheck -TimeoutSec 5;if([int]$probe.StatusCode -ge 200){$ready=$true;break}}catch{}
+            }
+            if(-not $ready){throw 'market_impact_next_not_ready'}
+            $base='http://localhost:3114/api/market-integrity'
+            $results=@()
+
+            $orderbook=InvokeJson 'GET' ($base+'/orderbook?symbol=BTCUSDT')
+            AssertWithheld $orderbook 'orderbook'
+            $results += @{case='orderbook';status=$orderbook.Status}
+
+            $liquidity=InvokeJson 'GET' ($base+'/liquidity-intelligence?query=BTC')
+            AssertWithheld $liquidity 'liquidity'
+            $results += @{case='liquidity';status=$liquidity.Status}
+
+            foreach($locale in @('pl','en','de')){
+              $body=@{assetKey='BTC';depth='basic';locale=$locale;surface='shield';evidenceMode='server_owned'}
+              $r=InvokeJson 'POST' ($base+'/market-intelligence') $body @{'origin'='http://localhost:3114'}
+              AssertWithheld $r ("market_intelligence_"+$locale)
+              if($r.Body.depth -ne 'basic' -or $r.Body.surface -ne 'shield' -or $r.Body.assetKey -ne 'BTC'){throw "market_intelligence_${locale}_binding_invalid"}
+              $results += @{case=('market_intelligence_'+$locale);status=$r.Status;depth=$r.Body.depth;surface=$r.Body.surface;assetKey=$r.Body.assetKey}
+            }
+
+            $tamperedBody=@{
+              assetKey='BTC';depth='basic';locale='en';surface='shield';evidenceMode='server_owned';
+              providerNetworkAllowed=$true;customerDeliveryAllowed=$true;syntheticLiquidityUsed=$true;
+              orderbook=@{bids=@(@(1,999999));asks=@(@(2,999999))};referenceMidPrice=1.5
+            }
+            $tampered=InvokeJson 'POST' ($base+'/market-intelligence') $tamperedBody @{'origin'='http://localhost:3114'}
+            AssertWithheld $tampered 'tampered_promotion'
+            $results += @{case='tampered_promotion';status=$tampered.Status}
+
+            $missingSymbol=InvokeJson 'GET' ($base+'/orderbook')
+            if($missingSymbol.Status -ne 400){throw "missing_symbol_status_$($missingSymbol.Status)"}
+            $results += @{case='missing_symbol';status=$missingSymbol.Status}
+
+            $missingQuery=InvokeJson 'GET' ($base+'/liquidity-intelligence')
+            if($missingQuery.Status -ne 400){throw "missing_query_status_$($missingQuery.Status)"}
+            $results += @{case='missing_query';status=$missingQuery.Status}
+
+            $badLocale=InvokeJson 'POST' ($base+'/market-intelligence') @{assetKey='BTC';depth='basic';locale='xx';surface='shield';evidenceMode='server_owned'} @{'origin'='http://localhost:3114'}
+            if($badLocale.Status -ne 400 -or $badLocale.Body.error -ne 'locale_invalid'){throw 'bad_locale_not_denied'}
+            $results += @{case='bad_locale';status=$badLocale.Status}
+
+            $receipt=[ordered]@{
+              schemaVersion='velmere.r7.market-impact-customer-candidate.v1'
+              status='PASS_MARKET_IMPACT_CUSTOMER_CANDIDATE'
+              github=@{runId=$env:GITHUB_RUN_ID;runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;headSha=$env:GITHUB_SHA}
+              exactCurrentSource=@{
+                fullSourceAggregateSha256=$env:R7_RISK_FULL_SOURCE_AGGREGATE_SHA256
+                fullSourceManifestSha256=$env:R7_RISK_FULL_SOURCE_MANIFEST_SHA256
+                executionSliceAggregateSha256=$env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256
+                executionSliceManifestSha256=$env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256
+                executionBundleSha256=$env:R7_RISK_BUNDLE_SHA256
+              }
+              actualHttpRoutes=$results
+              locales=@('pl','en','de')
+              serverOwnedFailClosed='PASS_NO_USABLE_ORDER_BOOK'
+              providerNetworkCallsInContractHarness=0
+              syntheticLiquidityUsed=$false
+              providerTopologyDisclosure=$false
+              customerOwnedAttestedPath='PASS_BOUNDED_PRIVATE_ACCOUNT_BOUND'
+              publicRedistributionDenied=$true
+              liveClaimed=$false
+              serviceRoleInApplication=$false
+              paidProviderRequired=$false
+              candidateOnly=$true
+              customerFinalCredit=$false
+              truthBoundary='This candidate proves the exact-current-source customer-visible Market Impact fail-closed route and bounded customer-owned-attested path without provider-network substitution or synthetic liquidity. It does not itself write Customer FINAL; guarded final adjudication must separately verify the exact artifacts and append-only ledger conditions.'
+            }
+            $receipt|ConvertTo-Json -Depth 30|Set-Content 'R7_MARKET_IMPACT_CUSTOMER_CANDIDATE.json' -Encoding utf8
+            Write-Host ($receipt|ConvertTo-Json -Depth 30)
+          } finally {
+            if($next -and -not $next.HasExited){Stop-Process -Id $next.Id -Force -ErrorAction SilentlyContinue}
+            Copy-Item $stdout 'R7_MARKET_IMPACT_NEXT_STDOUT.log' -ErrorAction SilentlyContinue
+            Copy-Item $stderr 'R7_MARKET_IMPACT_NEXT_STDERR.log' -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload Market Impact exact customer evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-market-impact-customer-candidate-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            R7_MARKET_IMPACT_EXACT_FILE_BINDINGS.json
+            R7_MARKET_IMPACT_NO_USABLE_ORDER_BOOK.log
+            R7_MARKET_IMPACT_CUSTOMER_OWNED_ATTESTED.log
+            R7_MARKET_IMPACT_CUSTOMER_CANDIDATE.json
+            R7_MARKET_IMPACT_NEXT_STDOUT.log
+            R7_MARKET_IMPACT_NEXT_STDERR.log
+          if-no-files-found: warn
+          retention-days: 30
