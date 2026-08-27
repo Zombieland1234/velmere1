@@ -1,0 +1,222 @@
+name: R7 Audit Basic App Route V5 E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-app-route-v5-e2e.yml'
+      - 'diagnostic-current/patch-audit-basic-zero-vercel-app-route-candidate.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-audit-basic-app-route-v5-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit-basic-app-route-v5:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      EXACT_DEPLOYED_SOURCE_SHA256: '3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      NEXT_PUBLIC_SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'
+      VELMERE_AUDIT_CUSTOMER_BRIDGE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-audit-basic-customer-bridge'
+      AUDIT_OIDC_AUDIENCE: 'velmere-r7-audit-basic-app-candidate'
+
+    steps:
+      - name: Checkout exact control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Apply V5 Audit customer routes and compile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
+          try {
+            node ../diagnostic-current/patch-audit-basic-zero-vercel-app-route-candidate.mjs | Tee-Object -FilePath ../R7_AUDIT_APP_ROUTE_V5_PATCH.json
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_patch_failed' }
+            npm run typecheck
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_typecheck_failed' }
+            npx eslint lib/security/audit-basic-customer-bridge-client.ts app/api/audit/basic/case/route.ts app/api/audit/basic/report/route.ts app/api/audit/basic/report/restore/route.ts --max-warnings=0
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_targeted_eslint_failed' }
+            npm run build:webpack
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_webpack_failed' }
+          } finally { Pop-Location }
+
+      - name: Execute account-bound Audit customer lifecycle V5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function ShaBytes([byte[]]$Bytes) { return ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($Bytes))).Replace('-','').ToLowerInvariant() }
+          function ShaText([string]$Text) { return ShaBytes([Text.Encoding]::UTF8.GetBytes($Text)) }
+          function PostJson([string]$Uri, [hashtable]$Headers, [object]$Body) {
+            $Json = $Body | ConvertTo-Json -Depth 30 -Compress
+            $Response = Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 30
+            $Parsed = $null; try { $Parsed = $Response.Content | ConvertFrom-Json -Depth 40 } catch {}
+            return [pscustomobject]@{ Status=[int]$Response.StatusCode; Body=$Parsed; Raw=[string]$Response.Content }
+          }
+
+          $Separator = if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' }
+          $TokenResponse = Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL + $Separator + 'audience=' + [Uri]::EscapeDataString($env:AUDIT_OIDC_AUDIENCE)) -Headers @{ Authorization='Bearer ' + $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -TimeoutSec 20
+          $Oidc = [string]$TokenResponse.value
+          if ($Oidc.Split('.').Count -ne 3) { throw 'audit_candidate_oidc_missing' }
+          Write-Host "::add-mask::$Oidc"
+          $OidcUri = $env:NEXT_PUBLIC_SUPABASE_URL + '/functions/v1/r7-audit-basic-app-candidate-oidc'
+          $OidcHeaders = @{ Authorization='Bearer ' + $Oidc; Accept='application/json' }
+
+          $Provision = PostJson $OidcUri $OidcHeaders @{ action='provision' }
+          if ($Provision.Status -ne 200 -or $Provision.Body.ok -ne $true) { throw ('provision_failed:' + $Provision.Raw.Substring(0,[Math]::Min(500,$Provision.Raw.Length))) }
+          $A = $Provision.Body.a; $B = $Provision.Body.b
+          $env:VELMERE_AUDIT_SERVER_CAPABILITY = [string]$Provision.Body.auditServerCapability
+          Write-Host "::add-mask::$env:VELMERE_AUDIT_SERVER_CAPABILITY"
+
+          $StdOut = Join-Path $env:RUNNER_TEMP 'audit-app-v5-next.stdout.log'
+          $StdErr = Join-Path $env:RUNNER_TEMP 'audit-app-v5-next.stderr.log'
+          $Next = Start-Process -FilePath 'node' -ArgumentList @('node_modules/next/dist/bin/next','dev','--hostname','localhost','--port','3112') -WorkingDirectory (Join-Path $PWD 'r7-work') -PassThru -RedirectStandardOutput $StdOut -RedirectStandardError $StdErr
+          try {
+            $Ready=$false
+            for($i=0;$i -lt 60;$i++){ Start-Sleep -Seconds 2; try{$Probe=Invoke-WebRequest -Uri 'http://localhost:3112/' -SkipHttpErrorCheck -TimeoutSec 5;if([int]$Probe.StatusCode -ge 200){$Ready=$true;break}}catch{} }
+            if(-not $Ready){throw 'next_dev_not_ready'}
+
+            $Local='http://localhost:3112'
+            $AHeaders=@{Authorization='Bearer '+[string]$A.accessToken;Accept='application/json'}
+            $BHeaders=@{Authorization='Bearer '+[string]$B.accessToken;Accept='application/json'}
+            $DirectAHeaders=@{Authorization='Bearer '+[string]$A.accessToken;'x-velmere-audit-server-capability'=$env:VELMERE_AUDIT_SERVER_CAPABILITY;Accept='application/json'}
+            $RequestId='audit-app-v5-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
+            $Target='0x6666666666666666666666666666666666666666'
+            $TargetHash='sha256:'+(ShaText('velmere-audit-contract-target-v1:56:'+$Target.ToLowerInvariant()))
+            $CaseInput=@{
+              caseId='audit-app-v5-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
+              requestId=$RequestId
+              targetKind='contract'
+              targetPrivate=$Target.ToLowerInvariant()
+              targetHash=$TargetHash
+              targetChainId='56'
+              targetChainName='BSC'
+              displayLabel='Audit Basic app-route V5 exact-current-source candidate'
+              tier='basic'
+              locale='en'
+              status='queued_basic_prescreen'
+              accountId=[string]$A.accountId
+              accountEmail=$null
+              entitlementRequired=$false
+              entitlementVerified=$false
+              analysisStarted=$false
+              intakeReceipt=@{schemaVersion='audit-app-v5-candidate-v1';customerFinalCredit=$false}
+              sourceCandidatesProtected=@{auditUrl=$null;docsUrl=$null;githubUrl=$null;website=$null}
+            }
+            $Create=PostJson ($Local+'/api/audit/basic/case') $AHeaders $CaseInput
+            if($Create.Status -ne 200 -or $Create.Body.ok -ne $true -or $Create.Body.data.ok -ne $true){throw ('local_case_create_failed:'+$Create.Raw.Substring(0,[Math]::Min(600,$Create.Raw.Length)))}
+            $CaseRef=[string]$Create.Body.data.caseRef
+            if($CaseRef -notmatch '^AUD-[A-F0-9]{10}$'){throw 'created_case_ref_invalid'}
+
+            $OwnerCase=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/case?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$OwnerCase.StatusCode -ne 200){throw 'local_owner_case_read_failed'}
+            $CrossCase=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/case?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $BHeaders -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$CrossCase.StatusCode -ne 404){throw 'local_cross_account_case_not_denied'}
+
+            $Claim=PostJson $OidcUri $OidcHeaders @{action='claim';caseRef=$CaseRef}
+            if($Claim.Status -ne 200 -or $Claim.Body.claim.ok -ne $true){throw ('claim_failed:'+$Claim.Raw.Substring(0,[Math]::Min(600,$Claim.Raw.Length)))}
+
+            $CreatedAt=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+            $Pdf=[Text.Encoding]::UTF8.GetBytes('%PDF-1.4'+"`n"+('D'*1800)+"`n%%EOF`n")
+            $PdfDigest='sha256:'+(ShaBytes $Pdf)
+            $AccountHash=ShaText('velmere-account-binding-v1:'+[string]$A.accountId)
+            $ReportId='audit-app-v5-report-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT
+            $ReportVersion='sha256:'+(ShaText('rv:'+$CaseRef))
+            $SnapshotDigest='sha256:'+(ShaText('snap:'+$CaseRef))
+            $SourceRoot='sha256:'+(ShaText('src:'+$CaseRef))
+            $Snapshot=@{
+              requestId=$RequestId;tier='basic';digest=$SnapshotDigest;sourceReceiptRoot=$SourceRoot;generatedAt=$CreatedAt
+              renderContract=@{id='pass4808-deterministic-latin-extended-pagination-v1';pdfDigest=$PdfDigest;pdfByteLength=$Pdf.Length}
+              auditExecutionRelease=@{expectedTier='basic';caseRef=$CaseRef;decision='ALLOW_COMPLETE';completionAllowed=$true;persistAllowed=$true;packetDigest='sha256:'+(ShaText('packet:'+$CaseRef));currentDeploymentReceiptDigest='sha256:'+(ShaText('deploy:'+$CaseRef));matchedInputDigest='sha256:'+(ShaText('input:'+$CaseRef));releaseBindingDigest='sha256:'+(ShaText('release:'+$CaseRef))}
+              customerEligibility=@{commercialUseReady=$true}
+            }
+            $RecordMaterial=@('velmere.audit-basic-exact-immutable-pdf-artifact.v1',$ReportId,$CaseRef,$RequestId,$AccountHash,$TargetHash,$ReportVersion,$SnapshotDigest,$SourceRoot,$PdfDigest,[string]$Pdf.Length,'pass4808-deterministic-latin-extended-pagination-v1',$CreatedAt)-join "`n"
+            $RecordDigest='sha256:'+(ShaText $RecordMaterial)
+            $Payload=@{caseRef=$CaseRef;workerPrincipal=[string]$Claim.Body.workerPrincipal;leaseToken=[string]$Claim.Body.leaseToken;reasonCode='worker_result';reportId=$ReportId;requestId=$RequestId;accountIdHash=$AccountHash;targetHash=$TargetHash;reportVersionHash=$ReportVersion;snapshotDigest=$SnapshotDigest;sourceReceiptRoot=$SourceRoot;pdfDigest=$PdfDigest;pdfByteLength=$Pdf.Length;renderContractId='pass4808-deterministic-latin-extended-pagination-v1';recordDigest=$RecordDigest;pdfBase64=[Convert]::ToBase64String($Pdf);snapshotJson=$Snapshot;createdAt=$CreatedAt}
+            $Done=PostJson $env:VELMERE_AUDIT_CUSTOMER_BRIDGE_URL $DirectAHeaders @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='complete_pdf';payload=$Payload}
+            if($Done.Status -ne 200 -or $Done.Body.data.ok -ne $true){throw ('direct_completion_failed:'+$Done.Raw.Substring(0,[Math]::Min(600,$Done.Raw.Length)))}
+
+            $PdfPath=Join-Path $env:RUNNER_TEMP 'audit-app-v5.pdf'
+            $OwnerPdf=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -OutFile $PdfPath -PassThru -SkipHttpErrorCheck -TimeoutSec 30
+            if([int]$OwnerPdf.StatusCode -ne 200){throw 'local_owner_pdf_failed'}
+            $Observed=[IO.File]::ReadAllBytes($PdfPath)
+            if((ShaBytes $Observed) -ne $PdfDigest.Substring(7) -or $Observed.Length -ne $Pdf.Length){throw 'local_owner_pdf_identity'}
+            $CrossPdf=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $BHeaders -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$CrossPdf.StatusCode -ne 404){throw 'local_cross_account_pdf_not_denied'}
+
+            $Delete=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -Method Delete -SkipHttpErrorCheck -TimeoutSec 30
+            $DeleteJson=$Delete.Content|ConvertFrom-Json -Depth 20
+            if([int]$Delete.StatusCode -ne 200 -or $DeleteJson.ok -ne $true){throw ('local_backup_erase_failed:'+[string]$Delete.Content)}
+            $BackupId=[string]$DeleteJson.backupId
+            if($BackupId -notmatch '^abk_[a-f0-9]{64}$'){throw 'backup_id_invalid'}
+            $AfterErase=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$AfterErase.StatusCode -ne 404){throw 'local_owner_pdf_visible_after_erase'}
+
+            $Restore=PostJson ($Local+'/api/audit/basic/report/restore?caseRef='+[Uri]::EscapeDataString($CaseRef)) $AHeaders @{backupId=$BackupId}
+            if($Restore.Status -ne 200 -or $Restore.Body.ok -ne $true){throw ('local_restore_failed:'+$Restore.Raw.Substring(0,[Math]::Min(600,$Restore.Raw.Length)))}
+            $RestoredPath=Join-Path $env:RUNNER_TEMP 'audit-app-v5-restored.pdf'
+            $RestoredPdf=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -OutFile $RestoredPath -PassThru -SkipHttpErrorCheck -TimeoutSec 30
+            $ObservedRestored=[IO.File]::ReadAllBytes($RestoredPath)
+            if([int]$RestoredPdf.StatusCode -ne 200 -or (ShaBytes $ObservedRestored) -ne $PdfDigest.Substring(7) -or $ObservedRestored.Length -ne $Pdf.Length){throw 'local_restored_pdf_identity'}
+            $CrossRestored=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $BHeaders -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$CrossRestored.StatusCode -ne 404){throw 'local_post_restore_cross_account_not_denied'}
+
+            $Receipt=[ordered]@{
+              schemaVersion='velmere.r7.audit-basic-app-route-v5-e2e.v1';status='PASS_CANDIDATE';candidateOnly=$true;customerFinalCredit=$false
+              github=@{runId=$env:GITHUB_RUN_ID;runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;headSha=$env:GITHUB_SHA}
+              exactCurrentSource=@{fullSourceAggregateSha256=$env:R7_RISK_FULL_SOURCE_AGGREGATE_SHA256;executionSliceAggregateSha256=$env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256;executionSliceManifestSha256=$env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256;executionBundleSha256=$env:R7_RISK_BUNDLE_SHA256}
+              typecheck='PASS';targetedEslint='PASS';webpack='PASS';customerProvision='PASS_OWNER_OIDC';caseRefSource='DATABASE_RETURNED';localCaseCreate='PASS';ownerCaseRead='PASS';crossAccountCase='PASS_DENIED';workerClaim='PASS';exactPdfCompletion='PASS';localPdf='PASS_BYTE_IDENTICAL';crossAccountPdf='PASS_DENIED';backupErase='PASS';postEraseOwner='PASS_404';restore='PASS';postRestorePdf='PASS_BYTE_IDENTICAL';postRestoreCrossAccount='PASS_DENIED';serviceRoleInApplication=$false;pdfDigest=$PdfDigest;pdfByteLength=$Pdf.Length;recordDigest=$RecordDigest
+              truthBoundary='This proves the exact-current-source Audit Basic customer app route, authenticated account isolation and exact PDF backup/erase/restore lifecycle for the V5 candidate. It does not replace real audit findings, qualified-human review or guarded Customer FINAL adjudication.'
+            }
+            $Receipt|ConvertTo-Json -Depth 30|Set-Content 'R7_AUDIT_BASIC_APP_ROUTE_V5_E2E.json' -Encoding utf8
+            Write-Host ($Receipt|ConvertTo-Json -Depth 30)
+          } finally {
+            if($Next -and -not $Next.HasExited){Stop-Process -Id $Next.Id -Force -ErrorAction SilentlyContinue}
+            if($A -and $B){try{$null=PostJson $OidcUri $OidcHeaders @{action='cleanup';userIds=@([string]$A.userId,[string]$B.userId)}}catch{}}
+            Copy-Item $StdOut 'R7_AUDIT_APP_ROUTE_V5_NEXT_STDOUT.log' -ErrorAction SilentlyContinue
+            Copy-Item $StdErr 'R7_AUDIT_APP_ROUTE_V5_NEXT_STDERR.log' -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload Audit V5 app-route evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-app-route-v5-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            R7_AUDIT_APP_ROUTE_V5_PATCH.json
+            R7_AUDIT_BASIC_APP_ROUTE_V5_E2E.json
+            R7_AUDIT_APP_ROUTE_V5_NEXT_STDOUT.log
+            R7_AUDIT_APP_ROUTE_V5_NEXT_STDERR.log
+          if-no-files-found: warn
+          retention-days: 30
