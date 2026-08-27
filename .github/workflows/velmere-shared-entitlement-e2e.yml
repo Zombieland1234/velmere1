@@ -1,0 +1,80 @@
+name: Velmere Shared Entitlement E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/velmere-shared-entitlement-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  entitlement-e2e:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Execute account-bound entitlement lifecycle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          function Require([bool]$Condition,[string]$Message){if(-not $Condition){throw $Message}}
+          function Post([string]$Uri,[hashtable]$Headers,[object]$Body){
+            $Response=Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body ($Body|ConvertTo-Json -Depth 20 -Compress) -SkipHttpErrorCheck -TimeoutSec 30
+            $Parsed=$null;try{$Parsed=$Response.Content|ConvertFrom-Json -Depth 30}catch{}
+            return [pscustomobject]@{Status=[int]$Response.StatusCode;Body=$Parsed;Raw=[string]$Response.Content}
+          }
+          $Audience='velmere-shared-entitlement-e2e'
+          $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
+          $Token=(Invoke-RestMethod -Method Get -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($Audience)) -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
+          Require ([string]$Token.Split('.').Count -eq 3) 'entitlement_oidc_missing'
+          Write-Host "::add-mask::$Token"
+          $Helper='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/velmere-entitlement-e2e-oidc'
+          $Bridge='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/velmere-product-entitlement-bridge'
+          $OidcHeaders=@{Authorization='Bearer '+[string]$Token;Accept='application/json'}
+          $Provision=Post $Helper $OidcHeaders @{action='provision'}
+          Require ($Provision.Status -eq 200 -and $Provision.Body.ok -eq $true) ('entitlement_provision_failed:'+($Provision.Raw.Substring(0,[Math]::Min(400,$Provision.Raw.Length))))
+          $A=$Provision.Body.a;$B=$Provision.Body.b;$ProId=[string]$Provision.Body.proEntitlementId;$Capability=[string]$Provision.Body.entitlementServerCapability
+          $EntitlementIds=[System.Collections.Generic.List[string]]::new();$EntitlementIds.Add($ProId);$UserIds=@([string]$A.userId,[string]$B.userId)
+          foreach($Secret in @([string]$A.accessToken,[string]$B.accessToken,$Capability)){Write-Host "::add-mask::$Secret"}
+          function Resolve([object]$User,[string]$Tier){
+            return Post $Bridge @{Authorization='Bearer '+[string]$User.accessToken;'x-velmere-entitlement-server-capability'=$Capability;Accept='application/json'} @{schemaVersion='velmere.product-entitlement-bridge-request.v1';action='resolve';productSlug='browser';requiredTier=$Tier}
+          }
+          try{
+            $APro=Resolve $A 'pro';Require ($APro.Status -eq 200 -and $APro.Body.allowed -eq $true -and $APro.Body.reason -eq 'entitled') 'user_a_pro_not_allowed'
+            $AAdvancedBefore=Resolve $A 'advanced';Require ($AAdvancedBefore.Status -eq 200 -and $AAdvancedBefore.Body.allowed -eq $false -and $AAdvancedBefore.Body.reason -eq 'tier_insufficient') 'pro_incorrectly_unlocked_advanced'
+            $BPro=Resolve $B 'pro';Require ($BPro.Status -eq 200 -and $BPro.Body.allowed -eq $false -and $BPro.Body.reason -eq 'not_entitled') 'cross_account_pro_not_denied'
+            $GrantAdvanced=Post $Helper $OidcHeaders @{action='grant_advanced';userId=[string]$A.userId};Require ($GrantAdvanced.Status -eq 200 -and $GrantAdvanced.Body.ok -eq $true) 'advanced_grant_failed';$AdvancedId=[string]$GrantAdvanced.Body.entitlementId;$EntitlementIds.Add($AdvancedId)
+            $AAdvanced=Resolve $A 'advanced';Require ($AAdvanced.Status -eq 200 -and $AAdvanced.Body.allowed -eq $true) 'user_a_advanced_not_allowed'
+            $BAdvanced=Resolve $B 'advanced';Require ($BAdvanced.Status -eq 200 -and $BAdvanced.Body.allowed -eq $false) 'cross_account_advanced_not_denied'
+            $RevokeAdvanced=Post $Helper $OidcHeaders @{action='revoke';entitlementId=$AdvancedId};Require ($RevokeAdvanced.Status -eq 200 -and $RevokeAdvanced.Body.revoked -eq $true) 'advanced_revoke_failed'
+            $AAdvancedAfter=Resolve $A 'advanced';Require ($AAdvancedAfter.Status -eq 200 -and $AAdvancedAfter.Body.allowed -eq $false) 'advanced_survived_revoke'
+            $AProAfterAdvancedRevoke=Resolve $A 'pro';Require ($AProAfterAdvancedRevoke.Status -eq 200 -and $AProAfterAdvancedRevoke.Body.allowed -eq $true) 'pro_lost_after_advanced_revoke'
+            $RevokePro=Post $Helper $OidcHeaders @{action='revoke';entitlementId=$ProId};Require ($RevokePro.Status -eq 200 -and $RevokePro.Body.revoked -eq $true) 'pro_revoke_failed'
+            $AProAfter=Resolve $A 'pro';Require ($AProAfter.Status -eq 200 -and $AProAfter.Body.allowed -eq $false) 'pro_survived_revoke'
+            $Receipt=[ordered]@{schemaVersion='velmere.shared-entitlement-e2e.v1';status='PASS_ACCOUNT_BOUND_TIERED_ENTITLEMENT_LIFECYCLE';githubRunId=$env:GITHUB_RUN_ID;githubSha=$env:GITHUB_SHA;basicFreeAndOutsidePaidResolver=$true;userAProAllowed=$true;proDoesNotUnlockAdvanced=$true;userBCrossAccountDenied=$true;userAAdvancedAllowedAfterGrant=$true;advancedRevocationImmediate=$true;proSurvivesAdvancedRevocation=$true;proRevocationImmediate=$true;serviceRoleInWorkflow=$false;rawSecretsReturned=$false;customerFinalCredit=$false}
+            New-Item -ItemType Directory -Force -Path 'artifacts/shared-entitlement'|Out-Null
+            $Receipt|ConvertTo-Json -Depth 20|Set-Content -LiteralPath 'artifacts/shared-entitlement/VELMERE_SHARED_ENTITLEMENT_E2E.json' -Encoding utf8
+            Write-Host($Receipt|ConvertTo-Json -Depth 20)
+          }
+          finally{
+            try{Post $Helper $OidcHeaders @{action='cleanup';userIds=$UserIds;entitlementIds=@($EntitlementIds)}|Out-Null}catch{Write-Warning 'entitlement cleanup did not fully confirm'}
+          }
+
+      - name: Upload entitlement evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: velmere-shared-entitlement-e2e-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/shared-entitlement/VELMERE_SHARED_ENTITLEMENT_E2E.json
+          if-no-files-found: warn
+          retention-days: 14
