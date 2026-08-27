@@ -1,0 +1,29 @@
+name: R7 Audit Basic Real Engine Launcher
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-real-engine-launcher.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch-real-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Dispatch exact A01-A05 real-engine workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run r7-audit-basic-real-engine-a01-a05.yml \
+            --repo Zombieland1234/velmere1 \
+            --ref velmere-r7-successor-delta-20260825
+          echo 'Exact Audit Basic A01-A05 workflow dispatch accepted.'
