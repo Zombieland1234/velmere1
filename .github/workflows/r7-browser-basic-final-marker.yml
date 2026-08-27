@@ -1,0 +1,57 @@
+name: R7 Browser Basic FINAL Marker
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-browser-basic-final-marker.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  write-final-marker-only-if-ledger-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+
+      - name: Read fail-closed FINAL ledger
+        id: ledger
+        shell: pwsh
+        env:
+          AUDIENCE: 'velmere-r7-final-ledger-reader'
+          SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
+        run: |
+          $ErrorActionPreference='Stop'
+          $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
+          $T=Invoke-RestMethod -Uri($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:AUDIENCE))-Headers@{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN}-TimeoutSec20
+          $R=Invoke-WebRequest -Uri($env:SUPABASE_URL+'/functions/v1/r7-final-ledger-oidc-reader')-Method Post-Headers@{Authorization='Bearer '+[string]$T.value;Accept='application/json'}-ContentType'application/json'-Body'{}'-SkipHttpErrorCheck-TimeoutSec30
+          Write-Host([string]$R.Content)
+          if([int]$R.StatusCode-ne200){throw'ledger_read_failed'}
+          $J=$R.Content|ConvertFrom-Json -Depth20
+          if($J.ok-ne$true-or$null-eq$J.browserBasic-or$J.browserBasic.final_status-ne'FINAL'){throw'browser_basic_still_withheld'}
+          if($J.browserBasic.full_source_aggregate_sha256-ne'd3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'-or$J.browserBasic.execution_slice_aggregate_sha256-ne'504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'){throw'browser_final_source_identity_mismatch'}
+          New-Item -ItemType Directory -Force -Path 'r7-checkpoints'|Out-Null
+          $Marker=[ordered]@{schemaVersion='velmere.r7.browser-basic-final-marker.v1';status='FINAL';productOrdinal=4;product='browser-basic';customerFinalCount=[int]$J.customerFinalCount;fullSourceAggregateSha256=[string]$J.browserBasic.full_source_aggregate_sha256;executionSliceAggregateSha256=[string]$J.browserBasic.execution_slice_aggregate_sha256;finalizedAt=[string]$J.browserBasic.finalized_at;ledgerVerifiedByGitHubOidc=$true;serviceRoleInWorkflow=$false}
+          $Marker|ConvertTo-Json -Depth10|Set-Content 'r7-checkpoints/BROWSER_BASIC_FINAL.json' -Encoding utf8
+
+      - name: Commit FINAL marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'velmere-r7-evidence-bot'
+          git config user.email 'velmere-r7-evidence-bot@users.noreply.github.com'
+          git add r7-checkpoints/BROWSER_BASIC_FINAL.json
+          if git diff --cached --quiet; then
+            echo 'FINAL marker already identical.'
+            exit 0
+          fi
+          git commit -m 'R7 Browser Basic: record guarded FINAL marker'
+          git push origin HEAD:velmere-r7-successor-delta-20260825
