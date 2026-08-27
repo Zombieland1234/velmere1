@@ -1,0 +1,113 @@
+name: R7 Whale Watch Public Customer Route Candidate
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-whale-watch-public-route-candidate.yml'
+      - 'diagnostic-current/patch-whale-watch-public-route-v1.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  whale-watch-public-route-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_FULL_SOURCE_MANIFEST_SHA256: 'af63491cf2922c6391d25fcf25a7d8efb6e76d128f4f9ca1dcf07b36471b0a2f'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+
+    steps:
+      - name: Checkout exact control surface
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current product source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Apply fail-closed Whale customer route candidate and typecheck
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location r7-work
+          try {
+            node ../diagnostic-current/patch-whale-watch-public-route-v1.mjs | Tee-Object -FilePath ../R7_WHALE_WATCH_PUBLIC_ROUTE_PATCH.json
+            if ($LASTEXITCODE -ne 0) { throw 'whale_route_patch_failed' }
+            npm run typecheck
+            if ($LASTEXITCODE -ne 0) { throw 'whale_route_typecheck_failed' }
+            npx eslint app/api/whale-watch/route.ts --max-warnings=0
+            if ($LASTEXITCODE -ne 0) { throw 'whale_route_eslint_failed' }
+          } finally { Pop-Location }
+
+      - name: Execute real Next Whale Watch route in PL EN DE and adverse cases
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stdout=Join-Path $env:RUNNER_TEMP 'whale-route.stdout.log'
+          $stderr=Join-Path $env:RUNNER_TEMP 'whale-route.stderr.log'
+          $next=Start-Process -FilePath 'node' -ArgumentList @('node_modules/next/dist/bin/next','dev','--hostname','localhost','--port','3117') -WorkingDirectory (Join-Path $PWD 'r7-work') -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $ready=$false
+            for($i=0;$i -lt 60;$i++){Start-Sleep -Seconds 2;try{$p=Invoke-WebRequest -Uri 'http://localhost:3117/' -SkipHttpErrorCheck -TimeoutSec 5;if([int]$p.StatusCode -ge 200){$ready=$true;break}}catch{}}
+            if(-not $ready){throw 'whale_next_not_ready'}
+            $rows=@()
+            foreach($locale in @('pl','en','de')){
+              $r=Invoke-WebRequest -Uri ('http://localhost:3117/api/whale-watch?assetKey=USDT&locale='+$locale) -SkipHttpErrorCheck -TimeoutSec 30
+              if([int]$r.StatusCode -ne 424){throw "whale_${locale}_status_$($r.StatusCode)"}
+              $b=$r.Content|ConvertFrom-Json -Depth 30
+              if($b.ok -ne $false -or $b.productId -ne 'whale-watch' -or $b.availability -ne 'WITHHELD' -or $b.liveClaimed -ne $false -or $b.numbersPublished -ne $false -or $b.providerTopologyDisclosed -ne $false){throw "whale_${locale}_truth_invalid"}
+              if($b.customerTruth.transferIsTradeClaimAllowed -ne $false -or $b.customerTruth.buyOrSellIntentClaimAllowed -ne $false -or $b.customerTruth.unverifiedDisplayLabel -ne 'UNCLASSIFIED'){throw "whale_${locale}_safety_invalid"}
+              $lower=$r.Content.ToLowerInvariant()
+              foreach($forbidden in @('etherscan','alchemy','holder_count=0','transfer_count=0','net_exchange_flow_usd=0')){if($lower.Contains($forbidden)){throw "whale_${locale}_leak_$forbidden"}}
+              if([string]::IsNullOrWhiteSpace([string]$b.customerMessage)){throw "whale_${locale}_message_missing"}
+              $rows += @{locale=$locale;status=[int]$r.StatusCode;availability=$b.availability;truthState=$b.customerTruth.truthState}
+            }
+            $badLocale=Invoke-WebRequest -Uri 'http://localhost:3117/api/whale-watch?assetKey=USDT&locale=xx' -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$badLocale.StatusCode -ne 400){throw 'whale_bad_locale_not_denied'}
+            $badAsset=Invoke-WebRequest -Uri 'http://localhost:3117/api/whale-watch?assetKey=%20%20&locale=en' -SkipHttpErrorCheck -TimeoutSec 20
+            if([int]$badAsset.StatusCode -ne 400){throw 'whale_bad_asset_not_denied'}
+            $receipt=[ordered]@{
+              schemaVersion='velmere.r7.whale-watch-public-route-candidate.v1';status='PASS_WHALE_WATCH_PUBLIC_SAFE_ROUTE_CANDIDATE';github=@{runId=$env:GITHUB_RUN_ID;runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;headSha=$env:GITHUB_SHA};exactCurrentSourceBeforeCandidatePatch=@{fullSourceAggregateSha256=$env:R7_RISK_FULL_SOURCE_AGGREGATE_SHA256;fullSourceManifestSha256=$env:R7_RISK_FULL_SOURCE_MANIFEST_SHA256;executionSliceAggregateSha256=$env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256;executionSliceManifestSha256=$env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256};actualHttpRoutes=$rows;locales=@('pl','en','de');customerSafeUnavailable=$true;numbersPublished=$false;providerTopologyDisclosed=$false;badLocaleDenied=$true;badAssetDenied=$true;candidateOnly=$true;customerFinalCredit=$false;paidValueCredit=$false;truthBoundary='This proves a customer-visible Whale Watch route can fail closed in PL/EN/DE without publishing zero-as-data, provider topology or unauthorized numeric evidence. It does not prove live Whale data rights, continuous monitoring, real customer deployment or Customer FINAL.'
+            }
+            $receipt|ConvertTo-Json -Depth 30|Set-Content 'R7_WHALE_WATCH_PUBLIC_ROUTE_CANDIDATE.json' -Encoding utf8
+            Write-Host ($receipt|ConvertTo-Json -Depth 30)
+          } finally {
+            if($next -and -not $next.HasExited){Stop-Process -Id $next.Id -Force -ErrorAction SilentlyContinue}
+            Copy-Item $stdout 'R7_WHALE_WATCH_PUBLIC_ROUTE_STDOUT.log' -ErrorAction SilentlyContinue
+            Copy-Item $stderr 'R7_WHALE_WATCH_PUBLIC_ROUTE_STDERR.log' -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload Whale Watch public route candidate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-whale-watch-public-route-candidate-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            R7_WHALE_WATCH_PUBLIC_ROUTE_PATCH.json
+            R7_WHALE_WATCH_PUBLIC_ROUTE_CANDIDATE.json
+            R7_WHALE_WATCH_PUBLIC_ROUTE_STDOUT.log
+            R7_WHALE_WATCH_PUBLIC_ROUTE_STDERR.log
+          if-no-files-found: warn
+          retention-days: 30
