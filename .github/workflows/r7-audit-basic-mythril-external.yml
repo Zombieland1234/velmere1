@@ -1,0 +1,113 @@
+name: R7 Audit Basic External Mythril Family
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-mythril-external.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mythril-exact-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Fetch exact current BSC runtime bound by Sourcify v2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/r7/audit-basic/mythril/input
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const chainId='56'; const address='0xca11bde05977b3631167028862be2a173976ca11';
+          const expectedRuntimeSha='2756d7c52baee85cacb504f6ee1df7aad6809ac8d94a4a111d76991f90d36d6e';
+          const url=`https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=all`;
+          const res=await fetch(url,{headers:{accept:'application/json','user-agent':'velmere-r7-mythril'},signal:AbortSignal.timeout(25000)});
+          if(!res.ok) throw new Error(`sourcify_fetch_failed:${res.status}`);
+          const c=await res.json(); if(c.match!=='exact_match') throw new Error(`sourcify_not_exact_match:${String(c.match)}`);
+          const onchain=String(c.runtimeBytecode?.onchainBytecode??'').toLowerCase();
+          if(!/^0x[0-9a-f]{200,}$/.test(onchain)) throw new Error('sourcify_runtime_missing');
+          const rpc=await fetch('https://bsc-dataseed.binance.org/',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getCode',params:[address,'latest']}),signal:AbortSignal.timeout(20000)});
+          if(!rpc.ok) throw new Error(`bsc_rpc_failed:${rpc.status}`); const live=String((await rpc.json()).result??'').toLowerCase();
+          if(live!==onchain) throw new Error('current_bsc_runtime_differs_from_sourcify_onchain');
+          const bytes=Buffer.from(onchain.slice(2),'hex'); const sha=createHash('sha256').update(bytes).digest('hex');
+          if(sha!==expectedRuntimeSha) throw new Error(`runtime_sha_mismatch:${sha}`);
+          fs.writeFileSync('artifacts/r7/audit-basic/mythril/input/runtime.hex',onchain.slice(2)+'\n');
+          fs.writeFileSync('artifacts/r7/audit-basic/mythril/input/RUNTIME_IDENTITY.json',JSON.stringify({chainId,address,sourcifyMatch:c.match,runtimeMatch:c.runtimeMatch??null,runtimeSha256:sha,runtimeByteLength:bytes.length,currentBscCodeEqual:true},null,2)+'\n');
+          NODE
+
+      - name: Pull pinned Mythril image and record version
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull mythril/myth:0.24.8
+          docker image inspect mythril/myth:0.24.8 --format '{{json .RepoDigests}}' | tee artifacts/r7/audit-basic/mythril/MYTHRIL_IMAGE_DIGESTS.json
+          set +e
+          docker run --rm mythril/myth:0.24.8 version -o json > artifacts/r7/audit-basic/mythril/MYTHRIL_VERSION.json 2> artifacts/r7/audit-basic/mythril/MYTHRIL_VERSION_STDERR.log
+          CODE=$?
+          set -e
+          if [ "$CODE" -ne 0 ]; then docker run --rm mythril/myth:0.24.8 --help > artifacts/r7/audit-basic/mythril/MYTHRIL_HELP.txt; echo '{"version_str":"0.24.8","versionCommandFallback":true}' > artifacts/r7/audit-basic/mythril/MYTHRIL_VERSION.json; fi
+
+      - name: Execute independent Mythril symbolic analysis on runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          CODE_HEX="$(tr -d '\r\n ' < artifacts/r7/audit-basic/mythril/input/runtime.hex)"
+          if ! [[ "$CODE_HEX" =~ ^[0-9a-fA-F]{200,}$ ]]; then echo 'runtime hex invalid' >&2; exit 2; fi
+          set +e
+          timeout 330 docker run --rm mythril/myth:0.24.8 analyze -c "$CODE_HEX" --bin-runtime -o json --execution-timeout 240 > artifacts/r7/audit-basic/mythril/MYTHRIL_RAW.json 2> artifacts/r7/audit-basic/mythril/MYTHRIL_STDERR.log
+          EXIT=$?
+          set -e
+          echo "$EXIT" > artifacts/r7/audit-basic/mythril/MYTHRIL_EXIT_CODE.txt
+          if [ "$EXIT" -eq 124 ]; then echo 'Mythril timed out' >&2; exit 124; fi
+          if [ ! -s artifacts/r7/audit-basic/mythril/MYTHRIL_RAW.json ]; then echo "Mythril JSON missing; exit=$EXIT" >&2; cat artifacts/r7/audit-basic/mythril/MYTHRIL_STDERR.log >&2 || true; exit 1; fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const bytes=fs.readFileSync('artifacts/r7/audit-basic/mythril/MYTHRIL_RAW.json');
+          let raw; try{raw=JSON.parse(bytes.toString('utf8'));}catch(e){throw new Error(`mythril_invalid_json:${bytes.toString('utf8').slice(0,300)}`);}
+          if(raw.error) throw new Error(`mythril_analysis_error:${String(raw.error).slice(0,500)}`);
+          const issues=Array.isArray(raw.issues)?raw.issues:[];
+          const bySwc={},bySeverity={};
+          for(const issue of issues){const swc=String(issue['swc-id']??issue.swcID??issue.swc_id??'unknown');const severity=String(issue.severity??'unknown');bySwc[swc]=(bySwc[swc]??0)+1;bySeverity[severity]=(bySeverity[severity]??0)+1;}
+          const unchecked=issues.filter((i)=>{
+            const swc=String(i['swc-id']??i.swcID??i.swc_id??''); const title=String(i.title??'').toLowerCase(); const desc=String(i.description??'').toLowerCase();
+            return swc==='104'||title.includes('unchecked')||desc.includes('unchecked call')||desc.includes('return value');
+          }).map((i)=>({swcId:i['swc-id']??i.swcID??i.swc_id??null,title:i.title??null,severity:i.severity??null,address:i.address??null,description:String(i.description??'').slice(0,1200)}));
+          const identity=JSON.parse(fs.readFileSync('artifacts/r7/audit-basic/mythril/input/RUNTIME_IDENTITY.json','utf8'));
+          const version=JSON.parse(fs.readFileSync('artifacts/r7/audit-basic/mythril/MYTHRIL_VERSION.json','utf8'));
+          const digests=fs.readFileSync('artifacts/r7/audit-basic/mythril/MYTHRIL_IMAGE_DIGESTS.json','utf8').trim();
+          const exitCode=Number(fs.readFileSync('artifacts/r7/audit-basic/mythril/MYTHRIL_EXIT_CODE.txt','utf8').trim());
+          if(![0,1].includes(exitCode)) throw new Error(`mythril_unexpected_exit:${exitCode}`);
+          const receipt={
+            schemaVersion:'velmere.r7.audit-basic-external-analyzer.v1',status:'PASS_EXTERNAL_ANALYZER_EXECUTED',family:'mythril',tool:'Mythril',toolVersion:version.version_str??'0.24.8',pinnedDockerTag:'mythril/myth:0.24.8',imageRepoDigests:digests,
+            exactRuntimeSha256:identity.runtimeSha256,runtimeByteLength:identity.runtimeByteLength,chainId:identity.chainId,contractAddress:identity.address,sourcifyMatch:identity.sourcifyMatch,currentBscCodeEqual:true,
+            processExitCode:exitCode,issueCount:issues.length,bySwc,bySeverity,uncheckedCallReturnCorrelation:unchecked,uncheckedCallReturnCorrelationCount:unchecked.length,
+            rawOutputSha256:createHash('sha256').update(bytes).digest('hex'),independentExternalFamily:true,toolAgeLimitation:'Mythril 0.24.8 is the latest tagged upstream release observed for this execution but its release lineage is older than the current Velmere source; results require correlation and manual adjudication.',
+            paidProviderRequired:false,customerFinalCredit:false,
+            truthBoundary:'Mythril executed independently by symbolic analysis on the exact current BSC runtime bytecode. Issues are external evidence, not automatic customer vulnerability claims; timeout/tool limitations and cross-family disagreement remain explicit.'
+          };
+          fs.writeFileSync('artifacts/r7/audit-basic/mythril/R7_AUDIT_BASIC_MYTHRIL_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({...receipt,uncheckedCallReturnCorrelation:unchecked},null,2));
+          NODE
+
+      - name: Upload Mythril external-family evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-mythril-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/r7/audit-basic/mythril/R7_AUDIT_BASIC_MYTHRIL_RECEIPT.json
+            artifacts/r7/audit-basic/mythril/MYTHRIL_RAW.json
+            artifacts/r7/audit-basic/mythril/MYTHRIL_STDERR.log
+            artifacts/r7/audit-basic/mythril/MYTHRIL_VERSION.json
+            artifacts/r7/audit-basic/mythril/MYTHRIL_VERSION_STDERR.log
+            artifacts/r7/audit-basic/mythril/MYTHRIL_IMAGE_DIGESTS.json
+            artifacts/r7/audit-basic/mythril/MYTHRIL_EXIT_CODE.txt
+            artifacts/r7/audit-basic/mythril/input/RUNTIME_IDENTITY.json
+          if-no-files-found: error
+          retention-days: 30
