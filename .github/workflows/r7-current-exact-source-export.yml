@@ -51,7 +51,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
           if (-not (Test-Path -LiteralPath 'r7-risk-v5-clean-source' -PathType Container)) { throw 'clean_source_copy_missing' }
 
-      - name: Verify exported clean source byte identities
+      - name: Verify exact Risk v5 execution-source export
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -60,45 +60,57 @@ jobs:
           import path from 'node:path';
           import crypto from 'node:crypto';
           const root='r7-risk-v5-clean-source';
-          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const manifestPath=path.join(root,'CURRENT_CANDIDATE_CONTENT_MANIFEST.tsv');
+          const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
+          const manifestPath=path.join(root,'R7_EXECUTION_SLICE_MANIFEST.json');
           const manifestBytes=fs.readFileSync(manifestPath);
-          if(sha(manifestBytes)!==process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256) throw new Error('export_full_source_manifest_sha_mismatch');
-          const lines=manifestBytes.toString('utf8').trimEnd().split(/\r?\n/);
-          if(lines.shift()!=='path\tbytes\tsha256') throw new Error('export_manifest_header_invalid');
-          const rows=lines.map(line=>{const [p,b,s]=line.split('\t');return{path:p,bytes:Number(b),sha256:s};});
-          let payloadBytes=0;
-          for(const row of rows){
+          if(digest(manifestBytes)!==process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256) throw new Error('export_execution_manifest_sha_mismatch');
+          const manifest=JSON.parse(manifestBytes.toString('utf8'));
+          if(manifest.fileCount!==3506||manifest.testDenominator!==52||manifest.aggregateIdentitySha256!==process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256) throw new Error('export_execution_manifest_identity_invalid');
+          if(manifest.fullSource?.aggregateIdentitySha256!==process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256||manifest.fullSource?.manifestWithHeaderSha256!==process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256) throw new Error('export_full_source_authority_binding_invalid');
+          let body='',payloadBytes=0;
+          for(const row of manifest.files){
             const abs=path.join(root,row.path);
-            if(!fs.existsSync(abs)) throw new Error(`export_file_missing:${row.path}`);
+            if(!fs.existsSync(abs)) throw new Error(`export_execution_file_missing:${row.path}`);
             const bytes=fs.readFileSync(abs);
-            if(bytes.length!==row.bytes||sha(bytes)!==row.sha256) throw new Error(`export_file_identity:${row.path}`);
+            if(bytes.length!==row.byteLength||digest(bytes)!==row.sha256) throw new Error(`export_execution_file_identity:${row.path}`);
+            body+=`${row.sha256}\t${row.byteLength}\t${row.path}\n`;
             payloadBytes+=bytes.length;
           }
+          if(digest(Buffer.from(body))!==process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256) throw new Error('export_execution_aggregate_mismatch');
+          if(!fs.readFileSync(path.join(root,'R7_EXECUTION_SLICE_MANIFEST.tsv')).equals(Buffer.from(body))) throw new Error('export_execution_manifest_tsv_mismatch');
+          for(const p of manifest.archiveAdditionalPaths??[]){if(!fs.existsSync(path.join(root,p))) throw new Error(`export_archive_additional_missing:${p}`);}
           const forbidden=[];
-          for(const p of ['node_modules','.next','.env','.env.local','.git']) if(fs.existsSync(path.join(root,p))) forbidden.push(p);
+          for(const p of ['node_modules','.next','.env','.env.local','.git','r7-runtime/external-assets']) if(fs.existsSync(path.join(root,p))) forbidden.push(p);
           if(forbidden.length) throw new Error(`export_forbidden_runtime_paths:${forbidden.join(',')}`);
           const receipt={
-            schemaVersion:'velmere.r7.current-exact-clean-source-export.v1',
-            status:'PASS_EXACT_CLEAN_SOURCE_EXPORT_READY',
+            schemaVersion:'velmere.r7.current-exact-execution-source-export.v2',
+            status:'PASS_EXACT_CURRENT_EXECUTION_SOURCE_EXPORT_READY',
             github:{runId:process.env.GITHUB_RUN_ID,headSha:process.env.GITHUB_SHA,runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT)},
-            exactSource:{fullSourceAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,fullSourceManifestSha256:process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256,executionSliceAggregateSha256:process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256,executionSliceManifestSha256:process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256,executionBundleSha256:process.env.R7_RISK_BUNDLE_SHA256},
-            sourceFileCount:rows.length,
-            sourcePayloadByteLength:payloadBytes,
-            excludedRuntimePaths:['node_modules','.next','.env','.env.local','.git'],
+            exactSource:{
+              fullSourceAuthorityAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,
+              fullSourceAuthorityManifestSha256:process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256,
+              executionSliceAggregateSha256:process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256,
+              executionSliceManifestSha256:process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256,
+              executionBundleSha256:process.env.R7_RISK_BUNDLE_SHA256
+            },
+            executionSourceFileCount:manifest.fileCount,
+            executionSourcePayloadByteLength:payloadBytes,
+            testDenominator:manifest.testDenominator,
+            archiveAdditionalPaths:manifest.archiveAdditionalPaths??[],
+            excludedRuntimePaths:['node_modules','.next','.env','.env.local','.git','r7-runtime/external-assets'],
             customerFinalCredit:false,
             paidValueCredit:false,
-            truthBoundary:'This artifact is an exact clean source export of the current authority-bound Velmere source. Runtime dependencies, generated build output, credentials and local environment files are intentionally excluded.'
+            truthBoundary:'This ZIP contains the exact current Risk-v5 execution source slice used for the 52-case Windows authority, plus manifest-declared archive support paths. The separate 9958-entry full package manifest remains an authority binding and is not misrepresented as 9958 physically exported files. Runtime dependencies, generated build output, external licensed runtime assets, credentials and local environment files are excluded.'
           };
           fs.writeFileSync('R7_VELMERE_CURRENT_EXACT_SOURCE_EXPORT_RECEIPT.json',JSON.stringify(receipt,null,2)+'\n');
           console.log(JSON.stringify(receipt,null,2));
           '@ | node --input-type=module
-          if ($LASTEXITCODE -ne 0) { throw "clean_source_export_verification_failed:$LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "exact_execution_source_export_verification_failed:$LASTEXITCODE" }
 
-      - name: Upload exact clean Velmere source
+      - name: Upload exact current Velmere execution source
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: VELMERE_CURRENT_EXACT_CLEAN_SOURCE_2026-08-28_${{ github.sha }}
+          name: VELMERE_CURRENT_EXACT_EXECUTION_SOURCE_2026-08-28_${{ github.sha }}
           path: |
             r7-risk-v5-clean-source/**
             R7_VELMERE_CURRENT_EXACT_SOURCE_EXPORT_RECEIPT.json
