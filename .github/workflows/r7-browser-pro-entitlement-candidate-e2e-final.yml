@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/r7-browser-pro-entitlement-candidate-e2e-final.yml'
       - 'r7-browser-pro-harness/**'
+      - 'r7-risk-v5/run-r7-risk-v5-exact-windows-execution-slice-fixed.ps1'
   workflow_dispatch:
 
 permissions:
@@ -39,7 +40,7 @@ jobs:
 
       - name: Reconstruct and prove exact Risk/Browser base
         shell: pwsh
-        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1
+        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows-execution-slice-fixed.ps1
 
       - name: Apply Browser Pro entitlement candidate patch
         shell: pwsh
