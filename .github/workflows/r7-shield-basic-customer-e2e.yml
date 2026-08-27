@@ -1,0 +1,181 @@
+name: R7 Shield Basic Customer Tile E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-shield-basic-customer-e2e.yml'
+      - 'r7-shield-basic/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-shield-basic-customer-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  shield-basic-customer-e2e:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - name: Checkout Shield Basic controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Execute PL EN DE customer tile contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Invoke-JsonPost([string]$Uri,[hashtable]$Headers,[object]$Body) {
+            $Json = $Body | ConvertTo-Json -Depth 30 -Compress
+            $Response = Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 30
+            $Parsed = $null
+            try { $Parsed = $Response.Content | ConvertFrom-Json -Depth 50 } catch { }
+            return [pscustomobject]@{ Status=[int]$Response.StatusCode; Body=$Parsed; Raw=[string]$Response.Content }
+          }
+          function Assert([bool]$Condition,[string]$Message) { if (-not $Condition) { throw $Message } }
+
+          if (-not $env:ACTIONS_ID_TOKEN_REQUEST_URL -or -not $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN) { throw 'shield_oidc_environment_missing' }
+          $Separator = if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' }
+          $Audience = 'velmere-r7-shield-basic-e2e'
+          $TokenResponse = Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Separator+'audience='+[Uri]::EscapeDataString($Audience)) -Headers @{ Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -Method Get -TimeoutSec 20
+          $Oidc = [string]$TokenResponse.value
+          if (-not $Oidc) { throw 'shield_oidc_token_missing' }
+          Write-Host "::add-mask::$Oidc"
+
+          $HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-basic-e2e-oidc'
+          $BridgeUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-basic-public-bridge'
+          $CapabilityResponse = Invoke-JsonPost $HelperUrl @{ Authorization='Bearer '+$Oidc; Accept='application/json' } @{ action='capability' }
+          Assert ($CapabilityResponse.Status -eq 200 -and $CapabilityResponse.Body.ok -eq $true) ('shield_capability_failed:'+($CapabilityResponse.Raw.Substring(0,[Math]::Min(400,$CapabilityResponse.Raw.Length))))
+          $Capability = [string]$CapabilityResponse.Body.shieldServerCapability
+          Assert ($Capability.Length -ge 48 -and $Capability.Length -le 256) 'shield_capability_contract_invalid'
+          Write-Host "::add-mask::$Capability"
+
+          $Headers = @{ 'x-velmere-shield-server-capability'=$Capability; Accept='application/json' }
+          $ExpectedTitles = @{
+            pl = 'Shield — bieżąca postawa bezpieczeństwa'
+            en = 'Shield — current security posture'
+            de = 'Shield — aktuelle Sicherheitslage'
+          }
+          $Tiles = [ordered]@{}
+          foreach ($Locale in @('pl','en','de')) {
+            $Result = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-basic-tile-request.v1'; assetId='multicall3-bsc'; locale=$Locale }
+            Assert ($Result.Status -eq 200 -and $Result.Body.ok -eq $true) "shield_${Locale}_status_$($Result.Status)"
+            Assert ($Result.Body.schemaVersion -eq 'velmere.r7.shield-basic-customer-tile.v1') "shield_${Locale}_schema_invalid"
+            Assert ($Result.Body.productContract -eq 'CURRENT_DEFENSIVE_POSTURE_NOT_RISK_HISTORY') "shield_${Locale}_product_contract_invalid"
+            Assert ($Result.Body.serviceRoleReturned -eq $false -and $Result.Body.rawCapabilityReturned -eq $false) "shield_${Locale}_secret_boundary_invalid"
+            $Tile = $Result.Body.tile
+            Assert ($Tile.title -eq $ExpectedTitles[$Locale]) "shield_${Locale}_title_invalid"
+            Assert ($Tile.assetId -eq 'multicall3-bsc') "shield_${Locale}_asset_invalid"
+            Assert ($Tile.canonicalAssetId -eq 'eip155:56:0xca11bde05977b3631167028862be2a173976ca11') "shield_${Locale}_canonical_identity_invalid"
+            Assert ([int]$Tile.postureScore -eq 36 -and $Tile.postureLevel -eq 'medium') "shield_${Locale}_posture_invalid"
+            Assert ([double]$Tile.evidenceConfidence -eq 0.34 -and [int]$Tile.signalCount -eq 2) "shield_${Locale}_confidence_invalid"
+            Assert ($Tile.eventDigest -eq 'sha256:0aa92b05d736f5a3691be2420b77a0da7ff800d27707cb6f976d4626deb4f65e') "shield_${Locale}_event_digest_invalid"
+            Assert ([string]$Tile.evidenceDigest -match '^sha256:[a-f0-9]{64}$') "shield_${Locale}_evidence_digest_invalid"
+            Assert ($Tile.publicationState -eq 'PUBLIC' -and $Tile.customerPublishable -eq $true) "shield_${Locale}_publication_invalid"
+            Assert ([string]$Tile.observedAt -match '^2026-' -and [string]$Tile.sourceAsOf -match '^2026-') "shield_${Locale}_currentness_invalid"
+            Assert ([string]$Tile.uncertaintyDisclosure -and [string]$Tile.uncertaintyDisclosure -notmatch '(?i)probability\s*[:=]\s*\d') "shield_${Locale}_uncertainty_invalid"
+            Assert (@($Tile.currentDrivers).Count -ge 1 -and @($Tile.eventTypes).Count -ge 1) "shield_${Locale}_drivers_missing"
+            $Serialized = $Result.Body | ConvertTo-Json -Depth 50 -Compress
+            foreach ($Forbidden in @('SUPABASE_SERVICE_ROLE_KEY','x-velmere-shield-server-capability',$Capability)) {
+              Assert (-not $Serialized.Contains($Forbidden)) "shield_${Locale}_private_value_leak"
+            }
+            $Tiles[$Locale] = [ordered]@{
+              title = [string]$Tile.title
+              eventDigest = [string]$Tile.eventDigest
+              evidenceDigest = [string]$Tile.evidenceDigest
+              observedAt = [string]$Tile.observedAt
+              sourceAsOf = [string]$Tile.sourceAsOf
+            }
+          }
+
+          $InvalidCapability = 'x' * 64
+          $Invalid = Invoke-JsonPost $BridgeUrl @{ 'x-velmere-shield-server-capability'=$InvalidCapability; Accept='application/json' } @{ schemaVersion='velmere.r7.shield-basic-tile-request.v1'; assetId='multicall3-bsc'; locale='en' }
+          Assert ($Invalid.Status -eq 403) "shield_invalid_capability_not_denied_$($Invalid.Status)"
+          $Missing = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-basic-tile-request.v1'; assetId='unknown-shield-asset'; locale='en' }
+          Assert ($Missing.Status -eq 404) "shield_missing_asset_not_fail_closed_$($Missing.Status)"
+          $BadLocale = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-basic-tile-request.v1'; assetId='multicall3-bsc'; locale='fr' }
+          Assert ($BadLocale.Status -eq 400) "shield_bad_locale_not_rejected_$($BadLocale.Status)"
+
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/shield-basic' | Out-Null
+          $Receipt = [ordered]@{
+            schemaVersion = 'velmere.r7.shield-basic-customer-tile-e2e.v1'
+            status = 'PASS_SHIELD_BASIC_CUSTOMER_TILE_E2E'
+            github = @{ runId=$env:GITHUB_RUN_ID; runAttempt=[int]$env:GITHUB_RUN_ATTEMPT; headSha=$env:GITHUB_SHA }
+            product = @{
+              productSlug = 'shield-basic'
+              canonicalAssetId = 'eip155:56:0xca11bde05977b3631167028862be2a173976ca11'
+              contract = 'CURRENT_DEFENSIVE_POSTURE_NOT_RISK_HISTORY'
+              locales = @('pl','en','de')
+              tiles = $Tiles
+              provenance = $true
+              currentness = $true
+              descriptiveNotProbability = $true
+              calibratedUncertaintyBoundary = $true
+            }
+            negatives = @{ invalidCapabilityDenied=$true; missingAssetFailClosed=$true; unsupportedLocaleRejected=$true }
+            privacy = @{ serviceRoleInApplication=$false; rawCapabilityReturned=$false; rawProviderPayloadReturned=$false }
+            customerFinalCredit = $false
+            truthBoundary = 'Customer-visible Shield Basic tiles passed in PL, EN and DE on current public evidence. Formal FINAL is granted only by the guarded finalizer after GitHub job and artifact binding plus exact source authority verification.'
+          }
+          $Receipt | ConvertTo-Json -Depth 50 | Set-Content -LiteralPath 'artifacts/r7/shield-basic/R7_SHIELD_BASIC_CUSTOMER_TILE_E2E.json' -Encoding utf8
+          Write-Host ($Receipt | ConvertTo-Json -Depth 50)
+
+      - name: Upload Shield Basic customer evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-shield-basic-customer-e2e-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/shield-basic/R7_SHIELD_BASIC_CUSTOMER_TILE_E2E.json
+          if-no-files-found: error
+          retention-days: 14
+
+  finalize-shield-basic:
+    needs: shield-basic-customer-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Guarded append-only Shield Basic finalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          separator='?'
+          case "$ACTIONS_ID_TOKEN_REQUEST_URL" in *\?*) separator='&';; esac
+          oidc="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}${separator}audience=velmere-r7-shield-basic-finalizer" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
+          echo "::add-mask::$oidc"
+          response=''
+          for attempt in $(seq 1 12); do
+            response="$(curl --silent --show-error \
+              -X POST \
+              -H "Authorization: Bearer $oidc" \
+              -H 'Content-Type: application/json' \
+              -d '{"action":"finalize"}' \
+              'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-basic-finalizer-oidc')"
+            if python3 -c 'import json,sys; d=json.load(sys.stdin); raise SystemExit(0 if d.get("ok") is True else 1)' <<<"$response"; then
+              break
+            fi
+            sleep 2
+          done
+          python3 - <<'PY' <<<"$response"
+          import json, sys
+          data = json.load(sys.stdin)
+          if data.get('ok') is not True:
+              raise SystemExit(f"shield finalization failed: {data}")
+          result = data.get('result') or {}
+          if result.get('productSlug') != 'shield-basic' or result.get('finalStatus') != 'FINAL':
+              raise SystemExit(f"shield finalization contract invalid: {data}")
+          print(json.dumps({
+              'schemaVersion': 'velmere.r7.shield-basic-finalization-receipt.v1',
+              'status': 'FINAL',
+              'result': result,
+              'serviceRoleReturned': False,
+          }, indent=2))
+          PY
