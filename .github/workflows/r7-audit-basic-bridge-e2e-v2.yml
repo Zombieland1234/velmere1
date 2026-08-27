@@ -1,0 +1,42 @@
+name: R7 Audit Basic Bridge E2E V2
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-bridge-e2e-v2.yml'
+      - 'r7-audit-harness/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-audit-basic-bridge-e2e-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit-basic-bridge-e2e-v2:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Audit Basic V2 harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Execute secure Audit Basic bridge E2E V2
+        shell: pwsh
+        run: ./r7-audit-harness/run-r7-audit-basic-bridge-e2e-v2.ps1
+
+      - name: Upload Audit Basic bridge V2 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-bridge-e2e-v2-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/audit-basic/R7_AUDIT_BASIC_BRIDGE_E2E_V2.json
+          if-no-files-found: warn
+          retention-days: 14
