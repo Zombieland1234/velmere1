@@ -13,7 +13,13 @@ foreach ($Repair in $Repairs) {
   if ($Count -ne 1) { throw "audit_bridge_v2_$($Repair.Label)_anchor_mismatch:$Count" }
   $Text = $Text.Replace([string]$Repair.Broken, [string]$Repair.Correct)
 }
-[IO.File]::WriteAllText($Fixed, $Text, [Text.UTF8Encoding]::new($false))
 
+$ReadAnchor = '  $ReadA=Invoke-JsonPost $BridgeUrl $AHeaders @{schemaVersion=''velmere.r7.audit-basic-customer-bridge-request.v1'';action=''get_case'';caseRef=$CaseRef}'
+$ReadReplacement = '  $CaseRef=[string]$Created.Body.data.caseRef' + "`n" + $ReadAnchor
+$ReadCount = ([regex]::Matches($Text, [regex]::Escape($ReadAnchor))).Count
+if ($ReadCount -ne 1) { throw "audit_bridge_v2_canonical_case_ref_anchor_mismatch:$ReadCount" }
+$Text = $Text.Replace($ReadAnchor, $ReadReplacement)
+
+[IO.File]::WriteAllText($Fixed, $Text, [Text.UTF8Encoding]::new($false))
 & pwsh -NoProfile -File $Fixed
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
