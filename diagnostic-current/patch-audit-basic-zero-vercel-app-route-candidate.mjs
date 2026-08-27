@@ -58,8 +58,7 @@ export async function callAuditBasicCustomerBridge<T = unknown>(
     cache: 'no-store',
     signal: AbortSignal.timeout(20_000),
   });
-  let raw: unknown = null;
-  try { raw = await response.json(); } catch { raw = null; }
+  const raw: unknown = await response.json().catch(() => null);
   const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
   return {
     status: response.status,
@@ -211,4 +210,4 @@ for (const [relative, content] of writes) {
   fs.writeFileSync(target, content, 'utf8');
   changed.push({ path: relative, sha256: crypto.createHash('sha256').update(content).digest('hex'), bytes: Buffer.byteLength(content) });
 }
-console.log(JSON.stringify({ schemaVersion: 'velmere.r7.audit-basic-zero-vercel-app-route-candidate.v3', status: 'PASS_PATCH_APPLIED', changed, customerFinalCredit: false }, null, 2));
+console.log(JSON.stringify({ schemaVersion: 'velmere.r7.audit-basic-zero-vercel-app-route-candidate.v4', status: 'PASS_PATCH_APPLIED', changed, customerFinalCredit: false }, null, 2));
