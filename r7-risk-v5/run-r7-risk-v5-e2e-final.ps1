@@ -32,7 +32,12 @@ $New = "  & pwsh -NoProfile -File (Join-Path `$Root 'r7-risk-v5/run-r7-risk-v5-s
 if (([regex]::Matches($Text,[regex]::Escape($Old))).Count -ne 1) {
   throw 'risk_v5_e2e_prepare_anchor_mismatch'
 }
-$Text = $Text.Replace($Old,$New)
+$CapabilityOld = '$Capability=[string]$CapabilityResponse.riskHistoryServerCapability'
+$CapabilityNew = '$Capability=[string]$CapabilityResponse.riskServerCapability'
+if (([regex]::Matches($Text,[regex]::Escape($CapabilityOld))).Count -ne 1) {
+  throw 'risk_v5_capability_field_anchor_mismatch'
+}
+$Text = $Text.Replace($Old,$New).Replace($CapabilityOld,$CapabilityNew)
 [IO.File]::WriteAllText($Fixed,$Text,[Text.UTF8Encoding]::new($false))
 & pwsh -NoProfile -File $Fixed
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
