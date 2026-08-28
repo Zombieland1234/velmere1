@@ -81,7 +81,12 @@ try {
     try { $Probe = Invoke-WebRequest -Uri 'http://localhost:3100/' -UseBasicParsing -SkipHttpErrorCheck -TimeoutSec 2; if ($Probe.StatusCode -ge 200 -and $Probe.StatusCode -lt 500) { $Ready = $true; break } } catch { }
   }
   Require $Ready 'browser_advanced_next_not_ready'
-  & node (Join-Path $Work 'node_modules/tsx/dist/cli.mjs') (Join-Path $Root 'r7-browser-advanced-harness/r7-browser-advanced-candidate-e2e.mts')
+  $Tsx = Join-Path $Work 'node_modules/tsx/dist/cli.mjs'
+  $TsConfig = Join-Path $Work 'tsconfig.json'
+  $Driver = Join-Path $Root 'r7-browser-advanced-harness/r7-browser-advanced-candidate-e2e.mts'
+  Require (Test-Path -LiteralPath $TsConfig -PathType Leaf) 'browser_advanced_tsconfig_missing'
+  Push-Location $Work
+  try { & node $Tsx --tsconfig $TsConfig $Driver } finally { Pop-Location }
   if ($LASTEXITCODE -ne 0) { throw "browser_advanced_driver_failed:$LASTEXITCODE" }
   $ReceiptPath = Join-Path $ArtifactDirectory 'R7_BROWSER_ADVANCED_ENTITLEMENT_CANDIDATE_E2E.json'
   Require (Test-Path -LiteralPath $ReceiptPath -PathType Leaf) 'browser_advanced_receipt_missing'
