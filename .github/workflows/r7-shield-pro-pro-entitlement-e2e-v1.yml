@@ -1,0 +1,129 @@
+name: R7 Shield Pro Pro Entitlement Customer E2E
+
+on:
+  push:
+    branches: [velmere-r7-successor-delta-20260825]
+    paths:
+      - '.github/workflows/r7-shield-pro-pro-entitlement-e2e-v1.yml'
+      - 'r7-shield-pro-pro-v1/**'
+      - 'r7-risk-v5/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  shield-pro-pro-customer-e2e:
+    name: shield-pro-pro-customer-e2e
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: velmere-r7-successor-delta-20260825
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Execute account-scoped Pro customer workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
+          HELPER="$BASE/r7-shield-pro-pro-v1-e2e-oidc"
+          ROUTE="$BASE/r7-shield-pro-pro-v1-customer-route"
+          AUD='velmere-r7-shield-pro-pro-v1-e2e'
+          TOKEN_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}")"
+          OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$TOKEN_JSON")"
+          if [ "$(tr '.' '\n' <<<"$OIDC" | wc -l)" -ne 3 ]; then exit 1; fi
+          provision="$(curl -fsS -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data '{"action":"setup"}')"
+          python - "$provision" <<'PY'
+          import json,sys
+          d=json.loads(sys.argv[1]); assert d.get('ok') is True
+          assert d.get('paymentClaimed') is False and d.get('validationEntitlements') == 2 and d.get('basicEntitlements') == 0
+          for r in d['accounts']: assert 'accessToken' in r and 'password' in r
+          json.dump(d,open('/tmp/provision.json','w'))
+          PY
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/provision.json')); open('/tmp/proa','w').write(next(x['accessToken'] for x in d['accounts'] if x['role']=='proA')); open('/tmp/prob','w').write(next(x['accessToken'] for x in d['accounts'] if x['role']=='proB')); open('/tmp/basic','w').write(next(x['accessToken'] for x in d['accounts'] if x['role']=='basic')); open('/tmp/ids','w').write(json.dumps([x['id'] for x in d['accounts']]))
+          PY
+          PROA="$(cat /tmp/proa)"; PROB="$(cat /tmp/prob)"; BASIC="$(cat /tmp/basic)"
+          for locale in pl en de; do
+            r="$(curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"create\",\"locale\":\"$locale\"}")"
+            printf '%s\n' "$r" > "proa-create-$locale.json"
+            python - "$r" <<'PY'
+          import json,sys
+          d=json.loads(sys.argv[1]); assert d.get('ok') is True and d.get('productSlug')=='shield-pro-pro' and d.get('customerVisible') is True and d.get('paymentClaimed') is False
+          PY
+          done
+          case_ref="$(python - <<'PY'
+          import json
+          d=json.load(open('proa-create-en.json')); print(d['case']['caseRef'])
+          PY
+          )"
+          curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"read\",\"caseRef\":\"$case_ref\"}" > proa-read.json
+          curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"acknowledge\",\"caseRef\":\"$case_ref\"}" > proa-ack.json
+          curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"read\",\"caseRef\":\"$case_ref\"}" > proa-reconnect-read.json
+          outsider="$(curl -sS -X POST "$ROUTE" -H "Authorization: Bearer $PROB" -H 'Content-Type: application/json' --data "{\"action\":\"read\",\"caseRef\":\"$case_ref\"}")" || true
+          python - "$outsider" <<'PY'
+          import json,sys
+          d=json.loads(sys.argv[1]); assert d.get('ok') is False and d.get('error') in ('case_not_found','case_read_failed')
+          PY
+          basic="$(curl -sS -X POST "$ROUTE" -H "Authorization: Bearer $BASIC" -H 'Content-Type: application/json' --data '{"action":"create","locale":"en"}')" || true
+          python - "$basic" <<'PY'
+          import json,sys
+          d=json.loads(sys.argv[1]); assert d.get('ok') is False and d.get('error')=='shield_pro_pro_entitlement_required'
+          PY
+          curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"delete\",\"caseRef\":\"$case_ref\"}" > proa-delete.json
+          after="$(curl -sS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"read\",\"caseRef\":\"$case_ref\"}")" || true
+          python - "$after" <<'PY'
+          import json,sys
+          d=json.loads(sys.argv[1]); assert d.get('ok') is False and d.get('error')=='case_not_found'
+          PY
+          echo 'PASS_SHIELD_PRO_PRO_CUSTOMER_E2E'
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/provision.json')); open('accounts.json','w').write(json.dumps({'accounts':[{'role':x['role'],'id':x['id']} for x in d['accounts']]}))
+          PY
+          ids="$(cat /tmp/ids)"
+          curl -fsS -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data "{\"action\":\"cleanup\",\"accountIds\":$ids}" > cleanup.json
+          python - <<'PY'
+          import json
+          d=json.load(open('cleanup.json')); assert d.get('ok') is True and all(x.get('deleted') for x in d.get('deleted',[]))
+          PY
+      - name: Upload customer E2E evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-shield-pro-pro-entitlement-customer-e2e-${{ github.sha }}-${{ github.run_id }}
+          path: '*.json'
+          if-no-files-found: error
+          retention-days: 14
+
+  finalize:
+    name: shield-pro-pro-finalizer
+    needs: shield-pro-pro-customer-e2e
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Finalize Customer and Paid Value
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-pro-v1-finalizer-oidc'
+          AUD='velmere-r7-shield-pro-pro-v1-finalizer'
+          token="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}" | python -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
+          curl -fsS -X POST "$BASE" -H "Authorization: Bearer $token" -H 'Content-Type: application/json' --data '{"action":"finalize"}' | tee finalizer.json
+          python - <<'PY'
+          import json
+          d=json.load(open('finalizer.json')); assert d.get('ok') is True
+          assert d.get('finalStatus') == 'FINAL'
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r7-shield-pro-pro-finalizer-${{ github.sha }}-${{ github.run_id }}
+          path: finalizer.json
+          if-no-files-found: warn
+          retention-days: 14
