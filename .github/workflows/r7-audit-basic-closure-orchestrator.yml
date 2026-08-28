@@ -27,11 +27,14 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/r7/audit-basic
           python - <<'PY'
-          import json, os, subprocess, time
+          import json, os, subprocess
 
           repository = os.environ['REPOSITORY']
           ref = os.environ['TARGET_REF']
           workflows = [
+              'r7-audit-basic-app-route-current-source-e2e.yml',
+              'r7-audit-basic-prospective-frozen-benchmark.yml',
+              'r7-audit-basic-real-engine-a01-a05-repair.yml',
               'r7-audit-basic-app-route-candidate-e2e.yml',
               'r7-audit-basic-multicall3-remediation-retest-v2.yml',
               'r7-audit-basic-aderyn-external.yml',
@@ -53,13 +56,19 @@ jobs:
                   'stderr': completed.stderr.strip()[:500],
               })
           receipt = {
-              'schemaVersion': 'velmere.r7.audit-basic-closure-dispatch.v1',
+              'schemaVersion': 'velmere.r7.audit-basic-closure-dispatch.v2',
               'repository': repository,
               'ref': ref,
               'results': results,
               'allDispatched': all(row['dispatched'] for row in results),
+              'technicalMandatoryGatesRequested': [
+                  'promoted_customer_app_route',
+                  'prospective_frozen_benchmark',
+                  'exact_current_velmere_a01_a05',
+              ],
+              'qualifiedHumanReviewDispatched': False,
               'customerFinalCredit': False,
-              'truthBoundary': 'Dispatch proves only that the physical Audit Basic gates were requested. Each workflow result, exact-source binding, rights, real findings/retest, immutable PDF, account route and formal ledger remain separately required.',
+              'truthBoundary': 'Dispatch proves only that physical Audit Basic technical gates were requested. Qualified-human review remains separate and is never impersonated. Each workflow result, exact-source binding, immutable customer lifecycle and formal ledger transition remain independently required.',
           }
           with open('artifacts/r7/audit-basic/R7_AUDIT_BASIC_CLOSURE_DISPATCH.json','w',encoding='utf-8') as handle:
               json.dump(receipt, handle, indent=2)
