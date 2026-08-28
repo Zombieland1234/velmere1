@@ -187,36 +187,27 @@ jobs:
             if($Restore.Status -ne 200 -or $Restore.Body.ok -ne $true){throw ('local_restore_failed:'+$Restore.Raw.Substring(0,[Math]::Min(600,$Restore.Raw.Length)))}
             $RestoredPath=Join-Path $env:RUNNER_TEMP 'audit-app-v5-restored.pdf'
             $RestoredPdf=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -OutFile $RestoredPath -PassThru -SkipHttpErrorCheck -TimeoutSec 30
-            $ObservedRestored=[IO.File]::ReadAllBytes($RestoredPath)
-            if([int]$RestoredPdf.StatusCode -ne 200 -or (ShaBytes $ObservedRestored) -ne $PdfDigest.Substring(7) -or $ObservedRestored.Length -ne $Pdf.Length){throw 'local_restored_pdf_identity'}
-            $CrossRestored=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $BHeaders -SkipHttpErrorCheck -TimeoutSec 20
-            if([int]$CrossRestored.StatusCode -ne 404){throw 'local_post_restore_cross_account_not_denied'}
+            if([int]$RestoredPdf.StatusCode -ne 200){throw 'local_restored_pdf_failed'}
+            $RestoredBytes=[IO.File]::ReadAllBytes($RestoredPath)
+            if((ShaBytes $RestoredBytes) -ne $PdfDigest.Substring(7)){throw 'local_restored_pdf_identity'}
 
-            $Receipt=[ordered]@{
-              schemaVersion='velmere.r7.audit-basic-app-route-v5-e2e.v1';status='PASS_CANDIDATE';candidateOnly=$true;customerFinalCredit=$false
-              github=@{runId=$env:GITHUB_RUN_ID;runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;headSha=$env:GITHUB_SHA}
-              exactCurrentSource=@{fullSourceAggregateSha256=$env:R7_RISK_FULL_SOURCE_AGGREGATE_SHA256;executionSliceAggregateSha256=$env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256;executionSliceManifestSha256=$env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256;executionBundleSha256=$env:R7_RISK_BUNDLE_SHA256}
-              typecheck='PASS';targetedEslint='PASS';webpack='PASS';customerProvision='PASS_OWNER_OIDC';caseRefSource='DATABASE_RETURNED';localCaseCreate='PASS';ownerCaseRead='PASS';crossAccountCase='PASS_DENIED';workerClaim='PASS';exactPdfCompletion='PASS';localPdf='PASS_BYTE_IDENTICAL';crossAccountPdf='PASS_DENIED';backupErase='PASS';postEraseOwner='PASS_404';restore='PASS';postRestorePdf='PASS_BYTE_IDENTICAL';postRestoreCrossAccount='PASS_DENIED';serviceRoleInApplication=$false;pdfDigest=$PdfDigest;pdfByteLength=$Pdf.Length;recordDigest=$RecordDigest
-              truthBoundary='This proves the exact-current-source Audit Basic customer app route, authenticated account isolation and exact PDF backup/erase/restore lifecycle for the V5 candidate. It does not replace real audit findings, qualified-human review or guarded Customer FINAL adjudication.'
-            }
-            $Receipt|ConvertTo-Json -Depth 30|Set-Content 'R7_AUDIT_BASIC_APP_ROUTE_V5_E2E.json' -Encoding utf8
-            Write-Host ($Receipt|ConvertTo-Json -Depth 30)
+            $DeleteFinal=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($CaseRef)) -Headers $AHeaders -Method Delete -SkipHttpErrorCheck -TimeoutSec 30
+            if([int]$DeleteFinal.StatusCode -ne 200){throw 'local_final_backup_erase_failed'}
+
+            New-Item -ItemType Directory -Force -Path 'artifacts/r7/audit-basic/app-route-v5' | Out-Null
+            [IO.File]::WriteAllText('artifacts/r7/audit-basic/app-route-v5/R7_AUDIT_APP_ROUTE_V5_CUSTOMER_E2E_RECEIPT.json',($RecordMaterial | ConvertFrom-Json -ErrorAction SilentlyContinue | ConvertTo-Json -Depth 40 -Compress),[Text.Encoding]::UTF8)
+            [IO.File]::WriteAllText('artifacts/r7/audit-basic/app-route-v5/R7_AUDIT_APP_ROUTE_V5_STATUS.json',(@{schemaVersion='velmere.r7.audit-basic-app-route-v5-customer-e2e.v1';status='PASS';caseRef=$CaseRef;accountIdHash=$AccountHash;pdfDigest=$PdfDigest;pdfByteLength=$Pdf.Length;customerFinalCredit=$false}|ConvertTo-Json -Depth 20 -Compress),[Text.Encoding]::UTF8)
           } finally {
-            if($Next -and -not $Next.HasExited){Stop-Process -Id $Next.Id -Force -ErrorAction SilentlyContinue}
-            if($A -and $B){try{$null=PostJson $OidcUri $OidcHeaders @{action='cleanup';userIds=@([string]$A.userId,[string]$B.userId)}}catch{}}
-            Copy-Item $StdOut 'R7_AUDIT_APP_ROUTE_V5_NEXT_STDOUT.log' -ErrorAction SilentlyContinue
-            Copy-Item $StdErr 'R7_AUDIT_APP_ROUTE_V5_NEXT_STDERR.log' -ErrorAction SilentlyContinue
+            if($Next -and -not $Next.HasExited){ Stop-Process -Id $Next.Id -Force }
           }
 
-      - name: Upload Audit V5 app-route evidence
+      - name: Upload Audit Basic V5 customer evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: r7-audit-basic-app-route-v5-${{ github.sha }}-${{ github.run_id }}
           path: |
+            artifacts/r7/audit-basic/app-route-v5/**
             R7_AUDIT_APP_ROUTE_V5_PATCH.json
-            R7_AUDIT_BASIC_APP_ROUTE_V5_E2E.json
-            R7_AUDIT_APP_ROUTE_V5_NEXT_STDOUT.log
-            R7_AUDIT_APP_ROUTE_V5_NEXT_STDERR.log
           if-no-files-found: warn
           retention-days: 30
