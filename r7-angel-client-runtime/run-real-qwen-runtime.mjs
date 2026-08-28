@@ -108,7 +108,11 @@ function hashModelCache() {
       sha256: sha256(bytes),
     };
   });
-  requireCondition(files.length >= 6, "model_cache_incomplete");
+  requireCondition(files.length > 0, "model_cache_empty");
+  const config = files.filter((row) => /(^|\/)config\.json$/i.test(row.path));
+  const tokenizer = files.filter((row) => /(^|\/)tokenizer(?:_config)?\.json$/i.test(row.path));
+  requireCondition(config.length >= 1, "model_cache_config_missing");
+  requireCondition(tokenizer.length >= 1, "model_cache_tokenizer_missing");
   const onnx = files.filter((row) => /\.onnx(?:_data)?$/i.test(row.path) || /onnx/i.test(row.path));
   requireCondition(onnx.length >= 1, "model_cache_onnx_missing");
   requireCondition(onnx.reduce((sum, row) => sum + row.byteLength, 0) >= 100 * 1024 * 1024, "model_cache_weight_bytes_too_small");
