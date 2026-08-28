@@ -5,7 +5,8 @@ $RuntimePath = Join-Path $env:RUNNER_TEMP 'run-r7-browser-pro-entitlement-candid
 $Text = Get-Content -LiteralPath $SourcePath -Raw
 $Pairs = @(
   @{ Old = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-oidc'; New = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc'; Label = 'helper' },
-  @{ Old = "`$Audience = 'velmere-r7-browser-pro-e2e'"; New = "`$Audience = 'velmere-r7-browser-pro-e2e-final'"; Label = 'audience' }
+  @{ Old = "`$Audience = 'velmere-r7-browser-pro-e2e'"; New = "`$Audience = 'velmere-r7-browser-pro-e2e-final'"; Label = 'audience' },
+  @{ Old = '  & node $Tsx $Driver'; New = "  `$TsConfig = Join-Path `$Work 'tsconfig.json'`n  Require (Test-Path -LiteralPath `$TsConfig -PathType Leaf) 'browser_pro_tsconfig_missing'`n  Push-Location `$Work`n  try { & node `$Tsx --tsconfig `$TsConfig `$Driver } finally { Pop-Location }"; Label = 'driver_tsconfig_workdir' }
 )
 foreach ($Pair in $Pairs) {
   $Count = ([regex]::Matches($Text, [regex]::Escape([string]$Pair.Old))).Count
