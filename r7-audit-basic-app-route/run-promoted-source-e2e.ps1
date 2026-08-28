@@ -43,6 +43,7 @@ $RequiredEnvironment = @(
   'R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256',
   'R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256',
   'R7_RISK_BUNDLE_SHA256',
+  'R7_AUDIT_EXACT_DEPLOYED_SOURCE_SHA256',
   'PROMOTED_SOURCE_AGGREGATE_SHA256',
   'PROMOTED_SOURCE_MANIFEST_SHA256',
   'PROMOTED_RENDERER_SHA256',
@@ -157,8 +158,15 @@ try {
 
     $CreatedAt = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
     $GeneratedPdfPath = Join-Path $env:RUNNER_TEMP ("audit-promoted-$Locale-$CaseRef.pdf")
-    $RenderRaw = & $Tsx 'r7-work/scripts/r7-audit-basic-localized-pdf.ts' $Locale $GeneratedPdfPath $CaseRef $CreatedAt
-    Assert-True ($LASTEXITCODE -eq 0) "localized_pdf_renderer_failed:$Locale"
+    # Run tsx from the reconstructed application root so its exact tsconfig
+    # path alias (`@/*`) resolves against r7-work rather than the control repo.
+    Push-Location 'r7-work'
+    try {
+      $RenderRaw = & $Tsx 'scripts/r7-audit-basic-localized-pdf.ts' $Locale $GeneratedPdfPath $CaseRef $CreatedAt
+      Assert-True ($LASTEXITCODE -eq 0) "localized_pdf_renderer_failed:$Locale"
+    } finally {
+      Pop-Location
+    }
     $Render = ([string]::Join('', [string[]]$RenderRaw)) | ConvertFrom-Json -Depth 20
     Assert-True ($Render.schemaVersion -eq 'velmere.r7.audit-basic-localized-pdf-render.v1') "localized_pdf_receipt_invalid:$Locale"
     Assert-True ($Render.locale -eq $Locale -and $Render.documentId -eq $CaseRef) "localized_pdf_binding_invalid:$Locale"
@@ -305,6 +313,7 @@ try {
       executionSliceAggregateSha256 = $env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256
       executionSliceManifestSha256 = $env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256
       executionBundleSha256 = $env:R7_RISK_BUNDLE_SHA256
+      exactDeployedSourceSha256 = $env:R7_AUDIT_EXACT_DEPLOYED_SOURCE_SHA256
     }
     sourceAuthorityModel = 'RISK_V5_BASE_PLUS_AUDIT_APP_ROUTE_PROMOTED_COMPONENTS_V1'
     promotedRouteOverlay = @{

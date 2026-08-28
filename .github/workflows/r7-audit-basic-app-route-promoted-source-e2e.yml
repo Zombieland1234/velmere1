@@ -29,6 +29,7 @@ jobs:
       R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
       R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
       R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      R7_AUDIT_EXACT_DEPLOYED_SOURCE_SHA256: '3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
       NEXT_PUBLIC_SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
@@ -90,7 +91,7 @@ jobs:
           $HarnessSha = ShaFile $Harness
           $WorkflowSha = ShaFile $Workflow
           if ($RendererSha -ne '4fd8136cb40db24b3b6d37093ba6ae19efdf290638643b19d148ee181cb3f4fc') { throw 'promoted_renderer_hash_mismatch' }
-          if ($HarnessSha -ne '6d9796a2e2b2f225d7400dbd03840a42d9fb4fbcbb40accf4f387be45921056a') { throw 'promoted_harness_hash_mismatch' }
+          if ($HarnessSha -ne 'fa9da9a34a2bbfe23bf656e5c8228d285de1ed2c6668d793216429ce6c7b4cdc') { throw 'promoted_harness_hash_mismatch' }
 
           Copy-Item -LiteralPath $Renderer -Destination 'r7-work/scripts/r7-audit-basic-localized-pdf.ts' -Force
           $Manifest = [ordered]@{
@@ -102,6 +103,7 @@ jobs:
               executionSliceAggregateSha256 = $env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256
               executionSliceManifestSha256 = $env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256
               executionBundleSha256 = $env:R7_RISK_BUNDLE_SHA256
+              exactDeployedSourceSha256 = $env:R7_AUDIT_EXACT_DEPLOYED_SOURCE_SHA256
             }
             components = $Components
             promotedSourceAggregateSha256 = $Aggregate
