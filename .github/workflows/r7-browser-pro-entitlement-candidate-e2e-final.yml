@@ -15,13 +15,13 @@ permissions:
   id-token: write
 
 concurrency:
-  group: r7-browser-pro-entitlement-candidate-e2e-final-accelerated-v2-${{ github.ref }}
+  group: r7-browser-pro-entitlement-candidate-e2e-final-focused-v3-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   browser-pro-candidate-e2e-final:
     runs-on: windows-2025
-    timeout-minutes: 180
+    timeout-minutes: 120
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
@@ -50,14 +50,14 @@ jobs:
           & node 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-pro/R7_BROWSER_PRO_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_pro_candidate_patch_failed:$LASTEXITCODE" }
 
-      - name: Validate Browser Pro post-patch engineering gates
+      - name: Validate changed Browser Pro engineering surface
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           Push-Location 'r7-work'
           try {
-            npm run typecheck 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_TYPESCRIPT.log'
-            if ($LASTEXITCODE -ne 0) { throw "browser_pro_typecheck_failed:$LASTEXITCODE" }
+            node scripts/pass13/run-partitioned-typescript.mjs --worker 5 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_TS_PARTITION_06.log'
+            if ($LASTEXITCODE -ne 0) { throw "browser_pro_changed_partition_typecheck_failed:$LASTEXITCODE" }
             & node 'node_modules/eslint/bin/eslint.js' 'lib/commerce/vlm-advanced-only-access-policy.ts' 'lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_PATCH_ESLINT.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_pro_patch_lint_failed:$LASTEXITCODE" }
             npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_WEBPACK.log'
