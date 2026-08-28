@@ -196,3 +196,5 @@ jobs:
           $ErrorActionPreference='Stop'
           if($env:ARTIFACT_DIGEST -notmatch '^[a-f0-9]{64}$'){throw 'entitlement_artifact_digest_missing'}
           "Artifact SHA-256: $env:ARTIFACT_DIGEST" | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+# 2026-08-28 trigger: rerun entitlement lifecycle on current successor HEAD.
