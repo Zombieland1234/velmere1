@@ -8,21 +8,10 @@ const envPath = `${root}/ENV_PRODUCTION_READY.example`;
 let text = fs.readFileSync(policyPath, "utf8");
 const beforeSha = crypto.createHash("sha256").update(text).digest("hex");
 
-function matchingClose(source, openIndex, openCharacter = "(", closeCharacter = ")") {
-  let depth = 0, quote = null, escaped = false;
-  for (let index = openIndex; index < source.length; index += 1) {
-    const character = source[index];
-    if (quote) {
-      if (escaped) escaped = false;
-      else if (character === "\\") escaped = true;
-      else if (character === quote) quote = null;
-      continue;
-    }
-    if (character === '"' || character === "'" || character === "`") { quote = character; continue; }
-    if (character === openCharacter) depth += 1;
-    else if (character === closeCharacter && --depth === 0) return index;
-  }
-  return -1;
+function replaceExactly(source, oldText, newText, label) {
+  const count = source.split(oldText).length - 1;
+  if (count !== 1) throw new Error(`${label}_anchor_mismatch:${count}`);
+  return source.replace(oldText, newText);
 }
 
 if (!text.includes('extractSupabaseUserAccessToken')) {
@@ -33,98 +22,49 @@ if (!text.includes('extractSupabaseUserAccessToken')) {
   text = `${text.slice(0, at)}\nimport { extractSupabaseUserAccessToken } from "@/lib/db/supabase";${text.slice(at)}`;
 }
 
-let functionMatch = /export\s+(?:async\s+function|const)\s+resolveVlmAdvancedOnlyAccess\b/.exec(text);
-if (!functionMatch) throw new Error("paid_policy_function_missing");
-let functionStart = functionMatch.index;
-let functionOpen = text.indexOf("{", functionStart);
-let functionEnd = matchingClose(text, functionOpen, "{", "}");
-if (functionOpen < 0 || functionEnd < 0) throw new Error("paid_policy_function_boundary_missing");
-let functionText = text.slice(functionStart, functionEnd + 1);
-
-const paidReturns = [...functionText.matchAll(/return\s+(\{[\s\S]{0,1800}?paidRequired\s*:\s*true[\s\S]{0,1800}?\});/g)];
-if (!paidReturns.length) throw new Error("paid_success_return_not_found");
-let selected = null;
-for (const match of paidReturns.sort((a, b) => a[1].length - b[1].length)) {
-  const object = match[1];
-  const accessMode = /accessMode\s*:\s*["']([^"']+)["']/.exec(object)?.[1];
-  const reason = /reason\s*:\s*["']([^"']+)["']/.exec(object)?.[1];
-  const policy = /policy\s*:\s*([^,\n}]+)/.exec(object)?.[1]?.trim();
-  if (accessMode && reason && policy && !/[;{}]/.test(policy)) { selected = { accessMode, reason, policy }; break; }
-}
-if (!selected) throw new Error("paid_success_shape_not_safely_derivable");
-
-const helper = `async function resolveVelmereProductEntitlementBridge(args: {
-  request: Request;
-  productSlug: string;
-  requiredTier: "pro" | "advanced";
-}) {
-  const bridgeUrl = String(process.env.VELMERE_PRODUCT_ENTITLEMENT_BRIDGE_URL ?? "").trim();
-  const serverCapability = String(process.env.VELMERE_PRODUCT_ENTITLEMENT_SERVER_CAPABILITY ?? "").trim();
-  const accessToken = extractSupabaseUserAccessToken(args.request)?.token ?? "";
-  if (!bridgeUrl || !serverCapability || !accessToken) return null;
-  let target: URL;
-  try { target = new URL(bridgeUrl); } catch { throw new Error("product_entitlement_bridge_url_invalid"); }
-  if (target.protocol !== "https:" || !target.hostname.endsWith(".supabase.co")) throw new Error("product_entitlement_bridge_origin_invalid");
-  let response: Response;
-  try {
-    response = await fetch(target, {
-      method: "POST",
-      headers: {
-        authorization: "Bearer " + accessToken,
-        "x-velmere-entitlement-server-capability": serverCapability,
-        "content-type": "application/json",
-        accept: "application/json",
-      },
-      body: JSON.stringify({ schemaVersion: "velmere.product-entitlement-bridge-request.v1", action: "resolve", productSlug: args.productSlug, requiredTier: args.requiredTier }),
-      cache: "no-store",
-      redirect: "error",
-      signal: AbortSignal.timeout(8_000),
-    });
-  } catch { throw new Error("product_entitlement_bridge_unavailable"); }
-  const responseText = await response.text();
-  let envelope: Record<string, unknown>;
-  try { envelope = JSON.parse(responseText) as Record<string, unknown>; } catch { throw new Error("product_entitlement_bridge_invalid_json"); }
-  if (!response.ok || envelope.ok !== true) {
-    if ([401, 403].includes(response.status)) return false;
-    throw new Error("product_entitlement_bridge_failed");
-  }
-  return envelope.allowed === true;
+// A bridge-backed entitlement is still server-side authority, but it is not the
+// legacy VlmPaidAccountEntitlementVerdict record. Make the success union truthful
+// rather than fabricating a Stripe/legacy entitlement record just to satisfy TS.
+if (!text.includes('entitlementSource?: "legacy_server_ledger" | "product_entitlement_bridge";')) {
+  text = replaceExactly(
+    text,
+    '      entitlement: Extract<VlmPaidAccountEntitlementVerdict, { ok: true }>;\n      reason: "paid_entitlement_verified";',
+    '      entitlement?: Extract<VlmPaidAccountEntitlementVerdict, { ok: true }>;\n      entitlementSource?: "legacy_server_ledger" | "product_entitlement_bridge";\n      reason: "paid_entitlement_verified";',
+    "paid_success_union",
+  );
 }
 
-`;
-text = `${text.slice(0, functionStart)}${helper}${text.slice(functionStart)}`;
+if (!text.includes("async function resolveVelmereBrowserProEntitlementBridge")) {
+  const functionAnchor = 'export async function resolveVlmAdvancedOnlyAccess(args: {';
+  if (!text.includes(functionAnchor)) throw new Error("paid_policy_function_missing");
+  const helper = `async function resolveVelmereBrowserProEntitlementBridge(args: {\n  request: Request;\n}) {\n  const bridgeUrl = String(process.env.VELMERE_PRODUCT_ENTITLEMENT_BRIDGE_URL ?? \"\").trim();\n  const serverCapability = String(process.env.VELMERE_PRODUCT_ENTITLEMENT_SERVER_CAPABILITY ?? \"\").trim();\n  const accessToken = extractSupabaseUserAccessToken(args.request)?.token ?? \"\";\n  if (!bridgeUrl || !serverCapability || !accessToken) return null;\n  let target: URL;\n  try { target = new URL(bridgeUrl); } catch { throw new Error(\"product_entitlement_bridge_url_invalid\"); }\n  if (target.protocol !== \"https:\" || !target.hostname.endsWith(\".supabase.co\")) throw new Error(\"product_entitlement_bridge_origin_invalid\");\n  let response: Response;\n  try {\n    response = await fetch(target, {\n      method: \"POST\",\n      headers: {\n        authorization: \"Bearer \" + accessToken,\n        \"x-velmere-entitlement-server-capability\": serverCapability,\n        \"content-type\": \"application/json\",\n        accept: \"application/json\",\n      },\n      body: JSON.stringify({\n        schemaVersion: \"velmere.product-entitlement-bridge-request.v1\",\n        action: \"resolve\",\n        productSlug: \"browser\",\n        requiredTier: \"pro\",\n      }),\n      cache: \"no-store\",\n      redirect: \"error\",\n      signal: AbortSignal.timeout(8_000),\n    });\n  } catch { throw new Error(\"product_entitlement_bridge_unavailable\"); }\n  const responseText = await response.text();\n  let envelope: Record<string, unknown>;\n  try { envelope = JSON.parse(responseText) as Record<string, unknown>; } catch { throw new Error(\"product_entitlement_bridge_invalid_json\"); }\n  if (!response.ok || envelope.ok !== true) {\n    if ([401, 403].includes(response.status)) return false;\n    throw new Error(\"product_entitlement_bridge_failed\");\n  }\n  return envelope.allowed === true;\n}\n\n`;
+  text = text.replace(functionAnchor, `${helper}${functionAnchor}`);
+}
 
-functionMatch = /export\s+(?:async\s+function|const)\s+resolveVlmAdvancedOnlyAccess\b/.exec(text);
-if (!functionMatch) throw new Error("paid_policy_function_lost_after_helper");
-functionStart = functionMatch.index;
-functionOpen = text.indexOf("{", functionStart);
-functionEnd = matchingClose(text, functionOpen, "{", "}");
-functionText = text.slice(functionStart, functionEnd + 1);
-const contexts = [...functionText.matchAll(/const\s+context\s*=\s*normalizePaidContext\s*\(/g)];
-if (!contexts.length) throw new Error("paid_context_anchor_missing");
-const context = contexts.at(-1);
-const open = functionStart + context.index + context[0].lastIndexOf("(");
-const close = matchingClose(text, open, "(", ")");
-const semicolon = text.indexOf(";", close);
-if (close < 0 || semicolon < 0 || semicolon > functionEnd) throw new Error("paid_context_boundary_invalid");
-const block = `
+if (!text.includes('entitlementSource: "product_entitlement_bridge"')) {
+  const anchor = '  const skuTruth = getVlmCurrentSkuTruth(paidDepth, args.locale);\n\n';
+  const block = `  const skuTruth = getVlmCurrentSkuTruth(paidDepth, args.locale);\n\n  // Candidate lane is intentionally Browser Pro only. Basic stays free and never\n  // calls the paid bridge; other products and Advanced continue through their\n  // existing fail-closed authorities.\n  if (args.surface === \"browser\" && paidDepth === \"pro\") {\n    const bridgeEntitlementAllowed = await resolveVelmereBrowserProEntitlementBridge({ request: args.request });\n    if (bridgeEntitlementAllowed === true) {\n      return {\n        ok: true,\n        depth: paidDepth,\n        paidRequired: true,\n        accessMode: paidMode,\n        policy,\n        context,\n        entitlementSource: \"product_entitlement_bridge\",\n        reason: \"paid_entitlement_verified\",\n      };\n    }\n  }\n\n`;
+  text = replaceExactly(text, anchor, block, "browser_pro_bridge_insertion");
+}
 
-  const bridgeEntitlementAllowed = await resolveVelmereProductEntitlementBridge({ request: args.request, productSlug: "browser", requiredTier: depth });
-  if (bridgeEntitlementAllowed === true) {
-    return {
-      ok: true,
-      depth,
-      paidRequired: true,
-      accessMode: ${JSON.stringify(selected.accessMode)},
-      policy: ${selected.policy},
-      context,
-      reason: ${JSON.stringify(selected.reason)},
-    };
-  }
-`;
-text = `${text.slice(0, semicolon + 1)}${block}${text.slice(semicolon + 1)}`;
 fs.writeFileSync(policyPath, text, "utf8");
 let env = fs.readFileSync(envPath, "utf8");
-for (const key of ["VELMERE_PRODUCT_ENTITLEMENT_BRIDGE_URL", "VELMERE_PRODUCT_ENTITLEMENT_SERVER_CAPABILITY"]) if (!new RegExp(`^${key}=`, "m").test(env)) env += `${env.endsWith("\n") ? "" : "\n"}${key}=\n`;
+for (const key of ["VELMERE_PRODUCT_ENTITLEMENT_BRIDGE_URL", "VELMERE_PRODUCT_ENTITLEMENT_SERVER_CAPABILITY"]) {
+  if (!new RegExp(`^${key}=`, "m").test(env)) env += `${env.endsWith("\n") ? "" : "\n"}${key}=\n`;
+}
 fs.writeFileSync(envPath, env, "utf8");
-console.log(JSON.stringify({ status: "PASS_BROWSER_PRO_ENTITLEMENT_BRIDGE_CANDIDATE_PATCHED_V2", beforeSha256: beforeSha, afterSha256: crypto.createHash("sha256").update(fs.readFileSync(policyPath)).digest("hex"), derivedAccessMode: selected.accessMode, derivedReason: selected.reason, derivedPolicyExpression: selected.policy, exactCurrentSourceBytesAtProductExecution: false, customerFinalCredit: false }, null, 2));
+
+const after = fs.readFileSync(policyPath);
+console.log(JSON.stringify({
+  status: "PASS_BROWSER_PRO_ENTITLEMENT_BRIDGE_CANDIDATE_PATCHED_V2",
+  beforeSha256: beforeSha,
+  afterSha256: crypto.createHash("sha256").update(after).digest("hex"),
+  scope: "browser_pro_only",
+  basicBridgeCall: false,
+  crossProductEntitlementAllowed: false,
+  advancedPolicyChanged: false,
+  fabricatedLegacyEntitlementRecord: false,
+  exactCurrentSourceBytesAtProductExecution: false,
+  customerFinalCredit: false,
+  paidValueFinalCredit: false
+}, null, 2));
