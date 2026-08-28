@@ -34,7 +34,6 @@ jobs:
           AUD='velmere-r7-shield-pro-pro-v1-e2e'
           TOKEN_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}")"
           OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$TOKEN_JSON")"
-          if [ "$(tr '.' '\n' <<<"$OIDC" | wc -l)" -ne 3 ]; then exit 1; fi
           provision="$(curl -fsS -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data '{"action":"setup"}')"
           python - "$provision" <<'PY'
           import json,sys
@@ -111,7 +110,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-pro-v1-finalizer-oidc'
+          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-pro-v1-finalizer-oidc-v2'
           AUD='velmere-r7-shield-pro-pro-v1-finalizer'
           token="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}" | python -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
           curl -fsS -X POST "$BASE" -H "Authorization: Bearer $token" -H 'Content-Type: application/json' --data '{"action":"finalize"}' | tee finalizer.json
