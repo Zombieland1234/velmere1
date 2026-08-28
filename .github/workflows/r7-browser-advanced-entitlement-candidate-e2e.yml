@@ -16,7 +16,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: r7-browser-advanced-entitlement-candidate-e2e-focused-v3-${{ github.ref }}
+  group: r7-browser-advanced-entitlement-candidate-e2e-functional-v4-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
           & node 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_advanced_candidate_patch_failed:$LASTEXITCODE" }
 
-      - name: Validate changed Browser Advanced engineering surface
+      - name: Validate changed Browser Advanced surface before E2E
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -70,13 +70,21 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_changed_partition_typecheck_failed:$LASTEXITCODE" }
             & node 'node_modules/eslint/bin/eslint.js' 'lib/commerce/vlm-advanced-only-access-policy.ts' 'lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_PATCH_ESLINT.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_patch_lint_failed:$LASTEXITCODE" }
-            npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_WEBPACK.log'
-            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_webpack_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
 
       - name: Execute Browser Advanced matched-input candidate E2E
         shell: pwsh
         run: ./r7-browser-advanced-harness/run-r7-browser-advanced-candidate-e2e.ps1
+
+      - name: Prove production webpack after hosted E2E
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
+          try {
+            npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_WEBPACK.log'
+            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_webpack_failed:$LASTEXITCODE" }
+          } finally { Pop-Location }
 
       - name: Upload Browser Advanced candidate evidence
         if: always()
