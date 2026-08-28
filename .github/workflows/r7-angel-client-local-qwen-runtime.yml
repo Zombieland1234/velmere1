@@ -1,0 +1,70 @@
+name: R7 Angel Client Local Qwen Runtime
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-angel-client-local-qwen-runtime.yml'
+      - 'r7-angel-client-runtime/run-real-qwen-runtime.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-angel-client-local-qwen-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  real-customer-owned-model-runtime:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      CI: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      DO_NOT_TRACK: '1'
+      NODE_OPTIONS: '--max-old-space-size=6144'
+    steps:
+      - name: Checkout exact runtime control
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Install exact open-source inference runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --no-save --ignore-scripts --package-lock=false '@huggingface/transformers@3.8.1'
+          if ($LASTEXITCODE -ne 0) { throw "angel_transformers_install_failed:$LASTEXITCODE" }
+          $Package=Get-Content -LiteralPath 'node_modules/@huggingface/transformers/package.json' -Raw | ConvertFrom-Json
+          if ([string]$Package.version -ne '3.8.1' -or [string]$Package.license -ne 'Apache-2.0') { throw 'angel_transformers_package_identity_invalid' }
+
+      - name: Execute exact pinned Qwen model without provider credentials
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & node 'r7-angel-client-runtime/run-real-qwen-runtime.mjs'
+          if ($LASTEXITCODE -ne 0) { throw "angel_real_local_model_runtime_failed:$LASTEXITCODE" }
+          $Receipt=Get-Content -LiteralPath 'artifacts/r7/angel-local-model/R7_ANGEL_CLIENT_LOCAL_QWEN_RUNTIME.json' -Raw | ConvertFrom-Json -Depth 100
+          if ($Receipt.status -ne 'PASS_REAL_CUSTOMER_OWNED_OPEN_SOURCE_MODEL_RUNTIME') { throw 'angel_local_runtime_status_invalid' }
+          if (-not [bool]$Receipt.runtime.realModelRuntimeExecuted -or [bool]$Receipt.runtime.externalApiProviderExecuted -or [bool]$Receipt.runtime.credentialUsed) { throw 'angel_local_runtime_truth_boundary_invalid' }
+          if ([bool]$Receipt.customerFinalCredit -or [bool]$Receipt.paidValueCredit) { throw 'angel_local_runtime_overclaim' }
+          if (@($Receipt.outputs).Count -ne 3 -or [int64]$Receipt.modelCache.totalBytes -lt 104857600) { throw 'angel_local_runtime_evidence_incomplete' }
+          Write-Host ($Receipt | ConvertTo-Json -Depth 100 -Compress)
+
+      - name: Upload model-runtime evidence without model weights
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-angel-client-local-qwen-runtime-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/r7/angel-local-model/R7_ANGEL_CLIENT_LOCAL_QWEN_RUNTIME.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
