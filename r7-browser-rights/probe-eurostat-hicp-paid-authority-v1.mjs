@@ -16,6 +16,7 @@ const ADVANCED_CATEGORIES = Object.freeze([
   "CP07", "CP08", "CP09", "CP10", "CP11", "CP12", "CP13",
 ]);
 const MAX_RESPONSE_BYTES = 1_048_576;
+const MAX_POLICY_BYTES = 2_097_152;
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -30,6 +31,56 @@ function exactKeys(index, expected, label) {
   const actual = Object.keys(index).sort();
   const wanted = [...expected].sort();
   assert(JSON.stringify(actual) === JSON.stringify(wanted), `${label}_index_mismatch:${actual.join(",")}`);
+}
+
+async function readBoundedResponse(response, maxBytes, label) {
+  assert(response.ok, `${label}_http_${response.status}`);
+  const declared = Number(response.headers.get("content-length") ?? 0);
+  assert(!declared || declared <= maxBytes, `${label}_declared_response_too_large`);
+  assert(response.body, `${label}_body_missing`);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      total += part.value.byteLength;
+      assert(total <= maxBytes, `${label}_response_too_large`);
+      chunks.push(part.value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)), total);
+}
+
+async function fetchOfficialPolicy(policyUrl) {
+  const requested = new URL(policyUrl);
+  assert(requested.origin === ORIGIN && requested.pathname.startsWith("/eurostat/"), "policy_url_boundary_invalid");
+  const response = await fetch(requested, {
+    method: "GET",
+    headers: { accept: "text/html,application/xhtml+xml", "cache-control": "no-store" },
+    cache: "no-store",
+    redirect: "follow",
+    signal: AbortSignal.timeout(30_000),
+  });
+  const finalUrl = new URL(response.url);
+  assert(finalUrl.origin === ORIGIN && finalUrl.pathname.startsWith("/eurostat/"), "policy_redirect_boundary_invalid");
+  const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+  assert(contentType.includes("text/html") || contentType.includes("application/xhtml+xml"), "policy_content_type_invalid");
+  const bytes = await readBoundedResponse(response, MAX_POLICY_BYTES, "policy");
+  const normalized = bytes.toString("utf8").replace(/\s+/gu, " ").toLowerCase();
+  assert(normalized.includes("commercial") && normalized.includes("reuse"), "policy_expected_terms_missing");
+  assert(normalized.includes("source") || normalized.includes("acknowledg"), "policy_attribution_term_missing");
+  return {
+    requestedUrl: requested.toString(),
+    finalUrl: finalUrl.toString(),
+    httpStatus: response.status,
+    contentType: response.headers.get("content-type"),
+    byteLength: bytes.byteLength,
+    sha256: sha256(bytes),
+  };
 }
 
 function buildUrl(categories) {
@@ -54,10 +105,8 @@ async function fetchAndInspect(tier, categories) {
   });
   assert(response.status === 200, `${tier}_http_${response.status}`);
   assert((response.headers.get("content-type") ?? "").toLowerCase().includes("application/json"), `${tier}_content_type_invalid`);
-  const declaredLength = Number(response.headers.get("content-length") ?? 0);
-  assert(!declaredLength || declaredLength <= MAX_RESPONSE_BYTES, `${tier}_declared_response_too_large`);
-  const bytes = Buffer.from(await response.arrayBuffer());
-  assert(bytes.byteLength > 0 && bytes.byteLength <= MAX_RESPONSE_BYTES, `${tier}_response_size_invalid`);
+  const bytes = await readBoundedResponse(response, MAX_RESPONSE_BYTES, tier);
+  assert(bytes.byteLength > 0, `${tier}_response_empty`);
   let data;
   try { data = JSON.parse(bytes.toString("utf8")); }
   catch { throw new Error(`${tier}_invalid_json`); }
@@ -98,13 +147,14 @@ assert(packet?.customerFinalCredit === false && packet?.paidValueFinalCredit ===
 assert(packet?.boundedCandidateScope?.datasetCode === "prc_hicp_minr", "rights_packet_dataset_scope_invalid");
 exactKeys(Object.fromEntries(packet.boundedCandidateScope.geographies.map((value) => [value, true])), GEOGRAPHIES, "rights_packet_geographies");
 
-const [pro, advanced] = await Promise.all([
+const [policy, pro, advanced] = await Promise.all([
+  fetchOfficialPolicy(packet.officialAuthorities.copyrightAndReusePolicyUrl),
   fetchAndInspect("pro", ["TOTAL"]),
   fetchAndInspect("advanced", ADVANCED_CATEGORIES),
 ]);
 
 const receipt = {
-  schemaVersion: "velmere.r7.browser-eurostat-technical-probe.v1",
+  schemaVersion: "velmere.r7.browser-eurostat-technical-probe.v2",
   status: "PASS_TECHNICAL_ACCESS_WITHHELD_EXTERNAL_LEGAL_APPROVAL",
   observedAt: new Date().toISOString(),
   githubRunId: process.env.GITHUB_RUN_ID ?? null,
@@ -113,7 +163,7 @@ const receipt = {
   runtime: { node: process.version, platform: process.platform, architecture: process.arch },
   rightsReviewPacketPath: "r7-browser-rights/R7_BROWSER_EUROSTAT_PAID_RIGHTS_REVIEW_PACKET_20260828.json",
   rightsReviewPacketSha256: sha256(packetBytes),
-  officialPolicyUrl: packet.officialAuthorities.copyrightAndReusePolicyUrl,
+  officialPolicy: policy,
   apiDocumentationUrl: packet.officialAuthorities.apiDocumentationUrl,
   technicalAccessVerified: true,
   legalApprovalRecorded: false,
@@ -123,7 +173,7 @@ const receipt = {
   rightsGateBypassed: false,
   providerObservations: [pro, advanced],
   oneActionRequired: packet.requiredAuthorizedDecision.oneAction,
-  truthBoundary: "This is a live, zero-euro technical API/schema probe. It proves neither legal approval nor paid customer delivery and must not unlock the fail-closed Browser route.",
+  truthBoundary: "This is a live, zero-euro technical API/schema and official-policy byte probe. It proves neither legal approval nor paid customer delivery and must not unlock the fail-closed Browser route.",
 };
 
 await mkdir(dirname(OUTPUT_PATH), { recursive: true });
