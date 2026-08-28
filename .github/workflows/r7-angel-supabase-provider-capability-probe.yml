@@ -1,0 +1,84 @@
+name: R7 Angel Supabase Provider Capability Probe
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-angel-supabase-provider-capability-probe.yml'
+      - 'supabase/functions/r7-angel-provider-env-capability-oidc/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-angel-supabase-provider-capability-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  capability-probe:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact probe source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Probe server-only provider capability without exposing secrets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          function Require([bool]$Condition,[string]$Message){if(-not $Condition){throw $Message}}
+          Require (-not [string]::IsNullOrWhiteSpace($env:ACTIONS_ID_TOKEN_REQUEST_URL)) 'angel_provider_oidc_url_missing'
+          Require (-not [string]::IsNullOrWhiteSpace($env:ACTIONS_ID_TOKEN_REQUEST_TOKEN)) 'angel_provider_oidc_token_missing'
+          $OidcUri=[Uri]$env:ACTIONS_ID_TOKEN_REQUEST_URL
+          Require ($OidcUri.IsAbsoluteUri -and $OidcUri.Scheme -eq 'https' -and $OidcUri.DnsSafeHost.EndsWith('.actions.githubusercontent.com',[StringComparison]::OrdinalIgnoreCase)) 'angel_provider_oidc_authority_invalid'
+          $Body='{"action":"probe"}'
+          $BodyBytes=[Text.Encoding]::UTF8.GetBytes($Body)
+          $BodySha=([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($BodyBytes))).Replace('-','').ToLowerInvariant()
+          $Audience='velmere-r7-angel-provider-capability:'+$BodySha
+          $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
+          $Oidc=[string](Invoke-RestMethod -Method Get -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($Audience)) -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -MaximumRedirection 0 -TimeoutSec 20).value
+          Write-Host "::add-mask::$Oidc"
+          Require ($Oidc.Split('.').Count -eq 3) 'angel_provider_oidc_shape_invalid'
+          $Response=Invoke-WebRequest -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-provider-env-capability-oidc' -Method Post -Headers @{Authorization='Bearer '+$Oidc;Accept='application/json'} -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -MaximumRedirection 0 -TimeoutSec 30
+          $Raw=[string]$Response.Content
+          Require ([int]$Response.StatusCode -eq 200) ('angel_provider_probe_http_failed:'+($Raw.Substring(0,[Math]::Min(300,$Raw.Length))))
+          $Data=$Raw|ConvertFrom-Json -Depth 20
+          Require ($Data.ok -eq $true -and @('CONFIGURED','NOT_CONFIGURED') -contains [string]$Data.status) 'angel_provider_probe_contract_invalid'
+          Require ($Data.secretValuesReturned -eq $false -and $Data.secretLengthsReturned -eq $false -and $Data.secretHashesReturned -eq $false) 'angel_provider_probe_secret_boundary_invalid'
+          Require ($Data.providerExecuted -eq $false -and $Data.customerFinalCredit -eq $false) 'angel_provider_probe_overclaim'
+          $Receipt=[ordered]@{
+            schemaVersion='velmere.r7.angel-supabase-provider-capability-probe.v1'
+            status=[string]$Data.status
+            githubRunId=$env:GITHUB_RUN_ID
+            githubRunAttempt=$env:GITHUB_RUN_ATTEMPT
+            githubSha=$env:GITHUB_SHA
+            helperSourceSha256=(Get-FileHash -LiteralPath 'supabase/functions/r7-angel-provider-env-capability-oidc/index.ts' -Algorithm SHA256).Hash.ToLowerInvariant()
+            workflowSha256=(Get-FileHash -LiteralPath '.github/workflows/r7-angel-supabase-provider-capability-probe.yml' -Algorithm SHA256).Hash.ToLowerInvariant()
+            geminiApiKeyConfigured=[bool]$Data.geminiApiKeyConfigured
+            googleGenerativeAiApiKeyConfigured=[bool]$Data.googleGenerativeAiApiKeyConfigured
+            googleApiKeyConfigured=[bool]$Data.googleApiKeyConfigured
+            openAiApiKeyConfigured=[bool]$Data.openAiApiKeyConfigured
+            anthropicApiKeyConfigured=[bool]$Data.anthropicApiKeyConfigured
+            secretValuesReturned=$false
+            secretLengthsReturned=$false
+            secretHashesReturned=$false
+            providerExecuted=$false
+            customerFinalCredit=$false
+          }
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel-provider'|Out-Null
+          $Receipt|ConvertTo-Json -Depth 20|Set-Content -LiteralPath 'artifacts/r7/angel-provider/R7_ANGEL_SUPABASE_PROVIDER_CAPABILITY.json' -Encoding utf8
+          Write-Host ($Receipt|ConvertTo-Json -Depth 20)
+
+      - name: Upload capability-only receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-angel-supabase-provider-capability-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/r7/angel-provider/R7_ANGEL_SUPABASE_PROVIDER_CAPABILITY.json
+          if-no-files-found: error
+          retention-days: 7
