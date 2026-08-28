@@ -53,7 +53,7 @@ jobs:
           $ErrorActionPreference='Stop'
           $Archive=Get-Content -LiteralPath '.github/workflows/r7-audit-basic-prospective-frozen-benchmark.yml' -Raw
           function Extract([string]$Name){
-            $m=[regex]::Match($Archive,"(?m)^\s+$Name:\s+'([^']+)'\s*$")
+            $m=[regex]::Match($Archive,"(?m)^\s+${Name}:\s+'([^']+)'\s*$")
             if(-not $m.Success){throw "frozen_archive_block_missing_$Name"}
             return $m.Groups[1].Value
           }

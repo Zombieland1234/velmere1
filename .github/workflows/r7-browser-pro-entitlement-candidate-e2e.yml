@@ -37,9 +37,12 @@ jobs:
           node-version: '24.18.0'
           check-latest: false
 
-      - name: Reconstruct and prove exact Risk/Browser base
+      - name: Prepare exact hash-bound Risk/Browser base
         shell: pwsh
-        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1
+        # This product E2E has its own full TypeScript/lint/webpack gates below.
+        # The separate canonical Windows workflow owns 52x2/bundle authority;
+        # repeating it here delayed every entitlement diagnostic by ~50 minutes.
+        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1 -Mode Prepare
 
       - name: Apply Browser Pro entitlement candidate patch
         shell: pwsh

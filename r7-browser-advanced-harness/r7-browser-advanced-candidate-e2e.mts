@@ -7,6 +7,8 @@ const trusted = process.env.VELMERE_TRUSTED_ACCOUNT_HEADER_HMAC_SECRET_CURRENT ?
 const oidc = process.env.R7_BROWSER_ADVANCED_GITHUB_OIDC ?? "";
 const helperUrl = process.env.R7_BROWSER_ADVANCED_HELPER_URL ?? "";
 const restoreUrl = process.env.R7_BROWSER_ADVANCED_RESTORE_URL ?? "";
+const entitlementBridgeUrl = process.env.VELMERE_PRODUCT_ENTITLEMENT_BRIDGE_URL ?? "";
+const entitlementServerCapability = process.env.VELMERE_PRODUCT_ENTITLEMENT_SERVER_CAPABILITY ?? "";
 const a = { userId: process.env.R7_BROWSER_ADVANCED_USER_A_ID ?? "", accountId: process.env.R7_BROWSER_ADVANCED_ACCOUNT_A ?? "", token: process.env.R7_BROWSER_ADVANCED_USER_A_JWT ?? "", label: "a" };
 const b = { userId: process.env.R7_BROWSER_ADVANCED_USER_B_ID ?? "", accountId: process.env.R7_BROWSER_ADVANCED_ACCOUNT_B ?? "", token: process.env.R7_BROWSER_ADVANCED_USER_B_JWT ?? "", label: "b" };
 const entitlementId = process.env.R7_BROWSER_ADVANCED_ENTITLEMENT_ID ?? "";
@@ -38,9 +40,78 @@ function meaningful(value: unknown) { if (typeof value === "string") return valu
 assert(trusted.length >= 32, "trusted_account_hmac_missing");
 assert(oidc.split(".").length === 3, "browser_advanced_oidc_missing");
 assert(helperUrl.startsWith("https://") && restoreUrl.startsWith("https://"), "browser_advanced_helper_missing");
+assert(entitlementBridgeUrl.startsWith("https://") && entitlementServerCapability.length >= 48, "browser_advanced_entitlement_bridge_missing");
 assert(a.accountId.startsWith("supabase:") && b.accountId.startsWith("supabase:"), "browser_advanced_accounts_missing");
 assert(a.token.split(".").length === 3 && b.token.split(".").length === 3, "browser_advanced_jwts_missing");
 assert(/^ent_[a-f0-9]{48}$/.test(entitlementId), "browser_advanced_entitlement_missing");
+
+async function resolveDirectEntitlement(account: typeof a, requiredTier: "pro" | "advanced") {
+  const response = await fetch(entitlementBridgeUrl, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${account.token}`,
+      "x-velmere-entitlement-server-capability": entitlementServerCapability,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      schemaVersion: "velmere.product-entitlement-bridge-request.v1",
+      action: "resolve",
+      productSlug: "browser",
+      requiredTier,
+    }),
+    cache: "no-store",
+    redirect: "error",
+    signal: AbortSignal.timeout(8_000),
+  });
+  const text = await response.text();
+  let json: Record<string, any> | null = null;
+  try { json = JSON.parse(text) as Record<string, any>; } catch { }
+  return { status: response.status, json, bodyPrefix: text.slice(0, 240) };
+}
+
+// The downstream product route checks rights before it can deliver paid data.
+// Prove the real hierarchical entitlement authority separately, without using
+// that technical proof to bypass or satisfy customer-display rights.
+const directAdvanced = await resolveDirectEntitlement(a, "advanced");
+assert(
+  directAdvanced.status === 200
+    && directAdvanced.json?.ok === true
+    && directAdvanced.json?.allowed === true,
+  `browser_advanced_direct_owner_failed_${directAdvanced.status}:${directAdvanced.bodyPrefix}`,
+);
+const directPro = await resolveDirectEntitlement(a, "pro");
+assert(
+  directPro.status === 200
+    && directPro.json?.ok === true
+    && directPro.json?.allowed === true,
+  `browser_advanced_direct_did_not_cover_pro_${directPro.status}:${directPro.bodyPrefix}`,
+);
+const directDenied = await resolveDirectEntitlement(b, "advanced");
+assert(
+  (directDenied.status === 200
+    && directDenied.json?.ok === true
+    && directDenied.json?.allowed === false)
+    || [401, 403].includes(directDenied.status),
+  `browser_advanced_direct_cross_account_not_denied_${directDenied.status}:${directDenied.bodyPrefix}`,
+);
+await writeFile("artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_DIRECT_ENTITLEMENT_E2E.json", `${JSON.stringify({
+  schemaVersion: "velmere.r7.browser-advanced-direct-entitlement-e2e.v1",
+  status: "PASS_BROWSER_ADVANCED_DIRECT_ENTITLEMENT_REAL_BRIDGE",
+  githubRunId: process.env.GITHUB_RUN_ID ?? null,
+  githubRunAttempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 0),
+  githubSha: process.env.GITHUB_SHA ?? null,
+  productSlug: "browser",
+  advancedOwnerAllowed: true,
+  advancedEntitlementCoversPro: true,
+  unentitledAccountDenied: true,
+  serverCapabilityReturned: false,
+  rawTokenReturned: false,
+  customerArtifactDelivered: false,
+  customerFinalCredit: false,
+  paidValueFinalCredit: false,
+  truthBoundary: "Real hierarchical entitlement authority only. Customer delivery and paid value remain blocked until the independent rights and artifact gates pass.",
+}, null, 2)}\n`);
 
 const searchUrl = `${base}/api/search?q=EUR%2FUSD&mode=market&intent=detail&locale=en`;
 const searchResponse = await fetch(searchUrl, { headers: { accept: "application/json", "cache-control": "no-store" }, cache: "no-store" });
@@ -63,7 +134,36 @@ const basic = await preview(a, "basic");
 const pro = await preview(a, "pro");
 const advanced = await preview(a, "advanced");
 assert(basic.response.status === 200 && basic.json?.ok === true, "advanced_candidate_basic_failed");
-assert(pro.response.status === 200 && pro.json?.ok === true && typeof pro.json?.renderToken === "string", `advanced_entitlement_did_not_cover_pro_${pro.response.status}`);
+if (pro.response.status !== 200) {
+  let withheld: Record<string, any> | null = null;
+  try { withheld = JSON.parse(pro.errorText) as Record<string, any>; } catch { }
+  if (
+    pro.response.status === 503
+    && withheld?.schemaVersion === "velmere.current-execution.browser-customer-safe-withheld.v1"
+    && withheld?.availability === "WITHHELD"
+    && withheld?.error === "browser_customer_data_delivery_unavailable"
+  ) {
+    await writeFile("artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_WITHHELD_RIGHTS_E2E.json", `${JSON.stringify({
+      schemaVersion: "velmere.r7.browser-advanced-withheld-rights-e2e.v1",
+      status: "WITHHELD_EXTERNAL_CUSTOMER_DISPLAY_EXPORT_RIGHTS",
+      githubRunId: process.env.GITHUB_RUN_ID ?? null,
+      githubRunAttempt: Number(process.env.GITHUB_RUN_ATTEMPT ?? 0),
+      githubSha: process.env.GITHUB_SHA ?? null,
+      directAdvancedEntitlementBridgePassed: true,
+      directAdvancedCoversProPassed: true,
+      productRouteHttpStatus: 503,
+      productRouteFailClosed: true,
+      rightsGateBypassed: false,
+      customerArtifactDelivered: false,
+      customerFinalCredit: false,
+      paidValueFinalCredit: false,
+      requiredAction: "Attach a current, field-specific authority that permits the actual paid customer-display/export purposes, then rerun the unchanged route gate.",
+    }, null, 2)}\n`);
+    throw new Error("browser_advanced_withheld_external_customer_display_export_rights");
+  }
+  throw new Error(`advanced_pro_preview_status_${pro.response.status}:${pro.errorText.slice(0, 360)}`);
+}
+assert(pro.json?.ok === true && typeof pro.json?.renderToken === "string", "advanced_entitlement_did_not_cover_pro_valid_response");
 if (advanced.response.status !== 200) throw new Error(`advanced_preview_status_${advanced.response.status}:${advanced.errorText.slice(0, 360)}`);
 assert(advanced.json?.ok === true && typeof advanced.json?.renderToken === "string", "advanced_preview_invalid");
 const bAdvanced = await preview(b, "advanced");

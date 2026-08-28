@@ -21,46 +21,15 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 180
     env:
-      R7_CANDIDATE: 'R7_MERGED_CURRENT_SOURCE'
-      R7_BASE_PART_COUNT: '36'
-      R7_BASE_BUNDLE_SHA256: 'fb4c3d2a9524ec4f60f2d21cb430131bf11cfc99b108c96d2ad7d8543c941c87'
-      R7_BASE_EXECUTION_SLICE_AGGREGATE_SHA256: 'fb6b62ecea5e3f86a2d7b88a7afff427b77affd11823963ba983dc0e44021cc4'
-      R7_BASE_TRANSPORT_RECEIPT_SHA256: 'e7d16c41488c2dc72ee88edbdc250ad14a98d0dbbc188ae09c7fbebdae541e61'
-      R7_PATCH_RECEIPT_SHA256: 'f8ebec356391f46b308bd8b32beffccd7a554c29466d0309506eec3e6ac6e0de'
-      R7_PATCH_SHA256: '7f32287ca6a13ffb365bcf7eaa2e2b7e522f1316c64a7fb9033c2cd17f3634f0'
-      R7_PATCH_BYTE_LENGTH: '112009'
-      R7_PATCH_CHUNK_COUNT: '5'
-      R7_PATCH_GZIP_SHA256: '920b9fb291384c317cc28662379af9ea463b7d07b4e767d620b8c83b0a2169ea'
-      R7_PATCH_GZIP_BYTE_LENGTH: '29661'
-      R7_PATCH_BASE64_BYTE_LENGTH: '39548'
-      R7_FILE_COUNT: '3506'
-      R7_PAYLOAD_BYTE_LENGTH: '63055068'
-      R7_TARGET_BUNDLE_SHA256: '9154d6be2d62bc07cb786136fe0586b72bcef5e8afabb1e848de759a000d0190'
-      R7_EXECUTION_SLICE_AGGREGATE_SHA256: '504d7d132d7634959eb5643902c5508b2faec954937f3a3a949120913a0fc6c5'
-      R7_EXECUTION_SLICE_MANIFEST_SHA256: 'cd07a81aa556ddb128c6d84e45b3ec752b8bbe0222e96abbf5816504c9bdcfd9'
-      R7_FULL_SOURCE_AGGREGATE_SHA256: 'd3a95fb9f8b218e751d9a2d3b75bd2d36a766cff6497207a35156ff46318e1c0'
-      R7_FULL_SOURCE_MANIFEST_SHA256: 'b76d26819db32d5cd7eb17258d3c9c1bf4d6b1345c9df985b20e074786f7fd5f'
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
       R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
       R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
-      R7_PDF_FONT_PATH: 'r7-runtime/external-assets/manrope-pdf-latin-plus-ext.ttf'
-      R7_PDF_FONT_BYTE_LENGTH: '46464'
-      R7_PDF_FONT_SHA256: 'a07eea516ecb22957f162d68a559462c9af0534487669969d500f8e92aece0fa'
-      R7_PDF_FONT_GIT_BLOB_SHA1: '716393b0614fdceaf6f5578694479466ed495b14'
-      R7_PDF_FONT_LICENSE_PATH: 'r7-runtime/external-assets/OFL-Manrope.txt'
-      R7_PDF_FONT_LICENSE_BYTE_LENGTH: '4384'
-      R7_PDF_FONT_LICENSE_SHA256: 'e01b637272e0cbdfb240184dd98ea5cc671556d9894dae2668d92ab2c906787c'
-      R7_PDF_FONT_LICENSE_GIT_BLOB_SHA1: '472064afc4b8dec9079fab03b8ffafb617a1b2d8'
-      R7_RUNNER_RECEIPT_SHA256: '59056cc4623d49b124cd3a1f4057324c67aa64dfcf0073b88395d9a1313fb26d'
-      R7_RUNNER_SHA256: '3899f9dc9defe2c290771ab9b737334d8c5128e1328cd83f4e92dafd01639065'
-      R7_RUNNER_BYTE_LENGTH: '34222'
-      R7_RUNNER_GZIP_SHA256: '7db02ddb9d4221dbd8a608141da91dca7f54b4490744c1a7d4b45908387d9231'
-      R7_RUNNER_GZIP_BYTE_LENGTH: '8427'
-      R7_RUNNER_GZIP_BASE64_BYTE_LENGTH: '11236'
-      R7_RUNNER_CHUNK_COUNT: '2'
+      EXACT_DEPLOYED_SOURCE_SHA256: '3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
-      GIT_CEILING_DIRECTORIES: ${{ github.workspace }}
-      VELMERE_PDF_FONT_PATH: ${{ github.workspace }}\r7-runtime\external-assets\manrope-pdf-latin-plus-ext.ttf
       NEXT_PUBLIC_SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'
       VELMERE_AUDIT_CUSTOMER_BRIDGE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-audit-basic-customer-bridge'
@@ -78,54 +47,66 @@ jobs:
           node-version: '24.18.0'
           check-latest: false
 
-      - name: Reconstruct promoted source and prove exact base before candidate patch
+      - name: Reconstruct exact current source before candidate patch
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $Receipt=Get-Content 'r7-runner-v3/R7_WINDOWS_RUNNER_V3_RECEIPT.json' -Raw|ConvertFrom-Json
-          if((Get-FileHash 'r7-runner-v3/R7_WINDOWS_RUNNER_V3_RECEIPT.json' -Algorithm SHA256).Hash.ToLowerInvariant()-ne$env:R7_RUNNER_RECEIPT_SHA256){throw'runner_receipt_sha'}
-          $Parts=@(Get-ChildItem 'r7-runner-v3/runner-gzip-b64' -File|Sort-Object Name);if($Parts.Count-ne[int]$env:R7_RUNNER_CHUNK_COUNT){throw'runner_chunk_count'}
-          $E=[System.Collections.Generic.List[string]]::new();foreach($Row in @($Receipt.gzip.chunks)){$P='r7-runner-v3/runner-gzip-b64/'+[string]$Row.name;if((Get-FileHash $P -Algorithm SHA256).Hash.ToLowerInvariant()-ne[string]$Row.sha256){throw'runner_chunk_sha'};$E.Add([IO.File]::ReadAllText($P,[Text.Encoding]::ASCII))}
-          $Encoded=[string]::Concat($E);$Gz=Join-Path $env:RUNNER_TEMP 'r7-v3.ps1.gz';[IO.File]::WriteAllBytes($Gz,[Convert]::FromBase64String($Encoded));if((Get-FileHash $Gz -Algorithm SHA256).Hash.ToLowerInvariant()-ne$env:R7_RUNNER_GZIP_SHA256){throw'runner_gzip_sha'}
-          $Ps=Join-Path $env:RUNNER_TEMP 'r7-v3.ps1';$I=[IO.File]::OpenRead($Gz);$Z=[IO.Compression.GzipStream]::new($I,[IO.Compression.CompressionMode]::Decompress);$O=[IO.File]::Create($Ps);try{$Z.CopyTo($O)}finally{$O.Dispose();$Z.Dispose();$I.Dispose()};if((Get-FileHash $Ps -Algorithm SHA256).Hash.ToLowerInvariant()-ne$env:R7_RUNNER_SHA256){throw'runner_source_sha'}
-          & pwsh -NoProfile -File $Ps
-          if($LASTEXITCODE-ne0){throw'exact_promoted_base_failed'}
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
+          Push-Location 'r7-work'
+          try {
+            node scripts/runtime-config/verify-runtime-env-contract.mjs --output ../R7_AUDIT_APP_ROUTE_CANDIDATE_ENV_CONTRACT.json
+            if ($LASTEXITCODE -ne 0) { throw "exact_current_source_env_contract_failed:$LASTEXITCODE" }
+            $EnvReceipt = Get-Content '../R7_AUDIT_APP_ROUTE_CANDIDATE_ENV_CONTRACT.json' -Raw | ConvertFrom-Json
+            if ($EnvReceipt.status -ne 'PASS' -or @($EnvReceipt.missingRuntimeKeys).Count -ne 0) { throw 'exact_current_source_env_contract_not_pass' }
+            $EnvExample = Get-Content 'ENV_PRODUCTION_READY.example' -Raw
+            foreach ($Required in @('VELMERE_ACCOUNT_ARTIFACT_WRITE_BRIDGE_URL','VELMERE_BROWSER_SERVER_CAPABILITY')) {
+              if ($EnvExample -notmatch "(?m)^$Required=") { throw "exact_current_source_env_documentation_missing:$Required" }
+            }
+          } finally {
+            Pop-Location
+          }
 
       - name: Apply Audit Basic app-route candidate and compile
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          Push-Location r7-work
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
           try {
             node ../diagnostic-current/patch-audit-basic-zero-vercel-app-route-candidate.mjs | Tee-Object -FilePath ../R7_AUDIT_APP_ROUTE_CANDIDATE_PATCH.json
-            if($LASTEXITCODE-ne0){throw'candidate_patch_failed'}
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_patch_failed' }
             npm run typecheck
-            if($LASTEXITCODE-ne0){throw'candidate_typecheck_failed'}
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_typecheck_failed' }
             npx eslint lib/security/audit-basic-customer-bridge-client.ts app/api/audit/basic/case/route.ts app/api/audit/basic/report/route.ts app/api/audit/basic/report/restore/route.ts --max-warnings=0
-            if($LASTEXITCODE-ne0){throw'candidate_targeted_eslint_failed'}
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_targeted_eslint_failed' }
             npm run build:webpack
-            if($LASTEXITCODE-ne0){throw'candidate_webpack_failed'}
-          } finally { Pop-Location }
+            if ($LASTEXITCODE -ne 0) { throw 'candidate_webpack_failed' }
+          } finally {
+            Pop-Location
+          }
 
       - name: Execute real Next Audit customer-route lifecycle candidate E2E
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
+          $ErrorActionPreference = 'Stop'
           function ShaBytes([byte[]]$B){return([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($B))).Replace('-','').ToLowerInvariant()};function ShaText([string]$T){return ShaBytes([Text.Encoding]::UTF8.GetBytes($T))};function PJ([string]$U,[hashtable]$H,[object]$B){$J=$B|ConvertTo-Json -Depth 30 -Compress;$R=Invoke-WebRequest -Uri $U -Method Post -Headers $H -ContentType 'application/json' -Body $J -SkipHttpErrorCheck -TimeoutSec 30;$P=$null;try{$P=$R.Content|ConvertFrom-Json -Depth 40}catch{};return [pscustomobject]@{Status=[int]$R.StatusCode;Body=$P;Raw=[string]$R.Content}}
           $Sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'};$TR=Invoke-RestMethod -Uri($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Sep+'audience='+[Uri]::EscapeDataString($env:AUDIT_OIDC_AUDIENCE))-Headers@{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN}-TimeoutSec 20;$Oidc=[string]$TR.value;$OU=$env:NEXT_PUBLIC_SUPABASE_URL+'/functions/v1/r7-audit-basic-app-candidate-oidc';$OH=@{Authorization='Bearer '+$Oidc;Accept='application/json'}
           $P=PJ $OU $OH @{action='provision'};if($P.Status-ne200-or$P.Body.ok-ne$true){throw('provision_failed:'+($P.Raw.Substring(0,[Math]::Min(400,$P.Raw.Length))))};$A=$P.Body.a;$B=$P.Body.b;$env:VELMERE_AUDIT_SERVER_CAPABILITY=[string]$P.Body.auditServerCapability
           $StdOut=Join-Path $env:RUNNER_TEMP 'audit-app-next.stdout.log';$StdErr=Join-Path $env:RUNNER_TEMP 'audit-app-next.stderr.log';$Next=Start-Process -FilePath 'node' -ArgumentList @('node_modules/next/dist/bin/next','dev','--hostname','localhost','--port','3112') -WorkingDirectory (Join-Path $PWD 'r7-work') -PassThru -RedirectStandardOutput $StdOut -RedirectStandardError $StdErr
           try {
-            $Ready=$false;for($i=0;$i-lt60;$i++){Start-Sleep -Seconds 2;try{$Q=Invoke-WebRequest -Uri 'http://localhost:3112/' -Method Get -SkipHttpErrorCheck -TimeoutSec 5;if([int]$Q.StatusCode-ge200){$Ready=$true;break}}catch{}};if(-not$Ready){throw'next_dev_not_ready'}
-            $Local='http://localhost:3112';$AH=@{Authorization='Bearer '+[string]$A.accessToken;Accept='application/json'};$BH=@{Authorization='Bearer '+[string]$B.accessToken;Accept='application/json'};$DirectAH=@{Authorization='Bearer '+[string]$A.accessToken;'x-velmere-audit-server-capability'=$env:VELMERE_AUDIT_SERVER_CAPABILITY;Accept='application/json'};$Case='ABA-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$Req='audit-app-request-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$Target='0x6666666666666666666666666666666666666666';$TH='sha256:'+(ShaText('velmere-audit-contract-target-v1:56:'+$Target.ToLowerInvariant()))
-            $CI=@{caseId='audit-app-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;caseRef=$Case;requestId=$Req;targetKind='contract';targetPrivate=$Target.ToLowerInvariant();targetHash=$TH;targetChainId='56';targetChainName='BSC';displayLabel='Audit Basic app-route candidate';tier='basic';locale='en';status='queued_basic_prescreen';accountId=[string]$A.accountId;accountEmail=$null;entitlementRequired=$false;entitlementVerified=$false;analysisStarted=$false;intakeReceipt=@{schemaVersion='audit-app-candidate-v1';customerFinalCredit=$false};sourceCandidatesProtected=@{auditUrl=$null;docsUrl=$null;githubUrl=$null;website=$null}}
-            $C=PJ($Local+'/api/audit/basic/case')$AH $CI;if($C.Status-ne200-or$C.Body.ok-ne$true){throw('local_case_create_failed:'+($C.Raw.Substring(0,[Math]::Min(500,$C.Raw.Length))))};$BG=Invoke-WebRequest -Uri($Local+'/api/audit/basic/case?caseRef='+[Uri]::EscapeDataString($Case))-Headers$BH -SkipHttpErrorCheck -TimeoutSec20;if([int]$BG.StatusCode-ne404){throw'local_cross_account_case_not_denied'}
-            $Claim=PJ $OU $OH @{action='claim';caseRef=$Case};if($Claim.Status-ne200-or$Claim.Body.claim.ok-ne$true){throw'claim_failed'};$At=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ');$Pdf=[Text.Encoding]::UTF8.GetBytes('%PDF-1.4'+"`n"+('D'*1800)+"`n%%EOF`n");$PD='sha256:'+(ShaBytes $Pdf);$AHsh=ShaText('velmere-account-binding-v1:'+[string]$A.accountId);$RID='audit-app-report-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$RV='sha256:'+(ShaText('rv:'+$Case));$SD='sha256:'+(ShaText('snap:'+$Case));$SR='sha256:'+(ShaText('src:'+$Case));$Snap=@{requestId=$Req;tier='basic';digest=$SD;sourceReceiptRoot=$SR;generatedAt=$At;renderContract=@{id='pass4808-deterministic-latin-extended-pagination-v1';pdfDigest=$PD;pdfByteLength=$Pdf.Length};auditExecutionRelease=@{expectedTier='basic';caseRef=$Case;decision='ALLOW_COMPLETE';completionAllowed=$true;persistAllowed=$true;packetDigest='sha256:'+(ShaText('packet:'+$Case));currentDeploymentReceiptDigest='sha256:'+(ShaText('deploy:'+$Case));matchedInputDigest='sha256:'+(ShaText('input:'+$Case));releaseBindingDigest='sha256:'+(ShaText('release:'+$Case))};customerEligibility=@{commercialUseReady=$true}};$Mat=@('velmere.audit-basic-exact-immutable-pdf-artifact.v1',$RID,$Case,$Req,$AHsh,$TH,$RV,$SD,$SR,$PD,[string]$Pdf.Length,'pass4808-deterministic-latin-extended-pagination-v1',$At)-join"`n";$RD='sha256:'+(ShaText $Mat);$Payload=@{caseRef=$Case;workerPrincipal=[string]$Claim.Body.workerPrincipal;leaseToken=[string]$Claim.Body.leaseToken;reasonCode='worker_result';reportId=$RID;requestId=$Req;accountIdHash=$AHsh;targetHash=$TH;reportVersionHash=$RV;snapshotDigest=$SD;sourceReceiptRoot=$SR;pdfDigest=$PD;pdfByteLength=$Pdf.Length;renderContractId='pass4808-deterministic-latin-extended-pagination-v1';recordDigest=$RD;pdfBase64=[Convert]::ToBase64String($Pdf);snapshotJson=$Snap;createdAt=$At};$Done=PJ $env:VELMERE_AUDIT_CUSTOMER_BRIDGE_URL $DirectAH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='complete_pdf';caseRef=$Case;payload=$Payload};if($Done.Status-ne200-or$Done.Body.data.ok-ne$true){throw('direct_completion_failed:'+($Done.Raw.Substring(0,[Math]::Min(500,$Done.Raw.Length))))}
-            $F=Join-Path $env:RUNNER_TEMP 'audit-app.pdf';$RA=Invoke-WebRequest -Uri($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case))-Headers$AH -OutFile $F -PassThru -SkipHttpErrorCheck -TimeoutSec30;if([int]$RA.StatusCode-ne200){throw'local_owner_pdf_failed'};$Obs=[IO.File]::ReadAllBytes($F);if((ShaBytes $Obs)-ne$PD.Substring(7)-or$Obs.Length-ne$Pdf.Length){throw'local_owner_pdf_identity'};$RB=Invoke-WebRequest -Uri($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case))-Headers$BH -SkipHttpErrorCheck -TimeoutSec20;if([int]$RB.StatusCode-ne404){throw'local_cross_account_pdf_not_denied'}
-            $Del=Invoke-WebRequest -Uri($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case))-Headers$AH -Method Delete -SkipHttpErrorCheck -TimeoutSec30;$DJ=$Del.Content|ConvertFrom-Json;if([int]$Del.StatusCode-ne200-or$DJ.ok-ne$true){throw'local_backup_erase_failed'};$After=Invoke-WebRequest -Uri($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case))-Headers$AH -SkipHttpErrorCheck -TimeoutSec20;if([int]$After.StatusCode-ne404){throw'local_owner_pdf_visible_after_erase'};$Restore=PJ($Local+'/api/audit/basic/report/restore?caseRef='+[Uri]::EscapeDataString($Case))$AH @{backupId=[string]$DJ.backupId};if($Restore.Status-ne200-or$Restore.Body.ok-ne$true){throw'local_restore_failed'}
-            $F2=Join-Path $env:RUNNER_TEMP 'audit-app-restored.pdf';$RA2=Invoke-WebRequest -Uri($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case))-Headers$AH -OutFile $F2 -PassThru -SkipHttpErrorCheck -TimeoutSec30;$Obs2=[IO.File]::ReadAllBytes($F2);if([int]$RA2.StatusCode-ne200-or(ShaBytes $Obs2)-ne$PD.Substring(7)-or$Obs2.Length-ne$Pdf.Length){throw'local_restored_pdf_identity'};$RB2=Invoke-WebRequest -Uri($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case))-Headers$BH -SkipHttpErrorCheck -TimeoutSec20;if([int]$RB2.StatusCode-ne404){throw'local_post_restore_cross_account_not_denied'}
-            $Receipt=[ordered]@{schemaVersion='velmere.r7.audit-basic-app-route-candidate-e2e.v1';status='PASS_CANDIDATE';exactPromotedBaseBeforePatch=$true;candidateOnly=$true;customerFinalCredit=$false;typecheck='PASS';targetedEslint='PASS';webpack='PASS';localCaseCreate='PASS';crossAccountCase='PASS_DENIED';localPdf='PASS_BYTE_IDENTICAL';crossAccountPdf='PASS_DENIED';backupErase='PASS';postEraseOwner='PASS_404';restore='PASS';postRestorePdf='PASS_BYTE_IDENTICAL';postRestoreCrossAccount='PASS_DENIED';serviceRoleInApplication=$false;pdfDigest=$PD;pdfByteLength=$Pdf.Length;recordDigest=$RD};$Receipt|ConvertTo-Json -Depth 20|Set-Content 'R7_AUDIT_BASIC_APP_ROUTE_CANDIDATE_E2E.json' -Encoding utf8;Write-Host($Receipt|ConvertTo-Json -Depth 20)
-          } finally { if($Next-and-not$Next.HasExited){Stop-Process -Id $Next.Id -Force -ErrorAction SilentlyContinue};$Cleanup=PJ $OU $OH @{action='cleanup';userIds=@([string]$A.userId,[string]$B.userId)} }
+            $Ready=$false;for($i=0;$i -lt 60;$i++){Start-Sleep -Seconds 2;try{$Q=Invoke-WebRequest -Uri 'http://localhost:3112/' -Method Get -SkipHttpErrorCheck -TimeoutSec 5;if([int]$Q.StatusCode -ge 200){$Ready=$true;break}}catch{}};if(-not $Ready){throw 'next_dev_not_ready'}
+            $Local='http://localhost:3112';$AH=@{Authorization='Bearer '+[string]$A.accessToken;Accept='application/json'};$BH=@{Authorization='Bearer '+[string]$B.accessToken;Accept='application/json'};$DirectAH=@{Authorization='Bearer '+[string]$A.accessToken;'x-velmere-audit-server-capability'=$env:VELMERE_AUDIT_SERVER_CAPABILITY;Accept='application/json'};$Req='audit-app-request-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$Target='0x6666666666666666666666666666666666666666';$TH='sha256:'+(ShaText('velmere-audit-contract-target-v1:56:'+$Target.ToLowerInvariant()))
+            $CI=@{caseId='audit-app-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;requestId=$Req;targetKind='contract';targetPrivate=$Target.ToLowerInvariant();targetHash=$TH;targetChainId='56';targetChainName='BSC';displayLabel='Audit Basic app-route candidate';tier='basic';locale='en';status='queued_basic_prescreen';accountId=[string]$A.accountId;accountEmail=$null;entitlementRequired=$false;entitlementVerified=$false;analysisStarted=$false;intakeReceipt=@{schemaVersion='audit-app-candidate-v1';customerFinalCredit=$false};sourceCandidatesProtected=@{auditUrl=$null;docsUrl=$null;githubUrl=$null;website=$null}}
+            $C=PJ ($Local+'/api/audit/basic/case') $AH $CI;if($C.Status -ne 200 -or $C.Body.ok -ne $true -or $C.Body.data.ok -ne $true){throw('local_case_create_failed:'+($C.Raw.Substring(0,[Math]::Min(600,$C.Raw.Length))))};$Case=[string]$C.Body.data.caseRef;if($Case -notmatch '^AUD-[A-F0-9]{10}$'){throw('created_case_ref_invalid:'+$Case)};$AG=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/case?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $AH -SkipHttpErrorCheck -TimeoutSec 20;if([int]$AG.StatusCode -ne 200){throw 'local_owner_case_read_failed'};$BG=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/case?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $BH -SkipHttpErrorCheck -TimeoutSec 20;if([int]$BG.StatusCode -ne 404){throw 'local_cross_account_case_not_denied'}
+            $Claim=PJ $OU $OH @{action='claim';caseRef=$Case};if($Claim.Status -ne 200 -or $Claim.Body.claim.ok -ne $true){throw 'claim_failed'};$At=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ');$Pdf=[Text.Encoding]::UTF8.GetBytes('%PDF-1.4'+"`n"+('D'*1800)+"`n%%EOF`n");$PD='sha256:'+(ShaBytes $Pdf);$AHsh=ShaText('velmere-account-binding-v1:'+[string]$A.accountId);$RID='audit-app-report-'+$env:GITHUB_RUN_ID+'-'+$env:GITHUB_RUN_ATTEMPT;$RV='sha256:'+(ShaText('rv:'+$Case));$SD='sha256:'+(ShaText('snap:'+$Case));$SR='sha256:'+(ShaText('src:'+$Case));$Snap=@{requestId=$Req;tier='basic';digest=$SD;sourceReceiptRoot=$SR;generatedAt=$At;renderContract=@{id='pass4808-deterministic-latin-extended-pagination-v1';pdfDigest=$PD;pdfByteLength=$Pdf.Length};auditExecutionRelease=@{expectedTier='basic';caseRef=$Case;decision='ALLOW_COMPLETE';completionAllowed=$true;persistAllowed=$true;packetDigest='sha256:'+(ShaText('packet:'+$Case));currentDeploymentReceiptDigest='sha256:'+(ShaText('deploy:'+$Case));matchedInputDigest='sha256:'+(ShaText('input:'+$Case));releaseBindingDigest='sha256:'+(ShaText('release:'+$Case))};customerEligibility=@{commercialUseReady=$true}};$Mat=@('velmere.audit-basic-exact-immutable-pdf-artifact.v1',$RID,$Case,$Req,$AHsh,$TH,$RV,$SD,$SR,$PD,[string]$Pdf.Length,'pass4808-deterministic-latin-extended-pagination-v1',$At)-join"`n";$RD='sha256:'+(ShaText $Mat);$Payload=@{caseRef=$Case;workerPrincipal=[string]$Claim.Body.workerPrincipal;leaseToken=[string]$Claim.Body.leaseToken;reasonCode='worker_result';reportId=$RID;requestId=$Req;accountIdHash=$AHsh;targetHash=$TH;reportVersionHash=$RV;snapshotDigest=$SD;sourceReceiptRoot=$SR;pdfDigest=$PD;pdfByteLength=$Pdf.Length;renderContractId='pass4808-deterministic-latin-extended-pagination-v1';recordDigest=$RD;pdfBase64=[Convert]::ToBase64String($Pdf);snapshotJson=$Snap;createdAt=$At};$Done=PJ $env:VELMERE_AUDIT_CUSTOMER_BRIDGE_URL $DirectAH @{schemaVersion='velmere.r7.audit-basic-customer-bridge-request.v1';action='complete_pdf';caseRef=$Case;payload=$Payload};if($Done.Status -ne 200 -or $Done.Body.data.ok -ne $true){throw('direct_completion_failed:'+($Done.Raw.Substring(0,[Math]::Min(500,$Done.Raw.Length))))}
+            $F=Join-Path $env:RUNNER_TEMP 'audit-app.pdf';$RA=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $AH -OutFile $F -PassThru -SkipHttpErrorCheck -TimeoutSec 30;if([int]$RA.StatusCode -ne 200){throw 'local_owner_pdf_failed'};$Obs=[IO.File]::ReadAllBytes($F);if((ShaBytes $Obs) -ne $PD.Substring(7) -or $Obs.Length -ne $Pdf.Length){throw 'local_owner_pdf_identity'};$RB=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $BH -SkipHttpErrorCheck -TimeoutSec 20;if([int]$RB.StatusCode -ne 404){throw 'local_cross_account_pdf_not_denied'}
+            $Del=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $AH -Method Delete -SkipHttpErrorCheck -TimeoutSec 30;$DJ=$Del.Content|ConvertFrom-Json -Depth 20;if([int]$Del.StatusCode -ne 200 -or $DJ.ok -ne $true){throw 'local_backup_erase_failed'};$BackupId=[string]$DJ.backupId;if($BackupId -notmatch '^abk_[a-f0-9]{64}$'){throw 'backup_id_invalid'};$After=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $AH -SkipHttpErrorCheck -TimeoutSec 20;if([int]$After.StatusCode -ne 404){throw 'local_owner_pdf_visible_after_erase'};$Restore=PJ ($Local+'/api/audit/basic/report/restore?caseRef='+[Uri]::EscapeDataString($Case)) $AH @{backupId=$BackupId};if($Restore.Status -ne 200 -or $Restore.Body.ok -ne $true){throw 'local_restore_failed'}
+            $F2=Join-Path $env:RUNNER_TEMP 'audit-app-restored.pdf';$RA2=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $AH -OutFile $F2 -PassThru -SkipHttpErrorCheck -TimeoutSec 30;$Obs2=[IO.File]::ReadAllBytes($F2);if([int]$RA2.StatusCode -ne 200 -or (ShaBytes $Obs2) -ne $PD.Substring(7) -or $Obs2.Length -ne $Pdf.Length){throw 'local_restored_pdf_identity'};$RB2=Invoke-WebRequest -Uri ($Local+'/api/audit/basic/report?caseRef='+[Uri]::EscapeDataString($Case)) -Headers $BH -SkipHttpErrorCheck -TimeoutSec 20;if([int]$RB2.StatusCode -ne 404){throw 'local_post_restore_cross_account_not_denied'}
+            $Receipt=[ordered]@{schemaVersion='velmere.r7.audit-basic-app-route-candidate-e2e.v2';status='PASS_CANDIDATE';exactCurrentSourceBeforeCandidatePatch=$true;exactCurrentSource=@{fullSourceAggregateSha256=$env:R7_RISK_FULL_SOURCE_AGGREGATE_SHA256;executionSliceAggregateSha256=$env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256;executionSliceManifestSha256=$env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256;executionBundleSha256=$env:R7_RISK_BUNDLE_SHA256};candidateOnly=$true;customerFinalCredit=$false;typecheck='PASS';targetedEslint='PASS';webpack='PASS';customerProvision='PASS_OWNER_OIDC';caseRefSource='DATABASE_RETURNED';localCaseCreate='PASS';ownerCaseRead='PASS';crossAccountCase='PASS_DENIED';localPdf='PASS_BYTE_IDENTICAL';crossAccountPdf='PASS_DENIED';backupErase='PASS';postEraseOwner='PASS_404';restore='PASS';postRestorePdf='PASS_BYTE_IDENTICAL';postRestoreCrossAccount='PASS_DENIED';serviceRoleInApplication=$false;pdfDigest=$PD;pdfByteLength=$Pdf.Length;recordDigest=$RD};$Receipt|ConvertTo-Json -Depth 20|Set-Content 'R7_AUDIT_BASIC_APP_ROUTE_CANDIDATE_E2E.json' -Encoding utf8;Write-Host($Receipt|ConvertTo-Json -Depth 20)
+          } finally {
+            if($Next -and -not $Next.HasExited){Stop-Process -Id $Next.Id -Force -ErrorAction SilentlyContinue}
+            if($A -and $B){$Cleanup=PJ $OU $OH @{action='cleanup';userIds=@([string]$A.userId,[string]$B.userId)}}
+          }
 
       - name: Upload candidate evidence
         if: always()
@@ -134,6 +115,7 @@ jobs:
           name: r7-audit-basic-app-route-candidate-${{ github.sha }}-${{ github.run_id }}
           path: |
             R7_AUDIT_APP_ROUTE_CANDIDATE_PATCH.json
+            R7_AUDIT_APP_ROUTE_CANDIDATE_ENV_CONTRACT.json
             R7_AUDIT_BASIC_APP_ROUTE_CANDIDATE_E2E.json
             r7-work/artifacts/r7/windows
             r7-work/artifacts/r7/current-execution
