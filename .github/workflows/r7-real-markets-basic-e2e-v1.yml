@@ -49,7 +49,7 @@ jobs:
           Write-Host "::add-mask::$Oidc"
 
           $HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-real-markets-basic-v1-e2e-oidc'
-          $BridgeUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-real-markets-basic-v1-public-bridge'
+          $BridgeUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-real-markets-basic-v1-public-bridge-v4'
           $CapabilityResponse = Invoke-JsonPost $HelperUrl @{ Authorization='Bearer '+$Oidc; Accept='application/json' } @{ action='capability' }
           Assert ($CapabilityResponse.Status -eq 200 -and $CapabilityResponse.Body.ok -eq $true) ('real_markets_basic_capability_failed:'+($CapabilityResponse.Raw.Substring(0,[Math]::Min(500,$CapabilityResponse.Raw.Length))))
           $Capability = [string]$CapabilityResponse.Body.realMarketsBasicServerCapability
