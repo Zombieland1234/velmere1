@@ -1,0 +1,175 @@
+name: R7 Angel Customer Final Candidate E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-angel-customer-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-angel-customer-final-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  angel-customer-final-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_EXPECTED_EXECUTION_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+
+    steps:
+      - name: Checkout exact Angel controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct and execute exact current Windows source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Full
+          if ($LASTEXITCODE -ne 0) { throw "angel_exact_windows_source_failed:$LASTEXITCODE" }
+          if (-not (Test-Path -LiteralPath 'r7-work' -PathType Container)) { throw 'angel_r7_work_missing' }
+
+      - name: Verify exact source identity before Angel execution
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location r7-work
+          try {
+            @'
+            import fs from 'node:fs';
+            import crypto from 'node:crypto';
+            const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+            const manifestBytes=fs.readFileSync('R7_EXECUTION_SLICE_MANIFEST.json');
+            const manifest=JSON.parse(manifestBytes.toString('utf8'));
+            if(sha(manifestBytes)!==process.env.R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256) throw new Error('angel_execution_manifest_sha_mismatch');
+            if(manifest.aggregateIdentitySha256!==process.env.R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256) throw new Error('angel_execution_slice_aggregate_mismatch');
+            if(manifest.fullSource?.aggregateIdentitySha256!==process.env.R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256) throw new Error('angel_full_source_aggregate_mismatch');
+            if(manifest.testDenominator!==52) throw new Error('angel_test_denominator_mismatch');
+            const required=[
+              'app/api/angel/route.ts',
+              'lib/server/lazy-route-modules/angel.ts',
+              'lib/ai/angel-route-policy.ts',
+              'lib/ai/angel-structured-response.ts',
+              'components/angel/AngelPanel.tsx',
+              'tests/security/a102-angel-primary-route-safety-boundary.test.ts',
+              'tests/security/a102-angel-standalone-output-truth.test.ts',
+              'tests/security/a102-angel-ai-disclosure-and-public-topology.test.ts',
+              'tests/security/v4-angel-grounding-before-provider-boundary.test.ts',
+              'scripts/current-execution/test-angel-durable-memory-delete-fail-closed.mts',
+              'scripts/pass36/test-a102r44p44-angel-120.ts'
+            ];
+            for(const p of required) if(!fs.existsSync(p)) throw new Error(`angel_required_source_missing:${p}`);
+            console.log(JSON.stringify({status:'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY',fullSourceAggregateSha256:manifest.fullSource.aggregateIdentitySha256,executionSliceAggregateSha256:manifest.aggregateIdentitySha256,executionSliceManifestSha256:sha(manifestBytes),testDenominator:manifest.testDenominator,requiredSourceFiles:required.length},null,2));
+            '@ | node --input-type=module | Tee-Object -FilePath ../R7_ANGEL_EXACT_SOURCE_IDENTITY.json
+            if ($LASTEXITCODE -ne 0) { throw "angel_exact_source_identity_failed:$LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Execute Angel customer truth, safety, grounding and memory suite
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel' | Out-Null
+          Push-Location r7-work
+          try {
+            $Loader = './scripts/pass11/register-offline-ts-loader.mjs'
+            $Cases = @(
+              @{ Name='standalone-output-truth'; Path='tests/security/a102-angel-standalone-output-truth.test.ts' },
+              @{ Name='ai-disclosure-public-topology'; Path='tests/security/a102-angel-ai-disclosure-and-public-topology.test.ts' },
+              @{ Name='grounding-before-provider'; Path='tests/security/v4-angel-grounding-before-provider-boundary.test.ts' },
+              @{ Name='primary-route-safety'; Path='tests/security/a102-angel-primary-route-safety-boundary.test.ts' },
+              @{ Name='durable-memory-delete-fail-closed'; Path='scripts/current-execution/test-angel-durable-memory-delete-fail-closed.mts' }
+            )
+            foreach ($Case in $Cases) {
+              Write-Host "Running Angel case $($Case.Name)"
+              & node --import $Loader $Case.Path 2>&1 | Tee-Object -FilePath "../artifacts/r7/angel/$($Case.Name).log"
+              if ($LASTEXITCODE -ne 0) { throw "angel_case_failed:$($Case.Name):$LASTEXITCODE" }
+            }
+            & node --import $Loader 'scripts/pass36/test-a102r44p44-angel-120.ts' 2>&1 | Tee-Object -FilePath '../artifacts/r7/angel/angel-120.json'
+            if ($LASTEXITCODE -ne 0) { throw "angel_120_failed:$LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Validate Angel 120-case receipt and customer contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Raw = Get-Content -LiteralPath 'artifacts/r7/angel/angel-120.json' -Raw
+          $Boundary = $Raw | ConvertFrom-Json -Depth 100
+          if ($Boundary.status -ne 'PASS_R44P44_ANGEL_120_BOUNDARY_CASES') { throw 'angel_120_status_invalid' }
+          if ([int]$Boundary.cases -lt 120 -or [int]$Boundary.failed -ne 0 -or [int]$Boundary.passed -ne [int]$Boundary.cases) { throw 'angel_120_denominator_invalid' }
+          foreach ($Locale in @('pl','en','de')) {
+            if (-not $Boundary.byLocale.$Locale -or [int]$Boundary.byLocale.$Locale.failed -ne 0) { throw "angel_120_locale_failed:$Locale" }
+          }
+
+          $Receipt = [ordered]@{
+            schemaVersion = 'velmere.r7.angel-customer-final-candidate.v1'
+            status = 'PASS_ANGEL_CUSTOMER_FINAL_CANDIDATE'
+            github = @{ runId=$env:GITHUB_RUN_ID; runAttempt=[int]$env:GITHUB_RUN_ATTEMPT; headSha=$env:GITHUB_SHA }
+            source = @{
+              exactCurrentSourceBytesAtProductExecution = $true
+              fullSourceAggregateSha256 = $env:R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256
+              executionSliceAggregateSha256 = $env:R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256
+              executionSliceManifestSha256 = $env:R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256
+              executionBundleSha256 = $env:R7_EXPECTED_EXECUTION_BUNDLE_SHA256
+              exactWindows52x2 = $true
+              testDenominator = 52
+            }
+            product = @{
+              productOrdinal = 19
+              productSlug = 'angel'
+              standaloneFreeBasicOnly = $true
+              customerVisibleAiDisclosure = $true
+              informationalDecisionSupportOnly = $true
+              directChatPaymentRequired = $false
+              paidDepthChangesTruth = $false
+              locales = @('pl','en','de')
+            }
+            safety = @{
+              adversarialCases = [int]$Boundary.cases
+              adversarialPassed = [int]$Boundary.passed
+              adversarialFailed = [int]$Boundary.failed
+              promptInjectionRejected = $true
+              personalizedInvestmentAdviceAbstained = $true
+              personalizedLegalAdviceDisclosed = $true
+              groundingBeforeProvider = $true
+              unsignedEvidenceWithheld = $true
+              oversizedContextRejected = $true
+              providerOutputAdviceRewrittenSafely = $true
+              durableMemoryDeleteFailClosed = $true
+              rawIdentityDisclosure = $false
+            }
+            paidValueCredit = $false
+            customerFinalCredit = $false
+            truthBoundary = 'This run executes the exact hash-bound current source on Windows Server 2025, then exercises the actual Angel POST route module and customer-facing product truth across PL/EN/DE plus the deterministic adversarial boundary corpus. It does not claim external-model answer quality, human evaluation, paid value, or FINAL until a separate guarded GitHub-OIDC finalizer verifies this successful run and appends angel -> FINAL to the live ledger.'
+          }
+          $Receipt | ConvertTo-Json -Depth 50 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_CUSTOMER_FINAL_CANDIDATE.json' -Encoding utf8
+          Write-Host ($Receipt | ConvertTo-Json -Depth 50)
+
+      - name: Upload Angel customer final candidate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-angel-customer-final-candidate-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/r7/angel/**
+            R7_ANGEL_EXACT_SOURCE_IDENTITY.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
