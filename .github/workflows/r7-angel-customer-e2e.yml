@@ -79,7 +79,7 @@ jobs:
             ];
             for(const p of required) if(!fs.existsSync(p)) throw new Error(`angel_required_source_missing:${p}`);
             console.log(JSON.stringify({status:'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY',fullSourceAggregateSha256:manifest.fullSource.aggregateIdentitySha256,executionSliceAggregateSha256:manifest.aggregateIdentitySha256,executionSliceManifestSha256:sha(manifestBytes),testDenominator:manifest.testDenominator,requiredSourceFiles:required.length},null,2));
-            '@ | node --input-type=module | Tee-Object -FilePath ../R7_ANGEL_EXACT_SOURCE_IDENTITY.json
+          '@ | node --input-type=module | Tee-Object -FilePath ../R7_ANGEL_EXACT_SOURCE_IDENTITY.json
             if ($LASTEXITCODE -ne 0) { throw "angel_exact_source_identity_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
 
