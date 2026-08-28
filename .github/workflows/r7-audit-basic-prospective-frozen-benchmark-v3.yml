@@ -1,0 +1,107 @@
+name: R7 Audit Basic Prospective Frozen Benchmark V3
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-prospective-frozen-benchmark-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-benchmark-v3:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      EXACT_DEPLOYED_SOURCE_SHA256: '3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e'
+      FROZEN_TEST_SHA256: '52c9fd5f1d3fd2b704d6be200a1e75d6fe2ba1d5db3154b166a4c88587616b71'
+      FROZEN_RUNTIME_SHA256: '376c0d62724295ae0d1eb2b96dd7596b9cbac176093196b13fff76f129e8a221'
+      FROZEN_POLICY_SHA256: 'eebb6d52ce1ee3521519245a879323e76bbea583b848d30331a332d8773ad920'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+
+    steps:
+      - name: Checkout exact controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact current source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if($LASTEXITCODE -ne 0){throw "exact_current_source_prepare_failed:$LASTEXITCODE"}
+
+      - name: Restore exact frozen controls from hash-pinned archive block
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Archive=Get-Content -LiteralPath '.github/workflows/r7-audit-basic-prospective-frozen-benchmark.yml' -Raw
+          function Extract([string]$Name){
+            $m=[regex]::Match($Archive,"(?m)^\s+$Name:\s+'([^']+)'\s*$")
+            if(-not $m.Success){throw "frozen_archive_block_missing_$Name"}
+            return $m.Groups[1].Value
+          }
+          function Restore([string]$Encoded,[string]$Relative,[string]$Expected){
+            $compressed=[Convert]::FromBase64String($Encoded)
+            $input=[IO.MemoryStream]::new($compressed)
+            $gzip=[IO.Compression.GZipStream]::new($input,[IO.Compression.CompressionMode]::Decompress)
+            $output=[IO.MemoryStream]::new();$gzip.CopyTo($output);$gzip.Dispose();$input.Dispose()
+            $bytes=$output.ToArray();$output.Dispose()
+            $sha=([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-','').ToLowerInvariant()
+            if($sha -ne $Expected){throw ('frozen_control_sha_mismatch:'+ $Relative + ':' + $sha)}
+            $full=Join-Path (Join-Path $PWD 'r7-work') $Relative
+            New-Item -ItemType Directory -Force -Path (Split-Path $full) | Out-Null
+            [IO.File]::WriteAllBytes($full,$bytes)
+            Write-Host ('PINNED '+$Relative+' '+$sha+' '+$bytes.Length)
+          }
+          Restore (Extract 'TEST_GZ_B64') 'scripts/pass35/test-a19-audit-static-benchmark.mjs' $env:FROZEN_TEST_SHA256
+          Restore (Extract 'RUNTIME_GZ_B64') 'lib/security/pass35-a19-audit-static-benchmark-runtime.mjs' $env:FROZEN_RUNTIME_SHA256
+          Restore (Extract 'POLICY_GZ_B64') 'config/pass35/a19-audit-static-benchmark-policy.json' $env:FROZEN_POLICY_SHA256
+
+      - name: Execute frozen corpus twice and issue bounded receipt
+        shell: pwsh
+        working-directory: r7-work
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/audit-basic' | Out-Null
+          node scripts/pass35/test-a19-audit-static-benchmark.mjs | Tee-Object -FilePath artifacts/r7/audit-basic/frozen-contract.log
+          if($LASTEXITCODE -ne 0){throw "frozen_contract_failed:$LASTEXITCODE"}
+          @'
+          import fs from 'node:fs';
+          import {runA19AuditStaticBenchmark,verifyA19AuditStaticBenchmark,verifyA19AuditStaticPolicy} from './lib/security/pass35-a19-audit-static-benchmark-runtime.mjs';
+          const p=JSON.parse(fs.readFileSync('config/pass35/a19-audit-static-benchmark-policy.json','utf8'));
+          if(!verifyA19AuditStaticPolicy(p)) throw new Error('policy_invalid');
+          const a=runA19AuditStaticBenchmark(p), b=runA19AuditStaticBenchmark(p);
+          if(!verifyA19AuditStaticBenchmark(a,p)||!verifyA19AuditStaticBenchmark(b,p)||JSON.stringify(a)!==JSON.stringify(b)) throw new Error('repeatability_failed');
+          if(a.denominators.cases!==240||a.denominators.mutations!==2880||a.denominators.frozenTest!==90||a.failedGates.length!==0) throw new Error('denominator_or_gate_failed');
+          if(a.frozen.recall<.95||a.frozen.specificity<.95||a.frozen.precision<.95||a.frozen.f1<.95||a.frozen.severityAccuracy<.95||a.mutation.killRate<.99||a.frozen.fp!==0) throw new Error('quality_failed');
+          if(a.paidGateEligible!==false||a.independentExternalFamily!==false||a.fullAuditClaimAllowed!==false) throw new Error('hard_stop_regression');
+          const receipt={schemaVersion:'velmere.r7.audit-basic-prospective-frozen-benchmark.v3',status:'PASS_PROSPECTIVE_FROZEN_BENCHMARK',github:{runId:process.env.GITHUB_RUN_ID,runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),headSha:process.env.GITHUB_SHA},sourceAuthority:{fullSourceAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,executionSliceAggregateSha256:process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256,executionSliceManifestSha256:process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256,bundleSha256:process.env.R7_RISK_BUNDLE_SHA256,exactDeployedSourceSha256:process.env.EXACT_DEPLOYED_SOURCE_SHA256},controlOverlay:{classification:'HASH_PINNED_ARCHIVED_FROZEN_CONTROL_NOT_EXECUTION_SLICE',testSha256:process.env.FROZEN_TEST_SHA256,runtimeSha256:process.env.FROZEN_RUNTIME_SHA256,policySha256:process.env.FROZEN_POLICY_SHA256},results:{cases:a.denominators.cases,frozenTest:a.denominators.frozenTest,mutations:a.denominators.mutations,frozen:a.frozen,mutation:a.mutation,repeatability:'PASS_IDENTICAL_X2'},hardStops:{paidGateEligible:false,independentExternalFamily:false,fullAuditClaimAllowed:false,replacesQualifiedHumanReview:false},customerFinalCredit:false};
+          fs.writeFileSync('artifacts/r7/audit-basic/R7_AUDIT_BASIC_PROSPECTIVE_FROZEN_BENCHMARK_V3.json',JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify({status:receipt.status,cases:a.denominators.cases,mutations:a.denominators.mutations,recall:a.frozen.recall,specificity:a.frozen.specificity,precision:a.frozen.precision,f1:a.frozen.f1,killRate:a.mutation.killRate,customerFinalCredit:false},null,2));
+          '@ | node --input-type=module
+          if($LASTEXITCODE -ne 0){throw "frozen_receipt_failed:$LASTEXITCODE"}
+
+      - name: Upload bounded evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-frozen-v3-${{ github.sha }}-${{ github.run_id }}
+          path: r7-work/artifacts/r7/audit-basic/**
+          if-no-files-found: error
+          retention-days: 14
