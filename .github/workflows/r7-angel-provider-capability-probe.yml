@@ -1,0 +1,50 @@
+name: R7 Angel Provider Capability Probe
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-angel-provider-capability-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  angel-provider-capability-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Record secret-safe provider capability only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/r7/angel-provider
+          if [ -n "${GEMINI_API_KEY:-}" ]; then configured=true; else configured=false; fi
+          python3 - "$configured" <<'PY'
+          import json,sys
+          configured=sys.argv[1]=='true'
+          receipt={
+            'schemaVersion':'velmere.r7.angel-provider-capability.v1',
+            'status':'CONFIGURED' if configured else 'NOT_CONFIGURED',
+            'geminiApiKeyConfigured':configured,
+            'secretValueReturned':False,
+            'secretLengthReturned':False,
+            'secretFingerprintReturned':False,
+            'customerFinalCredit':False,
+            'paidValueCredit':False,
+            'truthBoundary':'This probe reports only whether the GitHub Actions GEMINI_API_KEY secret is non-empty. It never prints, hashes, measures, returns or uploads the secret value and grants no product credit.'
+          }
+          open('artifacts/r7/angel-provider/R7_ANGEL_PROVIDER_CAPABILITY.json','w',encoding='utf-8').write(json.dumps(receipt,indent=2)+'\n')
+          print(json.dumps(receipt,indent=2))
+          PY
+      - name: Upload capability receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-angel-provider-capability-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/angel-provider/R7_ANGEL_PROVIDER_CAPABILITY.json
+          if-no-files-found: error
+          retention-days: 7
