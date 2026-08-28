@@ -1,0 +1,92 @@
+name: R7 Browser Paid Patch TS Narrowing Probe
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-browser-paid-patch-ts-narrowing-probe.yml'
+      - 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs'
+      - 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-browser-paid-patch-ts-narrowing-probe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  paid-patch-ts-narrowing:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - name: Checkout exact closure controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Prepare exact Risk Browser source only
+        shell: pwsh
+        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1 -Mode Prepare
+
+      - name: Apply Browser Pro paid bridge patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & node 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs' 'r7-work'
+          if ($LASTEXITCODE -ne 0) { throw "browser_pro_patch_probe_failed:$LASTEXITCODE" }
+          $AuditToken = Get-Content -LiteralPath 'r7-work/lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' -Raw
+          if (-not $AuditToken.Contains('if (!access.entitlement) return NextResponse.json')) { throw 'durable_audit_entitlement_guard_missing' }
+
+      - name: Pro patch exact failing TS partition regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
+          try {
+            node scripts/pass13/run-partitioned-typescript.mjs --worker 5 | Tee-Object -FilePath 'R7_BROWSER_PRO_TS_PARTITION_06_PROBE.json'
+            if ($LASTEXITCODE -ne 0) { throw "browser_pro_ts_partition_06_failed:$LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Apply Browser Advanced hosted candidate patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & node 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs' 'r7-work'
+          if ($LASTEXITCODE -ne 0) { throw "browser_advanced_patch_probe_failed:$LASTEXITCODE" }
+
+      - name: Advanced stack exact failing TS partition regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
+          try {
+            node scripts/pass13/run-partitioned-typescript.mjs --worker 5 | Tee-Object -FilePath 'R7_BROWSER_ADVANCED_TS_PARTITION_06_PROBE.json'
+            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_ts_partition_06_failed:$LASTEXITCODE" }
+          } finally { Pop-Location }
+
+      - name: Upload narrowing probe evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-browser-paid-patch-ts-narrowing-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            r7-work/R7_BROWSER_PRO_TS_PARTITION_06_PROBE.json
+            r7-work/R7_BROWSER_ADVANCED_TS_PARTITION_06_PROBE.json
+            r7-work/R7_NPM_CI.log
+          if-no-files-found: warn
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 14
