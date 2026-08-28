@@ -1,0 +1,169 @@
+name: R7 Audit Basic App Route Promoted Source E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-audit-basic-app-route-promoted-source-e2e.yml'
+      - 'r7-audit-basic-app-route/**'
+      - 'supabase/functions/r7-audit-basic-app-candidate-oidc/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-audit-basic-app-route-promoted-source-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit-basic-app-route-promoted-source:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      R7_RISK_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+      R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+      R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+      R7_RISK_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+      R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
+      R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      NEXT_PUBLIC_SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_RTqLeQRrAJl6seP0ShSJlA_hyNo4Yz2'
+      VELMERE_AUDIT_CUSTOMER_BRIDGE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-audit-basic-customer-bridge'
+      AUDIT_OIDC_AUDIENCE: 'velmere-r7-audit-basic-app-candidate'
+
+    steps:
+      - name: Checkout exact control and promoted source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct immutable Risk V5 base source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
+          if ($LASTEXITCODE -ne 0) { throw "exact_base_source_prepare_failed:$LASTEXITCODE" }
+
+      - name: Apply exact branch-persisted Audit route overlay
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function ShaFile([string]$Path) { return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+          function ShaText([string]$Text) { return ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($Text)))).Replace('-','').ToLowerInvariant() }
+
+          $Components = @(
+            [ordered]@{ path='app/api/audit/basic/case/route.ts'; sha256='3cb537a14cd3b4ea5c8d842cf9ed2db6cdef76d58c0a607f3c3e02630902fa81' },
+            [ordered]@{ path='app/api/audit/basic/report/restore/route.ts'; sha256='fa7acef144db355894157e54c01367f3ffba860745b4407a07b950799cece063' },
+            [ordered]@{ path='app/api/audit/basic/report/route.ts'; sha256='2d9e5a40e6d129850f3da99294074ff78ad308470897c542124a830a9fbc91f1' },
+            [ordered]@{ path='lib/security/audit-basic-customer-bridge-client.ts'; sha256='cd058d8c57ae2f8185a4ac50c20eb7c2f45c1a5dd3d72a5694d36e9dc57b60f9' }
+          )
+          foreach ($Component in $Components) {
+            $Source = Join-Path 'r7-audit-basic-app-route/source' $Component.path
+            if ((ShaFile $Source) -ne $Component.sha256) { throw "promoted_source_hash_mismatch:$($Component.path)" }
+            $Destination = Join-Path 'r7-work' $Component.path
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Destination) | Out-Null
+            Copy-Item -LiteralPath $Source -Destination $Destination -Force
+            if ((ShaFile $Destination) -ne $Component.sha256) { throw "promoted_copy_hash_mismatch:$($Component.path)" }
+          }
+
+          $Material = ($Components | ForEach-Object { $_.path + "`t" + $_.sha256 }) -join "`n"
+          $Aggregate = ShaText $Material
+          if ($Aggregate -ne '6a32c0afd762a4e4bc25cd40824e0dee9ad9258dce2d22d6be7717d8c0e41c69') { throw 'promoted_source_aggregate_mismatch' }
+
+          $Renderer = 'r7-audit-basic-app-route/render-localized-audit-basic-pdf.ts'
+          $Harness = 'r7-audit-basic-app-route/run-promoted-source-e2e.ps1'
+          $Workflow = '.github/workflows/r7-audit-basic-app-route-promoted-source-e2e.yml'
+          $RendererSha = ShaFile $Renderer
+          $HarnessSha = ShaFile $Harness
+          $WorkflowSha = ShaFile $Workflow
+          if ($RendererSha -ne '4fd8136cb40db24b3b6d37093ba6ae19efdf290638643b19d148ee181cb3f4fc') { throw 'promoted_renderer_hash_mismatch' }
+          if ($HarnessSha -ne '6d9796a2e2b2f225d7400dbd03840a42d9fb4fbcbb40accf4f387be45921056a') { throw 'promoted_harness_hash_mismatch' }
+
+          Copy-Item -LiteralPath $Renderer -Destination 'r7-work/scripts/r7-audit-basic-localized-pdf.ts' -Force
+          $Manifest = [ordered]@{
+            schemaVersion = 'velmere.r7.audit-basic-app-route-promoted-source-manifest.v1'
+            status = 'PASS_PROMOTED_SOURCE_APPLIED'
+            authorityModel = 'RISK_V5_BASE_PLUS_AUDIT_APP_ROUTE_PROMOTED_COMPONENTS_V1'
+            baseSourceAuthority = @{
+              fullSourceAggregateSha256 = $env:R7_RISK_FULL_SOURCE_AGGREGATE_SHA256
+              executionSliceAggregateSha256 = $env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256
+              executionSliceManifestSha256 = $env:R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256
+              executionBundleSha256 = $env:R7_RISK_BUNDLE_SHA256
+            }
+            components = $Components
+            promotedSourceAggregateSha256 = $Aggregate
+            controls = @{
+              rendererSha256 = $RendererSha
+              harnessSha256 = $HarnessSha
+              workflowSha256 = $WorkflowSha
+            }
+            generatedPatchUsed = $false
+            persistedOnBranch = $true
+            customerFinalCredit = $false
+          }
+          $Manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath 'R7_AUDIT_BASIC_APP_ROUTE_PROMOTED_SOURCE_MANIFEST.json' -Encoding utf8
+          $ManifestSha = ShaFile 'R7_AUDIT_BASIC_APP_ROUTE_PROMOTED_SOURCE_MANIFEST.json'
+          "PROMOTED_SOURCE_AGGREGATE_SHA256=$Aggregate" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PROMOTED_SOURCE_MANIFEST_SHA256=$ManifestSha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PROMOTED_RENDERER_SHA256=$RendererSha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PROMOTED_HARNESS_SHA256=$HarnessSha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PROMOTED_WORKFLOW_SHA256=$WorkflowSha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host ($Manifest | ConvertTo-Json -Depth 30)
+
+      - name: Compile promoted exact source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
+          try {
+            npm run typecheck
+            if ($LASTEXITCODE -ne 0) { throw 'promoted_typecheck_failed' }
+            npx eslint lib/security/audit-basic-customer-bridge-client.ts app/api/audit/basic/case/route.ts app/api/audit/basic/report/route.ts app/api/audit/basic/report/restore/route.ts scripts/r7-audit-basic-localized-pdf.ts --max-warnings=0
+            if ($LASTEXITCODE -ne 0) { throw 'promoted_targeted_eslint_failed' }
+            npm run build:webpack
+            if ($LASTEXITCODE -ne 0) { throw 'promoted_webpack_failed' }
+          } finally {
+            Pop-Location
+          }
+
+      - name: Execute promoted PL EN DE customer lifecycle
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File 'r7-audit-basic-app-route/run-promoted-source-e2e.ps1' -OutputPath 'R7_AUDIT_BASIC_APP_ROUTE_PROMOTED_SOURCE_E2E.json'
+          if ($LASTEXITCODE -ne 0) { throw "promoted_customer_lifecycle_failed:$LASTEXITCODE" }
+
+      - name: Collect bounded runtime logs
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/audit-basic/promoted-route' | Out-Null
+          foreach ($Name in @('audit-promoted-next.stdout.log','audit-promoted-next.stderr.log')) {
+            $Source = Join-Path $env:RUNNER_TEMP $Name
+            if (Test-Path -LiteralPath $Source -PathType Leaf) {
+              Copy-Item -LiteralPath $Source -Destination (Join-Path 'artifacts/r7/audit-basic/promoted-route' $Name)
+            }
+          }
+
+      - name: Upload promoted-source evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-audit-basic-app-route-promoted-source-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            R7_AUDIT_BASIC_APP_ROUTE_PROMOTED_SOURCE_MANIFEST.json
+            R7_AUDIT_BASIC_APP_ROUTE_PROMOTED_SOURCE_E2E.json
+            artifacts/r7/audit-basic/promoted-route
+          if-no-files-found: warn
+          retention-days: 14
