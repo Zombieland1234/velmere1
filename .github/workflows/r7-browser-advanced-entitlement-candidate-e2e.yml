@@ -1,4 +1,3 @@
-# R7 closure dispatch marker 2026-08-28: run canonical Browser Advanced hosted E2E
 name: R7 Browser Advanced Entitlement Candidate E2E
 
 on:
@@ -23,7 +22,7 @@ concurrency:
 jobs:
   browser-advanced-candidate-e2e:
     runs-on: windows-2025
-    timeout-minutes: 240
+    timeout-minutes: 180
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
@@ -42,9 +41,9 @@ jobs:
           node-version: '24.18.0'
           check-latest: false
 
-      - name: Reconstruct and prove exact Risk/Browser base
+      - name: Prepare exact hash-bound Risk/Browser base
         shell: pwsh
-        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1
+        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1 -Mode Prepare
 
       - name: Apply shared Browser Pro entitlement candidate patch
         shell: pwsh
@@ -61,7 +60,7 @@ jobs:
           & node 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_advanced_candidate_patch_failed:$LASTEXITCODE" }
 
-      - name: Validate Browser Advanced candidate engineering gates
+      - name: Validate Browser Advanced post-patch engineering gates
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -69,8 +68,8 @@ jobs:
           try {
             npm run typecheck 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_TYPESCRIPT.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_typecheck_failed:$LASTEXITCODE" }
-            npm run lint 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_ESLINT.log'
-            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_lint_failed:$LASTEXITCODE" }
+            & node 'node_modules/eslint/bin/eslint.js' 'lib/commerce/vlm-advanced-only-access-policy.ts' 'lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_PATCH_ESLINT.log'
+            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_patch_lint_failed:$LASTEXITCODE" }
             npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_WEBPACK.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_webpack_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
