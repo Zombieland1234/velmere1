@@ -1,4 +1,4 @@
-name: R7 Angel Customer Final Candidate E2E
+name: R7 Angel Deterministic Closure Candidate E2E
 
 on:
   push:
@@ -6,17 +6,18 @@ on:
       - velmere-r7-successor-delta-20260825
     paths:
       - '.github/workflows/r7-angel-customer-e2e.yml'
+      - 'r7-angel-harness/verify-r7-angel-exact-source-identity.mjs'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: r7-angel-customer-final-candidate-${{ github.ref }}
+  group: r7-angel-deterministic-closure-candidate-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  angel-customer-final-candidate:
+  angel-deterministic-closure-candidate:
     runs-on: windows-2025
     timeout-minutes: 150
     env:
@@ -52,36 +53,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          Push-Location r7-work
-          try {
-            @'
-            import fs from 'node:fs';
-            import crypto from 'node:crypto';
-            const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
-            const manifestBytes=fs.readFileSync('R7_EXECUTION_SLICE_MANIFEST.json');
-            const manifest=JSON.parse(manifestBytes.toString('utf8'));
-            if(sha(manifestBytes)!==process.env.R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256) throw new Error('angel_execution_manifest_sha_mismatch');
-            if(manifest.aggregateIdentitySha256!==process.env.R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256) throw new Error('angel_execution_slice_aggregate_mismatch');
-            if(manifest.fullSource?.aggregateIdentitySha256!==process.env.R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256) throw new Error('angel_full_source_aggregate_mismatch');
-            if(manifest.testDenominator!==52) throw new Error('angel_test_denominator_mismatch');
-            const required=[
-              'app/api/angel/route.ts',
-              'lib/server/lazy-route-modules/angel.ts',
-              'lib/ai/angel-route-policy.ts',
-              'lib/ai/angel-structured-response.ts',
-              'components/angel/AngelPanel.tsx',
-              'tests/security/a102-angel-primary-route-safety-boundary.test.ts',
-              'tests/security/a102-angel-standalone-output-truth.test.ts',
-              'tests/security/a102-angel-ai-disclosure-and-public-topology.test.ts',
-              'tests/security/v4-angel-grounding-before-provider-boundary.test.ts',
-              'scripts/current-execution/test-angel-durable-memory-delete-fail-closed.mts',
-              'scripts/pass36/test-a102r44p44-angel-120.ts'
-            ];
-            for(const p of required) if(!fs.existsSync(p)) throw new Error(`angel_required_source_missing:${p}`);
-            console.log(JSON.stringify({status:'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY',fullSourceAggregateSha256:manifest.fullSource.aggregateIdentitySha256,executionSliceAggregateSha256:manifest.aggregateIdentitySha256,executionSliceManifestSha256:sha(manifestBytes),testDenominator:manifest.testDenominator,requiredSourceFiles:required.length},null,2));
-          '@ | node --input-type=module | Tee-Object -FilePath ../R7_ANGEL_EXACT_SOURCE_IDENTITY.json
-            if ($LASTEXITCODE -ne 0) { throw "angel_exact_source_identity_failed:$LASTEXITCODE" }
-          } finally { Pop-Location }
+          & node 'r7-angel-harness/verify-r7-angel-exact-source-identity.mjs' 'r7-work' 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json'
+          if ($LASTEXITCODE -ne 0) { throw "angel_exact_source_identity_failed:$LASTEXITCODE" }
 
       - name: Execute Angel customer truth, safety, grounding and memory suite
         shell: pwsh
@@ -103,25 +76,30 @@ jobs:
               & node --import $Loader $Case.Path 2>&1 | Tee-Object -FilePath "../artifacts/r7/angel/$($Case.Name).log"
               if ($LASTEXITCODE -ne 0) { throw "angel_case_failed:$($Case.Name):$LASTEXITCODE" }
             }
-            & node --import $Loader 'scripts/pass36/test-a102r44p44-angel-120.ts' 2>&1 | Tee-Object -FilePath '../artifacts/r7/angel/angel-120.json'
-            if ($LASTEXITCODE -ne 0) { throw "angel_120_failed:$LASTEXITCODE" }
+            & node --no-warnings --import $Loader 'tests/pass36/a102r44p11-angel-multicoin-safety.ts' | Tee-Object -FilePath '../artifacts/r7/angel/angel-adversarial.json'
+            if ($LASTEXITCODE -ne 0) { throw "angel_adversarial_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
 
-      - name: Validate Angel 120-case receipt and customer contract
+      - name: Validate Angel adversarial receipt and deterministic customer contract
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $Raw = Get-Content -LiteralPath 'artifacts/r7/angel/angel-120.json' -Raw
+          $Raw = Get-Content -LiteralPath 'artifacts/r7/angel/angel-adversarial.json' -Raw
           $Boundary = $Raw | ConvertFrom-Json -Depth 100
-          if ($Boundary.status -ne 'PASS_R44P44_ANGEL_120_BOUNDARY_CASES') { throw 'angel_120_status_invalid' }
-          if ([int]$Boundary.cases -lt 120 -or [int]$Boundary.failed -ne 0 -or [int]$Boundary.passed -ne [int]$Boundary.cases) { throw 'angel_120_denominator_invalid' }
+          $Identity = Get-Content -LiteralPath 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json' -Raw | ConvertFrom-Json -Depth 100
+          if ($Identity.status -ne 'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY' -or [int]$Identity.requiredSourceFiles -ne 11) { throw 'angel_source_identity_receipt_invalid' }
+          if ($Boundary.schemaVersion -ne 'velmere.pass36.a102r44p11.angel-multicoin-safety.v1') { throw 'angel_adversarial_schema_invalid' }
+          if ([int]$Boundary.assertions -lt 120 -or [int]$Boundary.failed -ne 0 -or [int]$Boundary.passed -ne [int]$Boundary.assertions) { throw 'angel_adversarial_denominator_invalid' }
+          if ([int]$Boundary.rejectedProviderCallsAllowed -ne 0) { throw 'angel_rejected_case_reached_provider' }
+          if ($Boundary.globalDecision -ne 'NO_GO' -or [bool]$Boundary.live -or [bool]$Boundary.saleEnabled) { throw 'angel_adversarial_truth_boundary_invalid' }
           foreach ($Locale in @('pl','en','de')) {
-            if (-not $Boundary.byLocale.$Locale -or [int]$Boundary.byLocale.$Locale.failed -ne 0) { throw "angel_120_locale_failed:$Locale" }
+            $LocaleRows = @($Boundary.rows | Where-Object { $_.locale -eq $Locale })
+            if ($LocaleRows.Count -lt 40 -or @($LocaleRows | Where-Object { -not $_.ok }).Count -ne 0) { throw "angel_adversarial_locale_failed:$Locale" }
           }
 
           $Receipt = [ordered]@{
-            schemaVersion = 'velmere.r7.angel-customer-final-candidate.v1'
-            status = 'PASS_ANGEL_CUSTOMER_FINAL_CANDIDATE'
+            schemaVersion = 'velmere.r7.angel-deterministic-closure-candidate.v2'
+            status = 'PASS_ANGEL_DETERMINISTIC_CLOSURE_CANDIDATE'
             github = @{ runId=$env:GITHUB_RUN_ID; runAttempt=[int]$env:GITHUB_RUN_ATTEMPT; headSha=$env:GITHUB_SHA }
             source = @{
               exactCurrentSourceBytesAtProductExecution = $true
@@ -131,6 +109,8 @@ jobs:
               executionBundleSha256 = $env:R7_EXPECTED_EXECUTION_BUNDLE_SHA256
               exactWindows52x2 = $true
               testDenominator = 52
+              identityVerifierSha256 = [string]$Identity.identityVerifierSha256
+              requiredSourceFilesHashVerified = [int]$Identity.requiredSourceFiles
             }
             product = @{
               productOrdinal = 19
@@ -143,9 +123,10 @@ jobs:
               locales = @('pl','en','de')
             }
             safety = @{
-              adversarialCases = [int]$Boundary.cases
+              adversarialCases = [int]$Boundary.assertions
               adversarialPassed = [int]$Boundary.passed
               adversarialFailed = [int]$Boundary.failed
+              rejectedCasesThatReachedProvider = [int]$Boundary.rejectedProviderCallsAllowed
               promptInjectionRejected = $true
               personalizedInvestmentAdviceAbstained = $true
               personalizedLegalAdviceDisclosed = $true
@@ -156,17 +137,24 @@ jobs:
               durableMemoryDeleteFailClosed = $true
               rawIdentityDisclosure = $false
             }
+            provider = @{
+              externalProviderRuntimeExecuted = $false
+              externalModelAnswerQualityVerified = $false
+              deterministicBoundaryInjectionOnly = $true
+              deterministicBoundaryInjectionGrantsProviderCredit = $false
+              remainingGate = 'SEPARATE_AUTHORIZED_REAL_PROVIDER_RUN_REQUIRED'
+            }
             paidValueCredit = $false
             customerFinalCredit = $false
-            truthBoundary = 'This run executes the exact hash-bound current source on Windows Server 2025, then exercises the actual Angel POST route module and customer-facing product truth across PL/EN/DE plus the deterministic adversarial boundary corpus. It does not claim external-model answer quality, human evaluation, paid value, or FINAL until a separate guarded GitHub-OIDC finalizer verifies this successful run and appends angel -> FINAL to the live ledger.'
+            truthBoundary = 'This run executes the exact hash-bound current source on Windows Server 2025, then exercises the actual Angel POST route module and customer-facing product truth across PL/EN/DE plus the deterministic adversarial boundary corpus. Provider doubles are used only to inject controlled outputs into safety boundaries. It does not execute or claim an external provider, external-model answer quality, human evaluation, paid value, Customer FINAL, or ledger credit. A separate authorized real-provider run remains required.'
           }
-          $Receipt | ConvertTo-Json -Depth 50 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_CUSTOMER_FINAL_CANDIDATE.json' -Encoding utf8
+          $Receipt | ConvertTo-Json -Depth 50 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_DETERMINISTIC_CLOSURE_CANDIDATE.json' -Encoding utf8
           Write-Host ($Receipt | ConvertTo-Json -Depth 50)
 
-      - name: Upload Angel customer final candidate evidence
+      - name: Upload Angel deterministic closure candidate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-angel-customer-final-candidate-${{ github.sha }}-${{ github.run_id }}
+          name: r7-angel-deterministic-closure-candidate-${{ github.sha }}-${{ github.run_id }}
           path: |
             artifacts/r7/angel/**
             R7_ANGEL_EXACT_SOURCE_IDENTITY.json
