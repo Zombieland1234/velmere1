@@ -117,7 +117,8 @@ jobs:
           python - <<'PY'
           import json
           d=json.load(open('finalizer.json')); assert d.get('ok') is True
-          assert d.get('finalStatus') == 'FINAL'
+          assert d.get('result',{}).get('finalStatus') == 'FINAL'
+          assert d.get('customerLedgerReRead',{}).get('final_status') == 'FINAL'
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
