@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 const root = process.argv[2];
 if (!root) throw new Error("work_root_required");
 const policyPath = `${root}/lib/commerce/vlm-advanced-only-access-policy.ts`;
+const auditPdfTokenPath = `${root}/lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts`;
 const envPath = `${root}/ENV_PRODUCTION_READY.example`;
 let text = fs.readFileSync(policyPath, "utf8");
 const beforeSha = crypto.createHash("sha256").update(text).digest("hex");
@@ -48,6 +49,23 @@ if (!text.includes('entitlementSource: "product_entitlement_bridge"')) {
 }
 
 fs.writeFileSync(policyPath, text, "utf8");
+
+// Making the Browser-only bridge success shape truthful means the shared success
+// union can omit the legacy ledger object. Audit PDF issuance must remain strictly
+// bound to a durable legacy/server ledger entitlement, so narrow explicitly before
+// dereferencing it. This is fail-closed and does not grant Browser bridge authority
+// to Audit or any other surface.
+if (fs.existsSync(auditPdfTokenPath)) {
+  let auditToken = fs.readFileSync(auditPdfTokenPath, "utf8");
+  const durableGuard = '  if (!access.entitlement) return NextResponse.json({ ok: false, error: "durable_paid_entitlement_required" }, { status: 402, headers: { "cache-control": "no-store" } });\n';
+  if (!auditToken.includes(durableGuard)) {
+    const anchor = '  if (access.reason !== "paid_entitlement_verified") return NextResponse.json({ ok: false, error: "durable_paid_entitlement_required" }, { status: 402, headers: { "cache-control": "no-store" } });\n  const entitlementId = access.entitlement.entitlement?.id;';
+    const replacement = '  if (access.reason !== "paid_entitlement_verified") return NextResponse.json({ ok: false, error: "durable_paid_entitlement_required" }, { status: 402, headers: { "cache-control": "no-store" } });\n' + durableGuard + '  const entitlementId = access.entitlement.entitlement?.id;';
+    auditToken = replaceExactly(auditToken, anchor, replacement, "audit_pdf_durable_entitlement_narrowing");
+    fs.writeFileSync(auditPdfTokenPath, auditToken, "utf8");
+  }
+}
+
 let env = fs.readFileSync(envPath, "utf8");
 for (const key of ["VELMERE_PRODUCT_ENTITLEMENT_BRIDGE_URL", "VELMERE_PRODUCT_ENTITLEMENT_SERVER_CAPABILITY"]) {
   if (!new RegExp(`^${key}=`, "m").test(env)) env += `${env.endsWith("\n") ? "" : "\n"}${key}=\n`;
@@ -64,6 +82,7 @@ console.log(JSON.stringify({
   crossProductEntitlementAllowed: false,
   advancedPolicyChanged: false,
   fabricatedLegacyEntitlementRecord: false,
+  durableAuditEntitlementGuardPreserved: true,
   exactCurrentSourceBytesAtProductExecution: false,
   customerFinalCredit: false,
   paidValueFinalCredit: false
