@@ -322,7 +322,8 @@ try {
         @{ path = 'app/api/audit/basic/case/route.ts'; sha256 = '3cb537a14cd3b4ea5c8d842cf9ed2db6cdef76d58c0a607f3c3e02630902fa81' },
         @{ path = 'app/api/audit/basic/report/restore/route.ts'; sha256 = 'fa7acef144db355894157e54c01367f3ffba860745b4407a07b950799cece063' },
         @{ path = 'app/api/audit/basic/report/route.ts'; sha256 = '2d9e5a40e6d129850f3da99294074ff78ad308470897c542124a830a9fbc91f1' },
-        @{ path = 'lib/security/audit-basic-customer-bridge-client.ts'; sha256 = 'cd058d8c57ae2f8185a4ac50c20eb7c2f45c1a5dd3d72a5694d36e9dc57b60f9' }
+        @{ path = 'lib/security/audit-basic-customer-bridge-client.ts'; sha256 = 'cd058d8c57ae2f8185a4ac50c20eb7c2f45c1a5dd3d72a5694d36e9dc57b60f9' },
+        @{ path = 'lib/security/pro-audit-pdf/embedded-font-data.ts'; sha256 = 'e0b08419f49573415c9d2537420fe6277752a1662c15f5d5d9c0f1d2d83d9fb9' }
       )
       manifestSha256 = $env:PROMOTED_SOURCE_MANIFEST_SHA256
       persistedOnBranch = $true
