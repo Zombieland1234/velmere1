@@ -1,0 +1,179 @@
+name: R7 Real Markets Basic Direct Chain E2E
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-real-markets-basic-e2e-v1.yml'
+      - 'r7-real-markets-basic-v1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-real-markets-basic-v1-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  real-markets-basic-customer-e2e:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Real Markets Basic controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Execute hosted PL EN DE direct-chain customer contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Invoke-JsonPost([string]$Uri,[hashtable]$Headers,[object]$Body) {
+            $Json = $Body | ConvertTo-Json -Depth 50 -Compress
+            $Response = Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 45
+            $Parsed = $null
+            try { $Parsed = $Response.Content | ConvertFrom-Json -Depth 100 } catch { }
+            return [pscustomobject]@{ Status=[int]$Response.StatusCode; Body=$Parsed; Raw=[string]$Response.Content }
+          }
+          function Assert([bool]$Condition,[string]$Message) { if (-not $Condition) { throw $Message } }
+
+          if (-not $env:ACTIONS_ID_TOKEN_REQUEST_URL -or -not $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN) { throw 'real_markets_basic_oidc_environment_missing' }
+          $Separator = if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' }
+          $TokenResponse = Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Separator+'audience='+[Uri]::EscapeDataString('velmere-r7-real-markets-basic-v1-e2e')) -Headers @{ Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -Method Get -TimeoutSec 20
+          $Oidc = [string]$TokenResponse.value
+          Assert ([bool]$Oidc) 'real_markets_basic_oidc_token_missing'
+          Write-Host "::add-mask::$Oidc"
+
+          $HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-real-markets-basic-v1-e2e-oidc'
+          $BridgeUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-real-markets-basic-v1-public-bridge'
+          $CapabilityResponse = Invoke-JsonPost $HelperUrl @{ Authorization='Bearer '+$Oidc; Accept='application/json' } @{ action='capability' }
+          Assert ($CapabilityResponse.Status -eq 200 -and $CapabilityResponse.Body.ok -eq $true) ('real_markets_basic_capability_failed:'+($CapabilityResponse.Raw.Substring(0,[Math]::Min(500,$CapabilityResponse.Raw.Length))))
+          $Capability = [string]$CapabilityResponse.Body.realMarketsBasicServerCapability
+          Assert ($Capability.Length -ge 48 -and $Capability.Length -le 256) 'real_markets_basic_capability_contract_invalid'
+          Write-Host "::add-mask::$Capability"
+
+          $Headers = @{ 'x-velmere-real-markets-basic-v1-server-capability'=$Capability; Accept='application/json' }
+          $ExpectedTitles = @{ pl='Real Markets Basic — puls WBNB/USDT'; en='Real Markets Basic — WBNB/USDT pulse'; de='Real Markets Basic — WBNB/USDT-Puls' }
+          $Locales = [ordered]@{}
+          foreach ($Locale in @('pl','en','de')) {
+            $Result = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.real-markets-basic-request.v1'; marketId='wbnb-usdt-bsc'; locale=$Locale }
+            Assert ($Result.Status -eq 200 -and $Result.Body.ok -eq $true) ('real_markets_basic_'+$Locale+'_status_'+$Result.Status+':'+$Result.Raw.Substring(0,[Math]::Min(500,$Result.Raw.Length)))
+            Assert ($Result.Body.schemaVersion -eq 'velmere.r7.real-markets-basic-customer-pulse.v1') "real_markets_basic_${Locale}_schema_invalid"
+            Assert ($Result.Body.productSlug -eq 'real-markets-basic' -and [int]$Result.Body.productOrdinal -eq 13) "real_markets_basic_${Locale}_identity_invalid"
+            Assert ($Result.Body.tier -eq 'basic' -and $Result.Body.freeBasic -eq $true -and $Result.Body.paidValueCredit -eq $false) "real_markets_basic_${Locale}_free_basic_invalid"
+            Assert ($Result.Body.productContract -eq 'DIRECT_CHAIN_WBNB_USDT_MARKET_PULSE_FREE_BASIC') "real_markets_basic_${Locale}_contract_invalid"
+            Assert ($Result.Body.title -eq $ExpectedTitles[$Locale]) "real_markets_basic_${Locale}_title_invalid"
+            Assert (@($Result.Body.cards).Count -eq 8) "real_markets_basic_${Locale}_card_denominator_invalid"
+            foreach ($CardId in @('market','spot-price','liquidity','base-reserve','block-height','block-age','gas-price','rpc-quorum')) {
+              Assert (@($Result.Body.cards | Where-Object { $_.id -eq $CardId }).Count -eq 1) "real_markets_basic_${Locale}_${CardId}_missing"
+            }
+
+            $Payload = $Result.Body.structuredPayload
+            Assert ($Payload.marketId -eq 'wbnb-usdt-bsc' -and [int]$Payload.chainId -eq 56) "real_markets_basic_${Locale}_market_identity_invalid"
+            Assert ($Payload.factoryAddress -eq '0xca143ce32fe78f1f7019d7d551a6402fc5350c73') "real_markets_basic_${Locale}_factory_invalid"
+            Assert ($Payload.baseTokenAddress -eq '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c') "real_markets_basic_${Locale}_base_invalid"
+            Assert ($Payload.quoteTokenAddress -eq '0x55d398326f99059ff775485246999027b3197955') "real_markets_basic_${Locale}_quote_invalid"
+            Assert ([string]$Payload.pairAddress -match '^0x[a-f0-9]{40}$' -and $Payload.pairAddress -ne '0x0000000000000000000000000000000000000000') "real_markets_basic_${Locale}_pair_invalid"
+            Assert (@([string]$Payload.token0,[string]$Payload.token1) -contains '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c') "real_markets_basic_${Locale}_token0_token1_missing_wbnb"
+            Assert (@([string]$Payload.token0,[string]$Payload.token1) -contains '0x55d398326f99059ff775485246999027b3197955') "real_markets_basic_${Locale}_token0_token1_missing_usdt"
+            Assert ([double]$Payload.spotPriceQuotePerBase -gt 0 -and [double]$Payload.spotPriceQuotePerBase -lt 10000000) "real_markets_basic_${Locale}_spot_invalid"
+            Assert ([double]$Payload.baseReserve -gt 0 -and [double]$Payload.quoteReserve -gt 0 -and [double]$Payload.liquidityQuote -gt 0) "real_markets_basic_${Locale}_reserves_invalid"
+            Assert ([string]$Payload.blockNumber -match '^[1-9][0-9]+$') "real_markets_basic_${Locale}_block_number_invalid"
+            Assert ([string]$Payload.blockHash -match '^0x[a-f0-9]{64}$') "real_markets_basic_${Locale}_block_hash_invalid"
+            Assert ([string]$Payload.marketDigest -match '^sha256:[a-f0-9]{64}$') "real_markets_basic_${Locale}_market_digest_invalid"
+            Assert ([int]$Payload.blockAgeSeconds -ge -30 -and [int]$Payload.blockAgeSeconds -le 180) "real_markets_basic_${Locale}_block_age_invalid"
+            Assert ([int]$Payload.reserveAgeSeconds -ge -60 -and [int]$Payload.reserveAgeSeconds -le 7200) "real_markets_basic_${Locale}_reserve_age_invalid"
+            Assert ([int]$Payload.rpcQuorum.configured -eq 3 -and [int]$Payload.rpcQuorum.passed -ge 2) "real_markets_basic_${Locale}_quorum_invalid"
+            Assert ([int]$Payload.rpcQuorum.maxBlockDivergence -ge 0 -and [int]$Payload.rpcQuorum.maxBlockDivergence -le 3) "real_markets_basic_${Locale}_divergence_invalid"
+            Assert ([double]$Payload.gasPriceGwei -gt 0 -and [double]$Payload.gasUtilizationPercent -ge 0 -and [double]$Payload.gasUtilizationPercent -le 100) "real_markets_basic_${Locale}_chain_health_invalid"
+            try { $SourceAsOf=[DateTimeOffset]$Payload.sourceAsOf; $ReserveAsOf=[DateTimeOffset]$Payload.reserveAsOf } catch { throw "real_markets_basic_${Locale}_timestamp_parse_invalid" }
+            $Now=[DateTimeOffset]::UtcNow
+            Assert ($SourceAsOf -le $Now.AddMinutes(5) -and $SourceAsOf -ge $Now.AddMinutes(-5)) "real_markets_basic_${Locale}_source_currentness_invalid"
+            Assert ($ReserveAsOf -le $Now.AddMinutes(5) -and $ReserveAsOf -ge $Now.AddHours(-2.1)) "real_markets_basic_${Locale}_reserve_currentness_invalid"
+            Assert ($Result.Body.rights.sourceClass -eq 'PUBLIC_BLOCKCHAIN_FACTS') "real_markets_basic_${Locale}_rights_source_invalid"
+            Assert ($Result.Body.rights.customerDisplayRightsBasis -eq 'FIRST_PARTY_DERIVATION_FROM_PUBLIC_BLOCKCHAIN_FACTS') "real_markets_basic_${Locale}_rights_basis_invalid"
+            Assert ($Result.Body.rights.rawProviderPayloadReturned -eq $false -and $Result.Body.rights.externalProviderRedistributionClaimed -eq $false -and $Result.Body.rights.providerLogosUsed -eq $false) "real_markets_basic_${Locale}_rights_boundary_invalid"
+            Assert ($Result.Body.serviceRoleReturned -eq $false -and $Result.Body.rawCapabilityReturned -eq $false) "real_markets_basic_${Locale}_secret_boundary_invalid"
+            Assert (([string]$Result.Body.uncertaintyDisclosure).Length -ge 40) "real_markets_basic_${Locale}_uncertainty_missing"
+
+            $Serialized = $Result.Body | ConvertTo-Json -Depth 100 -Compress
+            foreach ($Forbidden in @('SUPABASE_SERVICE_ROLE_KEY','x-velmere-real-markets-basic-v1-server-capability',$Capability,'buy now','kup teraz','jetzt kaufen')) {
+              Assert (-not $Serialized.Contains($Forbidden)) "real_markets_basic_${Locale}_forbidden_content"
+            }
+            $Locales[$Locale] = [ordered]@{ title=[string]$Result.Body.title; cards=@($Result.Body.cards).Count; pairAddress=[string]$Payload.pairAddress; blockNumber=[string]$Payload.blockNumber; marketDigest=[string]$Payload.marketDigest; rpcQuorumPassed=[int]$Payload.rpcQuorum.passed; sourceAsOf=$SourceAsOf.ToUniversalTime().ToString('o',[Globalization.CultureInfo]::InvariantCulture) }
+          }
+
+          $Invalid = Invoke-JsonPost $BridgeUrl @{ 'x-velmere-real-markets-basic-v1-server-capability'=('x'*64); Accept='application/json' } @{ schemaVersion='velmere.r7.real-markets-basic-request.v1'; marketId='wbnb-usdt-bsc'; locale='en' }
+          Assert ($Invalid.Status -eq 403) "real_markets_basic_invalid_capability_not_denied_$($Invalid.Status)"
+          $Missing = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.real-markets-basic-request.v1'; marketId='unknown-market'; locale='en' }
+          Assert ($Missing.Status -eq 404) "real_markets_basic_missing_market_not_closed_$($Missing.Status)"
+          $BadLocale = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.real-markets-basic-request.v1'; marketId='wbnb-usdt-bsc'; locale='fr' }
+          Assert ($BadLocale.Status -eq 400) "real_markets_basic_bad_locale_not_rejected_$($BadLocale.Status)"
+          $UnknownField = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.real-markets-basic-request.v1'; marketId='wbnb-usdt-bsc'; locale='en'; executeTrade=$true }
+          Assert ($UnknownField.Status -eq 400) "real_markets_basic_unknown_field_not_rejected_$($UnknownField.Status)"
+          $WrongMethod = Invoke-WebRequest -Uri $BridgeUrl -Method Get -SkipHttpErrorCheck -TimeoutSec 30
+          Assert ([int]$WrongMethod.StatusCode -eq 405) "real_markets_basic_wrong_method_not_rejected_$([int]$WrongMethod.StatusCode)"
+          $LargeBody = '{"schemaVersion":"velmere.r7.real-markets-basic-request.v1","marketId":"wbnb-usdt-bsc","locale":"en","padding":"' + ('a'*5000) + '"}'
+          $Oversized = Invoke-WebRequest -Uri $BridgeUrl -Method Post -Headers $Headers -ContentType 'application/json' -Body $LargeBody -SkipHttpErrorCheck -TimeoutSec 30
+          Assert ([int]$Oversized.StatusCode -eq 413) "real_markets_basic_oversized_not_rejected_$([int]$Oversized.StatusCode)"
+
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/real-markets-basic-v1' | Out-Null
+          $Receipt = [ordered]@{
+            schemaVersion='velmere.r7.real-markets-basic-v1-customer-e2e.v1'
+            status='PASS_REAL_MARKETS_BASIC_V1_DIRECT_CHAIN_CUSTOMER_E2E'
+            github=@{ runId=$env:GITHUB_RUN_ID; runAttempt=[int]$env:GITHUB_RUN_ATTEMPT; headSha=$env:GITHUB_SHA }
+            product=@{ productOrdinal=13; productSlug='real-markets-basic'; tier='basic'; freeBasic=$true; paidValueCredit=$false; contract='DIRECT_CHAIN_WBNB_USDT_MARKET_PULSE_FREE_BASIC'; locales=$Locales; cardCount=8; structuredPayload=$true }
+            source=@{ chainId=56; factoryAddress='0xca143ce32fe78f1f7019d7d551a6402fc5350c73'; baseTokenAddress='0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'; quoteTokenAddress='0x55d398326f99059ff775485246999027b3197955'; configuredRpcOrigins=3; minimumQuorum=2; publicBlockchainFacts=$true; rawProviderPayloadReturned=$false }
+            negatives=@{ invalidCapabilityDenied=$true; missingMarketFailClosed=$true; unsupportedLocaleRejected=$true; unknownFieldRejected=$true; wrongMethodRejected=$true; oversizedBodyRejected=$true }
+            rights=@{ customerDisplayRightsBasis='FIRST_PARTY_DERIVATION_FROM_PUBLIC_BLOCKCHAIN_FACTS'; externalProviderRedistributionClaimed=$false; providerLogosUsed=$false }
+            privacy=@{ serviceRoleInApplication=$false; rawCapabilityReturned=$false }
+            customerFinalCredit=$false
+            truthBoundary='Hosted PL/EN/DE direct-chain customer evidence passed. Only the guarded finalizer may append Real Markets Basic FINAL after exact GitHub run, artifact, component, source-authority and database-definition binding.'
+          }
+          $Receipt | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath 'artifacts/r7/real-markets-basic-v1/R7_REAL_MARKETS_BASIC_V1_CUSTOMER_E2E.json' -Encoding utf8
+          Write-Host ($Receipt | ConvertTo-Json -Depth 100)
+
+      - name: Upload Real Markets Basic customer evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-real-markets-basic-v1-customer-e2e-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/real-markets-basic-v1/R7_REAL_MARKETS_BASIC_V1_CUSTOMER_E2E.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
+
+  finalize-real-markets-basic:
+    needs: real-markets-basic-customer-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Guarded append-only Real Markets Basic finalization and re-read
+        shell: bash
+        run: |
+          set -euo pipefail
+          separator='?'; case "$ACTIONS_ID_TOKEN_REQUEST_URL" in *\?*) separator='&';; esac
+          oidc="$(curl --fail --silent --show-error -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}${separator}audience=velmere-r7-real-markets-basic-v1-finalizer" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
+          echo "::add-mask::$oidc"
+          response=''
+          for attempt in $(seq 1 15); do
+            response="$(curl --silent --show-error -X POST -H "Authorization: Bearer $oidc" -H 'Content-Type: application/json' -d '{"action":"finalize"}' 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-real-markets-basic-v1-finalizer-oidc')"
+            if python3 -c 'import json,sys; d=json.load(sys.stdin); raise SystemExit(0 if d.get("ok") is True else 1)' <<<"$response"; then break; fi
+            sleep 2
+          done
+          RESPONSE="$response" python3 - <<'PY'
+          import json, os
+          data = json.loads(os.environ["RESPONSE"])
+          if data.get("ok") is not True:
+              raise SystemExit(f"Real Markets Basic finalization failed: {data}")
+          result = data.get("result") or {}
+          reread = data.get("ledgerReRead") or {}
+          if result.get("productSlug") != "real-markets-basic" or result.get("finalStatus") != "FINAL":
+              raise SystemExit(f"Real Markets Basic finalization contract invalid: {data}")
+          if reread.get("product_slug") != "real-markets-basic" or reread.get("final_status") != "FINAL" or int(reread.get("product_ordinal", 0)) != 13:
+              raise SystemExit(f"Real Markets Basic ledger reread invalid: {data}")
+          print(json.dumps({"schemaVersion":"velmere.r7.real-markets-basic-v1-finalization-receipt.v1","status":"FINAL","result":result,"ledgerReRead":reread,"serviceRoleReturned":False}, indent=2))
+          PY
