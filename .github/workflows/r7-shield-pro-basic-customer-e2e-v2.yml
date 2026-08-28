@@ -40,14 +40,13 @@ jobs:
             return [pscustomobject]@{ Status=[int]$Response.StatusCode; Body=$Parsed; Raw=[string]$Response.Content }
           }
           function Assert([bool]$Condition,[string]$Message) { if (-not $Condition) { throw $Message } }
-
+          # canonical customer contract unchanged; this comment only retriggers the guarded run on current HEAD
           if (-not $env:ACTIONS_ID_TOKEN_REQUEST_URL -or -not $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN) { throw 'shield_pro_basic_oidc_environment_missing' }
           $Separator = if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' }
           $TokenResponse = Invoke-RestMethod -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$Separator+'audience='+[Uri]::EscapeDataString('velmere-r7-shield-pro-basic-v2-e2e')) -Headers @{ Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -Method Get -TimeoutSec 20
           $Oidc = [string]$TokenResponse.value
           Assert ([bool]$Oidc) 'shield_pro_basic_oidc_token_missing'
           Write-Host "::add-mask::$Oidc"
-
           $HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-basic-v2-e2e-oidc'
           $BridgeUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-basic-v2-public-bridge'
           $CapabilityResponse = Invoke-JsonPost $HelperUrl @{ Authorization='Bearer '+$Oidc; Accept='application/json' } @{ action='capability' }
@@ -55,15 +54,10 @@ jobs:
           $Capability = [string]$CapabilityResponse.Body.shieldProBasicServerCapability
           Assert ($Capability.Length -ge 48 -and $Capability.Length -le 256) 'shield_pro_basic_capability_contract_invalid'
           Write-Host "::add-mask::$Capability"
-
           $Headers = @{ 'x-velmere-shield-pro-basic-v2-server-capability'=$Capability; Accept='application/json' }
           $ExpectedTitles = @{ pl='Shield Pro Basic — terminal triage'; en='Shield Pro Basic — triage terminal'; de='Shield Pro Basic — Triage-Terminal' }
-          $RequiredEventDigests = @(
-            'sha256:fd4a3a3b66f5a030e951cc0c592a847197260418282b3f71b4fdacdc9b8aa861',
-            'sha256:0aa92b05d736f5a3691be2420b77a0da7ff800d27707cb6f976d4626deb4f65e'
-          )
+          $RequiredEventDigests = @('sha256:fd4a3a3b66f5a030e951cc0c592a847197260418282b3f71b4fdacdc9b8aa861','sha256:0aa92b05d736f5a3691be2420b77a0da7ff800d27707cb6f976d4626deb4f65e')
           $Locales = [ordered]@{}
-
           foreach ($Locale in @('pl','en','de')) {
             $Result = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale=$Locale }
             Assert ($Result.Status -eq 200 -and $Result.Body.ok -eq $true) "shield_pro_basic_${Locale}_status_$($Result.Status)"
@@ -88,43 +82,22 @@ jobs:
             Assert ($Result.Body.rights.rawProviderPayloadReturned -eq $false -and $Result.Body.rights.externalProviderRedistributionClaimed -eq $false) "shield_pro_basic_${Locale}_rights_boundary_invalid"
             Assert ($Result.Body.serviceRoleReturned -eq $false -and $Result.Body.rawCapabilityReturned -eq $false) "shield_pro_basic_${Locale}_secret_boundary_invalid"
             Assert (([string]$Result.Body.uncertaintyDisclosure).Length -ge 40) "shield_pro_basic_${Locale}_uncertainty_missing"
-
             try { $ObservedAt=[DateTimeOffset]$Result.Body.currentness.observedAt; $SourceAsOf=[DateTimeOffset]$Result.Body.currentness.sourceAsOf } catch { throw "shield_pro_basic_${Locale}_timestamp_parse_invalid" }
             $Now=[DateTimeOffset]::UtcNow
             Assert ($ObservedAt -le $Now.AddMinutes(5) -and $SourceAsOf -le $Now.AddMinutes(5)) "shield_pro_basic_${Locale}_future_timestamp_invalid"
             Assert ($ObservedAt -ge $Now.AddDays(-7) -and $SourceAsOf -ge $Now.AddDays(-7)) "shield_pro_basic_${Locale}_stale_invalid"
-
             $Serialized = $Result.Body | ConvertTo-Json -Depth 100 -Compress
             foreach ($Forbidden in @('SUPABASE_SERVICE_ROLE_KEY','x-velmere-shield-pro-basic-v2-server-capability',$Capability)) { Assert (-not $Serialized.Contains($Forbidden)) "shield_pro_basic_${Locale}_private_value_leak" }
             $Locales[$Locale] = [ordered]@{ title=[string]$Result.Body.title; cards=@($Result.Body.cards).Count; tableRows=@($Result.Body.operatorTable).Count; queueActions=@($Result.Body.actionQueue).Count; currentEventDigest=[string]$Result.Body.structuredPayload.currentEvent.eventDigest; sourceAsOf=$SourceAsOf.ToUniversalTime().ToString('o',[Globalization.CultureInfo]::InvariantCulture) }
           }
-
-          $Invalid = Invoke-JsonPost $BridgeUrl @{ 'x-velmere-shield-pro-basic-v2-server-capability'=('x'*64); Accept='application/json' } @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale='en' }
-          Assert ($Invalid.Status -eq 403) "shield_pro_basic_invalid_capability_not_denied_$($Invalid.Status)"
-          $Missing = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='unknown-terminal-asset'; locale='en' }
-          Assert ($Missing.Status -eq 404) "shield_pro_basic_missing_asset_not_closed_$($Missing.Status)"
-          $BadLocale = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale='fr' }
-          Assert ($BadLocale.Status -eq 400) "shield_pro_basic_bad_locale_not_rejected_$($BadLocale.Status)"
-          $UnknownField = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale='en'; admin=$true }
-          Assert ($UnknownField.Status -eq 400) "shield_pro_basic_unknown_field_not_rejected_$($UnknownField.Status)"
-          $WrongMethod = Invoke-WebRequest -Uri $BridgeUrl -Method Get -SkipHttpErrorCheck -TimeoutSec 30
-          Assert ([int]$WrongMethod.StatusCode -eq 405) "shield_pro_basic_wrong_method_not_rejected_$([int]$WrongMethod.StatusCode)"
-          $LargeBody = '{"schemaVersion":"velmere.r7.shield-pro-basic-terminal-request.v2","assetId":"multicall3-bsc","locale":"en","padding":"' + ('a'*5000) + '"}'
-          $Oversized = Invoke-WebRequest -Uri $BridgeUrl -Method Post -Headers $Headers -ContentType 'application/json' -Body $LargeBody -SkipHttpErrorCheck -TimeoutSec 30
-          Assert ([int]$Oversized.StatusCode -eq 413) "shield_pro_basic_oversized_not_rejected_$([int]$Oversized.StatusCode)"
-
+          $Invalid = Invoke-JsonPost $BridgeUrl @{ 'x-velmere-shield-pro-basic-v2-server-capability'=('x'*64); Accept='application/json' } @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale='en' }; Assert ($Invalid.Status -eq 403) "shield_pro_basic_invalid_capability_not_denied_$($Invalid.Status)"
+          $Missing = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='unknown-terminal-asset'; locale='en' }; Assert ($Missing.Status -eq 404) "shield_pro_basic_missing_asset_not_closed_$($Missing.Status)"
+          $BadLocale = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale='fr' }; Assert ($BadLocale.Status -eq 400) "shield_pro_basic_bad_locale_not_rejected_$($BadLocale.Status)"
+          $UnknownField = Invoke-JsonPost $BridgeUrl $Headers @{ schemaVersion='velmere.r7.shield-pro-basic-terminal-request.v2'; assetId='multicall3-bsc'; locale='en'; admin=$true }; Assert ($UnknownField.Status -eq 400) "shield_pro_basic_unknown_field_not_rejected_$($UnknownField.Status)"
+          $WrongMethod = Invoke-WebRequest -Uri $BridgeUrl -Method Get -SkipHttpErrorCheck -TimeoutSec 30; Assert ([int]$WrongMethod.StatusCode -eq 405) "shield_pro_basic_wrong_method_not_rejected_$([int]$WrongMethod.StatusCode)"
+          $LargeBody = '{"schemaVersion":"velmere.r7.shield-pro-basic-terminal-request.v2","assetId":"multicall3-bsc","locale":"en","padding":"' + ('a'*5000) + '"}'; $Oversized = Invoke-WebRequest -Uri $BridgeUrl -Method Post -Headers $Headers -ContentType 'application/json' -Body $LargeBody -SkipHttpErrorCheck -TimeoutSec 30; Assert ([int]$Oversized.StatusCode -eq 413) "shield_pro_basic_oversized_not_rejected_$([int]$Oversized.StatusCode)"
           New-Item -ItemType Directory -Force -Path 'artifacts/r7/shield-pro-basic-v2' | Out-Null
-          $Receipt = [ordered]@{
-            schemaVersion='velmere.r7.shield-pro-basic-v2-customer-terminal-e2e.v1'
-            status='PASS_SHIELD_PRO_BASIC_V2_CUSTOMER_TERMINAL_E2E'
-            github=@{ runId=$env:GITHUB_RUN_ID; runAttempt=[int]$env:GITHUB_RUN_ATTEMPT; headSha=$env:GITHUB_SHA }
-            product=@{ productOrdinal=10; productSlug='shield-pro-basic'; tier='basic'; freeBasic=$true; paidValueCredit=$false; contract='BOUNDED_SINGLE_TARGET_FREE_DEFENSIVE_TRIAGE_TERMINAL'; locales=$Locales; cardCount=8; operatorTableRows=2; actionQueueItems=4; structuredPayload=$true; canonicalAssetId='eip155:56:0xca11bde05977b3631167028862be2a173976ca11' }
-            evidence=@{ requiredEventDigests=$RequiredEventDigests; historyEvents=2; comparabilitySegments=2; providerNetworkCalls=0; sourceClass='VELMERE_GENERATED_PUBLIC_EVIDENCE_FROM_DIRECT_CHAIN_BOUND_SOURCE' }
-            negatives=@{ invalidCapabilityDenied=$true; missingAssetFailClosed=$true; unsupportedLocaleRejected=$true; unknownFieldRejected=$true; wrongMethodRejected=$true; oversizedBodyRejected=$true }
-            privacy=@{ serviceRoleInApplication=$false; rawCapabilityReturned=$false; rawProviderPayloadReturned=$false }
-            customerFinalCredit=$false
-            truthBoundary='Hosted PL/EN/DE customer terminal evidence passed. Only the guarded finalizer may append Shield Pro Basic FINAL after exact GitHub run, artifact, component, source-authority, database-definition, event, rights, and freshness binding.'
-          }
+          $Receipt = [ordered]@{ schemaVersion='velmere.r7.shield-pro-basic-v2-customer-terminal-e2e.v1'; status='PASS_SHIELD_PRO_BASIC_V2_CUSTOMER_TERMINAL_E2E'; github=@{ runId=$env:GITHUB_RUN_ID; runAttempt=[int]$env:GITHUB_RUN_ATTEMPT; headSha=$env:GITHUB_SHA }; product=@{ productOrdinal=10; productSlug='shield-pro-basic'; tier='basic'; freeBasic=$true; paidValueCredit=$false; contract='BOUNDED_SINGLE_TARGET_FREE_DEFENSIVE_TRIAGE_TERMINAL'; locales=$Locales; cardCount=8; operatorTableRows=2; actionQueueItems=4; structuredPayload=$true; canonicalAssetId='eip155:56:0xca11bde05977b3631167028862be2a173976ca11' }; evidence=@{ requiredEventDigests=$RequiredEventDigests; historyEvents=2; comparabilitySegments=2; providerNetworkCalls=0; sourceClass='VELMERE_GENERATED_PUBLIC_EVIDENCE_FROM_DIRECT_CHAIN_BOUND_SOURCE' }; negatives=@{ invalidCapabilityDenied=$true; missingAssetFailClosed=$true; unsupportedLocaleRejected=$true; unknownFieldRejected=$true; wrongMethodRejected=$true; oversizedBodyRejected=$true }; privacy=@{ serviceRoleInApplication=$false; rawCapabilityReturned=$false; rawProviderPayloadReturned=$false }; customerFinalCredit=$false; truthBoundary='Hosted PL/EN/DE customer terminal evidence passed. Only the guarded finalizer may append Shield Pro Basic FINAL after exact GitHub run, artifact, component, source-authority, database-definition, event, rights, and freshness binding.' }
           $Receipt | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath 'artifacts/r7/shield-pro-basic-v2/R7_SHIELD_PRO_BASIC_V2_CUSTOMER_TERMINAL_E2E.json' -Encoding utf8
           Write-Host ($Receipt | ConvertTo-Json -Depth 100)
 
