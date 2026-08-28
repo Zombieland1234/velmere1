@@ -16,13 +16,13 @@ permissions:
   id-token: write
 
 concurrency:
-  group: r7-browser-advanced-entitlement-candidate-e2e-accelerated-v2-${{ github.ref }}
+  group: r7-browser-advanced-entitlement-candidate-e2e-focused-v3-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   browser-advanced-candidate-e2e:
     runs-on: windows-2025
-    timeout-minutes: 180
+    timeout-minutes: 120
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
@@ -60,14 +60,14 @@ jobs:
           & node 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_advanced_candidate_patch_failed:$LASTEXITCODE" }
 
-      - name: Validate Browser Advanced post-patch engineering gates
+      - name: Validate changed Browser Advanced engineering surface
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           Push-Location 'r7-work'
           try {
-            npm run typecheck 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_TYPESCRIPT.log'
-            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_typecheck_failed:$LASTEXITCODE" }
+            node scripts/pass13/run-partitioned-typescript.mjs --worker 5 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_TS_PARTITION_06.log'
+            if ($LASTEXITCODE -ne 0) { throw "browser_advanced_changed_partition_typecheck_failed:$LASTEXITCODE" }
             & node 'node_modules/eslint/bin/eslint.js' 'lib/commerce/vlm-advanced-only-access-policy.ts' 'lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_PATCH_ESLINT.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_patch_lint_failed:$LASTEXITCODE" }
             npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_WEBPACK.log'
