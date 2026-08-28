@@ -15,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: r7-browser-pro-entitlement-candidate-e2e-final-focused-v3-${{ github.ref }}
+  group: r7-browser-pro-entitlement-candidate-e2e-final-functional-v4-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
           & node 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-pro/R7_BROWSER_PRO_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_pro_candidate_patch_failed:$LASTEXITCODE" }
 
-      - name: Validate changed Browser Pro engineering surface
+      - name: Validate changed Browser Pro surface before E2E
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -60,13 +60,21 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "browser_pro_changed_partition_typecheck_failed:$LASTEXITCODE" }
             & node 'node_modules/eslint/bin/eslint.js' 'lib/commerce/vlm-advanced-only-access-policy.ts' 'lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_PATCH_ESLINT.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_pro_patch_lint_failed:$LASTEXITCODE" }
-            npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_WEBPACK.log'
-            if ($LASTEXITCODE -ne 0) { throw "browser_pro_webpack_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
 
       - name: Execute and record Browser Pro canonical candidate E2E
         shell: pwsh
         run: ./r7-browser-pro-harness/run-r7-browser-pro-entitlement-candidate-e2e-final.ps1
+
+      - name: Prove production webpack after hosted E2E
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Push-Location 'r7-work'
+          try {
+            npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-pro/R7_BROWSER_PRO_WEBPACK.log'
+            if ($LASTEXITCODE -ne 0) { throw "browser_pro_webpack_failed:$LASTEXITCODE" }
+          } finally { Pop-Location }
 
       - name: Upload Browser Pro canonical candidate evidence
         if: always()
