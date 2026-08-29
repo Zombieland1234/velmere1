@@ -1,0 +1,53 @@
+name: R7 Browser Pro PR Candidate Trigger
+
+on:
+  pull_request:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-browser-pro-pr-trigger.yml'
+      - 'r7-browser-pro-harness/**'
+      - 'r7-risk-v5/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  browser-pro-pr-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+      - name: Prepare exact base
+        shell: pwsh
+        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows-execution-slice-fixed.ps1 -Mode Prepare
+      - name: Apply Browser Pro patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path 'r7-work/artifacts/r7/browser-pro' | Out-Null
+          & node 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs' 'r7-work'
+          if($LASTEXITCODE -ne 0){throw "browser_pro_patch_failed:$LASTEXITCODE"}
+      - name: Run Browser Pro canonical candidate E2E
+        shell: pwsh
+        run: ./r7-browser-pro-harness/run-r7-browser-pro-entitlement-candidate-e2e-final.ps1
+      - name: Upload candidate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-browser-pro-pr-candidate-${{ github.run_id }}
+          path: r7-work/artifacts/r7/browser-pro
+          if-no-files-found: warn
+          retention-days: 14
