@@ -39,7 +39,7 @@ jobs:
           $Base = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
           $Helper = "$Base/r7-shield-pro-paid-e2e-oidc-v1"
           $Workspace = "$Base/r7-shield-pro-paid-workspace-v1"
-          $CustomerFinalizer = "$Base/r7-shield-pro-advanced-customer-finalizer-oidc-v1"
+          $CustomerFinalizer = "$Base/r7-shield-pro-advanced-customer-finalizer-oidc-v2"
           $Audience = 'velmere-r7-shield-pro-paid-e2e-v1'
           $TokenUri = $env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' })) + 'audience=' + [Uri]::EscapeDataString($Audience)
           $Oidc = [string](Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{ Authorization = 'Bearer ' + $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -TimeoutSec 20).value
