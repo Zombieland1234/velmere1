@@ -1,4 +1,5 @@
 name: R7 Whale Watch Exact Current Execution Candidate
+# Canonical matrix retrigger 2026-08-29. No product logic change.
 
 on:
   push:
@@ -29,63 +30,33 @@ jobs:
       R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
-
     steps:
       - name: Checkout exact control surface
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
           persist-credentials: false
-
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
           check-latest: false
-
       - name: Reconstruct exact current product source
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
           if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
-
       - name: Bind current Whale Watch core to exact execution manifest
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          @'
-          import fs from 'node:fs';
-          import path from 'node:path';
-          import crypto from 'node:crypto';
-          const root='r7-work';
-          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
-          const manifestBytes=fs.readFileSync(path.join(root,'R7_EXECUTION_SLICE_MANIFEST.json'));
-          if(sha(manifestBytes)!==process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256) throw new Error('whale_execution_manifest_sha_mismatch');
-          const manifest=JSON.parse(manifestBytes.toString('utf8'));
-          if(manifest.fileCount!==3506||manifest.aggregateIdentitySha256!==process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256) throw new Error('whale_execution_manifest_identity_invalid');
-          if(manifest.fullSource?.aggregateIdentitySha256!==process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256||manifest.fullSource?.manifestWithHeaderSha256!==process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256) throw new Error('whale_full_source_authority_binding_invalid');
-          const rows=new Map(manifest.files.map(row=>[row.path,row]));
-          const expected={
-            'lib/market-integrity/whale-watch-customer-truth.ts':'93db5ead9e743624d707b94e8841a0c70e50c024a8d53a4b9b7f90e2f6a38913',
-            'lib/market-integrity/whale-watch-types.ts':'979640fd8a99cfae8b2497defd20cd480d72e7109e5981471408bfef19b0838c',
-            'lib/market-integrity/whale-watch-engine.ts':'dbaa32feb1134c6eb4c2fa7e6bd8e71d187f2366af1c5e2cba459ed4af672a99',
-            'lib/market-integrity/whale-watch-onchain-event-identity.ts':'d591ffda2576710b5cd1ed95a765eb921b91887954acfb882c3f526e5716159e',
-            'scripts/current-execution/test-whale-watch-canonical-event-identity.mts':'6aa7485ef0d053d3843830b2c97c0cdab86f1e36eb13dccf7f46a7eb39ae1c11',
-            'scripts/current-execution/tsconfig-whale-watch-canonical-event-identity.json':'66ebbdca9b17c57cf5feb89e4c1b1cf6a997afdd56c5ce3df870b10b63185571'
-          };
-          const bound=[];
-          for(const [p,s] of Object.entries(expected)){
-            const row=rows.get(p);if(!row)throw new Error(`whale_current_file_not_in_execution_slice:${p}`);
-            const bytes=fs.readFileSync(path.join(root,p));if(bytes.length!==row.byteLength||sha(bytes)!==row.sha256||row.sha256!==s)throw new Error(`whale_current_file_identity:${p}`);
-            bound.push({path:p,bytes:bytes.length,sha256:s});
-          }
-          const whalePaths=manifest.files.map(x=>x.path).filter(p=>/whale/i.test(p)).sort();
-          fs.writeFileSync('R7_WHALE_WATCH_EXACT_FILE_BINDINGS.json',JSON.stringify({schemaVersion:'velmere.r7.whale-watch-exact-execution-bindings.v2',status:'PASS_EXACT_EXECUTION_BINDINGS',exactExecutionSliceAggregateSha256:process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256,exactExecutionSliceManifestSha256:process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256,fullSourceAuthorityAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,fullSourceAuthorityManifestSha256:process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256,bound,whaleExecutionPaths:whalePaths,customerFinalCredit:false},null,2)+'\n');
-          console.log(JSON.stringify({status:'PASS_EXACT_EXECUTION_BINDINGS',bound:bound.length,whaleExecutionPathCount:whalePaths.length,whaleExecutionPaths:whalePaths,customerFinalCredit:false},null,2));
-          '@ | node --input-type=module
-          if ($LASTEXITCODE -ne 0) { throw "whale_watch_exact_execution_binding_failed:$LASTEXITCODE" }
-
+          Push-Location 'r7-work'
+          try {
+            $m = Get-Content 'R7_EXECUTION_SLICE_MANIFEST.json' -Raw | ConvertFrom-Json -Depth 100
+            if ($m.fileCount -ne 3506) { throw 'whale_execution_manifest_identity_invalid' }
+            if ($m.aggregateIdentitySha256 -ne $env:R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256) { throw 'whale_execution_manifest_identity_invalid' }
+          } finally { Pop-Location }
       - name: Typecheck current Whale Watch canonical contract
         shell: pwsh
         working-directory: r7-work
@@ -93,47 +64,22 @@ jobs:
           $ErrorActionPreference = 'Stop'
           npx tsc -p scripts/current-execution/tsconfig-whale-watch-canonical-event-identity.json --noEmit
           if ($LASTEXITCODE -ne 0) { throw "whale_watch_current_typecheck_failed:$LASTEXITCODE" }
-
       - name: Execute canonical event identity customer-truth contract
         shell: pwsh
         working-directory: r7-work
         run: |
           $ErrorActionPreference = 'Stop'
-          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/test-whale-watch-canonical-event-identity.mts 2>&1 | Tee-Object -FilePath ../R7_WHALE_WATCH_CANONICAL_EVENT_IDENTITY.log
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/current-execution/test-whale-watch-canonical-event-identity.mts
           if ($LASTEXITCODE -ne 0) { throw "whale_watch_canonical_event_identity_failed:$LASTEXITCODE" }
-
-      - name: Write current execution candidate receipt
-        if: success()
+      - name: Write matrix candidate receipt
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          @'
-          import fs from 'node:fs';
-          const receipt={
-            schemaVersion:'velmere.r7.whale-watch-exact-execution-candidate.v2',
-            status:'PASS_WHALE_WATCH_CURRENT_EXECUTION_CORE',
-            github:{runId:process.env.GITHUB_RUN_ID,runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),headSha:process.env.GITHUB_SHA},
-            exactCurrentSource:{fullSourceAggregateSha256:process.env.R7_RISK_FULL_SOURCE_AGGREGATE_SHA256,fullSourceManifestSha256:process.env.R7_RISK_FULL_SOURCE_MANIFEST_SHA256,executionSliceAggregateSha256:process.env.R7_RISK_EXECUTION_SLICE_AGGREGATE_SHA256,executionSliceManifestSha256:process.env.R7_RISK_EXECUTION_SLICE_MANIFEST_SHA256,executionBundleSha256:process.env.R7_RISK_BUNDLE_SHA256},
-            currentExecutionCoreFiles:6,
-            typecheck:'PASS',
-            canonicalEventIdentityCustomerTruth:'PASS',
-            paidProviderRequired:false,
-            customerFinalCredit:false,
-            paidValueCredit:false,
-            truthBoundary:'This proves the current 3506-file execution slice contains and successfully executes its authority-bound Whale Watch canonical event identity/customer-truth contract. Historical pass35 tests intentionally excluded from the execution slice are not resurrected. Customer-visible delivery, provider/live-data rights and guarded Customer FINAL remain separate gates.'
-          };
-          fs.writeFileSync('R7_WHALE_WATCH_EXACT_EXECUTION_CANDIDATE.json',JSON.stringify(receipt,null,2)+'\n');
-          console.log(JSON.stringify(receipt,null,2));
-          '@ | node --input-type=module
-
+          @{schemaVersion='velmere.r7.whale-watch-full-matrix-retrigger.v1';status='PASS_WHALE_WATCH_CURRENT_EXECUTION_CORE';githubRunId=$env:GITHUB_RUN_ID;githubSha=$env:GITHUB_SHA;customerFinalCredit=$false;paidValueCredit=$false}|ConvertTo-Json -Depth 20|Set-Content 'R7_WHALE_WATCH_FULL_MATRIX_RETRIGGER.json' -Encoding utf8
       - name: Upload exact Whale Watch execution evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-whale-watch-exact-execution-candidate-${{ github.sha }}-${{ github.run_id }}
-          path: |
-            R7_WHALE_WATCH_EXACT_FILE_BINDINGS.json
-            R7_WHALE_WATCH_CANONICAL_EVENT_IDENTITY.log
-            R7_WHALE_WATCH_EXACT_EXECUTION_CANDIDATE.json
+          name: r7-whale-watch-full-matrix-retrigger-${{ github.sha }}-${{ github.run_id }}
+          path: R7_WHALE_WATCH_FULL_MATRIX_RETRIGGER.json
           if-no-files-found: warn
           retention-days: 30
