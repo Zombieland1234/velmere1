@@ -1,0 +1,52 @@
+tr, Any], node_type: str) -> list[dict[str, Any]]:
+    return [x for x in walk(node) if x.get("nodeType") == node_type]
+
+
+def identifiers(node: dict[str, Any]) -> set[str]:
+    out = set()
+    for item in walk(node):
+        if item.get("nodeType") == "Identifier": out.add(item.get("name", ""))
+        if item.get("nodeType") == "MemberAccess": out.add(item.get("memberName", ""))
+    return out
+
+
+def has_require(fn: dict[str, Any]) -> bool:
+    for call in node_types(fn, "FunctionCall"):
+        expr = call.get("expression", {})
+        if expr.get("nodeType") == "Identifier" and expr.get("name") == "require": return True
+    return False
+
+
+def compiler_ast_checks(output: dict[str, Any]) -> list[dict[str, Any]]:
+    c = contract_nodes(output)
+    rows = []
+    def add(check_id: str, ok: bool, detail: Any = None): rows.append({"id": check_id, "ok": bool(ok), "detail": detail})
+
+    risk_oracle = function_node(c["OracleRisk"], "borrowLimit")
+    ctrl_oracle = function_node(c["OracleControl"], "borrowLimit")
+    add("oracle-risk-no-freshness-guard", not has_require(risk_oracle) and "read" in identifiers(risk_oracle))
+    add("oracle-control-freshness-guard", has_require(ctrl_oracle) and {"timestamp", "updatedAt"}.issubset(identifiers(ctrl_oracle)))
+
+    risk_share = function_node(c["ShareRisk"], "previewDeposit")
+    ctrl_share = function_node(c["ShareControl"], "previewDeposit")
+    risk_divisions = [n for n in node_types(risk_share, "BinaryOperation") if n.get("operator") == "/"]
+    ctrl_divisions = [n for n in node_types(ctrl_share, "BinaryOperation") if n.get("operator") == "/"]
+    add("share-risk-post-asset-denominator", any("assets" in identifiers(n.get("rightExpression", {})) and "totalAssets" in identifiers(n.get("rightExpression", {})) for n in risk_divisions))
+    add("share-control-pre-asset-denominator", any("totalAssets" in identifiers(n.get("rightExpression", {})) and "assets" not in identifiers(n.get("rightExpression", {})) for n in ctrl_divisions))
+
+    risk_init = function_node(c["InitRisk"], "initialize")
+    ctrl_init = function_node(c["InitControl"], "initialize")
+    add("initializer-risk-unguarded", not has_require(risk_init))
+    add("initializer-control-guarded", has_require(ctrl_init) and "initialized" in identifiers(ctrl_init))
+
+    layouts = output["contracts"]["src/upgrade/UpgradeableProtocol.sol"]
+    v1 = [x["label"] for x in layouts["LayoutV1"]["storageLayout"]["storage"]]
+    v2 = [x["label"] for x in layouts["LayoutV2Risk"]["storageLayout"]["storage"]]
+    init_control_layout = layouts["InitControl"]["storageLayout"]["storage"]
+    add("storage-layout-risk-reordered", v1 != v2 and v1 == ["owner", "value"] and v2 == ["value", "owner"], {"v1": v1, "v2": v2})
+    add("storage-layout-control-namespaced", len(init_control_layout) == 0, init_control_layout)
+
+    risk_bridge = function_node(c["BridgeRisk"], "execute")
+    ctrl_bridge = function_node(c["BridgeControl"], "execute")
+    add("bridge-risk-domain-missing", "chainid" not in identifiers(risk_bridge) and "destination" not in identifiers(risk_bridge))
+    add("bridge-control-domain-bound", {"chainid", "destination", "nonce"}.issubset(identifiers(ctrl_bridge)))

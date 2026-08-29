@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import time
+from typing import Any
+
+ROOT = pathlib.Path(__file__).resolve().parent
+EVIDENCE = ROOT / "evidence"
+PROJECT = EVIDENCE / "foundry-project"
+RAW = EVIDENCE / "raw"
+EXPECTED_SOLC = "0.8.24"
+EXPECTED_FORGE = "1.2.3"
+
+SOURCES: dict[str, str] = {
+"src/oracle/OracleProtocol.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+interface IPriceOracle {
+    function read() external view returns (uint256 price, uint256 updatedAt);
+}
+
+contract MutablePriceOracle is IPriceOracle {
+    uint256 public price;
+    uint256 public updatedAt;
+    function set(uint256 nextPrice, uint256 nextUpdatedAt) external { price = nextPrice; updatedAt = nextUpdatedAt; }
+    function read() external view returns (uint256, uint256) { return (price, updatedAt); }
+}
+
+contract OracleRisk {
+    IPriceOracle public immutable oracle;
+    constructor(IPriceOracle nextOracle) { oracle = nextOracle; }
+    function borrowLimit(uint256 collateral) external view returns (uint256) {
+        (uint256 price,) = oracle.read();
+        return collateral * price / 1e18;
+    }
+}
+
+contract OracleControl {
+    IPriceOracle public immutable oracle;
+    uint256 public constant MAX_AGE = 1 hours;
+    constructor(IPriceOracle nextOracle) { oracle = nextOracle; }
+    function borrowLimit(uint256 collateral) external view returns (uint256) {
+        (uint256 price, uint256 updatedAt) = oracle.read();
+        require(block.timestamp >= updatedAt && block.timestamp - updatedAt <= MAX_AGE, "STALE_ORACLE");
+        return collateral * price / 1e18;
+    }
+}
+''',
+"src/vault/ShareVault.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract ShareRisk {
+    uint256 public totalAssets;
+    uint256 public totalShares;
+    mapping(address => uint256) public shares;
+    function donate(uint256 assets) external { totalAssets += assets; }
+    function previewDeposit(uint256 assets) public view returns (uint256) {
+        return totalShares == 0 ? assets : assets * totalShares / (totalAssets + assets);
+    }
+    function deposit(uint256 assets) external returns (uint256 minted) {
+        minted = previewDeposit(assets);
+        totalAssets += assets;
+        totalShares += minted;
+        shares[msg.sender] += minted;
+    }
+}
+
+contract ShareControl {
+    uint256 public totalAssets;
+    uint256 public totalShares;
+    mapping(address => uint256) public shares;
+    function donate(uint256 assets) external { totalAssets += assets; }
+    function previewDeposit(uint256 assets) public view returns (uint256) {
+        return totalShares == 0 ? assets : assets * totalShares / totalAssets;
+    }
+    function deposit(uint256 assets) external returns (uint256 minted) {
+        minted = previewDeposit(assets);
+        require(minted > 0, "ZERO_SHARES");
+        totalAssets += assets;
+        totalShares += minted;
+        shares[msg.sender] += minted;
+    }
+}
+''',
+"src/upgrade/NamespacedState.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+library NamespacedState {
+    bytes32 internal con

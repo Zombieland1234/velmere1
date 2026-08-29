@@ -1,0 +1,83 @@
+stant SLOT = keccak256("velmere.r44p11.namespaced.state");
+    struct Data { address owner; bool initialized; uint256 value; }
+    function data() internal pure returns (Data storage state) {
+        bytes32 slot = SLOT;
+        assembly { state.slot := slot }
+    }
+}
+''',
+"src/upgrade/UpgradeableProtocol.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+import {NamespacedState} from "./NamespacedState.sol";
+
+contract LayoutV1 { address public owner; uint256 public value; }
+contract LayoutV2Risk { uint256 public value; address public owner; }
+
+contract InitRisk {
+    address public owner;
+    function initialize(address nextOwner) external { owner = nextOwner; }
+}
+
+contract InitControl {
+    function initialize(address nextOwner) external {
+        NamespacedState.Data storage state = NamespacedState.data();
+        require(!state.initialized, "ALREADY_INITIALIZED");
+        state.initialized = true;
+        state.owner = nextOwner;
+    }
+    function owner() external view returns (address) { return NamespacedState.data().owner; }
+}
+''',
+"src/bridge/BridgeProtocol.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract BridgeRisk {
+    mapping(bytes32 => bool) public executed;
+    function execute(bytes calldata message) external {
+        bytes32 id = keccak256(message);
+        require(!executed[id], "REPLAY");
+        executed[id] = true;
+    }
+}
+
+contract BridgeControl {
+    address public immutable messenger;
+    mapping(bytes32 => bool) public executed;
+    constructor(address nextMessenger) { messenger = nextMessenger; }
+    function execute(uint256 sourceChain, uint256 destinationChain, address destination, uint256 nonce, bytes calldata message) external {
+        require(msg.sender == messenger, "MESSENGER");
+        require(destinationChain == block.chainid && destination == address(this), "DOMAIN");
+        bytes32 id = keccak256(abi.encode(sourceChain, destinationChain, destination, nonce, message));
+        require(!executed[id], "REPLAY");
+        executed[id] = true;
+    }
+}
+''',
+"src/governance/GovernanceProtocol.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract GovernanceRisk {
+    function passed(uint256 votes) external pure returns (bool) { return votes >= 1; }
+}
+
+contract GovernanceControl {
+    uint256 public immutable snapshotSupply;
+    constructor(uint256 supply) { snapshotSupply = supply; }
+    function passed(uint256 votes) external view returns (bool) { return votes * 100 >= snapshotSupply * 10; }
+}
+''',
+"src/lending/SolvencyProtocol.sol": r'''// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+interface ILendingOracle { function read() external view returns (uint256 price, uint256 updatedAt); }
+contract LendingOracle is ILendingOracle {
+    uint256 public price;
+    uint256 public updatedAt;
+    function set(uint256 p, uint256 t) external { price = p; updatedAt = t; }
+    function read() external view returns (uint256, uint256) { return (price, updatedAt); }
+}
+
+contract SolvencyRisk {
+    mapping(address => uint256) public collateral;
+    mapping(address => uint256) public debt;
+    function seed(uint256 c, uint256 d) external { collateral[msg.s

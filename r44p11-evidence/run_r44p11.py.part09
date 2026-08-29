@@ -1,0 +1,18 @@
+edit": True,
+            "localMultifileProtocolCredit": True,
+            "localFoundryFuzzCredit": True,
+            "localFoundryInvariantCredit": True,
+            "realExternalProtocolAccuracyCredit": False,
+            "independentAdjudicationCredit": False,
+            "customerCredit": False,
+            "saleCredit": False,
+            "liveCredit": False,
+        },
+    }
+    ledger_path = EVIDENCE / "R44P11_COMPILER_AST_DYNAMIC_PROTOCOL_LEDGER.json"
+    ledger_path.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps({k: ledger[k] for k in ("status","protocolPairs","protocolVariants","astAssertions","astPassed","forgePassedTests","forgeFuzzTests","forgeInvariantCampaigns","artifactFileCount")}, indent=2))
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

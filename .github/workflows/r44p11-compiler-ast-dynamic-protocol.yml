@@ -1,0 +1,89 @@
+name: R44P11 Compiler AST Dynamic Protocol Closure
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p11-evidence/**'
+      - '.github/workflows/r44p11-compiler-ast-dynamic-protocol.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compiler-ast-dynamic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      EXPECTED_SOLC_SHA256: fb03a29a517452b9f12bcf459ef37d0a543765bb3bbc911e70a87d6a37c30d5f
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.2.3
+      - name: Prepare exact compiler and runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOLC_BINARY="$RUNNER_TEMP/solc-linux-amd64-v0.8.24+commit.e11b9ed9"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$SOLC_BINARY" \
+            'https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-v0.8.24%2Bcommit.e11b9ed9'
+          chmod 0755 "$SOLC_BINARY"
+          test "$(sha256sum "$SOLC_BINARY" | awk '{print $1}')" = "$EXPECTED_SOLC_SHA256"
+          "$SOLC_BINARY" --version | grep -F '0.8.24'
+          echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
+          cat r44p11-evidence/run_r44p11.py.part* > r44p11-evidence/run_r44p11.py
+          RUNNER_SHA256="$(sha256sum r44p11-evidence/run_r44p11.py | awk '{print $1}')"
+          echo "VELMERE_RUNNER_SHA256=$RUNNER_SHA256" >> "$GITHUB_ENV"
+          printf '%s  %s\n' "$RUNNER_SHA256" 'run_r44p11.py' > r44p11-evidence/RUNNER_SHA256.txt
+          python -m py_compile r44p11-evidence/run_r44p11.py
+      - name: Execute compiler AST and dynamic protocol campaigns
+        working-directory: r44p11-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_r44p11.py | tee execution-summary.log
+      - name: Verify ledger
+        working-directory: r44p11-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          x=json.load(open('evidence/R44P11_COMPILER_AST_DYNAMIC_PROTOCOL_LEDGER.json'))
+          assert x['status']=='PASS_LOCAL_COMPILER_AST_MULTIFILE_FUZZ_INVARIANT'
+          assert x['protocolPairs']==6 and x['protocolVariants']==12
+          assert x['astAssertions']==64 and x['astPassed']==64 and x['astFailed']==0
+          assert x['forgePassedTests']>=16 and x['forgeFuzzTests']>=3 and x['forgeInvariantCampaigns']>=4
+          assert x['creditBoundary']['realExternalProtocolAccuracyCredit'] is False
+          assert x['creditBoundary']['saleCredit'] is False and x['creditBoundary']['liveCredit'] is False
+          PY
+      - name: Package evidence
+        if: always()
+        working-directory: r44p11-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -d evidence; then
+            cp RUNNER_SHA256.txt evidence/RUNNER_SHA256.txt
+            printf '%s\n' "$GITHUB_SHA" > evidence/GITHUB_CHECKOUT_SHA.txt
+            tar --sort=name --mtime='UTC 2026-08-03' --owner=0 --group=0 --numeric-owner \
+              -czf r44p11-compiler-ast-dynamic-evidence.tar.gz evidence execution-summary.log
+            sha256sum r44p11-compiler-ast-dynamic-evidence.tar.gz > r44p11-compiler-ast-dynamic-evidence.sha256
+          fi
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p11-compiler-ast-dynamic-evidence
+          path: |
+            r44p11-evidence/evidence
+            r44p11-evidence/execution-summary.log
+            r44p11-evidence/r44p11-compiler-ast-dynamic-evidence.tar.gz
+            r44p11-evidence/r44p11-compiler-ast-dynamic-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
