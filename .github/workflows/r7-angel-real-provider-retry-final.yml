@@ -18,7 +18,7 @@ concurrency:
 env:
   NEXT_TELEMETRY_DISABLED: '1'
   CI: '1'
-  R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4ecec97be5ed49be67e'
+  R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
   R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
   R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
   R7_EXPECTED_EXECUTION_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
@@ -73,7 +73,7 @@ jobs:
           $ErrorActionPreference='Stop'
           $B=Get-Content 'artifacts/r7/angel/angel-adversarial.json' -Raw | ConvertFrom-Json -Depth 100
           $I=Get-Content 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json' -Raw | ConvertFrom-Json -Depth 100
-          if($I.status -ne 'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY' -or [int]$I.requiredSourceFiles -ne 11){throw 'angel_source_identity_receipt_invalid'}
+          if($I.status -ne 'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY' -or [int]$I.requiredSourceFiles -ne 11){throw 'angel_adversarial_denominator_invalid'}
           if([int]$B.assertions -lt 120 -or [int]$B.failed -ne 0 -or [int]$B.passed -ne [int]$B.assertions){throw 'angel_adversarial_denominator_invalid'}
           if([int]$B.rejectedProviderCallsAllowed -ne 0){throw 'angel_rejected_case_reached_provider'}
           if($B.globalDecision -ne 'NO_GO' -or [bool]$B.live -or [bool]$B.saleEnabled){throw 'angel_safety_boundary_invalid'}
@@ -90,7 +90,7 @@ jobs:
           $Ev=Get-Content 'artifacts/r7/angel/R7_ANGEL_GEMINI_PROVIDER_PROBE_V2.json' -Raw|ConvertFrom-Json -Depth 50
           $Canonical=[ordered]@{action='finalize';evidence=$Ev}|ConvertTo-Json -Depth 50 -Compress
           $Hash=[Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($Canonical));$Hex=(-join($Hash|ForEach-Object{$_.ToString('x2')}))
-          $Audience='velmere-r7-angel-real-provider:'+$Hex
+          $Audience='velmere-r7-angel-real-provider:'+ $Hex
           $TokenUri=$env:ACTIONS_ID_TOKEN_REQUEST_URL+($(if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'})+'audience='+[Uri]::EscapeDataString($Audience))
           $Oidc=(Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
           $R=Invoke-WebRequest -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-pr-oidc-v2' -Method Post -Headers @{Authorization='Bearer '+$Oidc;Accept='application/json'} -ContentType 'application/json' -Body $Canonical -SkipHttpErrorCheck -TimeoutSec 60
