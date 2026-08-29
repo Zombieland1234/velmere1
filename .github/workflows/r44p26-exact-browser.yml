@@ -1,0 +1,108 @@
+name: R44P26 Exact Playwright Chromium Intake
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/r44p26-exact-browser.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      NODE_VERSION: '24.18.0'
+      EXPECTED_NODE_ARCHIVE_SHA256: 'efced36c041a7a43e8b4a4b35cb929bef7747c1c7442e693901a0b4f06467e1d'
+      NODE_RELEASE_TAG: '24.18.0-28070977815'
+      PLAYWRIGHT_VERSION: '1.60.0'
+      EXPECTED_CHROMIUM_VERSION: '148.0.7778.96'
+      EXPECTED_CHROMIUM_REVISION: '1223'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare exact Node and Playwright
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p26-browser/runtime r44p26-browser/project r44p26-browser/cache
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output r44p26-browser/node.tar.gz \
+            "https://github.com/actions/node-versions/releases/download/${NODE_RELEASE_TAG}/node-${NODE_VERSION}-linux-x64.tar.gz"
+          test "$(sha256sum r44p26-browser/node.tar.gz | awk '{print $1}')" = "$EXPECTED_NODE_ARCHIVE_SHA256"
+          tar -xzf r44p26-browser/node.tar.gz -C r44p26-browser/runtime
+          NODE="$PWD/r44p26-browser/runtime/bin/node"
+          NPM="$PWD/r44p26-browser/runtime/lib/node_modules/npm/bin/npm-cli.js"
+          test "$($NODE --version)" = "v${NODE_VERSION}"
+          test "$($NODE "$NPM" --version)" = "11.16.0"
+          cd r44p26-browser/project
+          printf '{"private":true,"dependencies":{"playwright":"%s"}}\n' "$PLAYWRIGHT_VERSION" > package.json
+          "$NODE" "$NPM" install --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org/
+          test "$($NODE node_modules/playwright/cli.js --version)" = "Version ${PLAYWRIGHT_VERSION}"
+      - name: Download and launch exact Chromium
+        shell: bash
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/r44p26-browser/cache
+        run: |
+          set -euo pipefail
+          NODE="$PWD/r44p26-browser/runtime/bin/node"
+          cd r44p26-browser/project
+          "$NODE" node_modules/playwright/cli.js install chromium
+          cat > verify-browser.mjs <<'EOF'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch({ headless: true });
+          const version = browser.version();
+          const executablePath = chromium.executablePath();
+          const page = await browser.newPage();
+          await page.setContent('<main id="ok">R44P26</main>');
+          const text = await page.locator('#ok').textContent();
+          await browser.close();
+          const bytes = fs.readFileSync(executablePath);
+          const receipt = {
+            schemaVersion: 'velmere.pass36.a102r44p26.exact-browser-intake.v1',
+            status: version === process.env.EXPECTED_CHROMIUM_VERSION && text === 'R44P26' ? 'PASS_EXACT_BROWSER_INTAKE' : 'FAIL',
+            playwrightVersion: process.env.PLAYWRIGHT_VERSION,
+            chromiumVersion: version,
+            expectedChromiumVersion: process.env.EXPECTED_CHROMIUM_VERSION,
+            expectedRevision: process.env.EXPECTED_CHROMIUM_REVISION,
+            executablePath,
+            executableSha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+            executableBytes: bytes.length,
+            launchProven: true,
+            pageInteractionProven: text === 'R44P26',
+            truthBoundary: {
+              exactBrowserIdentity: version === process.env.EXPECTED_CHROMIUM_VERSION,
+              projectBrowserMatrixCredit: false,
+              projectBuildCredit: false,
+              stagingCredit: false,
+              saleCredit: false,
+              liveCredit: false
+            }
+          };
+          fs.writeFileSync('../R44P26_EXACT_BROWSER_INTAKE.json', JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify(receipt,null,2));
+          if (receipt.status !== 'PASS_EXACT_BROWSER_INTAKE') process.exit(1);
+          EOF
+          "$NODE" verify-browser.mjs
+          test -d "${PLAYWRIGHT_BROWSERS_PATH}/chromium-${EXPECTED_CHROMIUM_REVISION}" || {
+            find "${PLAYWRIGHT_BROWSERS_PATH}" -maxdepth 2 -type d -print;
+            exit 20;
+          }
+          cd ..
+          tar --sort=name --mtime='UTC 2026-08-07' --owner=0 --group=0 --numeric-owner \
+            -czf exact-chromium-cache.tar.gz -C cache .
+          sha256sum exact-chromium-cache.tar.gz > exact-chromium-cache.sha256
+      - name: Upload exact browser intake
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p26-exact-browser
+          path: |
+            r44p26-browser/R44P26_EXACT_BROWSER_INTAKE.json
+            r44p26-browser/exact-chromium-cache.tar.gz
+            r44p26-browser/exact-chromium-cache.sha256
+          if-no-files-found: warn
+          retention-days: 14
