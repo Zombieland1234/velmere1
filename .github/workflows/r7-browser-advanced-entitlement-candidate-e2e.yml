@@ -34,17 +34,14 @@ jobs:
           ref: velmere-r7-successor-delta-20260825
           fetch-depth: 1
           persist-credentials: false
-
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
           check-latest: false
-
       - name: Prepare exact hash-bound Risk/Browser base
         shell: pwsh
         run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1 -Mode Prepare
-
       - name: Apply shared Browser Pro entitlement candidate patch
         shell: pwsh
         run: |
@@ -52,14 +49,12 @@ jobs:
           New-Item -ItemType Directory -Force -Path 'r7-work/artifacts/r7/browser-advanced' | Out-Null
           & node 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_SHARED_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_advanced_shared_candidate_patch_failed:$LASTEXITCODE" }
-
       - name: Apply Browser Advanced hosted-only entitlement candidate patch
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           & node 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs' 'r7-work' | Tee-Object -FilePath 'r7-work/artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_ENTITLEMENT_PATCH_RECEIPT.json'
           if ($LASTEXITCODE -ne 0) { throw "browser_advanced_candidate_patch_failed:$LASTEXITCODE" }
-
       - name: Validate changed Browser Advanced surface before E2E
         shell: pwsh
         run: |
@@ -71,11 +66,9 @@ jobs:
             & node 'node_modules/eslint/bin/eslint.js' 'lib/commerce/vlm-advanced-only-access-policy.ts' 'lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts' 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_PATCH_ESLINT.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_patch_lint_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
-
       - name: Execute Browser Advanced matched-input candidate E2E
         shell: pwsh
         run: ./r7-browser-advanced-harness/run-r7-browser-advanced-candidate-e2e.ps1
-
       - name: Prove production webpack after hosted E2E
         shell: pwsh
         run: |
@@ -85,7 +78,6 @@ jobs:
             npm run build:webpack 2>&1 | Tee-Object -FilePath 'artifacts/r7/browser-advanced/R7_BROWSER_ADVANCED_WEBPACK.log'
             if ($LASTEXITCODE -ne 0) { throw "browser_advanced_webpack_failed:$LASTEXITCODE" }
           } finally { Pop-Location }
-
       - name: Upload Browser Advanced candidate evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -104,5 +96,4 @@ jobs:
           include-hidden-files: true
           compression-level: 0
           retention-days: 14
-
-# 2026-08-29 canonical push retrigger: exercise the real branch OIDC path; PR-triggered candidate is not trusted for final credit.
+# 2026-08-29 canonical retrigger: force fresh push/OIDC evaluation on the canonical successor branch for current-source Browser Advanced closure.
