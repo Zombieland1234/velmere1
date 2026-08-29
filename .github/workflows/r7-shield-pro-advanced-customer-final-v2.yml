@@ -80,8 +80,8 @@ jobs:
 
           $Cleanup = PostJson $Helper $Headers @{ action = 'cleanup'; accountIds = @([string]$Provision.users.basic.accountId,[string]$Provision.users.pro.accountId,[string]$Provision.users.advanced.accountId,[string]$Provision.users.outsider.accountId) }
           if ($Cleanup.ok -ne $true -or [int]$Cleanup.deletedUsers -ne 4) { throw 'advanced_final_cleanup_not_verified' }
-          if ([int]$Cleanup.revoked -lt 2) { throw 'advanced_final_revoke_not_verified' }
-          Write-Host "Advanced E2E cleanup verified; revoked=$($Cleanup.revoked)."
+          if ([int]$Cleanup.revoked.revoked -lt 2) { throw 'advanced_final_revoke_not_verified' }
+          Write-Host "Advanced E2E cleanup verified; revoked=$($Cleanup.revoked.revoked)."
 
           $Final = PostJson $CustomerFinalizer $Headers @{ action = 'finalize_customer'; tier = 'advanced' }
           if ($Final.ok -ne $true -or [string]$Final.productSlug -ne 'shield-pro-advanced' -or [string]$Final.finalStatus -ne 'FINAL') { throw 'advanced_customer_finalization_failed' }
