@@ -1,0 +1,226 @@
+name: R44P13 SmartBugs External Labeled Accuracy Baseline
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p13-evidence/**'
+      - '.github/workflows/r44p13-smartbugs-external-accuracy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  external-accuracy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      DATASET_COMMIT: 230e649123477eff332742a59a1c7cc6dc286cab
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install exact analysis tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade 'pip==25.1.1'
+          python -m pip install \
+            'solc-select==1.1.0' \
+            'slither-analyzer==0.11.5' \
+            'semgrep==1.130.0'
+          python - <<'PY'
+          import importlib.metadata as m
+          expected={'pip':'25.1.1','solc-select':'1.1.0','slither-analyzer':'0.11.5','semgrep':'1.130.0'}
+          actual={k:m.version(k) for k in expected}
+          assert actual==expected,(actual,expected)
+          print('TOOL_VERSIONS_OK',actual)
+          PY
+          python -m pip freeze --all | LC_ALL=C sort > r44p13-evidence/pip-freeze.txt
+
+      - name: Fetch pinned external labeled corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/smartbugs/smartbugs-curated.git r44p13-evidence/smartbugs-curated
+          git -C r44p13-evidence/smartbugs-curated fetch --depth 1 origin "$DATASET_COMMIT"
+          git -C r44p13-evidence/smartbugs-curated checkout --detach "$DATASET_COMMIT"
+          test "$(git -C r44p13-evidence/smartbugs-curated rev-parse HEAD)" = "$DATASET_COMMIT"
+          sha256sum \
+            r44p13-evidence/smartbugs-curated/README.md \
+            r44p13-evidence/smartbugs-curated/vulnerabilities.json \
+            r44p13-evidence/smartbugs-curated/versions.csv \
+            r44p13-evidence/smartbugs-curated/ICSE2020_curated_69.txt \
+            > r44p13-evidence/DATASET_METADATA_SHA256.txt
+
+      - name: Download hash-verified native solc binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          VELMERE_SOLC_BIN_DIR="$RUNNER_TEMP/r44p13-solc-binaries"
+          mkdir -p "$VELMERE_SOLC_BIN_DIR"
+          echo "VELMERE_SOLC_BIN_DIR=$VELMERE_SOLC_BIN_DIR" >> "$GITHUB_ENV"
+          export VELMERE_SOLC_BIN_DIR
+          python r44p13-evidence/download_solc_binaries.py | tee r44p13-evidence/SOLC_BINARY_DOWNLOAD_SUMMARY.json
+          cp "$VELMERE_SOLC_BIN_DIR/SOLC_BINARY_MANIFEST.json" r44p13-evidence/SOLC_BINARY_MANIFEST.json
+          python - <<'PY'
+          import json
+          x=json.load(open('r44p13-evidence/SOLC_BINARY_MANIFEST.json'))
+          available=sum(1 for row in x['versions'].values() if row['status']=='AVAILABLE_NATIVE_HASH_VERIFIED')
+          blocked=sum(1 for row in x['versions'].values() if row['status']=='BLOCKED_NATIVE_ARTIFACT_UNAVAILABLE')
+          assert available>=13,(available,blocked)
+          assert x['versions']['0.8.24']['status']=='AVAILABLE_NATIVE_HASH_VERIFIED'
+          print('SOLC_NATIVE_MANIFEST_OK',available,blocked)
+          PY
+
+      - name: Apply bounded runner hardening and syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python r44p13-evidence/patch_runner.py r44p13-evidence/run_smartbugs_external_accuracy.py
+          python -m py_compile \
+            r44p13-evidence/run_smartbugs_external_accuracy.py \
+            r44p13-evidence/patch_runner.py \
+            r44p13-evidence/download_solc_binaries.py
+          sha256sum \
+            r44p13-evidence/run_smartbugs_external_accuracy.py \
+            r44p13-evidence/patch_runner.py \
+            r44p13-evidence/download_solc_binaries.py \
+            > r44p13-evidence/RUNNER_SHA256.txt
+
+      - name: Execute 69-case external accuracy baseline
+        working-directory: r44p13-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_smartbugs_external_accuracy.py | tee execution-summary.log
+
+      - name: Independently verify denominator, receipts and truth boundary
+        working-directory: r44p13-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.')
+          evidence=root/'evidence'
+          ledger_path=evidence/'R44P13_EXTERNAL_LABELED_ACCURACY_LEDGER.json'
+          summary_path=evidence/'R44P13_EXTERNAL_LABELED_ACCURACY_SUMMARY.json'
+          ledger=json.loads(ledger_path.read_text())
+          summary=json.loads(summary_path.read_text())
+          assert summary['status']=='PASS_EXTERNAL_BASELINE_EXECUTED_WITH_BLOCKED_LEGACY_NATIVE_COMPILERS'
+          assert ledger['dataset']['commit']=='230e649123477eff332742a59a1c7cc6dc286cab'
+          assert ledger['dataset']['cases']==69
+          assert ledger['dataset']['sourceFilesRedistributed']==0
+          assert ledger['denominators']['cases']==69
+          assert ledger['denominators']['controls']==12
+          assert len(ledger['cases'])==69
+          assert len({r['caseId'] for r in ledger['cases']})==69
+          assert len(list((evidence/'receipts').glob('*.json')))==69
+          assert summary['compileSuccess']>0
+          assert summary['slitherSanitizedResults']>0
+          assert summary['semgrepSanitizedResults']==69
+          assert 0 < summary['legacyNativeCompilerBlockedCases'] < 69
+          for row in ledger['cases']:
+              receipt=evidence/'receipts'/f"{row['caseId']}.json"
+              assert receipt.is_file()
+              assert hashlib.sha256(receipt.read_bytes()).hexdigest()==row['receiptSha256']
+              parsed=json.loads(receipt.read_text())
+              assert parsed['sourceSha256']==row['sourceSha256']
+              assert parsed['datasetCommit']==ledger['dataset']['commit']
+              assert parsed['truthBoundary']['sourceRedistributedInEvidence'] is False
+              assert parsed['truthBoundary']['commercialRedistributionRightsApproved'] is False
+              assert parsed['truthBoundary']['saleCredit'] is False
+              assert parsed['truthBoundary']['liveCredit'] is False
+              compiler=parsed['compiler']
+              if compiler.get('selectedExact'):
+                  assert compiler.get('status')=='AVAILABLE_NATIVE_HASH_VERIFIED'
+                  assert compiler.get('solcSha256')
+              else:
+                  assert compiler.get('status') in {'BLOCKED_NATIVE_ARTIFACT_UNAVAILABLE','NATIVE_BINARY_VERSION_MISMATCH'}
+          tb=ledger['truthBoundary']
+          assert tb['externalLabeledRecallBaseline'] is True
+          assert tb['independentDatasetDesign'] is True
+          assert tb['formalPrecision'] is False
+          assert tb['severityCalibration'] is False
+          assert tb['businessLogicCoverage'] is False
+          assert tb['commercialRightsApproved'] is False
+          assert tb['customerCredit'] is False
+          assert tb['paidTierCredit'] is False
+          assert tb['liveCredit'] is False
+          assert tb['worldClassProven'] is False
+          forbidden=[]
+          for p in evidence.rglob('*'):
+              if p.is_file() and p.suffix.lower()=='.sol' and 'controls' not in p.parts:
+                  forbidden.append(str(p))
+          assert not forbidden,forbidden
+          result={
+            'schemaVersion':'velmere.pass36.a102r44p13.external-evidence-verification.v2',
+            'status':'PASS',
+            'checks':31,
+            'passed':31,
+            'failed':0,
+            'cases':69,
+            'receipts':69,
+            'controls':12,
+            'compileSuccess':summary['compileSuccess'],
+            'slitherSanitizedResults':summary['slitherSanitizedResults'],
+            'semgrepSanitizedResults':summary['semgrepSanitizedResults'],
+            'legacyNativeCompilerBlockedCases':summary['legacyNativeCompilerBlockedCases'],
+            'contractAnyLabelRecall':summary['contractAnyLabelRecall'],
+            'labelInstanceRecall':summary['labelInstanceRecall'],
+            'controlFlagRate':summary['controlFlagRate'],
+            'ledgerSha256':hashlib.sha256(ledger_path.read_bytes()).hexdigest(),
+          }
+          (root/'R44P13_INDEPENDENT_EVIDENCE_VERIFICATION.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+
+      - name: Build redacted deterministic evidence archive
+        if: always()
+        working-directory: r44p13-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          rm -rf packaged-evidence
+          mkdir -p packaged-evidence
+          if test -f evidence/R44P13_EXTERNAL_LABELED_ACCURACY_LEDGER.json; then
+            cp evidence/R44P13_EXTERNAL_LABELED_ACCURACY_LEDGER.json packaged-evidence/
+            cp evidence/R44P13_EXTERNAL_LABELED_ACCURACY_SUMMARY.json packaged-evidence/
+            cp -R evidence/receipts packaged-evidence/
+          fi
+          cp -f \
+            execution-summary.log pip-freeze.txt DATASET_METADATA_SHA256.txt RUNNER_SHA256.txt \
+            GITHUB_CHECKOUT_SHA.txt SOLC_BINARY_MANIFEST.json SOLC_BINARY_DOWNLOAD_SUMMARY.json \
+            packaged-evidence/ 2>/dev/null || true
+          cp -f R44P13_INDEPENDENT_EVIDENCE_VERIFICATION.json packaged-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('packaged-evidence')
+          rows=[]
+          for p in sorted(x for x in root.rglob('*') if x.is_file()):
+              b=p.read_bytes(); rows.append({'path':str(p.relative_to(root)),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          Path('R44P13_EVIDENCE_FILE_MANIFEST.json').write_text(json.dumps({'fileCount':len(rows),'files':rows},indent=2,sort_keys=True)+'\n')
+          PY
+          cp R44P13_EVIDENCE_FILE_MANIFEST.json packaged-evidence/
+          tar --sort=name --mtime='UTC 2026-08-04' --owner=0 --group=0 --numeric-owner \
+            -czf r44p13-smartbugs-external-accuracy-evidence.tar.gz packaged-evidence
+          sha256sum r44p13-smartbugs-external-accuracy-evidence.tar.gz > r44p13-smartbugs-external-accuracy-evidence.sha256
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p13-smartbugs-external-accuracy-evidence
+          path: |
+            r44p13-evidence/packaged-evidence
+            r44p13-evidence/R44P13_EVIDENCE_FILE_MANIFEST.json
+            r44p13-evidence/r44p13-smartbugs-external-accuracy-evidence.tar.gz
+            r44p13-evidence/r44p13-smartbugs-external-accuracy-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
