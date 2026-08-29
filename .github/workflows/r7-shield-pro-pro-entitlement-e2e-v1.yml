@@ -54,7 +54,15 @@ jobs:
           PY
           PROA="$(cat /tmp/proa)"; PROB="$(cat /tmp/prob)"; BASIC="$(cat /tmp/basic)"
           for locale in pl en de; do
-            r="$(curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"create\",\"locale\":\"$locale\"}")"
+            if [ "$locale" = "pl" ]; then
+              status="$(curl -sS -o /tmp/proa-create.json -w '%{http_code}' -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"create\",\"locale\":\"$locale\"}")"
+              echo "shield_pro_pro_create_status=$status"
+              cat /tmp/proa-create.json
+              test "$status" = "201"
+              r="$(cat /tmp/proa-create.json)"
+            else
+              r="$(curl -fsS -X POST "$ROUTE" -H "Authorization: Bearer $PROA" -H 'Content-Type: application/json' --data "{\"action\":\"create\",\"locale\":\"$locale\"}")"
+            fi
             printf '%s\n' "$r" > "proa-create-$locale.json"
             python - "$r" <<'PY'
           import json,sys
