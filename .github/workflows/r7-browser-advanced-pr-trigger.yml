@@ -1,0 +1,61 @@
+name: R7 Browser Advanced PR Candidate Trigger
+
+on:
+  pull_request:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-browser-advanced-pr-trigger.yml'
+      - 'r7-browser-advanced-harness/**'
+      - 'r7-browser-pro-harness/**'
+      - 'r7-risk-v5/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  browser-advanced-pr-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CI: '1'
+      VELMERE_BROWSER_ADVANCED_CANDIDATE: 'true'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+      - name: Prepare exact base
+        shell: pwsh
+        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows.ps1 -Mode Prepare
+      - name: Apply shared Browser patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path 'r7-work/artifacts/r7/browser-advanced' | Out-Null
+          & node 'r7-browser-pro-harness/patch-browser-pro-entitlement-bridge-candidate-v2.mjs' 'r7-work'
+          if($LASTEXITCODE -ne 0){throw "browser_shared_patch_failed:$LASTEXITCODE"}
+      - name: Apply Browser Advanced patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & node 'r7-browser-advanced-harness/patch-browser-advanced-entitlement-candidate-v1.mjs' 'r7-work'
+          if($LASTEXITCODE -ne 0){throw "browser_advanced_patch_failed:$LASTEXITCODE"}
+      - name: Run Browser Advanced canonical candidate E2E
+        shell: pwsh
+        run: ./r7-browser-advanced-harness/run-r7-browser-advanced-candidate-e2e.ps1
+      - name: Upload candidate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-browser-advanced-pr-candidate-${{ github.run_id }}
+          path: r7-work/artifacts/r7/browser-advanced
+          if-no-files-found: warn
+          retention-days: 14
