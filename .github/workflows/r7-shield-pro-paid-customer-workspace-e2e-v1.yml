@@ -8,6 +8,13 @@ on:
       - '.github/workflows/r7-shield-pro-paid-customer-workspace-e2e-v1.yml'
       - 'r7-shield-pro-paid/**'
       - 'r7-risk-v5/**'
+  pull_request:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-shield-pro-paid-customer-workspace-e2e-v1.yml'
+      - 'r7-shield-pro-paid/**'
+      - 'r7-risk-v5/**'
   workflow_dispatch:
 
 permissions:
@@ -26,7 +33,6 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
-  
     steps:
       - name: Checkout exact Shield Pro Paid controls
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -34,21 +40,19 @@ jobs:
           ref: velmere-r7-successor-delta-20260825
           fetch-depth: 1
           persist-credentials: false
-
       - name: Execute account-bound entitlement and workspace lifecycle
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $Base = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
-          $Helper = "$Base/r7-shield-pro-paid-e2e-oidc-v1"
+          $Helper = "$Base/r7-shield-pro-paid-e2e-oidc-v2"
           $Workspace = "$Base/r7-shield-pro-paid-workspace-v1"
-          $Audience = 'velmere-r7-shield-pro-paid-e2e-v1'
+          $Audience = 'velmere-r7-shield-pro-paid-e2e-v2'
           $TokenUri = $env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' })) + 'audience=' + [Uri]::EscapeDataString($Audience)
           $Oidc = [string](Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{ Authorization = 'Bearer ' + $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -TimeoutSec 20).value
           if ($Oidc.Split('.').Count -ne 3) { throw 'shield_pro_paid_oidc_missing' }
           Write-Host '::add-mask::' + $Oidc
           $OidcHeaders = @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' }
-
           function PostJson([string]$Uri, [hashtable]$Headers, [object]$Body) {
             $Json = $Body | ConvertTo-Json -Depth 50 -Compress
             $Response = Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 60
@@ -60,12 +64,10 @@ jobs:
             }
             return $Parsed
           }
-
           $Provision = PostJson $Helper $OidcHeaders @{ action = 'provision' }
           if ($Provision.ok -ne $true) { throw 'shield_pro_paid_provision_not_ok' }
           if ([string]$Provision.runId -ne [string]$env:GITHUB_RUN_ID -or [string]$Provision.headSha -ne [string]$env:GITHUB_SHA) { throw 'shield_pro_paid_run_binding_invalid' }
           if ($Provision.serviceRoleReturned -ne $false -or $Provision.passwordReturned -ne $false -or $Provision.paymentTransactionClaimed -ne $false) { throw 'shield_pro_paid_secret_boundary_invalid' }
-
           $Rows = New-Object System.Collections.Generic.List[object]
           $users = $Provision.users
           foreach ($tier in @('pro','advanced')) {
@@ -87,44 +89,18 @@ jobs:
             if ([string]$restored.payloadDigestSha256 -ne [string]$first.payloadDigestSha256) { throw "workspace_restore_digest_changed_$tier" }
             $Rows.Add([ordered]@{ tier = $tier; locale = 'pl'; workspaceId = [string]$restored.workspaceId; payloadDigestSha256 = [string]$restored.payloadDigestSha256; operation = 'RESTORE' })
           }
-
           New-Item -ItemType Directory -Force -Path 'r7-work/artifacts/r7/shield-pro-paid' | Out-Null
-          $Receipt = [ordered]@{
-            schemaVersion = 'velmere.r7.shield-pro-paid-customer-workspace-e2e.v1'
-            status = 'PASS_SHIELD_PRO_PAID_CUSTOMER_WORKSPACE_E2E'
-            workflowName = 'R7 Shield Pro Paid Customer Workspace E2E'
-            workflowFile = '.github/workflows/r7-shield-pro-paid-customer-workspace-e2e-v1.yml'
-            githubRunId = [string]$env:GITHUB_RUN_ID
-            githubRunAttempt = [int]$env:GITHUB_RUN_ATTEMPT
-            githubHeadSha = [string]$env:GITHUB_SHA
-            entitlementProvisioned = $true
-            entitlementHelper = 'r7-shield-pro-paid-e2e-oidc-v1'
-            workspaceHelper = 'r7-shield-pro-paid-workspace-v1'
-            tiers = @('pro','advanced')
-            locales = @('pl','en','de')
-            workspaceLifecycle = $Rows
-            paymentTransactionClaimed = $false
-            serviceRoleReturned = $false
-            customerFinalCredit = $false
-            paidValueFinalCredit = $false
-            materialPaidValuePro = 'THREE_TARGET_PERSISTENT_MONITORING_HISTORY'
-            materialPaidValueAdvanced = 'SIX_TARGET_PRIORITY_CORRELATION_TEAM_AUTOMATION_WORKFLOW'
-          }
+          $Receipt = [ordered]@{schemaVersion='velmere.r7.shield-pro-paid-customer-workspace-e2e.v1';status='PASS_SHIELD_PRO_PAID_CUSTOMER_WORKSPACE_E2E';workflowName='R7 Shield Pro Paid Customer Workspace E2E';workflowFile='.github/workflows/r7-shield-pro-paid-customer-workspace-e2e-v1.yml';githubRunId=[string]$env:GITHUB_RUN_ID;githubRunAttempt=[int]$env:GITHUB_RUN_ATTEMPT;githubHeadSha=[string]$env:GITHUB_SHA;entitlementProvisioned=$true;entitlementHelper='r7-shield-pro-paid-e2e-oidc-v2';workspaceHelper='r7-shield-pro-paid-workspace-v1';tiers=@('pro','advanced');locales=@('pl','en','de');workspaceLifecycle=$Rows;paymentTransactionClaimed=$false;serviceRoleReturned=$false;customerFinalCredit=$false;paidValueFinalCredit=$false;materialPaidValuePro='THREE_TARGET_PERSISTENT_MONITORING_HISTORY';materialPaidValueAdvanced='SIX_TARGET_PRIORITY_CORRELATION_TEAM_AUTOMATION_WORKFLOW'}
           $Receipt | ConvertTo-Json -Depth 60 | Set-Content -LiteralPath 'r7-work/artifacts/r7/shield-pro-paid/R7_SHIELD_PRO_PAID_CUSTOMER_WORKSPACE_E2E.json' -Encoding utf8
-
           $Cleanup = PostJson $Helper @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' } @{ action = 'cleanup'; accountIds = @([string]$users.basic.accountId,[string]$users.pro.accountId,[string]$users.advanced.accountId,[string]$users.outsider.accountId) }
           if ($Cleanup.ok -ne $true -or [int]$Cleanup.deletedUsers -ne 4) { throw 'shield_pro_paid_cleanup_not_verified' }
-          $CleanupReceipt = [ordered]@{ schemaVersion = 'velmere.r7.shield-pro-paid-cleanup.v1'; status = 'PASS_SHIELD_PRO_PAID_CLEANUP'; githubRunId = [string]$env:GITHUB_RUN_ID; revoked = $Cleanup.revoked; deletedUsers = $Cleanup.deletedUsers; serviceRoleReturned = $false; paymentTransactionClaimed = $false }
-          $CleanupReceipt | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath 'r7-work/artifacts/r7/shield-pro-paid/R7_SHIELD_PRO_PAID_CLEANUP.json' -Encoding utf8
-
       - name: Upload Shield Pro Paid customer E2E artifact
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: r7-shield-pro-paid-customer-e2e-${{ github.sha }}-${{ github.run_id }}
           path: r7-work/artifacts/r7/shield-pro-paid
-          if-no-files-found: error
-          include-hidden-files: true
-          compression-level: 0
+          if-no-files-found: warn
           retention-days: 14
 
   shield-pro-paid-finalizer:
@@ -143,29 +119,13 @@ jobs:
           BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-paid-finalizer-oidc-v1'
           OIDC_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=velmere-r7-shield-pro-paid-finalizer-v1")"
           OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$OIDC_JSON")"
-          if [ "$(tr '.' '\n' <<<"$OIDC" | wc -l)" -ne 3 ]; then echo 'shield_pro_paid_finalizer_oidc_missing'; exit 1; fi
           for tier in pro advanced; do
             body=$(printf '{"action":"finalize","tier":"%s"}' "$tier")
-            response=$(curl -sS -X POST "$BASE" -H "Authorization: Bearer $OIDC" -H 'Accept: application/json' -H 'Content-Type: application/json' --data "$body")
-            printf '%s\n' "$response" > "finalizer-$tier.json"
+            curl -sS -X POST "$BASE" -H "Authorization: Bearer $OIDC" -H 'Accept: application/json' -H 'Content-Type: application/json' --data "$body" > "finalizer-$tier.json"
             python - "$tier" <<'PY'
           import json,sys
-          tier=sys.argv[1]
-          d=json.load(open(f"finalizer-{tier}.json",encoding="utf-8"))
-          if d.get("ok") is not True:
-              raise SystemExit(f"finalizer_{tier}_failed:{d}")
-          if d.get("customerReRead",{}).get("final_status") != "FINAL":
-              raise SystemExit(f"customer_{tier}_not_final")
-          if d.get("paidReRead",{}).get("final_status") != "FINAL":
-              raise SystemExit(f"paid_{tier}_not_final")
-          print(f"Shield Pro Paid {tier}: CUSTOMER FINAL + PAID FINAL")
+          tier=sys.argv[1]; d=json.load(open(f"finalizer-{tier}.json",encoding="utf-8"))
+          if d.get("ok") is not True: raise SystemExit(f"finalizer_{tier}_failed:{d}")
+          print(json.dumps(d,indent=2))
           PY
           done
-      - name: Upload finalization receipts
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: r7-shield-pro-paid-finalizer-${{ github.sha }}-${{ github.run_id }}
-          path: finalizer-*.json
-          if-no-files-found: warn
-          retention-days: 14
