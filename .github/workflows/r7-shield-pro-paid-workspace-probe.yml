@@ -1,0 +1,36 @@
+name: R7 Shield Pro Paid Workspace Probe
+on:
+  pull_request:
+    branches: [velmere-r7-successor-delta-20260825]
+    paths:
+      - '.github/workflows/r7-shield-pro-paid-workspace-probe.yml'
+      - 'r7-shield-pro-paid/**'
+      - 'r7-risk-v5/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  probe:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {fetch-depth: 1, persist-credentials: false}
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '24.18.0', check-latest: false}
+      - name: Probe workspace denominator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Base='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
+          $Helper="$Base/r7-shield-pro-paid-e2e-oidc-v1"; $Workspace="$Base/r7-shield-pro-paid-workspace-v1"
+          $Audience='velmere-r7-shield-pro-paid-e2e-v1'
+          $sep=if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'}
+          $tok=[string](Invoke-RestMethod -Method Get -Uri ($env:ACTIONS_ID_TOKEN_REQUEST_URL+$sep+'audience='+[Uri]::EscapeDataString($Audience)) -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN}).value
+          function Post([string]$u,[object]$b,[string]$a){$r=Invoke-WebRequest -Uri $u -Method Post -Headers @{Authorization='Bearer '+$a;Accept='application/json'} -ContentType 'application/json' -Body ($b|ConvertTo-Json -Depth 30 -Compress) -SkipHttpErrorCheck -TimeoutSec 60; [pscustomobject]@{status=[int]$r.StatusCode;body=$r.Content}}
+          $p=Post $Helper @{action='provision'} $tok
+          if($p.status -ne 200){throw "provision_http_$($p.status):$($p.body.Substring(0,[Math]::Min(700,$p.body.Length)))"}
+          $j=$p.body|ConvertFrom-Json -Depth 50
+          foreach($tier in @('pro','advanced')){foreach($locale in @('pl','en','de')){$r=Post $Workspace @{schemaVersion='velmere.r7.shield-pro-paid-workspace-request.v1';tier=$tier;locale=$locale;operation='CREATE'} ([string]$j.users.$tier.accessToken);if($r.status -ne 200){throw "workspace_${tier}_${locale}_http_$($r.status):$($r.body.Substring(0,[Math]::Min(900,$r.body.Length)))"};Write-Host "workspace_${tier}_${locale}=PASS"}}
