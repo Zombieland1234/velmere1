@@ -1,0 +1,41 @@
+name: R44P14 Export Analyzer Inputs
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p14-evidence/**'
+      - '.github/workflows/r44p14-export-analyzer-inputs.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export-inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct exact analyzer and baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat r44p14-evidence/analyzer.mjs.gz.b64.part* > "$RUNNER_TEMP/analyzer.mjs.gz.b64"
+          cat r44p14-evidence/r44p13-baseline.json.gz.b64.part* > "$RUNNER_TEMP/r44p13-baseline.json.gz.b64"
+          python - <<'PY'
+          import base64,gzip,os,pathlib
+          root=pathlib.Path('r44p14-evidence/exported-inputs')
+          root.mkdir(parents=True,exist_ok=True)
+          temp=pathlib.Path(os.environ['RUNNER_TEMP'])
+          root.joinpath('solidity-structured-signal.mjs').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('analyzer.mjs.gz.b64').read_text().strip())))
+          root.joinpath('R44P13_BASELINE_SNAPSHOT.json').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('r44p13-baseline.json.gz.b64').read_text().strip())))
+          PY
+          cp r44p14-evidence/run_external_remediation.py r44p14-evidence/exported-inputs/
+          cp r44p14-evidence/analyze_file.mjs r44p14-evidence/exported-inputs/
+          sha256sum r44p14-evidence/exported-inputs/* > r44p14-evidence/exported-inputs/SHA256SUMS.txt
+          cat r44p14-evidence/exported-inputs/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p14-exported-analyzer-inputs
+          path: r44p14-evidence/exported-inputs
+          retention-days: 14

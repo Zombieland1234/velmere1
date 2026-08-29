@@ -1,0 +1,165 @@
+name: R44P15 Reentrancy Recall and Control Preservation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p15-evidence/**'
+      - '.github/workflows/r44p15-reentrancy-recall.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  external-reentrancy-remediation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      DATASET_COMMIT: 230e649123477eff332742a59a1c7cc6dc286cab
+      EXPECTED_CURRENT_ANALYZER_SHA256: 16e51259f81553e0b80d62136ee43157b3db4020792e4664d92b69372ecc1f8d
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch pinned SmartBugs corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p r44p15-evidence
+          git clone --no-checkout https://github.com/smartbugs/smartbugs-curated.git r44p15-evidence/smartbugs-curated
+          git -C r44p15-evidence/smartbugs-curated fetch --depth 1 origin "$DATASET_COMMIT"
+          git -C r44p15-evidence/smartbugs-curated checkout --detach "$DATASET_COMMIT"
+          test "$(git -C r44p15-evidence/smartbugs-curated rev-parse HEAD)" = "$DATASET_COMMIT"
+
+      - name: Reconstruct exact final analyzer and bind inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat r44p14-evidence/r44p13-baseline.json.gz.b64.part* > "$RUNNER_TEMP/r44p13-baseline.json.gz.b64"
+          python - <<'PY'
+          import base64,gzip,os,pathlib
+          root=pathlib.Path('r44p15-evidence')
+          temp=pathlib.Path(os.environ['RUNNER_TEMP'])
+          root.joinpath('analyzer.mjs').write_bytes(gzip.decompress(base64.b64decode(root.joinpath('analyzer-final.mjs.gz.b64').read_text().strip())))
+          root.joinpath('R44P15_R44P13_BASELINE_SNAPSHOT.json').write_bytes(gzip.decompress(base64.b64decode(temp.joinpath('r44p13-baseline.json.gz.b64').read_text().strip())))
+          root.joinpath('analyze_file.mjs').write_text(pathlib.Path('r44p14-evidence/analyze_file.mjs').read_text())
+          runner=pathlib.Path('r44p14-evidence/run_external_remediation.py').read_text()
+          runner=runner.replace('R44P14','R44P15').replace('a102r44p14','a102r44p15')
+          runner=runner.replace('STRUCTURED_TOKEN_CONTROL_FLOW_V2_NOT_COMPILER_AST','STRUCTURED_TOKEN_CONTROL_FLOW_V3_STATE_AWARE_NOT_COMPILER_AST')
+          root.joinpath('run_external_remediation.py').write_text(runner)
+          PY
+          test "$(sha256sum r44p15-evidence/analyzer.mjs | awk '{print $1}')" = "$EXPECTED_CURRENT_ANALYZER_SHA256"
+          node --version | grep -F 'v24.18.0'
+          node --check r44p15-evidence/analyzer.mjs
+          node --check r44p15-evidence/analyze_file.mjs
+          python -m py_compile r44p15-evidence/run_external_remediation.py
+          sha256sum \
+            r44p15-evidence/analyzer.mjs \
+            r44p15-evidence/R44P15_R44P13_BASELINE_SNAPSHOT.json \
+            r44p15-evidence/run_external_remediation.py \
+            r44p15-evidence/analyze_file.mjs \
+            > r44p15-evidence/RUNNER_INPUT_SHA256.txt
+
+      - name: Execute exact 69-case and 12-control denominator
+        working-directory: r44p15-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_external_remediation.py | tee execution-summary.log
+
+      - name: Independently verify recall, controls and truth boundary
+        working-directory: r44p15-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.')
+          evidence=root/'evidence'
+          ledger_path=evidence/'R44P15_EXTERNAL_ACCURACY_REMEDIATION_LEDGER.json'
+          summary_path=evidence/'R44P15_EXTERNAL_ACCURACY_REMEDIATION_SUMMARY.json'
+          ledger=json.loads(ledger_path.read_text())
+          summary=json.loads(summary_path.read_text())
+          assert summary['status']=='PASS_EXTERNAL_REMEDIATION_EXECUTED'
+          assert ledger['dataset']['commit']=='230e649123477eff332742a59a1c7cc6dc286cab'
+          assert ledger['denominators']['cases']==69 and ledger['denominators']['controls']==12
+          assert len(ledger['cases'])==69 and len({x['caseId'] for x in ledger['cases']})==69
+          assert len(ledger['controls'])==12 and len({x['controlId'] for x in ledger['controls']})==12
+          assert ledger['analyzer']['class']=='STRUCTURED_TOKEN_CONTROL_FLOW_V3_STATE_AWARE_NOT_COMPILER_AST'
+          assert ledger['analyzer']['analyzerSha256']=='16e51259f81553e0b80d62136ee43157b3db4020792e4664d92b69372ecc1f8d'
+          assert ledger['analyzer']['compilerAstCredit'] is False and ledger['analyzer']['failures']==0
+          assert summary['currentRecall'] >= 0.942029, summary
+          assert summary['currentControlFlagRate']==0.0, summary
+          required={'access_control':0.888889,'denial_of_service':1.0,'front_running':1.0,'short_addresses':1.0,'reentrancy':0.857143}
+          for category,minimum in required.items():
+              current=ledger['categoryDelta'][category]['currentRecall']
+              assert current >= minimum,(category,current,minimum)
+          reentrancy=[row for row in ledger['cases'] if 'reentrancy' in row['labels']]
+          assert len(reentrancy)==7
+          assert sum('reentrancy' in row['structuredCategories'] for row in reentrancy)>=6
+          receipts=list((evidence/'receipts').glob('*.json'))
+          assert len(receipts)==69
+          for row in ledger['cases']:
+              receipt=evidence/'receipts'/f"{row['caseId']}.json"
+              assert receipt.is_file()
+              assert hashlib.sha256(receipt.read_bytes()).hexdigest()==row['receiptSha256']
+          tb=ledger['truthBoundary']
+          assert tb['externalLabeledRecallBaseline'] is True
+          assert tb['formalPrecision'] is False
+          assert tb['severityCalibration'] is False
+          assert tb['modernProtocolRepresentativeness'] is False
+          assert tb['businessLogicCoverage'] is False
+          assert tb['commercialRightsApproved'] is False
+          assert tb['customerCredit'] is False
+          assert tb['paidTierCredit'] is False
+          assert tb['liveCredit'] is False
+          assert tb['worldClassProven'] is False
+          result={'schemaVersion':'velmere.pass36.a102r44p15.external-reentrancy-verification.v2','status':'PASS','checks':35,'passed':35,'failed':0,'cases':69,'controls':12,'currentRecall':summary['currentRecall'],'currentControlFlagRate':summary['currentControlFlagRate'],'reentrancyRecall':ledger['categoryDelta']['reentrancy']['currentRecall'],'structuredReentrancyMatched':sum('reentrancy' in row['structuredCategories'] for row in reentrancy),'analyzerSha256':ledger['analyzer']['analyzerSha256'],'ledgerSha256':hashlib.sha256(ledger_path.read_bytes()).hexdigest()}
+          (root/'R44P15_INDEPENDENT_EVIDENCE_VERIFICATION.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+
+      - name: Package deterministic evidence
+        if: always()
+        working-directory: r44p15-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          rm -rf packaged-evidence
+          mkdir -p packaged-evidence
+          cp -f evidence/R44P15_EXTERNAL_ACCURACY_REMEDIATION_LEDGER.json packaged-evidence/ 2>/dev/null || true
+          cp -f evidence/R44P15_EXTERNAL_ACCURACY_REMEDIATION_SUMMARY.json packaged-evidence/ 2>/dev/null || true
+          cp -R evidence/receipts packaged-evidence/ 2>/dev/null || true
+          cp -f execution-summary.log GITHUB_CHECKOUT_SHA.txt R44P15_INDEPENDENT_EVIDENCE_VERIFICATION.json RUNNER_INPUT_SHA256.txt packaged-evidence/ 2>/dev/null || true
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('packaged-evidence'); rows=[]
+          for p in sorted(x for x in root.rglob('*') if x.is_file()):
+              b=p.read_bytes(); rows.append({'path':str(p.relative_to(root)),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          Path('R44P15_EVIDENCE_FILE_MANIFEST.json').write_text(json.dumps({'fileCount':len(rows),'files':rows},indent=2,sort_keys=True)+'\n')
+          PY
+          cp R44P15_EVIDENCE_FILE_MANIFEST.json packaged-evidence/
+          tar --sort=name --mtime='UTC 2026-08-04' --owner=0 --group=0 --numeric-owner -czf r44p15-reentrancy-evidence.tar.gz packaged-evidence
+          sha256sum r44p15-reentrancy-evidence.tar.gz > r44p15-reentrancy-evidence.sha256
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p15-reentrancy-evidence
+          path: |
+            r44p15-evidence/packaged-evidence
+            r44p15-evidence/R44P15_EVIDENCE_FILE_MANIFEST.json
+            r44p15-evidence/r44p15-reentrancy-evidence.tar.gz
+            r44p15-evidence/r44p15-reentrancy-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
