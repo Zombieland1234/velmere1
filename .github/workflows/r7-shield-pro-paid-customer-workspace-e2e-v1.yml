@@ -42,6 +42,7 @@ jobs:
           $Base = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
           $Helper = "$Base/r7-shield-pro-paid-e2e-oidc-v1"
           $Workspace = "$Base/r7-shield-pro-paid-workspace-v1"
+          $CustomerFinalizer = "$Base/r7-shield-pro-advanced-customer-finalizer-oidc-v1"
           $Audience = 'velmere-r7-shield-pro-paid-e2e-v1'
           $TokenUri = $env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' })) + 'audience=' + [Uri]::EscapeDataString($Audience)
           $Oidc = [string](Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{ Authorization = 'Bearer ' + $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -TimeoutSec 20).value
@@ -111,6 +112,10 @@ jobs:
             materialPaidValueAdvanced = 'SIX_TARGET_PRIORITY_CORRELATION_TEAM_AUTOMATION_WORKFLOW'
           }
           $Receipt | ConvertTo-Json -Depth 60 | Set-Content -LiteralPath 'r7-work/artifacts/r7/shield-pro-paid/R7_SHIELD_PRO_PAID_CUSTOMER_WORKSPACE_E2E.json' -Encoding utf8
+
+          $CustomerFinal = PostJson $CustomerFinalizer $OidcHeaders @{ action = 'finalize_customer'; tier = 'advanced' }
+          if ($CustomerFinal.ok -ne $true -or [string]$CustomerFinal.productSlug -ne 'shield-pro-advanced' -or [string]$CustomerFinal.finalStatus -ne 'FINAL') { throw 'shield_pro_advanced_customer_finalization_failed' }
+          Write-Host 'Shield Pro Advanced: CUSTOMER FINAL committed before cleanup.'
 
           $Cleanup = PostJson $Helper @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' } @{ action = 'cleanup'; accountIds = @([string]$users.basic.accountId,[string]$users.pro.accountId,[string]$users.advanced.accountId,[string]$users.outsider.accountId) }
           if ($Cleanup.ok -ne $true -or [int]$Cleanup.deletedUsers -ne 4) { throw 'shield_pro_paid_cleanup_not_verified' }
