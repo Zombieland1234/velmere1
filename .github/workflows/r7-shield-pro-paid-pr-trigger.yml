@@ -1,0 +1,19 @@
+name: R7 Shield Pro Paid PR Candidate Trigger
+
+on:
+  pull_request:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-shield-pro-paid-pr-trigger.yml'
+      - 'r7-shield-pro-paid/**'
+      - 'r7-risk-v5/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  shield-pro-paid:
+    uses: ./.github/workflows/r7-shield-pro-paid-customer-workspace-e2e-v1.yml
