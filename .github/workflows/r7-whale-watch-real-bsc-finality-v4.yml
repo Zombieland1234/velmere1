@@ -25,27 +25,23 @@ jobs:
       R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
-
     steps:
       - name: Checkout exact control surface
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
           persist-credentials: false
-
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
           check-latest: false
-
       - name: Reconstruct exact current product source
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Prepare
           if ($LASTEXITCODE -ne 0) { throw "exact_current_source_prepare_failed:$LASTEXITCODE" }
-
       - name: Apply bounded finalized-state fallback and receipt fix
         shell: pwsh
         run: |
@@ -69,14 +65,12 @@ jobs:
           $text=$text.Replace("secondaryOfficialEndpointSamePhysicalLog,","secondaryOfficialEndpointSamePhysicalLog: secondaryEndpointSamePhysicalLog,")
           $text=$text.Replace("rightsState: 'INTERNAL_DIAGNOSTIC_ONLY',","historicalStateTrieRequiredForDecimals: decimalsStateTag === 'finalized',`n  finalizedStateTrieFallbackUsed: decimalsStateTag === 'latest',`n  rightsState: 'INTERNAL_DIAGNOSTIC_ONLY',")
           Set-Content -LiteralPath $path -Value $text -Encoding utf8
-
       - name: Execute real finalized BSC event through exact Whale identity engine
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           node --import ./r7-work/scripts/pass11/register-offline-ts-loader.mjs diagnostic-current/r7-whale-watch-real-bsc-finality-proof.mts
           if ($LASTEXITCODE -ne 0) { throw "real_bsc_whale_finality_proof_failed:$LASTEXITCODE" }
-
       - name: Upload real-chain Whale Watch evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -85,3 +79,5 @@ jobs:
           path: R7_WHALE_WATCH_REAL_BSC_FINALITY_PROOF.json
           if-no-files-found: error
           retention-days: 30
+
+# 2026-08-29 canonical retrigger: execute the real BSC finalized-state proof again on current successor source.
