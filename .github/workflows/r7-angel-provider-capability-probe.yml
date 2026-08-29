@@ -1,4 +1,4 @@
-name: R7 Angel Provider Capability Probe
+name: R7 Angel Real Provider Final Customer
 
 on:
   push:
@@ -6,47 +6,127 @@ on:
       - velmere-r7-successor-delta-20260825
     paths:
       - '.github/workflows/r7-angel-provider-capability-probe.yml'
+      - 'r7-angel-harness/verify-r7-angel-exact-source-identity.mjs'
+      - 'r7-risk-v5/**'
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
+
+concurrency:
+  group: r7-angel-real-provider-final-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  CI: '1'
+  R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+  R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+  R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+  R7_EXPECTED_EXECUTION_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
 
 jobs:
-  angel-provider-capability-probe:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  angel-real-provider-final-customer:
+    runs-on: windows-2025
+    timeout-minutes: 180
     steps:
-      - name: Record secret-safe provider capability only
-        shell: bash
+      - name: Checkout exact current source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Reconstruct exact Windows source
+        shell: pwsh
         run: |
-          set -euo pipefail
-          mkdir -p artifacts/r7/angel-provider
-          if [ -n "${GEMINI_API_KEY:-}" ]; then configured=true; else configured=false; fi
-          python3 - "$configured" <<'PY'
-          import json,sys
-          configured=sys.argv[1]=='true'
-          receipt={
-            'schemaVersion':'velmere.r7.angel-provider-capability.v1',
-            'status':'CONFIGURED' if configured else 'NOT_CONFIGURED',
-            'geminiApiKeyConfigured':configured,
-            'secretValueReturned':False,
-            'secretLengthReturned':False,
-            'secretFingerprintReturned':False,
-            'customerFinalCredit':False,
-            'paidValueCredit':False,
-            'truthBoundary':'This probe reports only whether the GitHub Actions GEMINI_API_KEY secret is non-empty. It never prints, hashes, measures, returns or uploads the secret value and grants no product credit.'
+          $ErrorActionPreference='Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Full
+          if ($LASTEXITCODE -ne 0) { throw "angel_exact_windows_source_failed:$LASTEXITCODE" }
+          if (-not (Test-Path -LiteralPath 'r7-work' -PathType Container)) { throw 'angel_r7_work_missing' }
+
+      - name: Verify exact Angel source identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & node 'r7-angel-harness/verify-r7-angel-exact-source-identity.mjs' 'r7-work' 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json'
+          if ($LASTEXITCODE -ne 0) { throw "angel_exact_source_identity_failed:$LASTEXITCODE" }
+
+      - name: Execute deterministic customer truth and safety suite
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel' | Out-Null
+          Push-Location 'r7-work'
+          try {
+            $Loader='./scripts/pass11/register-offline-ts-loader.mjs'
+            $Cases=@(
+              @{Name='standalone-output-truth';Path='tests/security/a102-angel-standalone-output-truth.test.ts'},
+              @{Name='ai-disclosure-public-topology';Path='tests/security/a102-angel-ai-disclosure-and-public-topology.test.ts'},
+              @{Name='grounding-before-provider';Path='tests/security/v4-angel-grounding-before-provider-boundary.test.ts'},
+              @{Name='primary-route-safety';Path='tests/security/a102-angel-primary-route-safety-boundary.test.ts'},
+              @{Name='durable-memory-delete-fail-closed';Path='scripts/current-execution/test-angel-durable-memory-delete-fail-closed.mts'}
+            )
+            foreach($Case in $Cases){
+              & node --import $Loader $Case.Path 2>&1 | Tee-Object -FilePath "../artifacts/r7/angel/$($Case.Name).log"
+              if($LASTEXITCODE -ne 0){throw "angel_case_failed:$($Case.Name):$LASTEXITCODE"}
+            }
+            & node --no-warnings --import $Loader 'tests/pass36/a102r44p11-angel-multicoin-safety.ts' | Tee-Object -FilePath '../artifacts/r7/angel/angel-adversarial.json'
+            if($LASTEXITCODE -ne 0){throw 'angel_adversarial_failed'}
+          } finally { Pop-Location }
+
+      - name: Validate deterministic receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Boundary=Get-Content -LiteralPath 'artifacts/r7/angel/angel-adversarial.json' -Raw | ConvertFrom-Json -Depth 100
+          $Identity=Get-Content -LiteralPath 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json' -Raw | ConvertFrom-Json -Depth 100
+          if($Identity.status -ne 'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY' -or [int]$Identity.requiredSourceFiles -ne 11){throw 'angel_source_identity_receipt_invalid'}
+          if([int]$Boundary.assertions -lt 120 -or [int]$Boundary.failed -ne 0 -or [int]$Boundary.passed -ne [int]$Boundary.assertions){throw 'angel_adversarial_denominator_invalid'}
+          if([int]$Boundary.rejectedProviderCallsAllowed -ne 0){throw 'angel_rejected_case_reached_provider'}
+          if($Boundary.globalDecision -ne 'NO_GO' -or [bool]$Boundary.live -or [bool]$Boundary.saleEnabled){throw 'angel_adversarial_truth_boundary_invalid'}
+          foreach($Locale in @('pl','en','de')){
+            $Rows=@($Boundary.rows | Where-Object {$_.locale -eq $Locale})
+            if($Rows.Count -lt 40 -or @($Rows | Where-Object {-not $_.ok}).Count -ne 0){throw "angel_adversarial_locale_failed:$Locale"}
           }
-          open('artifacts/r7/angel-provider/R7_ANGEL_PROVIDER_CAPABILITY.json','w',encoding='utf-8').write(json.dumps(receipt,indent=2)+'\n')
-          print(json.dumps(receipt,indent=2))
-          PY
-      - name: Upload capability receipt
+
+      - name: Execute real provider and guarded customer FINAL
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Body='{"action":"finalize"}'
+          $Bytes=[Text.Encoding]::UTF8.GetBytes($Body)
+          $Hash=[Security.Cryptography.SHA256]::HashData($Bytes)
+          $Hex=(-join ($Hash | ForEach-Object { $_.ToString('x2') }))
+          $Audience='velmere-r7-angel-real-provider:'+$Hex
+          $TokenUri=$env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'})+'audience='+[Uri]::EscapeDataString($Audience))
+          $Oidc=(Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
+          if(([string]$Oidc).Split('.').Count -ne 3){throw 'angel_real_provider_oidc_missing'}
+          $Headers=@{Authorization='Bearer '+$Oidc;Accept='application/json'}
+          $Url='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-oidc'
+          $Response=Invoke-WebRequest -Uri $Url -Method Post -Headers $Headers -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 300
+          $Text=[string]$Response.Content
+          if([int]$Response.StatusCode -ne 200){throw "angel_real_provider_finalize_failed:$($Response.StatusCode):$($Text.Substring(0,[Math]::Min(700,$Text.Length)))"}
+          $Result=$Text | ConvertFrom-Json -Depth 100
+          if($Result.ok -ne $true -or $Result.finalizer.finalStatus -ne 'FINAL'){throw "angel_customer_final_not_confirmed:$Text"}
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel' | Out-Null
+          @{schemaVersion='velmere.r7.angel-real-provider-final-receipt.v1';status='PASS_ANGEL_REAL_PROVIDER_FINAL';customerFinalCredit=$true;paidValueCredit=$false;githubRunId=$env:GITHUB_RUN_ID;githubHeadSha=$env:GITHUB_SHA;providerModel=[string]$Result.model;providerCallCount=[int]$Result.providerCallCount;providerPassCount=[int]$Result.providerPassCount;providerFailureCount=[int]$Result.providerFailureCount;rawProviderPayloadReturned=$false;secretValuesReturned=$false} | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_FINAL.json' -Encoding utf8
+
+      - name: Upload final Angel evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-angel-provider-capability-${{ github.sha }}-${{ github.run_id }}
-          path: artifacts/r7/angel-provider/R7_ANGEL_PROVIDER_CAPABILITY.json
+          name: r7-angel-real-provider-final-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/r7/angel/**
+            R7_ANGEL_EXACT_SOURCE_IDENTITY.json
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30
+          compression-level: 6
 
-# Triggered verification rerun; no secret values are emitted or transformed.
+# 2026-08-29: promoted from capability-only probe to real-provider guarded final customer flow.
