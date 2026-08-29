@@ -1,0 +1,23 @@
+name: R7 Next Closure Smoke
+
+on:
+  push:
+    branches:
+      - r7-next-closure-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-canonical-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical R7 closure surface exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f r7-risk-v5/run-r7-risk-v5-exact-windows.ps1
+          test -f r7-risk-v5/run-r7-risk-v5-e2e-final.ps1
+          echo CANONICAL_R7_CLOSURE_SURFACE_PRESENT
