@@ -109,14 +109,14 @@ jobs:
           $Oidc=(Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
           if(([string]$Oidc).Split('.').Count -ne 3){throw 'angel_real_provider_oidc_missing'}
           $Headers=@{Authorization='Bearer '+$Oidc;Accept='application/json'}
-          $Url='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-oidc'
+          $Url='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-oidc-v2'
           $Response=Invoke-WebRequest -Uri $Url -Method Post -Headers $Headers -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 300
           $Text=[string]$Response.Content
           if([int]$Response.StatusCode -ne 200){throw "angel_real_provider_finalize_failed:$($Response.StatusCode):$($Text.Substring(0,[Math]::Min(700,$Text.Length)))"}
           $Result=$Text | ConvertFrom-Json -Depth 100
           if($Result.ok -ne $true -or $Result.finalizer.finalStatus -ne 'FINAL'){throw "angel_customer_final_not_confirmed:$Text"}
           New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel' | Out-Null
-          @{schemaVersion='velmere.r7.angel-real-provider-final-receipt.v1';status='PASS_ANGEL_REAL_PROVIDER_FINAL';customerFinalCredit=$true;paidValueCredit=$false;githubRunId=$env:GITHUB_RUN_ID;githubHeadSha=$env:GITHUB_SHA;providerModel=[string]$Result.model;providerCallCount=[int]$Result.providerCallCount;providerPassCount=[int]$Result.providerPassCount;providerFailureCount=[int]$Result.providerFailureCount;rawProviderPayloadReturned=$false;secretValuesReturned=$false} | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_FINAL.json' -Encoding utf8
+          @{schemaVersion='velmere.r7.angel-real-provider-final-receipt.v2';status='PASS_ANGEL_REAL_PROVIDER_FINAL';customerFinalCredit=$true;paidValueCredit=$false;githubRunId=$env:GITHUB_RUN_ID;githubHeadSha=$env:GITHUB_SHA;providerModel=[string]$Result.model;providerCallCount=[int]$Result.providerCallCount;providerPassCount=[int]$Result.providerPassCount;providerFailureCount=[int]$Result.providerFailureCount;rawProviderPayloadReturned=$false;secretValuesReturned=$false} | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_FINAL.json' -Encoding utf8
 
       - name: Upload final Angel evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -129,4 +129,4 @@ jobs:
           retention-days: 30
           compression-level: 6
 
-# 2026-08-29: promoted from capability-only probe to real-provider guarded final customer flow.
+# 2026-08-29: real-provider execution + guarded customer final; secrets/output payloads never uploaded.
