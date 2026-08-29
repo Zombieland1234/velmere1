@@ -1,0 +1,88 @@
+name: R7 Shield Pro Advanced Customer Final v2
+
+on:
+  push:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    paths:
+      - '.github/workflows/r7-shield-pro-advanced-customer-final-v2.yml'
+      - 'r7-shield-pro-paid/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-shield-pro-advanced-customer-final-v2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalize-advanced-customer:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    env:
+      CI: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: velmere-r7-successor-delta-20260825
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove advanced customer lifecycle then revoke and finalize
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Base = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
+          $Helper = "$Base/r7-shield-pro-paid-e2e-oidc-v1"
+          $Workspace = "$Base/r7-shield-pro-paid-workspace-v1"
+          $CustomerFinalizer = "$Base/r7-shield-pro-advanced-customer-finalizer-oidc-v1"
+          $Audience = 'velmere-r7-shield-pro-paid-e2e-v1'
+          $TokenUri = $env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' })) + 'audience=' + [Uri]::EscapeDataString($Audience)
+          $Oidc = [string](Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{ Authorization = 'Bearer ' + $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -TimeoutSec 20).value
+          if ($Oidc.Split('.').Count -ne 3) { throw 'advanced_final_oidc_missing' }
+          Write-Host '::add-mask::' + $Oidc
+          $Headers = @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' }
+
+          function PostJson([string]$Uri, [hashtable]$Headers, [object]$Body) {
+            $Json = $Body | ConvertTo-Json -Depth 50 -Compress
+            $Response = Invoke-WebRequest -Uri $Uri -Method Post -Headers $Headers -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 60
+            $Parsed = $null
+            try { $Parsed = $Response.Content | ConvertFrom-Json -Depth 60 } catch { }
+            if ([int]$Response.StatusCode -lt 200 -or [int]$Response.StatusCode -ge 300) {
+              $detail = if ($Response.Content.Length -gt 900) { $Response.Content.Substring(0,900) } else { $Response.Content }
+              throw "http_$($Response.StatusCode):$detail"
+            }
+            return $Parsed
+          }
+
+          $Provision = PostJson $Helper $Headers @{ action = 'provision' }
+          if ($Provision.ok -ne $true) { throw 'advanced_final_provision_not_ok' }
+          if ([string]$Provision.runId -ne [string]$env:GITHUB_RUN_ID -or [string]$Provision.headSha -ne [string]$env:GITHUB_SHA) { throw 'advanced_final_run_binding_invalid' }
+          if ($Provision.serviceRoleReturned -ne $false -or $Provision.passwordReturned -ne $false -or $Provision.paymentTransactionClaimed -ne $false) { throw 'advanced_final_secret_boundary_invalid' }
+
+          $u = $Provision.users.advanced
+          if ($null -eq $u) { throw 'advanced_final_user_missing' }
+          $created = New-Object System.Collections.Generic.List[object]
+          foreach ($locale in @('pl','en','de')) {
+            $r = PostJson $Workspace @{ Authorization = 'Bearer ' + [string]$u.accessToken; Accept = 'application/json' } @{ schemaVersion = 'velmere.r7.shield-pro-paid-workspace-request.v1'; tier = 'advanced'; locale = $locale; operation = 'CREATE' }
+            if ($r.ok -ne $true -or [string]$r.tier -ne 'advanced' -or [string]$r.locale -ne $locale -or [string]$r.operation -ne 'CREATE') { throw "advanced_final_create_failed_$locale" }
+            $created.Add($r)
+          }
+          $first = $created[0]
+          $deleted = PostJson $Workspace @{ Authorization = 'Bearer ' + [string]$u.accessToken; Accept = 'application/json' } @{ schemaVersion = 'velmere.r7.shield-pro-paid-workspace-request.v1'; tier = 'advanced'; locale = 'pl'; operation = 'DELETE'; workspaceId = [string]$first.workspaceId }
+          if ($deleted.ok -ne $true -or [string]$deleted.operation -ne 'DELETE' -or [string]$deleted.payloadDigestSha256 -ne [string]$first.payloadDigestSha256) { throw 'advanced_final_delete_failed' }
+          $restored = PostJson $Workspace @{ Authorization = 'Bearer ' + [string]$u.accessToken; Accept = 'application/json' } @{ schemaVersion = 'velmere.r7.shield-pro-paid-workspace-request.v1'; tier = 'advanced'; locale = 'pl'; operation = 'RESTORE'; workspaceId = [string]$first.workspaceId }
+          if ($restored.ok -ne $true -or [string]$restored.operation -ne 'RESTORE' -or [string]$restored.payloadDigestSha256 -ne [string]$first.payloadDigestSha256) { throw 'advanced_final_restore_failed' }
+
+          $Cleanup = PostJson $Helper $Headers @{ action = 'cleanup'; accountIds = @([string]$Provision.users.basic.accountId,[string]$Provision.users.pro.accountId,[string]$Provision.users.advanced.accountId,[string]$Provision.users.outsider.accountId) }
+          if ($Cleanup.ok -ne $true -or [int]$Cleanup.deletedUsers -ne 4) { throw 'advanced_final_cleanup_not_verified' }
+          if ([int]$Cleanup.revoked -lt 2) { throw 'advanced_final_revoke_not_verified' }
+          Write-Host "Advanced E2E cleanup verified; revoked=$($Cleanup.revoked)."
+
+          $Final = PostJson $CustomerFinalizer $Headers @{ action = 'finalize_customer'; tier = 'advanced' }
+          if ($Final.ok -ne $true -or [string]$Final.productSlug -ne 'shield-pro-advanced' -or [string]$Final.finalStatus -ne 'FINAL') { throw 'advanced_customer_finalization_failed' }
+          Write-Host 'Shield Pro Advanced CUSTOMER FINAL committed.'
