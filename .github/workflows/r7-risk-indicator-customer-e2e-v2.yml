@@ -39,7 +39,6 @@ jobs:
           $Body = $Response.Content | ConvertFrom-Json -Depth 20
           if ($Body.ok -ne $true -or $Body.sourceIdentityBound -ne $true -or $Body.githubRunVerifiedSuccess -ne $true) { throw 'risk_source_authority_contract_failed' }
           Write-Host 'Risk v5 exact source authority bound.'
-
   risk-indicator-customer-e2e:
     name: risk-indicator-customer-e2e
     needs: bind-risk-source-authority
@@ -51,17 +50,14 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-
       - name: Setup exact Node 24.18.0
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24.18.0
           check-latest: false
-
       - name: Execute exact-source Risk customer tile E2E
         shell: pwsh
         run: ./r7-risk-v5/run-r7-risk-v5-e2e-final.ps1
-
       - name: Upload exact Risk customer E2E evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -78,7 +74,6 @@ jobs:
           include-hidden-files: true
           compression-level: 0
           retention-days: 14
-
   finalize-risk-indicator:
     name: finalize-risk-indicator
     needs: risk-indicator-customer-e2e
@@ -100,3 +95,5 @@ jobs:
           $Body = $Response.Content | ConvertFrom-Json -Depth 30
           if ($Body.ok -ne $true -or $Body.result.finalStatus -ne 'FINAL') { throw 'risk_finalizer_contract_failed' }
           Write-Host ($Body | ConvertTo-Json -Depth 30)
+
+# 2026-08-29 canonical retrigger: force a fresh source-authority bind and guarded customer finalization.
