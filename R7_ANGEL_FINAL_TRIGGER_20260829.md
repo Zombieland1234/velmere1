@@ -1,0 +1,1 @@
+R7 Angel real-provider final trigger marker. Validation-only; no ledger mutation.
