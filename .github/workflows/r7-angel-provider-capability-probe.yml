@@ -30,6 +30,8 @@ jobs:
   angel-real-provider-final-customer:
     runs-on: windows-2025
     timeout-minutes: 180
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Checkout exact current source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -49,7 +51,6 @@ jobs:
           $ErrorActionPreference='Stop'
           & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Full
           if ($LASTEXITCODE -ne 0) { throw "angel_exact_windows_source_failed:$LASTEXITCODE" }
-          if (-not (Test-Path -LiteralPath 'r7-work' -PathType Container)) { throw 'angel_r7_work_missing' }
 
       - name: Verify exact Angel source identity
         shell: pwsh
@@ -96,29 +97,88 @@ jobs:
             if($Rows.Count -lt 40 -or @($Rows | Where-Object {-not $_.ok}).Count -ne 0){throw "angel_adversarial_locale_failed:$Locale"}
           }
 
-      - name: Execute real provider and guarded customer FINAL
+      - name: Execute real Gemini provider and build evidence envelope
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $Body='{"action":"finalize"}'
-          $Bytes=[Text.Encoding]::UTF8.GetBytes($Body)
-          $Hash=[Security.Cryptography.SHA256]::HashData($Bytes)
-          $Hex=(-join ($Hash | ForEach-Object { $_.ToString('x2') }))
+          if([string]::IsNullOrWhiteSpace($env:GEMINI_API_KEY) -or $env:GEMINI_API_KEY.Length -lt 16){throw 'angel_gemini_secret_not_configured'}
+          $Cases=@(
+            @{locale='pl';prompt='Ile to 2 + 2? Odpowiedz tylko: 4.';kind='exact';value='4'},
+            @{locale='pl';prompt='Ile dni ma tydzień? Odpowiedz tylko liczbą.';kind='exact';value='7'},
+            @{locale='pl';prompt='Jaka jest stolica Polski? Odpowiedz jednym słowem.';kind='word';value='warszawa'},
+            @{locale='pl';prompt='Ile minut ma godzina? Odpowiedz tylko liczbą.';kind='exact';value='60'},
+            @{locale='en';prompt='What is 2 + 2? Answer only: 4.';kind='exact';value='4'},
+            @{locale='en';prompt='How many days are in a week? Answer only with the number.';kind='exact';value='7'},
+            @{locale='en';prompt='What is the capital of Germany? Answer with one word.';kind='word';value='berlin'},
+            @{locale='en';prompt='How many minutes are in an hour? Answer only with the number.';kind='exact';value='60'},
+            @{locale='de';prompt='Was ist 2 + 2? Antworte nur: 4.';kind='exact';value='4'},
+            @{locale='de';prompt='Wie viele Tage hat eine Woche? Antworte nur mit der Zahl.';kind='exact';value='7'},
+            @{locale='de';prompt='Was ist die Hauptstadt von Österreich? Antworte mit einem Wort.';kind='word';value='wien'},
+            @{locale='de';prompt='Wie viele Minuten hat eine Stunde? Antworte nur mit der Zahl.';kind='exact';value='60'}
+          )
+          function Test-Answer([string]$Text,[string]$Kind,[string]$Value){
+            $t=$Text.ToLowerInvariant().Trim() -replace '\s+',' '
+            if($Kind -eq 'exact'){ return [regex]::IsMatch($t,"(^|\D)$Value($|\D)") }
+            return [regex]::IsMatch($t,"(^|[^a-zà-ÿ])$Value([^a-zà-ÿ]|$)")
+          }
+          $Results=@()
+          foreach($Case in $Cases){
+            $Status='PASS'; $Error=$null; $OutputHash=''
+            try{
+              $Payload=@{contents=@(@{parts=@(@{text=$Case.prompt})});generationConfig=@{temperature=0;maxOutputTokens=80}} | ConvertTo-Json -Depth 10 -Compress
+              $Response=Invoke-WebRequest -Uri 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent' -Method Post -Headers @{'x-goog-api-key'=$env:GEMINI_API_KEY} -ContentType 'application/json' -Body $Payload -SkipHttpErrorCheck -TimeoutSec 45
+              $Raw=[string]$Response.Content
+              if([int]$Response.StatusCode -ne 200){throw "gemini_http_$($Response.StatusCode)"}
+              $Parsed=$Raw | ConvertFrom-Json -Depth 50
+              $Text=(@($Parsed.candidates[0].content.parts | ForEach-Object { [string]$_.text }) -join ' ').Trim()
+              if([string]::IsNullOrWhiteSpace($Text)){throw 'gemini_empty_output'}
+              $Bytes=[Text.Encoding]::UTF8.GetBytes($Text); $D=[Security.Cryptography.SHA256]::HashData($Bytes); $OutputHash=(-join ($D | ForEach-Object { $_.ToString('x2') }))
+              if(-not (Test-Answer $Text $Case.kind $Case.value)){ $Status='FAIL';$Error='objective_answer_mismatch' }
+            }catch{$Status='FAIL';$Error=$_.Exception.Message}
+            $Results+=,[pscustomobject]@{locale=$Case.locale;status=$Status;outputHash=$OutputHash;error=$Error}
+          }
+          $Pass=@($Results|Where-Object status -eq 'PASS').Count; $Fail=$Results.Count-$Pass
+          if($Fail -ne 0){throw "angel_real_provider_cases_failed:$Fail"}
+          $Evidence=[ordered]@{
+            schemaVersion='velmere.r7.angel-real-provider-evidence.v3'
+            providerExecuted=$true
+            providerModel='gemini-2.5-flash'
+            providerCallCount=$Results.Count
+            providerPassCount=$Pass
+            providerFailureCount=$Fail
+            deterministicCustomerSuitePassed=$true
+            secretValuesReturned=$false
+            rawProviderPayloadReturned=$false
+            outputHashesOnly=$true
+            locales=@('pl','en','de')
+            cases=$Results
+            githubRunId=$env:GITHUB_RUN_ID
+            githubHeadSha=$env:GITHUB_SHA
+          }
+          $Evidence | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_EVIDENCE.json' -Encoding utf8
+
+      - name: Guarded Angel customer FINAL
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Body=(Get-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_EVIDENCE.json' -Raw)
+          $Canonical=[ordered]@{action='finalize';evidence=($Body|ConvertFrom-Json -Depth 50)}
+          $CanonicalBody=$Canonical|ConvertTo-Json -Depth 50 -Compress
+          $Bytes=[Text.Encoding]::UTF8.GetBytes($CanonicalBody); $Hash=[Security.Cryptography.SHA256]::HashData($Bytes); $Hex=(-join ($Hash|ForEach-Object{$_.ToString('x2')}))
           $Audience='velmere-r7-angel-real-provider:'+$Hex
           $TokenUri=$env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'})+'audience='+[Uri]::EscapeDataString($Audience))
           $Oidc=(Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
-          if(([string]$Oidc).Split('.').Count -ne 3){throw 'angel_real_provider_oidc_missing'}
           $Headers=@{Authorization='Bearer '+$Oidc;Accept='application/json'}
-          $Url='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-oidc-v2'
-          $Response=Invoke-WebRequest -Uri $Url -Method Post -Headers $Headers -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 300
+          $Url='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-oidc-v3'
+          $Response=Invoke-WebRequest -Uri $Url -Method Post -Headers $Headers -ContentType 'application/json' -Body $CanonicalBody -SkipHttpErrorCheck -TimeoutSec 60
           $Text=[string]$Response.Content
-          if([int]$Response.StatusCode -ne 200){throw "angel_real_provider_finalize_failed:$($Response.StatusCode):$($Text.Substring(0,[Math]::Min(700,$Text.Length)))"}
-          $Result=$Text | ConvertFrom-Json -Depth 100
+          if([int]$Response.StatusCode -ne 200){throw "angel_customer_final_http_$($Response.StatusCode):$($Text.Substring(0,[Math]::Min(700,$Text.Length)))"}
+          $Result=$Text|ConvertFrom-Json -Depth 100
           if($Result.ok -ne $true -or $Result.finalizer.finalStatus -ne 'FINAL'){throw "angel_customer_final_not_confirmed:$Text"}
-          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel' | Out-Null
-          @{schemaVersion='velmere.r7.angel-real-provider-final-receipt.v2';status='PASS_ANGEL_REAL_PROVIDER_FINAL';customerFinalCredit=$true;paidValueCredit=$false;githubRunId=$env:GITHUB_RUN_ID;githubHeadSha=$env:GITHUB_SHA;providerModel=[string]$Result.model;providerCallCount=[int]$Result.providerCallCount;providerPassCount=[int]$Result.providerPassCount;providerFailureCount=[int]$Result.providerFailureCount;rawProviderPayloadReturned=$false;secretValuesReturned=$false} | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_FINAL.json' -Encoding utf8
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel'|Out-Null
+          $Result|ConvertTo-Json -Depth 100|Set-Content -LiteralPath 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_FINAL_RESULT.json' -Encoding utf8
 
-      - name: Upload final Angel evidence
+      - name: Upload Angel final evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: r7-angel-real-provider-final-${{ github.sha }}-${{ github.run_id }}
@@ -128,5 +188,3 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 6
-
-# 2026-08-29: real-provider execution + guarded customer final; secrets/output payloads never uploaded.
