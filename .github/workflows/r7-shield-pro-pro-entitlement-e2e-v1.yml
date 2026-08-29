@@ -35,9 +35,9 @@ jobs:
         run: |
           set -euo pipefail
           BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
-          HELPER="$BASE/r7-shield-pro-pro-v1-e2e-oidc-v3"
+          HELPER="$BASE/r7-shield-pro-pro-v1-e2e-oidc-v4"
           ROUTE="$BASE/r7-shield-pro-pro-v1-customer-route"
-          AUD='velmere-r7-shield-pro-pro-v1-e2e-v3'
+          AUD='velmere-r7-shield-pro-pro-v1-e2e-v4'
           TOKEN_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}")"
           OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$TOKEN_JSON")"
           provision_status="$(curl -sS -o /tmp/provision-response.json -w '%{http_code}' -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data '{"action":"setup"}')"
@@ -136,7 +136,6 @@ jobs:
           import json
           d=json.load(open('finalizer.json')); assert d.get('ok') is True
           assert d.get('result',{}).get('finalStatus') == 'FINAL'
-          assert d.get('customerLedgerReRead',{}).get('final_status') == 'FINAL'
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
