@@ -1,0 +1,102 @@
+name: R44P12 Real Public Provider Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p12-evidence/**'
+      - '.github/workflows/r44p12-real-provider-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  provider-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile r44p12-evidence/run_provider_diagnostic.py
+          sha256sum r44p12-evidence/run_provider_diagnostic.py | tee r44p12-evidence/RUNNER_SHA256.txt
+      - name: Execute bounded public provider diagnostic
+        working-directory: r44p12-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_provider_diagnostic.py | tee execution-summary.log
+      - name: Independently verify receipts and truth boundary
+        working-directory: r44p12-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.')
+          ledger_path=root/'evidence/R44P12_REAL_PROVIDER_DIAGNOSTIC_LEDGER.json'
+          summary_path=root/'evidence/R44P12_REAL_PROVIDER_DIAGNOSTIC_SUMMARY.json'
+          ledger=json.loads(ledger_path.read_text())
+          summary=json.loads(summary_path.read_text())
+          assert ledger['denominator']=={'assets':15,'providerRows':30}
+          assert len(ledger['observations'])==15
+          assert len({x['asset'] for x in ledger['observations']})==15
+          assert all(len(x['providers'])==2 for x in ledger['observations'])
+          assert all(x['terminalState'] in {'AVAILABLE','PARTIAL','CONFLICTED','RATE_LIMITED','FAILED'} for x in ledger['observations'])
+          assert summary['providerAvailableRows']>=10
+          assert summary['status']=='PASS_DIAGNOSTIC'
+          tb=ledger['truthBoundary']
+          assert tb['diagnosticOnly'] is True
+          assert tb['rightsApprovedCommercialUse'] is False
+          assert tb['customerDeliveryCredit'] is False
+          assert tb['paidTierCredit'] is False
+          assert tb['liveCredit'] is False
+          assert tb['productionApproved'] is False
+          for request in ledger['requests']:
+              body=root/request['bodyPath']; headers=root/request['headersPath']
+              assert body.is_file() and headers.is_file()
+              assert body.stat().st_size==request['bodyBytes']
+              assert hashlib.sha256(body.read_bytes()).hexdigest()==request['bodySha256']
+          rows=[p for x in ledger['observations'] for p in x['providers']]
+          for row in rows:
+              assert row['state'] in {'AVAILABLE','RATE_LIMITED','UNAVAILABLE','FAILED','SCHEMA_REJECTED'}
+              if row['state']=='AVAILABLE':
+                  assert row['identityExact'] is True
+                  assert isinstance(row['priceUsd'],(int,float)) and row['priceUsd']>0
+          result={'status':'PASS','checks':18,'passed':18,'failed':0,'ledgerSha256':hashlib.sha256(ledger_path.read_bytes()).hexdigest(),'availableRows':summary['providerAvailableRows']}
+          (root/'R44P12_INDEPENDENT_EVIDENCE_VERIFICATION.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2))
+          PY
+      - name: Package evidence
+        if: always()
+        working-directory: r44p12-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > GITHUB_CHECKOUT_SHA.txt
+          if test -d evidence; then
+            tar --sort=name --mtime='UTC 2026-08-03' --owner=0 --group=0 --numeric-owner \
+              -czf r44p12-real-provider-diagnostic-evidence.tar.gz \
+              evidence execution-summary.log RUNNER_SHA256.txt GITHUB_CHECKOUT_SHA.txt R44P12_INDEPENDENT_EVIDENCE_VERIFICATION.json
+            sha256sum r44p12-real-provider-diagnostic-evidence.tar.gz > r44p12-real-provider-diagnostic-evidence.sha256
+          fi
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p12-real-provider-diagnostic-evidence
+          path: |
+            r44p12-evidence/evidence
+            r44p12-evidence/execution-summary.log
+            r44p12-evidence/RUNNER_SHA256.txt
+            r44p12-evidence/GITHUB_CHECKOUT_SHA.txt
+            r44p12-evidence/R44P12_INDEPENDENT_EVIDENCE_VERIFICATION.json
+            r44p12-evidence/r44p12-real-provider-diagnostic-evidence.tar.gz
+            r44p12-evidence/r44p12-real-provider-diagnostic-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
