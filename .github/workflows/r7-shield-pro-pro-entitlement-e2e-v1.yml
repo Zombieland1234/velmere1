@@ -7,6 +7,12 @@ on:
       - '.github/workflows/r7-shield-pro-pro-entitlement-e2e-v1.yml'
       - 'r7-shield-pro-pro-v1/**'
       - 'r7-risk-v5/**'
+  pull_request:
+    branches: [velmere-r7-successor-delta-20260825]
+    paths:
+      - '.github/workflows/r7-shield-pro-pro-entitlement-e2e-v1.yml'
+      - 'r7-shield-pro-pro-v1/**'
+      - 'r7-risk-v5/**'
   workflow_dispatch:
 
 permissions:
@@ -29,9 +35,9 @@ jobs:
         run: |
           set -euo pipefail
           BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
-          HELPER="$BASE/r7-shield-pro-pro-v1-e2e-oidc"
+          HELPER="$BASE/r7-shield-pro-pro-v1-e2e-oidc-v2"
           ROUTE="$BASE/r7-shield-pro-pro-v1-customer-route"
-          AUD='velmere-r7-shield-pro-pro-v1-e2e'
+          AUD='velmere-r7-shield-pro-pro-v1-e2e-v2'
           TOKEN_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}")"
           OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$TOKEN_JSON")"
           provision="$(curl -fsS -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data '{"action":"setup"}')"
@@ -110,8 +116,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-pro-v1-finalizer-oidc-v2'
-          AUD='velmere-r7-shield-pro-pro-v1-finalizer'
+          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-pro-v1-finalizer-oidc-v4'
+          AUD='velmere-r7-shield-pro-pro-v1-finalizer-v4'
           token="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}" | python -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
           curl -fsS -X POST "$BASE" -H "Authorization: Bearer $token" -H 'Content-Type: application/json' --data '{"action":"finalize"}' | tee finalizer.json
           python - <<'PY'
