@@ -1,0 +1,188 @@
+name: R44P4 Official Toolchain 200 Executions
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p4-official-toolchain/**'
+      - 'r44p5-bootstrap/**'
+      - '.github/workflows/r44p4-official-toolchain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  official-tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      EXPECTED_SOLC_SHA256: fb03a29a517452b9f12bcf459ef37d0a543765bb3bbc911e70a87d6a37c30d5f
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install exact Python tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade 'pip==25.1.1'
+          python -m pip install \
+            'slither-analyzer==0.11.5' \
+            'semgrep==1.130.0'
+          python - <<'PY'
+          import importlib.metadata as m
+          expected={'pip':'25.1.1','slither-analyzer':'0.11.5','semgrep':'1.130.0'}
+          actual={name:m.version(name) for name in expected}
+          assert actual==expected,(actual,expected)
+          print('PYTHON_TOOL_VERSIONS_OK',actual)
+          PY
+          SOLC_BINARY="$RUNNER_TEMP/solc-linux-amd64-v0.8.24+commit.e11b9ed9"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$SOLC_BINARY" \
+            'https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-v0.8.24%2Bcommit.e11b9ed9'
+          chmod 0755 "$SOLC_BINARY"
+          test -x "$SOLC_BINARY"
+          echo "VELMERE_SOLC_BINARY=$SOLC_BINARY" >> "$GITHUB_ENV"
+          ACTUAL_SOLC_SHA256="$(sha256sum "$SOLC_BINARY" | awk '{print $1}')"
+          test "$ACTUAL_SOLC_SHA256" = "$EXPECTED_SOLC_SHA256"
+          "$SOLC_BINARY" --version
+          slither --version
+          semgrep --version
+          python -m pip freeze --all | LC_ALL=C sort > r44p4-official-toolchain/pip-freeze.txt
+          python -m pip show slither-analyzer semgrep > r44p4-official-toolchain/pip-show.txt
+
+      - name: Install Foundry 1.2.3
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.2.3
+
+      - name: Verify Forge
+        shell: bash
+        run: |
+          set -euo pipefail
+          forge --version | tee r44p4-official-toolchain/forge-version.txt
+          forge --version | grep -F '1.2.3'
+          command -v forge
+          sha256sum "$(command -v forge)" | tee r44p4-official-toolchain/forge-sha256.txt
+
+      - name: Reconstruct corpus and runner
+        working-directory: r44p4-official-toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat run_official_tools.py.part* > run_official_tools.py
+          python -m py_compile run_official_tools.py
+          python - <<'PY'
+          import glob,json
+          cases=[]
+          for path in sorted(glob.glob('contracts-batch-*.json')):
+              cases.extend(json.load(open(path,encoding='utf-8')))
+          assert len(cases)==50
+          assert len({x['case_id'] for x in cases})==50
+          assert len({x['filename'] for x in cases})==50
+          json.dump({'schemaVersion':'velmere.r44p4.official-tool-corpus.v1','caseCount':50,'cases':cases},open('contracts.json','w',encoding='utf-8'),separators=(',',':'),ensure_ascii=False)
+          print('CORPUS_OK',len(cases))
+          PY
+
+      - name: Execute 50 cases x 4 official tools
+        working-directory: r44p4-official-toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          python run_official_tools.py | tee execution-summary.log
+
+      - name: Package official-tool evidence
+        if: always()
+        working-directory: r44p4-official-toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/environment
+          cp -f pip-freeze.txt pip-show.txt forge-version.txt forge-sha256.txt evidence/environment/ 2>/dev/null || true
+          if test -n "${VELMERE_SOLC_BINARY:-}" && test -f "$VELMERE_SOLC_BINARY"; then
+            sha256sum "$VELMERE_SOLC_BINARY" > evidence/environment/solc-binary-sha256.txt
+            "$VELMERE_SOLC_BINARY" --version > evidence/environment/solc-version.txt 2>&1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('evidence');files=[]
+          if root.exists():
+              for p in sorted(x for x in root.rglob('*') if x.is_file()):
+                  b=p.read_bytes();files.append({'path':str(p.relative_to(root)),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+          Path('EVIDENCE_FILE_MANIFEST.json').write_text(json.dumps({'fileCount':len(files),'files':files},indent=2,sort_keys=True)+'\n')
+          PY
+          tar_inputs=(evidence EVIDENCE_FILE_MANIFEST.json)
+          test -f execution-summary.log && tar_inputs+=(execution-summary.log)
+          tar -czf r44p4-official-tool-evidence.tar.gz "${tar_inputs[@]}"
+          sha256sum r44p4-official-tool-evidence.tar.gz > r44p4-official-tool-evidence.sha256
+
+      - name: Upload official-tool evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p4-official-tool-evidence
+          path: |
+            r44p4-official-toolchain/evidence
+            r44p4-official-toolchain/EVIDENCE_FILE_MANIFEST.json
+            r44p4-official-toolchain/execution-summary.log
+            r44p4-official-toolchain/r44p4-official-tool-evidence.tar.gz
+            r44p4-official-toolchain/r44p4-official-tool-evidence.sha256
+          if-no-files-found: warn
+          retention-days: 14
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Execute exact Linux runtime/dependency/browser bootstrap
+        working-directory: r44p5-bootstrap
+        shell: bash
+        env:
+          EXPECTED_LOCK_SHA256: 6269b250e484780187c9378b52c69898fa533cf1c39cc21122ce8ef053387a6b
+          EXPECTED_NODE: v24.18.0
+          EXPECTED_NPM: 11.16.0
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+        run: bash run-linux-bootstrap.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-node
+          path: r44p5-bootstrap/exact-node-24.18.0-npm-11.16.0-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-node-modules
+          path: r44p5-bootstrap/exact-node-modules-r44p4-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-chromium
+          path: r44p5-bootstrap/exact-playwright-chromium-1.60.0-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-receipts
+          path: |
+            r44p5-bootstrap/EXACT_BOOTSTRAP_MANIFEST.json
+            r44p5-bootstrap/exact-bundles-sha256.txt
+            r44p5-bootstrap/package-lock.json
+            r44p5-bootstrap/package-lock-sha256.txt
+            r44p5-bootstrap/expected-lock-sha256.txt
+            r44p5-bootstrap/lock-comparison.env
+            r44p5-bootstrap/lifecycle-script-packages.json
+            r44p5-bootstrap/npm-ci*.log
+            r44p5-bootstrap/npm-ls*.json
+            r44p5-bootstrap/npm-audit*.json
+            r44p5-bootstrap/chromium-identity.json
+            r44p5-bootstrap/node-*.txt
+            r44p5-bootstrap/npm-*.txt
+            r44p5-bootstrap/runtime-root.txt
+          retention-days: 14

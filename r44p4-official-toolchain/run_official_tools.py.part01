@@ -1,0 +1,129 @@
+"[profile.default]\n"
+            "src = 'src'\n"
+            "out = 'forge-out'\n"
+            "cache_path = 'forge-cache'\n"
+            f"solc = '{solc_path}'\n"
+            "optimizer = true\n"
+            "optimizer_runs = 200\n"
+            "offline = true\n",
+            encoding="utf-8",
+        )
+        cmd = ["forge", "build", "--root", str(case_dir), "--force"]
+        output_files.append(case_dir / "forge-out")
+    else:
+        raise AssertionError(tool)
+
+    result = run(cmd, case_dir, timeout=240)
+    stdout_path, stderr_path = write_raw(tool, case_id, result)
+    outputs: list[dict[str, Any]] = []
+    for p in output_files:
+        if p.is_file():
+            outputs.append({"path": str(p.relative_to(ROOT)), "type": "file", "bytes": p.stat().st_size, "sha256": sha256_file(p)})
+        elif p.is_dir():
+            manifest = []
+            for f in sorted(x for x in p.rglob("*") if x.is_file()):
+                manifest.append({"path": str(f.relative_to(p)), "bytes": f.stat().st_size, "sha256": sha256_file(f)})
+            encoded = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+            outputs.append({"path": str(p.relative_to(ROOT)), "type": "directory", "fileCount": len(manifest), "manifestSha256": sha256_bytes(encoded)})
+    parsed_result: dict[str, Any] = {}
+    completed = result["exitCode"] == 0 and not result["timedOut"]
+    findings = False
+    if tool == "slither" and output_files and output_files[0].is_file():
+        try:
+            parsed = json.loads(output_files[0].read_text(encoding="utf-8"))
+            detectors = parsed.get("results", {}).get("detectors", [])
+            parsed_result = {
+                "jsonSuccess": parsed.get("success") is True,
+                "error": parsed.get("error"),
+                "detectorCount": len(detectors),
+            }
+            completed = parsed_result["jsonSuccess"] and not result["timedOut"]
+            findings = completed and len(detectors) > 0
+        except (OSError, json.JSONDecodeError) as exc:
+            parsed_result = {"jsonSuccess": False, "parseError": type(exc).__name__}
+            completed = False
+    elif tool == "semgrep" and output_files and output_files[0].is_file():
+        try:
+            parsed = json.loads(output_files[0].read_text(encoding="utf-8"))
+            parsed_result = {
+                "resultCount": len(parsed.get("results", [])),
+                "errorCount": len(parsed.get("errors", [])),
+            }
+            completed = result["exitCode"] == 0 and parsed_result["errorCount"] == 0 and not result["timedOut"]
+            findings = completed and parsed_result["resultCount"] > 0
+        except (OSError, json.JSONDecodeError) as exc:
+            parsed_result = {"parseError": type(exc).__name__}
+            completed = False
+    else:
+        parsed_result = {
+            "artifactFileCount": sum(o.get("fileCount", 1 if o.get("bytes", 0) > 0 else 0) for o in outputs),
+        }
+    if result["timedOut"]:
+        terminal_status = "EXECUTED_TIMEOUT"
+    elif completed and findings:
+        terminal_status = "EXECUTED_FINDINGS"
+    elif completed:
+        terminal_status = "EXECUTED_SUCCESS"
+    else:
+        terminal_status = "EXECUTED_TOOL_ERROR"
+
+    receipt = {
+        "schemaVersion": "velmere.r44p4.official-tool-execution.v2",
+        "executionId": f"{tool}-{case_id}",
+        "tool": tool,
+        "caseId": case_id,
+        "sourceFilename": case["filename"],
+        "sourceSha256": case["sha256"],
+        "inputClass": case["input_class"],
+        "rightsBasis": case["rights_basis"],
+        "command": cmd,
+        "startedAt": result["startedAt"],
+        "durationMs": result["durationMs"],
+        "exitCode": result["exitCode"],
+        "timedOut": result["timedOut"],
+        "stdout": {"path": str(stdout_path.relative_to(ROOT)), "bytes": stdout_path.stat().st_size, "sha256": sha256_file(stdout_path)},
+        "stderr": {"path": str(stderr_path.relative_to(ROOT)), "bytes": stderr_path.stat().st_size, "sha256": sha256_file(stderr_path)},
+        "outputs": outputs,
+        "parsedResult": parsed_result,
+        "toolIdentity": tool_meta,
+        "terminalStatus": terminal_status,
+        "officialExecutionCredit": completed,
+        "realAuditCredit": False,
+        "customerCredit": False,
+        "liveCredit": False,
+    }
+    RECEIPTS.mkdir(parents=True, exist_ok=True)
+    rp = RECEIPTS / f"{tool}-{case_id}.json"
+    rp.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    receipt["receiptPath"] = str(rp.relative_to(ROOT))
+    receipt["receiptSha256"] = sha256_file(rp)
+    return receipt
+
+
+def main() -> int:
+    OUT.mkdir(parents=True, exist_ok=True)
+    cases = prepare_cases()
+    solc_binary = os.environ.get("VELMERE_SOLC_BINARY", "solc")
+    tool_meta = {
+        "solc": tool_metadata("solc", [solc_binary, "--version"]),
+        "slither": tool_metadata("slither", ["slither", "--version"]),
+        "semgrep": tool_metadata("semgrep", ["semgrep", "--version"]),
+        "forge": tool_metadata("forge", ["forge", "--version"]),
+    }
+    for name, meta in tool_meta.items():
+        if meta["versionExitCode"] != 0 or not meta["versionMatched"]:
+            raise SystemExit(f"tool version mismatch: {name}")
+    solc_path = tool_meta["solc"]["realPath"]
+    (OUT / "tool-identities.json").write_text(json.dumps(tool_meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    ledger: list[dict[str, Any]] = []
+    for tool in TOOLS:
+        for i, case in enumerate(cases, 1):
+            print(f"[{tool} {i:02d}/50] {case['filename']}", flush=True)
+            ledger.append(execute_one(tool, case, tool_meta[tool], solc_path))
+    unique = {(r["tool"], r["caseId"]) for r in ledger}
+    by_tool = {tool: {"executed": 0, "completed": 0, "findings": 0, "toolError": 0} for tool in TOOLS}
+    for r in ledger:
+        d = by_tool[r["tool"]]
+        d["executed"] += 1
+        if r["officialExecutionCredit"]:
+         
