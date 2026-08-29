@@ -1,0 +1,137 @@
+name: R44P5 Exact Windows Runtime Dependency Browser Bootstrap
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p5-bootstrap/**'
+      - '.github/workflows/r44p5-exact-windows-bootstrap.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap-windows:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    env:
+      EXPECTED_LOCK_SHA256: 6269b250e484780187c9378b52c69898fa533cf1c39cc21122ce8ef053387a6b
+      EXPECTED_NODE: v24.18.0
+      EXPECTED_NPM: 11.16.0
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}\ms-playwright
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Pin exact npm and verify runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npm install --global 'npm@11.16.0'
+          if ((node --version).Trim() -ne $env:EXPECTED_NODE) { throw 'Node version mismatch' }
+          if ((npm --version).Trim() -ne $env:EXPECTED_NPM) { throw 'npm version mismatch' }
+          node --version | Set-Content r44p5-bootstrap\node-version-windows.txt
+          npm --version | Set-Content r44p5-bootstrap\npm-version-windows.txt
+          $node=(Get-Command node).Source
+          $npm=(Get-Command npm).Source
+          $node | Set-Content r44p5-bootstrap\node-path-windows.txt
+          $npm | Set-Content r44p5-bootstrap\npm-path-windows.txt
+          (Get-FileHash -Algorithm SHA256 -LiteralPath $node).Hash.ToLowerInvariant() | Set-Content r44p5-bootstrap\node-executable-sha256-windows.txt
+          (Get-FileHash -Algorithm SHA256 -LiteralPath $npm).Hash.ToLowerInvariant() | Set-Content r44p5-bootstrap\npm-launcher-sha256-windows.txt
+
+      - name: Regenerate lockfile and record drift
+        working-directory: r44p5-bootstrap
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          $actual=(Get-FileHash -Algorithm SHA256 -LiteralPath package-lock.json).Hash.ToLowerInvariant()
+          "$actual  package-lock.json" | Set-Content package-lock-sha256-windows.txt
+          if ($actual -eq $env:EXPECTED_LOCK_SHA256) {
+            'LOCK_MATCH=true' | Set-Content lock-comparison-windows.env
+          } else {
+            'LOCK_MATCH=false' | Set-Content lock-comparison-windows.env
+            "$($env:EXPECTED_LOCK_SHA256)  expected-r44p4-package-lock.json" | Set-Content expected-lock-sha256-windows.txt
+          }
+
+      - name: Exact npm ci without lifecycle scripts
+        working-directory: r44p5-bootstrap
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue
+          npm ci --ignore-scripts --no-audit --no-fund *> npm-ci-ignore-scripts-windows.log
+          npm ls --all --json | Set-Content npm-ls-ignore-scripts-windows.json
+          node -e "const x=require('./npm-ls-ignore-scripts-windows.json');if(x.problems?.length){console.error(x.problems);process.exit(1)}"
+
+      - name: Exact npm ci with reviewed lifecycle scripts
+        working-directory: r44p5-bootstrap
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Remove-Item node_modules -Recurse -Force -ErrorAction SilentlyContinue
+          npm ci --no-audit --no-fund *> npm-ci-windows.log
+          npm ls --all --json | Set-Content npm-ls-windows.json
+          node -e "const x=require('./npm-ls-windows.json');if(x.problems?.length){console.error(x.problems);process.exit(1)}"
+          cmd /c "npm audit --omit=dev --json > npm-audit-production-windows.json"; if ($LASTEXITCODE -gt 1) { throw 'npm production audit command failed' }
+          cmd /c "npm audit --json > npm-audit-all-windows.json"; if ($LASTEXITCODE -gt 1) { throw 'npm full audit command failed' }
+
+      - name: Install exact Playwright Chromium
+        working-directory: r44p5-bootstrap
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          npx playwright install chromium
+          @'
+          const fs=require('node:fs');
+          const crypto=require('node:crypto');
+          const {chromium}=require('playwright');
+          (async()=>{const exe=chromium.executablePath();const b=fs.readFileSync(exe);const browser=await chromium.launch({headless:true});const version=browser.version();await browser.close();fs.writeFileSync('chromium-identity-windows.json',JSON.stringify({playwrightVersion:require('playwright/package.json').version,executablePath:exe,executableSha256:crypto.createHash('sha256').update(b).digest('hex'),browserVersion:version},null,2)+'\n');})().catch(e=>{console.error(e);process.exit(1)});
+          '@ | node
+
+      - name: Package exact Windows bundles
+        working-directory: r44p5-bootstrap
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $runtimeRoot=Split-Path -Parent (Get-Command node).Source
+          $runtimeRoot | Set-Content runtime-root-windows.txt
+          $seven=(Get-Command 7z).Source
+          & $seven a -tzip -mx=7 exact-node-24.18.0-npm-11.16.0-windows-x64.zip "$runtimeRoot\*" | Out-Null
+          & $seven a -tzip -mx=7 exact-node-modules-r44p4-windows-x64.zip '.\node_modules\*' | Out-Null
+          & $seven a -tzip -mx=7 exact-playwright-chromium-1.60.0-windows-x64.zip "$env:PLAYWRIGHT_BROWSERS_PATH\*" | Out-Null
+          $rows=@()
+          Get-ChildItem exact-*.zip | Sort-Object Name | ForEach-Object {
+            $rows += [ordered]@{name=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()}
+          }
+          $actual=(Get-Content package-lock-sha256-windows.txt).Split(' ')[0]
+          [ordered]@{node='24.18.0';npm='11.16.0';expectedLockSha256=$env:EXPECTED_LOCK_SHA256;generatedLockSha256=$actual;lockMatchesExpected=($actual -eq $env:EXPECTED_LOCK_SHA256);bundles=$rows} | ConvertTo-Json -Depth 5 | Set-Content EXACT_WINDOWS_BOOTSTRAP_MANIFEST.json
+          $rows | ForEach-Object { "$($_.sha256)  $($_.name)" } | Set-Content exact-windows-bundles-sha256.txt
+
+      - name: Upload exact Windows bootstrap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-windows-bootstrap
+          path: |
+            r44p5-bootstrap/exact-node-24.18.0-npm-11.16.0-windows-x64.zip
+            r44p5-bootstrap/exact-node-modules-r44p4-windows-x64.zip
+            r44p5-bootstrap/exact-playwright-chromium-1.60.0-windows-x64.zip
+            r44p5-bootstrap/EXACT_WINDOWS_BOOTSTRAP_MANIFEST.json
+            r44p5-bootstrap/exact-windows-bundles-sha256.txt
+            r44p5-bootstrap/package-lock.json
+            r44p5-bootstrap/package-lock-sha256-windows.txt
+            r44p5-bootstrap/expected-lock-sha256-windows.txt
+            r44p5-bootstrap/lock-comparison-windows.env
+            r44p5-bootstrap/npm-ci*-windows.log
+            r44p5-bootstrap/npm-ls*-windows.json
+            r44p5-bootstrap/npm-audit*-windows.json
+            r44p5-bootstrap/chromium-identity-windows.json
+            r44p5-bootstrap/node-*-windows.txt
+            r44p5-bootstrap/npm-*-windows.txt
+            r44p5-bootstrap/runtime-root-windows.txt
+          retention-days: 14

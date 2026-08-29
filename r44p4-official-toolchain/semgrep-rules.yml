@@ -1,0 +1,43 @@
+rules:
+  - id: velmere-solidity-tx-origin
+    languages: [generic]
+    severity: ERROR
+    message: tx.origin authorization surface
+    pattern-regex: '\btx\.origin\b'
+  - id: velmere-solidity-delegatecall
+    languages: [generic]
+    severity: ERROR
+    message: delegatecall surface
+    pattern-regex: '\.delegatecall\s*\('
+  - id: velmere-solidity-selfdestruct
+    languages: [generic]
+    severity: WARNING
+    message: selfdestruct surface
+    pattern-regex: '\bselfdestruct\s*\('
+  - id: velmere-solidity-unchecked-low-level-call
+    languages: [generic]
+    severity: WARNING
+    message: low-level call surface
+    pattern-regex: '\.call\s*(?:\{|\()'
+  - id: velmere-solidity-block-timestamp
+    languages: [generic]
+    severity: INFO
+    message: block.timestamp usage
+    pattern-regex: '\bblock\.timestamp\b'
+  - id: velmere-solidity-blockhash
+    languages: [generic]
+    severity: INFO
+    message: blockhash usage
+    pattern-regex: '\bblockhash\s*\('
+  - id: velmere-solidity-ecrecover
+    languages: [generic]
+    severity: INFO
+    message: ecrecover signature surface
+    pattern-regex: '\becrecover\s*\('
+  - id: velmere-solidity-external-loop
+    languages: [generic]
+    severity: WARNING
+    message: loop and external transfer surface
+    patterns:
+      - pattern-regex: '\bfor\s*\('
+      - pattern-regex: '\.(?:transfer|send|call)\s*(?:\{|\()'

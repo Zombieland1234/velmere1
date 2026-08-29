@@ -1,0 +1,122 @@
+name: R44P5 Exact Runtime Dependency Browser Split Bootstrap
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'r44p5-bootstrap/**'
+      - '.github/workflows/r44p4-official-toolchain.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      EXPECTED_LOCK_SHA256: 6269b250e484780187c9378b52c69898fa533cf1c39cc21122ce8ef053387a6b
+      EXPECTED_NODE: v24.18.0
+      EXPECTED_NPM: 11.16.0
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Execute exact Linux bootstrap
+        working-directory: r44p5-bootstrap
+        shell: bash
+        run: bash run-linux-bootstrap.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-node
+          path: r44p5-bootstrap/exact-node-24.18.0-npm-11.16.0-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-node-modules
+          path: r44p5-bootstrap/exact-node-modules-r44p4-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-chromium
+          path: r44p5-bootstrap/exact-playwright-chromium-1.60.0-linux-x64.tar.gz
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-linux-receipts
+          path: |
+            r44p5-bootstrap/EXACT_BOOTSTRAP_MANIFEST.json
+            r44p5-bootstrap/exact-bundles-sha256.txt
+            r44p5-bootstrap/package-lock.json
+            r44p5-bootstrap/package-lock-sha256.txt
+            r44p5-bootstrap/expected-lock-sha256.txt
+            r44p5-bootstrap/lock-comparison.env
+            r44p5-bootstrap/lifecycle-script-packages.json
+            r44p5-bootstrap/npm-ci*.log
+            r44p5-bootstrap/npm-ls*.json
+            r44p5-bootstrap/npm-audit*.json
+            r44p5-bootstrap/chromium-identity.json
+            r44p5-bootstrap/node-*.txt
+            r44p5-bootstrap/npm-*.txt
+            r44p5-bootstrap/runtime-root.txt
+          retention-days: 14
+
+  exact-windows:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    env:
+      EXPECTED_LOCK_SHA256: 6269b250e484780187c9378b52c69898fa533cf1c39cc21122ce8ef053387a6b
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}\ms-playwright
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Execute exact Windows bootstrap
+        working-directory: r44p5-bootstrap
+        shell: pwsh
+        run: ./run-windows-bootstrap.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-windows-node
+          path: r44p5-bootstrap/exact-node-24.18.0-npm-11.16.0-windows-x64.zip
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-windows-node-modules
+          path: r44p5-bootstrap/exact-node-modules-r44p4-windows-x64.zip
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-windows-chromium
+          path: r44p5-bootstrap/exact-playwright-chromium-1.60.0-windows-x64.zip
+          compression-level: 0
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r44p5-exact-windows-receipts
+          path: |
+            r44p5-bootstrap/EXACT_WINDOWS_BOOTSTRAP_MANIFEST.json
+            r44p5-bootstrap/exact-windows-bundles-sha256.txt
+            r44p5-bootstrap/package-lock.json
+            r44p5-bootstrap/package-lock-sha256-windows.txt
+            r44p5-bootstrap/expected-lock-sha256-windows.txt
+            r44p5-bootstrap/lock-comparison-windows.env
+            r44p5-bootstrap/lifecycle-script-packages-windows.json
+            r44p5-bootstrap/npm-ci*-windows.log
+            r44p5-bootstrap/npm-ls*-windows.json
+            r44p5-bootstrap/npm-audit*-windows.json
+            r44p5-bootstrap/chromium-identity-windows.json
+            r44p5-bootstrap/node-*-windows.txt
+            r44p5-bootstrap/npm-*-windows.txt
+            r44p5-bootstrap/runtime-root-windows.txt
+          retention-days: 14
