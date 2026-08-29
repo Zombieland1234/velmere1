@@ -30,6 +30,7 @@ jobs:
       R7_PACKAGE_JSON_SHA256: '384932e8183ff4ced7850556ee21bb7b71f9a86add02112a4e434bc09f457a61'
       R7_PACKAGE_LOCK_SHA256: '5924aa0d679ebd78bcd6da01815fdd4b6ff503db45b17697c00168c06af7de61'
       R7_AUDIT_EXACT_DEPLOYED_SOURCE_SHA256: '3f05fc95b3bfd3d41e96fa281e00a71302e35b8fff59f81f399a419cdb9f577e'
+      PROMOTED_SOURCE_AGGREGATE_SHA256: '316f8b1cdb4d1041013bac400d15640297e1c0e073942f04934e1f959c455c68'
       NEXT_TELEMETRY_DISABLED: '1'
       CI: '1'
       NEXT_PUBLIC_SUPABASE_URL: 'https://yljjyowcvjgjcamffnvd.supabase.co'
@@ -77,7 +78,7 @@ jobs:
           }
           $Material = ($Components | ForEach-Object { $_.path + "`t" + $_.sha256 }) -join "`n"
           $Aggregate = ShaText $Material
-          if ($Aggregate -ne '316f8b1cdb4d1041013bac400d15640297e1c0e073942f04934e1f959c455c68') { throw 'promoted_source_aggregate_mismatch' }
+          if ($Aggregate -ne $env:PROMOTED_SOURCE_AGGREGATE_SHA256) { throw 'promoted_source_aggregate_mismatch' }
           $Renderer = 'r7-audit-basic-app-route/render-localized-audit-basic-pdf.ts'
           $Harness = 'r7-audit-basic-app-route/run-promoted-source-e2e.ps1'
           $Workflow = '.github/workflows/r7-audit-basic-app-route-promoted-source-e2e.yml'
@@ -122,4 +123,4 @@ jobs:
             artifacts/r7/audit-basic/promoted-route
           if-no-files-found: warn
           retention-days: 14
-# 2026-08-29 09:14 CEST: fresh canonical push trigger for Audit Basic promoted-source lifecycle.
+# 2026-08-29: add the already-verified promoted source aggregate required by the lifecycle harness.
