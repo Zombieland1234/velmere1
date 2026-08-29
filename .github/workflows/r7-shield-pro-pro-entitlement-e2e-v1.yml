@@ -40,7 +40,11 @@ jobs:
           AUD='velmere-r7-shield-pro-pro-v1-e2e-v3'
           TOKEN_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUD}")"
           OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$TOKEN_JSON")"
-          provision="$(curl -fsS -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data '{"action":"setup"}')"
+          provision_status="$(curl -sS -o /tmp/provision-response.json -w '%{http_code}' -X POST "$HELPER" -H "Authorization: Bearer $OIDC" -H 'Content-Type: application/json' --data '{"action":"setup"}')"
+          echo "shield_pro_pro_helper_status=$provision_status"
+          cat /tmp/provision-response.json
+          test "$provision_status" = "200"
+          provision="$(cat /tmp/provision-response.json)"
           python - "$provision" <<'PY'
           import json,sys
           d=json.loads(sys.argv[1]); assert d.get('ok') is True
