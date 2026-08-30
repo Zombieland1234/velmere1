@@ -1,0 +1,112 @@
+name: R7 Angel Real Provider Retry Final Customer
+
+on:
+  pull_request:
+    branches:
+      - velmere-r7-successor-delta-20260825
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: r7-angel-retry-final-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  CI: '1'
+  R7_EXPECTED_FULL_SOURCE_AGGREGATE_SHA256: '50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e'
+  R7_EXPECTED_EXECUTION_SLICE_AGGREGATE_SHA256: 'f83f28de6add73eee70d9086f2705241243661d64b5c9fd579b17b359050a221'
+  R7_EXPECTED_EXECUTION_SLICE_MANIFEST_SHA256: 'b947314bb696fb8f9153c34d46ba825c5897e9f8cc8cf911a5f31113aa5fc01f'
+  R7_EXPECTED_EXECUTION_BUNDLE_SHA256: '8e3c66471d534310e1142c3671d43bb556e35b6901c847c9596eea14e8815967'
+  GEMINI_MODEL: 'gemini-2.5-flash'
+
+jobs:
+  angel-real-provider-retry-final:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'r7-angel-final-trigger-') }}
+    runs-on: windows-2025
+    timeout-minutes: 180
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Checkout PR merge source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+      - name: Reconstruct exact current source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Full
+          if($LASTEXITCODE -ne 0){throw "angel_exact_windows_source_failed:$LASTEXITCODE"}
+      - name: Verify exact Angel source identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & node 'r7-angel-harness/verify-r7-angel-exact-source-identity.mjs' 'r7-work' 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json'
+          if($LASTEXITCODE -ne 0){throw "angel_exact_source_identity_failed:$LASTEXITCODE"}
+      - name: Execute deterministic Angel safety suite
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          New-Item -ItemType Directory -Force -Path 'artifacts/r7/angel' | Out-Null
+          Push-Location 'r7-work'
+          try {
+            $Loader='./scripts/pass11/register-offline-ts-loader.mjs'
+            $Cases=@('tests/security/a102-angel-standalone-output-truth.test.ts','tests/security/a102-angel-ai-disclosure-and-public-topology.test.ts','tests/security/v4-angel-grounding-before-provider-boundary.test.ts','tests/security/a102-angel-primary-route-safety-boundary.test.ts','scripts/current-execution/test-angel-durable-memory-delete-fail-closed.mts')
+            foreach($Case in $Cases){ & node --import $Loader $Case 2>&1 | Tee-Object -FilePath (Join-Path '..' ('artifacts/r7/angel/'+[IO.Path]::GetFileName($Case)+'.log')); if($LASTEXITCODE -ne 0){throw "angel_case_failed:$Case"} }
+            & node --no-warnings --import $Loader 'tests/pass36/a102r44p11-angel-multicoin-safety.ts' | Tee-Object -FilePath '../artifacts/r7/angel/angel-adversarial.json'
+            if($LASTEXITCODE -ne 0){throw 'angel_adversarial_failed'}
+          } finally { Pop-Location }
+      - name: Validate deterministic safety receipt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $B=Get-Content 'artifacts/r7/angel/angel-adversarial.json' -Raw | ConvertFrom-Json -Depth 100
+          $I=Get-Content 'R7_ANGEL_EXACT_SOURCE_IDENTITY.json' -Raw | ConvertFrom-Json -Depth 100
+          if($I.status -ne 'PASS_ANGEL_EXACT_CURRENT_SOURCE_IDENTITY' -or [int]$I.requiredSourceFiles -ne 11){throw 'angel_adversarial_denominator_invalid'}
+          if([int]$B.assertions -lt 120 -or [int]$B.failed -ne 0 -or [int]$B.passed -ne [int]$B.assertions){throw 'angel_adversarial_denominator_invalid'}
+          if([int]$B.rejectedProviderCallsAllowed -ne 0){throw 'angel_rejected_case_reached_provider'}
+          if($B.globalDecision -ne 'NO_GO' -or [bool]$B.live -or [bool]$B.saleEnabled){throw 'angel_safety_boundary_invalid'}
+      - name: Execute 12 real Gemini provider calls with retry diagnostics
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & pwsh -NoProfile -File 'r7-angel-harness/run-r7-angel-gemini-provider-probe-v2.ps1'
+          if($LASTEXITCODE -ne 0){throw "angel_gemini_probe_failed:$LASTEXITCODE"}
+      - name: Guarded Angel customer FINAL v2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $Ev=Get-Content 'artifacts/r7/angel/R7_ANGEL_GEMINI_PROVIDER_PROBE_V2.json' -Raw|ConvertFrom-Json -Depth 50
+          $Canonical=[ordered]@{action='finalize';evidence=$Ev}|ConvertTo-Json -Depth 50 -Compress
+          $Hash=[Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($Canonical));$Hex=(-join($Hash|ForEach-Object{$_.ToString('x2')}))
+          $Audience='velmere-r7-angel-real-provider:'+ $Hex
+          $TokenUri=$env:ACTIONS_ID_TOKEN_REQUEST_URL+($(if($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')){'&'}else{'?'})+'audience='+[Uri]::EscapeDataString($Audience))
+          $Oidc=(Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{Authorization='Bearer '+$env:ACTIONS_ID_TOKEN_REQUEST_TOKEN} -TimeoutSec 20).value
+          $R=Invoke-WebRequest -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-angel-real-provider-finalize-pr-oidc-v2' -Method Post -Headers @{Authorization='Bearer '+$Oidc;Accept='application/json'} -ContentType 'application/json' -Body $Canonical -SkipHttpErrorCheck -TimeoutSec 60
+          $Text=[string]$R.Content
+          if([int]$R.StatusCode -ne 200){throw "angel_final_http_$($R.StatusCode):$($Text.Substring(0,[Math]::Min(700,$Text.Length)))"}
+          $Out=$Text|ConvertFrom-Json -Depth 100
+          if($Out.ok -ne $true -or $Out.finalizer.finalStatus -ne 'FINAL'){throw "angel_final_not_confirmed:$Text"}
+          $Out|ConvertTo-Json -Depth 100|Set-Content 'artifacts/r7/angel/R7_ANGEL_REAL_PROVIDER_FINAL_RESULT_V2.json' -Encoding utf8
+      - name: Upload Angel retry evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-angel-real-provider-retry-final-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/r7/angel/**
+            R7_ANGEL_EXACT_SOURCE_IDENTITY.json
+          if-no-files-found: warn
+          retention-days: 30
+# 2026-08-29: retrigger exact workflow authority path for current R7 Angel closure validation.
