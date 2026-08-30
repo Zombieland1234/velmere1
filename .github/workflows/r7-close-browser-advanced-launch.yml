@@ -1,0 +1,22 @@
+name: R7 Browser Advanced Closure Launcher
+on:
+  push:
+    branches:
+      - r7-close-browser-advanced-20260830
+    paths:
+      - '.github/workflows/r7-close-browser-advanced-launch.yml'
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch canonical Browser Advanced candidate E2E
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run r7-browser-advanced-entitlement-candidate-e2e.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          echo "dispatched Browser Advanced canonical candidate on $GITHUB_REF_NAME"
