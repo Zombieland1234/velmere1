@@ -1,4 +1,4 @@
-# R7 Closure Status Matrix — 2026-08-29
+# R7 Closure Status Matrix — 2026-08-30
 
 Canonical branch: `velmere-r7-successor-delta-20260825`
 
@@ -6,43 +6,47 @@ Canonical branch: `velmere-r7-successor-delta-20260825`
 
 | Ordinal | SKU | Status | Current evidence / blocker |
 |---:|---|---|---|
-| 1 | audit-basic | NOT_FINAL | Current-source E2E run 33237966794 active; exact source reconstruction passed; human-review gate remains required. |
-| 2 | audit-pro | NOT_FINAL | No dedicated public finalizer/E2E backend found in current Supabase public-function inventory. |
-| 3 | audit-advanced | NOT_FINAL | No dedicated public finalizer/E2E backend found in current Supabase public-function inventory. |
+| 1 | audit-basic | NOT_FINAL | Technical evidence exists; qualified human-review gate still required and current review table has 0 rows. |
+| 2 | audit-pro | NOT_FINAL | No dedicated current public finalizer/E2E backend found. |
+| 3 | audit-advanced | NOT_FINAL | No dedicated current public finalizer/E2E backend found. |
 | 4 | browser-basic | FINAL | Existing guarded ledger FINAL. |
-| 5 | browser-pro | NOT_FINAL | Candidate E2E reaches real paid route but is fail-closed on missing field/purpose-specific customer display/export rights. |
-| 6 | browser-advanced | NOT_FINAL | Candidate E2E reaches real route but is fail-closed on missing customer display/export rights. |
-| 7 | shield-basic | FINAL | Existing guarded ledger FINAL; current public evidence is now stale for the two-day currentness gate. |
-| 8 | shield-pro | NOT_FINAL | Backend exists; requires a fresh qualifying customer proof path. |
-| 9 | shield-advanced | NOT_FINAL | No dedicated Shield Advanced public finalizer/E2E backend found in current Supabase inventory. |
+| 5 | browser-pro | NOT_FINAL | Candidate route is blocked by provider/session identity path; fresh push-bound trigger work is in progress. |
+| 6 | browser-advanced | NOT_FINAL | Candidate route reaches the application but current customer display/export rights gate remains unmet. |
+| 7 | shield-basic | FINAL | Existing guarded ledger FINAL. |
+| 8 | shield-pro | NOT_FINAL | Fresh paid/customer qualification path still required. |
+| 9 | shield-advanced | NOT_FINAL | No dedicated current public finalizer/E2E backend found. |
 | 10 | shield-pro-basic | FINAL | Existing guarded ledger FINAL. |
 | 11 | shield-pro-pro | FINAL | Existing guarded ledger FINAL. |
-| 12 | shield-pro-advanced | NOT_FINAL | Paid-tier finalizer supports advanced paid tier, but current qualifying asset denominator is insufficient. |
+| 12 | shield-pro-advanced | FINAL | Live guarded finalizer reread is idempotent FINAL on run 33244166685. |
 | 13 | real-markets-basic | FINAL | Existing guarded ledger FINAL. |
-| 14 | real-markets-pro | NOT_FINAL | No dedicated current repo module/finalizer found; only Real Markets Basic implementation is present. |
-| 15 | real-markets-advanced | NOT_FINAL | No dedicated current repo module/finalizer found; only Real Markets Basic implementation is present. |
+| 14 | real-markets-pro | NOT_FINAL | No dedicated current repo module/finalizer found. |
+| 15 | real-markets-advanced | NOT_FINAL | No dedicated current repo module/finalizer found. |
 | 16 | shield-map | FINAL | Existing guarded ledger FINAL. |
 | 17 | market-impact | FINAL | Existing guarded ledger FINAL. |
 | 18 | whale-watch | FINAL | Existing guarded ledger FINAL. |
-| 19 | angel | NOT_FINAL | Real-provider final workflow 33237653032 active; exact source reconstruction currently in progress. |
+| 19 | angel | NOT_FINAL | Real-provider workflow requires 12/12 real Gemini calls plus deterministic safety evidence. |
 | 20 | risk-indicator | FINAL | Existing guarded ledger FINAL. |
 
 ## Paid Value
 
-Current Paid Value FINAL count: **0/10**.
+Current Paid Value FINAL count: **2/10**.
 
-Shield Pro paid-tier gate currently sees only one asset with at least two public/customer-publishable events in the last seven days (`multicall3-bsc`), while Pro requires three qualifying assets and Advanced requires six.
+Confirmed FINAL transitions:
+- ordinal 7: `shield-pro-basic-to-pro`
+- ordinal 8: `shield-pro-pro-to-advanced`
 
-## Active closure runs
+The current public risk-history denominator now has **7 assets** with at least two PUBLIC + customer-publishable events in the last seven days, which is sufficient for the Shield Pro paid-tier requirement of 3 and the Advanced requirement of 6. The remaining gap is qualified E2E/finalizer evidence for transitions outside the existing Shield Pro pair.
 
-- Audit Basic current source: run `33237966794`.
-- Browser Pro candidate final: run `33237978502` (last attempt failed at rights gate; exact prep/TS/lint passed).
-- Browser Advanced candidate: run `33237976286` (last attempt failed at rights gate; exact prep/patch/TS/lint passed).
-- Angel real-provider final: run `33237653032`.
-- Risk v5 exact Windows/candidate: run `33237653036`.
+## Active closure work
+
+- Browser Pro / Browser Advanced: dedicated push-bound candidate triggers and OIDC/session corrections.
+- Angel: real-provider closure path.
+- Audit Basic: technical closure path, human review remains a real external requirement.
+- AI acceptance: dedicated post-closure campaign harness for 100 personas × 24 actions and 50 × 3 × 6 reviewer denominator.
+- Shield Pro Paid: fresh customer E2E/finalizer path on canonical branch.
 
 ## Non-negotiable credit rule
 
-No Customer FINAL or Paid Value point may be credited without exact current-source binding, successful customer E2E, durable evidence artifact, guarded finalizer confirmation, and a live ledger re-read.
+No Customer FINAL or Paid Value point may be credited without exact current-source binding, successful customer E2E, durable evidence artifact, guarded finalizer confirmation, and a live ledger reread.
 
 Rights approval, real human review, or provider evidence may not be invented or synthesized merely to move the counter.
