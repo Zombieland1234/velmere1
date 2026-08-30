@@ -1,0 +1,56 @@
+name: R7 AI-Simulated Customer Acceptance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r7-ai-customer-acceptance
+  cancel-in-progress: false
+
+jobs:
+  ai-simulated-customer-acceptance:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact campaign harness
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+
+      - name: Execute 100 x 24 campaign denominator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & node 'r7-ai-customer-acceptance/run-ai-customer-acceptance-campaign.mjs'
+          if($LASTEXITCODE -ne 0){throw "ai_customer_campaign_failed:$LASTEXITCODE"}
+
+      - name: Verify campaign truth boundary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $R=Get-Content 'artifacts/r7/ai-customer-acceptance/R7_AI_CUSTOMER_ACCEPTANCE.json' -Raw | ConvertFrom-Json -Depth 100
+          if($R.campaignStatus -ne 'CAMPAIGN_DEFINED'){throw 'ai_customer_campaign_status_invalid'}
+          if([int]$R.summary.totalPersonas -ne 100){throw 'ai_customer_persona_denominator_invalid'}
+          if([int]$R.summary.actionsPerPersona -ne 24){throw 'ai_customer_action_denominator_invalid'}
+          if([int]$R.summary.totalInteractions -ne 2400){throw 'ai_customer_interaction_denominator_invalid'}
+          if([bool]$R.executionBoundary.noCustomerFinalCredit -ne $true){throw 'ai_customer_final_boundary_invalid'}
+          if([bool]$R.executionBoundary.noPaidValueCredit -ne $true){throw 'ai_customer_paid_boundary_invalid'}
+          if([bool]$R.executionBoundary.humanProofSeparate -ne $true){throw 'ai_customer_human_boundary_invalid'}
+
+      - name: Upload AI customer campaign receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-ai-simulated-customer-acceptance-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/ai-customer-acceptance/R7_AI_CUSTOMER_ACCEPTANCE.json
+          if-no-files-found: error
+          retention-days: 30
