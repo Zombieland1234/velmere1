@@ -27,14 +27,14 @@ jobs:
           node-version: '24.18.0'
           check-latest: false
 
-      - name: Execute 100 x 24 campaign denominator
+      - name: Execute 100 x 24 customer campaign denominator
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           & node 'r7-ai-customer-acceptance/run-ai-customer-acceptance-campaign.mjs'
           if($LASTEXITCODE -ne 0){throw "ai_customer_campaign_failed:$LASTEXITCODE"}
 
-      - name: Verify campaign truth boundary
+      - name: Verify 2400 customer interactions and truth boundary
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -47,10 +47,30 @@ jobs:
           if([bool]$R.executionBoundary.noPaidValueCredit -ne $true){throw 'ai_customer_paid_boundary_invalid'}
           if([bool]$R.executionBoundary.humanProofSeparate -ne $true){throw 'ai_customer_human_boundary_invalid'}
 
-      - name: Upload AI customer campaign receipt
+      - name: Execute 50 x 3 x 6 reviewer denominator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & node 'r7-ai-customer-acceptance/run-ai-reviewer-panel.mjs'
+          if($LASTEXITCODE -ne 0){throw "ai_reviewer_panel_failed:$LASTEXITCODE"}
+
+      - name: Verify 900 reviewer judgments and truth boundary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $R=Get-Content 'artifacts/r7/ai-customer-acceptance/R7_AI_REVIEWER_PANEL.json' -Raw | ConvertFrom-Json -Depth 100
+          if($R.panelStatus -ne 'PANEL_DEFINED'){throw 'ai_reviewer_panel_status_invalid'}
+          if([int]$R.denominator.auditCases -ne 50){throw 'ai_reviewer_case_denominator_invalid'}
+          if([int]$R.denominator.tiers -ne 3){throw 'ai_reviewer_tier_denominator_invalid'}
+          if([int]$R.denominator.reviewers -ne 6){throw 'ai_reviewer_reviewer_denominator_invalid'}
+          if([int]$R.denominator.judgments -ne 900){throw 'ai_reviewer_judgment_denominator_invalid'}
+          if([bool]$R.truthBoundary.aiSimulatedOnly -ne $true){throw 'ai_reviewer_simulation_boundary_invalid'}
+          if([bool]$R.truthBoundary.externalHumanProofCredit -ne $false){throw 'ai_reviewer_human_credit_boundary_invalid'}
+
+      - name: Upload AI customer and reviewer receipts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: r7-ai-simulated-customer-acceptance-${{ github.sha }}-${{ github.run_id }}
-          path: artifacts/r7/ai-customer-acceptance/R7_AI_CUSTOMER_ACCEPTANCE.json
+          name: r7-ai-customer-acceptance-${{ github.sha }}-${{ github.run_id }}
+          path: artifacts/r7/ai-customer-acceptance/*.json
           if-no-files-found: error
           retention-days: 30
