@@ -3,7 +3,7 @@ name: R7 Browser Advanced Entitlement Candidate E2E
 on:
   push:
     branches:
-      - velmere-r7-successor-delta-20260825
+      - r7-browser-advanced-final-trigger-20260830
     paths:
       - '.github/workflows/r7-browser-advanced-entitlement-candidate-e2e.yml'
       - 'r7-browser-advanced-harness/**'
@@ -16,7 +16,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: r7-browser-advanced-entitlement-candidate-e2e-functional-v4-${{ github.ref }}
+  group: r7-browser-advanced-entitlement-candidate-e2e-functional-v5-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
       - name: Checkout exact Browser Advanced candidate controls
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: velmere-r7-successor-delta-20260825
+          ref: ${{ github.ref_name }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -77,6 +77,7 @@ jobs:
         run: ./r7-browser-advanced-harness/run-r7-browser-advanced-candidate-e2e.ps1
 
       - name: Prove production webpack after hosted E2E
+        if: ${{ success() }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
