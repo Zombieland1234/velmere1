@@ -25,7 +25,7 @@ function Invoke-Gemini([string]$Prompt){
       $r=Invoke-WebRequest -Uri $uri -Method Post -Headers @{'x-goog-api-key'=$env:GEMINI_API_KEY} -ContentType 'application/json' -Body $payload -SkipHttpErrorCheck -TimeoutSec 60
       $status=[int]$r.StatusCode
       if($status -eq 200){return @{status=200;content=$r.Content;attempt=$attempt}}
-      $last="http_$status:"+([string]$r.Content).Substring(0,[Math]::Min(350,[string]$r.Content.Length))
+      $last="http_${status}:"+([string]$r.Content).Substring(0,[Math]::Min(350,[string]$r.Content.Length))
       if($status -notin 429,500,502,503,504){break}
     }catch{$last=$_.Exception.Message}
     Start-Sleep -Seconds ([int][Math]::Pow(2,$attempt-1))
