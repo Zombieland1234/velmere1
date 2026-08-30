@@ -1,9 +1,9 @@
 name: R7 Browser Pro PR Candidate Trigger
 
 on:
-  pull_request:
+  push:
     branches:
-      - velmere-r7-successor-delta-20260825
+      - r7-browser-pro-final-trigger-20260829
     paths:
       - '.github/workflows/r7-browser-pro-pr-trigger.yml'
       - 'r7-browser-pro-harness/**'
@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   browser-pro-pr-candidate:
+    if: ${{ github.repository == 'Zombieland1234/velmere1' && startsWith(github.ref_name, 'r7-browser-pro-final-trigger-') }}
     runs-on: windows-2025
     timeout-minutes: 120
     env:
