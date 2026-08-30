@@ -1,0 +1,1 @@
+R7 Browser Pro fresh canonical candidate trigger after OIDC branch-binding repair. No direct FINAL/Paid credit; guarded E2E/finalizer required.
