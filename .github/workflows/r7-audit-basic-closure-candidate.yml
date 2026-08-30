@@ -1,0 +1,56 @@
+name: R7 Audit Basic Closure Candidate
+
+on:
+  push:
+    branches:
+      - r7-audit-basic-closure-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  audit-basic-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout exact candidate source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          check-latest: false
+      - name: Reconstruct exact current source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          & pwsh -NoProfile -File 'r7-risk-v5/run-r7-risk-v5-exact-windows.ps1' -Mode Full
+          if($LASTEXITCODE -ne 0){throw "audit_basic_exact_source_failed:$LASTEXITCODE"}
+      - name: Discover Audit Basic customer gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          if(-not (Test-Path 'r7-risk-v5/run-r7-risk-v5-e2e-final.ps1')){throw 'audit_basic_e2e_harness_missing'}
+          $paths=@(
+            'lib/security/audit-basic-report-store.ts',
+            'lib/security/audit-customer-report-pipeline.ts',
+            'lib/security/audit-basic-report-store.ts',
+            'lib/reporting/audit-exact-artifact-owner-readable-publisher.ts',
+            'lib/reporting/pass6-manual-review-authority.ts'
+          )
+          foreach($p in $paths){ if(-not(Test-Path $p)){ throw "audit_basic_required_surface_missing:$p" } }
+          Get-ChildItem 'tests','scripts' -Recurse -File -ErrorAction SilentlyContinue | Select-String -Pattern 'audit.?basic|finalize.?audit.?basic|qualified.?human.?review' -AllMatches | Select-Object -First 80 Path,LineNumber,Line
+      - name: Run existing Audit Basic qualified gate harness when present
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $ErrorActionPreference='Continue'
+          $hits=Get-ChildItem 'r7-*','diagnostic-current','tests','scripts' -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'audit.*basic|basic.*audit' }
+          $hits | Select-Object -First 120 FullName
+
+      # R7 closure retrigger marker: run after current-source/OIDC repairs.
