@@ -4,7 +4,7 @@ $SourcePath = Join-Path $PSScriptRoot 'run-r7-browser-pro-entitlement-candidate-
 $RuntimePath = Join-Path $env:RUNNER_TEMP 'run-r7-browser-pro-entitlement-candidate-e2e-final-runtime.ps1'
 $Text = Get-Content -LiteralPath $SourcePath -Raw
 $Pairs = @(
-  @{ Old = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-oidc'; New = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc'; Label = 'helper' },
+  @{ Old = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-oidc'; New = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc-v2'; Label = 'helper' },
   @{ Old = "`$Audience = 'velmere-r7-browser-pro-e2e'"; New = "`$Audience = 'velmere-r7-browser-pro-e2e-final'"; Label = 'audience' },
   @{ Old = '  & node $Tsx $Driver'; New = "  `$TsConfig = Join-Path `$Work 'tsconfig.json'`n  Require (Test-Path -LiteralPath `$TsConfig -PathType Leaf) 'browser_pro_tsconfig_missing'`n  Push-Location `$Work`n  try { & node `$Tsx --tsconfig `$TsConfig `$Driver } finally { Pop-Location }"; Label = 'driver_tsconfig_workdir' }
 )
@@ -31,7 +31,7 @@ if (-not (Test-Path -LiteralPath $PatchPath -PathType Leaf)) { throw 'browser_pr
 $E2e = Get-Content -LiteralPath $E2ePath -Raw | ConvertFrom-Json -Depth 40
 $Patch = Get-Content -LiteralPath $PatchPath -Raw | ConvertFrom-Json -Depth 40
 $Body = @{ action = 'record'; e2eReceipt = $E2e; patchReceipt = $Patch } | ConvertTo-Json -Depth 50 -Compress
-$Response = Invoke-WebRequest -Method Post -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc' -Headers @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' } -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 45
+$Response = Invoke-WebRequest -Method Post -Uri 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc-v2' -Headers @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' } -ContentType 'application/json' -Body $Body -SkipHttpErrorCheck -TimeoutSec 45
 if ([int]$Response.StatusCode -ne 200) { throw "browser_pro_final_record_http_$([int]$Response.StatusCode):$(([string]$Response.Content).Substring(0,[Math]::Min(400,([string]$Response.Content).Length)))" }
 $Recorded = $Response.Content | ConvertFrom-Json -Depth 30
 if ($Recorded.ok -ne $true -or $Recorded.recorded -ne $true) { throw 'browser_pro_final_record_contract_failed' }
