@@ -44,7 +44,19 @@ jobs:
           if($LASTEXITCODE -ne 0){throw "browser_pro_patch_failed:$LASTEXITCODE"}
       - name: Run Browser Pro canonical candidate E2E
         shell: pwsh
-        run: ./r7-browser-pro-harness/run-r7-browser-pro-entitlement-candidate-e2e-final.ps1
+        run: |
+          $ErrorActionPreference='Stop'
+          $SourcePath = './r7-browser-pro-harness/run-r7-browser-pro-entitlement-candidate-e2e-final.ps1'
+          $RuntimePath = Join-Path $env:RUNNER_TEMP 'run-r7-browser-pro-entitlement-candidate-e2e-final-v2-runtime.ps1'
+          $Text = Get-Content -LiteralPath $SourcePath -Raw
+          $Old = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc'
+          $New = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-pro-e2e-final-oidc-v2'
+          $Count = ([regex]::Matches($Text,[regex]::Escape($Old))).Count
+          if($Count -ne 2){throw "browser_pro_final_v2_anchor_mismatch:$Count"}
+          $Text = $Text.Replace($Old,$New)
+          [IO.File]::WriteAllText($RuntimePath,$Text,[Text.UTF8Encoding]::new($false))
+          & pwsh -NoProfile -File $RuntimePath
+          if($LASTEXITCODE -ne 0){throw "browser_pro_final_e2e_v2_failed:$LASTEXITCODE"}
       - name: Upload candidate evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
