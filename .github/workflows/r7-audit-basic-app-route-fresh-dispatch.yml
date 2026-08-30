@@ -6,6 +6,8 @@ on:
       - velmere-r7-successor-delta-20260825
     paths:
       - '.github/workflows/r7-audit-basic-app-route-fresh-dispatch.yml'
+      - '.github/workflows/r7-audit-basic-app-route-promoted-source-e2e.yml'
+      - 'r7-audit-basic-app-route/**'
   workflow_dispatch:
 
 permissions:
@@ -16,7 +18,7 @@ jobs:
   dispatch-current-head:
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch app-route and Aderyn workflows on current head
+      - name: Dispatch Audit Basic closure workflows on current head
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -27,6 +29,7 @@ jobs:
           body=$(printf '{"ref":"%s"}' "$REF_NAME")
           for workflow in \
             r7-audit-basic-app-route-current-source-e2e.yml \
+            r7-audit-basic-app-route-promoted-source-e2e.yml \
             r7-audit-basic-aderyn-external.yml
           do
             code=$(curl -sS -o "response-${workflow}.txt" -w '%{http_code}' \
@@ -43,5 +46,4 @@ jobs:
             echo "fresh $workflow dispatched for $REF_NAME"
           done
 
-# 2026-08-29 closure retrigger: force current canonical-head Audit Basic validation.
-# 2026-08-29 08:10 CEST: explicit retrigger touch for live current-head closure verification.
+# 2026-08-30: include promoted-source customer lifecycle and Aderyn validation in the parallel current-head closure wave.
