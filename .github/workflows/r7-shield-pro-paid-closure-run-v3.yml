@@ -1,0 +1,95 @@
+name: R7 Shield Pro Paid Closure Run V3
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: r7-shield-pro-paid-closure-v3-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  customer-e2e:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact closure branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Execute account-bound entitlement and workspace lifecycle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Base = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1'
+          $Helper = "$Base/r7-shield-pro-paid-e2e-oidc-v2"
+          $Workspace = "$Base/r7-shield-pro-paid-workspace-v1"
+          $Audience = 'velmere-r7-shield-pro-paid-e2e-v2'
+          $TokenUri = $env:ACTIONS_ID_TOKEN_REQUEST_URL + ($(if ($env:ACTIONS_ID_TOKEN_REQUEST_URL.Contains('?')) { '&' } else { '?' })) + 'audience=' + [Uri]::EscapeDataString($Audience)
+          $Oidc = [string](Invoke-RestMethod -Method Get -Uri $TokenUri -Headers @{ Authorization = 'Bearer ' + $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN } -TimeoutSec 20).value
+          if ($Oidc.Split('.').Count -ne 3) { throw 'shield_pro_paid_oidc_missing' }
+          Write-Host '::add-mask::' + $Oidc
+          $Headers = @{ Authorization = 'Bearer ' + $Oidc; Accept = 'application/json' }
+          function PostJson([string]$Uri,[hashtable]$H,[object]$Body) {
+            $Json = $Body | ConvertTo-Json -Depth 50 -Compress
+            $R = Invoke-WebRequest -Uri $Uri -Method Post -Headers $H -ContentType 'application/json' -Body $Json -SkipHttpErrorCheck -TimeoutSec 60
+            if ([int]$R.StatusCode -lt 200 -or [int]$R.StatusCode -ge 300) { throw "http_$($R.StatusCode):$($R.Content)" }
+            try { return ($R.Content | ConvertFrom-Json -Depth 60) } catch { throw 'non_json_helper_response' }
+          }
+          $P = PostJson $Helper $Headers @{ action='provision' }
+          if ($P.ok -ne $true) { throw 'provision_not_ok' }
+          if ([string]$P.runId -ne [string]$env:GITHUB_RUN_ID) { throw 'run_binding_invalid' }
+          if ([string]$P.headSha -ne [string]$env:GITHUB_SHA) { throw "sha_binding_invalid:$($P.headSha):$env:GITHUB_SHA" }
+          if ($P.serviceRoleReturned -ne $false -or $P.passwordReturned -ne $false -or $P.paymentTransactionClaimed -ne $false) { throw 'secret_boundary_invalid' }
+          foreach ($tier in @('pro','advanced')) {
+            $u = $P.users.$tier
+            if ($null -eq $u) { throw "missing_user_$tier" }
+            if ([string]$u.accessToken -notmatch '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$') { throw "invalid_token_$tier" }
+            $Uh = @{ Authorization='Bearer ' + [string]$u.accessToken; Accept='application/json' }
+            $first = $null
+            foreach ($locale in @('pl','en','de')) {
+              $C = PostJson $Workspace $Uh @{ schemaVersion='velmere.r7.shield-pro-paid-workspace-request.v1'; tier=$tier; locale=$locale; operation='CREATE' }
+              if ($C.ok -ne $true -or [string]$C.tier -ne $tier -or [string]$C.locale -ne $locale -or [string]$C.operation -ne 'CREATE') { throw "create_failed_${tier}_${locale}" }
+              if ($null -eq $first) { $first = $C }
+            }
+            $D = PostJson $Workspace $Uh @{ schemaVersion='velmere.r7.shield-pro-paid-workspace-request.v1'; tier=$tier; locale='pl'; operation='DELETE'; workspaceId=[string]$first.workspaceId }
+            if ($D.ok -ne $true -or [string]$D.operation -ne 'DELETE' -or [string]$D.payloadDigestSha256 -ne [string]$first.payloadDigestSha256) { throw "delete_failed_$tier" }
+            $R = PostJson $Workspace $Uh @{ schemaVersion='velmere.r7.shield-pro-paid-workspace-request.v1'; tier=$tier; locale='pl'; operation='RESTORE'; workspaceId=[string]$first.workspaceId }
+            if ($R.ok -ne $true -or [string]$R.operation -ne 'RESTORE' -or [string]$R.payloadDigestSha256 -ne [string]$first.payloadDigestSha256) { throw "restore_failed_$tier" }
+          }
+          $Cleanup = PostJson $Helper $Headers @{ action='cleanup'; accountIds=@([string]$P.users.basic.accountId,[string]$P.users.pro.accountId,[string]$P.users.advanced.accountId,[string]$P.users.outsider.accountId) }
+          if ($Cleanup.ok -ne $true -or [int]$Cleanup.deletedUsers -ne 4) { throw 'cleanup_not_verified' }
+          New-Item -ItemType Directory -Force -Path r7-work/artifacts/r7/shield-pro-paid | Out-Null
+          @{ schemaVersion='velmere.r7.shield-pro-paid-closure-run-v3'; status='PASS_CUSTOMER_WORKSPACE_LIFECYCLE'; githubRunId=[string]$env:GITHUB_RUN_ID; githubSha=[string]$env:GITHUB_SHA; helper='r7-shield-pro-paid-e2e-oidc-v2'; customerFinalCredit=$false; paidValueFinalCredit=$false } | ConvertTo-Json -Depth 20 | Set-Content r7-work/artifacts/r7/shield-pro-paid/R7_SHIELD_PRO_PAID_CLOSURE_RUN_V3.json -Encoding utf8
+      - name: Upload closure evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r7-shield-pro-paid-closure-v3-${{ github.sha }}-${{ github.run_id }}
+          path: r7-work/artifacts/r7/shield-pro-paid
+          if-no-files-found: warn
+          retention-days: 14
+  finalize:
+    needs: customer-e2e
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Guarded Shield Pro Paid finalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-shield-pro-paid-finalizer-oidc-v1'
+          OIDC_JSON="$(curl -fsSL -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=velmere-r7-shield-pro-paid-finalizer-v1")"
+          OIDC="$(python -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$OIDC_JSON")"
+          [ "$(tr '.' '\n' <<<"$OIDC" | wc -l)" -eq 3 ]
+          for tier in pro advanced; do
+            response="$(curl -sS -X POST "$BASE" -H "Authorization: Bearer $OIDC" -H 'Accept: application/json' -H 'Content-Type: application/json' --data "{\"action\":\"finalize\",\"tier\":\"$tier\"}")"
+            printf '%s\n' "$response"
+            python - "$tier" <<'PY' <<<"$response"
+          import json,sys
+          tier=sys.argv[1]; d=json.load(sys.stdin)
+          if d.get('ok') is not True: raise SystemExit(f'finalizer_{tier}_failed:{d}')
+          if d.get('customerReRead',{}).get('final_status') != 'FINAL': raise SystemExit(f'customer_{tier}_not_final')
+          if d.get('paidReRead',{}).get('final_status') != 'FINAL': raise SystemExit(f'paid_{tier}_not_final')
+          PY
+          done
