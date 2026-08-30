@@ -85,11 +85,5 @@ jobs:
           for tier in pro advanced; do
             response="$(curl -sS -X POST "$BASE" -H "Authorization: Bearer $OIDC" -H 'Accept: application/json' -H 'Content-Type: application/json' --data "{\"action\":\"finalize\",\"tier\":\"$tier\"}")"
             printf '%s\n' "$response"
-            python - "$tier" <<'PY' <<<"$response"
-          import json,sys
-          tier=sys.argv[1]; d=json.load(sys.stdin)
-          if d.get('ok') is not True: raise SystemExit(f'finalizer_{tier}_failed:{d}')
-          if d.get('customerReRead',{}).get('final_status') != 'FINAL': raise SystemExit(f'customer_{tier}_not_final')
-          if d.get('paidReRead',{}).get('final_status') != 'FINAL': raise SystemExit(f'paid_{tier}_not_final')
-          PY
+            python -c 'import json,sys; tier=sys.argv[1]; d=json.load(sys.stdin); assert d.get("ok") is True, (tier,d); assert d.get("customerReRead",{}).get("final_status")=="FINAL", (tier,"customer_not_final",d); assert d.get("paidReRead",{}).get("final_status")=="FINAL", (tier,"paid_not_final",d)' "$tier" <<<"$response"
           done
