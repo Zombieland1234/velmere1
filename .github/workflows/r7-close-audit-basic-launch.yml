@@ -1,0 +1,22 @@
+name: R7 Audit Basic Closure Launcher
+on:
+  push:
+    branches:
+      - r7-close-audit-basic-20260830
+    paths:
+      - '.github/workflows/r7-close-audit-basic-launch.yml'
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch canonical Audit Basic closure orchestrator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run r7-audit-basic-closure-orchestrator.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          echo "dispatched Audit Basic canonical closure on $GITHUB_REF_NAME"
