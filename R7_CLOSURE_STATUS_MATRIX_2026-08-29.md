@@ -27,6 +27,8 @@ Canonical branch: `velmere-r7-successor-delta-20260825`
 | 19 | angel | NOT_FINAL | Real-provider workflow requires 12/12 real Gemini calls plus deterministic safety evidence. |
 | 20 | risk-indicator | FINAL | Existing guarded ledger FINAL. |
 
+**Verified Customer FINAL count from the table: 10/20.**
+
 ## Paid Value
 
 Current Paid Value FINAL count: **2/10**.
@@ -39,11 +41,12 @@ The current public risk-history denominator now has **7 assets** with at least t
 
 ## Active closure work
 
+- Audit Basic: promoted-source customer route E2E is actively compiling in run `33291486549`; only the compile step is currently active after successful source reconstruction, overlay, and manifest binding.
 - Browser Pro / Browser Advanced: dedicated push-bound candidate triggers and OIDC/session corrections.
 - Angel: real-provider closure path.
-- Audit Basic: technical closure path, human review remains a real external requirement.
-- AI acceptance: dedicated post-closure campaign harness for 100 personas × 24 actions and 50 × 3 × 6 reviewer denominator.
+- Audit Basic: qualified human review remains a real external requirement after technical E2E closure.
 - Shield Pro Paid: fresh customer E2E/finalizer path on canonical branch.
+- Real Markets Pro / Advanced: dedicated current repo module/finalizer still needs to be established before any credit is possible.
 
 ## Non-negotiable credit rule
 
