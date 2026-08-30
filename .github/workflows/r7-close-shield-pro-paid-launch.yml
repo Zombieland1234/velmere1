@@ -5,6 +5,7 @@ on:
       - r7-close-shield-pro-paid-20260830
     paths:
       - '.github/workflows/r7-close-shield-pro-paid-launch.yml'
+      - '.github/workflows/r7-shield-pro-paid-closure-run-v3.yml'
   workflow_dispatch:
 permissions:
   actions: write
@@ -13,10 +14,10 @@ jobs:
   launch:
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch canonical Shield Pro Paid customer E2E
+      - name: Dispatch branch-bound Shield Pro Paid closure runner
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh workflow run r7-shield-pro-paid-customer-workspace-e2e-v1.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
-          echo "dispatched Shield Pro Paid canonical closure on $GITHUB_REF_NAME"
+          gh workflow run r7-shield-pro-paid-closure-run-v3.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          echo "dispatched Shield Pro Paid closure v3 on $GITHUB_REF_NAME"
