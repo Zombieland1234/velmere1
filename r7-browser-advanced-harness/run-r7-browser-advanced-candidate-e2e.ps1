@@ -10,7 +10,7 @@ function Invoke-JsonPost([string]$Uri, [hashtable]$Headers, [object]$Body) {
 }
 $Root = (Get-Location).Path
 $Work = Join-Path $Root 'r7-work'
-$HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-advanced-e2e-oidc'
+$HelperUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-advanced-e2e-oidc-v2'
 $RestoreUrl = 'https://yljjyowcvjgjcamffnvd.supabase.co/functions/v1/r7-browser-basic-staging-proof'
 $Audience = 'velmere-r7-browser-advanced-e2e'
 $NextProcess = $null; $Oidc = $null; $UserIds = @(); $EntitlementIds = @()
