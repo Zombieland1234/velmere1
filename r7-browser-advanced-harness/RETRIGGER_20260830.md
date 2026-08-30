@@ -1,0 +1,1 @@
+R7 Browser Advanced fresh canonical candidate trigger after shared Browser closure repairs. No direct FINAL/Paid credit; guarded E2E/finalizer required.
