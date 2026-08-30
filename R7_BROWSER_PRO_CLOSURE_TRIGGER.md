@@ -1,0 +1,1 @@
+R7 Browser Pro closure trigger marker. Validation-only; no ledger mutation.
