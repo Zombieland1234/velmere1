@@ -52,3 +52,5 @@ jobs:
           $ErrorActionPreference='Continue'
           $hits=Get-ChildItem 'r7-*','diagnostic-current','tests','scripts' -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'audit.*basic|basic.*audit' }
           $hits | Select-Object -First 120 FullName
+
+      # R7 closure retrigger marker: run after current-source/OIDC repairs.
