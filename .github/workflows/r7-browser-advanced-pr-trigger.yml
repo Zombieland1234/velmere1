@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 1
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -35,7 +36,7 @@ jobs:
           check-latest: false
       - name: Prepare exact base
         shell: pwsh
-        run: ./r7-risk-v5/run-r7-risk-v5-exact-windows-execution-slice-fixed.ps1 -Mode Prepare
+        run: ./r7-risk-v5/run-r7-risk-v5-execution-slice-fixed.ps1 -Mode Prepare
       - name: Apply shared Browser patch
         shell: pwsh
         run: |
