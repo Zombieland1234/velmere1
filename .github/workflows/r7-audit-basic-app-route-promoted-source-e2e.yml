@@ -110,6 +110,17 @@ jobs:
             npm run build:webpack
             if ($LASTEXITCODE -ne 0) { throw 'promoted_webpack_failed' }
           } finally { Pop-Location }
+      - name: Bind promoted lifecycle control hashes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function ShaFile([string]$Path) { return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+          $env:PROMOTED_RENDERER_SHA256 = ShaFile 'r7-audit-basic-app-route/render-localized-audit-basic-pdf.ts'
+          $env:PROMOTED_HARNESS_SHA256 = ShaFile 'r7-audit-basic-app-route/run-promoted-source-e2e.ps1'
+          $env:PROMOTED_WORKFLOW_SHA256 = ShaFile '.github/workflows/r7-audit-basic-app-route-promoted-source-e2e.yml'
+          if ($env:PROMOTED_RENDERER_SHA256 -ne '4fd8136cb40db24b3b6d37093ba6ae19efdf290638643b19d148ee181cb3f4fc') { throw 'promoted_renderer_runtime_hash_mismatch' }
+          if ($env:PROMOTED_HARNESS_SHA256 -ne '98272a7914a7fb086b40a85282dca0a86f8288bf4230e95b5bd73f7e98b80729') { throw 'promoted_harness_runtime_hash_mismatch' }
+          foreach ($Name in @('PROMOTED_RENDERER_SHA256','PROMOTED_HARNESS_SHA256','PROMOTED_WORKFLOW_SHA256')) { Write-Host "$Name=$([Environment]::GetEnvironmentVariable($Name))" }
       - name: Execute promoted PL EN DE customer lifecycle
         shell: pwsh
         run: |
@@ -132,4 +143,4 @@ jobs:
             artifacts/r7/audit-basic/promoted-route
           if-no-files-found: warn
           retention-days: 14
-# 2026-08-29: bind the exact generated promoted-source manifest hash before customer lifecycle execution.
+# 2026-08-30: bind renderer/harness/workflow hashes before lifecycle execution.
