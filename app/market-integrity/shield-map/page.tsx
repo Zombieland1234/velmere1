@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function MarketIntegrityShieldMapRootPage() {
-  redirect("/pl/shield-map");
+  redirect("/pl/market-integrity/shield-map");
 }

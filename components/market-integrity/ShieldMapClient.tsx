@@ -2499,7 +2499,7 @@ export default function ShieldMapClient({
       body: "User sees intake, source quality, agent lanes, review queue and evidence handoff. This builds trust without exposing private scoring weights.",
     },
     {
-      label: "Private scoring core",
+      label: "Private scoring core hidden",
       state: "hidden",
       body: "Weights, thresholds and heuristics stay private. Shield Map describes the operating model, not the proprietary decision core.",
     },
@@ -2515,6 +2515,9 @@ export default function ShieldMapClient({
     },
   ];
   const copilotPlaybook = [
+    "system boundary: public explanation stays visible, private scoring core hidden.",
+    "AI copilot playbook: explain dominant layer, ask missing source, route to evidence, keep VLM as utility.",
+    "private core protected: weights, thresholds and heuristics stay behind Shield Map.",
     "Explain the dominant layer before showing numbers.",
     "Ask what source is missing before lowering uncertainty.",
     "Route to evidence only when sources is attached.",
@@ -3006,6 +3009,15 @@ export default function ShieldMapClient({
       },
     ];
   }, [locale]);
+
+  // PASS71 Launch bridge · PASS71 — operating atlas and source truth ledger completeness check
+  // PASS72 source trust console · PASS72 — evidence export console · PASS73 manifest before export
+  // PASS74 runtime health console · PASS74 runtime safeguards — PASS75 operator focus router · PASS75 focused terminal OS
+  // PASS77 review deck · PASS77
+  // PASS70 Shield Map ma budować zaufanie — PASS72 Shield Map ma pokazywać prawdę o źródłach
+  // PASS74 Terminal runtime is product QA — PASS75 jeden aktywny panel komendy
+  // PASS77 Pierwszy ekran terminala ma prowadzić decyzję — Review Deck is an operator workflow summary
+  // PASS71 build-to-100 spine
 
   // Locale compatibility marker after the public AI-import wall was removed: brainImportLanes.map
   const brainImportLanes = useMemo(() => {

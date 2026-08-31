@@ -25,7 +25,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function ShieldMapPage({ params }: PageProps) {
+export default async function MarketIntegrityShieldMapPage({ params }: PageProps) {
   const { locale } = await params;
   if (
     !SUPPORTED_LOCALES.includes(locale as (typeof SUPPORTED_LOCALES)[number])
@@ -33,5 +33,10 @@ export default async function ShieldMapPage({ params }: PageProps) {
     notFound();
   }
   setRequestLocale(locale);
-  return <ShieldMapCommandClient locale={locale} />;
+  return (
+    <div>
+      {locale === "pl" && <h1 className="sr-only">Mapa operacyjna Shielda</h1>}
+      <ShieldMapCommandClient locale={locale} />
+    </div>
+  );
 }

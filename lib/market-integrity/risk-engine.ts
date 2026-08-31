@@ -2203,3 +2203,11 @@ export function analyzeTokenRisk(
     generatedAt: new Date().toISOString(),
   };
 }
+
+export const AI_RISK_BRAIN_SCENARIOS = {
+  mega_cap_normal_volatility: "velocity agent with rapid_intraday_move signal",
+  stablecoin_depeg: "stablecoinDepegReview with peg deviation and redemption proof checks",
+  low_float_parabolic_pump: "multi_timeframe_pump with holder_concentration and thin_liquidity",
+  contract_trap: "contract_trap_gate with honeypot, owner privilege and hidden owner checks",
+  no_data_token: "insufficient_data with missingCoreCount fallback scoring",
+} as const;

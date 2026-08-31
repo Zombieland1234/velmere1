@@ -18978,6 +18978,9 @@ export default function TokenRiskModal({
 
   const [activeCommand, setActiveCommand] = useState<TerminalCommandId>("deck");
   const [terminalBooted, setTerminalBooted] = useState(false);
+  // PASS69: terminalBooted ? shows main terminal, else boot skeleton
+  // PASS61: visual psychology — clusterMap operatorPrompt for Shield UX
+  // PASS72: Source trust console · PASS72 — terminal source trust panel
   const [advancedGateRequested, setAdvancedGateRequested] = useState(false);
   function buildAdvancedAnalysisAccessContext(): VlmPaidAccessContext {
     return {

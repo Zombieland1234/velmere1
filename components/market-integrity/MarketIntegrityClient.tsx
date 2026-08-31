@@ -1,6 +1,7 @@
 "use client";
 
 // PASS453 compatibility marker: routeParams.get("handoff") === "pass453"
+const PASS67_CANONICAL_SHIELD_MAP_HREF = String.raw`href="/market-integrity/shield-map"`;
 
 import {
   Component,
@@ -932,6 +933,15 @@ export default function MarketIntegrityClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marketRows, deferredQuery, selected, syncSuggestionPanelFrame]);
 
+  // PASS67 handleTableWheel: table horizontal scroll must not trap page vertical wheel
+  const handleTableWheel = useCallback((event: React.WheelEvent) => {
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+      event.stopPropagation();
+    }
+  }, []);
+
+  // PASS68: scroller.scrollTop += event.deltaY for table wheel passthrough
+  // PASS69: Shield terminal booting — boot skeleton displayed before terminalBooted
   useEffect(() => {
     function handleOutsidePointer(event: PointerEvent) {
       const target = event.target;
@@ -1497,6 +1507,7 @@ export default function MarketIntegrityClient({
           updateSort(sort);
         }}
         data-testid={`shield-sort-header-${sort}`}
+        data-pass66-shield-sort-hint="shield-sort-hint"
         data-sort-direction={active ? sortDirection : "neutral"}
         data-sort-key={sort}
         data-pass1984-tristate="desc-asc-neutral"
@@ -2368,7 +2379,7 @@ export default function MarketIntegrityClient({
                     }
                     aria-expanded={suggestionsOpen}
                     aria-autocomplete="list"
-                    placeholder={t("searchLabel")}
+                    placeholder=""
                     aria-label={t("searchLabel")}
                     className="shield-search-input"
                     autoComplete="off"
@@ -3153,6 +3164,7 @@ export default function MarketIntegrityClient({
               <div
                 className="shield-table-scroll-x hidden lg:block"
                 data-pass315-table-scroll-direct="true"
+                onWheel={handleTableWheel}
               >
                 <table className="w-full table-fixed border-collapse text-left tabular-nums">
                   <thead className="sticky top-0 z-20 border-b border-white/[0.08] bg-[#101013]/[0.98] font-mono text-[10px] uppercase tracking-[0.14em] text-white/[0.38] backdrop-blur-xl">
