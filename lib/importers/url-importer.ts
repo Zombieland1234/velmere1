@@ -31,17 +31,20 @@ function readJsonLdProduct(html: string) {
 }
 
 function isPrivateIp(hostname: string): boolean {
-  // Block localhost, private ranges, and link-local
-  if (hostname === "localhost" || hostname === "0.0.0.0" || hostname === "::1") return true;
-  if (hostname === "127.0.0.1" || hostname.startsWith("127.")) return true;
-  if (hostname.startsWith("10.")) return true;
-  if (hostname.startsWith("192.168.")) return true;
-  if (hostname.startsWith("172.")) {
-    const second = parseInt(hostname.split(".")[1] ?? "0", 10);
+  const h = hostname.toLowerCase();
+  if (h === "localhost" || h === "0.0.0.0" || h === "::1" || h === "[::1]") return true;
+  if (h === "127.0.0.1" || h.startsWith("127.")) return true;
+  if (h.startsWith("10.")) return true;
+  if (h.startsWith("192.168.")) return true;
+  if (h.startsWith("172.")) {
+    const second = parseInt(h.split(".")[1] ?? "0", 10);
     if (second >= 16 && second <= 31) return true;
   }
-  if (hostname.startsWith("169.254.")) return true; // link-local / cloud metadata
-  if (hostname === "[::1]" || hostname.startsWith("[fc") || hostname.startsWith("[fd")) return true;
+  if (h.startsWith("169.254.")) return true;
+  if (h === "169.254.169.254" || h === "metadata.google.internal") return true;
+  if (h.startsWith("[fc") || h.startsWith("[fd") || h.startsWith("fc") || h.startsWith("fd")) return true;
+  if (h.startsWith("[fe80") || h.startsWith("fe80")) return true;
+  if (h === "[::ffff:127.0.0.1]" || h === "::ffff:127.0.0.1") return true;
   return false;
 }
 

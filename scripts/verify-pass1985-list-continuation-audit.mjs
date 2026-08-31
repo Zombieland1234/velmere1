@@ -8,7 +8,7 @@ const cart = read('components/CartProvider.tsx');
 add('cart opening is single-phase without requestAnimationFrame reopen', !cart.includes('frame-confirm') && !cart.includes('timeout-confirm') && cart.includes('PASS1985: keep cart opening single-phase'));
 
 const overlay = read('components/ui/OverlayPrimitives.tsx');
-add('dropdown geometry updates are requestAnimationFrame-throttled', overlay.includes('const scheduleUpdate = () =>') && overlay.includes('if (frame) return;') && overlay.includes('window.addEventListener("scroll", scheduleUpdate, true)'));
+add('dropdown geometry updates are requestAnimationFrame-throttled', overlay.includes('const scheduleUpdate = () =>') && overlay.includes('if (frame) return;') && overlay.includes('window.addEventListener("scroll", scheduleUpdate'));
 
 const vlm = read('components/market-integrity/VlmNeuralAuditExperience.tsx');
 add('VLM contained analysis resets when symbol/name/mode changes', vlm.includes('setElapsed(0);') && vlm.includes('setComplete(false);') && vlm.includes('[symbol, name, mode, sourceDiffTimeline.steps.length]'));

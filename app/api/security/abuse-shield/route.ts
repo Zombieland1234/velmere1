@@ -2,7 +2,7 @@ import { abuseShieldResponseMeta, applyApiAbuseShield, evaluateAbuseSignals } fr
 import { buildDurableRateLimitReadiness } from "@/lib/security/durable-rate-limit";
 import { buildSecurityEventLedgerSnapshot } from "@/lib/security/security-event-ledger";
 import { buildSecurityAlertSnapshot } from "@/lib/security/security-alert-rules";
-import { buildSecurityAdminGateReadiness } from "@/lib/security/security-admin-auth";
+import { buildSecurityAdminGateReadiness, verifySecurityAdminToken } from "@/lib/security/security-admin-auth";
 import { buildSecurityEventStoreSnapshot } from "@/lib/security/security-event-store-contract";
 import { buildSecurityEventAppendReadiness } from "@/lib/security/security-event-append-adapter";
 import { buildSecurityRuntimeQaSnapshot } from "@/lib/security/security-runtime-qa";
@@ -17,6 +17,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const admin = verifySecurityAdminToken(request, ["security:read"]);
+  if (!admin.ok) return admin.response;
+
   const shield = await applyApiAbuseShield(request, "security", { keyPrefix: "abuse-shield-readiness", queryParam: "q", allowEmptyQuery: true });
   if (!shield.ok) return shield.response;
 

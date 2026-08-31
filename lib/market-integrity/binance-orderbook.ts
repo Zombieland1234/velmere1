@@ -81,11 +81,14 @@ function simulateBuySlippage(asks: [string, string][], notionalUsd: number, mid:
 export async function fetchBinanceOrderBook(symbol: string): Promise<OrderBookDepthResult> {
   const clean = symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const pair = clean.endsWith("USDT") ? clean : `${clean}USDT`;
-  const response = await fetch(`https://api.binance.com/api/v3/depth?symbol=${encodeURIComponent(pair)}&limit=100`, {
-    headers: { accept: "application/json" },
-    next: { revalidate: 20 },
-  } as RequestInit & { next: { revalidate: number } });
-  if (!response.ok) throw new Error(`Binance depth request failed with status ${response.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5_000);
+  try {
+    const response = await fetch(`https://api.binance.com/api/v3/depth?symbol=${encodeURIComponent(pair)}&limit=100`, {
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    } as RequestInit & { next?: { revalidate: number } });
+    if (!response.ok) throw new Error(`Binance depth request failed with status ${response.status}`);
   const data = (await response.json()) as DepthResponse;
   const bids = data.bids ?? [];
   const asks = data.asks ?? [];
@@ -106,4 +109,7 @@ export async function fetchBinanceOrderBook(symbol: string): Promise<OrderBookDe
   if ((simulatedSellSlippage10k ?? 0) > 8 || (simulatedBuySlippage10k ?? 0) > 8) signals.push({ id: "slippage", label: "High $10k slippage simulation", points: 22 });
   if (Math.abs(bidAskImbalancePercent) > 55) signals.push({ id: "imbalance", label: "Bid/ask depth imbalance", points: 10 });
   return { symbol: pair, bestBid, bestAsk, spreadPercent, bidDepthUsd, askDepthUsd, bids: bidLevels, asks: askLevels, bidAskImbalancePercent, simulatedSellSlippage10k, simulatedBuySlippage10k, riskPoints: Math.min(45, signals.reduce((sum, signal) => sum + signal.points, 0)), signals, source: "Binance spot depth" };
+  } finally {
+    clearTimeout(timer);
+  }
 }

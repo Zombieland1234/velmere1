@@ -15,8 +15,7 @@ function isAuthorized(request: Request) {
   const secret = process.env.MARKET_INTEGRITY_CRON_SECRET;
   if (!secret) return false;
   const auth = request.headers.get("authorization") ?? "";
-  const cronHeader = request.headers.get("x-vercel-cron") ?? "";
-  return auth === `Bearer ${secret}` || cronHeader === "1" || cronHeader.toLowerCase() === "true";
+  return auth === `Bearer ${secret}`;
 }
 
 export async function GET(request: Request) {

@@ -163,11 +163,14 @@ async function loadQuote(
   const config = rangeConfig[rangeKey];
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${config.range}&interval=${config.interval}&includePrePost=false&events=div%2Csplits`;
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5_000);
     const response = await fetch(url, {
       headers: {
         accept: "application/json",
         "user-agent": "Velmere-Market-Integrity/1.0",
       },
+      signal: controller.signal,
       next: {
         revalidate:
           rangeKey === "15m" || rangeKey === "1h" || rangeKey === "4h" || rangeKey === "1d"
@@ -175,6 +178,7 @@ async function loadQuote(
             : 300,
       },
     });
+    clearTimeout(timer);
     if (!response.ok) throw new Error(`provider_${response.status}`);
     const payload = (await response.json()) as YahooChart;
     const result = payload.chart?.result?.[0];
