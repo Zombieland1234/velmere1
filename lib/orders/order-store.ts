@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import type { Product } from "@/lib/products/types";
 
 export type OrderStatus =
@@ -63,7 +64,7 @@ export function createOrderDraft(input: {
   lineItems: OrderLineItem[];
   walletAddress?: string;
 }) {
-  const id = `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const id = `ord_${Date.now().toString(36)}_${randomUUID().slice(0, 8)}`;
   const order: OrderRecord = {
     id,
     status: "draft",

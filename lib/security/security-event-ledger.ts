@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { appendSecurityEventBestEffort, buildSecurityEventAppendReadiness } from "@/lib/security/security-event-append-adapter";
 export type SecurityEventKind =
   | "abuse_blocked"
@@ -66,7 +67,7 @@ function familyFromUserAgent(userAgent: string) {
 }
 
 function eventId(kind: SecurityEventKind, route: string, createdAt: string) {
-  return `${kind}_${stableHash(`${route}:${createdAt}:${Math.random()}`).slice(3, 11)}`;
+  return `${kind}_${stableHash(`${route}:${createdAt}:${randomUUID()}`).slice(3, 11)}`;
 }
 
 export function createClientFingerprint(request: Request) {

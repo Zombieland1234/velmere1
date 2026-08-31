@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import type { SecurityAdminScope } from "@/lib/security/security-admin-auth";
 import { createClientFingerprint } from "@/lib/security/security-event-ledger";
 
@@ -36,7 +37,7 @@ function stableHash(value: string) {
 }
 
 function auditId(kind: SecurityAdminAuditKind, route: string, createdAt: string) {
-  return `${kind}_${stableHash(`${kind}:${route}:${createdAt}:${Math.random()}`).slice(3, 11)}`;
+  return `${kind}_${stableHash(`${kind}:${route}:${createdAt}:${randomUUID()}`).slice(3, 11)}`;
 }
 
 function inferKind(scopes: SecurityAdminScope[], result: SecurityAdminAuditRecord["result"]): SecurityAdminAuditKind {

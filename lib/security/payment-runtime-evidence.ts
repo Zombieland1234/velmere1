@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 export type PaymentRuntimeEvidenceStatus = "pass" | "fail" | "manual" | "blocked";
 export type PaymentRuntimeEvidenceArea =
   | "checkout"
@@ -81,7 +82,7 @@ export function recordPaymentRuntimeEvidence(input: PaymentRuntimeEvidenceInput)
   const area = normalizeArea(input.area);
   const status = normalizeStatus(input.status);
   const record: PaymentRuntimeEvidenceRecord = {
-    id: `payev_${stableHash(`${area}:${status}:${createdAt}:${Math.random()}`)}`,
+    id: `payev_${stableHash(`${area}:${status}:${createdAt}:${randomUUID()}`)}`,
     area,
     status,
     label: cleanText(input.label, "Payment runtime evidence"),
