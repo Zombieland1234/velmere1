@@ -184,14 +184,6 @@ export default function AuthFormClient({ labels }: AuthFormClientProps) {
           className="velmere-segmented-control mt-7 grid grid-cols-2 rounded-full border border-white/[0.08] bg-black/[0.20] p-1"
           role="tablist"
           aria-label={labels?.privateAccount ?? "Account access"}
-          onKeyDown={(event) => {
-            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-            event.preventDefault();
-            const nextMode = mode === "signin" ? "create" : "signin";
-            setMode(nextMode);
-            setError(null);
-            window.requestAnimationFrame(() => document.getElementById(`auth-tab-${nextMode}`)?.focus());
-          }}
         >
           <button
             type="button"
@@ -201,6 +193,12 @@ export default function AuthFormClient({ labels }: AuthFormClientProps) {
             aria-controls="auth-access-panel"
             tabIndex={mode === "signin" ? 0 : -1}
             onClick={() => { setMode("signin"); setError(null); }}
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowRight") return;
+              event.preventDefault();
+              setMode("create");
+              setError(null);
+            }}
             className={`velmere-segmented-control__item min-h-11 rounded-full px-4 text-xs font-semibold transition-all duration-150 ${mode === "signin" ? "bg-white text-black shadow-[0_10px_35px_rgba(0,0,0,0.28)]" : "text-white/[0.44] hover:text-white"}`}
           >
             {local.signInTab}
@@ -213,6 +211,12 @@ export default function AuthFormClient({ labels }: AuthFormClientProps) {
             aria-controls="auth-access-panel"
             tabIndex={mode === "create" ? 0 : -1}
             onClick={() => { setMode("create"); setError(null); }}
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowLeft") return;
+              event.preventDefault();
+              setMode("signin");
+              setError(null);
+            }}
             className={`velmere-segmented-control__item min-h-11 rounded-full px-4 text-xs font-semibold transition-all duration-150 ${mode === "create" ? "bg-white text-black shadow-[0_10px_35px_rgba(0,0,0,0.28)]" : "text-white/[0.44] hover:text-white"}`}
           >
             {local.createTab}

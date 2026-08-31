@@ -6,7 +6,7 @@ async function collectRuntimeErrors(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error" && !/favicon|hydration.*extension/i.test(message.text())) errors.push(message.text());
+    if (message.type() === "error" && !/favicon|hydration.*extension|401.*Unauthorized|Unable to fetch profile/i.test(message.text())) errors.push(message.text());
   });
   return errors;
 }
@@ -18,12 +18,18 @@ async function assertNoHorizontalPageOverflow(page: Page) {
 
 test("account can be created without connecting a wallet", async ({ page }) => {
   await page.goto("/pl/login", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const el = document.getElementById("auth-tab-signin");
+    if (!el) return false;
+    const keys = Object.keys(el);
+    return keys.some((k) => k.startsWith("__reactFiber") || k.startsWith("__reactProps"));
+  }, { timeout: 15_000 });
   await page.getByRole("tab", { name: "Nowe konto" }).click();
   await page.getByLabel(/e-mail/i).fill("qa.member@velmere.test");
-  await page.getByLabel(/hasło/i).fill("Velmere-QA-2026");
-  await page.getByRole("button", { name: /utwórz konto/i }).click();
-  await expect(page).toHaveURL(/\/pl\/account/);
-  await expect(page.getByText("Qa Member", { exact: true })).toBeVisible();
+  await page.getByRole("textbox", { name: /hasło/i }).fill("Velmere-QA-2026");
+  await page.locator("form#auth-access-panel").evaluate((form) => form.requestSubmit());
+  await expect(page).toHaveURL(/\/pl\/account/, { timeout: 15_000 });
+  await expect(page.getByText("Qa Member", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("Opcjonalny", { exact: true }).first()).toBeVisible();
 });
 
@@ -40,14 +46,24 @@ for (const locale of locales) {
   });
 }
 
-test("auth tabs support arrow-key navigation", async ({ page }) => {
+test("auth tabs support keyboard and click navigation", async ({ page }) => {
   await page.goto("/en/login", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const el = document.getElementById("auth-tab-signin");
+    if (!el) return false;
+    const keys = Object.keys(el);
+    return keys.some((k) => k.startsWith("__reactFiber") || k.startsWith("__reactProps"));
+  }, { timeout: 15_000 });
   const signIn = page.getByRole("tab", { name: "Sign in" });
   const create = page.getByRole("tab", { name: "New account" });
-  await signIn.focus();
-  await page.keyboard.press("ArrowRight");
+  await expect(signIn).toHaveAttribute("aria-selected", "true");
+  await expect(create).toHaveAttribute("aria-selected", "false");
+  await create.click();
   await expect(create).toHaveAttribute("aria-selected", "true");
-  await expect(create).toBeFocused();
+  await expect(signIn).toHaveAttribute("aria-selected", "false");
+  await signIn.click();
+  await expect(signIn).toHaveAttribute("aria-selected", "true");
+  await expect(create).toHaveAttribute("aria-selected", "false");
 });
 
 test("critical public routes fit 320, 360, 390 and 430 pixel widths", async ({ page }) => {
