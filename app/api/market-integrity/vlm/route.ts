@@ -52,23 +52,28 @@ function advancedAccessContext(args: { query: string; locale: VlmLocale; surface
 }
 
 async function requireAdvancedAnalysisAccess(request: Request, args: { query: string; locale: VlmLocale; surface: VlmSurface; depth: VlmDepth }) {
-  if (args.depth !== "advanced") return null;
+  if (args.depth === "basic") return null;
+
+  const productId = args.depth === "advanced"
+    ? "vlm_advanced_analysis_single"
+    : "vlm_advanced_analysis_single";
+
   const context = advancedAccessContext(args);
   const token = request.headers.get("x-velmere-paid-access");
   const verdict = await verifyVlmPaidAccessEntitlement({
     token,
-    productId: "vlm_advanced_analysis_single",
+    productId,
     context,
   });
   if (verdict.ok) return null;
   return securityJson({
     mode: "error",
     error: "payment_required",
-    product: getVlmPaidProduct("vlm_advanced_analysis_single", args.locale),
+    product: getVlmPaidProduct(productId, args.locale),
     context,
     reason: verdict.error,
     ledgerMode: verdict.ledgerMode,
-  }, { status: 402, headers: { "x-velmere-paid-access-required": "vlm_advanced_analysis_single" } });
+  }, { status: 402, headers: { "x-velmere-paid-access-required": productId } });
 }
 
 async function resolveAnalysis(query: string, options: { locale: VlmLocale; depth: VlmDepth; surface: VlmSurface; prompt?: string }) {

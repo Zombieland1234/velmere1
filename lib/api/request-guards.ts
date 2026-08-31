@@ -16,8 +16,7 @@ export function getVelmereSession(request: Request): VelmereSession | null {
     return { id: "server-session", displayName: "Velmère Member", handle: "@member", source: "server" };
   }
 
-  // Preview-only bridge for the current local prototype. Real launch should replace this with Supabase Auth/Auth.js.
-  if (request.headers.get("x-velmere-preview-session") === "active") {
+  if (process.env.NODE_ENV !== "production" && request.headers.get("x-velmere-preview-session") === "active") {
     return { id: "preview-session", displayName: "Velmère Preview Member", handle: "@preview-member", source: "preview" };
   }
 

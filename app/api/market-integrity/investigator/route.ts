@@ -56,9 +56,7 @@ export async function GET(request: Request) {
       engine: {
         marketData: "live",
         riskEngine: "connected",
-        generativeNarrative: process.env.VELMERE_ANGEL_PROVIDER
-          ? "configured"
-          : "not_configured",
+        generativeNarrative: "available",
         webOsint: "not_connected",
         locale,
       },

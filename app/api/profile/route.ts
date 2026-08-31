@@ -12,7 +12,9 @@ const profileSchema = z.object({
   lastNameChange: z.string().datetime().optional(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+  const sessionGate = requireVelmereSession(request);
+  if (sessionGate.response) return sessionGate.response;
   const result = await getProfile();
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }

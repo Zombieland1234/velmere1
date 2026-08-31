@@ -1,6 +1,7 @@
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./routing";
 import { NextRequest, NextResponse } from "next/server";
+import { applySoftRateLimit } from "./lib/security/api-guard";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -53,6 +54,15 @@ export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const normalizedPath = pathname.replace(/\/$/, "") || "/";
 
+  // Blanket rate limiting for all API routes
+  if (normalizedPath.startsWith("/api/")) {
+    const rl = applySoftRateLimit(request, { limit: 120, windowMs: 60_000, keyPrefix: "api-mw" });
+    if (!rl.ok) {
+      return rl.response;
+    }
+    return NextResponse.next(); // Pass through to API route handler
+  }
+
   const rootRedirect = ROOT_AUTH_ALIASES[normalizedPath];
   if (rootRedirect) {
     return NextResponse.redirect(new URL(rootRedirect, request.url));
@@ -67,9 +77,23 @@ export default function proxy(request: NextRequest) {
     }
   }
 
+  if (normalizedPath.includes("/admin")) {
+    const adminToken = process.env.ADMIN_IMPORT_TOKEN;
+    if (!adminToken) {
+      return NextResponse.json({ error: "Admin access is not configured." }, { status: 503 });
+    }
+    const authorization = request.headers.get("authorization") ?? "";
+    const bearer = authorization.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : "";
+    const headerToken = request.headers.get("x-admin-import-token") ?? "";
+    const provided = bearer || headerToken;
+    if (!provided || provided !== adminToken) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+  }
+
   return stripRedundantLocaleSelfRewrite(intlMiddleware(request), request);
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
 };

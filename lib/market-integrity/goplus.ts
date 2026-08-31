@@ -41,10 +41,18 @@ export async function fetchGoPlusTokenSecurity(chainId: string | undefined, toke
   if (!goPlusChainId || !tokenAddress) return {};
 
   const params = new URLSearchParams({ contract_addresses: tokenAddress });
-  const response = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${goPlusChainId}?${params.toString()}`, {
-    headers: { accept: "application/json" },
-    next: { revalidate: 300 },
-  } as RequestInit & { next: { revalidate: number } });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5_000);
+  let response: Response;
+  try {
+    response = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${goPlusChainId}?${params.toString()}`, {
+      headers: { accept: "application/json" },
+      next: { revalidate: 300 },
+      signal: controller.signal,
+    } as RequestInit & { next: { revalidate: number } });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) return {};
   const data = (await response.json()) as { result?: Record<string, GoPlusTokenPayload> };

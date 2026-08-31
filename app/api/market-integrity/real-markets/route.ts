@@ -14,6 +14,8 @@ import {
   realMarketsDataContract,
   toCanonicalRealMarketInstrument,
 } from "@/lib/market-integrity/real-markets-data-contract";
+import { getVlmPaidProduct, normalizePaidContext } from "@/lib/commerce/pass2024-vlm-paid-access";
+import { verifyVlmPaidAccessEntitlement } from "@/lib/commerce/pass2025-vlm-entitlement-ledger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,6 +138,23 @@ type YahooChart = {
 
 const safeSymbol = /^[A-Za-z0-9.^=\-]{1,24}$/;
 
+async function requireRealMarketsTierAccess(request: Request, depth: string, locale: string) {
+  if (depth === "basic" || !depth) return null;
+  const productId = depth === "advanced" ? "real_markets_advanced_single" : "real_markets_pro_single";
+  const context = normalizePaidContext({ surface: "real-markets", locale: locale as "pl" | "en" | "de" });
+  const token = request.headers.get("x-velmere-paid-access");
+  const verdict = await verifyVlmPaidAccessEntitlement({ token, productId, context });
+  if (verdict.ok) return null;
+  return NextResponse.json({
+    ok: false,
+    error: "payment_required",
+    product: getVlmPaidProduct(productId, locale),
+    context,
+    reason: verdict.error,
+    ledgerMode: verdict.ledgerMode,
+  }, { status: 402, headers: { "x-velmere-paid-access-required": productId } });
+}
+
 async function loadQuote(
   id: string,
   symbol: string,
@@ -234,6 +253,10 @@ async function loadQuote(
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const depth = url.searchParams.get("depth") || "basic";
+  const tierGate = await requireRealMarketsTierAccess(request, depth, "en");
+  if (tierGate) return tierGate;
+
   const query = (url.searchParams.get("q") || "").trim().slice(0, 60);
   if (query) {
     try {

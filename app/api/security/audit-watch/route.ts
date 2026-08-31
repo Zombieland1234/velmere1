@@ -129,6 +129,31 @@ export async function POST(request: Request) {
       }, { status: 402, headers: { "x-velmere-paid-access-required": "vlm_advanced_audit_human_review" } });
     }
   }
+  if (normalized.reviewLevel === "pro_review") {
+    const paidContext = normalizePaidContext({
+      surface: "audit",
+      locale,
+      assetId: normalized.contractAddress || normalized.auditUrl || normalized.projectName || "audit-request",
+      symbol: normalized.projectName,
+      depth: "pro",
+      returnPath: `/${locale}/security/audits`,
+    }, locale);
+    const paidAccess = await verifyVlmPaidAccessEntitlement({
+      token: request.headers.get("x-velmere-paid-access"),
+      productId: "audit_pro_review",
+      context: paidContext,
+    });
+    if (!paidAccess.ok) {
+      return NextResponse.json({
+        ok: false,
+        error: "payment_required",
+        product: getVlmPaidProduct("audit_pro_review", locale),
+        context: paidContext,
+        reason: paidAccess.error,
+        ledgerMode: paidAccess.ledgerMode,
+      }, { status: 402, headers: { "x-velmere-paid-access-required": "audit_pro_review" } });
+    }
+  }
   const legacySubmission: AuditWatchSubmission = {
     contractAddress: normalized.contractAddress,
     auditUrl: normalized.auditUrl,

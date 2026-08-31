@@ -79,5 +79,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return securityJson({ ok: true, delivered: Boolean(resendKey), to, file: fileInfo });
+  return securityJson({ ok: true, delivered: Boolean(resendKey), file: fileInfo });
 }

@@ -8,6 +8,7 @@ import {
 import { createVlmPaidAccessToken, hashVlmPaidAccessContext } from "@/lib/commerce/pass2024-vlm-paid-access-server";
 import { upsertVlmPaidEntitlementFromStripeSession } from "@/lib/commerce/pass2025-vlm-entitlement-ledger";
 import { getStripeServerClient } from "@/lib/stripe/server";
+import { applySoftRateLimit } from "@/lib/security/api-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +25,11 @@ function jsonError(message: string, status = 400, details?: unknown) {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = applySoftRateLimit(request, { keyPrefix: "vlm-verify", limit: 10, windowMs: 60_000 });
+  if (!rateLimit.ok) {
+    return rateLimit.response;
+  }
+
   let body: VerifyBody = {};
   try {
     body = (await request.json()) as VerifyBody;

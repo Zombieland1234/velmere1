@@ -174,7 +174,7 @@ const MAX_CACHE = 160;
 const MAX_ATTEMPTS = 3;
 
 function modelName() {
-  return process.env.VELMERE_GEMINI_MODEL?.trim() || "gemini-3.5-flash";
+  return process.env.VELMERE_GEMINI_MODEL?.trim() || "gemini-2.0-flash";
 }
 
 function shadowModelName() {

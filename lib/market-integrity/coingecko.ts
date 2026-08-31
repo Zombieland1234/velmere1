@@ -186,13 +186,20 @@ export function coinToMarketRow(coin: CoinGeckoMarketCoin): MarketIntegrityRow {
 }
 
 async function fetchJson<T>(url: string, revalidate = 90): Promise<T> {
-  const response = await fetch(url, {
-    headers: cgHeaders(),
-    next: { revalidate },
-  } as RequestInit & { next: { revalidate: number } });
-  if (!response.ok)
-    throw new Error(`CoinGecko request failed with status ${response.status}`);
-  return (await response.json()) as T;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5_000);
+  try {
+    const response = await fetch(url, {
+      headers: cgHeaders(),
+      next: { revalidate },
+      signal: controller.signal,
+    } as RequestInit & { next: { revalidate: number } });
+    if (!response.ok)
+      throw new Error(`CoinGecko request failed with status ${response.status}`);
+    return (await response.json()) as T;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function fetchCoinGeckoMarkets({

@@ -224,7 +224,7 @@ export async function upsertVlmPaidEntitlementFromStripeSession(
       persisted: false,
       mode: "memory_fallback",
       reason: "Missing Supabase config; entitlement kept in process memory only.",
-      stripeSessionId: record.stripeSessionId,
+      stripeSessionId: record.stripeSessionId.slice(0, 8) + "..." + record.stripeSessionId.slice(-4),
       productId: record.productId,
       contextHash: record.contextHash,
       customerEmail: redactedEmail(record.customerEmail),
@@ -298,7 +298,7 @@ export async function verifyVlmPaidAccessEntitlement(args: {
     return { ok: false, error: "entitlement_not_found", tokenPayload: tokenVerdict.payload, ledgerMode: "durable" };
   }
 
-  if (process.env.VELMERE_REQUIRE_PAID_ENTITLEMENT_LEDGER === "true") {
+  if (process.env.NODE_ENV === "production" || process.env.VELMERE_REQUIRE_PAID_ENTITLEMENT_LEDGER === "true") {
     return { ok: false, error: "durable_entitlement_ledger_required", tokenPayload: tokenVerdict.payload };
   }
 

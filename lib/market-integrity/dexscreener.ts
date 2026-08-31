@@ -64,10 +64,18 @@ export async function analyzeDexScreenerToken(query: string): Promise<TokenRiskR
   const normalized = normalizeQuery(query);
   if (!normalized) throw new Error("Missing token query");
 
-  const response = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(normalized)}`, {
-    headers: { accept: "application/json" },
-    next: { revalidate: 60 },
-  } as RequestInit & { next: { revalidate: number } });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5_000);
+  let response: Response;
+  try {
+    response = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(normalized)}`, {
+      headers: { accept: "application/json" },
+      next: { revalidate: 60 },
+      signal: controller.signal,
+    } as RequestInit & { next: { revalidate: number } });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) throw new Error(`DEX Screener request failed with status ${response.status}`);
   const data = (await response.json()) as DexSearchResponse;

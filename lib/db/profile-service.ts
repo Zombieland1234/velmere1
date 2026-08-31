@@ -38,9 +38,9 @@ export async function getProfile(): Promise<{ profile: ProfileRecord; source: "s
   };
 }
 
-export async function updateProfile(profileId: string, profile: ProfileRecord): Promise<{ profile: ProfileRecord; source: "supabase" | "mock" }> {
+export async function updateProfile(profileId: string, profile: ProfileRecord): Promise<{ profile: ProfileRecord; source: "supabase" }> {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return { profile, source: "mock" };
+  if (!supabase) throw new Error("Profile persistence requires Supabase configuration. Changes were not saved.");
 
   const { data, error } = await supabase
     .from(PROFILE_TABLE)

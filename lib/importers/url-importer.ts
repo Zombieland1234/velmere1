@@ -30,6 +30,21 @@ function readJsonLdProduct(html: string) {
   return null;
 }
 
+function isPrivateIp(hostname: string): boolean {
+  // Block localhost, private ranges, and link-local
+  if (hostname === "localhost" || hostname === "0.0.0.0" || hostname === "::1") return true;
+  if (hostname === "127.0.0.1" || hostname.startsWith("127.")) return true;
+  if (hostname.startsWith("10.")) return true;
+  if (hostname.startsWith("192.168.")) return true;
+  if (hostname.startsWith("172.")) {
+    const second = parseInt(hostname.split(".")[1] ?? "0", 10);
+    if (second >= 16 && second <= 31) return true;
+  }
+  if (hostname.startsWith("169.254.")) return true; // link-local / cloud metadata
+  if (hostname === "[::1]" || hostname.startsWith("[fc") || hostname.startsWith("[fd")) return true;
+  return false;
+}
+
 export async function importProductFromUrl(url: string): Promise<ProductImportDraft> {
   let parsed: URL;
   try {
@@ -39,6 +54,16 @@ export async function importProductFromUrl(url: string): Promise<ProductImportDr
       title: "Invalid URL draft",
       sourceType: "url",
       warnings: ["invalid url"],
+      externalUrl: url,
+    });
+  }
+
+  // Block private/internal IPs to prevent SSRF
+  if (isPrivateIp(parsed.hostname)) {
+    return createDraft({
+      title: "Blocked URL draft",
+      sourceType: "url",
+      warnings: ["private/internal URL blocked"],
       externalUrl: url,
     });
   }

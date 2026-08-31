@@ -5,7 +5,7 @@ import { buildRiskBrain } from "@/lib/market-integrity/risk-brain";
 import { buildShieldChatResponse } from "@/lib/market-integrity/shield-chat";
 import { generateVlmBrainAnalysis } from "@/lib/ai/vlm-brain";
 import { abuseShieldResponseMeta, applyApiAbuseShield } from "@/lib/security/api-abuse-shield";
-import { securityJson } from "@/lib/security/api-guard";
+import { securityJson, applySoftRateLimit } from "@/lib/security/api-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,8 +31,19 @@ async function resolveAngel(request: Request, body?: AngelPostBody | null) {
     return securityJson({ mode: "error", error: "Missing query" }, { status: 400 });
   }
 
-  const marketRow = await searchCoinGeckoMarket(query);
-  const result = marketRow?.result ?? await analyzeDexScreenerToken(query);
+  // Parallelize market data sources (CoinGecko + DexScreener)
+  const [cgResult, dexResult] = await Promise.allSettled([
+    searchCoinGeckoMarket(query),
+    analyzeDexScreenerToken(query),
+  ]);
+
+  const cgRow = cgResult.status === "fulfilled" ? cgResult.value : null;
+  const dexData = dexResult.status === "fulfilled" ? dexResult.value : null;
+  const result = cgRow?.result ?? dexData;
+  if (!result) {
+    return securityJson({ mode: "error", error: "No market data available" }, { status: 502 });
+  }
+
   const id = result.token.marketId ?? result.token.tokenAddress ?? result.token.symbol;
   const history = await getPersistentRiskHistory(id);
   const brain = buildRiskBrain(result, history);
@@ -80,13 +91,13 @@ export async function GET(request: Request) {
 
 
 export async function POST(request: Request) {
-  const shield = await applyApiAbuseShield(request, "default", { keyPrefix: "market-angel", allowEmptyQuery: true });
-  if (!shield.ok) return shield.response;
+  const rateLimit = applySoftRateLimit(request, { keyPrefix: "market-angel-post", limit: 20, windowMs: 60_000 });
+  if (!rateLimit.ok) return rateLimit.response;
   try {
     const body = (await request.json().catch(() => null)) as AngelPostBody | null;
     const response = await resolveAngel(request, body);
     const payload = await response.json();
-    return securityJson({ ...payload, ...abuseShieldResponseMeta(shield) }, { status: response.status });
+    return securityJson(payload, { status: response.status });
   } catch (error) {
     return securityJson({ mode: "error", error: error instanceof Error ? error.message : "Angel request failed" }, { status: 502 });
   }

@@ -58,9 +58,8 @@ export async function POST(req: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid Stripe webhook signature.";
-    return NextResponse.json({ error: message }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
   }
 
   if (await hasProcessedStripeWebhookEvent(event.id)) {

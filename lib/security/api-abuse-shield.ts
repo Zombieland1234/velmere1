@@ -17,6 +17,10 @@ export type AbuseShieldProfile =
   | "security"
   | "contract"
   | "osint"
+  | "market-impact"
+  | "whale-watch"
+  | "risk-indicator"
+  | "shield-pro"
   | "default";
 
 export type AbuseShieldDecision = {
@@ -37,6 +41,10 @@ const profileLimits: Record<AbuseShieldProfile, { limit: number; windowMs: numbe
   security: { limit: 40, windowMs: 60_000, maxUrlLength: 1024, maxQueryLength: 96 },
   contract: { limit: 35, windowMs: 60_000, maxUrlLength: 1400, maxQueryLength: 96 },
   osint: { limit: 35, windowMs: 60_000, maxUrlLength: 1200, maxQueryLength: 96 },
+  "market-impact": { limit: 20, windowMs: 60_000, maxUrlLength: 1400, maxQueryLength: 96 },
+  "whale-watch": { limit: 20, windowMs: 60_000, maxUrlLength: 1400, maxQueryLength: 96 },
+  "risk-indicator": { limit: 25, windowMs: 60_000, maxUrlLength: 1400, maxQueryLength: 96 },
+  "shield-pro": { limit: 25, windowMs: 60_000, maxUrlLength: 1400, maxQueryLength: 96 },
   default: { limit: 60, windowMs: 60_000, maxUrlLength: 1600, maxQueryLength: 96 },
 };
 

@@ -120,7 +120,10 @@ const DECISION_REVERSIBILITY_MANIPULATION_PATTERNS = [
 
 const ZERO_WIDTH_PATTERN = /[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\ufff9-\ufffb]/g;
 const SECURITY_FINGERPRINT_SECRET =
-  process.env.VELMERE_SECURITY_FINGERPRINT_SECRET?.trim() || randomBytes(32).toString("hex");
+  process.env.VELMERE_SECURITY_FINGERPRINT_SECRET?.trim() ||
+  createHash("sha256")
+    .update("velmere-fallback-" + (process.env.VERCEL_DEPLOYMENT_ID ?? "local-dev"))
+    .digest("hex");
 
 export type VlmSecurityFlag =
   | "prompt_injection"

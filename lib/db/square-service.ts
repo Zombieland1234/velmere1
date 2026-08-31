@@ -71,32 +71,12 @@ export async function getSquarePosts(locale: string): Promise<{ posts: SquarePos
   return { posts: data.map(toPost), source: "supabase" };
 }
 
-export async function createSquarePost(input: CreatePostInput): Promise<{ post: SquarePost; source: "supabase" | "mock" }> {
+export async function createSquarePost(input: CreatePostInput): Promise<{ post: SquarePost; source: "supabase" }> {
   const supabase = getSupabaseServerClient();
   const slug = `post-${Date.now()}`;
 
   if (!supabase) {
-    return {
-      source: "mock",
-      post: {
-        id: slug,
-        slug,
-        authorName: input.authorName,
-        authorHandle: input.authorHandle,
-        authorType: "community",
-        locale: input.locale,
-        title: input.title,
-        body: input.body,
-        imageUrl: input.imageUrl,
-        tags: input.tags ?? [],
-        views: 1,
-        likes: 0,
-        commentsCount: 0,
-        createdAt: "now",
-        moderationStatus: "pending",
-        comments: [],
-      },
-    };
+    throw new Error("Square posts require Supabase configuration. Your post was not saved.");
   }
 
   const { data, error } = await supabase
@@ -123,21 +103,12 @@ export async function createSquarePost(input: CreatePostInput): Promise<{ post: 
   return { post: toPost(data), source: "supabase" };
 }
 
-export async function createSquareComment(input: CreateCommentInput): Promise<{ comment: SquareComment; source: "supabase" | "mock" }> {
+export async function createSquareComment(input: CreateCommentInput): Promise<{ comment: SquareComment; source: "supabase" }> {
   const supabase = getSupabaseServerClient();
   const id = `comment-${Date.now()}`;
 
   if (!supabase) {
-    return {
-      source: "mock",
-      comment: {
-        id,
-        authorName: input.authorName,
-        body: input.body,
-        createdAt: "now",
-        moderationStatus: "pending",
-      },
-    };
+    throw new Error("Square comments require Supabase configuration. Your comment was not saved.");
   }
 
   const { data, error } = await supabase
