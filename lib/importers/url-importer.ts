@@ -41,7 +41,7 @@ function isPrivateIp(hostname: string): boolean {
     if (second >= 16 && second <= 31) return true;
   }
   if (h.startsWith("169.254.")) return true;
-  if (h === "169.254.169.254" || h === "metadata.google.internal") return true;
+  if (h === "169.254.169.254" || h === "metadata.google.internal" || h === "100.100.100.200" || h === "fd00:ec2::254") return true;
   if (h.startsWith("[fc") || h.startsWith("[fd") || h.startsWith("fc") || h.startsWith("fd")) return true;
   if (h.startsWith("[fe80") || h.startsWith("fe80")) return true;
   if (h === "[::ffff:127.0.0.1]" || h === "::ffff:127.0.0.1") return true;

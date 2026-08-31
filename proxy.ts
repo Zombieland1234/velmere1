@@ -2,6 +2,12 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "./routing";
 import { NextRequest, NextResponse } from "next/server";
 import { applySoftRateLimit } from "./lib/security/api-guard";
+import { timingSafeEqual } from "crypto";
+
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -86,7 +92,7 @@ export default function proxy(request: NextRequest) {
     const bearer = authorization.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : "";
     const headerToken = request.headers.get("x-admin-import-token") ?? "";
     const provided = bearer || headerToken;
-    if (!provided || provided !== adminToken) {
+    if (!provided || !safeCompare(provided, adminToken)) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
   }
