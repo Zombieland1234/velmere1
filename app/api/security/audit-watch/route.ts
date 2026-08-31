@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   try {
     payload = (await request.json()) as AuditReviewSubmission & { locale?: string };
   } catch {
-    payload = {};
+    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
   }
 
   const locale = payload.locale === "pl" || payload.locale === "de" || payload.locale === "en" ? payload.locale : "en";

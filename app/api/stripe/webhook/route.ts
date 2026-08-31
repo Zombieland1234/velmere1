@@ -34,6 +34,7 @@ function parseMetadataOrderItems(value: string | null | undefined): PersistOrder
       ];
     });
   } catch {
+    console.warn("[stripe-webhook] Failed to parse order items from session metadata");
     return [];
   }
 }
