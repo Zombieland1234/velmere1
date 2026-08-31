@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildVelmereMetadata, SUPPORTED_LOCALES } from "@/lib/seo/metadata";
+import MarketImpactClient from "@/components/market-integrity/MarketImpactClient";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -12,10 +13,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return buildVelmereMetadata({
     locale,
     path: "/market-impact",
-    title: "Velmère Market Impact — Stress Test & Liquidity Analysis",
+    title:
+      locale === "pl"
+        ? "Velmère Analiza Wpływu Rynkowego — Stress Test i Płynność"
+        : locale === "de"
+          ? "Velmère Markt-Impact — Stress-Test & Liquiditätsanalyse"
+          : "Velmère Market Impact — Stress Test & Liquidity Analysis",
     description:
       locale === "pl"
-        ? "Analiza wpływu rynkowego: testy stress, płynność, symulacje slippage, impact large orders."
+        ? "Analiza wpływu rynkowego: testy stress, płynność, symulacje slippage, wpływ large orders."
         : locale === "de"
           ? "Markt-Impact-Analyse: Stress-Tests, Liquidität, Slippage-Simulationen."
           : "Market impact analysis: stress tests, liquidity, slippage simulations, large order impact.",
@@ -28,18 +34,5 @@ export default async function MarketImpactPage({ params }: PageProps) {
     notFound();
   }
   setRequestLocale(locale);
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-white mb-4">Market Impact Analysis</h1>
-      <p className="text-sm text-zinc-400 mb-6">
-        Stress tests, liquidity analysis, slippage simulations, and large order impact estimation.
-      </p>
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <p className="text-zinc-300 text-sm">
-          Enter a token symbol or address to analyze market impact. This product provides stress testing,
-          liquidity depth analysis, slippage estimation, and large order impact modeling.
-        </p>
-      </div>
-    </main>
-  );
+  return <MarketImpactClient locale={locale} />;
 }
