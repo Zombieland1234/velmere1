@@ -18,26 +18,48 @@ type RiskIndicatorResult = {
   alerts: { type: string; message: string; severity: "info" | "warning" | "critical" }[];
 };
 
-function computeRiskIndicators(brain: Record<string, unknown>, history: unknown[]): RiskIndicatorResult {
+function deterministicStatus(value: number, thresholds: { high: number; mid: number }): "green" | "yellow" | "red" {
+  if (value > thresholds.high) return "red";
+  if (value > thresholds.mid) return "yellow";
+  return "green";
+}
+
+function computeRiskIndicators(
+  brain: Record<string, unknown>,
+  history: Array<{ score?: number; timestamp?: string }>,
+  fallbackMetrics?: { top10HolderPercent?: number; holderCount?: number; volume24h?: number; liquidityUsd?: number; priceChange24h?: number },
+): RiskIndicatorResult {
   const riskScore = (brain as { brainScore?: number }).brainScore ?? 50;
   const confidence = (brain as { confidence?: number }).confidence ?? 50;
 
+  const activeLayers = (brain as { activeLayers?: Array<{ id?: string; score?: number }> }).activeLayers ?? [];
+  const layerMap = Object.fromEntries(activeLayers.map((l) => [l.id, l.score ?? 0]));
+
+  const holderScore = layerMap["holders"] ?? (fallbackMetrics?.top10HolderPercent != null ? Math.min(100, fallbackMetrics.top10HolderPercent * 1.6) : 40);
+  const contractScore = layerMap["contract"] ?? (fallbackMetrics?.holderCount != null ? (fallbackMetrics.holderCount > 10000 ? 25 : fallbackMetrics.holderCount > 1000 ? 45 : 65) : 40);
+  const velocityScore = layerMap["velocity"] ?? (fallbackMetrics?.priceChange24h != null ? Math.min(100, Math.abs(fallbackMetrics.priceChange24h) * 3 + 15) : 35);
+
   const indicators = [
-    { name: "Market Risk", value: Math.min(100, riskScore * 1.1), weight: 0.25, status: riskScore > 70 ? "red" as const : riskScore > 40 ? "yellow" as const : "green" as const },
-    { name: "Liquidity Risk", value: Math.min(100, 100 - confidence), weight: 0.2, status: confidence < 30 ? "red" as const : confidence < 60 ? "yellow" as const : "green" as const },
-    { name: "Concentration Risk", value: 30 + Math.random() * 50, weight: 0.15, status: "yellow" as const },
-    { name: "Contract Risk", value: 20 + Math.random() * 60, weight: 0.15, status: "yellow" as const },
-    { name: "Source Confidence", value: confidence, weight: 0.15, status: confidence > 70 ? "green" as const : confidence > 40 ? "yellow" as const : "red" as const },
-    { name: "Volatility Index", value: 20 + Math.random() * 60, weight: 0.1, status: "yellow" as const },
+    { name: "Market Risk", value: Math.min(100, riskScore * 1.1), weight: 0.25, status: deterministicStatus(riskScore, { high: 70, mid: 40 }) },
+    { name: "Liquidity Risk", value: Math.min(100, 100 - confidence), weight: 0.2, status: deterministicStatus(100 - confidence, { high: 70, mid: 40 }) },
+    { name: "Concentration Risk", value: Math.min(100, holderScore), weight: 0.15, status: deterministicStatus(holderScore, { high: 70, mid: 40 }) },
+    { name: "Contract Risk", value: Math.min(100, contractScore), weight: 0.15, status: deterministicStatus(contractScore, { high: 70, mid: 40 }) },
+    { name: "Source Confidence", value: confidence, weight: 0.15, status: deterministicStatus(confidence, { high: 70, mid: 40 }) },
+    { name: "Volatility Index", value: Math.min(100, velocityScore), weight: 0.1, status: deterministicStatus(velocityScore, { high: 70, mid: 40 }) },
   ];
 
   const overallScore = indicators.reduce((sum, ind) => sum + ind.value * ind.weight, 0);
   const riskLevel = overallScore > 70 ? "critical" : overallScore > 50 ? "high" : overallScore > 30 ? "medium" : "low";
 
+  const historyScores = history.filter((h): h is { score: number } => typeof h.score === "number");
+  let slope = 0;
+  if (historyScores.length >= 2) {
+    slope = (historyScores.at(-1)!.score - historyScores[0].score) / historyScores.length;
+  }
   const trend = {
-    direction: (history as unknown[]).length > 7 ? "stable" as const : "improving" as const,
-    change7d: -5 + Math.random() * 10,
-    change30d: -10 + Math.random() * 20,
+    direction: (historyScores.length > 7 ? "stable" : slope > 2 ? "deteriorating" : slope < -2 ? "improving" : "stable") as "improving" | "stable" | "deteriorating",
+    change7d: Math.round(slope * 7 * 100) / 100,
+    change30d: Math.round(slope * 30 * 100) / 100,
   };
 
   const alerts = indicators
@@ -78,21 +100,36 @@ export async function GET(request: Request) {
   try {
     let brain: Record<string, unknown> = {};
     let symbol = query;
+    let history: Array<{ score?: number; timestamp?: string }> = [];
+    let fallbackMetrics: { top10HolderPercent?: number; holderCount?: number; volume24h?: number; liquidityUsd?: number; priceChange24h?: number } | undefined;
 
     const marketHit = await searchCoinGeckoMarket(query);
     if (marketHit) {
       symbol = marketHit.result.token.symbol ?? query;
-      const history = await getPersistentRiskHistory(marketHit.result.token.marketId ?? query);
+      history = await getPersistentRiskHistory(marketHit.result.token.marketId ?? query);
       brain = buildRiskBrain(marketHit.result, history) as unknown as Record<string, unknown>;
+      fallbackMetrics = {
+        top10HolderPercent: marketHit.result.metrics.top10HolderPercent,
+        holderCount: marketHit.result.metrics.holderCount,
+        volume24h: marketHit.result.metrics.volume24h,
+        liquidityUsd: marketHit.result.metrics.liquidityUsd,
+        priceChange24h: marketHit.result.metrics.priceChange24h,
+      };
     } else {
       const dexResult = await analyzeDexScreenerToken(query);
       symbol = dexResult.token.symbol ?? query;
       brain = dexResult as unknown as Record<string, unknown>;
+      fallbackMetrics = {
+        top10HolderPercent: dexResult.metrics.top10HolderPercent,
+        holderCount: dexResult.metrics.holderCount,
+        volume24h: dexResult.metrics.volume24h,
+        liquidityUsd: dexResult.metrics.liquidityUsd,
+      };
     }
 
-    const riskIndicators = computeRiskIndicators(brain, []);
+    const riskIndicators = computeRiskIndicators(brain, history, fallbackMetrics);
     return securityJson({ mode: "live", query: symbol, riskIndicators, ...abuseShieldResponseMeta(shield) }, { headers: abuseShieldResponseHeaders(shield) });
-  } catch (error) {
+  } catch {
     return securityJson({ mode: "degraded", error: "Risk indicator analysis unavailable" }, { status: 502 });
   }
 }

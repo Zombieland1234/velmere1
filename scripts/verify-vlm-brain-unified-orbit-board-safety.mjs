@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, "..");
 const modalPath = path.join(root, 'components/market-integrity/TokenRiskModal.tsx');
 const cssPath = path.join(root, 'app/globals.css');
 const modal = fs.readFileSync(modalPath, 'utf8');

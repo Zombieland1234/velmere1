@@ -224,21 +224,16 @@ export async function fetchWhaleWatchData(input: WhaleWatchProviderInput): Promi
     warnings.push("No contract address — individual holder details unavailable");
   }
 
-  // If no Etherscan data, create representative holders from GoPlus aggregated data
-  if (topHolders.length === 0 && top10Pct > 0) {
-    const estimatedPerHolder = top10Pct / 10;
-    topHolders = Array.from({ length: Math.min(10, Math.max(3, Math.floor(holderCount * 0.01))) }, (_, i) => ({
-      address: `0x${String(i + 1).padStart(40, "0")}`,
-      percentage: Math.max(0.1, estimatedPerHolder * (1 - i * 0.2)),
-      role: classifyHolderRole(estimatedPerHolder * (1 - i * 0.2)),
-      label: i === 0 ? "Largest holder (aggregated)" : undefined,
-    }));
-    warnings.push("Holder addresses are estimated from aggregated GoPlus data");
-    completeness += 15;
-  } else if (topHolders.length > 0) {
-    completeness += 25;
+  // If no Etherscan data, report aggregated concentration only — no synthetic addresses
+  if (topHolders.length === 0) {
+    if (top10Pct > 0) {
+      warnings.push("Etherscan unavailable — top-holder distribution shown as aggregated concentration only (no individual wallet addresses)");
+      completeness += 10;
+    } else {
+      warnings.push("No holder data available — token may be a native coin (not ERC-20) or provider returned no data");
+    }
   } else {
-    warnings.push("No holder data available — token may be a native coin (not ERC-20) or provider returned no data");
+    completeness += 25;
   }
 
   // Concentration

@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root = path.resolve(new URL('..', import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, "..");
 const checks = [
   ['package.json', '"npm": ">=11.12.0 <12"', 'relaxed npm engine for Vercel npm 11.12+'],
   ['.npmrc', 'engine-strict=false', 'Vercel install does not fail on minor npm drift'],
