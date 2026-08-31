@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       symbol,
     });
     return securityJson({ mode: "live", query: symbol, whaleData, ...abuseShieldResponseMeta(shield) }, { headers: abuseShieldResponseHeaders(shield) });
-  } catch (error) {
+  } catch {
     return securityJson({ mode: "degraded", error: "Whale watch analysis unavailable" }, { status: 502 });
   }
 }

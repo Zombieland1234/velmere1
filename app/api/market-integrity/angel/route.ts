@@ -47,7 +47,7 @@ async function resolveAngel(request: Request, body?: AngelPostBody | null) {
   const id = result.token.marketId ?? result.token.tokenAddress ?? result.token.symbol;
   const history = await getPersistentRiskHistory(id);
   const brain = buildRiskBrain(result, history);
-  const deterministic = buildShieldChatResponse(result, history, prompt, locale);
+  buildShieldChatResponse(result, history, prompt, locale);
   const vlm = await generateVlmBrainAnalysis({ result, brain, prompt, locale, depth: "pro", surface: "angel" });
 
   return securityJson({

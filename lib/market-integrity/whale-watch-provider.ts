@@ -95,7 +95,6 @@ function classifyHolderRole(percentage: number, label?: string): WhaleHolder["ro
 function deriveSellPressure(
   buyVolume24h: number,
   sellVolume24h: number,
-  liquidityUsd: number,
 ): WhaleSellPressure {
   const total = buyVolume24h + sellVolume24h;
   if (total === 0) {
@@ -193,8 +192,6 @@ export async function fetchWhaleWatchData(input: WhaleWatchProviderInput): Promi
   let top10Pct = tokenRiskResult.metrics.top10HolderPercent ?? 0;
   let chainId = tokenRiskResult.token.chainId;
   let contractAddress = tokenRiskResult.token.tokenAddress;
-  const liquidity = tokenRiskResult.metrics.liquidityUsd ?? 0;
-
   // If CoinGecko didn't provide holder data, try DexScreener for contract address + GoPlus
   if (!holderCount && !top10Pct && symbol) {
     try {
@@ -259,7 +256,7 @@ export async function fetchWhaleWatchData(input: WhaleWatchProviderInput): Promi
   const volume24h = tokenRiskResult.metrics.volume24h ?? 0;
   const estimatedBuyVol = volume24h * (1 + buySellImbalance / 100) / 2;
   const estimatedSellVol = volume24h - estimatedBuyVol;
-  const sellPressure = deriveSellPressure(Math.max(0, estimatedBuyVol), Math.max(0, estimatedSellVol), liquidity);
+  const sellPressure = deriveSellPressure(Math.max(0, estimatedBuyVol), Math.max(0, estimatedSellVol));
   completeness += 10;
 
   // Clusters from GoPlus
