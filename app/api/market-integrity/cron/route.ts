@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { fetchCoinGeckoMarkets } from "@/lib/market-integrity/coingecko";
 import { buildSweepInsights, getMarketMemoryStatus, recordMarketRows } from "@/lib/market-integrity/market-memory";
 import { getRiskLedgerStatus, persistMarketRows } from "@/lib/market-integrity/risk-ledger";
@@ -15,7 +16,9 @@ function isAuthorized(request: Request) {
   const secret = process.env.MARKET_INTEGRITY_CRON_SECRET;
   if (!secret) return false;
   const auth = request.headers.get("authorization") ?? "";
-  return auth === `Bearer ${secret}`;
+  const expected = `Bearer ${secret}`;
+  if (auth.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(auth), Buffer.from(expected));
 }
 
 export async function GET(request: Request) {
@@ -64,7 +67,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: error instanceof Error ? error.message : "Cron market sweep failed" },
+      { mode: "error", error: "Cron market sweep failed" },
       { status: 502 },
     );
   }
