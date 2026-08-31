@@ -63,19 +63,33 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
       const r = await page.goto('/pl/market-integrity/about');
       expect(r?.status()).toBe(200);
     });
-    test('Shield API: analyze BTC', async ({ request }) => {
+    test('Shield API: analyze BTC returns real data', async ({ request }) => {
       const r = await request.get('/api/market-integrity/analyze?query=BTC');
       expect(r.status()).toBe(200);
       const body = await r.json();
-      expect(body.mode).toBeTruthy();
+      expect(['demo', 'live', 'degraded_live', 'degraded']).toContain(body.mode);
+      expect(body.result).toBeDefined();
+      if (body.mode !== 'demo') {
+        expect(body.result.token).toBeDefined();
+        expect(body.result.token.symbol).toBeDefined();
+      }
     });
-    test('Shield API: alerts', async ({ request }) => {
+    test('Shield API: alerts returns data', async ({ request }) => {
       const r = await request.get('/api/market-integrity/alerts');
       expect(r.status()).toBe(200);
+      const body = await r.json();
+      expect(body).toBeDefined();
+      expect(typeof body).toBe('object');
     });
     test('VLM API: basic depth (no auth needed)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/vlm?query=BTC&depth=basic');
       expect([200, 502]).toContain(r.status());
+      const body = await r.json();
+      if (r.status() === 200) {
+        expect(body.mode).toBeDefined();
+      } else {
+        expect(body.error).toBeDefined();
+      }
     });
     test('VLM API: advanced depth (payment required)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/vlm?query=BTC&depth=advanced');
@@ -143,11 +157,15 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
       const r = await page.goto('/pl/market-integrity/cross-asset');
       expect(r?.status()).toBe(200);
     });
-    test('Real Markets API: BTC quote', async ({ request }) => {
+    test('Real Markets API: BTC quote has real data', async ({ request }) => {
       const r = await request.get('/api/market-integrity/real-markets?ids=btc');
       expect(r.status()).toBe(200);
       const body = await r.json();
       expect(body.ok).toBe(true);
+      expect(body.quotes).toBeDefined();
+      expect(Array.isArray(body.quotes)).toBe(true);
+      expect(body.quotes.length).toBeGreaterThan(0);
+      expect(body.quotes[0].currentPrice).toBeGreaterThan(0);
     });
     test('Real Markets API: depth=pro (payment required)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/real-markets?ids=btc&depth=pro');
@@ -158,6 +176,8 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
     test('Real Markets API: depth=advanced (payment required)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/real-markets?ids=btc&depth=advanced');
       expect(r.status()).toBe(402);
+      const body = await r.json();
+      expect(body.error).toBe('payment_required');
     });
   });
 
@@ -170,9 +190,11 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
       const r = await page.goto('/en/market-impact');
       expect(r?.status()).toBe(200);
     });
-    test('Market Impact API: no query => 400', async ({ request }) => {
+    test('Market Impact API: no query => 400 with error', async ({ request }) => {
       const r = await request.get('/api/market-integrity/market-impact');
       expect(r.status()).toBe(400);
+      const body = await r.json();
+      expect(body.error).toBeDefined();
     });
     test('Market Impact API: BTC (payment required)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/market-impact?query=BTC');
@@ -192,9 +214,11 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
       const r = await page.goto('/en/whale-watch');
       expect(r?.status()).toBe(200);
     });
-    test('Whale Watch API: no query => 400', async ({ request }) => {
+    test('Whale Watch API: no query => 400 with error', async ({ request }) => {
       const r = await request.get('/api/market-integrity/whale-watch');
       expect(r.status()).toBe(400);
+      const body = await r.json();
+      expect(body.error).toBeDefined();
     });
     test('Whale Watch API: BTC (payment required)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/whale-watch?query=BTC');
@@ -206,19 +230,22 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
   });
 
   test.describe('ROW 19: ANGEL', () => {
-    test('Angel API responds to POST', async ({ request }) => {
+    test('Angel store API responds to POST', async ({ request }) => {
       const r = await request.post('/api/angel', { data: { message: 'hello', locale: 'en' } });
       expect([200, 400, 502]).toContain(r.status());
       const body = await r.json();
-      expect(body).toBeTruthy();
+      expect(body).toBeDefined();
+      expect(typeof body).toBe('object');
     });
-    test('Angel Market Intelligence API exists and responds', async ({ request }) => {
+    test('Angel Market Intelligence API responds to POST', async ({ request }) => {
       const r = await request.fetch('/api/market-integrity/angel', {
         method: 'POST',
         data: JSON.stringify({ query: 'BTC', prompt: 'What is the risk?', locale: 'en' }),
         headers: { 'Content-Type': 'application/json' },
       });
-      expect([200, 400, 405, 502]).toContain(r.status());
+      expect([200, 402, 405, 502]).toContain(r.status());
+      const body = await r.json();
+      expect(body).toBeDefined();
     });
   });
 
@@ -231,9 +258,11 @@ test.describe('CUSTOMER FINAL — Product Page Verification', () => {
       const r = await page.goto('/en/risk-indicator');
       expect(r?.status()).toBe(200);
     });
-    test('Risk Indicator API: no query => 400', async ({ request }) => {
+    test('Risk Indicator API: no query => 400 with error', async ({ request }) => {
       const r = await request.get('/api/market-integrity/risk-indicator');
       expect(r.status()).toBe(400);
+      const body = await r.json();
+      expect(body.error).toBeDefined();
     });
     test('Risk Indicator API: BTC (payment required)', async ({ request }) => {
       const r = await request.get('/api/market-integrity/risk-indicator?query=BTC');
@@ -249,17 +278,25 @@ test.describe('SECURITY GATES', () => {
   test('Cron endpoint returns 401 without secret', async ({ request }) => {
     const r = await request.get('/api/market-integrity/cron');
     expect(r.status()).toBe(401);
+    const body = await r.json();
+    expect(body.error).toBeDefined();
   });
   test('Profile endpoint returns 401 without session', async ({ request }) => {
     const r = await request.get('/api/profile');
     expect(r.status()).toBe(401);
+    const body = await r.json();
+    expect(body.error).toBeDefined();
   });
-  test('Checkout endpoint returns 400/503 without body', async ({ request }) => {
+  test('Checkout endpoint returns error without Stripe key', async ({ request }) => {
     const r = await request.post('/api/checkout', { data: {} });
     expect([400, 503]).toContain(r.status());
+    const body = await r.json();
+    expect(body).toBeDefined();
   });
-  test('VLM verify returns rate limit header', async ({ request }) => {
+  test('VLM verify returns error without valid body', async ({ request }) => {
     const r = await request.post('/api/checkout/vlm-service/verify', { data: {} });
     expect([400, 402, 429]).toContain(r.status());
+    const body = await r.json();
+    expect(body).toBeDefined();
   });
 });
