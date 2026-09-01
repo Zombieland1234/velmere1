@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { runA28Benchmark, verifyA28Benchmark, verifyA28Policy } from "../../lib/security/pass35-a28-economic-adversarial-evidence-runtime.mjs";
+const policy = JSON.parse(readFileSync("config/pass35/a28-economic-adversarial-evidence-policy.json", "utf8"));
+assert.equal(verifyA28Policy(policy), true);
+const report = runA28Benchmark(policy);
+assert.equal(verifyA28Benchmark(report, policy), true);
+assert.equal(report.denominators.cases, 192);
+assert.equal(report.denominators.frozen, 72);
+assert.equal(report.denominators.mutations, 2304);
+assert.equal(report.frozen.accuracy, 1);
+assert.equal(report.frozen.unsafeEligible, 0);
+assert.equal(report.frozen.falseBlocks, 0);
+assert.equal(report.mutation.killRate, 1);
+assert.equal(report.currentRightsApprovedInputsUsed, false);
+assert.equal(report.officialForkedEvmExecuted, false);
+assert.equal(report.realEconomicExploitProven, false);
+assert.equal(report.paidGateEligible, false);
+console.log(JSON.stringify({ status: "PASS_A28_ECONOMIC_ADVERSARIAL_EVIDENCE", cases: report.denominators.cases, frozen: report.denominators.frozen, mutations: report.denominators.mutations, accuracy: report.frozen.accuracy, mutationKillRate: report.mutation.killRate, sellEnabled: 0 }, null, 2));

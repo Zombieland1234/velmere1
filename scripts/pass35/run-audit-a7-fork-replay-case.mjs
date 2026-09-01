@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { executeForkReplayAdapter } from "./audit-fork-replay-adapter.mjs";
+const args = process.argv.slice(2);
+const value = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; };
+const inputPath = value("--input");
+const toolPath = value("--tool");
+const outputPath = value("--output");
+if (!inputPath || !toolPath || !outputPath) throw new Error("usage: --input <case.json> --tool <tool.json> --output <receipt.json>");
+const root = process.cwd();
+const out = path.resolve(root, outputPath);
+const rel = path.relative(root, out);
+if (rel.startsWith("..") || path.isAbsolute(rel)) throw new Error("a7_fork_output_outside_root");
+const input = JSON.parse(readFileSync(path.resolve(root, inputPath), "utf8"));
+const tool = JSON.parse(readFileSync(path.resolve(root, toolPath), "utf8"));
+if (input.inputClass === "SYNTHETIC_OFFLINE" && !rel.startsWith(`fixtures${path.sep}pass35${path.sep}audit-a7${path.sep}`)) throw new Error("a7_fork_synthetic_receipt_must_use_fixture_root");
+if (input.inputClass !== "SYNTHETIC_OFFLINE" && !rel.startsWith(`.velmere${path.sep}private-audit-cases${path.sep}`)) throw new Error("a7_fork_customer_receipt_must_use_private_evidence_root");
+const receipt = executeForkReplayAdapter({ rootPath: root, casePath: inputPath, caseInput: input, toolSpec: tool });
+mkdirSync(path.dirname(out), { recursive: true });
+writeFileSync(out, `${JSON.stringify(receipt, null, 2)}\n`, { mode: 0o600 });
+console.log(JSON.stringify({ status: receipt.status, output: rel, receiptSha256: receipt.receiptSha256, realCaseExecution: receipt.realCaseExecution, paidGateEligible: false }, null, 2));

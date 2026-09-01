@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "velmere.p99.failure-adjudication.v1",
+  "generatedAt": "2026-08-21T14:45:00.000Z",
+  "status": "PASS_ALL_FIRST_FAILURES_BLOCKERS_AND_SUPERSEDED_RUNS_PRESERVED",
+  "summary": {
+    "total": 8,
+    "creditedAsPass": 0,
+    "fixedProductDefects": 1,
+    "fixedTypeOrHarnessDefects": 2,
+    "environmentWithheld": 3,
+    "superseded": 1,
+    "historyRestored": 1
+  },
+  "supportingRawDiagnostics": [
+    "artifacts/p99/failures/MARKETS_ROUTE_IMPORT_WITHHELD.log"
+  ],
+  "rows": [
+    {
+      "id": "parent_rights_live_label_defect",
+      "state": "PRODUCT_RIGHTS_AND_SEMANTIC_DEFECT_FIXED",
+      "path": "artifacts/p99/failures/00_P99_PARENT_REAL_MARKETS_BASIC_RIGHTS_LIVE_LABEL_DEFECT.log",
+      "bytes": 842,
+      "sha256": "sha256:c9a1963243b51fc8310fdc43e7855cb32d6b0c099ecad961b790dcff0492cc48",
+      "adjudication": "Parent source could call unapproved CoinGecko/Binance lanes, expose local reference rows, and label aggregated reference data live. P99 blocks before network/cache/fallback and applies field semantic contracts.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "markets_route_import_missing_zod",
+      "state": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "path": "artifacts/p99/failures/01_P99_MARKETS_ROUTE_IMPORT_WITHHELD_MISSING_ZOD.log",
+      "bytes": 327,
+      "sha256": "sha256:e9e38d1f49dad14c08744428da254470a171036fc061c0bde04543198f751d24",
+      "adjudication": "The customer route import cannot execute because the dependency graph lacks zod. Source transpile/static order proof passes; route execution receives no credit.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "market_row_gate_import_missing_zod",
+      "state": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "path": "artifacts/p99/failures/MARKET_ROW_GATE_IMPORT_WITHHELD.log",
+      "bytes": 112,
+      "sha256": "sha256:6a82144dbe5abf764d071120b6a38870f62c319fbea3513ffb322d7bdddc2823",
+      "adjudication": "The shared market-row gate import cannot execute because zod is unavailable. Transpile passes; no semantic runtime or route credit.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "typescript_wrong_global_path",
+      "state": "TEST_HARNESS_PATH_DEFECT_FIXED",
+      "path": "artifacts/p99/failures/02_P99_TARGETED_TYPESCRIPT_WRONG_GLOBAL_PATH.log",
+      "bytes": 320,
+      "sha256": "sha256:11646a393d5d1f3f19debdb4b8af7789f0ad99c39be61fc39e0e62d5b2830087",
+      "adjudication": "The first compiler path was wrong. It did not adjudicate product source and receives zero credit.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "mjs_declaration_resolution",
+      "state": "TYPE_DECLARATION_REACHABILITY_DEFECT_FIXED",
+      "path": "artifacts/p99/failures/03_P99_TARGETED_TYPESCRIPT_MJS_DECLARATION_RESOLUTION.log",
+      "bytes": 351,
+      "sha256": "sha256:34dfa44e431ec2d97596fce5dc627db91546034b83960b826cbdddd675356493",
+      "adjudication": "Bundler resolution required a matching .d.mts for the .mjs import. P99 adds the exact declaration and reruns bounded strict TypeScript.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "pass36_local_reference_harness",
+      "state": "SUPERSEDED_NO_CREDIT",
+      "path": "artifacts/p99/failures/04_P99_PASS36_LOCAL_REFERENCE_HARNESS_SUPERSEDED.log",
+      "bytes": 737,
+      "sha256": "sha256:fe93d35dff3768c316835d675c7576a3a4e3fa5f654964f8830812b89cb42e05",
+      "adjudication": "Historical P36 harness is frozen to its old active-pass identity and old local-reference requirement. It is not rewritten to pass P99.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "pass6_market_gate_dependency",
+      "state": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "path": "artifacts/p99/failures/05_P99_PASS6_MARKET_GATE_WITHHELD_MISSING_ZOD.log",
+      "bytes": 951,
+      "sha256": "sha256:f1a2508607a50713fa6c2becce9e5bb4caae4e96a4e280e894ec7d935b202fca",
+      "adjudication": "The historical market-risk runtime harness cannot import current dependencies without zod. No retry or PASS credit.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "p87_receipt_overwrite",
+      "state": "HISTORICAL_OUTPUT_MUTATION_RESTORED",
+      "path": "artifacts/p99/failures/06_P99_P87_HISTORICAL_RECEIPT_OVERWRITE_RESTORED.log",
+      "bytes": 667,
+      "sha256": "sha256:3633b4704ddd32f909d646eccc01ab0f68674e3da5f98d92ebf6e42a8a0a2f38",
+      "adjudication": "Current-byte regression output was copied into P99 scope; frozen P87 receipt was restored byte-for-byte from the P98 parent.",
+      "creditedAsPass": false
+    }
+  ],
+  "truthBoundary": "Every first product defect, failed setup, unavailable dependency, superseded harness and historical overwrite remains preserved with zero PASS credit. Later green results are credited only after root-cause adjudication."
+}

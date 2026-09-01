@@ -1,0 +1,10 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+const ROOT=process.cwd();const exts=new Set([".ts",".tsx",".mts",".mjs",".js"]);const skip=new Set(["node_modules",".next","artifacts","receipts","fixtures"]);
+function walk(d,out=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(skip.has(e.name))continue;const p=path.join(d,e.name);if(e.isDirectory())walk(p,out);else if(exts.has(path.extname(e.name))&&/(account|export|erasure|delete)/i.test(p))out.push(p);}return out;}
+function windows(t){const ms=["NextResponse.json(","Response.json(","exportPayload","customerExport","accountExport"];const o=[];for(const m of ms){let i=0;while((i=t.indexOf(m,i))!==-1){o.push(t.slice(i,Math.min(t.length,i+6000)));i+=m.length;}}return o;}
+const forbidden=[[/providerUrl\s*:/g,"provider_url"],[/rawResponse\s*:/g,"raw_provider_response"],[/authorization\s*:/gi,"authorization_material"],[/accessToken\s*:/gi,"access_token"],[/refreshToken\s*:/gi,"refresh_token"],[/privateKey\s*:/gi,"private_key"],[/operator_note\s*:/gi,"operator_note"],[/admin_route\s*:/gi,"admin_route"],[/action_log\s*:/gi,"action_log"],[/(?:error|message|detail|reason)\s*:\s*(?:error|err|cause)\.message\b/g,"raw_exception_text"]];
+const observations=[],failures=[];
+for(const file of walk(ROOT)){const rel=path.relative(ROOT,file).split(path.sep).join("/");const text=fs.readFileSync(file,"utf8");if(!/(export|erasure|delete account|account delete|account export)/i.test(text+" "+rel))continue;observations.push({file:rel,sha256:crypto.createHash("sha256").update(text).digest("hex")});for(const w of windows(text)){for(const [re,rule] of forbidden){re.lastIndex=0;if(re.test(w))failures.push({file:rel,rule});}}}
+const result={schemaVersion:"velmere.account-export-erasure-customer-boundary.v2",checkedFiles:observations.length,observations,failures,ok:observations.length>0&&failures.length===0};process.stdout.write(JSON.stringify(result,null,2)+"\n");if(!result.ok)process.exit(observations.length?1:2);

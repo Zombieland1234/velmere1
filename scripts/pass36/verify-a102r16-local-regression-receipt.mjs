@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+const REV="VELMERE_PASS36_A102R16_ACTION_REQUIRED_COOKIE_CONSENT_GRANULAR_CHOICE_EXPIRY_STRICT_JSON_AND_LOCAL_LEGAL_PROOF_BOUNDARY_NO_REAL_CREDIT";
+const PARENT="VELMERE_PASS36_A102R15_ACTION_REQUIRED_ASSET_ANALYSIS_SYSTEM_CLIPBOARD_PACKET_RECEIPT_SOURCE_CLAIM_AND_TIMESTAMP_REDACTION_FAIL_CLOSED_NO_REAL_CREDIT";
+const receipt=JSON.parse(fs.readFileSync("config/pass36/a102r16-local-regression-receipt.json","utf8"));
+const state=JSON.parse(fs.readFileSync("config/pass36/a102r16-action-required-current-state.json","utf8"));
+const checks=[];const add=(id,passed,detail=null)=>checks.push({id,passed:Boolean(passed),detail});
+add("identity",receipt.revisionId===REV&&receipt.parentRevisionId===PARENT);
+add("status",receipt.status==="PASS_A102R16_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION");
+add("stages",receipt.requiredStages===24&&receipt.executedStages===24&&receipt.passedStages===24&&receipt.failedStages===0);
+add("denominators",receipt.keyDenominators?.a102r16Checks===62&&receipt.keyDenominators?.routeDispatchChecks===1480&&receipt.keyDenominators?.productTierChecks===186&&receipt.keyDenominators?.zeroBudgetChecks===439);
+add("source-audit",receipt.sourceAudit?.syntaxErrors===0&&receipt.sourceAudit?.missingLocalImports===0&&receipt.sourceAudit?.missingCssModuleClasses===0,receipt.sourceAudit);
+add("logs",receipt.stages?.length===24&&receipt.stages.every(row=>row.exitCode===0&&row.passed===true&&/^[a-f0-9]{64}$/u.test(row.stdoutSha256)&&/^[a-f0-9]{64}$/u.test(row.stderrSha256)));
+const c=receipt.localClosure??{};
+add("closure",c.granularAnalyticsAndMarketingChoice===true&&c.analyticsDefaultOff===true&&c.marketingDefaultOff===true&&c.exactConsentExpiryRequired===true&&c.strictJsonRequired===true&&c.legacyConsentPurgedWithoutMigration===true&&c.storageFailureKeepsDialogVisible===true&&c.localStorageLegalProof===false&&c.serverRecorded===false&&c.roadmapProgramAuthorityDriftRepaired===true,c);
+add("blocked",receipt.environmentBlockers?.length>=7&&receipt.environmentBlockers.every(row=>row.credit===false));
+add("real",Object.values(receipt.realEvidence??{}).every(value=>value===0));
+add("promotion",receipt.promotion?.globalDecision==="NO_GO"&&receipt.promotion?.live===false&&receipt.promotion?.saleEnabled===false&&receipt.promotion?.productionApproved===false&&receipt.promotion?.worldClassProven===false);
+add("state",state.revisionId===REV&&state.localImplementation?.cookieConsentGranularAnalyticsAndMarketingChoiceImplemented===true&&state.localImplementation?.cookieConsentLocalStorageLegalProof===false&&state.localImplementation?.cookieConsentServerLedgerVerified===false);
+const failed=checks.filter(row=>!row.passed);
+console.log(JSON.stringify({status:failed.length?"FAIL_A102R16_LOCAL_REGRESSION_RECEIPT":"PASS_A102R16_LOCAL_REGRESSION_RECEIPT_ACTION_REQUIRED_NO_PROMOTION",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,results:checks},null,2));
+process.exit(failed.length?1:0);

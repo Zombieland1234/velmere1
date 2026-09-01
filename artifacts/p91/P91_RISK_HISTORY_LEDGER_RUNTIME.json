@@ -1,0 +1,610 @@
+{
+  "schemaVersion": "velmere.p91.risk-history-ledger-runtime.v1",
+  "generatedAt": "2026-08-20T12:00:00.000Z",
+  "status": "PASS_BOUNDED_NO_SOCKET_DURABILITY_PROTOCOL",
+  "checks": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "memory_first_event_stored",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-a4ef6c0708a0bd3f5180dfc7fe50a63366afd9dd"
+          ]
+        }
+      },
+      {
+        "id": "memory_unchanged_event_skipped",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "attempted": 1,
+          "candidateEvents": 0,
+          "stored": 0,
+          "skipped": 1,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": []
+        }
+      },
+      {
+        "id": "memory_daily_heartbeat_stored",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-9fd1e08926eb0a5a49bbbbc749e650c0c584e480"
+          ]
+        }
+      },
+      {
+        "id": "memory_never_claims_durable",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.internal-status.v1",
+          "mode": "memory",
+          "configured": false,
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "pass423Retention": {
+            "version": "long-term-memory-spine",
+            "retentionDays": 1825,
+            "retentionYears": 5,
+            "hotWindowDays": 30,
+            "warmWindowDays": 180,
+            "coldWindowDays": 730,
+            "maxSnapshotsPerAsset": 5000,
+            "analysisWindowSnapshots": 720,
+            "learningHalfLifeDays": 90,
+            "archiveHalfLifeDays": 365,
+            "requiresDurableStoreForYears": true,
+            "personalDataRule": "no_personal_memory_without_consent"
+          },
+          "longTermStorage": "runtime_mirror_only",
+          "lastPersistAt": "<runtime-timestamp>",
+          "lastVerifiedAt": "<runtime-timestamp>",
+          "trackedAssets": 1,
+          "storedEvents": 2,
+          "highestStoredRisk": {
+            "schemaVersion": "velmere.risk-history-snapshot.v1",
+            "id": "bitcoin-p91",
+            "canonicalAssetId": "market:bitcoin-p91",
+            "identityClass": "MARKET_ID",
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "timestamp": "2026-08-21T13:00:00.000Z",
+            "price": 100,
+            "score": 40,
+            "level": "medium",
+            "signalCount": 1,
+            "confidence": 80,
+            "publicationState": "PUBLIC",
+            "customerPublishable": true,
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "evidenceDigest": "sha256:5d58f56764545f9991a22aebb1a107922c60dbb0b0ce38a145b4d8d1484eda2c",
+            "sourceAsOf": "2026-08-21T13:00:00.000Z",
+            "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+            "snapshotDigest": "sha256:3cf68ea4c403bcc08fcbc8d11af737e5693e3fe91386cb0b2fb33790e1cf1770"
+          }
+        }
+      },
+      {
+        "id": "memory_customer_status_bounded",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+          "storageState": "RUNTIME_ONLY",
+          "historyCompleteness": "RUNTIME_BOUNDED",
+          "blockers": [
+            "durable_history_not_configured"
+          ]
+        }
+      },
+      {
+        "id": "configuration_alone_not_durable",
+        "status": "PASS",
+        "detail": {
+          "configuredOnly": {
+            "mode": "memory",
+            "durabilityState": "CONFIGURED_UNVERIFIED",
+            "attempted": 0,
+            "candidateEvents": 0,
+            "stored": 0,
+            "skipped": 0,
+            "conflicts": 0,
+            "readBackVerified": false,
+            "eventIds": []
+          },
+          "configuredStatus": {
+            "schemaVersion": "velmere.risk-history-ledger.internal-status.v1",
+            "mode": "memory",
+            "configured": true,
+            "durabilityState": "CONFIGURED_UNVERIFIED",
+            "pass423Retention": {
+              "version": "long-term-memory-spine",
+              "retentionDays": 1825,
+              "retentionYears": 5,
+              "hotWindowDays": 30,
+              "warmWindowDays": 180,
+              "coldWindowDays": 730,
+              "maxSnapshotsPerAsset": 5000,
+              "analysisWindowSnapshots": 720,
+              "learningHalfLifeDays": 90,
+              "archiveHalfLifeDays": 365,
+              "requiresDurableStoreForYears": true,
+              "personalDataRule": "no_personal_memory_without_consent"
+            },
+            "longTermStorage": "runtime_mirror_only",
+            "lastPersistAt": "<runtime-timestamp>",
+            "lastVerifiedAt": "<runtime-timestamp>",
+            "trackedAssets": 0,
+            "storedEvents": 0
+          }
+        }
+      },
+      {
+        "id": "configured_customer_status_withheld",
+        "status": "PASS"
+      },
+      {
+        "id": "no_socket_exact_readback_durable",
+        "status": "PASS",
+        "detail": {
+          "mode": "supabase",
+          "durabilityState": "DURABLE_READBACK_VERIFIED",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": true,
+          "eventIds": [
+            "risk-history-a4ef6c0708a0bd3f5180dfc7fe50a63366afd9dd"
+          ]
+        }
+      },
+      {
+        "id": "no_socket_three_stage_protocol",
+        "status": "PASS",
+        "detail": [
+          {
+            "path": "/rest/v1/rpc/velmere_get_latest_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_append_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_read_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_get_latest_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_get_latest_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_append_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_read_risk_history_events_v1",
+            "method": "POST"
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_read_risk_history_by_asset_v1",
+            "method": "POST"
+          }
+        ]
+      },
+      {
+        "id": "durable_unchanged_no_write",
+        "status": "PASS",
+        "detail": {
+          "mode": "supabase",
+          "durabilityState": "DURABLE_READBACK_VERIFIED",
+          "attempted": 1,
+          "candidateEvents": 0,
+          "stored": 0,
+          "skipped": 1,
+          "conflicts": 0,
+          "readBackVerified": true,
+          "eventIds": []
+        }
+      },
+      {
+        "id": "durable_material_change_written",
+        "status": "PASS",
+        "detail": {
+          "mode": "supabase",
+          "durabilityState": "DURABLE_READBACK_VERIFIED",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": true,
+          "eventIds": [
+            "risk-history-9d3af71c5b131ed88130d74b4ce26910795cfe8e"
+          ]
+        }
+      },
+      {
+        "id": "durable_history_read",
+        "status": "PASS",
+        "detail": [
+          {
+            "schemaVersion": "velmere.risk-history-event.v1",
+            "eventId": "risk-history-a4ef6c0708a0bd3f5180dfc7fe50a63366afd9dd",
+            "canonicalAssetId": "market:bitcoin-p91",
+            "assetId": "bitcoin-p91",
+            "identityClass": "MARKET_ID",
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "observedAt": "2026-08-20T12:00:00.000Z",
+            "recordedAt": "2026-08-20T12:00:00.000Z",
+            "score": 40,
+            "level": "medium",
+            "signalCount": 1,
+            "confidence": 80,
+            "publicationState": "PUBLIC",
+            "customerPublishable": true,
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "evidenceDigest": "sha256:5d58f56764545f9991a22aebb1a107922c60dbb0b0ce38a145b4d8d1484eda2c",
+            "sourceAsOf": "2026-08-20T12:00:00.000Z",
+            "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+            "comparableToPrevious": false,
+            "eventTypes": [
+              "TRACKING_STARTED"
+            ],
+            "changeReasons": [
+              "Velmère began tracking this asset at this observation."
+            ],
+            "snapshot": {
+              "schemaVersion": "velmere.risk-history-snapshot.v1",
+              "id": "bitcoin-p91",
+              "canonicalAssetId": "market:bitcoin-p91",
+              "identityClass": "MARKET_ID",
+              "symbol": "BTC",
+              "name": "Bitcoin",
+              "timestamp": "2026-08-20T12:00:00.000Z",
+              "price": 100,
+              "score": 40,
+              "level": "medium",
+              "signalCount": 1,
+              "confidence": 80,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:5d58f56764545f9991a22aebb1a107922c60dbb0b0ce38a145b4d8d1484eda2c",
+              "sourceAsOf": "2026-08-20T12:00:00.000Z",
+              "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+              "snapshotDigest": "sha256:3be6f96fa9219b3e3917f92b2cbb23aa98499985319380840685d58b74617bd1"
+            },
+            "eventDigest": "sha256:d721000ab231dcadb0d6e379151696ae68f66cf113f716acc82d2f6b0a204bd8"
+          },
+          {
+            "schemaVersion": "velmere.risk-history-event.v1",
+            "eventId": "risk-history-9d3af71c5b131ed88130d74b4ce26910795cfe8e",
+            "canonicalAssetId": "market:bitcoin-p91",
+            "assetId": "bitcoin-p91",
+            "identityClass": "MARKET_ID",
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "observedAt": "2026-08-20T14:00:00.000Z",
+            "recordedAt": "2026-08-20T14:00:00.000Z",
+            "score": 68,
+            "level": "high",
+            "signalCount": 1,
+            "confidence": 80,
+            "publicationState": "PUBLIC",
+            "customerPublishable": true,
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "evidenceDigest": "sha256:5d58f56764545f9991a22aebb1a107922c60dbb0b0ce38a145b4d8d1484eda2c",
+            "sourceAsOf": "2026-08-20T14:00:00.000Z",
+            "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+            "comparableToPrevious": true,
+            "eventTypes": [
+              "SCORE_CHANGED",
+              "LEVEL_CHANGED"
+            ],
+            "changeReasons": [
+              "Risk score changed from 40 to 68.",
+              "Risk level changed from medium to high."
+            ],
+            "snapshot": {
+              "schemaVersion": "velmere.risk-history-snapshot.v1",
+              "id": "bitcoin-p91",
+              "canonicalAssetId": "market:bitcoin-p91",
+              "identityClass": "MARKET_ID",
+              "symbol": "BTC",
+              "name": "Bitcoin",
+              "timestamp": "2026-08-20T14:00:00.000Z",
+              "price": 100,
+              "score": 68,
+              "level": "high",
+              "signalCount": 1,
+              "confidence": 80,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:5d58f56764545f9991a22aebb1a107922c60dbb0b0ce38a145b4d8d1484eda2c",
+              "sourceAsOf": "2026-08-20T14:00:00.000Z",
+              "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+              "snapshotDigest": "sha256:a37673355195ddeae528f5aa67d3fcff164364241234b7bb6df70bfc97a57b23"
+            },
+            "eventDigest": "sha256:7575fa279c5c4d4097c3fa2700568479eff16aeafedcff45a02246ad72957bfe"
+          }
+        ]
+      },
+      {
+        "id": "durable_claim_requires_readback",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.internal-status.v1",
+          "mode": "supabase",
+          "configured": true,
+          "durabilityState": "DURABLE_READBACK_VERIFIED",
+          "pass423Retention": {
+            "version": "long-term-memory-spine",
+            "retentionDays": 1825,
+            "retentionYears": 5,
+            "hotWindowDays": 30,
+            "warmWindowDays": 180,
+            "coldWindowDays": 730,
+            "maxSnapshotsPerAsset": 5000,
+            "analysisWindowSnapshots": 720,
+            "learningHalfLifeDays": 90,
+            "archiveHalfLifeDays": 365,
+            "requiresDurableStoreForYears": true,
+            "personalDataRule": "no_personal_memory_without_consent"
+          },
+          "longTermStorage": "durable_years_ready",
+          "lastPersistAt": "<runtime-timestamp>",
+          "lastVerifiedAt": "<runtime-timestamp>",
+          "trackedAssets": 1,
+          "storedEvents": 2,
+          "highestStoredRisk": {
+            "schemaVersion": "velmere.risk-history-snapshot.v1",
+            "id": "bitcoin-p91",
+            "canonicalAssetId": "market:bitcoin-p91",
+            "identityClass": "MARKET_ID",
+            "symbol": "BTC",
+            "name": "Bitcoin",
+            "timestamp": "2026-08-20T14:00:00.000Z",
+            "price": 100,
+            "score": 68,
+            "level": "high",
+            "signalCount": 1,
+            "confidence": 80,
+            "publicationState": "PUBLIC",
+            "customerPublishable": true,
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "evidenceDigest": "sha256:5d58f56764545f9991a22aebb1a107922c60dbb0b0ce38a145b4d8d1484eda2c",
+            "sourceAsOf": "2026-08-20T14:00:00.000Z",
+            "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+            "snapshotDigest": "sha256:a37673355195ddeae528f5aa67d3fcff164364241234b7bb6df70bfc97a57b23"
+          }
+        }
+      },
+      {
+        "id": "customer_status_no_internal_error",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+          "storageState": "DURABLE_VERIFIED",
+          "historyCompleteness": "DURABLE_BOUNDED",
+          "blockers": []
+        }
+      },
+      {
+        "id": "tampered_readback_falls_back",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "DEGRADED_MEMORY_FALLBACK",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-a4ef6c0708a0bd3f5180dfc7fe50a63366afd9dd"
+          ],
+          "error": "risk_history_rpc_event_integrity_invalid"
+        }
+      },
+      {
+        "id": "tampered_customer_status_generic",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+          "storageState": "DEGRADED",
+          "historyCompleteness": "UNKNOWN",
+          "blockers": [
+            "durable_history_temporarily_unavailable"
+          ]
+        }
+      },
+      {
+        "id": "rpc_failure_falls_back_without_durable_credit",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "DEGRADED_MEMORY_FALLBACK",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-a4ef6c0708a0bd3f5180dfc7fe50a63366afd9dd"
+          ],
+          "error": "Supabase 503: {\"error\":\"forced latest failure\"}"
+        }
+      },
+      {
+        "id": "customer_route_no_store",
+        "status": "PASS",
+        "detail": {
+          "cache-control": "no-store, max-age=0",
+          "content-type": "application/json",
+          "pragma": "no-cache",
+          "x-content-type-options": "nosniff"
+        }
+      },
+      {
+        "id": "customer_route_projection_available",
+        "status": "PASS",
+        "detail": {
+          "mode": "stored",
+          "publication": {
+            "evidenceState": "verified",
+            "liveClaimed": false,
+            "currentness": "event_observation_time_bound"
+          },
+          "riskHistory": {
+            "schemaVersion": "velmere.risk-history.customer.v1",
+            "productId": "risk-indicator",
+            "capability": "risk-history",
+            "status": "AVAILABLE",
+            "asset": {
+              "canonicalAssetId": "market:bitcoin-p91",
+              "symbol": "BTC",
+              "name": "Bitcoin"
+            },
+            "trackingStartedAt": "2026-08-20T12:00:00.000Z",
+            "observations": 1,
+            "segments": [
+              {
+                "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "comparableWithPreviousSegment": false,
+                "startedAt": "2026-08-20T12:00:00.000Z",
+                "endedAt": "2026-08-20T12:00:00.000Z"
+              }
+            ],
+            "history": [
+              {
+                "eventReference": "sha256:d721000ab231dcadb0d6e379151696ae68f66cf113f716acc82d2f6b0a204bd8",
+                "observedAt": "2026-08-20T12:00:00.000Z",
+                "score": 40,
+                "level": "medium",
+                "confidence": 80,
+                "eventTypes": [
+                  "TRACKING_STARTED"
+                ],
+                "changeReasons": [
+                  "Velmère began verified tracking for this asset."
+                ],
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:5e257b2871a50995fa1adde6bd0c6ece3f2b06774391ad7a2937ace87b62a7d8",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "comparabilityKey": "sha256:91bde9467e8bf04d2f0f6af2e45ab178cbae2fdc4a441d35d4d45c5a2b8c001e",
+                "comparableToPrevious": false,
+                "isProbability": false,
+                "probabilityPercent": null
+              }
+            ],
+            "storage": {
+              "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+              "storageState": "RUNTIME_ONLY",
+              "historyCompleteness": "RUNTIME_BOUNDED",
+              "blockers": [
+                "durable_history_not_configured"
+              ]
+            },
+            "limitations": [
+              "Risk history begins when Velmère starts verified tracking; it is not reconstructed before that date.",
+              "The score is a descriptive review-priority signal, not a probability, price forecast or trade instruction.",
+              "A methodology or provider-configuration change starts a new segment when old and new scores are not directly comparable.",
+              "Multi-year durable history is not yet verified by an exact database read-back proof."
+            ]
+          },
+          "generatedAt": "<runtime-timestamp>"
+        }
+      },
+      {
+        "id": "customer_route_excludes_raw_snapshot",
+        "status": "PASS",
+        "detail": {
+          "responseStatus": 200,
+          "topLevelKeys": [
+            "generatedAt",
+            "mode",
+            "publication",
+            "riskHistory"
+          ]
+        }
+      },
+      {
+        "id": "customer_route_no_live_claim",
+        "status": "PASS"
+      },
+      {
+        "id": "customer_route_duplicate_query_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "customer_route_invalid_identity_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "customer_route_invalid_limit_rejected",
+        "status": "PASS"
+      }
+    ]
+  },
+  "testTransport": {
+    "networkSocketsUsed": false,
+    "databaseSimulated": true,
+    "exactWriteReadbackProtocolExercised": true
+  },
+  "zeroFakeCredit": {
+    "realPostgreSqlExecuted": false,
+    "realSupabaseExecuted": false,
+    "stagingRlsExecuted": false,
+    "productionDurabilityProven": false,
+    "customerFinal": "0/20",
+    "riskIndicatorFinal": false
+  },
+  "truthBoundary": "The no-socket transport exercises configured-origin policy, latest-read, append and exact read-back verification. It proves fail-closed application behavior, not PostgreSQL migration execution, RLS, triggers, staging or production durability."
+}

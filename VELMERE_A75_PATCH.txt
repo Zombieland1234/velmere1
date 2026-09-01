@@ -1,0 +1,8 @@
+PASS36 A75R0 — TRUSTED PROXY + REQUEST CLIENT IDENTITY BOUNDARY HARDENING
+- Centralized every active raw forwarded-client-header read in lib/security/api-guard.ts.
+- Production ignores caller-controlled x-forwarded-for/x-real-ip and requires an explicit verified proxy profile.
+- Vercel client identity accepts one canonical x-vercel-forwarded-for value; chains, malformed addresses and spoofed alternatives fail closed.
+- IPv4-mapped IPv6 is normalized to IPv4 and native IPv6 limiter keys aggregate at /64.
+- Security fingerprints and durable computation fallback identities no longer depend on spoofable forwarded headers, raw Authorization, paid tokens or cookies.
+- Market Integrity and legacy member write guardrails now use the central durable limiter; duplicate Square limiters were removed.
+- No UI, price, tier, LIVE or sale enablement changes.

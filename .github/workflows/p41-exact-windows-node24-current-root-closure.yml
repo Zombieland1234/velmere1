@@ -1,0 +1,18 @@
+name: P41 Superseded — Do Not Execute
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  superseded-contract:
+    runs-on: windows-2025
+    steps:
+      - name: P41 is superseded by the P42 lifecycle-quarantine gate
+        shell: pwsh
+        run: |
+          Write-Output 'P41 exact-current-root workflow is intentionally superseded.'
+          Write-Output 'Use p42-exact-windows-node24-lifecycle-quarantine.yml.'
+          exit 1

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a8-monitoring-handoff-case.v1",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "caseRef": "AUD-PASS35-A8-A17-0001",
+  "observedAt": "2026-07-22T20:30:00.000Z",
+  "chainId": "1",
+  "contractAddress": "0x1111111111111111111111111111111111111111",
+  "runtimeBytecodeSha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "auditReportSha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "monitoringProviderConfigurationSha256": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "incidentPlaybookRootSha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "customerHandoffSha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "rules": [
+    {
+      "ruleId": "A17_ADMIN_CHANGE",
+      "type": "ADMIN_CHANGE",
+      "severity": "CRITICAL",
+      "maxDetectionDelaySec": 60,
+      "signal": "OwnershipTransferred or role-admin membership change",
+      "condition": "Any privileged principal changes outside approved deployment window",
+      "responsePlaybookId": "PB-ADMIN-CHANGE",
+      "ownerRole": "SECURITY_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_PROXY_UPGRADE",
+      "type": "PROXY_UPGRADE",
+      "severity": "CRITICAL",
+      "maxDetectionDelaySec": 60,
+      "signal": "EIP-1967 implementation slot or Upgraded event change",
+      "condition": "Implementation hash differs from approved release binding",
+      "responsePlaybookId": "PB-PROXY-UPGRADE",
+      "ownerRole": "SECURITY_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_PAUSE_STATE",
+      "type": "PAUSE_STATE",
+      "severity": "HIGH",
+      "maxDetectionDelaySec": 120,
+      "signal": "Paused or Unpaused state transition",
+      "condition": "Pause state changes without approved incident or maintenance ticket",
+      "responsePlaybookId": "PB-PAUSE-STATE",
+      "ownerRole": "PROTOCOL_OPERATIONS",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_SUPPLY_CHANGE",
+      "type": "SUPPLY_CHANGE",
+      "severity": "HIGH",
+      "maxDetectionDelaySec": 300,
+      "signal": "Mint burn or totalSupply delta",
+      "condition": "Supply change exceeds approved rolling threshold",
+      "responsePlaybookId": "PB-SUPPLY-CHANGE",
+      "ownerRole": "RISK_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_LIQUIDITY_DROP",
+      "type": "LIQUIDITY_DROP",
+      "severity": "HIGH",
+      "maxDetectionDelaySec": 300,
+      "signal": "Provider-bound pool liquidity depth",
+      "condition": "Available liquidity falls more than thirty percent inside one hour",
+      "responsePlaybookId": "PB-LIQUIDITY-DROP",
+      "ownerRole": "MARKET_RISK_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_ORACLE_DEVIATION",
+      "type": "ORACLE_DEVIATION",
+      "severity": "CRITICAL",
+      "maxDetectionDelaySec": 60,
+      "signal": "Primary oracle versus independent reference family",
+      "condition": "Deviation exceeds five percent or freshness budget is breached",
+      "responsePlaybookId": "PB-ORACLE-DEVIATION",
+      "ownerRole": "SECURITY_ON_CALL",
+      "customerCommunicationRequired": true
+    }
+  ]
+}

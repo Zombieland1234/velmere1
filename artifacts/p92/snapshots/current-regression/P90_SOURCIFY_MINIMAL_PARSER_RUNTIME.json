@@ -1,0 +1,453 @@
+{
+  "schemaVersion": "velmere.p90.sourcify-minimal-runtime.v2",
+  "generatedAt": "2026-08-20T12:10:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_READ_ONLY_NO_SOCKET",
+  "checks": {
+    "total": 46,
+    "passed": 46,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "parser_exact",
+        "status": "PASS",
+        "detail": {
+          "requestedAddress": "0x0000000000000000000000000000000000000090",
+          "requestedChainId": "1",
+          "resolvedAddress": "0x0000000000000000000000000000000000000090",
+          "resolvedChainId": "1",
+          "identityMatched": true,
+          "match": "exact_match",
+          "creationMatch": "exact_match",
+          "runtimeMatch": "exact_match",
+          "verifiedAt": "2026-08-01T00:00:00.000Z",
+          "matchIdDigest": "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+          "exactRuntimeVerification": true,
+          "verifiedButNotExact": false,
+          "unsafeRawFieldsPresent": false,
+          "blockers": []
+        }
+      },
+      {
+        "id": "parser_exact_match_reference_digest",
+        "status": "PASS",
+        "detail": "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+      },
+      {
+        "id": "parser_non_exact",
+        "status": "PASS",
+        "detail": {
+          "requestedAddress": "0x0000000000000000000000000000000000000090",
+          "requestedChainId": "1",
+          "resolvedAddress": "0x0000000000000000000000000000000000000090",
+          "resolvedChainId": "1",
+          "identityMatched": true,
+          "match": "match",
+          "runtimeMatch": "match",
+          "exactRuntimeVerification": false,
+          "verifiedButNotExact": true,
+          "unsafeRawFieldsPresent": false,
+          "blockers": []
+        }
+      },
+      {
+        "id": "parser_wrong_address_fail_closed",
+        "status": "PASS",
+        "detail": {
+          "requestedAddress": "0x0000000000000000000000000000000000000090",
+          "requestedChainId": "1",
+          "resolvedAddress": "0x0000000000000000000000000000000000000091",
+          "resolvedChainId": "1",
+          "identityMatched": false,
+          "match": "exact_match",
+          "runtimeMatch": "exact_match",
+          "exactRuntimeVerification": false,
+          "verifiedButNotExact": false,
+          "unsafeRawFieldsPresent": false,
+          "blockers": [
+            "exact_chain_address_identity_missing"
+          ]
+        }
+      },
+      {
+        "id": "parser_wrong_chain_fail_closed",
+        "status": "PASS",
+        "detail": {
+          "requestedAddress": "0x0000000000000000000000000000000000000090",
+          "requestedChainId": "1",
+          "resolvedAddress": "0x0000000000000000000000000000000000000090",
+          "resolvedChainId": "56",
+          "identityMatched": false,
+          "match": "exact_match",
+          "runtimeMatch": "exact_match",
+          "exactRuntimeVerification": false,
+          "verifiedButNotExact": false,
+          "unsafeRawFieldsPresent": false,
+          "blockers": [
+            "exact_chain_address_identity_missing"
+          ]
+        }
+      },
+      {
+        "id": "parser_raw_sensitive_fields_fail_closed",
+        "status": "PASS",
+        "detail": {
+          "requestedAddress": "0x0000000000000000000000000000000000000090",
+          "requestedChainId": "1",
+          "resolvedAddress": "0x0000000000000000000000000000000000000090",
+          "resolvedChainId": "1",
+          "identityMatched": true,
+          "match": "exact_match",
+          "runtimeMatch": "exact_match",
+          "exactRuntimeVerification": false,
+          "verifiedButNotExact": false,
+          "unsafeRawFieldsPresent": true,
+          "blockers": [
+            "raw_sensitive_fields_present"
+          ]
+        }
+      },
+      {
+        "id": "exact_lane_present",
+        "status": "PASS"
+      },
+      {
+        "id": "exact_single_minimal_lookup",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "exact_no_raw_field_query",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "exact_confirmed",
+        "status": "PASS",
+        "detail": "confirmed"
+      },
+      {
+        "id": "exact_live_eligible",
+        "status": "PASS",
+        "detail": true
+      },
+      {
+        "id": "exact_identity_bound",
+        "status": "PASS",
+        "detail": {
+          "verification": "exact_response",
+          "requestedAddress": "0x0000000000000000000000000000000000000090",
+          "resolvedAddress": "0x0000000000000000000000000000000000000090",
+          "requestedChainId": "1",
+          "resolvedChainId": "1",
+          "matched": true
+        }
+      },
+      {
+        "id": "exact_one_strict",
+        "status": "PASS",
+        "detail": 1
+      },
+      {
+        "id": "exact_one_live",
+        "status": "PASS",
+        "detail": 1
+      },
+      {
+        "id": "exact_sourcify_contributor",
+        "status": "PASS",
+        "detail": [
+          "sourcify-v2"
+        ]
+      },
+      {
+        "id": "non_exact_lane_present",
+        "status": "PASS"
+      },
+      {
+        "id": "non_exact_single_minimal_lookup",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "non_exact_no_raw_field_query",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "non_exact_partial",
+        "status": "PASS",
+        "detail": "partial"
+      },
+      {
+        "id": "non_exact_live_eligible",
+        "status": "PASS",
+        "detail": true
+      },
+      {
+        "id": "non_exact_zero_strict",
+        "status": "PASS",
+        "detail": 0
+      },
+      {
+        "id": "non_exact_one_live",
+        "status": "PASS",
+        "detail": 1
+      },
+      {
+        "id": "wrong_address_lane_present",
+        "status": "PASS"
+      },
+      {
+        "id": "wrong_address_single_minimal_lookup",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "wrong_address_no_raw_field_query",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "wrong_address_not_live",
+        "status": "PASS",
+        "detail": false
+      },
+      {
+        "id": "wrong_address_zero_strict_live",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "pass4830-audit-provider-evidence-dimensions-v2",
+          "strictLanes": [],
+          "successfulLiveLanes": [],
+          "strictReceiptCount": 0,
+          "successfulLiveLaneCount": 0,
+          "independentProviderFamilies": [],
+          "independentUpstreamRoots": [],
+          "uniqueContentDigests": [],
+          "successfulLiveProviderIds": [],
+          "duplicateStrictLanesRejected": 0,
+          "duplicateLiveLanesRejected": 0,
+          "explicitLiveExecutionIneligibleLanesRejected": 8,
+          "truthBoundary": "Successful live direct-provider execution and strict exact-identity evidence are separate dimensions. Current runtime must explicitly reject target-irrelevant HTTP success through liveExecutionEligible=false. A contributor can occupy at most one slot per dimension; URL aliases, retries, duplicate receipt replay and submitted/human lanes cannot inflate either count."
+        }
+      },
+      {
+        "id": "wrong_chain_lane_present",
+        "status": "PASS"
+      },
+      {
+        "id": "wrong_chain_single_minimal_lookup",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "wrong_chain_no_raw_field_query",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "wrong_chain_not_live",
+        "status": "PASS",
+        "detail": false
+      },
+      {
+        "id": "wrong_chain_zero_strict_live",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "pass4830-audit-provider-evidence-dimensions-v2",
+          "strictLanes": [],
+          "successfulLiveLanes": [],
+          "strictReceiptCount": 0,
+          "successfulLiveLaneCount": 0,
+          "independentProviderFamilies": [],
+          "independentUpstreamRoots": [],
+          "uniqueContentDigests": [],
+          "successfulLiveProviderIds": [],
+          "duplicateStrictLanesRejected": 0,
+          "duplicateLiveLanesRejected": 0,
+          "explicitLiveExecutionIneligibleLanesRejected": 8,
+          "truthBoundary": "Successful live direct-provider execution and strict exact-identity evidence are separate dimensions. Current runtime must explicitly reject target-irrelevant HTTP success through liveExecutionEligible=false. A contributor can occupy at most one slot per dimension; URL aliases, retries, duplicate receipt replay and submitted/human lanes cannot inflate either count."
+        }
+      },
+      {
+        "id": "raw_sensitive_lane_present",
+        "status": "PASS"
+      },
+      {
+        "id": "raw_sensitive_single_minimal_lookup",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "raw_sensitive_no_raw_field_query",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "raw_sensitive_not_live",
+        "status": "PASS",
+        "detail": false
+      },
+      {
+        "id": "raw_sensitive_zero_strict_live",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "pass4830-audit-provider-evidence-dimensions-v2",
+          "strictLanes": [],
+          "successfulLiveLanes": [],
+          "strictReceiptCount": 0,
+          "successfulLiveLaneCount": 0,
+          "independentProviderFamilies": [],
+          "independentUpstreamRoots": [],
+          "uniqueContentDigests": [],
+          "successfulLiveProviderIds": [],
+          "duplicateStrictLanesRejected": 0,
+          "duplicateLiveLanesRejected": 0,
+          "explicitLiveExecutionIneligibleLanesRejected": 8,
+          "truthBoundary": "Successful live direct-provider execution and strict exact-identity evidence are separate dimensions. Current runtime must explicitly reject target-irrelevant HTTP success through liveExecutionEligible=false. A contributor can occupy at most one slot per dimension; URL aliases, retries, duplicate receipt replay and submitted/human lanes cannot inflate either count."
+        }
+      },
+      {
+        "id": "raw_values_not_returned",
+        "status": "PASS"
+      },
+      {
+        "id": "not_found_lane_present",
+        "status": "PASS"
+      },
+      {
+        "id": "not_found_single_minimal_lookup",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "not_found_no_raw_field_query",
+        "status": "PASS",
+        "detail": [
+          "https://api.coingecko.com/api/v3/search?query=0x0000000000000000000000000000000000000090",
+          "https://api.dexscreener.com/latest/dex/tokens/0x0000000000000000000000000000000000000090",
+          "https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses=0x0000000000000000000000000000000000000090",
+          "https://api.honeypot.is/v2/IsHoneypot?address=0x0000000000000000000000000000000000000090&chainID=1",
+          "https://sourcify.dev/server/v2/contract/1/0x0000000000000000000000000000000000000090"
+        ]
+      },
+      {
+        "id": "not_found_not_live",
+        "status": "PASS",
+        "detail": false
+      },
+      {
+        "id": "not_found_zero_strict_live",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "pass4830-audit-provider-evidence-dimensions-v2",
+          "strictLanes": [],
+          "successfulLiveLanes": [],
+          "strictReceiptCount": 0,
+          "successfulLiveLaneCount": 0,
+          "independentProviderFamilies": [],
+          "independentUpstreamRoots": [],
+          "uniqueContentDigests": [],
+          "successfulLiveProviderIds": [],
+          "duplicateStrictLanesRejected": 0,
+          "duplicateLiveLanesRejected": 0,
+          "explicitLiveExecutionIneligibleLanesRejected": 8,
+          "truthBoundary": "Successful live direct-provider execution and strict exact-identity evidence are separate dimensions. Current runtime must explicitly reject target-irrelevant HTTP success through liveExecutionEligible=false. A contributor can occupy at most one slot per dimension; URL aliases, retries, duplicate receipt replay and submitted/human lanes cannot inflate either count."
+        }
+      },
+      {
+        "id": "production_egress_blocked_before_network",
+        "status": "PASS",
+        "detail": "provider_rights_not_verified"
+      },
+      {
+        "id": "report_no_raw_source_abi_metadata_bytecode",
+        "status": "PASS"
+      },
+      {
+        "id": "boundary_does_not_claim_safety",
+        "status": "PASS",
+        "detail": "Sourcify lookup is read-only. An exact match proves a bounded source/recompilation relationship at verification time; it does not prove current runtime state, safety, absence of vulnerabilities, trusted-forwarder configuration or exploitability. Raw source, ABI, metadata and bytecode are not requested or redistributed."
+      }
+    ]
+  },
+  "networkExecuted": false,
+  "transport": "async-scoped local no-socket transport",
+  "rawSourceRequested": false,
+  "rawAbiRequested": false,
+  "stateChangeAttempted": false,
+  "zeroFakeCredit": {
+    "realSourcifyResponse": false,
+    "providerRightsApproved": false,
+    "currentDeploymentProven": false,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3"
+  },
+  "truthBoundary": "This proves the current runtime path counts an exact target-bound Sourcify lookup as one strict and one live contributor, a non-exact target-bound lookup only as live, and rejects wrong-target, wrong-chain, raw-sensitive and 404 responses. All provider calls used a local no-socket transport; production egress remains blocked by the rights gate."
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "velmere.p68.audit-manual-review-semantics-adjudication.v1",
+  "status": "PASS_ACTIVE_CUSTOMER_PATH_WITH_LEGACY_INTERNAL_DEBT",
+  "activeCustomerPathPositiveManualClaims": [],
+  "activeCustomerPathPositiveManualClaimCount": 0,
+  "legacyRendererPath": "lib/security/pro-audit-pdf/render-pro-audit-pdf.ts",
+  "legacyManualReviewDependencyEvidence": [
+    {
+      "line": 24,
+      "text": "import { buildPass2579AdvancedManualReviewQueueReport } from \"@/lib/security/advanced-manual-review-queue\";"
+    },
+    {
+      "line": 603,
+      "text": "const advancedManualReviewQueue = buildPass2579AdvancedManualReviewQueueReport({ ...baseInput, reviewLevel, reportAssembler });"
+    },
+    {
+      "line": 604,
+      "text": "const customerSafeDeliveryDecision = buildPass2580CustomerSafeDeliveryDecisionReport({ ...baseInput, reviewLevel, reportAssembler, advancedManualReviewQueue });"
+    },
+    {
+      "line": 617,
+      "text": "`Automated advanced scenario items: ${advancedManualReviewQueue.summary.totalItems}`,"
+    },
+    {
+      "line": 618,
+      "text": "`Evidence items ready for advanced automated processing: ${advancedManualReviewQueue.summary.readyForOperator}`,"
+    }
+  ],
+  "legacyDebtState": "OPEN_TECH_DEBT_INTERNAL_COMPATIBILITY_ONLY",
+  "advancedCustomerReleaseState": "NOT_FOR_SALE_FAIL_CLOSED",
+  "customerFinalOutputCredit": 0,
+  "auditFinalCustomerPdfCredit": 0,
+  "truthBoundary": "Current active assembler/projection/customer snapshot paths do not positively claim manual/human/operator review. The historical PDF renderer still imports the legacy advanced-manual-review queue and remains explicit internal technical debt; this does not create a customer promise or release credit."
+}

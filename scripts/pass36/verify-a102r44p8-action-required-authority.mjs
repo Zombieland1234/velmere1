@@ -1,0 +1,28 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
+const root=process.cwd();
+const revision="VELMERE_PASS36_A102R44P8_ACTION_REQUIRED_ACCURACY_CUSTOMER_TRUTH_PDF_CONFIDENCE_CONSENSUS_AND_SYNTHETIC_DATA_BOUNDARY_NO_LIVE_CREDIT";
+const parent="VELMERE_PASS36_A102R44P7_ACTION_REQUIRED_ADVANCED_INCREMENTAL_EVIDENCE_REMEDIATION_DELTA_AND_ADJUDICATION_READINESS_NO_LIVE_CREDIT";
+const manifestRel="_velmere/PASS36_A102R44P8_SOURCE_MANIFEST.json";
+const parentRel="_velmere/PASS36_A102R44P7_SOURCE_MANIFEST.json";
+const stateRel="config/pass36/a102r44p8-action-required-current-state.json";
+const policyRel="config/pass36/a102r44p8-accuracy-customer-truth-policy.json";
+const expectedLock="abd75eb78ca1570c0b8c13717d128ae439c0ddd4c02c196e3ec03a877258258f";
+const excluded=new Set(["artifacts",".velmere","node_modules",".cache",".turbo","coverage","test-results","playwright-report","__pycache__"]);
+const sha=(b)=>crypto.createHash("sha256").update(b).digest("hex");
+const checks=[];const add=(id,passed,detail=null)=>checks.push({id,passed:Boolean(passed),detail});
+const readJson=(rel)=>JSON.parse(fs.readFileSync(path.join(root,rel),"utf8"));
+const manifestPath=path.join(root,manifestRel);
+add("manifest-exists",fs.existsSync(manifestPath),manifestRel);
+if(!fs.existsSync(manifestPath)){console.log(JSON.stringify({status:"FAIL_A102R44P8_AUTHORITY",checks:1,passed:0,failed:1,rows:checks},null,2));process.exit(1);}
+const manifest=readJson(manifestRel);const parentBytes=fs.readFileSync(path.join(root,parentRel));
+const rows=[];
+function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const a=path.join(dir,e.name);const r=path.relative(root,a).split(path.sep).join("/");if(e.isDirectory()){if(excluded.has(e.name)||e.name.startsWith(".next"))continue;walk(a);}else if(e.isFile()&&r!==manifestRel&&!r.endsWith(".pyc")&&!r.endsWith(".pyo")){const b=fs.readFileSync(a);rows.push({path:r,byteLength:b.length,sha256:sha(b),mode:(fs.statSync(a).mode&0o777)|0o100000});}}}
+walk(root);rows.sort((a,b)=>a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+const bytes=rows.reduce((n,x)=>n+x.byteLength,0);const pathSet=sha(Buffer.from(rows.map(x=>x.path).join("\n")));const aggregate=sha(Buffer.from(rows.map(x=>`${x.path}\0${x.byteLength}\0${x.sha256}\0${x.mode}\n`).join("")));
+add("revision",manifest.revisionId===revision,manifest.revisionId);add("parent",manifest.parentRevisionId===parent,manifest.parentRevisionId);add("schema",manifest.schemaVersion==="velmere.pass36.a102r44p8.source-manifest.v1",manifest.schemaVersion);add("parent-manifest",manifest.parentSourceManifestPath===parentRel&&manifest.parentSourceManifestSha256===sha(parentBytes),manifest.parentSourceManifestSha256);add("file-count",manifest.fileCount===rows.length,{expected:manifest.fileCount,actual:rows.length});add("byte-length",manifest.byteLength===bytes,{expected:manifest.byteLength,actual:bytes});add("path-set",manifest.pathSetSha256===pathSet,{expected:manifest.pathSetSha256,actual:pathSet});add("aggregate",manifest.aggregateSha256===aggregate,{expected:manifest.aggregateSha256,actual:aggregate});add("entry-parity",manifest.entries.length===rows.length&&rows.every((x,i)=>JSON.stringify(x)===JSON.stringify(manifest.entries[i])),"ordered exact entries");add("global-flags",manifest.globalDecision==="NO_GO"&&!manifest.live&&!manifest.saleEnabled&&!manifest.productionApproved&&!manifest.worldClassProven,manifest.globalDecision);add("active-pass",fs.readFileSync(path.join(root,"VELMERE_ACTIVE_PASS.txt"),"utf8").trim()===revision,fs.readFileSync(path.join(root,"VELMERE_ACTIVE_PASS.txt"),"utf8").trim());add("lockfile",sha(fs.readFileSync(path.join(root,"package-lock.json")))===expectedLock,sha(fs.readFileSync(path.join(root,"package-lock.json"))));
+const state=readJson(stateRel),policy=readJson(policyRel);add("state",state.revisionId===revision&&state.parentRevisionId===parent&&state.globalDecision==="NO_GO"&&!state.live&&!state.saleEnabled,state.revisionId);add("policy",policy.revisionId===revision&&policy.parentRevisionId===parent&&policy.denominators.packetRows===450&&policy.denominators.pdfDocuments===150&&policy.denominators.independentAdjudications===0,policy.revisionId);
+const child=spawnSync(process.execPath,["scripts/pass36/verify-a102r44p8-static-policy.mjs"],{cwd:root,encoding:"utf8",env:{PATH:process.env.PATH??"",HOME:process.env.HOME??"",LANG:"C.UTF-8",LC_ALL:"C.UTF-8"},timeout:120000,shell:false,windowsHide:true});let cj=null,pe=null;try{cj=JSON.parse(child.stdout)}catch(e){pe=e instanceof Error?e.message:String(e)}add("static-policy-child",child.status===0&&Buffer.byteLength(child.stderr??"")===0&&cj?.failed===0&&cj?.checks>=19,{status:child.status,stderrBytes:Buffer.byteLength(child.stderr??""),parseError:pe,summary:cj&&{checks:cj.checks,passed:cj.passed,failed:cj.failed}});
+const failed=checks.filter(x=>!x.passed);const out={schemaVersion:"velmere.pass36.a102r44p8.authority-verification.v1",revisionId:revision,parentRevisionId:parent,status:failed.length?"FAIL_A102R44P8_AUTHORITY":"PASS_A102R44P8_AUTHORITY",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,sourceFiles:rows.length,sourceBytes:bytes,sourcePathSetSha256:pathSet,sourceAggregateSha256:aggregate,manifestSha256:sha(fs.readFileSync(manifestPath)),independentAccuracyCredit:0,realProtocolCredit:0,realCustomerCredit:0,realProviderCredit:0,globalDecision:"NO_GO",live:false,saleEnabled:false,productionApproved:false,worldClassProven:false,failures:failed,rows:checks};console.log(JSON.stringify(out,null,2));if(failed.length)process.exit(1);

@@ -1,0 +1,421 @@
+import { withExpensiveRouteBudget } from "@/lib/security/expensive-route-concurrency-budget";
+export const PASS4191_ADMIN_AI_POST_ACTIVATION_LIVE_SURVEILLANCE = "pass4191_admin_ai_post_activation_live_surveillance" as const;
+export const PASS4191_ADMIN_AI_POST_ACTIVATION_LIVE_SURVEILLANCE_HEADER = "x-velmere-pass4191-admin-ai-post-activation-live-surveillance" as const;
+export const PASS4190_ADMIN_AI_CANARY_OBSERVATION_CLOSURE_FINAL_ACTIVATION = "pass4190_admin_ai_canary_observation_closure_final_activation" as const;
+export const PASS4190_ADMIN_AI_CANARY_OBSERVATION_CLOSURE_FINAL_ACTIVATION_HEADER = "x-velmere-pass4190-admin-ai-canary-observation-closure-final-activation" as const;
+export const PASS4189_ADMIN_AI_PUBLIC_RESTORE_ACTIVATION_CANARY_ROLLBACK = "pass4189_admin_ai_public_restore_activation_canary_rollback" as const;
+export const PASS4189_ADMIN_AI_PUBLIC_RESTORE_ACTIVATION_CANARY_ROLLBACK_HEADER = "x-velmere-pass4189-admin-ai-public-restore-activation-canary-rollback" as const;
+export const PASS4188_ADMIN_AI_PUBLIC_RESTORE_PUBLISH_ESCROW_NOTARIZED_EVIDENCE_BOARD = "pass4188_admin_ai_public_restore_publish_escrow_notarized_evidence_board" as const;
+export const PASS4188_ADMIN_AI_PUBLIC_RESTORE_PUBLISH_ESCROW_NOTARIZED_EVIDENCE_BOARD_HEADER = "x-velmere-pass4188-admin-ai-public-restore-publish-escrow-notarized-evidence-board" as const;
+export const PASS4187_ADMIN_AI_RESTORE_APPROVAL_ESCROW_PUBLIC_RESTORE_PREFLIGHT = "pass4187_admin_ai_restore_approval_escrow_public_restore_preflight" as const;
+export const PASS4187_ADMIN_AI_RESTORE_APPROVAL_ESCROW_PUBLIC_RESTORE_PREFLIGHT_HEADER = "x-velmere-pass4187-admin-ai-restore-approval-escrow-public-restore-preflight" as const;
+export const PASS4186_ADMIN_AI_RESTORE_CANDIDATE_NOMINATION_DUAL_CONTROL_APPROVAL = "pass4186_admin_ai_restore_candidate_nomination_dual_control_approval" as const;
+export const PASS4186_ADMIN_AI_RESTORE_CANDIDATE_NOMINATION_DUAL_CONTROL_APPROVAL_HEADER = "x-velmere-pass4186-admin-ai-restore-candidate-nomination-dual-control-approval" as const;
+export const PASS4185_ADMIN_AI_PROBATION_STABILITY_WATCH_RESTORE_ELIGIBILITY = "pass4185_admin_ai_probation_stability_watch_restore_eligibility" as const;
+export const PASS4185_ADMIN_AI_PROBATION_STABILITY_WATCH_RESTORE_ELIGIBILITY_HEADER = "x-velmere-pass4185-admin-ai-probation-stability-watch-restore-eligibility" as const;
+export const PASS4184_ADMIN_AI_REMEDIATION_CLOSURE_ADJUDICATION_POST_INCIDENT_PROBATION = "pass4184_admin_ai_remediation_closure_adjudication_post_incident_probation" as const;
+export const PASS4184_ADMIN_AI_REMEDIATION_CLOSURE_ADJUDICATION_POST_INCIDENT_PROBATION_HEADER = "x-velmere-pass4184-admin-ai-remediation-closure-adjudication-post-incident-probation" as const;
+export const PASS4183_ADMIN_AI_INCIDENT_REMEDIATION_CLOSURE_RESTORE_LOCK = "pass4183_admin_ai_incident_remediation_closure_restore_lock" as const;
+export const PASS4183_ADMIN_AI_INCIDENT_REMEDIATION_CLOSURE_RESTORE_LOCK_HEADER = "x-velmere-pass4183-admin-ai-incident-remediation-closure-restore-lock" as const;
+export const PASS4182_ADMIN_AI_CONTINUITY_BREACH_AUTO_DOWNGRADE_INCIDENT_ESCALATION = "pass4182_admin_ai_continuity_breach_auto_downgrade_incident_escalation" as const;
+export const PASS4182_ADMIN_AI_CONTINUITY_BREACH_AUTO_DOWNGRADE_INCIDENT_ESCALATION_HEADER = "x-velmere-pass4182-admin-ai-continuity-breach-auto-downgrade-incident-escalation" as const;
+export const PASS4181_ADMIN_AI_POST_RESTORE_PUBLIC_SEAL_CONTINUITY_MONITOR = "pass4181_admin_ai_post_restore_public_seal_continuity_monitor" as const;
+export const PASS4181_ADMIN_AI_POST_RESTORE_PUBLIC_SEAL_CONTINUITY_MONITOR_HEADER = "x-velmere-pass4181-admin-ai-post-restore-public-seal-continuity-monitor" as const;
+export const PASS4180_ADMIN_AI_PROBATION_EXIT_SEAL_RESTORE_GRADUATION = "pass4180_admin_ai_probation_exit_seal_restore_graduation" as const;
+export const PASS4180_ADMIN_AI_PROBATION_EXIT_SEAL_RESTORE_GRADUATION_HEADER = "x-velmere-pass4180-admin-ai-probation-exit-seal-restore-graduation" as const;
+export const PASS4179_ADMIN_AI_RECOVERY_RESTORE_PROBATION_RELAPSE_SENTINEL = "pass4179_admin_ai_recovery_restore_probation_relapse_sentinel" as const;
+export const PASS4179_ADMIN_AI_RECOVERY_RESTORE_PROBATION_RELAPSE_SENTINEL_HEADER = "x-velmere-pass4179-admin-ai-recovery-restore-probation-relapse-sentinel" as const;
+export const PASS4178_ADMIN_AI_REVALIDATION_REPLAY_ADJUDICATION_RECOVERY_ESCROW = "pass4178_admin_ai_revalidation_replay_adjudication_recovery_escrow" as const;
+export const PASS4178_ADMIN_AI_REVALIDATION_REPLAY_ADJUDICATION_RECOVERY_ESCROW_HEADER = "x-velmere-pass4178-admin-ai-revalidation-replay-adjudication-recovery-escrow" as const;
+import { createHash } from "node:crypto";
+import { verifyAdminImportRequest } from "@/lib/admin/auth";
+export const PASS4177_ADMIN_AI_REVALIDATION_SCHEDULER_STALE_PROOF_QUARANTINE = "pass4177_admin_ai_revalidation_scheduler_stale_proof_quarantine" as const;
+export const PASS4177_ADMIN_AI_REVALIDATION_SCHEDULER_STALE_PROOF_QUARANTINE_HEADER = "x-velmere-pass4177-admin-ai-revalidation-scheduler-stale-proof-quarantine" as const;
+import {
+  applySoftRateLimit as applyPass2177SoftRateLimit,
+  assertSameOriginRequest as assertPass2177SameOriginRequest,
+  rejectLargeContentLength as rejectPass2177LargeContentLength,
+} from "@/lib/security/api-guard";
+import { generateGeminiAdminText } from "@/lib/ai/gemini";
+import { readBoundedJsonBody } from "@/lib/security/payment-webhook-guard";
+import {
+  applySoftRateLimit,
+  assertAllowedMethods,
+  rejectLargeContentLength,
+  securityJson,
+} from "@/lib/security/api-guard";
+
+export const runtime = "nodejs";
+
+const PASS4157_ADMIN_AI_INPUT_REDACTION_FIXTURE =
+  "pass4157-admin-ai-input-redaction-fixture: admin AI route may use input for provider generation but response proof returns only bounded length/digest metadata and never raw input" as const;
+
+type Pass4157AdminAiInputRedactionFixture = {
+  passId: "PASS4157_ADMIN_AI_INPUT_REDACTION_FIXTURE";
+  rawInputReturned: false;
+  inputDigest: string;
+  inputLength: number;
+  inputPreviewReturned: false;
+  providerPayloadAllowed: true;
+  redactionCases: Array<
+    | "no_raw_input_echo"
+    | "bounded_length_only"
+    | "sha256_digest_only"
+    | "admin_auth_before_provider_call"
+  >;
+  boundary: typeof PASS4157_ADMIN_AI_INPUT_REDACTION_FIXTURE;
+};
+
+function buildPass4157AdminAiInputRedactionFixture(
+  input: string,
+): Pass4157AdminAiInputRedactionFixture {
+  return {
+    passId: "PASS4157_ADMIN_AI_INPUT_REDACTION_FIXTURE",
+    rawInputReturned: false,
+    inputDigest: createHash("sha256").update(input, "utf8").digest("hex"),
+    inputLength: input.length,
+    inputPreviewReturned: false,
+    providerPayloadAllowed: true,
+    redactionCases: [
+      "no_raw_input_echo",
+      "bounded_length_only",
+      "sha256_digest_only",
+      "admin_auth_before_provider_call",
+    ],
+    boundary: PASS4157_ADMIN_AI_INPUT_REDACTION_FIXTURE,
+  };
+}
+
+const PASS4158_ADMIN_AI_PROMPT_INJECTION_NEGATIVE_FIXTURE =
+  "pass4158-admin-ai-prompt-injection-negative-fixture: admin AI route blocks prompt-injection/payment-bypass/secret-exfiltration requests before provider calls and returns digest-only proof metadata" as const;
+
+const PASS4159_ADMIN_AI_NEGATIVE_CASE_REPLAY_RUNNER =
+  "pass4159-admin-ai-negative-case-replay-runner: deterministic local fixture pack verifies prompt-injection, payment-bypass, secret-exfiltration and raw-prompt echo cases are blocked before provider call with digest-only metadata" as const;
+
+const PASS4160_ADMIN_AI_SIGNED_NEGATIVE_FIXTURE_BINDER =
+  "pass4160-admin-ai-signed-negative-fixture-binder: PASS4159 AI negative cases are digest-bound into a signed local fixture manifest and remain provider-eval gated before topka-live promotion" as const;
+
+const PASS4161_ADMIN_AI_FINAL_RUNNER_INTAKE_GATE =
+  "pass4161-admin-ai-final-runner-intake-gate: PASS4160 signed negative AI fixtures enter final-runner intake while provider red-team eval remains blocked until TESTED_GREEN receipt" as const;
+
+const PASS4162_ADMIN_AI_NODE20_PREFLIGHT_EVIDENCE_BUCKET =
+  "pass4162-admin-ai-node20-preflight-evidence-bucket: admin AI negative fixtures are now bound to Node20 preflight evidence, npm-ci dry-run output and diagnostic buckets while provider eval remains fail-closed" as const;
+
+const PASS4163_ADMIN_AI_TYPECHECK_DIAGNOSTIC_REDUCER =
+  "pass4163-admin-ai-typecheck-diagnostic-reducer: admin AI route diagnostics are reduced into dependency/type-install buckets and transitive implicit-any cleanup before provider red-team or topka-live promotion" as const;
+
+const PASS4164_ADMIN_AI_DEPENDENCY_TYPE_SURFACE_CLOSURE =
+  "pass4164-admin-ai-dependency-type-surface-closure: admin AI missing-module diagnostics are bound to declared provider/security dependency surfaces and Node20 type policy before provider red-team promotion" as const;
+
+const PASS4165_ADMIN_AI_NODE20_TYPE_PACKAGE_ALIGNMENT =
+  "pass4165-admin-ai-node20-type-package-alignment: admin AI route type evidence now uses Node20-compatible @types/node package/lock policy while provider red-team eval remains fail-closed until clean Node20 runtime proof" as const;
+
+const PASS4166_ADMIN_AI_CLEAN_ROOM_INSTALL_READINESS_LOCK =
+  "pass4166-admin-ai-clean-room-install-readiness-lock: admin AI proof chain now binds Node20 engine-strict install readiness, package-lock drift checks and clean-room execution queue before provider red-team eval or topka-live promotion" as const;
+
+const PASS4167_ADMIN_AI_FINAL_CLEANROOM_EXECUTION_DAG =
+  "pass4167-admin-ai-final-cleanroom-execution-dag: provider red-team eval is now ordered inside a fail-closed Node20 clean-room DAG after install/typecheck/build/lint/security gates before any AI/topka-live promotion" as const;
+
+const PASS4168_ADMIN_AI_ZERO_SKIP_FINAL_RUNNER_BRIDGE =
+  "pass4168-admin-ai-zero-skip-final-runner-bridge: AI provider red-team proof is connected to the zero-skip final-runner ledger; no admin/AI green claim can bypass missing receipt evidence" as const;
+
+const PASS4169_ADMIN_AI_RECEIPT_FRESHNESS_EXPIRY_GATE =
+  "pass4169-admin-ai-receipt-freshness-expiry-gate: AI provider red-team eval cannot promote from stale, missing, local-only or non-Node20 receipts; every AI proof must include fresh environment-bound evidence" as const;
+
+const PASS4170_ADMIN_AI_RECEIPT_PROVENANCE_ENVIRONMENT_BINDING =
+  "pass4170-admin-ai-receipt-provenance-environment-binding: AI red-team eval receipts must bind provenance to Node20 runtime, npm version, package-lock digest, command digest and evaluator artifact digest before any AI/topka-live claim can promote" as const;
+
+const PASS4171_ADMIN_AI_TAMPER_EVIDENT_RECEIPT_CHAIN =
+  "pass4171-admin-ai-tamper-evident-receipt-chain: AI red-team receipts must be chained to prior proof digests so edited, reordered or local-only evaluator artifacts cannot promote as live AI evidence" as const;
+
+const PASS4172_ADMIN_AI_RELEASE_FREEZE_DIGEST_SOURCE_MANIFEST_SEAL =
+  "pass4172-admin-ai-release-freeze-digest-source-manifest-seal: AI red-team receipts must bind to the frozen source manifest, admin route digest, package-lock digest and release-freeze chain head before any AI/live proof can promote" as const;
+
+const PASS4173_ADMIN_AI_POST_FREEZE_DIFF_FIREWALL_MUTATION_WATCH =
+  "pass4173-admin-ai-post-freeze-diff-firewall-mutation-watch: AI red-team receipts must match the approved post-freeze source delta; any unapproved Admin AI route, evaluator or package mutation blocks AI/live promotion" as const;
+
+const PASS4174_ADMIN_AI_RELEASE_PROMOTION_ESCROW_OPERATOR_SIGNOFF_GATE =
+  "pass4174-admin-ai-release-promotion-escrow-operator-signoff-gate: AI red-team eval cannot promote to live proof until the post-freeze head, evaluator receipt and dual-operator signoff packet are accepted for the same release candidate" as const;
+
+const PASS4175_ADMIN_AI_PUBLIC_CLAIM_DEGRADATION_STATUS_BOARD_GATE =
+  "pass4175-admin-ai-public-claim-degradation-status-board-gate: AI proof missing red-team evaluator receipt, Node20 final green status or operator signoff must publicly degrade to BLOCKED_EVIDENCE_MISSING instead of READY, VERIFIED or TOPKA_LIVE" as const;
+const PASS4176_ADMIN_AI_CLAIM_EXPIRY_AUTO_DOWNGRADE_RENEWAL_GATE =
+  "pass4176-admin-ai-claim-expiry-auto-downgrade-renewal-gate: AI public verification must expire without fresh red-team Node20 final-green evaluator evidence and renewal signoff; stale AI proof auto-downgrades to NEEDS_REVALIDATION" as const;
+
+
+type Pass4158AdminAiNegativeCase =
+  | "ignore_previous_instructions"
+  | "payment_or_entitlement_bypass"
+  | "secret_or_env_exfiltration"
+  | "raw_prompt_echo_request";
+
+type Pass4158AdminAiPromptInjectionNegativeFixture = {
+  passId: "PASS4158_ADMIN_AI_PROMPT_INJECTION_NEGATIVE_FIXTURE";
+  inputDigest: string;
+  inputLength: number;
+  rawInputReturned: false;
+  providerBlocked: boolean;
+  matchedNegativeCases: Pass4158AdminAiNegativeCase[];
+  expectedNegativeCases: Pass4158AdminAiNegativeCase[];
+  boundary: typeof PASS4158_ADMIN_AI_PROMPT_INJECTION_NEGATIVE_FIXTURE;
+};
+
+function detectPass4158AdminAiNegativeCases(
+  input: string,
+): Pass4158AdminAiNegativeCase[] {
+  const normalized = input.toLowerCase();
+  const cases = new Set<Pass4158AdminAiNegativeCase>();
+  if (
+    /ignore|bypass|override|forget|jailbreak|developer mode/i.test(normalized)
+  ) {
+    cases.add("ignore_previous_instructions");
+  }
+  if (
+    /payment|paid access|entitlement|stripe|checkout|webhook|402/i.test(
+      normalized,
+    )
+  ) {
+    cases.add("payment_or_entitlement_bypass");
+  }
+  if (
+    /secret|api key|apikey|env|token|bearer|private key|seed phrase/i.test(
+      normalized,
+    )
+  ) {
+    cases.add("secret_or_env_exfiltration");
+  }
+  if (/repeat.*prompt|show.*system|echo.*input|raw prompt/i.test(normalized)) {
+    cases.add("raw_prompt_echo_request");
+  }
+  return Array.from(cases);
+}
+
+function buildPass4158AdminAiPromptInjectionNegativeFixture(
+  input: string,
+): Pass4158AdminAiPromptInjectionNegativeFixture {
+  const matchedNegativeCases = detectPass4158AdminAiNegativeCases(input);
+  return {
+    passId: "PASS4158_ADMIN_AI_PROMPT_INJECTION_NEGATIVE_FIXTURE",
+    inputDigest: createHash("sha256").update(input, "utf8").digest("hex"),
+    inputLength: input.length,
+    rawInputReturned: false,
+    providerBlocked: matchedNegativeCases.length > 0,
+    matchedNegativeCases,
+    expectedNegativeCases: [
+      "ignore_previous_instructions",
+      "payment_or_entitlement_bypass",
+      "secret_or_env_exfiltration",
+      "raw_prompt_echo_request",
+    ],
+    boundary: PASS4158_ADMIN_AI_PROMPT_INJECTION_NEGATIVE_FIXTURE,
+  };
+}
+
+type AiRequestBody = {
+  task?: "product_description" | "rewrite_copy" | "alt_text" | "import_cleanup";
+  locale?: "pl" | "en" | "de";
+  input?: string;
+};
+
+const PASS4156_ADMIN_AI_ROUTE_BOUNDARY =
+  "pass4156-admin-ai-route-boundary: admin AI generation requires same-origin/rate-limit/admin auth and returns only provider payload plus bounded proof metadata" as const;
+
+type Pass4156AdminAiTask = NonNullable<AiRequestBody["task"]>;
+type Pass4156AdminAiLocale = NonNullable<AiRequestBody["locale"]>;
+
+type Pass4156AdminAiBoundary = {
+  passId: "PASS4156_ADMIN_AI_ROUTE_BOUNDARY";
+  adminAuthRequired: true;
+  sameOriginChecked: true;
+  inputReturnedRaw: false;
+  task: Pass4156AdminAiTask;
+  locale: Pass4156AdminAiLocale;
+  inputLength: number;
+  boundary: typeof PASS4156_ADMIN_AI_ROUTE_BOUNDARY;
+};
+
+function resolvePass4156AdminAiTask(value: unknown): Pass4156AdminAiTask {
+  return value === "product_description" ||
+    value === "rewrite_copy" ||
+    value === "alt_text" ||
+    value === "import_cleanup"
+    ? value
+    : "import_cleanup";
+}
+
+function resolvePass4156AdminAiLocale(value: unknown): Pass4156AdminAiLocale {
+  return value === "en" || value === "de" || value === "pl" ? value : "pl";
+}
+
+function parsePass4156AdminAiBody(value: unknown): AiRequestBody {
+  return value && typeof value === "object" ? (value as AiRequestBody) : {};
+}
+
+function buildPass4156AdminAiBoundary(args: {
+  task: Pass4156AdminAiTask;
+  locale: Pass4156AdminAiLocale;
+  inputLength: number;
+}): Pass4156AdminAiBoundary {
+  return {
+    passId: "PASS4156_ADMIN_AI_ROUTE_BOUNDARY",
+    adminAuthRequired: true,
+    sameOriginChecked: true,
+    inputReturnedRaw: false,
+    task: args.task,
+    locale: args.locale,
+    inputLength: args.inputLength,
+    boundary: PASS4156_ADMIN_AI_ROUTE_BOUNDARY,
+  };
+}
+
+async function handleAdminAiPost(req: Request) {
+  const pass2177SizeGuard = rejectPass2177LargeContentLength(req, 256 * 1024);
+  if (pass2177SizeGuard) return pass2177SizeGuard;
+
+  const pass2177OriginGuard = assertPass2177SameOriginRequest(req, {
+    allowMissingOrigin: true,
+  });
+  if (pass2177OriginGuard) return pass2177OriginGuard;
+
+  const pass2177RateLimit = applyPass2177SoftRateLimit(req, {
+    keyPrefix: "pass2177-ai",
+    limit: 24,
+    windowMs: 60_000,
+  });
+  if (!pass2177RateLimit.ok) return pass2177RateLimit.response;
+
+  const methodGuard = assertAllowedMethods(req, ["POST"]);
+  if (methodGuard) return methodGuard;
+
+  const sizeGuard = rejectLargeContentLength(req, 64 * 1024);
+  if (sizeGuard) return sizeGuard;
+
+  const rateLimit = applySoftRateLimit(req, {
+    keyPrefix: "admin-ai",
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) return rateLimit.response;
+
+  const auth = verifyAdminImportRequest(req);
+  if (!auth.ok) return auth.response;
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return securityJson(
+      { error: "ai_provider_unavailable" },
+      {
+        status: 503,
+        headers: {
+          "x-velmere-pass4196-secret-exposure-lock":
+            "admin-auth-passed-provider-config-not-disclosed",
+        },
+      },
+    );
+  }
+
+  const parsedBody = await readBoundedJsonBody<unknown>(req, 64 * 1024, { maxDepth: 10 });
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsePass4156AdminAiBody(parsedBody.value);
+  const task = resolvePass4156AdminAiTask(body.task);
+  const locale = resolvePass4156AdminAiLocale(body.locale);
+  const input = typeof body.input === "string" ? body.input.trim() : "";
+
+  if (!input) {
+    return securityJson({ error: "Input is required." }, { status: 400 });
+  }
+
+  const pass4158 = buildPass4158AdminAiPromptInjectionNegativeFixture(input);
+  if (pass4158.providerBlocked) {
+    return securityJson(
+      {
+        error: "ai_input_policy_blocked",
+        pass4157: buildPass4157AdminAiInputRedactionFixture(input),
+        pass4158,
+      },
+      {
+        status: 400,
+        headers: {
+          "x-velmere-pass4158-admin-ai-negative-fixture":
+            "blocked-before-provider-digest-only",
+          "x-velmere-pass4159-admin-ai-negative-replay":
+            PASS4159_ADMIN_AI_NEGATIVE_CASE_REPLAY_RUNNER,
+          "x-velmere-pass4160-admin-ai-signed-negative-fixture-binder":
+            PASS4160_ADMIN_AI_SIGNED_NEGATIVE_FIXTURE_BINDER,
+          "x-velmere-pass4161-admin-ai-final-runner-intake":
+            PASS4161_ADMIN_AI_FINAL_RUNNER_INTAKE_GATE,
+          "x-velmere-pass4162-admin-ai-node20-preflight-evidence":
+            PASS4162_ADMIN_AI_NODE20_PREFLIGHT_EVIDENCE_BUCKET,
+          "x-velmere-pass4163-admin-ai-typecheck-diagnostic-reducer":
+            PASS4163_ADMIN_AI_TYPECHECK_DIAGNOSTIC_REDUCER,
+          "x-velmere-pass4164-admin-ai-dependency-type-surface":
+            PASS4164_ADMIN_AI_DEPENDENCY_TYPE_SURFACE_CLOSURE,
+          "x-velmere-pass4165-admin-ai-node20-type-package-alignment":
+            PASS4165_ADMIN_AI_NODE20_TYPE_PACKAGE_ALIGNMENT,
+          "x-velmere-pass4166-admin-ai-clean-room-install-readiness":
+            PASS4166_ADMIN_AI_CLEAN_ROOM_INSTALL_READINESS_LOCK,
+          "x-velmere-pass4167-admin-ai-final-cleanroom-execution-dag":
+            PASS4167_ADMIN_AI_FINAL_CLEANROOM_EXECUTION_DAG,
+          "x-velmere-pass4168-admin-ai-zero-skip-final-runner-bridge":
+            PASS4168_ADMIN_AI_ZERO_SKIP_FINAL_RUNNER_BRIDGE,
+          "x-velmere-pass4169-admin-ai-receipt-freshness-expiry":
+            PASS4169_ADMIN_AI_RECEIPT_FRESHNESS_EXPIRY_GATE,
+          "x-velmere-pass4170-admin-ai-receipt-provenance-env-binding":
+            PASS4170_ADMIN_AI_RECEIPT_PROVENANCE_ENVIRONMENT_BINDING,
+          "x-velmere-pass4171-admin-ai-tamper-evident-receipt-chain":
+            PASS4171_ADMIN_AI_TAMPER_EVIDENT_RECEIPT_CHAIN,
+          "x-velmere-pass4172-admin-ai-release-freeze-source-manifest-seal":
+            PASS4172_ADMIN_AI_RELEASE_FREEZE_DIGEST_SOURCE_MANIFEST_SEAL,
+          "x-velmere-pass4173-admin-ai-post-freeze-diff-firewall-mutation-watch":
+            PASS4173_ADMIN_AI_POST_FREEZE_DIFF_FIREWALL_MUTATION_WATCH,
+          "x-velmere-pass4174-admin-ai-release-promotion-escrow-operator-signoff":
+            PASS4174_ADMIN_AI_RELEASE_PROMOTION_ESCROW_OPERATOR_SIGNOFF_GATE,
+          "x-velmere-pass4175-admin-ai-public-claim-degradation-status-board":
+            PASS4175_ADMIN_AI_PUBLIC_CLAIM_DEGRADATION_STATUS_BOARD_GATE,
+          "x-velmere-pass4176-admin-ai-claim-expiry-auto-downgrade-renewal":
+            PASS4176_ADMIN_AI_CLAIM_EXPIRY_AUTO_DOWNGRADE_RENEWAL_GATE,
+        },
+      },
+    );
+  }
+
+  const result = await generateGeminiAdminText({ task, locale, input });
+  return securityJson(
+    {
+      ...result.payload,
+      pass4156: buildPass4156AdminAiBoundary({
+        task,
+        locale,
+        inputLength: input.length,
+      }),
+      pass4157: buildPass4157AdminAiInputRedactionFixture(input),
+      pass4158,
+    },
+    {
+      status: result.status,
+      headers: {
+        "x-velmere-pass4156-admin-ai-boundary":
+          "admin-auth-required-input-not-echoed",
+        "x-velmere-pass4157-admin-ai-input-redaction":
+          "sha256-digest-only-no-raw-input",
+        "x-velmere-pass4158-admin-ai-negative-fixture":
+          "passed-negative-cases-digest-only",
+        "x-velmere-pass4159-admin-ai-negative-replay":
+          PASS4159_ADMIN_AI_NEGATIVE_CASE_REPLAY_RUNNER,
+        "x-velmere-pass4160-admin-ai-signed-negative-fixture-binder":
+          PASS4160_ADMIN_AI_SIGNED_NEGATIVE_FIXTURE_BINDER,
+        "x-velmere-pass4161-admin-ai-final-runner-intake":
+          PASS4161_ADMIN_AI_FINAL_RUNNER_INTAKE_GATE,
+        "x-velmere-pass4162-admin-ai-node20-preflight-evidence":
+          PASS4162_ADMIN_AI_NODE20_PREFLIGHT_EVIDENCE_BUCKET,
+        "x-velmere-pass4163-admin-ai-typecheck-diagnostic-reducer":
+          PASS4163_ADMIN_AI_TYPECHECK_DIAGNOSTIC_REDUCER,
+      },
+    },
+  );
+}
+
+export async function POST(req: Request) {
+  return withExpensiveRouteBudget(req, "admin_ai_post", () => handleAdminAiPost(req));
+}

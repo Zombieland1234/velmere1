@@ -1,0 +1,17 @@
+rules:
+  - id: velmere.solidity.tx-origin-auth
+    languages: [solidity]
+    severity: ERROR
+    message: tx.origin should not authorize privileged actions
+    pattern: tx.origin
+    metadata:
+      category: security
+      confidence: HIGH
+  - id: velmere.solidity.delegatecall-review
+    languages: [solidity]
+    severity: WARNING
+    message: delegatecall target requires manual trust-boundary review
+    pattern: $TARGET.delegatecall(...)
+    metadata:
+      category: security
+      confidence: MEDIUM

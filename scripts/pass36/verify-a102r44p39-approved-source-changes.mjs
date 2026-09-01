@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+const REV = "VELMERE_PASS36_A102R44P39_ACTION_REQUIRED_AUDIT_PACKET_PARITY_BYTECODE_PROXY_BINDING_AND_EXTERNAL_ACCURACY_REGISTRY_TEST_CYCLE_2_OF_3_NO_LIVE_CREDIT";
+const PARENT = "VELMERE_PASS36_A102R44P38_ACTION_REQUIRED_COMPILER_AST_IR_LOCAL_GENERALIZATION24_METAMORPHIC7_AND_AUDIT_ACCURACY_TEST_CYCLE_1_OF_3_NO_LIVE_CREDIT";
+const parent = JSON.parse(fs.readFileSync("_velmere/PASS36_A102R44P38_SOURCE_ONLY_MANIFEST.json", "utf8"));
+const current = JSON.parse(fs.readFileSync("_velmere/PASS36_A102R44P39_SOURCE_ONLY_MANIFEST.json", "utf8"));
+const approved = JSON.parse(fs.readFileSync("config/pass36/r44p39-approved-source-changes.json", "utf8"));
+const p = new Map(parent.files.map((row) => [row.path, row]));
+const c = new Map(current.files.map((row) => [row.path, row]));
+const compareUtf8 = (left, right) => Buffer.compare(Buffer.from(left, "utf8"), Buffer.from(right, "utf8"));
+const added = [...c.keys()].filter((item) => !p.has(item)).sort(compareUtf8);
+const deleted = [...p.keys()].filter((item) => !c.has(item)).sort(compareUtf8);
+const modified = [...c.keys()].filter((item) => p.has(item) && (p.get(item).sha256 !== c.get(item).sha256 || p.get(item).byteLength !== c.get(item).byteLength)).sort(compareUtf8);
+const rows = [];
+const check = (id, passed, detail = null) => rows.push({ id, passed: Boolean(passed), detail });
+check("revision", approved.revisionId === REV && current.revisionId === REV);
+check("parent", approved.parentRevisionId === PARENT && parent.revisionId === PARENT);
+check("added", JSON.stringify(added) === JSON.stringify([...approved.added].sort(compareUtf8)), { actual: added, expected: approved.added });
+check("modified", JSON.stringify(modified) === JSON.stringify([...approved.modified].sort(compareUtf8)), { actual: modified, expected: approved.modified });
+check("deleted", JSON.stringify(deleted) === JSON.stringify([...approved.deleted].sort(compareUtf8)), { actual: deleted, expected: approved.deleted });
+check("no-history-mutation", approved.historyMutations === 0 && approved.removedTests === 0 && approved.denominatorCollapse === false);
+check("no-promotion", approved.liveCredit === false && approved.saleCredit === false && approved.worldClassCredit === false);
+const failed = rows.filter((row) => !row.passed);
+console.log(JSON.stringify({ schemaVersion: "velmere.pass36.a102r44p39.approved-source-changes-verification.v1", status: failed.length ? "FAIL_R44P39_APPROVED_SOURCE_CHANGES" : "PASS_R44P39_APPROVED_SOURCE_CHANGES", added: added.length, modified: modified.length, deleted: deleted.length, checks: rows.length, passed: rows.length - failed.length, failed: failed.length, rows }, null, 2));
+if (failed.length) process.exit(1);

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "velmere.p94r1.failure-adjudication.v1",
+  "generatedAt": "2026-08-21T00:20:00.000Z",
+  "status": "PASS_COMPLETE_FAILURE_ADJUDICATION_ZERO_CREDIT",
+  "sourceReceipt": "receipts/p94/P94_FAILURE_ADJUDICATION.json",
+  "sourceReceiptSha256": "b3ffc9310597cad4ee2b9bf7814f98a34f9722c43d083302c3501eed0954e2e1",
+  "failures": {
+    "total": 7,
+    "adjudicated": 7,
+    "unadjudicated": 0,
+    "rows": [
+      {
+        "id": "P94_RUNTIME_001_TEST_FIXTURE_SNAPSHOT_INSTEAD_OF_EVENT",
+        "log": "artifacts/p94/logs/failures/P94_RUNTIME_001_TEST_FIXTURE_SNAPSHOT_INSTEAD_OF_EVENT.log",
+        "classification": "TEST_FIXTURE_DEFECT_ZERO_CREDIT",
+        "rootCause": "The negative test supplied a RiskHistorySnapshotRecord where the production boundary requires a verified RiskHistoryEvent.",
+        "repair": "Use the actual WITHHELD event from the internal canonical history and rerun the complete runtime suite from the beginning.",
+        "replacementProof": "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_RUNTIME.json",
+        "replacementStatus": "PASS_BOUNDED_NO_SOCKET_PUBLIC_ONLY_PAGINATION",
+        "replacementChecks": 62,
+        "logBytes": 669,
+        "logSha256": "acd27894c811a1a6403d946847a97dc1b132a66fa19c6fdf02dbfc2608a62096",
+        "replacementProofSha256": "cc750b01847b1fe2f0584171fc87a759773cf872228d9087d4e0134a56515303",
+        "credit": 0,
+        "adjudicated": true
+      },
+      {
+        "id": "P94_STATIC_001_FALSE_POSITIVE_REQUEST_BINDING_CALL_VS_RESPONSE",
+        "log": "artifacts/p94/logs/failures/P94_STATIC_001_FALSE_POSITIVE_REQUEST_BINDING_CALL_VS_RESPONSE.log",
+        "classification": "STATIC_HARNESS_FALSE_POSITIVE_ZERO_CREDIT",
+        "rootCause": "The assertion searched the entire route source for requestBinding and confused the internal builder argument with a customer response field.",
+        "repair": "Parse the returned response object boundary and verify that requestBinding is consumed internally but not serialized to the public route payload.",
+        "replacementProof": "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_STATIC.json",
+        "replacementStatus": "PASS",
+        "replacementChecks": 111,
+        "logBytes": 579,
+        "logSha256": "b005d3df8215721e1d315f3864f6cc7cecbbe26deeb8647212ddda6636c82b1c",
+        "replacementProofSha256": "0f2e96adec3f6617d05b227f0bfd6e29f811306b9cf391987166b8a9c7c63c8b",
+        "credit": 0,
+        "adjudicated": true
+      },
+      {
+        "id": "P94_STATIC_002_SCHEMA_SOURCE_DIVERGENCE",
+        "log": "artifacts/p94/logs/failures/P94_STATIC_002_SCHEMA_PARITY_EXPECTATION_TOO_STRICT.log",
+        "classification": "REAL_SCHEMA_MIGRATION_DIVERGENCE_FIXED_ZERO_INITIAL_CREDIT",
+        "rootCause": "The ordered P94 migration contained the final public request binding and STABLE time semantics, while lib/db/schema.sql still contained the earlier body without the same guarantees. The failure was not merely a strict test expectation despite the historical log filename.",
+        "repair": "Replace the schema-file function body with the exact ordered migration body and verify source parity.",
+        "replacementProof": "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_STATIC.json",
+        "replacementStatus": "PASS",
+        "replacementChecks": 111,
+        "logBytes": 562,
+        "logSha256": "35cf4dc29b8410caf89cefbceb87659b945cf21a292c6707aed0883a84a01072",
+        "replacementProofSha256": "0f2e96adec3f6617d05b227f0bfd6e29f811306b9cf391987166b8a9c7c63c8b",
+        "credit": 0,
+        "adjudicated": true
+      },
+      {
+        "id": "P94_TYPESCRIPT_003_INITIAL_PUBLIC_BINDING_INFERENCE_FIXED",
+        "log": "artifacts/p94/logs/failures/P94_TYPESCRIPT_003_INITIAL_PUBLIC_BINDING_INFERENCE_FIXED.log",
+        "classification": "REAL_TYPE_INFERENCE_DEFECT_FIXED_ZERO_INITIAL_CREDIT",
+        "rootCause": "requestBinding.resolutionKind widened to string | null after validation instead of the closed CANONICAL | UNIQUE_ALIAS | null union.",
+        "repair": "Add the exact RiskHistoryPublicRequestBinding return type at the parser boundary and rerun all four targeted strict TypeScript configurations.",
+        "replacementProof": "receipts/p94/P94_TARGETED_STRICT_TYPESCRIPT.json",
+        "replacementStatus": "PASS_BOUNDED_TARGETED_STRICT_TYPESCRIPT",
+        "replacementChecks": 4,
+        "logBytes": 699,
+        "logSha256": "f7af8d84048732f8eafdb9055fa9b4df1d347016d66dc0563340e6c71c645a56",
+        "replacementProofSha256": "a92f10196f6485038b2a606a7b3b0edab17e390858aa28c9ed5ec1433651a823",
+        "credit": 0,
+        "adjudicated": true
+      },
+      {
+        "id": "P94_TYPESCRIPT_001_P93_AMBIENT_SUPERSEDED",
+        "log": "artifacts/p94/logs/failures/P94_TYPESCRIPT_001_P93_AMBIENT_SUPERSEDED.log",
+        "classification": "SUPERSEDED_AMBIENT_CONTRACT_NO_CREDIT",
+        "rootCause": "The frozen P93 ambient declaration does not contain the new P94 public pagination types and reader.",
+        "repair": "Preserve P93 history unchanged and use the closed P94 server ambient for current-byte proof.",
+        "replacementProof": "receipts/p94/P94_TARGETED_STRICT_TYPESCRIPT.json",
+        "replacementStatus": "PASS_BOUNDED_TARGETED_STRICT_TYPESCRIPT",
+        "replacementChecks": 4,
+        "logBytes": 1187,
+        "logSha256": "d9b8405bc8c74c6986673739fc6bed7a362be8afea44ce2becbbd11c513858a0",
+        "replacementProofSha256": "a92f10196f6485038b2a606a7b3b0edab17e390858aa28c9ed5ec1433651a823",
+        "credit": 0,
+        "adjudicated": true
+      },
+      {
+        "id": "P94_TYPESCRIPT_002_P92_UI_AMBIENT_SUPERSEDED",
+        "log": "artifacts/p94/logs/failures/P94_TYPESCRIPT_002_P92_UI_AMBIENT_SUPERSEDED.log",
+        "classification": "SUPERSEDED_AMBIENT_CONTRACT_NO_CREDIT",
+        "rootCause": "The frozen P92 UI ambient predates cursors, page merging and safe merged-event caps.",
+        "repair": "Preserve P92 history unchanged and use the closed P94 UI ambient for current-byte proof.",
+        "replacementProof": "receipts/p94/P94_TARGETED_STRICT_TYPESCRIPT.json",
+        "replacementStatus": "PASS_BOUNDED_TARGETED_STRICT_TYPESCRIPT",
+        "replacementChecks": 4,
+        "logBytes": 1196,
+        "logSha256": "2701e6c8597fc5b34cfe1d8ff32f4541d46db5680f215867a2601638f892bfef",
+        "replacementProofSha256": "a92f10196f6485038b2a606a7b3b0edab17e390858aa28c9ed5ec1433651a823",
+        "credit": 0,
+        "adjudicated": true
+      },
+      {
+        "id": "P94_REGRESSION_001_P91_LEDGER_RPC_V1_SUPERSEDED",
+        "log": "artifacts/p94/logs/failures/P94_REGRESSION_001_P91_LEDGER_RPC_V1_SUPERSEDED.log",
+        "classification": "SUPERSEDED_V1_READER_CONTRACT_NO_CREDIT",
+        "rootCause": "The historical P91 ledger runtime expects the retired v1 canonical reader, while the production shared reader correctly uses the P93 v2 contract.",
+        "repair": "Retain the frozen P91 failure with zero current credit and rerun the P91 event contract plus P93 durable/cross-product current-byte compatibility proofs.",
+        "replacementProof": "receipts/p94/P94_CURRENT_BYTE_REGRESSION.json",
+        "replacementStatus": "PASS_BOUNDED_CURRENT_BYTE_AFFECTED_SCOPE_REGRESSION",
+        "replacementChecks": 308,
+        "logBytes": 574,
+        "logSha256": "8a2b2d92980131e1d292f09b3da3b4eb35866df8fecae106b4119adf73a5d959",
+        "replacementProofSha256": "664cd942be06e3240c2e6762dc07992036676b76075b23304f3df8aabc85345b",
+        "credit": 0,
+        "adjudicated": true
+      }
+    ]
+  },
+  "replacementProofs": [
+    "receipts/p94/P94_CURRENT_BYTE_REGRESSION.json",
+    "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_RUNTIME.json",
+    "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_STATIC.json",
+    "receipts/p94/P94_TARGETED_STRICT_TYPESCRIPT.json"
+  ],
+  "zeroFakeCredit": {
+    "firstFailuresPreserved": true,
+    "nonzeroRunsCredited": false,
+    "supersededHarnessesRewritten": false,
+    "retryUntilGreenCredited": false
+  },
+  "truthBoundary": "Seven first failures or superseded contracts are preserved with zero credit. Replacement PASS applies only to the explicitly rerun bounded scope and does not erase the original result or grant Browser, PostgreSQL, exact-Windows or Customer FINAL credit."
+}

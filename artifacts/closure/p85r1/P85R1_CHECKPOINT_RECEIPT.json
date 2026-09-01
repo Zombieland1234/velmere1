@@ -1,0 +1,329 @@
+{
+  "schemaVersion": "velmere.p85r1.checkpoint-receipt.v1",
+  "generatedAt": "2026-08-20T02:15:00Z",
+  "status": "PASS_BOUNDED_P85R1_AUDIT_DATABASE_ENFORCED_PUBLICATION_VISIBILITY_OWNER_RPC",
+  "canonicalBinding": {
+    "directiveFile": "VELMERE_CANONICAL_OWNER_DIRECTIVE_V17_TRUE_TOPOLOGY_AUTOMATED_ADVANCED_CURRENT_WORLD_CLASS_2026-08-17.txt",
+    "directiveSha256": "de7fbd6df651a7a8a8f85054c6e9ac3c2ca530ebfb0d4ccd335dcb99fb658f05",
+    "directiveChanged": false,
+    "directiveChangeReason": "V17 already requires object-level authorization, immutable stored bytes and fail-closed delivery. P85 closes an implementation gap without authority churn.",
+    "parentCheckpoint": "P84R1",
+    "parentLedgerSha256": "6db258bcb7ab207945970f4d3a0c2de9652c109c7c17dabfbf3c9f34da32c79f",
+    "parentLedgerBytes": 19156,
+    "parentSourceOnlySha256": "ed6a4d103bf5afe75fc2ad1fc0a55346886f7cecc70723a0bb1452bbbb188f78",
+    "parentSourceOnlyBytes": 214630313,
+    "parentSourceOnlyEntries": 8254
+  },
+  "productProjection": {
+    "fileCount": 1610,
+    "payloadBytes": 21321708,
+    "pathSetSha256": "1ca658d50c4ca3864a1c4b0ca9bc01ede1d6dcaae5e0f7fd2be72fa05adeda3e",
+    "sourceContentAggregateSha256": "551996094773c843fac4c13749ccfa6f4e2c2fa8b58804940469ad25b2447743"
+  },
+  "discoveredDefects": [
+    {
+      "id": "P85-DEFECT-01-DIRECT-OWNER-REST-COULD-BYPASS-AUDIT-PUBLICATION-LINK",
+      "severity": "HIGH_CUSTOMER_PRIVACY_AND_EVIDENCE_INTEGRITY_BLOCKER",
+      "status": "REPAIRED_IN_SOURCE_STATIC_PROVEN_RUNTIME_POSTGRES_WITHHELD",
+      "description": "P84 owner RLS allowed a signed owner to query their own Audit snapshot/PDF directly before the immutable publication link existed. P85 makes exact link existence and digest binding part of snapshot/PDF RLS itself."
+    },
+    {
+      "id": "P85-DEFECT-02-LIMIT-BEFORE-ORPHAN-FILTER-AND-N-PLUS-ONE-READS",
+      "severity": "MEDIUM_AVAILABILITY_AND_SCALING_BLOCKER",
+      "status": "REPAIRED_IN_SOURCE_STATIC_AND_LOCAL_RPC_RUNTIME_PROVEN",
+      "description": "The route fetched at most 50 snapshots before filtering hidden Audit rows and issued one link query per Audit artifact. P85 filters publication visibility before LIMIT in PostgreSQL and uses one closed owner-scoped RPC."
+    },
+    {
+      "id": "P85-DEFECT-03-PREVIEW-ACCOUNT-IDENTITY-ACCEPTED-BY-DURABLE-READ-HELPER",
+      "severity": "MEDIUM_BOUNDARY_CONFUSION_BLOCKER",
+      "status": "REPAIRED_AND_RUNTIME_PROVEN",
+      "description": "The first P85 implementation accepted preview:* account strings even though the durable RPC is only valid for authenticated real owners. The helper now rejects preview owners before RPC."
+    }
+  ],
+  "physicalChanges": {
+    "deltaFilesOutsideSelfGeneratedClosure": 48,
+    "buildRelevantChangedFiles": 3,
+    "databaseRlsPublicationBoundaryAdded": true,
+    "ownerScopedSecurityInvokerListRpc": "velmere_list_owner_visible_customer_artifacts_v1",
+    "ownerScopedSecurityInvokerGetRpc": "velmere_get_owner_visible_customer_artifact_v1",
+    "callerAccountIdParameterAccepted": false,
+    "directTableCallsInDurableReadHelper": 0,
+    "publicationVisibilityFilteredBeforeLimit": true,
+    "routeNPlusOneRemoved": true,
+    "previewAccountRejectedByDurableReadHelper": true,
+    "p84WriteBoundaryByteFrozen": true,
+    "historicalReceiptsByteIdentical": true,
+    "runtimeReceiptRepeatability": "PASS"
+  },
+  "localDeterministicFixture": {
+    "classification": "DEFENSIVE_LOCAL_DATABASE_PUBLICATION_VISIBILITY_AND_OWNER_RPC_VALIDATION",
+    "status": "PASS_BOUNDED_LOCAL_MOCKED_OWNER_RPC",
+    "runtimeChecks": 45,
+    "repeatabilityChecks": 5,
+    "staticChecks": 86,
+    "rpcModel": {
+      "readId": "p85-owner-visible-customer-artifact-read-v1",
+      "listRpc": "velmere_list_owner_visible_customer_artifacts_v1",
+      "getRpc": "velmere_get_owner_visible_customer_artifact_v1",
+      "accountIdentityParameterAccepted": false,
+      "directTableCalls": 0,
+      "routeQueryModel": "ONE_OWNER_SCOPED_RPC_PER_LIST_OR_GET",
+      "limitAfterPublicationVisibility": "STATIC_SQL_PROVEN_RUNTIME_POSTGRES_WITHHELD"
+    },
+    "fixtures": [
+      {
+        "snapshotId": "artifact-audit-536a0e826cbef0d0-52daf89a1fb44d716e9a0329cda46325cb8fca96d383261cc479a5ce4964f248",
+        "snapshotDigest": "sha256:0e07f37ced266c8ce096ada400fdeb32ef7425e106ac281e07d42c27d7bbc8ef",
+        "artifactDigest": "sha256:52daf89a1fb44d716e9a0329cda46325cb8fca96d383261cc479a5ce4964f248",
+        "pdfDigest": "sha256:6544acd9132cc15de798aff16458f784df64391d8cf5b8265f10c3c689b85e54",
+        "linkSchema": "p84-audit-customer-artifact-link-v1",
+        "generatedAt": "2026-08-20T20:10:00.000Z"
+      },
+      {
+        "snapshotId": "artifact-audit-536a0e826cbef0d0-da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd",
+        "snapshotDigest": "sha256:178d0b7d93a35624d01094d143fe8baebb9dff9546e5d109ff482e21f0cf34c2",
+        "artifactDigest": "sha256:da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd",
+        "pdfDigest": "sha256:ba90a4b9188691bbf3de505abc5b3cf984e88857b22d16fcf2e4ba02eab7cc60",
+        "linkSchema": "p84-audit-customer-artifact-link-v1",
+        "generatedAt": "2026-08-20T20:00:00.000Z"
+      }
+    ],
+    "customerFinalEligible": false,
+    "auditFinalPdfEligible": false
+  },
+  "controls": [
+    {
+      "label": "P85 owner-visible runtime",
+      "path": "receipts/p85/P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_RUNTIME.json",
+      "sha256": "ef18ebf9cf934b69086cd4f6590266e5cddefcbb91a46ff6628ad83a857a52bc",
+      "checks": 45,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P85 runtime repeatability",
+      "path": "receipts/p85/P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_REPEATABILITY.json",
+      "sha256": "e5a55c0aa878689deec0d6d130b4a79e1b3911a21803ec46e1b3a5166b0a4306",
+      "checks": 5,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P85 database/read-path static",
+      "path": "receipts/p85/P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_STATIC.json",
+      "sha256": "cd31da3c8326a42d50493aa2e6fd22436b0de21cb5490a075514171f0ba8413a",
+      "checks": 86,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P85/P84 frozen write-boundary compatibility",
+      "path": "receipts/p85/P85_P84_OWNER_READ_COMPATIBILITY.json",
+      "sha256": "78c6fe84c31eeb62affcd06daa6c76694013d8224ab521cdef85301bf38d222b",
+      "checks": 34,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P85/P80 immutable artifact replacement compatibility",
+      "path": "receipts/p85/P85_P80_IMMUTABLE_ARTIFACT_COMPATIBILITY.json",
+      "sha256": "559069e567a307d4ec5aa15afb2ba234237af57b03f9b59ac3902d0b6b7613c2",
+      "checks": 10,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P84 owner-read runtime regression",
+      "path": "receipts/p84/P84_AUDIT_CUSTOMER_ARTIFACT_OWNER_READ_RUNTIME.json",
+      "sha256": "65855657cf00983ec46c24558af025626b500422b421685b4b8ec94972bc60c7",
+      "checks": 59,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P84 owner-read repeatability regression",
+      "path": "receipts/p84/P84_AUDIT_CUSTOMER_ARTIFACT_OWNER_READ_REPEATABILITY.json",
+      "sha256": "3eca56d003f7bcd82b268c1ff8845fcfa4210110b6d5521fd28e3bd1c1a4168c",
+      "checks": 5,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P84/P83 atomic publication compatibility",
+      "path": "receipts/p84/P84_P83_ATOMIC_PUBLICATION_COMPATIBILITY.json",
+      "sha256": "633441c6b0b427118fc9aca9e1672f4547b4ca77bf449256a68e4b44f911137b",
+      "checks": 7,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P82 quorum runtime regression",
+      "path": "receipts/p82/P82_SUCCESSFUL_QUORUM_INTEGRITY_RUNTIME.json",
+      "sha256": "83ddff037752d56ed418acdca710410961c6c7c7d4b03e54e348549367c1213f",
+      "checks": 167,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P82 quorum static regression",
+      "path": "receipts/p82/P82_SUCCESSFUL_QUORUM_INTEGRITY_STATIC.json",
+      "sha256": "d832994ce3b7d80710c6272d4f4d6235c33c1452b36ebfc9a9c09eb4196ab6a3",
+      "checks": 129,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P80 immutable Audit runtime regression",
+      "path": "receipts/p80/P80_AUDIT_EXACT_IMMUTABLE_ACCOUNT_ARTIFACT_RUNTIME.json",
+      "sha256": "a6584c83cec907ab7101afe19ca623de2f55c211107f60536b6c4c18b4ef36ac",
+      "checks": 67,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P79 historical customer-path runtime",
+      "path": "receipts/p79/P79_HISTORICAL_DEPLOYMENT_CUSTOMER_PATH_RUNTIME.json",
+      "sha256": "a1a26ec7048bc5f764867767abac5b22eb227e8b77ae51783cc6c41249b05df7",
+      "checks": 93,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P79 historical customer-path static",
+      "path": "receipts/p79/P79_CUSTOMER_PATH_STATIC.json",
+      "sha256": "62e9a96b6d0e432e99401b2a504910a0a8194ba8ea524dac928b403a67863e8e",
+      "checks": 98,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P78 private provider evidence",
+      "path": "receipts/p78/P78_PRIVATE_PROVIDER_EVIDENCE_RUNTIME.json",
+      "sha256": "6bf3ba4dccde73772989c4d4fa8037e26eced5a6f7b9579b035bfe1200a99bdd",
+      "checks": 27,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P78 standard-json customer path",
+      "path": "receipts/p78/P78_STANDARD_JSON_CUSTOMER_PATH_RUNTIME.json",
+      "sha256": "bf6a76f76637e5966b8c0032589db521003b75b98d4206be4a135f5edd218499",
+      "checks": 38,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P78 thirdweb development micro-corpus",
+      "path": "receipts/p78/P78_THIRDWEB_DEVELOPMENT_MICRO_CORPUS_RUNTIME.json",
+      "sha256": "b5c1f113f2bff49d8e70e82504e777faaa7b7bcd1ce1caf5830eec84ef5f9f3b",
+      "checks": 58,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P78 real-audit dataflow static",
+      "path": "receipts/p78/P78_REAL_AUDIT_DATAFLOW_STATIC.json",
+      "sha256": "9ab787b80b234d2fbe15985a3d2d8a233df74272cf3bb77735e9575f543c1ffa",
+      "checks": 38,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P78R3 customer path static",
+      "path": "receipts/p78/P78R3_CUSTOMER_PATH_STATIC.json",
+      "sha256": "553f85700202f519eb0f88fec56e91551642eb984af4941421065026790ea7e2",
+      "checks": 54,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P77 deterministic delivery current static",
+      "path": "receipts/p85/P85_P77_DETERMINISTIC_DELIVERY_CURRENT_STATIC_REGRESSION.json",
+      "sha256": "c7ac1249cc6ab64fdfa607ca68f54939840c2ef5735dc33574600e28e2a0319b",
+      "checks": 23,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P85 changed production module imports",
+      "path": "artifacts/p85/logs/P85_CHANGED_MODULE_IMPORTS.log",
+      "sha256": "314fe5e6b58d672a4629fbe79c93b610b88cd1325e5cf3b88b1bd90c5bda487d",
+      "checks": 3,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P85 targeted strict TypeScript",
+      "path": "artifacts/p85/logs/P85_TARGETED_TYPESCRIPT.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checks": 1,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "P75 Advanced automation runtime",
+      "path": "artifacts/p85/logs/P75_ADVANCED_AUTOMATION_CURRENT_REGRESSION.log",
+      "sha256": "5dd6326dd9001311919518053319a01df82711455e67f9914436fbf7ce3b70eb",
+      "checks": 37,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "Exact PDF unit",
+      "path": "artifacts/p85/logs/EXACT_PDF_UNIT.log",
+      "sha256": "8e9419af5d3635dc01abee7ae1911055b8955201fd8d063c1ab197f47dd8a71c",
+      "checks": 22,
+      "passed": true,
+      "status": "PASS"
+    },
+    {
+      "label": "Exact PDF integration",
+      "path": "artifacts/closure/p36/P36_EXACT_CUSTOMER_PDF_INTEGRATION.json",
+      "sha256": "313615f5a68a6ef31e901c6dcc395d8d9e7077b25baab464a7b668adc9d41c88",
+      "checks": 55,
+      "passed": true,
+      "status": "PASS"
+    }
+  ],
+  "aggregateExecutedChecksAcrossOverlappingHarnesses": 1161,
+  "aggregateIndependenceClaim": false,
+  "environment": {
+    "localNode": "v22.16.0",
+    "localNpm": "10.9.2",
+    "localTsc": "5.8.3",
+    "platform": "linux x86_64",
+    "authorizedPostgresMigrationExecuted": false,
+    "realRlsJwtTwoAccountIsolationExecuted": false,
+    "directPostgrestOrphanDenialExecuted": false,
+    "deployedHttpExecuted": false,
+    "currentExternalRpcQuorumExecuted": false,
+    "semanticTypeScriptCurrentBytes": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+    "eslintCurrentBytes": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+    "dualProductionBuildCurrentBytes": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+    "exactWindowsCurrentBytes": "WITHHELD"
+  },
+  "targetedSecretScan": {
+    "status": "PASS",
+    "matches": 0
+  },
+  "securityBoundary": {
+    "externalTransactionSent": false,
+    "stateChangePerformedOnExternalChain": false,
+    "liveExploitPerformed": false,
+    "weaponizedPocCreated": false,
+    "authorizationBypassAttempted": false,
+    "rawSolidityAbiRuntimeTraceStateRedistributed": false,
+    "fullInternalMessageExposedToCustomer": false
+  },
+  "zeroFakeCredit": {
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203 inherited only",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false,
+    "global": "NO_GO / STOP_SELL"
+  },
+  "nextBlocker": "Apply P83/P84/P85 migrations on an authorized staging PostgreSQL/Supabase instance; prove service-role publication, authenticated owner visibility only after exact link commit, anon/cross-owner denial, direct PostgREST orphan snapshot/blob denial, >50-orphan starvation resistance, full rollback, and deployed preview/download/account byte identity. Current BSC quorum, offline replay, rights/currentness and exact Windows remain separate gates.",
+  "truthBoundary": "P85 proves source/static and mocked owner-token RPC behavior. It does not execute PostgreSQL/Supabase, real JWT/RLS, PostgREST, deployed HTTP, current chain facts, exploitability, rights expansion, Customer FINAL or Audit FINAL PDF."
+}

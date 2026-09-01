@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+const REV='VELMERE_PASS36_A102R44P43_ACTION_REQUIRED_PUBLIC_BALANCED_HOLDOUT_LEGACY_COMPILER_AST_AND_CONTROL_ALERT_RATE_TEST_CYCLE_2_OF_3_NO_LIVE_CREDIT';
+const PARENT='VELMERE_PASS36_A102R44P41_ACTION_REQUIRED_OFFICIAL_FOUNDRY_INVARIANTS_ANVIL_RAW_RPC_EXACT_OFFLINE_FULL_LINUX_RELEASE_NO_LIVE_CREDIT';
+const parent=JSON.parse(fs.readFileSync("_velmere/PASS36_A102R44P41_SOURCE_ONLY_MANIFEST.json","utf8"));
+const current=JSON.parse(fs.readFileSync("_velmere/PASS36_A102R44P43_SOURCE_ONLY_MANIFEST.json","utf8"));
+const approved=JSON.parse(fs.readFileSync("config/pass36/r44p43-approved-source-changes.json","utf8"));
+const p=new Map(parent.files.map(r=>[r.path,r]));const c=new Map(current.files.map(r=>[r.path,r]));
+const cmp=(a,b)=>Buffer.compare(Buffer.from(a,"utf8"),Buffer.from(b,"utf8"));
+const added=[...c.keys()].filter(k=>!p.has(k)).sort(cmp);const deleted=[...p.keys()].filter(k=>!c.has(k)).sort(cmp);const modified=[...c.keys()].filter(k=>p.has(k)&&(p.get(k).sha256!==c.get(k).sha256||p.get(k).byteLength!==c.get(k).byteLength)).sort(cmp);
+const rows=[];const check=(id,passed,detail=null)=>rows.push({id,passed:Boolean(passed),detail});
+check("revision",approved.revisionId===REV&&current.revisionId===REV);check("parent",approved.parentSourceRevisionId===PARENT&&parent.revisionId===PARENT);
+check("added",JSON.stringify(added)===JSON.stringify([...approved.added].sort(cmp)),{actual:added,expected:approved.added});
+check("modified",JSON.stringify(modified)===JSON.stringify([...approved.modified].sort(cmp)),{actual:modified,expected:approved.modified});
+check("deleted",JSON.stringify(deleted)===JSON.stringify([...approved.deleted].sort(cmp)),{actual:deleted,expected:approved.deleted});
+check("no-history",approved.historyMutations===0&&approved.removedTests===0&&approved.denominatorCollapse===false);
+check("no-promotion",approved.liveCredit===false&&approved.saleCredit===false&&approved.worldClassCredit===false&&approved.customerCredit===false);
+const failed=rows.filter(r=>!r.passed);console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p43.approved-source-changes-verification.v1",status:failed.length?"FAIL_R44P43_APPROVED_SOURCE_CHANGES":"PASS_R44P43_APPROVED_SOURCE_CHANGES",added:added.length,modified:modified.length,deleted:deleted.length,checks:rows.length,passed:rows.length-failed.length,failed:failed.length,rows},null,2));if(failed.length)process.exit(1);

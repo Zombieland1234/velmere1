@@ -1,0 +1,302 @@
+{
+  "schemaVersion": "velmere.p85.owner-visible-customer-artifact-runtime.v1",
+  "generatedAt": "2026-08-20T20:15:00.000Z",
+  "fixtureGeneratedAt": [
+    "2026-08-20T20:10:00.000Z",
+    "2026-08-20T20:00:00.000Z"
+  ],
+  "status": "PASS_BOUNDED_LOCAL_MOCKED_OWNER_RPC",
+  "classification": "DEFENSIVE_LOCAL_DATABASE_PUBLICATION_VISIBILITY_AND_OWNER_RPC_VALIDATION",
+  "runtime": {
+    "node": "v22.16.0",
+    "platform": "linux",
+    "arch": "x64",
+    "exactWindowsCredit": "WITHHELD"
+  },
+  "implementation": {
+    "readId": "p85-owner-visible-customer-artifact-read-v1",
+    "listRpc": "velmere_list_owner_visible_customer_artifacts_v1",
+    "getRpc": "velmere_get_owner_visible_customer_artifact_v1",
+    "accountIdentityParameterAccepted": false,
+    "directTableCalls": 0,
+    "routeQueryModel": "ONE_OWNER_SCOPED_RPC_PER_LIST_OR_GET",
+    "limitAfterPublicationVisibility": "STATIC_SQL_PROVEN_RUNTIME_POSTGRES_WITHHELD"
+  },
+  "fixtures": [
+    {
+      "snapshotId": "artifact-audit-536a0e826cbef0d0-52daf89a1fb44d716e9a0329cda46325cb8fca96d383261cc479a5ce4964f248",
+      "snapshotDigest": "sha256:0e07f37ced266c8ce096ada400fdeb32ef7425e106ac281e07d42c27d7bbc8ef",
+      "artifactDigest": "sha256:52daf89a1fb44d716e9a0329cda46325cb8fca96d383261cc479a5ce4964f248",
+      "pdfDigest": "sha256:6544acd9132cc15de798aff16458f784df64391d8cf5b8265f10c3c689b85e54",
+      "linkSchema": "p84-audit-customer-artifact-link-v1",
+      "generatedAt": "2026-08-20T20:10:00.000Z"
+    },
+    {
+      "snapshotId": "artifact-audit-536a0e826cbef0d0-da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd",
+      "snapshotDigest": "sha256:178d0b7d93a35624d01094d143fe8baebb9dff9546e5d109ff482e21f0cf34c2",
+      "artifactDigest": "sha256:da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd",
+      "pdfDigest": "sha256:ba90a4b9188691bbf3de505abc5b3cf984e88857b22d16fcf2e4ba02eab7cc60",
+      "linkSchema": "p84-audit-customer-artifact-link-v1",
+      "generatedAt": "2026-08-20T20:00:00.000Z"
+    }
+  ],
+  "checks": {
+    "total": 45,
+    "passed": 45,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p85_fixture_newest_snapshot_valid",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_fixture_older_snapshot_valid",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_schema_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_returns_two_visible_artifacts",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_order_preserved_and_validated",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_requires_exact_publication_links",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_single_rpc",
+        "status": "PASS",
+        "detail": [
+          {
+            "name": "velmere_list_owner_visible_customer_artifacts_v1",
+            "params": {
+              "p_limit": 2
+            }
+          }
+        ]
+      },
+      {
+        "id": "p85_list_expected_rpc",
+        "status": "PASS",
+        "detail": {
+          "name": "velmere_list_owner_visible_customer_artifacts_v1",
+          "params": {
+            "p_limit": 2
+          }
+        }
+      },
+      {
+        "id": "p85_list_rpc_has_only_limit_no_owner_parameter",
+        "status": "PASS",
+        "detail": {
+          "p_limit": 2
+        }
+      },
+      {
+        "id": "p85_list_no_direct_table_reads",
+        "status": "PASS",
+        "detail": 0
+      },
+      {
+        "id": "p85_list_projection_exposes_no_operator_fields",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_get_returns_exact_artifact",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_get_single_rpc",
+        "status": "PASS",
+        "detail": {
+          "rpcCalls": [
+            {
+              "name": "velmere_get_owner_visible_customer_artifact_v1",
+              "params": {
+                "p_snapshot_id": "artifact-audit-536a0e826cbef0d0-da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd"
+              }
+            }
+          ],
+          "fromCalls": 0
+        }
+      },
+      {
+        "id": "p85_get_rpc_has_only_snapshot_no_owner_parameter",
+        "status": "PASS",
+        "detail": {
+          "p_snapshot_id": "artifact-audit-536a0e826cbef0d0-da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd"
+        }
+      },
+      {
+        "id": "p85_missing_artifact_returns_null_without_disclosure",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_requires_owner_client",
+        "status": "PASS",
+        "detail": "VELMERE_P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_BOUNDARY_REQUIRED"
+      },
+      {
+        "id": "p85_get_requires_owner_client",
+        "status": "PASS",
+        "detail": "VELMERE_P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_BOUNDARY_REQUIRED"
+      },
+      {
+        "id": "p85_invalid_owner_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_account_invalid"
+      },
+      {
+        "id": "p85_preview_owner_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_account_invalid"
+      },
+      {
+        "id": "p85_limit_zero_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_limit_invalid"
+      },
+      {
+        "id": "p85_limit_over_50_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_limit_invalid"
+      },
+      {
+        "id": "p85_invalid_snapshot_id_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_snapshot_id_invalid"
+      },
+      {
+        "id": "p85_list_rpc_error_fails_closed",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_list_failed:RLS denied"
+      },
+      {
+        "id": "p85_get_rpc_error_fails_closed",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_get_failed:RLS denied"
+      },
+      {
+        "id": "p85_list_non_array_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_list_response_invalid"
+      },
+      {
+        "id": "p85_list_over_limit_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_list_response_invalid"
+      },
+      {
+        "id": "p85_duplicate_snapshot_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_duplicate_snapshot"
+      },
+      {
+        "id": "p85_out_of_order_rows_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_order_invalid"
+      },
+      {
+        "id": "p85_get_ambiguous_rows_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_get_response_invalid"
+      },
+      {
+        "id": "p85_get_identity_mismatch_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_get_identity_mismatch"
+      },
+      {
+        "id": "p85_extra_row_field_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_row_shape_invalid"
+      },
+      {
+        "id": "p85_missing_row_field_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_row_shape_invalid"
+      },
+      {
+        "id": "p85_wrong_visibility_schema_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_customer_artifact_schema_invalid"
+      },
+      {
+        "id": "p85_orphan_audit_row_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_audit_artifact_publication_missing"
+      },
+      {
+        "id": "p85_wrong_row_owner_rejected",
+        "status": "PASS",
+        "detail": "account_customer_artifact_owner_immutable_conflict"
+      },
+      {
+        "id": "p85_wrong_row_owner_hash_rejected",
+        "status": "PASS",
+        "detail": "account_customer_artifact_row_account_hash_mismatch"
+      },
+      {
+        "id": "p85_wrong_row_snapshot_digest_rejected",
+        "status": "PASS",
+        "detail": "account_customer_artifact_row_snapshot_digest_mismatch"
+      },
+      {
+        "id": "p85_wrong_row_artifact_digest_rejected",
+        "status": "PASS",
+        "detail": "account_customer_artifact_row_artifact_digest_mismatch"
+      },
+      {
+        "id": "p85_wrong_row_pdf_storage_rejected",
+        "status": "PASS",
+        "detail": "account_customer_artifact_row_pdf_storage_mismatch"
+      },
+      {
+        "id": "p85_link_owner_rejected",
+        "status": "PASS",
+        "detail": "audit_customer_artifact_link_row_integrity_invalid"
+      },
+      {
+        "id": "p85_link_owner_hash_rejected",
+        "status": "PASS",
+        "detail": "audit_customer_artifact_link_row_integrity_invalid"
+      },
+      {
+        "id": "p85_link_snapshot_digest_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_audit_artifact_publication_mismatch"
+      },
+      {
+        "id": "p85_link_artifact_digest_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_audit_artifact_publication_mismatch"
+      },
+      {
+        "id": "p85_link_pdf_digest_rejected",
+        "status": "PASS",
+        "detail": "owner_visible_audit_artifact_publication_mismatch"
+      },
+      {
+        "id": "p85_link_extra_field_rejected",
+        "status": "PASS",
+        "detail": "audit_customer_artifact_link_row_shape_invalid"
+      }
+    ]
+  },
+  "zeroFakeCredit": {
+    "authorizedPostgresExecution": "WITHHELD_NO_SERVER_BINARY_OR_NETWORK_RETRIEVAL",
+    "realSupabaseRLS": "WITHHELD",
+    "realOwnerJwtIsolation": "WITHHELD",
+    "deployedHttp": "WITHHELD",
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "currentExploitability": false,
+    "exactWindows": "WITHHELD"
+  }
+}

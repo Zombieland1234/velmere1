@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+
+const root = path.resolve(process.argv[2] ?? process.cwd());
+const receiptPath = path.resolve(process.argv[3] ?? "");
+const npmLsPath = path.resolve(process.argv[4] ?? "");
+const policy = JSON.parse(fs.readFileSync(path.join(root, "config/pass36/r44p41-dependency-recovery-policy.json"), "utf8"));
+const receipt = JSON.parse(fs.readFileSync(receiptPath, "utf8"));
+const npmLs = JSON.parse(fs.readFileSync(npmLsPath, "utf8"));
+const packageLock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+const sha256File = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+const rows = [];
+const check = (id, passed, detail = null) => rows.push({ id, passed: Boolean(passed), detail });
+const packageEntries = Object.keys(packageLock.packages ?? {}).length;
+check("schema", receipt.schemaVersion === "velmere.pass36.a102r44p41.dependency-recovery-receipt.v1");
+check("revision", receipt.revisionId === policy.revisionId);
+check("runtime", receipt.node === policy.requiredNode && receipt.npm === policy.requiredNpm);
+check("npm-ci", receipt.npmCiExitCode === policy.requiredNpmCiExitCode);
+check("npm-ls", receipt.npmLsExitCode === policy.requiredNpmLsExitCode && !npmLs.error);
+check("lockfile-version", packageLock.lockfileVersion === policy.packageLockVersion);
+check("package-entries", packageEntries >= policy.minimumLockfilePackageEntries, packageEntries);
+check("package-lock-hash", receipt.packageLockSha256 === sha256File(path.join(root, "package-lock.json")));
+check("package-json-hash", receipt.packageJsonSha256 === sha256File(path.join(root, "package.json")));
+check("typescript", receipt.typescript === policy.requiredTypeScript && packageJson.devDependencies.typescript === policy.requiredTypeScript);
+check("next", receipt.next === policy.requiredNext && packageJson.dependencies.next === policy.requiredNext);
+check("source-class", receipt.dependencySourceClass === policy.dependencySourceClass && receipt.networkFallbackUsed === false);
+check("no-promotion", receipt.saleCredit === false && receipt.liveCredit === false);
+const failed = rows.filter((row) => !row.passed);
+console.log(JSON.stringify({ schemaVersion: "velmere.pass36.a102r44p41.dependency-recovery-verification.v1", status: failed.length ? "FAIL_R44P41_DEPENDENCY_RECOVERY" : "PASS_R44P41_DEPENDENCY_RECOVERY", checks: rows.length, passed: rows.length - failed.length, failed: failed.length, rows }, null, 2));
+if (failed.length) process.exit(1);

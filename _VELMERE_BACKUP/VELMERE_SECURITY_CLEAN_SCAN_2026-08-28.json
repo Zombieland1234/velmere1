@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "velmere.clean-backup-security-scan.v1",
+  "status": "PASS_NO_CONFIRMED_REAL_SECRETS",
+  "scanDate": "2026-08-28",
+  "materializedSourceHighRiskRawPatternHits": 13,
+  "confirmedRealSecretHits": 0,
+  "falsePositiveClassification": "All 13 hits are literal private-key denylist markers inside Velmere security/packaging scanner source code, not PEM key material.",
+  "controlRepositoryHighRiskPatternHits": 0,
+  "patternsChecked": [
+    "private PEM key markers",
+    "GitHub PAT/classic token patterns",
+    "AWS access key IDs",
+    "OpenAI sk-* key pattern",
+    "Slack xox* token pattern",
+    "Supabase sb_secret_* key pattern"
+  ],
+  "pathSafety": "PASS: no .git, node_modules, .next, .velmere, .pytest_cache, current-execution-out, artifacts/r7/local, __pycache__, *.pyc, or local .env secret paths in materialized source denominator.",
+  "note": "Pattern scanning is an additional backup hygiene control. It does not replace the project's source-controlled secret scanners."
+}

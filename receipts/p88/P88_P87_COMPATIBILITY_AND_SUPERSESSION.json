@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "velmere.p88.p87-compatibility-and-supersession.v1",
+  "generatedAt": "2026-08-20T14:10:00.000Z",
+  "status": "PASS",
+  "parentCheckpoint": "P87R1",
+  "verifiedUnchangedParentProductFiles": 1604,
+  "declaredChangedBuildRelevantFiles": [
+    "lib/db/supabase-rpc-operation-registry.ts",
+    "lib/security/audit-report-exact-pdf-artifact.ts",
+    "lib/security/audit-report-snapshot-store.ts",
+    "lib/security/pro-audit-pdf/render-pro-audit-pdf.ts",
+    "lib/server/lazy-route-modules/admin--security--advanced-audit-release.ts",
+    "lib/server/lazy-route-modules/security--audit-review--advanced--settle.ts",
+    "lib/server/lazy-route-modules/security--audit-review--pro--settle.ts",
+    "lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts",
+    "lib/server/lazy-route-modules/security--audit-watch--pro-pdf.ts"
+  ],
+  "supersededHistoricalHarnesses": [
+    {
+      "harness": "scripts/p75/test-p75-advanced-automation-runtime.mjs",
+      "result": "EXPECTED_NONZERO_TWO_V1_ASSERTIONS_NOT_COUNTED",
+      "reason": "P88 replaces snapshot-only completion operation matching with the stronger exact-PDF v2 atomic completion boundary.",
+      "replacementProof": "P88 runtime/static and this compatibility receipt"
+    },
+    {
+      "harness": "scripts/p87/verify-p87-p86-compatibility.py",
+      "result": "NOT_CURRENT_AFTER_ORDERED_SCHEMA_CHANGE",
+      "reason": "The frozen P87 lane requires lib/db/schema.sql to remain byte-identical to P86; P88 intentionally appends one ordered exact-PDF migration block.",
+      "replacementProof": "P88 schema-prefix/delta proof, P87 Real Markets current runtime/static and this compatibility receipt"
+    }
+  ],
+  "checks": {
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p88_parent_product_projection_unchanged_except_declared",
+        "status": "PASS",
+        "detail": {
+          "verifiedUnchangedFiles": 1604,
+          "mismatches": []
+        }
+      },
+      {
+        "id": "p88_p87_real_markets_frozen_lib_market-integrity_customer-report-exact-pdf-token_ts",
+        "status": "PASS",
+        "detail": "80d330d83ec6fc2076f969d140efd7e35da6a643b8e6d1188042d19b0e90b3a7"
+      },
+      {
+        "id": "p88_p87_real_markets_frozen_lib_market-integrity_real-markets-paid-account-artifact_ts",
+        "status": "PASS",
+        "detail": "df99cf7e2e81e9cbe78d71a88c9b93eb7238f2d7d5601a6bd6fff069c9eb09b3"
+      },
+      {
+        "id": "p88_p87_real_markets_frozen_lib_server_market-integrity-route-modules_report-pdf_ts",
+        "status": "PASS",
+        "detail": "f8e9b4ec8e247ff0c54549df3f79530149f76bb142534d4b3f31cbbadbfb3131"
+      },
+      {
+        "id": "p88_p87_real_markets_frozen_lib_server_market-integrity-route-modules_report_ts",
+        "status": "PASS",
+        "detail": "9b9350e5c0997a458b26314e99631c29e473f2ffd3553b2489d3ca31804aa578"
+      },
+      {
+        "id": "p88_v17_frozen",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_schema_parent_prefix_exact",
+        "status": "PASS",
+        "detail": {
+          "parentBytes": 220755,
+          "currentBytes": 241196
+        }
+      },
+      {
+        "id": "p88_schema_delta_only_p88_block",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_ordered_migration_only_new",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p75_historical_harness_executed_nonzero",
+        "status": "PASS",
+        "detail": 1
+      },
+      {
+        "id": "p88_p75_failure_exactly_two_v1_completion_assertions",
+        "status": "PASS",
+        "detail": [
+          "Advanced atomic TS boundary",
+          "Advanced atomic tier binding"
+        ]
+      },
+      {
+        "id": "p88_p75_replacement_export_preserved",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p75_replacement_generic_tier_binding",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p75_replacement_v2_operation",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p75_replacement_settle_advanced_tier",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p75_replacement_sql_wrapper",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p75_replacement_automated_not_human",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p87_old_compat_freezes_schema",
+        "status": "PASS"
+      },
+      {
+        "id": "p88_p87_old_compat_not_counted_after_schema_migration",
+        "status": "PASS"
+      }
+    ]
+  },
+  "truthBoundary": "Compatibility/source-supersession proof. It does not establish PostgreSQL execution, rollback, deployed HTTP, current rights/providers, Customer FINAL, sale eligibility, build or exact Windows."
+}

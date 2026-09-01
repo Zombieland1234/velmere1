@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+const read=(p)=>JSON.parse(fs.readFileSync(p,'utf8'));
+const policy=read('config/pass36/r44p36-policy.json');
+const state=read('config/pass36/r44p36-current-state.json');
+const score=read('config/pass36/r44p36-dynamic-scorecard.json');
+const psych=read('config/pass36/r44p36-psychology30.json');
+const checks=[];
+const add=(id,ok,detail)=>checks.push({id,passed:Boolean(ok),detail});
+add('cycle-3-of-3',policy.testCycle?.position===3&&policy.testCycle?.length===3,policy.testCycle);
+add('17-products',policy.canonicalProducts?.rowCount===17,policy.canonicalProducts);
+add('tiered-only-3-families',JSON.stringify(policy.canonicalProducts?.tieredFamilies)===JSON.stringify(['audit','pdf','browser']),policy.canonicalProducts?.tieredFamilies);
+add('8-standalone',policy.canonicalProducts?.standalone?.length===8,policy.canonicalProducts?.standalone);
+add('no-live',state.live===false&&state.saleEnabled===false&&state.productionApproved===false&&state.worldClassProven===false,{live:state.live,saleEnabled:state.saleEnabled});
+add('score-17-products',score.products?.length===17,score.products?.length);
+add('score-no-standalone-tiering',!score.products?.some((p)=>policy.canonicalProducts.forbiddenStandaloneTiering.includes(p.productId)),null);
+add('psychology-30',psych.personas===30&&psych.rowCount===720&&psych.rows?.length===720,{personas:psych.personas,rowCount:psych.rows?.length});
+add('real-participants-zero',psych.realParticipants===0,psych.realParticipants);
+add('customer-proof-cap',score.products?.every((p)=>p.customerProof===0? p.worldClassEvidence<=49.000001 : true),null);
+add('basic-free',score.products?.filter((p)=>['audit-basic','pdf-basic','browser-basic'].includes(p.productId)).every((p)=>p.publicPrice===0&&p.chargeAllowed===false),null);
+add('advanced-not-sale',score.products?.filter((p)=>p.productId.endsWith('-advanced')).every((p)=>p.saleDecision==='NOT_FOR_SALE'),null);
+const failed=checks.filter((c)=>!c.passed);
+process.stdout.write(JSON.stringify({status:failed.length?'FAIL_R44P36_STATIC_POLICY':'PASS_R44P36_STATIC_POLICY',passed:checks.length-failed.length,total:checks.length,failed,checks},null,2)+'\n');
+process.exit(failed.length?1:0);

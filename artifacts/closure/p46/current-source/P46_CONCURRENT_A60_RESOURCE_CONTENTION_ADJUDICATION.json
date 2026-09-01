@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "velmere.p46.concurrent-a60-resource-contention-adjudication.v1",
+  "status": "ACTION_REQUIRED_SERIALIZED_RERUN",
+  "parallelRuns": 2,
+  "runs": [
+    {
+      "receipt": "/mnt/data/p46_a60_concurrent_fail_20260814T174258Z/pass36/a60/PASS36_A60_EXACT_FINAL_BYTE_BUILD_BROWSER_ACCEPTANCE.json",
+      "receiptSha256": "b6e1d2d7c73040c7c67f8243e596eea3f9379532565f4ddb98a1afc241fe8e73",
+      "decision": "ACTION_REQUIRED",
+      "failure": "stage_failed:lint",
+      "sourceFingerprint": "fb12b722c3d6e87e435189660fe0f850b1c87980dab931f4ff2cc68f31caa610",
+      "sourceUnchanged": true,
+      "lintDurationMs": 843906,
+      "lintErrors": 0,
+      "lintWarnings": 0,
+      "processFailures": [
+        {
+          "code": "eslint_spawn_failed",
+          "partition": 3,
+          "batch": 121,
+          "errorCode": "ETIMEDOUT",
+          "message": "spawnSync /mnt/data/node24/x64/bin/node ETIMEDOUT",
+          "stderrTail": ""
+        }
+      ]
+    },
+    {
+      "receipt": "/mnt/data/p46_artifacts_pre_final_a60_20260814T173610/pass36/a60/PASS36_A60_EXACT_FINAL_BYTE_BUILD_BROWSER_ACCEPTANCE.json",
+      "receiptSha256": "c2b48c582bf903f5a08648305f08a13d8c0e4f015bf8d764f1342b0ecaf89c08",
+      "decision": "ACTION_REQUIRED",
+      "failure": "stage_failed:lint",
+      "sourceFingerprint": "fb12b722c3d6e87e435189660fe0f850b1c87980dab931f4ff2cc68f31caa610",
+      "sourceUnchanged": true,
+      "lintDurationMs": 794584,
+      "lintErrors": 0,
+      "lintWarnings": 0,
+      "processFailures": [
+        {
+          "code": "eslint_spawn_failed",
+          "partition": 3,
+          "batch": 85,
+          "errorCode": "ETIMEDOUT",
+          "message": "spawnSync /mnt/data/node24/x64/bin/node ETIMEDOUT",
+          "stderrTail": ""
+        }
+      ]
+    }
+  ],
+  "classification": "ORCHESTRATION_RESOURCE_CONTENTION_NOT_CODE_QUALITY_PASS_OR_FAIL",
+  "evidence": {
+    "sameCurrentSource": true,
+    "zeroLintErrors": true,
+    "zeroLintWarnings": true,
+    "timeoutFailures": true
+  },
+  "credit": "ZERO_PASS_CREDIT",
+  "nextAction": "Run exactly one serialized A60 campaign on unchanged current bytes. Do not raise the timeout or mark lint failed unless the serialized run reproduces the issue.",
+  "integritySha256": "7910cdd06860226b79fb5afbcb320b08ff0ef0dc61695123e6aca57ddb478c8c"
+}

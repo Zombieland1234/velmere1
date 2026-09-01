@@ -1,0 +1,562 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a01-a05-report.v1",
+  "engineId": "pass35-audit-a01-a05-engine",
+  "caseRef": "AUD-PASS35-A3-SYNTH-0001",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "observedAt": "2026-07-22T17:00:00.000Z",
+  "target": {
+    "chainId": "1",
+    "chainName": "ethereum",
+    "contractAddress": "0x1111111111111111111111111111111111111111",
+    "projectName": "Synthetic Risky Upgradeable Vault"
+  },
+  "inputIdentity": {
+    "sourceBundleSha256": "sha256:939f85a4901d9c7ebd0e65172c486edbcff982190159c552b60d08f502764f78",
+    "abiSha256": "sha256:791cbef6ffa7c1083f39d9dbfd547d10e68aa1f860fe32aefbd5605fe3a6f46b",
+    "compilerConfigurationSha256": "sha256:f426ce0574dd8c87eb46dde3feb0c9d5ae579183db8edccce3f7fd03580501b3",
+    "compiledRuntimeBytecodeSha256": "sha256:c63bdfd52d9373482ea4d1f749dda47f77ccd9bf94c6781eacb5ba32e18060eb",
+    "deployedRuntimeBytecodeSha256": "sha256:f5496ad3371adfadb767200edd3a804c3f00b8c516f38670921048dfd77eec72",
+    "provenanceResponseSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "controls": {
+    "A01": {
+      "state": "VERIFIED_LOCAL_STRUCTURE",
+      "passEligible": false,
+      "blockers": [],
+      "truthBoundary": "Validates exact input structure, digests and provenance fields. It does not independently verify the explorer/provider or customer rights."
+    },
+    "A02": {
+      "state": "VERIFIED_METADATA_STRIPPED_BYTECODE",
+      "passEligible": false,
+      "blockers": [],
+      "truthBoundary": "Compares supplied runtime bytecodes exactly or after strict Solidity CBOR metadata stripping. It does not execute the compiler or resolve immutables/libraries automatically."
+    },
+    "A03": {
+      "state": "GENERATED_LOCAL_HEURISTIC_NOT_REVIEWED",
+      "passEligible": false,
+      "blockers": [
+        "a03_manual_architecture_and_business_logic_review_missing"
+      ],
+      "truthBoundary": "Produces a deterministic preliminary threat model; qualified human architecture review remains mandatory."
+    },
+    "A04": {
+      "state": "GENERATED_LOCAL_HEURISTIC_NOT_REVIEWED",
+      "passEligible": false,
+      "blockers": [
+        "a04_runtime_role_state_and_manual_authorization_review_missing"
+      ],
+      "truthBoundary": "Maps source/ABI privilege surfaces but cannot prove current on-chain role holders, multisig, timelock or hidden implementation behavior."
+    },
+    "A05": {
+      "state": "EXECUTED_LOCAL_HEURISTIC_NOT_BENCHMARKED",
+      "passEligible": false,
+      "blockers": [
+        "a05_external_analyzer_binaries_not_executed",
+        "a05_real_frozen_benchmark_missing",
+        "a05_independent_adjudication_missing"
+      ],
+      "truthBoundary": "Two separate local code paths execute over source and ABI/bytecode lanes. They are not substitutes for two validated external analyzer families or independent assurance."
+    }
+  },
+  "bytecodeComparison": {
+    "status": "MATCH_AFTER_SOLIDITY_METADATA_STRIP",
+    "compiledCoreSha256": "sha256:d5bd55eed5d3123b53b549489ccd6d5aec9bc7c5ca918b7488d69ae150885bff",
+    "deployedCoreSha256": "sha256:d5bd55eed5d3123b53b549489ccd6d5aec9bc7c5ca918b7488d69ae150885bff",
+    "compiledMetadataBytes": 8,
+    "deployedMetadataBytes": 8,
+    "firstMismatchByte": null,
+    "truthBoundary": "A match proves equality of supplied runtime bytecode under the stated normalization only; source compilation and chain retrieval remain separate evidence lanes."
+  },
+  "threatModel": {
+    "components": [
+      "ABI/public call surface",
+      "customer-supplied source bundle",
+      "deployed EVM runtime",
+      "proxy/implementation execution boundary"
+    ],
+    "trustBoundaries": [
+      "contract -> external callee/callback",
+      "external caller -> contract",
+      "off-chain source/ABI provenance -> audit engine",
+      "privileged actor -> protected function",
+      "proxy storage -> implementation code"
+    ],
+    "assets": [
+      "token supply integrity"
+    ],
+    "privilegedActors": [
+      "fee controller",
+      "mint controller",
+      "pause controller",
+      "role controller",
+      "upgrade controller"
+    ],
+    "externalDependencies": [
+      "upgrade administrator and implementation lifecycle"
+    ],
+    "assumptions": [
+      "Source files and ABI are treated as evidence inputs, not as proof that they match deployed runtime until A02 passes.",
+      "Heuristic findings indicate review surfaces and do not establish exploitability or absence of vulnerabilities."
+    ],
+    "missingEvidence": [
+      "runtime state and storage-slot reads",
+      "deployment transaction and constructor arguments",
+      "reachable call graph and path feasibility",
+      "property/invariant registry and execution",
+      "fork/replay at an exact chain block",
+      "qualified manual business-logic review"
+    ]
+  },
+  "privilegeMap": [
+    {
+      "surface": "grantRole(bytes32,address)",
+      "evidenceLane": "abi",
+      "category": "role",
+      "mutability": "nonpayable",
+      "accessEvidence": "ABI exposes the callable surface but does not prove caller authorization.",
+      "confidence": 86
+    },
+    {
+      "surface": "grantRole",
+      "evidenceLane": "source",
+      "category": "role",
+      "mutability": "nonpayable_or_unknown",
+      "accessEvidence": "Observed modifiers/tokens: onlyOwner",
+      "confidence": 82
+    },
+    {
+      "surface": "mint(address,uint256)",
+      "evidenceLane": "abi",
+      "category": "mint",
+      "mutability": "nonpayable",
+      "accessEvidence": "ABI exposes the callable surface but does not prove caller authorization.",
+      "confidence": 86
+    },
+    {
+      "surface": "mint",
+      "evidenceLane": "source",
+      "category": "mint",
+      "mutability": "nonpayable_or_unknown",
+      "accessEvidence": "Observed modifiers/tokens: onlyOwner",
+      "confidence": 82
+    },
+    {
+      "surface": "pause()",
+      "evidenceLane": "abi",
+      "category": "pause",
+      "mutability": "nonpayable",
+      "accessEvidence": "ABI exposes the callable surface but does not prove caller authorization.",
+      "confidence": 86
+    },
+    {
+      "surface": "pause",
+      "evidenceLane": "source",
+      "category": "pause",
+      "mutability": "nonpayable_or_unknown",
+      "accessEvidence": "Observed modifiers/tokens: onlyOwner",
+      "confidence": 82
+    },
+    {
+      "surface": "setFee(uint256)",
+      "evidenceLane": "abi",
+      "category": "fee",
+      "mutability": "nonpayable",
+      "accessEvidence": "ABI exposes the callable surface but does not prove caller authorization.",
+      "confidence": 86
+    },
+    {
+      "surface": "setFee",
+      "evidenceLane": "source",
+      "category": "fee",
+      "mutability": "nonpayable_or_unknown",
+      "accessEvidence": "Observed modifiers/tokens: onlyOwner",
+      "confidence": 82
+    },
+    {
+      "surface": "upgradeTo(address)",
+      "evidenceLane": "abi",
+      "category": "upgrade",
+      "mutability": "nonpayable",
+      "accessEvidence": "ABI exposes the callable surface but does not prove caller authorization.",
+      "confidence": 86
+    },
+    {
+      "surface": "upgradeTo",
+      "evidenceLane": "source",
+      "category": "upgrade",
+      "mutability": "nonpayable_or_unknown",
+      "accessEvidence": "Observed modifiers/tokens: onlyOwner",
+      "confidence": 82
+    }
+  ],
+  "staticFamilies": [
+    {
+      "familyId": "source_semantic_family",
+      "assuranceClass": "LOCAL_HEURISTIC_NOT_BENCHMARKED",
+      "inputSha256": "sha256:0f0495364ba96b8b865b56d6c1297d4d66e9c117f27fa608cc1d26e8d8baf86d",
+      "configurationSha256": "sha256:2d72fc1a7a376b5c878bd43c395fa73279f72f1840ce6aab7464091231b3e284",
+      "rawOutputSha256": "sha256:4f80b27e11a9134637e41a94d5147117982d6a2a365483a57de008dfd45725e5",
+      "executedAt": "2026-07-22T17:00:00.000Z",
+      "status": "EXECUTED",
+      "findingCount": 5,
+      "severityCounts": {
+        "critical": 0,
+        "high": 3,
+        "medium": 2,
+        "low": 0,
+        "informational": 0
+      },
+      "paidGateEligible": false,
+      "independentExternalFamily": false,
+      "limitations": [
+        "No Slither/Mythril/other external analyzer binary was executed.",
+        "No benchmark, path feasibility, exploitability confirmation or independent review."
+      ]
+    },
+    {
+      "familyId": "abi_bytecode_family",
+      "assuranceClass": "LOCAL_HEURISTIC_NOT_BENCHMARKED",
+      "inputSha256": "sha256:c01c91f29ef8ba33ff0954141f962a7fa4055e431d1b66cf03d281f176789927",
+      "configurationSha256": "sha256:10cfa7a66b6b1368fc5e598e12fb9d930de4af9b77927e7a822202115fbd6df4",
+      "rawOutputSha256": "sha256:94cc366bf6325264953512975be888872b568452494b15a12ebc2133a617288c",
+      "executedAt": "2026-07-22T17:00:00.000Z",
+      "status": "EXECUTED",
+      "findingCount": 7,
+      "severityCounts": {
+        "critical": 0,
+        "high": 4,
+        "medium": 3,
+        "low": 0,
+        "informational": 0
+      },
+      "paidGateEligible": false,
+      "independentExternalFamily": false,
+      "limitations": [
+        "Independent code path and input lane from the source family, but not an independent external assurance provider.",
+        "No control-flow graph, symbolic execution, state snapshot or exploitability adjudication."
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "A3-09BF8C47124AFB50",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A04",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "medium",
+      "confidence": 86,
+      "title": "Privileged ABI surface: pause()",
+      "description": "The ABI exposes a pause control surface. ABI presence does not prove who can call it or whether delay/multisig controls exist.",
+      "evidence": [
+        {
+          "lane": "abi",
+          "reference": "pause()",
+          "excerptSha256": "sha256:6c9ddd9db131747b1a1ba54a46b01299aca9b05004c7ffd965d40f2d560754d6"
+        }
+      ],
+      "safeRemediation": "Bind the function to source-level authorization, owner/role state, proxy administration and operational controls before rating it safe.",
+      "limitations": [
+        "ABI-only observation; caller permissions and implementation behavior require source/state evidence."
+      ]
+    },
+    {
+      "findingId": "A3-0C0A7D50A82A0BF8",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A03",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "high",
+      "confidence": 98,
+      "title": "SELFDESTRUCT opcode present in deployed runtime",
+      "description": "SELFDESTRUCT was found by push-aware bytecode traversal at program counter 25. Presence alone does not prove exploitability.",
+      "evidence": [
+        {
+          "lane": "bytecode",
+          "reference": "pc:25",
+          "pc": 25,
+          "excerptSha256": "sha256:f498a934760a81c01b22243131aaf6da5b84e7bb1662c2512ace4909a9ea5163"
+        }
+      ],
+      "safeRemediation": "Trace reachable callers and targets, verify authorization and state assumptions, then add path, invariant and fork tests.",
+      "limitations": [
+        "Opcode presence only; no control-flow graph or path feasibility analysis."
+      ]
+    },
+    {
+      "findingId": "A3-1ECBBB7EC89E6F9F",
+      "familyId": "source_semantic_family",
+      "controls": [
+        "A05"
+      ],
+      "state": "finding",
+      "severity": "high",
+      "confidence": 91,
+      "title": "Delegatecall execution surface",
+      "description": "Delegatecall executes foreign code in the caller storage context and requires exact target, upgrade and storage-layout controls.",
+      "evidence": [
+        {
+          "lane": "source",
+          "reference": "contracts/RiskyUpgradeableVault.sol",
+          "line": 15,
+          "excerptSha256": "sha256:9d6a6def110c568cdd4afa7a66e817a8732fae908919ae1bf92bd6b0d2c2f238"
+        }
+      ],
+      "safeRemediation": "Bind allowed implementations, protect upgrades, document storage layout and test unauthorized target substitution.",
+      "limitations": [
+        "Local lexical/structural heuristic; no path feasibility proof and no human adjudication."
+      ]
+    },
+    {
+      "findingId": "A3-3440C274C13609F7",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A04",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "high",
+      "confidence": 86,
+      "title": "Privileged ABI surface: upgradeTo(address)",
+      "description": "The ABI exposes a upgrade control surface. ABI presence does not prove who can call it or whether delay/multisig controls exist.",
+      "evidence": [
+        {
+          "lane": "abi",
+          "reference": "upgradeTo(address)",
+          "excerptSha256": "sha256:d3cbb8517899c26c03274372c7a0e8c1de1a4b1318aa01fcfecd1fdfd496db24"
+        }
+      ],
+      "safeRemediation": "Bind the function to source-level authorization, owner/role state, proxy administration and operational controls before rating it safe.",
+      "limitations": [
+        "ABI-only observation; caller permissions and implementation behavior require source/state evidence."
+      ]
+    },
+    {
+      "findingId": "A3-389D9E5B312ACA85",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A04",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "high",
+      "confidence": 86,
+      "title": "Privileged ABI surface: grantRole(bytes32,address)",
+      "description": "The ABI exposes a role control surface. ABI presence does not prove who can call it or whether delay/multisig controls exist.",
+      "evidence": [
+        {
+          "lane": "abi",
+          "reference": "grantRole(bytes32,address)",
+          "excerptSha256": "sha256:bd2019b382cf41a2bdb1b19f364e73e877ce3a98f27943412e6bb22bd69f81c5"
+        }
+      ],
+      "safeRemediation": "Bind the function to source-level authorization, owner/role state, proxy administration and operational controls before rating it safe.",
+      "limitations": [
+        "ABI-only observation; caller permissions and implementation behavior require source/state evidence."
+      ]
+    },
+    {
+      "findingId": "A3-5DD7C93147774178",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "high",
+      "confidence": 98,
+      "title": "DELEGATECALL opcode present in deployed runtime",
+      "description": "DELEGATECALL was found by push-aware bytecode traversal at program counter 21. Presence alone does not prove exploitability.",
+      "evidence": [
+        {
+          "lane": "bytecode",
+          "reference": "pc:21",
+          "pc": 21,
+          "excerptSha256": "sha256:6c803c407b93731413f2fdd995cdd938c6617fcc7d2370ea4287ed12943e304b"
+        }
+      ],
+      "safeRemediation": "Trace reachable callers and targets, verify authorization and state assumptions, then add path, invariant and fork tests.",
+      "limitations": [
+        "Opcode presence only; no control-flow graph or path feasibility analysis."
+      ]
+    },
+    {
+      "findingId": "A3-7CE931558AA5318C",
+      "familyId": "source_semantic_family",
+      "controls": [
+        "A05"
+      ],
+      "state": "finding",
+      "severity": "medium",
+      "confidence": 68,
+      "title": "Potentially unbounded loop",
+      "description": "A loop appears tied to dynamic length or an open condition and may cause gas-bound denial of service.",
+      "evidence": [
+        {
+          "lane": "source",
+          "reference": "contracts/RiskyUpgradeableVault.sol",
+          "line": 24,
+          "excerptSha256": "sha256:17824ddac92d0dc9a183e0c25252cc124dfb27e77947a0cc875575b4d3463a89"
+        }
+      ],
+      "safeRemediation": "Bound iteration, paginate work or enforce a maximum collection size and test worst-case gas.",
+      "limitations": [
+        "Local lexical/structural heuristic; no path feasibility proof and no human adjudication."
+      ]
+    },
+    {
+      "findingId": "A3-835BE16DEFC46417",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A04",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "medium",
+      "confidence": 86,
+      "title": "Privileged ABI surface: setFee(uint256)",
+      "description": "The ABI exposes a fee control surface. ABI presence does not prove who can call it or whether delay/multisig controls exist.",
+      "evidence": [
+        {
+          "lane": "abi",
+          "reference": "setFee(uint256)",
+          "excerptSha256": "sha256:930f85455c3aaa74f2b8315872bb4680075ef2962f1d6aedf09df3582f394f8d"
+        }
+      ],
+      "safeRemediation": "Bind the function to source-level authorization, owner/role state, proxy administration and operational controls before rating it safe.",
+      "limitations": [
+        "ABI-only observation; caller permissions and implementation behavior require source/state evidence."
+      ]
+    },
+    {
+      "findingId": "A3-8B608AEFCA9B2C4A",
+      "familyId": "source_semantic_family",
+      "controls": [
+        "A05"
+      ],
+      "state": "finding",
+      "severity": "high",
+      "confidence": 94,
+      "title": "Authorization depends on tx.origin",
+      "description": "tx.origin can make authorization depend on the entire call chain rather than the immediate caller.",
+      "evidence": [
+        {
+          "lane": "source",
+          "reference": "contracts/RiskyUpgradeableVault.sol",
+          "line": 13,
+          "excerptSha256": "sha256:34f7380c44c0555844fa719c7eb4be11b84a38bee8f971c4bb60c518efa9fbfa"
+        }
+      ],
+      "safeRemediation": "Use explicit role or msg.sender-based authorization and test calls through intermediary contracts.",
+      "limitations": [
+        "Local lexical/structural heuristic; no path feasibility proof and no human adjudication."
+      ]
+    },
+    {
+      "findingId": "A3-A44D47F79C2A4BE5",
+      "familyId": "source_semantic_family",
+      "controls": [
+        "A05"
+      ],
+      "state": "finding",
+      "severity": "high",
+      "confidence": 96,
+      "title": "Destructive opcode source surface",
+      "description": "The source exposes a destructive lifecycle operation whose current chain semantics and authorization must be reviewed.",
+      "evidence": [
+        {
+          "lane": "source",
+          "reference": "contracts/RiskyUpgradeableVault.sol",
+          "line": 26,
+          "excerptSha256": "sha256:6c7d98ada3cd09c5c83b05d3408e1262b8e9df3adcf812261739efed5deb1e08"
+        }
+      ],
+      "safeRemediation": "Remove the operation where possible or require explicit governance, delay, monitoring and chain-specific behavior tests.",
+      "limitations": [
+        "Local lexical/structural heuristic; no path feasibility proof and no human adjudication."
+      ]
+    },
+    {
+      "findingId": "A3-B41169B4E247EAB6",
+      "familyId": "abi_bytecode_family",
+      "controls": [
+        "A04",
+        "A05"
+      ],
+      "state": "observation",
+      "severity": "medium",
+      "confidence": 86,
+      "title": "Privileged ABI surface: mint(address,uint256)",
+      "description": "The ABI exposes a mint control surface. ABI presence does not prove who can call it or whether delay/multisig controls exist.",
+      "evidence": [
+        {
+          "lane": "abi",
+          "reference": "mint(address,uint256)",
+          "excerptSha256": "sha256:e674d395a7f9db3ca6fb62771fecfdb911d14395bc8a3d4773565ea309f468c2"
+        }
+      ],
+      "safeRemediation": "Bind the function to source-level authorization, owner/role state, proxy administration and operational controls before rating it safe.",
+      "limitations": [
+        "ABI-only observation; caller permissions and implementation behavior require source/state evidence."
+      ]
+    },
+    {
+      "findingId": "A3-C7A2C1193BC8F8C8",
+      "familyId": "source_semantic_family",
+      "controls": [
+        "A05"
+      ],
+      "state": "finding",
+      "severity": "medium",
+      "confidence": 84,
+      "title": "Low-level external call",
+      "description": "A low-level call can hide return-data assumptions and expands reentrancy and error-handling risk.",
+      "evidence": [
+        {
+          "lane": "source",
+          "reference": "contracts/RiskyUpgradeableVault.sol",
+          "line": 20,
+          "excerptSha256": "sha256:1089eef5b885a3b5574c5d0c97821f6b87b40e347a71a087beef3ba701975384"
+        }
+      ],
+      "safeRemediation": "Check success and return data, apply checks-effects-interactions or a guard, and add adversarial callback tests.",
+      "limitations": [
+        "Local lexical/structural heuristic; no path feasibility proof and no human adjudication."
+      ]
+    }
+  ],
+  "summary": {
+    "findings": 12,
+    "severityCounts": {
+      "critical": 0,
+      "high": 7,
+      "medium": 5,
+      "low": 0,
+      "informational": 0
+    },
+    "sourceFiles": 1,
+    "abiFunctions": 6,
+    "bytecodeOpcodes": 16,
+    "paidDeliveryAllowed": false,
+    "fullAuditClaimAllowed": false,
+    "humanReviewed": false,
+    "independentAssurance": false,
+    "nextRequiredControls": [
+      "external pinned static analyzer family 1",
+      "independent external static analyzer family 2",
+      "symbolic/path analysis where applicable",
+      "per-case unit/integration tests",
+      "property/fuzz/invariant execution",
+      "fork/replay at exact state",
+      "manual architecture and business-logic review",
+      "real frozen benchmark and independent adjudication"
+    ]
+  },
+  "truthBoundary": "PASS35 A3 executes deterministic local A01-A05 controls and two heuristic static lanes. It is synthetic/offline when run on fixtures, never authorizes sale, never proves a full audit and never replaces external analyzers, fuzz/fork execution, human review, staging, LIVE or customer evidence.",
+  "reportSha256": "sha256:e72536d8862834c50dfa9a2e2fb6a4906f2916f2be7ef42fcdf63b86837d41ab"
+}

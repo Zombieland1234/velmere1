@@ -1,0 +1,442 @@
+{
+  "schemaVersion": "velmere.p84.audit-customer-artifact-owner-read-static.v1",
+  "status": "PASS",
+  "runtime": {
+    "python": "3.13.5",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.41"
+  },
+  "files": {
+    "supabase/migrations/20260820000002_p84_audit_customer_artifact_owner_read_path.sql": {
+      "bytes": 17389,
+      "sha256": "2a26411401d1143f4d0c94cbb7ab6867290ab340c7ff70470cd2f03ef3ee98f8"
+    },
+    "supabase/migrations/20260820000001_p83_audit_exact_artifact_atomic_publication.sql": {
+      "bytes": 59031,
+      "sha256": "dfd35636097b834a8deaf72249817b59edbc4a2be38fbfa2fc99837e6c60f87b"
+    },
+    "lib/db/schema.sql": {
+      "bytes": 208625,
+      "sha256": "c76d6c40376694dc6f2897b2a4d039890a7f8a76d1c76da1e071a2dc96f0c8f4"
+    },
+    "lib/reporting/audit-exact-artifact-owner-readable-publisher.ts": {
+      "bytes": 13201,
+      "sha256": "205b979abca4223389e48dd8023ad1db8a4133c2872b6d774c6ebd37a4beb2fa"
+    },
+    "lib/reporting/audit-exact-artifact-atomic-publisher.ts": {
+      "bytes": 9653,
+      "sha256": "9bd0d5c6a9eb4202a8ce3fc9e688e93b1995dcad6a3cefdc55b76eba34990201"
+    },
+    "lib/account/audit-account-messages.ts": {
+      "bytes": 40554,
+      "sha256": "97f3979d59a533de3203efea8d43ec1c5966fad2753abf561313bf95d6a15030"
+    },
+    "lib/security/audit-watch-post-handler.ts": {
+      "bytes": 44794,
+      "sha256": "9c9c482664b038456d6227f125d15070c15d84805fef3d8bde46e2adfe77896a"
+    },
+    "lib/server/lazy-route-modules/account--customer-artifact.ts": {
+      "bytes": 16846,
+      "sha256": "a4a81cd9d68d2328d48502d09cc5e0b880267384a39ee4f06ae4c6ac8cff9fbb"
+    },
+    "scripts/p84/test-p84-audit-customer-artifact-owner-read-runtime.mjs": {
+      "bytes": 27884,
+      "sha256": "a0e5ce43dab91fbca718030c35d9f75f74ab4770dd511f2b798ad6219deff11f"
+    }
+  },
+  "discoveredDefects": [
+    {
+      "id": "P84-DEFECT-01-P83-AUTHENTICATED-ARTIFACT-SELECT-REVOKED",
+      "severity": "HIGH_CUSTOMER_DELIVERY_BLOCKER",
+      "status": "REPAIRED_IN_SOURCE_STATIC_PROVEN_RUNTIME_WITHHELD",
+      "description": "P83 copied older artifact DDL that revoked authenticated SELECT after the owner RLS migrations, making the real owner-token route unable to read snapshots and PDF blobs."
+    },
+    {
+      "id": "P84-DEFECT-02-OWNER-ROUTE-QUERIED-SERVICE-ROLE-MESSAGE-LEDGER",
+      "severity": "HIGH_CUSTOMER_DELIVERY_BLOCKER",
+      "status": "REPAIRED_IN_SOURCE_STATIC_AND_LOCAL_RUNTIME_PROVEN",
+      "description": "The owner route attempted to validate Audit publication through the full service-role-only message ledger. P84 replaces that read with a minimal immutable RLS link ledger."
+    }
+  ],
+  "checks": {
+    "total": 91,
+    "passed": 91,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p84_migration_is_latest_ordered_migration",
+        "status": "PASS",
+        "detail": "20260820000002_p84_audit_customer_artifact_owner_read_path.sql"
+      },
+      {
+        "id": "p84_migration_transaction_wrapped",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_sql_dollar_quotes_balanced",
+        "status": "PASS",
+        "detail": 6
+      },
+      {
+        "id": "p84_no_dynamic_sql",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_no_swallowed_errors",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_schema_mirror_byte_identical",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_marker_occurs_once_in_migration",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_marker_occurs_once_in_schema",
+        "status": "PASS"
+      },
+      {
+        "id": "p83_regression_authenticated_select_absent_velmere_customer_artifact_snapshots",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_authenticated_select_restored_velmere_customer_artifact_snapshots",
+        "status": "PASS"
+      },
+      {
+        "id": "p83_regression_authenticated_select_absent_velmere_customer_artifact_pdf_blobs",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_authenticated_select_restored_velmere_customer_artifact_pdf_blobs",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_snapshots_rls_enabled",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_pdf_blobs_rls_enabled",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_snapshot_owner_policy_rebound",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_pdf_owner_policy_rebound",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_no_authenticated_write_grants_on_artifacts",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_full_message_table_remains_customer_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_full_message_table_service_role_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_no_authenticated_message_table_grant",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_minimal_link_table_required_columns",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_minimal_link_table_excludes_sensitive_message_fields",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_strict_schema_constraint",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_strict_owner_constraint",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_strict_identity_constraints",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_strict_digest_constraints",
+        "status": "PASS",
+        "detail": 4
+      },
+      {
+        "id": "p84_link_table_time_equality_constraint",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_restrictive_foreign_keys",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_rls_enabled",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_only_select_granted",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_table_no_customer_write_grant",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_owner_policy_uses_id_and_salted_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_security_definer",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_fixed_search_path",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_insert_only_immutable",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_recomputes_salted_owner_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_binds_internal_message",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_binds_customer_snapshot",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_binds_pdf_blob",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_recomputes_pdf_hash_and_length",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_binds_exact_customer_snapshot",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_guard_function_not_executable_by_roles",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_trigger_covers_insert_update_delete",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_backfill_joins_message_snapshot_blob",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_backfill_revalidates_through_trigger",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_backfill_fails_if_exact_message_unlinked",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_security_definer",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_fixed_search_path",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_calls_p83_parent_in_same_transaction",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_validates_closed_parent_shape",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_parent_before_link_write",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_locks_message_snapshot_blob",
+        "status": "PASS",
+        "detail": 4
+      },
+      {
+        "id": "p84_rpc_serializes_link_retry",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_rejects_ambiguous_link_identity",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_idempotent_existing_link_verified",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_closed_response_schema",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_response_contains_link_and_created_flags",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_service_role_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_rpc_no_client_execute_grant",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_preserves_p83_publisher_byte_for_byte",
+        "status": "PASS",
+        "detail": {
+          "expected": "9bd0d5c6a9eb4202a8ce3fc9e688e93b1995dcad6a3cefdc55b76eba34990201",
+          "current": "9bd0d5c6a9eb4202a8ce3fc9e688e93b1995dcad6a3cefdc55b76eba34990201"
+        }
+      },
+      {
+        "id": "p84_publisher_uses_versioned_v2_rpc",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_single_rpc_only",
+        "status": "PASS",
+        "detail": 1
+      },
+      {
+        "id": "p84_publisher_no_direct_table_access",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_no_memory_or_two_write_fallback",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_requires_real_owner",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_requires_durable_storage",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_exact_rpc_response_keys",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_verifies_bundle_message_and_link",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_returned_link_cross_bound",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_publisher_no_raw_external_evidence",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_message_lookup_uses_minimal_link_table",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_message_lookup_selects_closed_column_set",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_message_lookup_filters_owner_and_snapshot",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_message_lookup_limits_ambiguity",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_message_lookup_parses_integrity_row",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_parser_closed_shape",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_parser_recomputes_owner_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_link_parser_validates_all_digest_classes",
+        "status": "PASS",
+        "detail": 4
+      },
+      {
+        "id": "p84_handler_uses_current_publisher_once",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_handler_no_longer_uses_p83_publisher",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_handler_uses_committed_objects",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_handler_fail_closed_wording_mentions_owner_link",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_owner_route_uses_owner_token_boundary",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_owner_route_filters_audit_through_link",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_owner_route_overfetches_bounded_window_before_filter",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_owner_route_never_uses_service_role_directly",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_runtime_fixture_clock_frozen",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_runtime_tests_closed_rpc_shape",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_runtime_tests_link_mutations",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_runtime_tests_minimal_owner_lookup",
+        "status": "PASS"
+      },
+      {
+        "id": "p84_runtime_does_not_claim_postgres",
+        "status": "PASS"
+      }
+    ]
+  },
+  "truthBoundary": "Static proof establishes ordered migration reachability, final privilege intent, salted owner policies, a minimal immutable link ledger, versioned single-RPC publication and customer-path use of the owner-token client. The local runtime harness validates TypeScript response/link integrity against mocked clients. This does not execute PostgreSQL, Supabase RLS, JWT isolation, deployed HTTP, exact Windows or current chain state."
+}

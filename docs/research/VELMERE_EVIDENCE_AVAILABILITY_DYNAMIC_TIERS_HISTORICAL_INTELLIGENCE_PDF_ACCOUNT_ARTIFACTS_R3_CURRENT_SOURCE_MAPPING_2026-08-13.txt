@@ -1,0 +1,279 @@
+VELMÈRE — EVIDENCE AVAILABILITY, DYNAMIC TIERS, HISTORICAL INTELLIGENCE,
+PDF PARITY & ACCOUNT ARTIFACTS
+R3 — CURRENT-SOURCE IMPLEMENTATION MAPPING
+Data: 2026-08-13
+Status: REQUIREMENT AUTHORITY / PARTIAL P0 IMPLEMENTATION / NO FAKE FEATURE CREDIT
+Parent requirement: VELMERE_EVIDENCE_AVAILABILITY_DYNAMIC_TIERS_HISTORICAL_INTELLIGENCE_PDF_ACCOUNT_ARTIFACTS_R2_2026-08-13.txt
+
+======================================================================
+0. CEL R3
+======================================================================
+
+R3 nie zastępuje szczegółowego R2. R3 mapuje pomysł R2 na aktualny SOURCE i rozdziela:
+
+- IMPLEMENTED_AND_TESTED_INTERNAL;
+- IMPLEMENTED_SOURCE_BUT_CURRENTLY_UNREACHABLE;
+- OPEN_REQUIRED_FOR_GO_INTERNAL;
+- EXTERNAL_OPEN_REQUIRED_FOR_PAID;
+- DEFERRED_UNTIL_VALUE_AND_RIGHTS_EXIST;
+- NOT_IMPLEMENTED.
+
+Żadna pozycja nie otrzymuje credit tylko dlatego, że została opisana w R2/R3.
+
+======================================================================
+1. CURRENT P35 AUTHORITY
+======================================================================
+
+Dynamic eligibility authority:
+- lib/commerce/vlm-evidence-availability.ts
+- lib/commerce/vlm-current-evidence-availability-matrix.ts
+- app/api/checkout/vlm-service/readiness/route.ts
+- app/api/checkout/vlm-service/route.ts
+
+Canonical customer PDF/artifact authority:
+- lib/reporting/exact-customer-pdf-delivery.ts
+- lib/server/lazy-route-modules/account--customer-artifact.ts
+
+Current public contracts:
+- velmere.tier-eligibility-receipt.v1
+- velmere.public-tier-eligibility.v1
+- velmere.public-vlm-service-readiness.v2
+- velmere.public-customer-artifact-list.v2
+- velmere.public-customer-artifact-detail.v2
+
+Current test authority:
+- tests/security/a102-evidence-availability-dynamic-tier.test.ts
+- tests/security/a102-current-evidence-availability-matrix.test.ts
+- tests/security/a102-public-tier-readiness-contract.test.ts
+- tests/security/a102-exact-customer-pdf-delivery.test.ts
+- tests/security/a102-account-artifact-preview-download-parity.test.ts
+- tests/security/a102-evidence-availability-artifact-methodology-binding.test.ts
+
+======================================================================
+2. P0 — IMPLEMENTED_AND_TESTED_INTERNAL
+======================================================================
+
+2.1 Deterministic Evidence Availability Engine
+
+Implemented:
+- evidence, freshness, conflict, rights, runtime, catalog and value gates are separate;
+- AI cannot set saleEligible;
+- receipt is canonicalized, hashed and tamper-checked;
+- customer projection is whitelist-based;
+- unknown restoration ETA remains null;
+- current/historical and nextCheck/restoration are non-aliased;
+- payment proof/client state cannot override catalog/evidence/value/rights/runtime truth;
+- no silent downgrade decision contract.
+
+2.2 Current 11 products × 3 tiers matrix
+
+Current internal denominator:
+- 33/33 profiles executed;
+- 11/33 analysisEligible;
+- 0/33 saleEligible;
+- highest analysis-eligible tier for every current product is Basic;
+- Pro/Advanced remain withheld where catalog, evidence, value, rights or runtime does not close.
+
+This is an honest current-state result, not a failure to render three buttons.
+
+2.3 Public service readiness
+
+Implemented:
+- semantic public v2 response;
+- availability reason and state;
+- payment availability depends on eligibility.saleEligible;
+- no internal PASS graph/operator checklist in customer response;
+- no-store and explicit public-contract header.
+
+2.4 Exact stored PDF preview/download parity
+
+Implemented internal contract:
+- one stored immutable PDF blob;
+- SHA-256 validation;
+- preview serves the stored bytes inline;
+- download serves the same stored bytes as attachment;
+- only Content-Disposition differs;
+- legacy rerender cannot masquerade as exact full preview;
+- safe filename/header handling;
+- no AI/provider/analysis rerun on download.
+
+2.5 Customer artifact public projection
+
+Implemented:
+- object-level account check remains mandatory;
+- raw storage source and raw canonical internals are not public;
+- v2 public artifact schemas;
+- exact PDF integrity/parity fields;
+- unknown/legacy exact preview fails closed where immutable bytes do not exist.
+
+======================================================================
+3. IMPLEMENTED_SOURCE_BUT_CURRENTLY_UNREACHABLE / ZERO SALE CREDIT
+======================================================================
+
+The checkout denial path is integrated with current eligibility, but the current product truth still contains:
+- Pro invitation-only / no public checkout;
+- Advanced not for sale;
+- saleEligible 0/33.
+
+Therefore the deeper checkout creation path receives no current public-sale credit.
+It remains protected against future re-enable drift and direct-route bypass.
+
+======================================================================
+4. OPEN_REQUIRED_FOR_GO_INTERNAL
+======================================================================
+
+Still open before internal closure:
+- exact clean dependency closure and production build on final bytes;
+- current Browser customer journey for Basic/Pro/Advanced;
+- final holdout datasets and contamination registry;
+- final same-input tier-value execution;
+- FN/FP, novelty, duplication, decision-change, latency and cost receipts;
+- final current-byte Browser/PDF customer-surface campaign;
+- three full convergence rounds after denominator completion;
+- final security/reachability rerun on frozen bytes.
+
+Dynamic eligibility implementation does not close those items.
+
+======================================================================
+5. EXTERNAL_OPEN_REQUIRED_FOR_GO_PAID
+======================================================================
+
+Still external/open:
+- commercial provider rights per use-case field;
+- professional merchant/product-role/legal decisions where required;
+- production/staging delivery identity;
+- real customer comprehension, reuse, WTP and refund evidence;
+- real retention/storage economics;
+- real backup/restore for the promised retention period;
+- production billing/support/incident outcomes.
+
+Current paid readiness may improve internally, but GO_PAID remains false.
+
+======================================================================
+6. P1 — ACCEPTED NEXT BOUNDED WORK, NOT YET A LIVE FEATURE
+======================================================================
+
+Accepted after final value outputs:
+- Evidence Vault / My Audits customer UI;
+- explicit artifact lifecycle, expiry and correction UI;
+- secure retention/deletion/export controls;
+- immutable Shield/Shield Pro/Real Markets snapshot reopening;
+- separate OPEN ORIGINAL / RUN NEW CURRENT / COMPARE actions;
+- schema migration adapters and archived read-only fallback;
+- rights-aware field retention.
+
+Current credit:
+- requirement accepted;
+- partial public artifact/PDF foundation exists;
+- complete Vault workflow NOT_IMPLEMENTED/OPEN.
+
+======================================================================
+7. P2/P3 — DEFERRED / ZERO CURRENT CREDIT
+======================================================================
+
+Deferred until lawful historical data, validated demand and storage economics exist:
+- Evidence Time Machine;
+- long-history What Changed?;
+- Incident Window / Before-After automation;
+- restoration ETA model;
+- source reliability analytics/SLA;
+- automatic dynamic price experiments;
+- organization/team vault;
+- public share links.
+
+These items must not appear in marketing, pricing or readiness scoring as current functions.
+
+======================================================================
+8. RETENTION — HYPOTHESIS ONLY
+======================================================================
+
+Candidate starting hypothesis:
+- Basic artifact: 7 days;
+- Pro artifact: 90 days;
+- Advanced artifact: 365 days;
+- raw uploaded source: delete 7 days after delivery or earlier by user request.
+
+This is not a current customer promise.
+Final retention is bounded by:
+- privacy/data minimization;
+- provider/source rights;
+- customer contract;
+- deletion request;
+- backup expiry;
+- legal hold where lawful;
+- security incident override;
+- storage economics and restore capability.
+
+======================================================================
+9. REQUIRED FINAL METRICS
+======================================================================
+
+Eligibility:
+- false availability rate;
+- false unavailability rate;
+- stale-as-current incidents;
+- rights bypass incidents;
+- eligibility race/replay failures;
+- time to revalidation;
+- lower-tier/historical fallback correctness.
+
+Customer:
+- reason comprehension;
+- current vs historical comprehension;
+- trust impact of withholding;
+- conversion only when available;
+- notification interest;
+- artifact reopen/download/reuse;
+- WTP and refund expectation.
+
+Artifacts:
+- preview/download mismatch count;
+- PDF QA failure rate;
+- object authorization failures;
+- correction/supersession correctness;
+- retention/deletion/restore correctness;
+- unknown schema rejection;
+- no deleted artifact resurrection.
+
+======================================================================
+10. HARD FAILS
+======================================================================
+
+- payment or entitlement overrides sale eligibility;
+- tier sold without critical evidence/value/rights/runtime support;
+- Advanced sold without material delta over Pro;
+- stale/historical shown as current;
+- fake restoration ETA;
+- silent downgrade after payment;
+- full preview and download bytes differ;
+- preview regenerated from current data;
+- account A accesses account B artifact;
+- refund/revoke but download still works contrary to policy;
+- legacy rerender labelled exact full preview;
+- raw source/storage/operator/PASS topology leaks;
+- snapshot silently refreshes;
+- unknown schema accepted;
+- report silently overwritten;
+- deleted artifact reappears after restore;
+- retention hypothesis marketed as a promise before proof.
+
+======================================================================
+11. P35 VERDICT
+======================================================================
+
+P35 materially upgrades R2 from product idea to a bounded, tested P0 foundation:
+- deterministic dynamic eligibility exists;
+- public readiness is eligibility-bound;
+- current 33-profile matrix exists;
+- exact stored PDF byte-parity authority exists;
+- customer artifact public projection is hardened.
+
+It does NOT yet implement the full Evidence Vault, Time Machine, historical intelligence product,
+production retention, provider-rights program, final tier-value campaign or paid release.
+
+Current bounded product principle:
+
+VELMÈRE CHECKS WHETHER IT CAN HONESTLY DELIVER THE TIER BEFORE ALLOWING SALE.
+OWNED FULL PDF PREVIEW AND DOWNLOAD USE THE SAME STORED ARTIFACT BYTES.
+
+END R3 CURRENT-SOURCE MAPPING

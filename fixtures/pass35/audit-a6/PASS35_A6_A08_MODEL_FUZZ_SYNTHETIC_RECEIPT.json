@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a6-a08-model-fuzz-receipt.v1",
+  "engineId": "pass35-a6-model-based-fuzz-invariants",
+  "familyId": "property_fuzz_invariant",
+  "caseRef": "AUD-PASS35-A6-A08-0001",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "modelId": "ERC20_ACCOUNTING_MODEL_V1",
+  "implementationVariant": "REFERENCE",
+  "seedSha256": "sha256:4242424242424242424242424242424242424242424242424242424242424242",
+  "iterations": 10000,
+  "actorCount": 4,
+  "sourceModelBindingSha256": "sha256:f953138950db592af4d22ea0ba4f4addf37bce8f9440b4fb8b6a6c0bd4ee5021",
+  "a07ExactTestReceiptSha256": "sha256:ea58884a3c49d808c0febeca5fc0c6373a342a308dc1e39ee862417ce7d4ff31",
+  "execution": {
+    "status": "VERIFIED_LOCAL_MODEL_FUZZ",
+    "assuranceClass": "LOCAL_STATE_MODEL_NOT_EVM",
+    "realCaseExecution": false,
+    "paidGateEligible": false,
+    "fullAuditClaimAllowed": false,
+    "promotionAllowed": false
+  },
+  "operationCount": 10000,
+  "appliedCount": 6862,
+  "rejectedCount": 3138,
+  "invariantChecks": 28787,
+  "invariantFailureCount": 0,
+  "invariantFailureIds": [],
+  "firstFailures": [],
+  "finalStateSha256": "sha256:d6b695b90f7d1f2411cf9a6f7edb2a65b30497178290f5941522b59e1c5e705e",
+  "operationTraceSha256": "sha256:d2504ff0abc86ea3671b004c93d5a02c72620c7fb0933581214289888d6cd189",
+  "blockers": [],
+  "limitations": [
+    "This runner fuzzes a deterministic accounting state model, not deployed EVM bytecode or Solidity execution.",
+    "Model success does not prove implementation equivalence, branch coverage, reentrancy safety, external-call behavior or fork-state correctness.",
+    "A08 paid-gate credit requires real compiled-contract fuzz/invariant execution, benchmark and reviewer adjudication."
+  ],
+  "truthBoundary": "A6 model fuzz may prove local model invariants and mutation-detection capability only. It cannot be promoted to EVM, customer, paid, independent or full-audit evidence.",
+  "receiptSha256": "sha256:d585391c79d670b411b40e0b64ab6f5f549658ce7f54215b984b9d9fe1f9c88f"
+}

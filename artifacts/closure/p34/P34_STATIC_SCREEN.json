@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "velmere.p34.static-screen.v4",
+  "status": "PASS",
+  "jsonFilesParsed": 1646,
+  "jsonParseErrors": [],
+  "staleDraftAuthorityFiles": [],
+  "pythonFilesCompiled": 7,
+  "commands": [
+    {
+      "name": "python_compile",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "-m",
+        "py_compile",
+        "scripts/closure/build-p34-source-identity.py",
+        "scripts/closure/build-p34-parent-diff.py",
+        "scripts/closure/build-p34-internal-ai-dual-ledger.py",
+        "scripts/closure/verify-p34-internal-ai-dual-ledger.py",
+        "scripts/closure/build-p34-static-screen.py",
+        "scripts/closure/build-p34-handoff.py",
+        "scripts/closure/package-p34-current-source.py"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "node_check",
+      "command": [
+        "node",
+        "--check",
+        "tests/security/a102-internal-ai-dual-ledger.test.mjs"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "dual_ledger_test",
+      "command": [
+        "node",
+        "tests/security/a102-internal-ai-dual-ledger.test.mjs"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "{\"status\":\"PASS\",\"checks\":24,\"aiInternalTable\":\"4017/4017 (100%)\",\"realExternalTable\":\"0/9 (0%)\",\"profilesCovered\":\"33/33\",\"falsePromotionMutations\":\"19/19\",\"externalCredit\":0}\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "p32_profile_verifier",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "scripts/closure/verify-p32-profile-execution-receipts.py"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "{\n  \"schemaVersion\": \"velmere.p32.profile-execution-verifier-receipt.v1\",\n  \"state\": \"PASS_PROFILE_EXECUTION_RECEIPTS_FAIL_CLOSED\",\n  \"summary\": {\n    \"checks\": 5,\n    \"passed\": 5,\n    \"failed\": 0\n  },\n  \"profileCounts\": 33,\n  \"executedInternalFixtureRegression\": 30,\n  \"blockedBrowser\": 3,\n  \"finalHoldoutsFrozen\": 0,\n  \"mutations\": [\n    {\n      \"mutationId\": \"promote_browser_execution\",\n      \"detected\": true\n    },\n    {\n      \"mutationId\": \"claim_final_holdout\",\n      \"detected\": true\n    },\n    {\n      \"mutationId\": \"claim_customer_value\",\n      \"detected\": true\n    },\n    {\n      \"mutationId\": \"shrink_profile_denominator\",\n      \"detected\": true\n    }\n  ],\n  \"truthBoundary\": \"This verifier protects against converting internal fixture execution into Browser, final-holdout, customer-value, paid or sale credit.\",\n  \"failures\": [],\n  \"checks\": [\n    {\n      \"id\": \"manifest:valid\",\n      \"passed\": true,\n      \"detail\": []\n    },\n    {\n      \"id\": \"summary:state\",\n      \"passed\": true,\n      \"detail\": \"STRUCTURAL_FIXTURE_DELTA_ONLY_NOT_FINAL_VALUE_CAMPAIGN\"\n    },\n    {\n      \"id\": \"summary:profile-counts\",\n      \"passed\": true,\n      \"detail\": {\n        \"total\": 33,\n        \"executedInternalFixtureRegression\": 30,\n        \"blockedBrowser\": 3,\n        \"finalHoldoutsFrozen\": 0,\n        \"finalHoldoutsExecuted\": 0\n      }\n    },\n    {\n      \"id\": \"summary:no-value-metrics\",\n      \"passed\": true,\n      \"detail\": [\n        \"NEW_FACT\",\n        \"NEW_EVIDENCE\",\n        \"NEW_REASONING\",\n        \"NEW_ACTION\",\n        \"NEW_WORKFLOW\",\n        \"REPHRASE\",\n        \"DUPLICATE\",\n        \"decision-change\",\n        \"ground-truth accuracy on final holdout\",\n        \"blinded customer utility\",\n        \"willingness-to-pay\",\n        \"refund-risk\",\n        \"latency/cost on production runtime\"\n      ]\n    },\n    {\n      \"id\": \"mutations:detected\",\n      \"passed\": true,\n      \"detail\": [\n        {\n          \"mutationId\": \"promote_browser_execution\",\n          \"detected\": true\n        },\n        {\n          \"mutationId\": \"claim_final_holdout\",\n          \"detected\": true\n        },\n        {\n          \"mutationId\": \"claim_customer_value\",\n          \"detected\": true\n        },\n        {\n          \"mutationId\": \"shrink_profile_denominator\",\n          \"detected\": true\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "p33_paid_verifier",
+      "command": [
+        "/opt/pyvenv/bin/python",
+        "scripts/closure/verify-p33-paid-readiness.py"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "{\"schemaVersion\": \"velmere.p33.paid-readiness-verifier-receipt.v1\", \"status\": \"PASS\", \"axisCount\": 12, \"errors\": [], \"mutationControls\": {\"force_go_paid\": true, \"drop_axis\": true, \"provider_false_pass\": true, \"customer_false_pass\": true, \"stripe_false_release\": true, \"tier_false_pass\": true, \"tamper_integrity\": true}, \"mutationsDetected\": 7, \"mutationDenominator\": 7, \"goPaidAllowed\": false, \"truthBoundary\": \"Verifier proves denominator, integrity and false-promotion resistance of the paid-readiness matrix. It does not grant any missing external, production, legal, provider-rights, customer-value or GO_PAID credit.\"}\n",
+      "stderrTail": ""
+    }
+  ],
+  "sourceIdentity": {
+    "fileCount": 6532,
+    "payloadBytes": 232857220,
+    "sourceAggregateSha256": "c6f61c1c5f96735c97a129d3495d9e905c43947db52a0e44d42aee51fbb9c08d",
+    "receiptSha256": "4eb1b1dcf99b7006343838d9988be573a2c0c7616fc18ca958b80982f98b687c"
+  },
+  "internalAiTable": {
+    "cohorts": 8,
+    "rowsExecuted": 4017,
+    "rowDenominator": 4017,
+    "coveragePercent": 100.0,
+    "profilesCovered": 33
+  },
+  "realExternalTable": {
+    "tracksCompleted": 0,
+    "trackDenominator": 9,
+    "coveragePercent": 0
+  },
+  "falsePromotionMutations": {
+    "detected": 19,
+    "denominator": 19
+  },
+  "parentDiff": {
+    "parentFileCount": 6520,
+    "currentFileCount": 6532,
+    "onlyParentCount": 0,
+    "onlyCurrentCount": 12,
+    "changedCount": 0
+  },
+  "truthBoundary": "PASS applies to P34 dual-ledger authority, integrity and static checks only. Production build, Browser runtime, final holdouts, real customers, independent review, professional legal/provider rights and GO_PAID remain open."
+}

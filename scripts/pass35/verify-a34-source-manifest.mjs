@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+const here=path.dirname(fileURLToPath(import.meta.url));
+const root=path.resolve(here,'../..');
+const manifestPath=path.join(root,'artifacts/pass35/a34/PASS35_A34_SOURCE_MANIFEST.json');
+const fail=(m)=>{throw new Error(`A34_SOURCE_MANIFEST_FAIL: ${m}`)};
+const sha=(p)=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+if(!fs.existsSync(manifestPath)) fail('manifest missing');
+const m=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+if(m.schemaVersion!=='velmere.pass35.a34.source-manifest.v1') fail('schema');
+if(m.revisionId!=='VELMERE_PASS35_A34_DEEP_VISUAL_RECONCILIATION') fail('revision');
+if(!Array.isArray(m.files)||!m.files.length) fail('files');
+let aggregate=crypto.createHash('sha256');
+const seen=new Set();
+for(const f of m.files){
+ if(seen.has(f.path)) fail(`duplicate ${f.path}`); seen.add(f.path);
+ const segments=f.path.split('/');
+ if(path.isAbsolute(f.path)||f.path.includes('\\')||segments.some((x)=>x==='..'||x==='')) fail(`unsafe ${f.path}`);
+ const p=path.join(root,f.path); if(!fs.existsSync(p)) fail(`missing ${f.path}`);
+ const st=fs.statSync(p); if(!st.isFile()) fail(`not file ${f.path}`);
+ if(st.size!==f.size) fail(`size ${f.path}`);
+ const d=sha(p); if(d!==f.sha256) fail(`sha ${f.path}`);
+ aggregate.update(`${f.path}\0${f.size}\0${d}\n`);
+}
+if(aggregate.digest('hex')!==m.aggregateSha256) fail('aggregate');
+const forbidden=['node_modules/','.next/','.git/'];
+for(const f of m.files) for(const x of forbidden) if(f.path===x.slice(0,-1)||f.path.startsWith(x)) fail(`forbidden ${f.path}`);
+if(m.files.some(f=>f.path.toLowerCase().endsWith('.pdf'))) fail('pdf in source');
+console.log(JSON.stringify({status:'PASS_A34_SOURCE_MANIFEST',files:m.files.length,aggregateSha256:m.aggregateSha256,sourceBytes:m.sourceBytes,pdfCount:0},null,2));

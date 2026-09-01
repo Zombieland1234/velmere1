@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "velmere.r7.common-staging-runtime-receipt.v2",
+  "generatedAt": "2026-08-24T01:58:00.000Z",
+  "candidate": "R7_MERGED_CURRENT_SOURCE",
+  "projectRef": "yljjyowcvjgjcamffnvd",
+  "region": "eu-west-2",
+  "status": "PASS_PRE_WINDOWS",
+  "ownerAuthorized": true,
+  "realRuntime": {
+    "postgres": "17.6.1.155",
+    "supabaseProjectState": "ACTIVE_HEALTHY",
+    "edgeFunctionDeployed": true,
+    "postgrestHttpExecuted": true
+  },
+  "auth": {
+    "authUsersPresent": 6,
+    "authSessionsPresent": 4,
+    "realGoTrueProofUsers": 2,
+    "realGoTrueProofSessions": 2,
+    "distinctJwtSubjects": true,
+    "distinctSessions": true,
+    "refreshTokensPresent": 2,
+    "rawTokensReturned": false,
+    "provisionerDisabledAfterUse": true
+  },
+  "tenantIsolation": {
+    "userA": {
+      "httpStatus": 200,
+      "ownSnapshotVisible": 1,
+      "otherSnapshotVisible": 0,
+      "ownPdfVisible": 1,
+      "otherPdfVisible": 0
+    },
+    "userB": {
+      "httpStatus": 200,
+      "ownSnapshotVisible": 1,
+      "otherSnapshotVisible": 0,
+      "ownPdfVisible": 1,
+      "otherPdfVisible": 0
+    }
+  },
+  "artifact": {
+    "surface": "lens",
+    "tier": "basic",
+    "ownerSuppliedInput": true,
+    "externalProviderCalls": 0,
+    "rightsState": "OWNER_AUTHORIZED_PRIVATE_ANALYSIS_AND_ACCOUNT_DELIVERY",
+    "snapshotRowsPresent": 6,
+    "exactPdfBlobRowsPresent": 6,
+    "byteLength": 431,
+    "pdfDigest": "sha256:e7e96ab239c8f1d9590bc2f562e23ff55bb032ba0ba40ca97102933328b534b7",
+    "digestBinding": true,
+    "pdfHeaderValid": true,
+    "immutableExactBlob": true,
+    "deployedRequestBoundReceipt": true
+  },
+  "persistenceRecovery": {
+    "write": true,
+    "readback": true,
+    "reconnectReadback": true,
+    "rollbackFailure": {
+      "status": "PASS",
+      "exceptionCaught": true,
+      "rowCountsUnchanged": true
+    },
+    "backupRowsPresent": 4,
+    "restore": true,
+    "postRestoreRlsReverified": true,
+    "concurrency": {
+      "status": "PASS",
+      "independentBackendCount": 2,
+      "createdCount": 1,
+      "idempotentExistingCount": 1,
+      "errorCount": 0
+    },
+    "export": true,
+    "durableErasure": {
+      "status": "PASS",
+      "snapshotBefore": 1,
+      "pdfBefore": 1,
+      "snapshotAfter": 0,
+      "pdfAfter": 0
+    }
+  },
+  "securityHardening": {
+    "publicArtifactTablesRls": true,
+    "privateControlTables": 8,
+    "privateControlTablesRls": 8,
+    "privateExplicitDenyPolicies": 8,
+    "accountBindingHelpersSecurityInvoker": true,
+    "fixedSearchPath": true,
+    "pdfForeignKeyIndexPresent": true,
+    "securityAdvisorCritical": 0,
+    "securityAdvisorErrors": 0,
+    "securityAdvisorWarnings": [
+      "AUTH_LEAKED_PASSWORD_PROTECTION_DISABLED"
+    ],
+    "warningBoundary": "Non-critical owner configuration advisory. Proof users use long random owner-controlled passwords; provisioning function is disabled and public signup is not part of this staging proof.",
+    "performanceAdvisorWarnings": 0,
+    "performanceAdvisorInfo": [
+      "NEW_STAGING_INDEXES_NOT_YET_USED"
+    ],
+    "rawSecretsReturned": false,
+    "providerErrorsReturned": false
+  },
+  "sourceAuthority": {
+    "tableFailClosed": true,
+    "rowCount": 0,
+    "exactWindowsStatus": "NOT_EXECUTED",
+    "recordingRequiresPhysicalExactWindowsPass": true
+  },
+  "correctedPreliminaryFailures": [
+    "PGCRYPTO_FUNCTION_SCHEMA_RESOLUTION_CORRECTED",
+    "BOOLEAN_AGGREGATE_PROBE_CORRECTED",
+    "EARLY_BACKUP_TABLE_NAME_PROBE_CORRECTED"
+  ],
+  "remainingPhysicalBlockers": [
+    "HOSTED_EXACT_WINDOWS_R7_52_X2_AND_SOURCE_AUTHORITY_BINDING"
+  ],
+  "customerFinalCredit": false,
+  "truthBoundary": "All common staging and Browser Basic runtime gates are physically passed except exact current-R7 Windows 52x2 and its fail-closed source-authority binding. No external customer proof is required for internal FINAL."
+}

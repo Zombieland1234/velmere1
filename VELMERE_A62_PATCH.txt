@@ -1,0 +1,9 @@
+PASS36 A62R0 — OFFLINE EXACT RUNTIME + DEPENDENCY + PLAYWRIGHT BROWSER BOOTSTRAP
+- Adds fail-closed intake for official Node 24.18.0 archives on Windows x64 and Linux x64.
+- Anchors Windows ZIP to SHA-256 0ae68406... and Linux tar.xz to SHA-256 55aa7153....
+- Verifies bundled npm 11.16.0 by executing npm-cli with the extracted exact Node binary.
+- Requires all 827 remote package tarballs from package-lock.json with exact metadata, SHA-256 and SRI.
+- Requires an externally SHA-256-anchored Playwright 1.60.0 Chromium bundle with exact file inventory.
+- Rejects path traversal, symlinks in browser ZIP, unsafe tar entries, duplicate/extra/missing packages, altered lockfiles and bundle tampering.
+- Seeds a private npm cache, proves an actual Chromium launch, and invokes the A60 exact build/browser gate with a bound executable path.
+- Does not include runtime, dependency or browser binaries in SOURCE_ONLY and grants no LIVE or sale credit.

@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import fs from "node:fs";import path from "node:path";import {fileURLToPath} from "node:url";
+const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
+const REV="VELMERE_PASS36_A102R44P30_ACTION_REQUIRED_EXACT_CURRENT_BYTE_LINUX_DUAL_BUILD_BROWSER_PDF_AND_PARENT_EXTERNAL_RLS_NO_LIVE_CREDIT";
+const migration=JSON.parse(fs.readFileSync(path.join(ROOT,"config/pass36/a102r44p30-chromium-full-page-screenshot-backend-migration.json"),"utf8"));
+const browser=fs.readFileSync(path.join(ROOT,"scripts/a45-browser-acceptance.mjs"),"utf8");
+const checks=[];const add=(id,ok,detail=null)=>checks.push({id,ok:Boolean(ok),detail});
+add("schema",migration.schemaVersion==="velmere.pass36.a102r44p30.chromium-full-page-screenshot-backend-migration.v1");
+add("revision",migration.revisionId===REV);
+add("qa-only",migration.change.scope==="QA_HARNESS_ONLY"&&migration.truthBoundary.productBehaviorChanged===false);
+add("exact-toolchain-retained",migration.change.exactChromiumRemains==="148.0.7778.96"&&migration.change.playwrightRemains==="1.60.0");
+add("headless-retained",migration.change.headlessRemains===true&&browser.includes("headless: true"));
+add("single-default-arg-ignored",browser.includes('ignoreDefaultArgs: ["--enable-features=CDPScreenshotNewSurface"]'));
+add("no-disable-gpu",migration.change.disableGpuAdded===false&&!browser.includes('"--disable-gpu"'));
+add("no-headful",migration.change.headfulModeAdded===false&&!browser.includes("headless: false"));
+add("denominators",migration.denominators.routeRowsAfter===56&&migration.denominators.scenarioChecksAfter===57&&migration.denominators.screenshotsAfter===29&&migration.denominators.popupTabsAfter===4&&migration.denominators.evidenceChecksAfter===584&&migration.denominators.removed===0);
+add("no-removal",migration.testsDeleted===0&&migration.assertionsRemoved===0&&migration.denominatorCollapse===false);
+add("retest-required",migration.truthBoundary.exactBrowserRetestRequired===true);
+add("no-promotion",migration.globalDecision==="NO_GO"&&migration.saleEnabled===false&&migration.LIVE===false&&migration.truthBoundary.saleCredit===false&&migration.truthBoundary.liveCredit===false);
+const failed=checks.filter(x=>!x.ok);console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p30.chromium-full-page-screenshot-backend-migration-test.v1",status:failed.length?"FAIL":"PASS",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,rows:checks},null,2));if(failed.length)process.exit(1);

@@ -1,0 +1,31 @@
+VELMERE A102R4 PATCH
+Revision: VELMERE_PASS36_A102R4_ACTION_REQUIRED_CLIENT_AUTH_PREVIEW_HEADER_LOCAL_STORAGE_AND_ACCOUNT_DATA_FAIL_CLOSED_NO_REAL_CREDIT
+Parent: VELMERE_PASS36_A102R3_ACTION_REQUIRED_LOCAL_FULL_REGRESSION_PRODUCT_PDF_AND_RELEASE_INTEGRITY_REBASELINE_NO_REAL_CREDIT
+Decision: NO_GO
+LIVE=false; saleEnabled=false; productionApproved=false; worldClassProven=false
+completedThrough=89
+
+LOCAL SECURITY CLOSURE
+- Removed localStorage authentication/profile state as account authority.
+- Auth-service outage now leaves account UI closed.
+- Removed unsigned x-velmere-preview-session and browser-supplied account identity headers.
+- Preview access uses a signed server-issued cookie outside production only.
+- Dashboard logout calls the server session deletion endpoint.
+- Legacy local auth/profile keys are purged and never newly written.
+- A73 and A94R2 historical verifiers now follow current authority and the full descendant chain.
+- A89 frozen input remains unchanged; an exact A102R4 approved-change ledger binds the legal current account-session bytes.
+- Route-AST credit is checked for internal consistency without granting exact release/browser credit.
+
+LOCAL TESTS
+- A102R4 auth boundary: 21/21.
+- A73: 57/57; verifier 73/73.
+- A89: 54/54; verifier 156/156; 192 cases; 768/768 mutations.
+- API body: 37/37; malformed JSON: 112/112; PASS4800: 61/61.
+- A57 current contract: 1138/1138; protected integrity 1073/1073.
+- Route dispatch: 1480/1480; lazy routes 176/176.
+- A59: 77/77; tiers 186/186; zero-budget 439/439.
+- Cross-surface: 32/32; 17/17 mutations killed.
+- Source audit: 4865 files; 2991 code files; syntax=0, missing imports=0, missing CSS classes=0.
+
+TRUTH BOUNDARY
+No fresh exact Node/npm build, Chromium/browser, staging, real-data, rights, legal, customer, assurance, LIVE or sale credit is granted.

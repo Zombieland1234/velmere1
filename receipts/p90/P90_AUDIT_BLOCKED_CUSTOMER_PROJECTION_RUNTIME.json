@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "velmere.p90.audit-blocked-customer-projection-runtime.v1",
+  "generatedAt": "2026-08-20T12:20:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_FAIL_CLOSED_PROJECTION",
+  "checks": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "blocked_schema",
+        "status": "PASS",
+        "detail": "pass4829-audit-report-customer-blocked-projection-v1"
+      },
+      {
+        "id": "risk_score_removed",
+        "status": "PASS",
+        "detail": {
+          "riskScore": null,
+          "riskLabel": "WITHHELD",
+          "reviewPriorityScore": 0,
+          "sourceConfidence": 0,
+          "readinessScore": 0,
+          "basicState": "blocked",
+          "proState": "blocked",
+          "advancedState": "blocked",
+          "publicVerdict": "Provider-derived audit findings are withheld.",
+          "proVerdict": "Provider-derived audit findings are withheld.",
+          "advancedVerdict": "Provider-derived audit findings are withheld."
+        }
+      },
+      {
+        "id": "risk_label_withheld",
+        "status": "PASS",
+        "detail": "WITHHELD"
+      },
+      {
+        "id": "findings_removed",
+        "status": "PASS"
+      },
+      {
+        "id": "sections_removed",
+        "status": "PASS"
+      },
+      {
+        "id": "paid_lines_removed",
+        "status": "PASS"
+      },
+      {
+        "id": "evidence_counts_zeroed",
+        "status": "PASS",
+        "detail": {
+          "totalSections": 0,
+          "ready": 0,
+          "partial": 0,
+          "missing": 0,
+          "blocked": 1,
+          "manualReview": 0,
+          "totalEvidence": 0,
+          "totalMissing": 1,
+          "proPdfSections": 0,
+          "advancedActions": 0
+        }
+      },
+      {
+        "id": "sensitive_marker_absent",
+        "status": "PASS"
+      },
+      {
+        "id": "hidden_counts_preserved",
+        "status": "PASS",
+        "detail": {
+          "advancedQueueHidden": 1,
+          "proPdfLinesHidden": 1,
+          "sectionsHidden": 1,
+          "findingsHidden": 1
+        }
+      },
+      {
+        "id": "projection_digest_valid",
+        "status": "PASS",
+        "detail": "sha256:48f9c9d59c39efe7cdb21e3287a8cc39e38f9a47725f2a6d9d881d3bdb992222"
+      },
+      {
+        "id": "tamper_breaks_digest",
+        "status": "PASS"
+      }
+    ]
+  },
+  "zeroFakeCredit": {
+    "realProviderNetwork": false,
+    "legalApproval": false,
+    "deployedRoute": false,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3"
+  },
+  "truthBoundary": "This proves only that a local rights/currentness block strips provider-derived scores, findings, sections and PDF lines before another route can consume the report. It does not prove deployed handler behavior or authorization."
+}

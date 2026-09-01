@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "velmere.p49.direct-projection-negative-controls.v1",
+  "status": "PASS",
+  "executed": 7,
+  "detected": 7,
+  "failedToDetect": 0,
+  "tests": [
+    {
+      "name": "missing-part",
+      "detected": true,
+      "exitCode": 1,
+      "receiptStatus": "FAIL",
+      "error": "RuntimeError: transport_part_missing:00:/mnt/data/p49_build/mutations/missing-part/parts/part-00.b64"
+    },
+    {
+      "name": "tampered-part",
+      "detected": true,
+      "exitCode": 1,
+      "receiptStatus": "FAIL",
+      "error": "RuntimeError: transport_part_integrity_mismatch:01"
+    },
+    {
+      "name": "wrong-transport-manifest-sha",
+      "detected": true,
+      "exitCode": 1,
+      "receiptStatus": "FAIL",
+      "error": "RuntimeError: transport_manifest_sha_mismatch:b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "tampered-projection-manifest",
+      "detected": true,
+      "exitCode": 1,
+      "receiptStatus": "FAIL",
+      "error": "RuntimeError: support_file_integrity_mismatch:projectionManifest:/mnt/data/p49_build/mutations/tampered-projection-manifest.json"
+    },
+    {
+      "name": "tampered-runner",
+      "detected": true,
+      "exitCode": 1,
+      "receiptStatus": "FAIL",
+      "error": "RuntimeError: support_file_integrity_mismatch:runner:/mnt/data/p49_build/mutations/tampered-runner.mjs"
+    },
+    {
+      "name": "path-traversal-tar",
+      "detected": true,
+      "exitCode": null,
+      "receiptStatus": null,
+      "error": "RuntimeError: unsafe_tar_path:../escape.txt"
+    },
+    {
+      "name": "symlink-tar",
+      "detected": true,
+      "exitCode": null,
+      "receiptStatus": null,
+      "error": "RuntimeError: unsupported_tar_member:link:b'2'"
+    }
+  ],
+  "truthBoundary": "These negative controls validate fail-closed transport and extraction behavior; they do not replace native Windows build execution.",
+  "integritySha256": "8128d31fa19a52d7ca5756a6b7ba29539627b3be7ef1c503b893c7787d9225bf"
+}

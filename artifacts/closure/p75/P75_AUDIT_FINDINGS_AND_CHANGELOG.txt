@@ -1,0 +1,57 @@
+VELMERE P75 — ADVANCED AUDIT AUTOMATION RUNTIME REPAIR
+Date: 2026-08-17
+Parent: P73R7 / V17
+Parent exact-Windows commit: f8a327154e019a28bf43d65be390fef5db2bf05d
+Classification: CURRENT PRODUCT REPAIR; ZERO CUSTOMER-FINAL / SALE CREDIT
+
+AUDIT CURRENT TRUTH
+- V17 requires exactly 10 product families / 20 customer rows / 20 current execution profiles / 10 paid transitions.
+- PDF remains an artifact, not a product family.
+- Advanced Audit is a deeper automated tier. Human QA may exist only as optional internal QA and must not become a customer feature, value gate, execution prerequisite, release prerequisite, or sale unlock.
+- P73R7 remains the last proven product checkpoint before P75. P74 diagnostics did not prove current Ancient8 runtime bytecode and therefore receive no checkpoint/customer-final credit.
+
+ACTIVE DRIFT FOUND IN P73R7 SOURCE
+1. Durable customer-history deserialization accepted legacy advanced_human_review but not current advanced_automation.
+2. PASS4616 introduced automation_claimed / automation_completed / reviewer_assigned event usage without extending PASS4615 CHECK constraints, so durable inserts could be rejected by the database.
+3. Durable Advanced orchestration had no Advanced worker lease claim/settle RPC path; Pro had one.
+4. Advanced completion lacked the Pro-style atomic "worker complete + immutable snapshot" transaction.
+5. Current Advanced PDF token/download path still called the legacy manual-release delivery gate.
+6. Optional Advanced human QA could mutate automation review_state to assigned and therefore interfere with machine execution state.
+7. Customer projection exposed optional-human-QA fields (reviewer assignment/SLA), contrary to V17 optional-internal-only semantics.
+8. The legacy-named Advanced manual-review status route still exposed manual release / human review semantics.
+9. Existing commercial STOP_SELL correctly kept Advanced outside the paid surface guard; this must remain unchanged.
+
+P75 PHYSICAL REPAIR
+- Current queue/history lane now accepts and persists advanced_automation; advanced_human_review remains legacy compatibility only.
+- Added forward-only 20260817000001_p75_advanced_audit_automation_runtime.sql; historical migrations are not rewritten.
+- Forward migration expands event/reason/queue constraints needed by current automation and constrains customer-history reason storage to customer-safe allowlisted values.
+- Optional human QA is isolated from customer execution state/history; it may not overwrite a live automation lease/state.
+- Added Advanced worker claim + settle APIs/RPC registry entries and service-role DB functions.
+- Added atomic durable Advanced completion with immutable snapshot, tier-bound to advanced.
+- Advanced PDF token/download gates now require automated Advanced completion rather than manual release/sign-off.
+- Legacy route name remains compatibility-only but now returns automated status and hides optional human QA/SLA details.
+- STOP_SELL guard is intentionally unchanged; Advanced is not made sale-eligible by this repair.
+
+LOCAL CONTROL RESULTS BEFORE EXACT-WINDOWS
+- Static controls: PASS 29/29 in p75 CI control; broader local campaign: PASS 37/37.
+- Historical PASS4615/PASS4616/PASS4806 migration bytes preserved.
+- New migration SHA-256: fa56abf0a1dc4d72794ea916e7569f06fe5b601865fee1cd23198737a1773cc2
+- P75 build-relevant projection: 1601 files / 21,037,749 bytes
+- P75 path-set SHA-256: 40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59
+- P75 content aggregate SHA-256: 748be4046784cb0581c3a6f123ed3670afd4e6849a9007bd98a144f820d7dff6
+
+ZERO-FAKE-CREDIT BOUNDARY
+- Current Ancient8 runtime bytecode: 0/1
+- Vulnerability ground truth: 0
+- Customer FINAL: 0/20
+- Audit FINAL PDF: 0/3
+- Rights: 2/203
+- Paid value: 0/10
+- Sale eligible: 0/20
+- LIVE: false
+- Global: NO_GO / STOP_SELL
+
+EXACT-WINDOWS STATUS
+- First P75 run 32074365435: FAILED in control-plane CI bundle reconstruction before product execution; 0 credit.
+- Repaired transport run: 32074700759 on branch velmere-p75-advanced-automation-runtime-20260817.
+- Final status must be bound from the completed GitHub evidence before P75 receives checkpoint credit.

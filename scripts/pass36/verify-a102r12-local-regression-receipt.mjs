@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { REV, PARENT, RECEIPT, STATE } from "./a102r12-source-boundary.mjs";
+const read=(f)=>JSON.parse(fs.readFileSync(f,"utf8"));
+const receipt=read(RECEIPT); const state=read(STATE); const checks=[]; const add=(id,p,d=null)=>checks.push({id,passed:Boolean(p),detail:d}); const digest=/^[a-f0-9]{64}$/u;
+add("identity",receipt.revisionId===REV&&receipt.parentRevisionId===PARENT);
+add("status",receipt.phase==="FINAL"&&receipt.status==="PASS_A102R12_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION",receipt.status);
+add("rows",receipt.results?.length===21&&receipt.results.every((r)=>r.passed===true&&r.exitCode===0&&digest.test(r.stdoutSha256)&&digest.test(r.stderrSha256)),receipt.summary);
+add("admin-draft",receipt.keyDenominators?.a102r12AdminDraftChecks===29);
+add("prior-browser-boundaries",receipt.keyDenominators?.a102r11ClientPdfChecks===43&&receipt.keyDenominators?.a102r10ExternalNavigationChecks===59&&receipt.keyDenominators?.a102r9ClipboardChecks===38&&receipt.keyDenominators?.a102r8BrowserPrivacyChecks===41&&receipt.keyDenominators?.a102r7WalletPrivacyChecks===43&&receipt.keyDenominators?.a102r6PrivateStateChecks===30&&receipt.keyDenominators?.a102r5PaidBoundaryChecks===26);
+add("auth",receipt.keyDenominators?.a73Checks===57&&receipt.keyDenominators?.a73VerifierChecks===73&&receipt.keyDenominators?.a89Checks===54&&receipt.keyDenominators?.a89Cases===192&&receipt.keyDenominators?.a89MutationsKilled===768);
+add("api",receipt.keyDenominators?.apiBodyChecks===37&&receipt.keyDenominators?.malformedJsonChecks===112&&receipt.keyDenominators?.mega4800Checks===61);
+add("core",receipt.keyDenominators?.a59Checks===77&&receipt.keyDenominators?.routeDispatchChecks===1480&&receipt.keyDenominators?.routeDispatchTamperChecks===7&&receipt.keyDenominators?.routeRoutes===160&&receipt.keyDenominators?.lazyRouteChecks===176&&receipt.keyDenominators?.productTierChecks===186&&receipt.keyDenominators?.zeroBudgetChecks===439);
+add("source-audit",receipt.sourceAudit?.filesRead===5005&&receipt.sourceAudit?.codeFiles===3084&&receipt.sourceAudit?.syntaxErrors===0&&receipt.sourceAudit?.missingLocalImports===0&&receipt.sourceAudit?.missingCssModuleClasses===0,receipt.sourceAudit);
+add("deferred",receipt.deferredFinalLineageVerifiers?.length===2&&receipt.deferredFinalLineageVerifiers.every((r)=>r.requiredAfterDescendantFreeze&&r.credit===false));
+add("blocked",receipt.environmentBlockers?.length===4&&receipt.environmentBlockers.every((r)=>r.available===false&&r.credit===false));
+add("no-real",Object.values(receipt.realEvidence??{}).every((v)=>v===0));
+add("no-promotion",receipt.promotion?.globalDecision==="NO_GO"&&receipt.promotion?.live===false&&receipt.promotion?.saleEnabled===false&&receipt.promotion?.productionApproved===false&&receipt.promotion?.worldClassProven===false);
+add("state",state.revisionId===REV&&state.parentRevisionId===PARENT&&state.localImplementation?.adminProductDraftPersistentLocalStorageRemoved===true&&state.localImplementation?.adminProductDraftCurrentTabMemoryOnly===true&&state.localImplementation?.adminProductDraftScopeDigestRequired===true&&state.localImplementation?.adminProductImportResponseStrictJsonRequired===true&&state.localImplementation?.durableServerAdminDraftStorageVerified===false&&state.runtimeTruth?.freshWebpackBuildOnA102R12BytesExecuted===false&&state.runtimeTruth?.freshAdminProductDraftBrowserRowsExecuted===0);
+const failed=checks.filter((r)=>!r.passed);
+console.log(JSON.stringify({status:failed.length?"FAIL_A102R12_LOCAL_REGRESSION_RECEIPT":"PASS_A102R12_LOCAL_REGRESSION_RECEIPT_ACTION_REQUIRED_NO_PROMOTION",revisionId:REV,checks:checks.length,passed:checks.length-failed.length,failed:failed.length,results:checks,live:false,saleEnabled:false},null,2));
+process.exit(failed.length?1:0);

@@ -1,0 +1,214 @@
+VELMÈRE — CURRENT STATE AND PASS DELTA LEDGER
+REVISION: P73R7 / V17
+DATE: 2026-08-17
+AUTHORITY: CANONICAL OWNER DIRECTIVE V17 — unchanged byte-for-byte from P71R5
+PARENT PRODUCT CHECKPOINT: P72R3 / V17
+PASS DECISION: PASS_BOUNDED_P73R7_REAL_DEPLOYMENT_IDENTITY_GROUND_TRUTH_EXACT_WINDOWS
+P73R7 CREDIT CLASS: REAL_PRODUCT_SOURCE_REPAIR + LIVE_DUAL_AUTHORITY_EVIDENCE + DEPLOYMENT_IDENTITY_GROUND_TRUTH_1 + EXACT_WINDOWS_ENGINEERING + FULL_INTEGRATION_NEGATIVE_CONTROLS + FAIL_CLOSED_NO_CUSTOMER_FINAL_PROMOTION
+GLOBAL RELEASE DECISION: NO_GO
+STOP_SELL: true
+LIVE: false
+saleEnabled: false
+productionApproved: false
+worldClassProven: false
+
+======================================================================
+EXECUTIVE DELTA — P72R3 → P73R7
+======================================================================
+Axis | P72R3 | P73R7 | Honest credit
+Canonical product topology | 10 / 20 / 20 / 10 | unchanged | PASS_RETAINED
+Commercial/readiness topology | exact owner-bound | unchanged | PASS_RETAINED
+Real deployed Audit reference | Multicall3 Ethereum reference retained | retained | PASS_RETAINED
+Deployment-identity ground-truth cases | 0 | 1 (Ancient8 Multicall3 contradiction) | PASS_BOUNDED
+Independent authority roots for case | 0 | 2 (Ancient8 official docs + pinned official Multicall3 repository README) | PASS_BOUNDED
+Official Ancient8 Multicall3 address | not adjudicated | 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e | PASS_BOUNDED
+Incorrect neighboring address parser risk | OPEN | fixed row-bound; 0x4200...0007 explicitly rejected | PASS_PRODUCT_CORRECTNESS
+Deployment finding projection | none credited | confirmed deployment_identity finding, risk floor 90 / critical | PASS_BOUNDED
+Exploitability/vulnerability ground truth | 0 | 0 | WITHHELD
+Current runtime bytecode quorum for Ancient8 target | 0 | 0 | WITHHELD
+Basic authority supplement readiness | absent | authority supplement met (2 receipts) | INTERNAL_EVIDENCE_ONLY
+Audit Basic customer FINAL | 0/1 row | still NOT FINAL | no promotion
+Audit Pro/Advanced evidence readiness | blocked | still blocked | correct
+Audit FINAL PDFs | 0/3 | 0/3 | unchanged
+Customer FINAL outputs | 0/20 | 0/20 | unchanged
+Rights | 2/203 | 2/203 | unchanged
+Paid value transitions | 0/10 | 0/10 | unchanged
+Sale eligible | 0/20 | 0/20 | STOP_SELL
+Global | NO_GO | NO_GO | correct
+
+P73R7 proves one real deployment-identity contradiction path. It does NOT prove a vulnerability, exploitability, current runtime bytecode identity, commercial rights, a final customer Audit, a final PDF, sale eligibility, LIVE, or world-class closure.
+
+======================================================================
+TABLE 0 — CURRENT OWNER-BOUND PRODUCT TOPOLOGY
+======================================================================
+Family | Shape | Customer rows | Paid transitions | PDF obligation
+Audit | TIERED | Basic / Pro / Advanced | 2 | final tier-appropriate Audit PDF
+Browser | TIERED | Basic / Pro / Advanced | 2 | Browser PDF where promised
+Shield | TIERED | Basic / Pro / Advanced | 2 | none as separate family
+Shield Pro | TIERED | Basic / Pro / Advanced | 2 | none as separate family
+Real Markets | TIERED | Basic / Pro / Advanced | 2 | none
+Shield Map | STANDALONE | Shield Map | N/A | none
+Market Impact | STANDALONE FREE | Market Impact | N/A | none
+Whale Watch | STANDALONE FREE | Whale Watch | N/A | none
+Angel | STANDALONE AI | Angel | N/A | none
+Risk Indicator | STANDALONE | Risk Indicator | N/A | none
+Denominators remain exactly: 10 families / 20 customer-facing rows / 20 current execution profiles / 10 material paid transitions. PDF separate family=false.
+
+======================================================================
+TABLE 1 — P73R7 REAL DEPLOYMENT-IDENTITY CASE
+======================================================================
+Project reference: Multicall3
+Canonical reference address: 0xca11bde05977b3631167028862be2a173976ca11
+Target chain: Ancient8 Mainnet
+Chain ID: 888888888
+Official Ancient8 deployment address adjudicated for Multicall3: 0xb76d6e8c82d06fd262ef3799db73d5a724108d4e
+Pinned project-maintainer source repository: mds1/multicall3
+Pinned project source commit: b667d67ecfa5361a81e8f110234ce242613b0012
+Authority root 1: docs.ancient8.gg
+Authority root 2: raw.githubusercontent.com / exact mds1/multicall3 commit
+Authority receipts: 2
+Evidence self-verification: PASS
+Evidence digest: sha256:a009a00f21d6a9ffefa85f61bfc502fbca4a50e8c27de88a27aa26d8f10167a1
+Adverse kind: deployment_identity
+Finding severity: critical
+Risk floor / report risk score: 90
+Exploitability claim: NOT GRANTED
+Current runtime-bytecode identity: UNVERIFIED
+Persistent blocker: current_runtime_bytecode_quorum_unavailable
+
+Important negative control closed in P73R7:
+- Ancient8 official contract documentation contains other contract addresses near the Multicall3 row, including 0x4200000000000000000000000000000000000007.
+- P73R5 diagnostic exposed that the proximity parser could bind that neighboring address incorrectly.
+- P73R6 changed acquisition to a project-label-bound parser.
+- P73R7 retained that semantics and removed only lint defects.
+- Full integration explicitly requires the Multicall3 address 0xb76d...8d4e and rejects 0x4200...0007.
+
+======================================================================
+TABLE 2 — EXACT P73R7 PRODUCT DELTA VS P72R3
+======================================================================
+Final build-relevant delta: 7 files (captured again by package-source run 32047029082)
+- lib/security/audit-adjudicated-authority-evidence.ts — 19,142 B — 242868a1a746a6d256c01ce6f902929d964b97e42102644517d6e5b0bb042b54
+- lib/security/audit-claim-ledger.ts — 15,965 B — 9f799c6322f1be59df3e3add2bb559251f41b92f296896ece6f26e142d3ad18a
+- lib/security/audit-customer-report-pipeline.ts — 24,885 B — d78b55074bcc8e0b8e90f4c0752c639ca86e7ffb148da561f58ceccafab286e8
+- lib/security/audit-paid-evidence-readiness.ts — 5,527 B — 93cdd36e2864dc80a3b12442a07dbb3dee3ce387e3cdea04884f9ef975969ff4
+- lib/security/audit-provider-runtime-client.ts — 39,628 B — 090c7377c7a963395adbd7446339d1a4ef91e68fc59dcee7ab8dc068db107bcd
+- lib/security/audit-report-assembler.ts — 26,736 B — 8ca934e68c0d432479f9faf25d5bcd1f54a157abeab80082bc89d9a6f3b171f0
+- lib/server/security-route-modules/audit-report-assembler.ts — 13,129 B — 3876162367a12c2d05f522bf1fd2fef8b2c5f5a2e7ac87f2651268b8cf8087cb
+
+Final P73R7 build projection:
+- file count: 1598
+- payload: 21,014,913 B
+- path-set SHA-256: 9cb47f15e73ec678e32fe214b8e2947a4bfbaa624d8fb5101650296700d3dd25
+- aggregate SHA-256: b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b
+
+Independent package-source capture reproduced all 1598 manifest rows with 0 missing / 0 mismatch before canonical packaging.
+
+======================================================================
+TABLE 3 — EXACT WINDOWS ENGINEERING + LIVE INTEGRATION
+======================================================================
+Final proof run: 32046176467
+Proof head: f8a327154e019a28bf43d65be390fef5db2bf05d
+Runner: Microsoft Windows Server 2025 / x64
+Node: v24.18.0
+npm: 11.16.0
+Exact product projection: 1598 files / 21,014,913 B
+Aggregate: b25efb6aeb017989e96ed1c4bc1fee02a4f181fc5103e9396091d23333a7c92b
+
+Hard gates 12/12 PASS:
+- native Windows
+- exact Node
+- exact npm
+- exact projection pre-install
+- dependency closure
+- native Next SWC
+- semantic TypeScript
+- zero-warning ESLint
+- Webpack production build
+- Turbopack production build
+- controlled Next.js next-env.d.ts mutation
+- exact projection post-build restore
+
+Live P73R7 full authority integration: 27/27 PASS
+- exact Ancient8 target/chain binding
+- exact official Multicall3 row-bound address
+- neighboring-contract negative control
+- 2 independent authority roots
+- pinned maintainer commit binding
+- authority evidence self-verification
+- tamper negative control
+- unsupported-chain fail-closed
+- claim-ledger adverse projection
+- risk floor 90
+- report critical deployment-identity finding
+- no exploitability overclaim
+- Basic authority supplement internal readiness
+- Pro remains blocked
+- Advanced remains blocked
+- route/source binding retained
+
+Exact-Windows artifact SHA-256: 95a2a396d00cf57db6c2c0552f857cb73099ed0655c239dc653bbc233bf892a5
+Exact package-source-capture artifact SHA-256: dd06acf428b5efb755200a675f800c8283989b9a896264c566e90e7aa4fdf18c
+
+======================================================================
+FAILED / DIAGNOSTIC P73 ATTEMPTS — ZERO FINAL CHECKPOINT CREDIT
+======================================================================
+P73R4/R4R3 — engineering reached green but live GitHub API maintainer authority dependency returned failure/unavailable; zero checkpoint credit.
+P73R5 — pinned README product bytes reached exact engineering PASS, but inherited test workspace path was wrong; zero ground-truth credit.
+P73R5R1 — corrected workspace harness reached live runtime but old expected-address assertion failed; zero ground-truth credit.
+P73R5R2 — DIAGNOSTIC_ONLY: proved authority engine state=confirmed and verify=true, but exposed wrong neighboring address extraction; zero release credit.
+P73R6 — row-bound parser semantics applied; semantic TypeScript PASS; zero-warning ESLint correctly rejected stale constant / unnecessary escape; zero checkpoint credit.
+P73R7 attempts 32045859292 and 32046038248 — guarded patch transport mismatch; zero credit.
+P73R7 final run 32046176467 — SUCCESS — current engineering + live integration proof.
+Package-source capture run 32047029082 — SUCCESS_CONTROL_ONLY — exact aggregate reproduction; zero new product/release credit.
+
+======================================================================
+PACKAGING TRUTH / PARENT CORRECTION
+======================================================================
+The P72R3 product checkpoint and main SOURCE_ONLY ZIP A are retained as valid parent content.
+Physical parent ZIP A verified during P73R7 packaging:
+- bytes: 210,206,464
+- SHA-256: 8fa5ce28a59e837318c14e6f3602cd7cddcc97ab84f721df08f10070368fa1f1
+- entries: 7725
+- CRC: PASS
+
+A previously created local P72R3 COPY_B was interrupted (22,410,456 B) and is not a valid ZIP. Therefore P73R7 DOES NOT inherit or claim a P72R3 A/B byte-identity packaging pass. Product/engineering evidence from P72R3 remains valid; only that interrupted duplicate-package claim is corrected. P73R7 deterministic A/B packaging is rebuilt from the verified P72R3 ZIP A and must pass independently before handoff.
+
+Canonical directive V17 remains unchanged:
+SHA-256 de7fbd6df651a7a8a8f85054c6e9ac3c2ca530ebfb0d4ccd335dcb99fb658f05
+
+======================================================================
+GLOBAL CURRENT DENOMINATORS
+======================================================================
+Canonical product families: 10
+Customer-facing rows: 20
+Current execution profiles: 20
+Material paid transitions passed: 0/10
+Customer FINAL outputs: 0/20
+Audit final customer PDF artifacts: 0/3
+Real Markets final customer rows: 0/3
+Current real deployed Audit reference targets: 1 retained from P70
+Deployment-identity ground-truth cases: 1
+Current runtime-bytecode verified Ancient8 cases: 0
+Vulnerability/exploitability ground-truth cases: 0
+Rights: 2/203
+Rights withheld: 201/203
+Sale eligible: 0/20
+Security/privacy final closure: OPEN
+Accessibility/i18n final closure: OPEN
+Convergence rounds: 0/3
+FINAL_AI_VALIDATION: NOT_READY
+REAL_EXTERNAL_PROOF: NOT_STARTED
+GLOBAL: NO_GO / STOP_SELL / LIVE=false
+
+======================================================================
+NEXT HIGHEST-VALUE WORK — P74
+======================================================================
+1. Acquire current Ancient8 runtime bytecode for the canonical address using multiple independent current providers / roots.
+2. Bind block number/hash, chain ID, provider identity, response bytes/hash, currentness/finality, and fail closed on disagreement.
+3. Compare actual current runtime against the canonical Multicall3 runtime and against the officially documented Ancient8 deployment address.
+4. Do not treat Blockscout/explorer verification alone as ground truth; use independent RPC/provider evidence where possible.
+5. If runtime identity closes, feed it through the existing P73 deployment authority bundle and Audit customer pipeline.
+6. Only then assess whether Audit Basic can move toward a real customer FINAL + professional PDF; Pro/Advanced remain blocked until their own evidence minima, rights and deeper automated analysis close.
+7. Vulnerability/exploitability remains a separate denominator from deployment identity.
+
+END OF P73R7 LEDGER

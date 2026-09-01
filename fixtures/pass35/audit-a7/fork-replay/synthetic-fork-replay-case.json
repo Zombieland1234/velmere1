@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a7-fork-replay-case.v1",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "caseRef": "AUD-A7-FORK-REPLAY-0001",
+  "observedAt": "2026-07-22T20:00:00.000Z",
+  "chainId": "1",
+  "chainName": "Ethereum",
+  "blockNumber": "19400000",
+  "blockHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "preStateRoot": "0x2222222222222222222222222222222222222222222222222222222222222222",
+  "expectedPostStateRoot": "0x3333333333333333333333333333333333333333333333333333333333333333",
+  "contractAddress": "0x1111111111111111111111111111111111111111",
+  "sourceToBytecodeReceiptSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "chainProviderReceiptSha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "replayPlanSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "forkProviderConfigurationSha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "forkProviderCommercialRightsEvidenceSha256": null,
+  "forkProviderEndpointClass": "LOCAL_TEST",
+  "expectedTransactions": [
+    {
+      "txHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedStatus": "SUCCESS",
+      "expectedStateDiffSha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "expectedLogsSha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "expectedReturnDataSha256": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    {
+      "txHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expectedStatus": "REVERT",
+      "expectedStateDiffSha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "expectedLogsSha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "expectedReturnDataSha256": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  ],
+  "requiredAssertions": [
+    { "assertionId": "A09_TOTAL_SUPPLY_CONSERVED", "category": "ACCOUNTING", "expectedObservationSha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777" },
+    { "assertionId": "A09_ADMIN_STORAGE_UNCHANGED", "category": "STORAGE", "expectedObservationSha256": "sha256:8888888888888888888888888888888888888888888888888888888888888888" },
+    { "assertionId": "A09_UNAUTHORIZED_CALL_REVERTS", "category": "AUTHORIZATION", "expectedObservationSha256": "sha256:9999999999999999999999999999999999999999999999999999999999999999" },
+    { "assertionId": "A09_EVENT_SEQUENCE_MATCHES", "category": "EVENT", "expectedObservationSha256": "sha256:abababababababababababababababababababababababababababababababab" },
+    { "assertionId": "A09_TARGET_BALANCE_DELTA", "category": "BALANCE", "expectedObservationSha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd" }
+  ]
+}

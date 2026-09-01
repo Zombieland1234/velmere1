@@ -1,0 +1,173 @@
+VELMÈRE — CURRENT STATE AND PASS DELTA LEDGER
+REVISION: P77R3 / V17
+DATE: 2026-08-18
+AUTHORITY: CANONICAL OWNER DIRECTIVE V17 — unchanged byte-for-byte
+PARENT PRODUCT CHECKPOINT: P76R6 / V17
+PASS DECISION: PASS_BOUNDED_P77R3_DETERMINISTIC_FINAL_DELIVERY_AUTHORITY_EXACT_WINDOWS
+CREDIT CLASS: REAL_PRODUCT_SOURCE_REPAIR + DETERMINISTIC_CUSTOMER_DELIVERY_AUTHORITY + EXACT_WINDOWS_ENGINEERING + P73/P75/P76_REGRESSIONS + FAIL_CLOSED_NO_CUSTOMER_FINAL_PROMOTION
+GLOBAL RELEASE DECISION: NO_GO
+STOP_SELL: true
+LIVE: false
+saleEnabled: false
+productionApproved: false
+worldClassProven: false
+
+======================================================================
+EXECUTIVE DELTA — P76R6 → P77R3
+======================================================================
+Axis | P76R6 | P77R3 | Honest credit
+Canonical topology | 10 / 20 / 20 / 10 | unchanged | PASS_RETAINED
+Advanced automation | claim/settle/snapshot + immutable release | retained | PASS_RETAINED
+Generic final-delivery authority | operatorStatus=customer_safe_ready / mark_ready remained reachable | deterministic evidence/snapshot/redaction/currentness/route-health authority | PASS_PRODUCT_CORRECTNESS
+primary_reviewer in delivery authorization | reachable | removed from current delivery authorization | PASS_PRODUCT_CORRECTNESS
+mark_ready | could participate in customer-delivery state | optional internal annotation only | PASS_PRODUCT_CORRECTNESS
+operatorFinalSign / canCustomerDeliverAdvanced | legacy human-shaped authority leaked into upstream readiness/value paths | removed from current eligibility; legacy fields compatibility-only | PASS_PRODUCT_CORRECTNESS
+Immutable snapshot | required | required | PASS_RETAINED
+Redaction / receipt / entitlement / scope / replay | required | required | PASS_RETAINED
+Route health / fresh endpoint ping | required | required | PASS_RETAINED
+Blocked/stale warnings | fail closed | fail closed | PASS_RETAINED
+Exact Windows engineering | 12/12 PASS | 12/12 PASS current P77R3 bytes | PASS_CURRENT
+P77 static control | — | 23/23 PASS | PASS_CURRENT
+P77 deterministic-delivery runtime | — | 8/8 PASS | PASS_CURRENT
+P73 authority regression | PASS | 27/27 PASS | PASS_RETAINED
+P75 automation regression | PASS | 11/11 PASS | PASS_RETAINED
+P76 release regression | PASS | PASS | PASS_RETAINED
+P76R2 malicious human-gate negative | PASS | PASS | PASS_RETAINED
+PostgreSQL 16 durable proof | PASS P76R6 | inherited parent evidence; not rerun | PASS_PARENT_ONLY
+Production Supabase deployment | unproven | unproven | WITHHELD
+Current Ancient8 runtime bytecode | 0/1 | 0/1 | WITHHELD
+Vulnerability/exploitability ground truth | 0 | 0 | WITHHELD
+Customer FINAL | 0/20 | 0/20 | WITHHELD
+Audit FINAL PDF | 0/3 | 0/3 | WITHHELD
+Rights | 2/203 | 2/203 | unchanged
+Paid value | 0/10 | 0/10 | unchanged
+Sale eligible | 0/20 | 0/20 | STOP_SELL
+Global | NO_GO | NO_GO | correct
+
+P77R3 closes a real V17 contradiction left above the P76R6 Advanced release envelope: a customer-safe report could still be held behind operator readiness/manual mark_ready semantics in the generic and upstream delivery path. P77R3 removes human/operator annotations from eligibility while retaining deterministic security and evidence gates. No customer-final, PDF, rights, paid-value, sale, LIVE or WORLD_CLASS numerator is promoted.
+
+======================================================================
+PHYSICAL PRODUCT SOURCE DELTA
+======================================================================
+Exactly 12 build-relevant files changed from P76R6:
+1. lib/security/final-delivery-gate.ts
+2. lib/server/lazy-route-modules/admin--security--audit-messages--operator-actions.ts
+3. lib/account/audit-account-messages.ts
+4. lib/security/linked-request-drawer-actions.ts
+5. lib/security/delivery-receipt-ledger.ts
+6. lib/security/audit-case-vault-private-delivery-ledger.ts
+7. lib/security/server-payment-account-delivery-gate.ts
+8. lib/security/audit-tier-value-proof.ts
+9. lib/security/audit-evidence-qa-release-gate-matrix.ts
+10. lib/security/audit-watch-post-handler.ts
+11. lib/security/linked-request-drawer.ts
+12. lib/security/payment-evidence-redacted-details.ts
+
+Current deterministic delivery rules:
+- operator/customer-safe-ready status is informational only and cannot unlock or block delivery;
+- mark_ready is compatibility/internal annotation only;
+- human reviewer identity/sign-off is not a customer-delivery prerequisite;
+- immutable customer snapshot must be present;
+- server payment/receipt, entitlement/scope/consent, evidence sufficiency, redaction, replay and private-queue gates remain fail closed;
+- route health and a fresh endpoint ping remain required where applicable;
+- blocked or stale warnings remain delivery blockers;
+- security_admin remains an endpoint authorization role, not a product reviewer feature.
+
+======================================================================
+EXACT WINDOWS CURRENT-PRODUCT PROOF
+======================================================================
+Final run: 32089244367
+Proof head: ec1808241cd3a19f4af01aa47836b197ab4c48dd
+Runner: Microsoft Windows Server 2025 / x64
+Node: v24.18.0
+npm: 11.16.0
+Exact product projection: 1601 files / 21,037,233 B
+Path-set SHA-256: 40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59
+Aggregate SHA-256: 354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032
+Exact-Windows artifact SHA-256: 7be172e1da32b7c40b2db6b76dd50448c41813376585d844ce130424030153f7
+Support bundle: 10 parts / 19,080 base64 chars / 14,310 B / SHA-256 844d0790fbc239bb892073740bdea7691f6d02faead7c4b88f1ba4d08e389eb8
+
+12/12 exact-Windows hard gates PASS:
+- native Windows
+- exact Node
+- exact npm
+- exact projection pre-install
+- dependency closure
+- native Next/SWC
+- semantic TypeScript
+- zero-warning ESLint
+- Webpack production build
+- Turbopack production build
+- controlled next-env mutation
+- exact projection post-build
+
+Current runtime/static regressions:
+- P77 static: 23/23 PASS
+- P77 deterministic delivery runtime: 8/8 PASS
+- P73R7 authority regression: 27/27 PASS
+- P75 Advanced automation regression: 11/11 PASS
+- P76 release-envelope regression: PASS
+- P76R2 required=true human-gate tamper regression: PASS
+
+Local reproduction after the successful run independently re-applied the exact commit-bound P77 support bundle to canonical P76R6 and compared every current projection entry against the Windows manifest:
+1601/1601 files; 0 missing; 0 extra; 0 mismatch; payload 21,037,233 B; aggregate 354ec7229eb61dd55cccdae90c4a94576967f1c3beb9bad67909d847ccf1e032.
+
+======================================================================
+FAILED P77 ATTEMPTS — ZERO CREDIT
+======================================================================
+32088143528: reached real engineering and zero-warning ESLint correctly found one dead `operator` variable after operator authority was removed. Product checkpoint credit: 0.
+32088730723: repaired lint candidate existed, but support base64 transport was truncated before product engineering. Product checkpoint credit: 0.
+32089069224: split transport added per-part verification and caught a single support.part04 content mismatch before product execution. Product checkpoint credit: 0.
+P77R3 repaired transport by replacing only the damaged fragment with three smaller hash-bound parts. The product candidate remained the lint-repaired P77R1 bytes. Full run 32089244367 then passed.
+
+======================================================================
+INHERITED P76R6 POSTGRESQL PROOF — NO NEW DB CREDIT
+======================================================================
+P76R6 real PostgreSQL 16 transaction proof remains valid parent evidence for Advanced claim/retry/reclaim/atomic-complete/immutable-snapshot behavior. P77R3 did not change that migration/function layer and did not rerun PostgreSQL. Therefore P77R3 claims no new database-engine or production Supabase credit.
+Production/staging Supabase deployment remains unproven.
+
+======================================================================
+P73 AUTHORITY REGRESSION OBSERVATION — NO VULNERABILITY CLAIM
+======================================================================
+The inherited P73 authority regression remains green and continues to surface a deployment-identity contradiction for the Ancient8 Multicall3 reference using two authority roots. This may support Basic deployment-identity/risk evidence under the existing P73 contract. Current Ancient8 runtime-bytecode quorum remains unavailable, so this is NOT vulnerability ground truth, NOT exploitability proof, and does not unlock Pro/Advanced or customer FINAL credit.
+
+======================================================================
+CURRENT GLOBAL DENOMINATORS — ZERO FAKE CREDIT
+======================================================================
+Canonical product families: 10
+Customer-facing rows: 20
+Current execution profiles: 20
+Material paid transitions: 10
+Customer FINAL: 0/20
+Audit FINAL PDF: 0/3
+Real Markets FINAL: 0/3
+Current Ancient8 runtime-bytecode cases: 0/1
+Vulnerability/exploitability ground truth: 0
+Rights: 2/203 PASS; 201/203 WITHHELD
+Paid value: 0/10
+Sale eligible: 0/20
+Security/privacy FINAL: OPEN
+Accessibility/i18n FINAL: OPEN
+Convergence: 0/3
+FINAL_AI_VALIDATION: NOT_READY
+REAL_EXTERNAL_PROOF: NOT_STARTED
+LIVE: false
+GLOBAL: NO_GO / STOP_SELL
+
+======================================================================
+NEXT HIGHEST-VALUE WORK — P78
+======================================================================
+Do not spend another pass merely removing human wording if it is not reachable authority.
+Highest-value next work is now an end-to-end real Audit customer execution on a proof-friendly real target:
+1. independently sourced vulnerability/exploitability ground truth or an explicitly adjudicated no-finding truth set;
+2. real findings → severity → remediation → retest state;
+3. current Basic/Pro/Advanced customer execution path using the repaired P75/P76/P77 automation/release/delivery authority;
+4. first honest Customer FINAL numerator if and only if all evidence, rights, safety, freshness and artifact gates pass;
+5. first honest Audit FINAL PDF numerator only after customer-final content and PDF polish/render equivalence pass.
+
+If the real target or independent ground truth cannot support FINAL, keep 0/20 and 0/3 and record the blocker instead of promoting infrastructure evidence.
+
+CANONICAL AUTHORITY AFTER P77R3
+1. Canonical Owner Directive V17 — unchanged byte-for-byte.
+2. Current State & Pass Delta Ledger P77R3 / V17 — this file.
+3. Current complete SOURCE_ONLY P77R3 / V17 deterministic package.

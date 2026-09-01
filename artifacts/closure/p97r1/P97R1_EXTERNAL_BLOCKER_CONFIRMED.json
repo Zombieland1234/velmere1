@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "velmere.p97.external-blocker-confirmation.v1",
+  "generatedAt": "2026-08-21T08:00:00.000Z",
+  "status": "EXTERNAL_BLOCKER_CONFIRMED",
+  "authorizedStaging": {
+    "availableInCurrentExecutionEnvironment": false,
+    "configuredCredentialVariableNames": [],
+    "missingCredentialVariableNames": [
+      "SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "DATABASE_URL",
+      "POSTGRES_URL",
+      "POSTGRES_PRISMA_URL",
+      "POSTGRES_URL_NON_POOLING"
+    ],
+    "toolAvailability": {
+      "psql": false,
+      "pg_isready": false,
+      "supabase": false,
+      "docker": false,
+      "podman": false
+    },
+    "rawCredentialValuesRecorded": false,
+    "classification": "EXTERNAL_BLOCKER_CONFIRMED",
+    "scope": "Risk Indicator migrations P91/P93/P94, RLS/JWT, rollback/concurrency and deployed HTTP cannot be executed from this environment without authorized staging credentials and an execution client."
+  },
+  "exactEngineeringEnvironment": {
+    "currentNode": "v22.16.0",
+    "currentNpm": "10.9.2",
+    "requiredByPackageDevEngines": {
+      "packageManager": {
+        "name": "npm",
+        "onFail": "error",
+        "version": "11.16.0"
+      },
+      "runtime": {
+        "name": "node",
+        "onFail": "error",
+        "version": "24.18.0"
+      }
+    },
+    "packageLockPresent": true,
+    "nodeModulesPresent": false,
+    "registryDns": {
+      "exitCode": 2,
+      "resolved": false,
+      "outputPresent": false
+    },
+    "classification": "EXTERNAL_BLOCKER_CONFIRMED"
+  },
+  "workstreamDecision": {
+    "riskHistoryLocalPolishing": "STOPPED_AFTER_P96",
+    "selectedIndependentRow": "browser-basic",
+    "reason": "Authorized staging and exact dependency/runtime proof are unavailable. Browser Basic had a production-reachable artifact-integrity defect that could be repaired and tested without imitating staging."
+  },
+  "zeroFakeCredit": {
+    "stagingExecuted": false,
+    "postgresExecuted": false,
+    "supabaseExecuted": false,
+    "rlsExecuted": false,
+    "jwtExecuted": false,
+    "browserExecuted": false,
+    "wholeProjectTypeScript": false,
+    "exactWindows": false,
+    "customerFinalNumeratorDelta": 0
+  },
+  "truthBoundary": "Confirms only that authorized staging credentials/tools and the exact dependency graph are unavailable in this execution environment. It does not prove that the owner's external staging does not exist, is unhealthy, or cannot be used elsewhere."
+}

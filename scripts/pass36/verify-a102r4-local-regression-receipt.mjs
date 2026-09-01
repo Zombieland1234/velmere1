@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { REV, PARENT, RECEIPT, STATE } from "./a102r4-source-boundary.mjs";
+const read=(f)=>JSON.parse(fs.readFileSync(f,"utf8"));
+const receipt=read(RECEIPT); const state=read(STATE); const checks=[];
+const add=(id,passed,detail=null)=>checks.push({id,passed:Boolean(passed),detail});
+const digest=/^[a-f0-9]{64}$/u;
+add("identity",receipt.revisionId===REV&&receipt.parentRevisionId===PARENT);
+add("status",receipt.phase==="FINAL"&&receipt.status==="PASS_A102R4_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION",receipt.status);
+add("rows",receipt.results?.length===13&&receipt.results.every((r)=>r.passed===true&&digest.test(r.stdoutSha256)&&digest.test(r.stderrSha256)),receipt.summary);
+add("auth",receipt.keyDenominators?.a102r4AuthChecks===21&&receipt.keyDenominators?.a73Checks===57&&receipt.keyDenominators?.a73VerifierChecks===73);
+add("red-team",receipt.keyDenominators?.a89Checks===54&&receipt.keyDenominators?.a89Cases===192&&receipt.keyDenominators?.a89MutationsKilled===768);
+add("api",receipt.keyDenominators?.apiBodyChecks===37&&receipt.keyDenominators?.malformedJsonChecks===112&&receipt.keyDenominators?.mega4800Checks===61);
+add("core",receipt.keyDenominators?.a59Checks===77&&receipt.keyDenominators?.routeDispatchChecks===1480&&receipt.keyDenominators?.routeRoutes===160&&receipt.keyDenominators?.lazyRouteChecks===176&&receipt.keyDenominators?.productTierChecks===186&&receipt.keyDenominators?.zeroBudgetChecks===439);
+add("source-audit",receipt.sourceAudit?.syntaxErrors===0&&receipt.sourceAudit?.missingLocalImports===0&&receipt.sourceAudit?.missingCssModuleClasses===0,receipt.sourceAudit);
+add("blocked",receipt.environmentBlockers?.length===3&&receipt.environmentBlockers.every((r)=>r.available===false&&r.credit===false),receipt.environmentBlockers);
+add("no-real-credit",Object.values(receipt.realEvidence??{}).every((v)=>v===0));
+add("no-promotion",receipt.promotion?.globalDecision==="NO_GO"&&receipt.promotion?.live===false&&receipt.promotion?.saleEnabled===false&&receipt.promotion?.productionApproved===false&&receipt.promotion?.worldClassProven===false);
+add("state",state.revisionId===REV&&state.parentRevisionId===PARENT&&state.localImplementation?.clientAuthLocalStorageFailOpenRemoved===true&&state.runtimeTruth?.freshWebpackBuildOnA102R4BytesExecuted===false&&state.runtimeTruth?.freshExactBrowserRowsExecuted===0);
+const failed=checks.filter((r)=>!r.passed);
+console.log(JSON.stringify({status:failed.length?"FAIL_A102R4_LOCAL_REGRESSION_RECEIPT":"PASS_A102R4_LOCAL_REGRESSION_RECEIPT_ACTION_REQUIRED_NO_PROMOTION",revisionId:REV,checks:checks.length,passed:checks.length-failed.length,failed:failed.length,results:checks,live:false,saleEnabled:false},null,2));
+process.exit(failed.length?1:0);

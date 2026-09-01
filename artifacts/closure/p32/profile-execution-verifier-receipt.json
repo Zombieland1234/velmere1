@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "velmere.p32.profile-execution-verifier-receipt.v1",
+  "state": "PASS_PROFILE_EXECUTION_RECEIPTS_FAIL_CLOSED",
+  "summary": {
+    "checks": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "profileCounts": 33,
+  "executedInternalFixtureRegression": 30,
+  "blockedBrowser": 3,
+  "finalHoldoutsFrozen": 0,
+  "mutations": [
+    {
+      "mutationId": "promote_browser_execution",
+      "detected": true
+    },
+    {
+      "mutationId": "claim_final_holdout",
+      "detected": true
+    },
+    {
+      "mutationId": "claim_customer_value",
+      "detected": true
+    },
+    {
+      "mutationId": "shrink_profile_denominator",
+      "detected": true
+    }
+  ],
+  "truthBoundary": "This verifier protects against converting internal fixture execution into Browser, final-holdout, customer-value, paid or sale credit.",
+  "failures": [],
+  "checks": [
+    {
+      "id": "manifest:valid",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "id": "summary:state",
+      "passed": true,
+      "detail": "STRUCTURAL_FIXTURE_DELTA_ONLY_NOT_FINAL_VALUE_CAMPAIGN"
+    },
+    {
+      "id": "summary:profile-counts",
+      "passed": true,
+      "detail": {
+        "total": 33,
+        "executedInternalFixtureRegression": 30,
+        "blockedBrowser": 3,
+        "finalHoldoutsFrozen": 0,
+        "finalHoldoutsExecuted": 0
+      }
+    },
+    {
+      "id": "summary:no-value-metrics",
+      "passed": true,
+      "detail": [
+        "NEW_FACT",
+        "NEW_EVIDENCE",
+        "NEW_REASONING",
+        "NEW_ACTION",
+        "NEW_WORKFLOW",
+        "REPHRASE",
+        "DUPLICATE",
+        "decision-change",
+        "ground-truth accuracy on final holdout",
+        "blinded customer utility",
+        "willingness-to-pay",
+        "refund-risk",
+        "latency/cost on production runtime"
+      ]
+    },
+    {
+      "id": "mutations:detected",
+      "passed": true,
+      "detail": [
+        {
+          "mutationId": "promote_browser_execution",
+          "detected": true
+        },
+        {
+          "mutationId": "claim_final_holdout",
+          "detected": true
+        },
+        {
+          "mutationId": "claim_customer_value",
+          "detected": true
+        },
+        {
+          "mutationId": "shrink_profile_denominator",
+          "detected": true
+        }
+      ]
+    }
+  ]
+}

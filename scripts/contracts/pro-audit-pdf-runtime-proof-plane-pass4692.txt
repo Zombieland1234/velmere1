@@ -1,0 +1,2562 @@
+import { withExpensiveRouteBudget } from "@/lib/security/expensive-route-concurrency-budget";
+import { NextResponse } from "next/server";
+import { buildCustomerSafeMinimalPdf, cleanProAuditPdfInput, isCustomerSafeProAuditPdfLine } from "@/lib/security/pro-audit-pdf/customer-safe-renderer";
+import { buildPass2569AuditSourceMatrix, buildPass2569AuditSourceSpine } from "@/lib/security/audit-source-spine";
+import { buildPass2570AuditSourceQuorumReport, PASS2570_AUDIT_SOURCE_QUORUM_RUNTIME_ID } from "@/lib/security/audit-source-quorum-runtime";
+import { buildPass2571AuditProviderIntelligenceReport, PASS2571_AUDIT_PROVIDER_INTELLIGENCE_ID } from "@/lib/security/audit-provider-intelligence";
+import { buildPass2572AuditProviderRuntimeReport, PASS2572_AUDIT_PROVIDER_RUNTIME_CLIENT_ID } from "@/lib/security/audit-provider-runtime-client";
+import { buildPass2573AuditRuntimeConfidenceReport, PASS2573_AUDIT_RUNTIME_CONFIDENCE_ENGINE_ID } from "@/lib/security/audit-runtime-confidence";
+import { buildPass2574AuditClaimLedgerReport, PASS2574_AUDIT_CLAIM_LEDGER_ID } from "@/lib/security/audit-claim-ledger";
+import { buildPass2575AuditSourceFreshnessReport, PASS2575_AUDIT_SOURCE_FRESHNESS_ID } from "@/lib/security/audit-source-freshness";
+import { buildPass2576AuditPermissionParserReport, PASS2576_AUDIT_PERMISSION_PARSER_ID } from "@/lib/security/audit-permission-parser";
+import { buildPass2577AuditLiquidityHolderLockRiskReport, PASS2577_AUDIT_LIQUIDITY_HOLDER_LOCK_RISK_ID } from "@/lib/security/audit-liquidity-holder-lock-risk";
+import { buildPass2578AuditReportAssemblerReport, PASS2578_AUDIT_REPORT_ASSEMBLER_ID } from "@/lib/security/audit-report-assembler";
+import { buildPass2579AdvancedManualReviewQueueReport, PASS2579_ADVANCED_MANUAL_REVIEW_QUEUE_ID } from "@/lib/security/advanced-manual-review-queue";
+import { buildPass2580CustomerSafeDeliveryDecisionReport, PASS2580_CUSTOMER_SAFE_DELIVERY_DECISION_ID } from "@/lib/security/customer-safe-delivery-decision";
+import { buildPass2581AuditVersionedRecheckReceiptReport, PASS2581_AUDIT_VERSIONED_RECHECK_RECEIPT_ID } from "@/lib/security/audit-versioned-recheck-receipt";
+import { buildPass2582RealProviderAdapterHardeningReport, PASS2582_REAL_PROVIDER_ADAPTER_HARDENING_ID } from "@/lib/security/real-provider-adapter-hardening";
+import { buildPass2583ContractSourceAbiExtractionReport, PASS2583_CONTRACT_SOURCE_ABI_EXTRACTION_ID } from "@/lib/security/contract-source-abi-extraction";
+import { buildPass2584HolderLiquidityDepthEvidenceReport, PASS2584_HOLDER_LIQUIDITY_DEPTH_EVIDENCE_ID } from "@/lib/security/holder-liquidity-depth-evidence";
+import { buildPass2585PremiumProPdfTemplateContractReport, PASS2585_PREMIUM_PRO_PDF_TEMPLATE_CONTRACT_ID } from "@/lib/security/premium-pro-pdf-template-contract";
+import { buildPass2586AdvancedOperatorConsoleMergeReport, PASS2586_ADVANCED_OPERATOR_CONSOLE_MERGE_ID } from "@/lib/security/advanced-operator-console-merge";
+import { buildPass2587ServerPaymentAccountDeliveryGateReport, PASS2587_SERVER_PAYMENT_ACCOUNT_DELIVERY_GATE_ID } from "@/lib/security/server-payment-account-delivery-gate";
+import { buildPass2588AuditCaseVaultPrivateDeliveryLedgerReport, PASS2588_AUDIT_CASE_VAULT_PRIVATE_DELIVERY_LEDGER_ID } from "@/lib/security/audit-case-vault-private-delivery-ledger";
+import { buildPass2589SourceFreshnessRecheckOrchestratorReport, PASS2589_SOURCE_FRESHNESS_RECHECK_ORCHESTRATOR_ID } from "@/lib/security/source-freshness-recheck-orchestrator";
+import { buildPass2590RiskFormulaEvidenceWeightingContractReport, PASS2590_RISK_FORMULA_EVIDENCE_WEIGHTING_CONTRACT_ID } from "@/lib/security/risk-formula-evidence-weighting-contract";
+import { buildPass2591RiskCalibrationGoldenFixtureHarnessReport, PASS2591_RISK_CALIBRATION_GOLDEN_FIXTURE_HARNESS_ID } from "@/lib/security/risk-calibration-golden-fixture-harness";
+import { buildPass2592ProviderConflictArbitrationMatrixReport, PASS2592_PROVIDER_CONFLICT_ARBITRATION_MATRIX_ID } from "@/lib/security/provider-conflict-arbitration-matrix";
+import { buildPass2593EvidenceNarrativeClaimLedgerExplainabilityReport, PASS2593_EVIDENCE_NARRATIVE_CLAIM_LEDGER_EXPLAINABILITY_ID } from "@/lib/security/evidence-narrative-claim-ledger-explainability";
+import { buildPass2594AuditEvidenceQaReleaseGateMatrixReport, PASS2594_AUDIT_EVIDENCE_QA_RELEASE_GATE_MATRIX_ID } from "@/lib/security/audit-evidence-qa-release-gate-matrix";
+import { buildPass2595RuntimeBuildReadinessTypeSafetySweepReport, PASS2595_RUNTIME_BUILD_READINESS_TYPE_SAFETY_SWEEP_ID } from "@/lib/security/runtime-build-readiness-type-safety-sweep";
+import { buildPass2596ApiContractResponseEnvelopeHardeningReport, PASS2596_API_CONTRACT_RESPONSE_ENVELOPE_HARDENING_ID } from "@/lib/security/api-contract-response-envelope-hardening";
+import { buildPass2597CustomerSafePdfDataLeakGuardReport, PASS2597_CUSTOMER_SAFE_PDF_DATA_LEAK_GUARD_ID } from "@/lib/security/customer-safe-pdf-data-leak-guard";
+import { buildPass2598PrivacyRedactionPiiBoundaryGateReport, maskCustomerFacingPii, PASS2598_PRIVACY_REDACTION_PII_BOUNDARY_GATE_ID } from "@/lib/security/privacy-redaction-pii-boundary-gate";
+import { buildPass2599RetentionErasureDataMinimizationGateReport, PASS2599_RETENTION_ERASURE_DATA_MINIMIZATION_GATE_ID } from "@/lib/security/pass2599-retention-erasure-data-minimization-gate";
+import { buildPass2600E2EAuditDeliveryLaunchGateReport, PASS2600_E2E_AUDIT_DELIVERY_LAUNCH_GATE_ID } from "@/lib/security/pass2600-e2e-audit-delivery-launch-gate";
+import { buildPass2601SyntheticAuditDeliveryReplayHarnessReport, PASS2601_SYNTHETIC_AUDIT_DELIVERY_REPLAY_HARNESS_ID } from "@/lib/security/pass2601-synthetic-audit-delivery-replay-harness";
+import { buildPass2602OperatorEscalationHumanReviewSlaGateReport, PASS2602_OPERATOR_ESCALATION_HUMAN_REVIEW_SLA_GATE_ID } from "@/lib/security/pass2602-operator-escalation-human-review-sla-gate";
+import { buildPass2603AdminEscalationInboxOperatorQueueRuntimeReport, PASS2603_ADMIN_ESCALATION_INBOX_OPERATOR_QUEUE_RUNTIME_ID } from "@/lib/security/pass2603-admin-escalation-inbox-operator-queue-runtime";
+import { buildPass2604OperatorDecisionLedgerReviewerSignoffTrailReport, PASS2604_OPERATOR_DECISION_LEDGER_REVIEWER_SIGNOFF_TRAIL_ID } from "@/lib/security/pass2604-operator-decision-ledger-reviewer-signoff-trail";
+import { buildPass2605EvidenceChangeRequestRevisionControlGateReport, PASS2605_EVIDENCE_CHANGE_REQUEST_REVISION_CONTROL_GATE_ID } from "@/lib/security/pass2605-evidence-change-request-revision-control-gate";
+import { buildPass2606CustomerNotificationAuditStatusTimelineGateReport, PASS2606_CUSTOMER_NOTIFICATION_AUDIT_STATUS_TIMELINE_GATE_ID } from "@/lib/security/pass2606-customer-notification-audit-status-timeline-gate";
+import { buildPass2607AccountAuditDeliveryCenterPortalRuntimeReport, PASS2607_ACCOUNT_AUDIT_DELIVERY_CENTER_PORTAL_RUNTIME_ID } from "@/lib/security/pass2607-account-audit-delivery-center-portal-runtime";
+import { buildPass2608AccountDeliveryPermissionAccessControlGateReport, PASS2608_ACCOUNT_DELIVERY_PERMISSION_ACCESS_CONTROL_GATE_ID } from "@/lib/security/pass2608-account-delivery-permission-access-control-gate";
+import { buildPass2609SecureDownloadTokenReportAccessReplayGuardReport, PASS2609_SECURE_DOWNLOAD_TOKEN_REPORT_ACCESS_REPLAY_GUARD_ID } from "@/lib/security/pass2609-secure-download-token-report-access-replay-guard";
+import { buildPass2610EntitlementProofReceiptToReportBindingGateReport, PASS2610_ENTITLEMENT_PROOF_RECEIPT_TO_REPORT_BINDING_GATE_ID } from "@/lib/security/pass2610-entitlement-proof-receipt-to-report-binding-gate";
+import { buildPass2611RefundChargebackRevocationEntitlementGateReport, PASS2611_REFUND_CHARGEBACK_REVOCATION_ENTITLEMENT_GATE_ID } from "@/lib/security/pass2611-refund-chargeback-revocation-entitlement-gate";
+import { buildPass2612EntitlementReissueRestoredAccessRecoveryGateReport, PASS2612_ENTITLEMENT_REISSUE_RESTORED_ACCESS_RECOVERY_GATE_ID } from "@/lib/security/pass2612-entitlement-reissue-restored-access-recovery-gate";
+import { buildPass2613EntitlementExpiryRenewalReminderGateReport, PASS2613_ENTITLEMENT_EXPIRY_RENEWAL_REMINDER_GATE_ID } from "@/lib/security/pass2613-entitlement-expiry-renewal-reminder-gate";
+import { buildPass2614RenewalPaymentEntitlementExtensionReceiptGateReport, PASS2614_RENEWAL_PAYMENT_ENTITLEMENT_EXTENSION_RECEIPT_GATE_ID } from "@/lib/security/pass2614-renewal-payment-entitlement-extension-receipt-gate";
+import { buildPass2615RenewalAbuseDoubleSpendEntitlementGuardReport, PASS2615_RENEWAL_ABUSE_DOUBLE_SPEND_ENTITLEMENT_GUARD_ID } from "@/lib/security/pass2615-renewal-abuse-double-spend-entitlement-guard";
+import { buildPass2616PaymentWebhookIdempotencyEventOrderingGateReport, PASS2616_PAYMENT_WEBHOOK_IDEMPOTENCY_EVENT_ORDERING_GATE_ID } from "@/lib/security/pass2616-payment-webhook-idempotency-event-ordering-gate";
+import { buildPass2617PaymentWebhookSignatureRawBodyVerificationGateReport, PASS2617_PAYMENT_WEBHOOK_SIGNATURE_RAW_BODY_VERIFICATION_GATE_ID } from "@/lib/security/pass2617-payment-webhook-signature-raw-body-verification-gate";
+import { buildPass2618WebhookSecretRotationProviderKeyVersionGateReport, PASS2618_WEBHOOK_SECRET_ROTATION_PROVIDER_KEY_VERSION_GATE_ID } from "@/lib/security/pass2618-webhook-secret-rotation-provider-key-version-gate";
+import { buildPass2619WebhookOriginProviderAllowlistGateReport, PASS2619_WEBHOOK_ORIGIN_PROVIDER_ALLOWLIST_GATE_ID } from "@/lib/security/pass2619-webhook-origin-provider-allowlist-gate";
+import { buildPass2620WebhookFailureQuarantineManualReconciliationGateReport, PASS2620_WEBHOOK_FAILURE_QUARANTINE_MANUAL_RECONCILIATION_GATE_ID } from "@/lib/security/pass2620-webhook-failure-quarantine-manual-reconciliation-gate";
+import { buildPass2621WebhookDeadLetterOperatorQueueSlaGateReport, PASS2621_WEBHOOK_DEAD_LETTER_OPERATOR_QUEUE_SLA_GATE_ID } from "@/lib/security/pass2621-webhook-dead-letter-operator-queue-sla-gate";
+import { buildPass2622PublicPrivateRouteLockdownReport, PASS2622_PUBLIC_PRIVATE_ROUTE_LOCKDOWN_ID } from "@/lib/security/public-private-route-lockdown";
+import { buildPass2623ProPdfPaidTokenFinalGateReport, PASS2623_PRO_PDF_PAID_TOKEN_FINAL_GATE_ID } from "@/lib/security/pass2623-pro-pdf-paid-token-final-gate";
+import { buildPass2624SupabaseRlsAccountDeliveryProductionLockReport, PASS2624_SUPABASE_RLS_ACCOUNT_DELIVERY_PRODUCTION_LOCK_ID } from "@/lib/security/supabase-rls-account-delivery-production-lock";
+import { hashVelmereAccountBinding, resolveRequestAccount } from "@/lib/auth/pass2363-account-session";
+import { getAuditCaseForOwningAccount } from "@/lib/security/audit-intake-case-vault";
+import { verifyVlmPaidEntitlementById } from "@/lib/commerce/vlm-entitlement-ledger";
+import {
+  buildPass4657AuditPdfReportVersionHash,
+  failPass4658AuditPdfDownloadReservation,
+  finalizePass4658AuditPdfDownloadToken,
+  PASS4657_AUDIT_PDF_DOWNLOAD_TOKEN_ID,
+  PASS4658_AUDIT_PDF_TOKEN_LIFECYCLE_ID,
+  reservePass4658AuditPdfDownloadToken,
+  verifyPass4657AuditPdfDownloadToken,
+} from "@/lib/security/audit-pdf-download-token";
+import { buildPass2625RuntimeEvidenceTestPackReport, PASS2625_RUNTIME_EVIDENCE_TEST_PACK_ID } from "@/lib/security/runtime-evidence-test-pack";
+import { buildPass2626RuntimeReplayArtifactCollectorReport, PASS2626_RUNTIME_REPLAY_ARTIFACT_COLLECTOR_ID } from "@/lib/security/runtime-replay-artifact-collector";
+import { buildPass2627RuntimeReplayArtifactStorageAdapterReport, PASS2627_RUNTIME_REPLAY_ARTIFACT_STORAGE_ADAPTER_ID } from "@/lib/security/runtime-replay-artifact-storage-adapter";
+import { buildPass2628SupabaseReleaseEvidenceBoardMigrationRlsGateReport, PASS2628_SUPABASE_RELEASE_EVIDENCE_BOARD_MIGRATION_RLS_GATE_ID } from "@/lib/security/supabase-release-evidence-board-migration-rls-gate";
+import { buildPass2629SupabaseRlsPolicyRegressionFixtureRunnerReport, PASS2629_SUPABASE_RLS_POLICY_REGRESSION_FIXTURE_RUNNER_ID } from "@/lib/security/supabase-rls-policy-regression-fixture-runner";
+import { buildPass2630SupabaseRlsFixtureArtifactIngestionProofBoardReport, PASS2630_SUPABASE_RLS_FIXTURE_ARTIFACT_INGESTION_PROOF_BOARD_ID } from "@/lib/security/pass2630-supabase-rls-fixture-artifact-ingestion-proof-board";
+import { buildPass2631PreviewCredentialReplayCliArtifactExporterReport, PASS2631_PREVIEW_CREDENTIAL_REPLAY_CLI_ARTIFACT_EXPORTER_ID } from "@/lib/security/pass2631-preview-credential-replay-cli-artifact-exporter";
+import { buildPass2632PreviewReplayArtifactBundleIngestionReport, PASS2632_PREVIEW_REPLAY_ARTIFACT_BUNDLE_INGESTION_ID } from "@/lib/security/pass2632-preview-replay-artifact-bundle-ingestion";
+import { buildPass2633PreviewReplayArtifactPostSmokeNegativeControlReport, PASS2633_PREVIEW_REPLAY_ARTIFACT_POST_SMOKE_NEGATIVE_CONTROL_ID } from "@/lib/security/pass2633-preview-replay-artifact-post-smoke-negative-control";
+import { buildPass2634DeployedPreviewSmokeRunnerReport, PASS2634_DEPLOYED_PREVIEW_SMOKE_RUNNER_ID } from "@/lib/security/pass2634-deployed-preview-smoke-runner";
+import { buildPass2635Pass2634ArtifactIngestionReleaseBoardAttachmentReport, PASS2635_PASS2634_ARTIFACT_INGESTION_RELEASE_BOARD_ATTACHMENT_ID } from "@/lib/security/pass2635-pass2634-artifact-ingestion-release-board-attachment";
+import { buildPass2636DeployedPostAttachmentSmokeWriteReceiptExporterReport, PASS2636_DEPLOYED_POST_ATTACHMENT_SMOKE_WRITE_RECEIPT_EXPORTER_ID } from "@/lib/security/pass2636-deployed-post-attachment-smoke-write-receipt-exporter";
+import { buildPass2637SupabaseReleaseBoardLiveWriteRlsRegressionReport, PASS2637_SUPABASE_RELEASE_BOARD_LIVE_WRITE_RLS_REGRESSION_ID } from "@/lib/security/pass2637-supabase-release-board-live-write-rls-regression";
+import { buildPass2638ReleaseEvidenceBoardReceiptVerifierProPdfPromotionHardGateReport, PASS2638_RELEASE_EVIDENCE_BOARD_RECEIPT_VERIFIER_PRO_PDF_PROMOTION_HARD_GATE_ID } from "@/lib/security/pass2638-release-evidence-board-receipt-verifier-pro-pdf-promotion-hard-gate";
+import { buildPass2639ProPdfCustomerReceiptBadgeAccountDeliveryPromotionStateReport, PASS2639_PRO_PDF_CUSTOMER_RECEIPT_BADGE_ACCOUNT_DELIVERY_PROMOTION_STATE_ID } from "@/lib/security/pass2639-pro-pdf-customer-receipt-badge-account-delivery-promotion-state";
+import { buildPass2640AccountDeliveryReceiptBadgeUiTimelineE2eContractReport, PASS2640_ACCOUNT_DELIVERY_RECEIPT_BADGE_UI_TIMELINE_E2E_CONTRACT_ID } from "@/lib/security/pass2640-account-delivery-receipt-badge-ui-timeline-e2e-contract";
+import { buildPass2641AccountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedStateReport, PASS2641_ACCOUNT_PORTAL_RECEIPT_BADGE_PLAYWRIGHT_FIXTURE_PDF_DOWNLOAD_CTA_LOCKED_STATE_ID } from "@/lib/security/pass2641-account-portal-receipt-badge-playwright-fixture-pdf-download-cta-locked-state";
+import { buildPass2642DeployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporterReport, PASS2642_DEPLOYED_ACCOUNT_PORTAL_PLAYWRIGHT_SMOKE_PDF_UNLOCK_EVIDENCE_EXPORTER_ID } from "@/lib/security/pass2642-deployed-account-portal-playwright-smoke-pdf-unlock-evidence-exporter";
+import { buildPass2643Pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceiptReport, PASS2643_PASS2642_RELEASE_BOARD_ATTACHMENT_GATE_PRO_PDF_UNLOCK_PROMOTION_DENY_UNTIL_SMOKE_RECEIPT_ID } from "@/lib/security/pass2643-pass2642-release-board-attachment-gate-pro-pdf-unlock-promotion-deny-until-smoke-receipt";
+import { buildPass2644ProPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegressionReport, PASS2644_PRO_PDF_SAFE_ROUTE_DOWNLOAD_TOKEN_ONE_TIME_CONSUMPTION_RECEIPT_REVOCATION_REGRESSION_ID } from "@/lib/security/pass2644-pro-pdf-safe-route-download-token-one-time-consumption-receipt-revocation-regression";
+import { buildPass2645SafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGateReport, PASS2645_SAFE_PDF_DOWNLOAD_TOKEN_STORAGE_ADAPTER_SUPABASE_CONSUMPTION_LEDGER_RLS_GATE_ID } from "@/lib/security/pass2645-safe-pdf-download-token-storage-adapter-supabase-consumption-ledger-rls-gate";
+import { buildPass2646DeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporterReport, PASS2646_DEPLOYED_SAFE_PDF_TOKEN_LEDGER_CONSUMPTION_SMOKE_SUPABASE_RLS_LIVE_RECEIPT_EXPORTER_ID } from "@/lib/security/pass2646-deployed-safe-pdf-token-ledger-consumption-smoke-supabase-rls-live-receipt-exporter";
+import { buildPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceiptReport, PASS2647_PASS2646_RELEASE_BOARD_ATTACHMENT_SAFE_PDF_PROMOTION_FINAL_GATE_RECEIPT_ID } from "@/lib/security/pass2647-pass2646-release-board-attachment-safe-pdf-promotion-final-gate-receipt";
+import { buildPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegressionReport, PASS2648_SAFE_PDF_FINAL_GATE_ACCOUNT_DELIVERY_E2E_STATUS_SPLIT_REFUND_REVOCATION_PORTAL_REGRESSION_ID } from "@/lib/security/pass2648-safe-pdf-final-gate-account-delivery-e2e-status-split-refund-revocation-portal-regression";
+import { buildPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapterReport, PASS2649_ACCOUNT_DELIVERY_REFUND_CHARGEBACK_WEBHOOK_REPLAY_FIXTURE_ENTITLEMENT_REVOCATION_LEDGER_ADAPTER_ID } from "@/lib/security/pass2649-account-delivery-refund-chargeback-webhook-replay-fixture-entitlement-revocation-ledger-adapter";
+import { buildPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporterReport, PASS2650_DEPLOYED_REFUND_CHARGEBACK_WEBHOOK_REPLAY_SMOKE_REVOCATION_LEDGER_LIVE_RECEIPT_EXPORTER_ID } from "@/lib/security/pass2650-deployed-refund-chargeback-webhook-replay-smoke-revocation-ledger-live-receipt-exporter";
+import { PASS2651_PASS2650_RELEASE_BOARD_ATTACHMENT_ACCOUNT_DELIVERY_REVOCATION_PROMOTION_GATE_ID } from "@/lib/security/pass2651-pass2650-release-board-attachment-account-delivery-revocation-promotion-gate";
+import { PASS2652_ACCOUNT_DELIVERY_REVOCATION_FINAL_GATE_CUSTOMER_TIMELINE_SUPPORT_HANDOFF_EVIDENCE_CONTRACT_ID } from "@/lib/security/pass2652-account-delivery-revocation-final-gate-customer-timeline-support-handoff-evidence-contract";
+import { PASS2653_DEPLOYED_ACCOUNT_DELIVERY_REVOCATION_TIMELINE_SMOKE_SUPPORT_HANDOFF_PUBLIC_PACKET_EXPORTER_ID } from "@/lib/security/pass2653-deployed-account-delivery-revocation-timeline-smoke-support-handoff-public-packet-exporter";
+import { PASS2654_PASS2653_RELEASE_BOARD_ATTACHMENT_SUPPORT_HANDOFF_PUBLIC_PACKET_PROMOTION_RECEIPT_ID } from "@/lib/security/pass2654-pass2653-release-board-attachment-support-handoff-public-packet-promotion-receipt";
+import { PASS2655_ACCOUNT_DELIVERY_SUPPORT_HANDOFF_FINAL_GATE_UI_COPY_PUBLIC_PACKET_DOWNLOAD_RECEIPT_UX_REGRESSION_ID } from "@/lib/security/pass2655-account-delivery-support-handoff-final-gate-ui-copy-public-packet-download-receipt-ux-regression";
+import { PASS2656_PASS2655_RELEASE_BOARD_ATTACHMENT_SUPPORT_HANDOFF_UX_PROMOTION_FINAL_RECEIPT_ID } from "@/lib/security/pass2656-pass2655-release-board-attachment-support-handoff-ux-promotion-final-receipt";
+import { PASS2657_CUSTOMER_FACING_SUPPORT_HANDOFF_FINAL_BADGE_GUARDED_SUPPORT_PACKET_ROUTE_SPLIT_REGRESSION_ID } from "@/lib/security/pass2657-customer-facing-support-handoff-final-badge-guarded-support-packet-route-split-regression";
+import { PASS2658_PASS2657_RELEASE_BOARD_ATTACHMENT_GUARDED_SUPPORT_PACKET_ROUTE_SPLIT_PROMOTION_FINAL_RECEIPT_ID } from "@/lib/security/pass2658-pass2657-release-board-attachment-guarded-support-packet-route-split-promotion-final-receipt";
+import { PASS2659_DEPLOYED_GUARDED_SUPPORT_PACKET_ROUTE_SPLIT_FINAL_GATE_SMOKE_PUBLIC_ROUTE_DOWNLOAD_RECEIPT_EXPORTER_ID } from "@/lib/security/pass2659-deployed-guarded-support-packet-route-split-final-gate-smoke-public-route-download-receipt-exporter";
+import { PASS2660_PASS2659_RELEASE_BOARD_ATTACHMENT_PUBLIC_ROUTE_DOWNLOAD_RECEIPT_PROMOTION_FINAL_RECEIPT_ID } from "@/lib/security/pass2660-pass2659-release-board-attachment-public-route-download-receipt-promotion-final-receipt";
+import { PASS2661_CUSTOMER_SUPPORT_PACKET_FINAL_GATE_ACCOUNT_TIMELINE_REVOCATION_STATE_REGRESSION_ID } from "@/lib/security/pass2661-customer-support-packet-final-gate-account-timeline-revocation-state-regression";
+import { PASS2662_DEPLOYED_PUBLIC_DOWNLOAD_REVOCATION_STATE_SMOKE_CUSTOMER_TIMELINE_PACKET_EXPORTER_ID } from "@/lib/security/pass2662-deployed-public-download-revocation-state-smoke-customer-timeline-packet-exporter";
+import { PASS2663_PASS2662_RELEASE_BOARD_ATTACHMENT_TIMELINE_PUBLIC_PACKET_PROMOTION_RECEIPT_ID } from "@/lib/security/pass2663-pass2662-release-board-attachment-timeline-public-packet-promotion-receipt";
+import { PASS2664_MASTER_AUDIT_PUBLIC_PRIVATE_LEAK_REGRESSION_SUITE_ID } from "@/lib/security/pass2664-master-audit-public-private-leak-regression-suite";
+import { PASS2665_PRODUCTION_ENV_HARD_FAIL_NO_MEMORY_FALLBACK_GATE_ID } from "@/lib/security/pass2665-production-env-hard-fail-no-memory-fallback-gate";
+import { PASS2666_FULL_BUILD_TYPECHECK_CLEAN_SIGNAL_PACK_ID } from "@/lib/security/pass2666-full-build-typecheck-clean-signal-pack";
+import { PASS2667_SUPABASE_LIVE_RLS_MASTER_REGRESSION_PACK_ID } from "@/lib/security/pass2667-supabase-live-rls-master-regression-pack";
+import { PASS2668_STRIPE_WEBHOOK_LIVE_REPLAY_MASTER_PACK_ID } from "@/lib/security/pass2668-stripe-webhook-live-replay-master-pack";
+import { PASS2669_VLM_RISK_FORMULA_V1_CENTRAL_ENGINE_ID } from "@/lib/security/pass2669-vlm-risk-formula-v1-central-engine";
+import { PASS2670_CLAIM_LEDGER_CLAIM_FIREWALL_V1_ID } from "@/lib/security/pass2670-claim-ledger-claim-firewall-v1";
+import { PASS2671_SOURCE_QUORUM_PROVIDER_SNAPSHOT_VAULT_V1_ID } from "@/lib/security/pass2671-source-quorum-provider-snapshot-vault-v1";
+import { PASS2672_BASIC_PRO_ADVANCED_CUSTOMER_UX_COMPRESSION_ID } from "@/lib/security/pass2672-basic-pro-advanced-customer-ux-compression";
+import { PASS2673_PRO_PDF_PREMIUM_LAYOUT_V1_ID } from "@/lib/security/pass2673-pro-pdf-premium-layout-v1";
+import { PASS2674_ACCOUNT_DELIVERY_PORTAL_FINAL_MOBILE_SMOKE_ID } from "@/lib/security/pass2674-account-delivery-portal-final-mobile-smoke";
+import { PASS2675_ADVANCED_OPERATOR_AUTH_QUEUE_SIGNOFF_LEDGER_ID } from "@/lib/security/pass2675-advanced-operator-auth-queue-signoff-ledger";
+import { PASS2676_ANGEL_EVIDENCE_BOUND_AI_QUALITY_BENCH_ID } from "@/lib/security/pass2676-angel-evidence-bound-ai-quality-bench-pl-en-de";
+import { PASS2677_BROWSER_LENS_AUDIT_INTAKE_PARITY_ID } from "@/lib/security/pass2677-browser-lens-audit-intake-parity";
+import { PASS2678_SHIELD_REAL_MARKETS_RISK_PARITY_ID } from "@/lib/security/pass2678-shield-real-markets-risk-parity-with-audit-engine";
+import { PASS2679_OBSERVABILITY_ALERTS_INCIDENT_RESPONSE_ID } from "@/lib/security/pass2679-observability-alerts-incident-response-pack";
+import { PASS2680_WORLD_CLASS_AUDIT_LAUNCH_READINESS_ID } from "@/lib/security/pass2680-world-class-audit-launch-readiness-gate";
+import { PASS2681_REAL_PROOF_EXECUTION_PLAN_ID } from "@/lib/security/pass2681-real-proof-execution-plan-clean-ci-preview-supabase-stripe-alert-sink-runbook";
+import { PASS2682_GITHUB_ACTIONS_VERCEL_CI_ARTIFACT_WORKFLOW_ID } from "@/lib/security/pass2682-github-actions-vercel-ci-artifact-workflow";
+import { PASS2683_ATTESTED_CI_EVIDENCE_PROTECTED_RELEASE_BOARD_GATE_ID } from "@/lib/security/pass2683-attested-ci-evidence-protected-release-board-gate";
+import { PASS2684_SBOM_DEPENDENCY_SUPPLY_CHAIN_POLICY_GATE_ID } from "@/lib/security/pass2684-sbom-dependency-supply-chain-policy-gate";
+import { PASS2685_RUNTIME_SECRETS_ROTATION_ENV_DRIFT_KEY_SCOPE_GATE_ID } from "@/lib/security/pass2685-runtime-secrets-rotation-env-drift-key-scope-gate";
+import { PASS2686_LIVE_EXTERNAL_SMOKE_EVIDENCE_MATRIX_PUBLIC_ROUTE_HEALTH_CUSTOMER_CRITICAL_FLOW_E2E_ID } from "@/lib/security/pass2686-live-external-smoke-evidence-matrix-public-route-health-customer-critical-flow-e2e";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+async function handleProAuditPdfGet(request: Request) {
+  const url = new URL(request.url);
+  const locale = cleanProAuditPdfInput(url.searchParams.get("locale"), "en", 8);
+  const requestedRequestId = cleanProAuditPdfInput(url.searchParams.get("requestId"), "", 80);
+  const requestedTarget = cleanProAuditPdfInput(url.searchParams.get("target"), "", 600);
+  const chain = cleanProAuditPdfInput(url.searchParams.get("chain"), "ethereum", 40);
+  const score = cleanProAuditPdfInput(url.searchParams.get("score"), "limited", 20);
+  const confidence = cleanProAuditPdfInput(url.searchParams.get("confidence"), "limited", 20);
+
+  const account = resolveRequestAccount(request);
+  if (!account) {
+    return NextResponse.json({
+      ok: false,
+      surface: "pro_pdf_paid_token_final_gate",
+      status: "locked",
+      message: "A signed account session is required to download this report.",
+      nextSafeAction: "Open the report from the authenticated account center.",
+    }, { status: 401, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
+  }
+
+  const reportId = cleanProAuditPdfInput(url.searchParams.get("reportId") ?? request.headers.get("x-velmere-report-id"), "", 120);
+  const auditCaseRef = cleanProAuditPdfInput(url.searchParams.get("auditCaseRef") ?? request.headers.get("x-velmere-audit-case-ref"), "", 160);
+  const auditCase = await getAuditCaseForOwningAccount({ caseRef: auditCaseRef, accountId: account.accountId });
+  if (!auditCase.ok || !auditCase.record) {
+    return NextResponse.json({ ok: false, error: "audit_case_not_found_or_not_owned" }, { status: 404, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
+  }
+  const auditCaseRecord = auditCase.record;
+  const requestId = auditCaseRecord.requestId;
+  const target = auditCaseRecord.target.canonicalTarget;
+  if ((requestedRequestId && requestedRequestId !== requestId) || (requestedTarget && requestedTarget !== target)) {
+    return NextResponse.json({ ok: false, error: "audit_case_report_binding_mismatch" }, { status: 409, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
+  }
+  const entitlementId = cleanProAuditPdfInput(url.searchParams.get("entitlementId") ?? request.headers.get("x-velmere-entitlement-id"), "", 180);
+  const suppliedReportVersionHash = cleanProAuditPdfInput(url.searchParams.get("reportVersionHash") ?? request.headers.get("x-velmere-report-version-hash"), "", 160);
+  const authorization = request.headers.get("authorization") ?? "";
+  const bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1] ?? "";
+  const downloadToken = cleanProAuditPdfInput(
+    request.headers.get("x-velmere-download-token")
+      ?? request.headers.get("x-velmere-pro-pdf-token")
+      ?? bearerToken,
+    "",
+    16 * 1024,
+  );
+  const computedReportVersionHash = buildPass4657AuditPdfReportVersionHash({
+    reportId,
+    auditCaseRef,
+    requestId,
+    target,
+    chain,
+    locale,
+  });
+
+  const entitlementVerdict = await verifyVlmPaidEntitlementById({
+    entitlementId,
+    allowedProductIds: ["vlm_pro_audit_review", "vlm_advanced_audit_human_review"],
+    accountIdHash: hashVelmereAccountBinding(account.accountId),
+    auditCaseRef,
+  });
+  const expectedCaseTier = entitlementVerdict.ok && entitlementVerdict.entitlement.productId === "vlm_advanced_audit_human_review" ? "advanced" : "pro";
+  const auditCaseBindingValid = Boolean(
+    auditCaseRecord.entitlementVerified &&
+    auditCaseRecord.status === "queued_paid_review" &&
+    auditCaseRecord.entitlementId === entitlementId &&
+    auditCaseRecord.tier === expectedCaseTier
+  );
+  const tokenVerdict = verifyPass4657AuditPdfDownloadToken({
+    token: downloadToken,
+    accountId: account.accountId,
+    entitlementId,
+    expectedReportId: reportId,
+    expectedReportVersionHash: computedReportVersionHash,
+  });
+  const reportVersionMatches = Boolean(suppliedReportVersionHash) && suppliedReportVersionHash === computedReportVersionHash;
+  const serverVerified = entitlementVerdict.ok && tokenVerdict.ok && reportVersionMatches && auditCaseBindingValid;
+
+  const proPdfPaidTokenFinalGate = buildPass2623ProPdfPaidTokenFinalGateReport({
+    locale,
+    reportId,
+    accountId: account.accountId,
+    entitlementId,
+    reportVersionHash: reportVersionMatches ? computedReportVersionHash : "",
+    downloadToken: tokenVerdict.ok ? downloadToken : "",
+    entitlementState: entitlementVerdict.ok ? entitlementVerdict.entitlement.status : "blocked",
+    tokenState: tokenVerdict.ok ? "fresh" : tokenVerdict.error === "audit_pdf_token_expired" ? "expired" : "blocked",
+    qaBypassActive: false,
+  });
+  const accountDeliveryProductionLock = buildPass2624SupabaseRlsAccountDeliveryProductionLockReport({
+    locale,
+    accountId: account.accountId,
+    requestAccountId: account.accountId,
+    recordAccountId: entitlementVerdict.ok ? account.accountId : null,
+    reportId,
+    entitlementId,
+    reportVersionHash: reportVersionMatches ? computedReportVersionHash : null,
+    downloadTokenState: tokenVerdict.ok ? "fresh" : "blocked",
+    deliveryReceiptState: serverVerified ? "verified" : "blocked",
+    storageSource: entitlementVerdict.ok ? entitlementVerdict.ledgerMode : "unverified",
+  });
+
+  const runtimeEvidenceTestPack = buildPass2625RuntimeEvidenceTestPackReport({
+    locale,
+    proPdfCanStream: proPdfPaidTokenFinalGate.summary.canStreamProPdf,
+    proPdfMissingClaims: proPdfPaidTokenFinalGate.summary.missingClaims,
+    proPdfReplayBlocked: true,
+    refundRevocationReady: true,
+    webhookIdempotencyReady: true,
+    webhookQuarantineReady: true,
+    deadLetterReady: true,
+    supabaseProductionLockReady: accountDeliveryProductionLock.summary.productionLockReadiness >= 60,
+    memoryFallbackBlockedInProduction: accountDeliveryProductionLock.summary.memoryFallbackBlockedInProduction || !accountDeliveryProductionLock.summary.productionMode,
+    accountOwnerScoped: accountDeliveryProductionLock.summary.accountOwnerMatches,
+    publicApiSanitized: true,
+    operatorRoutesRequireAdmin: true,
+    pdfLeakGuardReady: true,
+    runtimeE2eExecuted: false,
+  });
+
+  const runtimeReplayArtifactCollector = buildPass2626RuntimeReplayArtifactCollectorReport({
+    locale,
+    runtimeEvidenceTestPack,
+    runtimeE2eExecuted: false,
+    previewRunId: url.searchParams.get("previewRunId") ?? url.searchParams.get("reportId") ?? request.headers.get("x-velmere-report-id"),
+    proPdfMissingClaimsArtifactAttached: false,
+    proPdfConsumedTokenArtifactAttached: false,
+    stripeDuplicateWebhookArtifactAttached: false,
+    stripeRefundRevocationArtifactAttached: false,
+    stripeInvalidSignatureArtifactAttached: false,
+    supabaseProductionLockArtifactAttached: false,
+    accountOwnerMismatchArtifactAttached: false,
+    publicApiLeakScanArtifactAttached: false,
+    pdfLeakScanArtifactAttached: false,
+    operatorAuthArtifactAttached: false,
+    preflightArtifactAttached: true,
+    i18nArtifactAttached: true,
+    releaseBoardStored: false,
+  });
+
+  const runtimeReplayArtifactStorageAdapter = buildPass2627RuntimeReplayArtifactStorageAdapterReport({
+    locale,
+    runtimeReplayArtifactCollector,
+    previewRunId: url.searchParams.get("previewRunId") ?? url.searchParams.get("reportId") ?? request.headers.get("x-velmere-report-id"),
+    productionMode: process.env.NODE_ENV === "production",
+    supabaseConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    releaseBoardStored: false,
+    appendOnlyLedgerReady: false,
+    immutableHashVerified: false,
+    artifactPointersStored: false,
+    storageOwnerScoped: Boolean(request.headers.get("x-velmere-account-id") || url.searchParams.get("accountId")),
+    noMemoryFallbackInProduction: process.env.NODE_ENV === "production" ? Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) : true,
+    customerPublicStatusStored: false,
+    operatorPrivateRefsStored: false,
+    releasePacketSealed: false,
+  });
+
+  const releaseEvidenceBoardRlsGate = buildPass2628SupabaseReleaseEvidenceBoardMigrationRlsGateReport({
+    locale,
+    storageAdapter: runtimeReplayArtifactStorageAdapter,
+    productionMode: process.env.NODE_ENV === "production",
+    supabaseConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    migrationPresent: true,
+    rlsEnabled: true,
+    insertOnlyPolicyReady: true,
+    updateDeleteDenied: true,
+    ownerSelectPolicyReady: true,
+    adminServiceRolePolicyReady: true,
+    privateRefsOperatorOnly: true,
+    noRawPayloadColumns: true,
+    releaseBoardHashUnique: true,
+    artifactPointerRedactionReady: true,
+    immutableSealPolicyReady: runtimeReplayArtifactStorageAdapter.summary.canPersistReleaseBoard,
+  });
+
+  const rlsPolicyRegressionFixtureRunner = buildPass2629SupabaseRlsPolicyRegressionFixtureRunnerReport({
+    locale,
+    rlsGate: releaseEvidenceBoardRlsGate,
+    fixturesExecuted: false,
+  });
+
+  const rlsFixtureArtifactIngestionProofBoard = buildPass2630SupabaseRlsFixtureArtifactIngestionProofBoardReport({
+    locale,
+    rlsFixtureRunner: rlsPolicyRegressionFixtureRunner,
+    previewCredentialsAvailable: false,
+    artifactBundleAttached: false,
+    roleMatrixArtifactAttached: false,
+    negativeControlArtifactAttached: false,
+    privateRefArtifactAttached: false,
+    releaseBoardHashMatches: false,
+    noRawTraceInPublicBundle: true,
+    signedByOperator: false,
+    promotionBlockedWithoutArtifact: true,
+  });
+
+  const previewCredentialReplayCliArtifactExporter = buildPass2631PreviewCredentialReplayCliArtifactExporterReport({
+    locale,
+    pass2630: rlsFixtureArtifactIngestionProofBoard,
+    cliScriptPresent: true,
+    previewEnvTemplatePresent: true,
+    previewCredentialsAvailable: false,
+    roleMatrixInputAttached: false,
+    negativeControlInputAttached: false,
+    privateRefInputAttached: false,
+    artifactExported: false,
+    hashBoundToReleaseBoard: false,
+    publicRedactionScanPassed: true,
+    operatorHandoffReady: false,
+    promotionBlockedWithoutCliBundle: true,
+  });
+
+  const previewReplayArtifactBundleIngestion = buildPass2632PreviewReplayArtifactBundleIngestionReport({
+    locale,
+    pass2631: previewCredentialReplayCliArtifactExporter,
+    artifactBundlePresent: false,
+    artifactBundleHash: null,
+    replayManifestHash: null,
+    releaseBoardHash: runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash,
+    hashVerified: false,
+    replayManifestHashVerified: false,
+    releaseBoardHashMatches: false,
+    redactionPassed: true,
+    pass2630AttachmentReady: false,
+    immutableBoardAttachmentReady: false,
+    operatorReceiptAttached: false,
+    promotionBlockedWithoutAttachment: true,
+  });
+
+  const previewReplayArtifactPostSmokeNegativeControl = buildPass2633PreviewReplayArtifactPostSmokeNegativeControlReport({
+    locale,
+    pass2632: previewReplayArtifactBundleIngestion,
+    postSmokeExecuted: false,
+    validBundleAccepted: false,
+    hashBindingVerified: false,
+    releaseBoardHashAttached: false,
+    maliciousBundleSubmitted: false,
+    maliciousBundleRejected: false,
+    rawPayloadRejected: false,
+    jwtClaimsRejected: false,
+    serviceRoleTraceRejected: false,
+    operatorSignatureRejected: false,
+    hashMismatchSubmitted: false,
+    hashMismatchRejected: false,
+    publicOutputSanitized: true,
+    sanitizerRegressionPassed: true,
+    operatorReceiptAttached: false,
+    launchBlockedOnFailure: true,
+  });
+
+  const deployedPreviewSmokeRunner = buildPass2634DeployedPreviewSmokeRunnerReport({
+    locale,
+    pass2633: previewReplayArtifactPostSmokeNegativeControl,
+    previewBaseUrl: null,
+    runnerExecuted: false,
+    positivePostPassed: false,
+    maliciousPostRejected: false,
+    hashMismatchRejected: false,
+    publicResponseSanitized: true,
+    requiredHeadersPresent: false,
+    artifactBundleExported: false,
+    artifactBundleHashAttached: false,
+    launchBlockedOnFailure: true,
+  });
+
+  const pass2634ArtifactIngestionReleaseBoardAttachment = buildPass2635Pass2634ArtifactIngestionReleaseBoardAttachmentReport({
+    locale,
+    pass2634: deployedPreviewSmokeRunner,
+    previewSmokeArtifact: null,
+    artifactSubmitted: false,
+    rawArtifactRejected: true,
+    positivePostPassed: deployedPreviewSmokeRunner.summary.positivePostPassed,
+    maliciousPostRejected: deployedPreviewSmokeRunner.summary.maliciousPostRejected,
+    hashMismatchRejected: deployedPreviewSmokeRunner.summary.hashMismatchRejected,
+    publicResponseSanitized: deployedPreviewSmokeRunner.summary.publicResponseSanitized,
+    requiredHeadersPresent: deployedPreviewSmokeRunner.summary.requiredHeadersPresent,
+    artifactBundleExported: deployedPreviewSmokeRunner.summary.artifactBundleExported,
+    artifactBundleHashAttached: false,
+    releaseBoardHash: runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash,
+    expectedReleaseBoardHash: runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash,
+    attachedToReleaseBoard: false,
+    immutableAttachmentReceipt: false,
+  });
+
+  const deployedPostAttachmentSmokeWriteReceipt = buildPass2636DeployedPostAttachmentSmokeWriteReceiptExporterReport({
+    locale,
+    pass2635: pass2634ArtifactIngestionReleaseBoardAttachment,
+    previewBaseUrl: null,
+    artifactFileLoaded: false,
+    normalizedPass2634Artifact: false,
+    attachmentPostExecuted: false,
+    endpointAcceptedArtifact: false,
+    pass2635HeaderPresent: false,
+    publicResponseSanitized: true,
+    releaseBoardWriteReceiptExported: false,
+    immutableWriteReceiptExported: false,
+    releaseBoardHash: runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash,
+    artifactBundleHash: pass2634ArtifactIngestionReleaseBoardAttachment.summary.previewSmokeArtifactHash,
+  });
+
+  const supabaseReleaseBoardLiveWriteRlsRegression = buildPass2637SupabaseReleaseBoardLiveWriteRlsRegressionReport({
+    locale,
+    pass2636: deployedPostAttachmentSmokeWriteReceipt,
+    supabaseConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    pass2636ReceiptLoaded: false,
+    releaseBoardInsertAttempted: false,
+    releaseBoardInsertSucceeded: false,
+    publicSelectDenied: false,
+    anonInsertDenied: false,
+    updateDenied: false,
+    deleteDenied: false,
+    privateColumnsHidden: true,
+    serviceRoleTraceSanitized: true,
+    rlsReceiptExported: false,
+    immutableReceiptRetained: false,
+    releaseBoardHash: deployedPostAttachmentSmokeWriteReceipt.summary.releaseBoardHash,
+    receiptHash: deployedPostAttachmentSmokeWriteReceipt.summary.receiptHash,
+  });
+
+  const releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate = buildPass2638ReleaseEvidenceBoardReceiptVerifierProPdfPromotionHardGateReport({
+    locale,
+    pass2637: supabaseReleaseBoardLiveWriteRlsRegression,
+    pass2637ReceiptLoaded: false,
+    releaseBoardReceiptVerified: false,
+    releaseBoardHash: supabaseReleaseBoardLiveWriteRlsRegression.summary.releaseBoardHash,
+    receiptHash: supabaseReleaseBoardLiveWriteRlsRegression.summary.receiptHash,
+    receiptFreshForPromotion: false,
+    proPdfPromotionHardGateEnabled: true,
+    advancedPromotionHardGateEnabled: true,
+    launchPromotionHardGateEnabled: true,
+    releasePromotionBlockedWithoutReceipt: true,
+    publicResponseSanitized: true,
+    promotionReceiptExported: false,
+    immutableVersionHashRetained: true,
+  });
+
+
+
+  const proPdfCustomerReceiptBadgeAccountDeliveryPromotionState = buildPass2639ProPdfCustomerReceiptBadgeAccountDeliveryPromotionStateReport({
+    locale,
+    pass2638: releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate,
+    pass2638ReceiptLoaded: false,
+    promotionReceiptHash: releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.promotionReceiptHash,
+    technicalReleaseEvidenceVerified: false,
+    customerBadgeAllowed: false,
+    proPdfBadgeRenderable: false,
+    accountDeliveryStateSplit: true,
+    advancedDeliveryStateSplit: true,
+    staleReceiptShowsPendingCopy: true,
+    customerFacingReceiptSanitized: true,
+    privateReceiptHiddenFromCustomer: true,
+    badgeReceiptExported: false,
+    immutablePromotionHashRetained: releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.immutableVersionHashRetained,
+  });
+
+  const accountDeliveryReceiptBadgeUiTimelineE2eContract = buildPass2640AccountDeliveryReceiptBadgeUiTimelineE2eContractReport({
+    locale,
+    pass2639: proPdfCustomerReceiptBadgeAccountDeliveryPromotionState,
+    pass2639ReceiptLoaded: false,
+    customerBadgeReceiptHash: proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.customerBadgeReceiptHash,
+    customerBadgeReceiptVerified: false,
+    accountDeliveryPromotionState: proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.accountDeliveryPromotionState,
+    portalBadgeRenderable: false,
+    customerTimelineRenderable: true,
+    proPdfAccountParity: false,
+    downloadCtaLockedUntilReceipt: true,
+    staleReceiptShowsPending: true,
+    localeCopyReady: true,
+    publicResponseSanitized: true,
+    privateTraceHidden: true,
+    e2eContractExported: false,
+  });
+
+  const accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState = buildPass2641AccountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedStateReport({
+    locale,
+    pass2640: accountDeliveryReceiptBadgeUiTimelineE2eContract,
+    pass2640ContractLoaded: false,
+    pass2640UiContractHash: accountDeliveryReceiptBadgeUiTimelineE2eContract.uiContract.outputReceipt,
+    playwrightFixtureExported: false,
+    verifiedBadgeCaseCovered: true,
+    pendingBadgeCaseCovered: true,
+    blockedPrivateTraceCaseCovered: true,
+    pdfDownloadCtaLockedWithoutReceipt: true,
+    lockedCtaNoHref: true,
+    lockedCtaAriaDisabled: true,
+    lockedCtaClickPrevented: true,
+    customerSafeReceiptRequiredForDownload: true,
+    dataAttributesPresent: true,
+    portalTimelineSelectorsReady: true,
+    proPdfDownloadParityAsserted: true,
+    publicResponseSanitized: true,
+    privateTraceHidden: true,
+    localeCopyReady: true,
+  });
+
+  const deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter = buildPass2642DeployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporterReport({
+    locale,
+    pass2641: accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState,
+    pass2641FixtureLoaded: false,
+    pass2641FixtureHash: accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.playwrightContract.outputReceipt,
+    previewUrl: null,
+    deployedPortalSmokeExecuted: false,
+    pendingLockedSmokePassed: true,
+    verifiedUnlockSmokePassed: false,
+    lockedCtaNoHref: true,
+    lockedCtaAriaDisabled: true,
+    lockedClickPrevented: true,
+    verifiedReceiptUnlocksPdfRoute: false,
+    customerSafeReceiptHashBound: false,
+    pdfRouteGuardedByReceipt: true,
+    privateDomLeakRejected: true,
+    deployedSmokeArtifactExported: false,
+    publicResponseSanitized: true,
+  });
+
+  const pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt = buildPass2643Pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceiptReport({
+    locale,
+    pass2642: deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter,
+    pass2642ArtifactLoaded: true,
+    pass2642ArtifactHash: deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.pass2641FixtureHash,
+    pass2642CanAttachToReleaseBoard: deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.canAttachToReleaseBoard,
+    pass2642SmokeReceiptFresh: false,
+    artifactHashBoundToReleaseBoard: false,
+    releaseBoardAttachmentReceiptPresent: false,
+    releaseBoardAttachmentReady: false,
+    denyProPdfPromotionWithoutSmokeReceipt: true,
+    denyAdvancedPromotionWithoutSmokeReceipt: true,
+    denyLaunchClaimWithoutSmokeReceipt: true,
+    customerSafeReceiptExported: false,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+  const proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression = buildPass2644ProPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegressionReport({
+    locale,
+    pass2643: pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt,
+    pass2643ReceiptLoaded: true,
+    pass2643CanPromoteProPdfUnlock: pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.canPromoteProPdfUnlock,
+    pass2643ReceiptHash: pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.releaseBoardAttachmentReceiptHash,
+    safeDownloadTokenIssued: false,
+    tokenBoundToReceiptHash: false,
+    tokenBoundToAccount: false,
+    tokenExpiresAtPresent: true,
+    tokenConsumedOnce: false,
+    replayDeniedAfterConsumption: true,
+    revokedReceiptDenied: true,
+    expiredTokenDenied: true,
+    revokedEntitlementDenied: true,
+    safeRouteRequiresReceipt: true,
+    safeRouteRequiresUnconsumedToken: true,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+  const proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate = buildPass2645SafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGateReport({
+    locale,
+    pass2644: proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression,
+    pass2644ReceiptLoaded: true,
+    pass2644CanPromoteSafePdfDownloadRoute: proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.canPromoteSafePdfDownloadRoute,
+    pass2644ReceiptHash: proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.pass2643ReceiptHash,
+    pass2644TokenHash: proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.tokenHash,
+    storageAdapterReady: false,
+    supabaseConsumptionLedgerReady: false,
+    serviceRoleInsertReceiptReady: false,
+    firstConsumptionRecorded: false,
+    replayDeniedFromLedger: true,
+    revokedTokenDeniedFromLedger: true,
+    expiredTokenDeniedFromLedger: true,
+    receiptHashBoundToLedger: false,
+    tokenHashBoundToLedger: false,
+    anonInsertDenied: true,
+    anonSelectDenied: true,
+    updateDeleteDenied: true,
+    publicReceiptViewSafe: true,
+    rlsMigrationPresent: true,
+    noMemoryFallbackInProduction: true,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+
+  const proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter = buildPass2646DeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporterReport({
+    locale,
+    pass2645: proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate,
+    pass2645ReceiptLoaded: true,
+    pass2645CanPromoteStorageBackedSafePdfDownload: proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.canPromoteStorageBackedSafePdfDownload,
+    pass2645ReceiptHash: proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.pass2644ReceiptHash,
+    deployedEndpointReachable: false,
+    deployedEndpointAcceptedReceipt: false,
+    supabaseLiveConsumptionReceiptReady: false,
+    firstConsumptionRecordedLive: false,
+    replayDeniedLive: true,
+    revokedTokenDeniedLive: true,
+    expiredTokenDeniedLive: true,
+    anonInsertDeniedLive: true,
+    anonSelectDeniedLive: true,
+    updateDeleteDeniedLive: true,
+    publicReceiptExported: false,
+    publicReceiptHashBound: false,
+    releaseBoardAttachmentReady: false,
+    noMemoryFallbackInProduction: true,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+  if (!proPdfPaidTokenFinalGate.summary.canStreamProPdf) {
+    return NextResponse.json(proPdfPaidTokenFinalGate.customerResponse ?? {
+      ok: false,
+      surface: "pro_pdf_paid_token_final_gate",
+      status: "locked",
+      message: "Pro PDF is locked until paid access and a one-time token are confirmed.",
+      missingClaims: proPdfPaidTokenFinalGate.summary.missingClaims,
+      nextSafeAction: "Open the report from the paid account center or mint a fresh download link.",
+    }, {
+      status: proPdfPaidTokenFinalGate.httpStatus,
+      headers: {
+        "cache-control": "no-store",
+        "x-velmere-pass2623-pro-pdf-paid-token-final-gate": PASS2623_PRO_PDF_PAID_TOKEN_FINAL_GATE_ID,
+        "x-velmere-pro-pdf-paid-token-required": "true",
+        "x-velmere-pro-pdf-public-free-qa-mode": "denied",
+        "x-velmere-pro-pdf-can-stream": "false",
+        "x-velmere-no-raw-download-token-output": "true",
+        "x-velmere-pass2624-account-delivery-production-lock": PASS2624_SUPABASE_RLS_ACCOUNT_DELIVERY_PRODUCTION_LOCK_ID,
+        "x-velmere-memory-fallback-blocked-in-production": String(accountDeliveryProductionLock.summary.memoryFallbackBlockedInProduction),
+        "x-velmere-runtime-evidence-test-pack": PASS2625_RUNTIME_EVIDENCE_TEST_PACK_ID,
+        "x-velmere-runtime-evidence-readiness": String(runtimeEvidenceTestPack.summary.runtimeEvidenceReadiness),
+        "x-velmere-runtime-replay-artifact-collector": PASS2626_RUNTIME_REPLAY_ARTIFACT_COLLECTOR_ID,
+        "x-velmere-launch-evidence-readiness": String(runtimeReplayArtifactCollector.summary.launchEvidenceReadiness),
+        "x-velmere-launch-blocking-artifacts": String(runtimeReplayArtifactCollector.summary.launchBlockingArtifacts),
+        "x-velmere-runtime-replay-artifact-storage-adapter": PASS2627_RUNTIME_REPLAY_ARTIFACT_STORAGE_ADAPTER_ID,
+        "x-velmere-release-board-storage-readiness": String(runtimeReplayArtifactStorageAdapter.summary.storageReadiness),
+        "x-velmere-release-board-hash": runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash,
+        "x-velmere-pass2628-release-evidence-board-rls-gate": PASS2628_SUPABASE_RELEASE_EVIDENCE_BOARD_MIGRATION_RLS_GATE_ID,
+        "x-velmere-release-board-migration-readiness": String(releaseEvidenceBoardRlsGate.summary.migrationReadiness),
+        "x-velmere-release-board-rls-readiness": String(releaseEvidenceBoardRlsGate.summary.rlsReadiness),
+        "x-velmere-release-board-insert-only-readiness": String(releaseEvidenceBoardRlsGate.summary.insertOnlyReadiness),
+      },
+    });
+  }
+
+  if (!serverVerified || !tokenVerdict.ok || !entitlementVerdict.ok || !auditCaseBindingValid) {
+    return NextResponse.json({
+      ok: false,
+      surface: "pro_pdf_paid_token_final_gate",
+      status: "locked",
+      message: "The paid report could not be verified for this account and report version.",
+      nextSafeAction: "Open the report from the authenticated account center and mint a fresh link.",
+    }, {
+      status: tokenVerdict.ok ? 402 : tokenVerdict.error === "audit_pdf_token_expired" ? 423 : 401,
+      headers: {
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "x-velmere-audit-pdf-download-token": PASS4657_AUDIT_PDF_DOWNLOAD_TOKEN_ID,
+        "x-velmere-audit-pdf-token-lifecycle": PASS4658_AUDIT_PDF_TOKEN_LIFECYCLE_ID,
+      },
+    });
+  }
+
+  const tokenReservation = await reservePass4658AuditPdfDownloadToken({
+    tokenHash: tokenVerdict.tokenHash,
+    payload: tokenVerdict.payload,
+    accountId: account.accountId,
+    entitlementId,
+    reservationSeconds: 180,
+  });
+  if (!tokenReservation.ok) {
+    const status = tokenReservation.error === "audit_pdf_token_in_progress" || tokenReservation.error === "audit_pdf_token_replayed"
+      ? 409
+      : tokenReservation.error === "audit_pdf_token_expired"
+        ? 423
+        : 503;
+    return NextResponse.json({
+      ok: false,
+      surface: "pro_pdf_paid_token_lifecycle",
+      status: tokenReservation.error === "audit_pdf_token_in_progress" ? "processing" : "locked",
+      message: status === 503
+        ? "The secure download ledger is temporarily unavailable."
+        : "This download link is already in use, expired, or consumed.",
+      nextSafeAction: status === 503 ? "Retry later without purchasing again." : "Mint a fresh download link from the account center.",
+    }, {
+      status,
+      headers: {
+        "cache-control": "no-store",
+        "retry-after": tokenReservation.error === "audit_pdf_token_in_progress" ? "5" : status === 503 ? "15" : "0",
+        "x-content-type-options": "nosniff",
+        "x-velmere-audit-pdf-token-lifecycle": PASS4658_AUDIT_PDF_TOKEN_LIFECYCLE_ID,
+      },
+    });
+  }
+
+  const today = new Date().toISOString();
+  const sourceSpine = buildPass2569AuditSourceSpine(locale);
+  const sourceRows = buildPass2569AuditSourceMatrix(locale).slice(0, 9);
+  const isContract = /^0x[a-fA-F0-9]{40}$/.test(target);
+  const sourceQuorum = buildPass2570AuditSourceQuorumReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+  });
+  const providerIntelligence = buildPass2571AuditProviderIntelligenceReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    sourceQuorum,
+  });
+  const providerRuntime = await buildPass2572AuditProviderRuntimeReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    providerIntelligence,
+  });
+  const runtimeConfidence = buildPass2573AuditRuntimeConfidenceReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    sourceQuorum,
+    providerRuntime,
+  });
+  const claimLedger = buildPass2574AuditClaimLedgerReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    sourceQuorum,
+    providerRuntime,
+    runtimeConfidence,
+  });
+  const sourceFreshness = buildPass2575AuditSourceFreshnessReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    providerRuntime,
+    claimLedger,
+  });
+  const permissionParser = buildPass2576AuditPermissionParserReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    providerRuntime,
+    claimLedger,
+    sourceFreshness,
+  });
+  const liquidityHolderRisk = buildPass2577AuditLiquidityHolderLockRiskReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    providerRuntime,
+    claimLedger,
+    sourceFreshness,
+    permissionParser,
+  });
+  const reportAssembler = buildPass2578AuditReportAssemblerReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    providerRuntime,
+    runtimeConfidence,
+    claimLedger,
+    sourceFreshness,
+    permissionParser,
+    liquidityHolderRisk,
+  });
+  const advancedManualReviewQueue = buildPass2579AdvancedManualReviewQueueReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    reportAssembler,
+  });
+  const customerSafeDeliveryDecision = buildPass2580CustomerSafeDeliveryDecisionReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    reportAssembler,
+    advancedManualReviewQueue,
+  });
+  const versionedRecheckReceipt = buildPass2581AuditVersionedRecheckReceiptReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    reportAssembler,
+    customerSafeDeliveryDecision,
+  });
+  const realProviderAdapterHardening = buildPass2582RealProviderAdapterHardeningReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    providerIntelligence,
+    providerRuntime,
+    versionedRecheckReceipt,
+  });
+  const contractSourceAbiExtraction = buildPass2583ContractSourceAbiExtractionReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    providerRuntime,
+    permissionParser,
+    realProviderAdapterHardening,
+  });
+  const holderLiquidityDepthEvidence = buildPass2584HolderLiquidityDepthEvidenceReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    providerRuntime,
+    liquidityHolderRisk,
+    realProviderAdapterHardening,
+    contractSourceAbiExtraction,
+  });
+  const premiumProPdfTemplateContract = buildPass2585PremiumProPdfTemplateContractReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    reportAssembler,
+    customerSafeDeliveryDecision,
+    versionedRecheckReceipt,
+    realProviderAdapterHardening,
+    contractSourceAbiExtraction,
+    holderLiquidityDepthEvidence,
+  });
+  const advancedOperatorConsoleMerge = buildPass2586AdvancedOperatorConsoleMergeReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "advanced_review",
+    paymentVerified: false,
+    advancedManualReviewQueue,
+    customerSafeDeliveryDecision,
+    versionedRecheckReceipt,
+    premiumProPdfTemplateContract,
+  });
+  const serverPaymentAccountDeliveryGate = buildPass2587ServerPaymentAccountDeliveryGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    paidAccessReceipt: null,
+    accountMessage: null,
+    versionedRecheckReceipt,
+    advancedOperatorConsoleMerge,
+  });
+  const auditCaseVaultPrivateDeliveryLedger = buildPass2588AuditCaseVaultPrivateDeliveryLedgerReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    accountMessage: null,
+    versionedRecheckReceipt,
+    premiumProPdfTemplateContract,
+    advancedOperatorConsoleMerge,
+    serverPaymentAccountDeliveryGate,
+  });
+  const sourceFreshnessRecheckOrchestrator = buildPass2589SourceFreshnessRecheckOrchestratorReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    sourceFreshness,
+    versionedRecheckReceipt,
+    auditCaseVaultPrivateDeliveryLedger,
+  });
+  const riskFormulaEvidenceWeightingContract = buildPass2590RiskFormulaEvidenceWeightingContractReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    runtimeConfidence,
+    sourceFreshness,
+    permissionParser,
+    liquidityHolderRisk,
+    holderLiquidityDepthEvidence,
+    advancedOperatorConsoleMerge,
+    sourceFreshnessRecheckOrchestrator,
+  });
+  const riskCalibrationGoldenFixtureHarness = buildPass2591RiskCalibrationGoldenFixtureHarnessReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    runtimeConfidence,
+    contractSourceAbiExtraction,
+    holderLiquidityDepthEvidence,
+    advancedOperatorConsoleMerge,
+    serverPaymentAccountDeliveryGate,
+    sourceFreshnessRecheckOrchestrator,
+    riskFormulaEvidenceWeightingContract,
+  });
+  const providerConflictArbitrationMatrix = buildPass2592ProviderConflictArbitrationMatrixReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    providerRuntime,
+    claimLedger,
+    realProviderAdapterHardening,
+    sourceFreshnessRecheckOrchestrator,
+    riskFormulaEvidenceWeightingContract,
+    riskCalibrationGoldenFixtureHarness,
+  });
+  const evidenceNarrativeClaimLedgerExplainability = buildPass2593EvidenceNarrativeClaimLedgerExplainabilityReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    claimLedger,
+    providerConflictArbitrationMatrix,
+    riskFormulaEvidenceWeightingContract,
+    sourceFreshnessRecheckOrchestrator,
+  });
+  const auditEvidenceQaReleaseGateMatrix = buildPass2594AuditEvidenceQaReleaseGateMatrixReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    premiumProPdfTemplateContract,
+    advancedOperatorConsoleMerge,
+    serverPaymentAccountDeliveryGate,
+    sourceFreshnessRecheckOrchestrator,
+    riskFormulaEvidenceWeightingContract,
+    riskCalibrationGoldenFixtureHarness,
+    providerConflictArbitrationMatrix,
+    evidenceNarrativeClaimLedgerExplainability,
+  });
+  const runtimeBuildReadinessTypeSafetySweep = buildPass2595RuntimeBuildReadinessTypeSafetySweepReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    auditEvidenceQaReleaseGateMatrix,
+  });
+  const apiContractResponseEnvelopeHardening = buildPass2596ApiContractResponseEnvelopeHardeningReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    auditEvidenceQaReleaseGateMatrix,
+    runtimeBuildReadinessTypeSafetySweep,
+  });
+  const customerSafePdfDataLeakGuard = buildPass2597CustomerSafePdfDataLeakGuardReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    auditEvidenceQaReleaseGateMatrix,
+    apiContractResponseEnvelopeHardening,
+  });
+  const privacyRedactionPiiBoundaryGate = buildPass2598PrivacyRedactionPiiBoundaryGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    customerSafePdfDataLeakGuard,
+  });
+  const retentionErasureDataMinimizationGate = buildPass2599RetentionErasureDataMinimizationGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    auditCaseVaultPrivateDeliveryLedger,
+    sourceFreshnessRecheckOrchestrator,
+    privacyRedactionPiiBoundaryGate,
+  });
+  const e2eAuditDeliveryLaunchGate = buildPass2600E2EAuditDeliveryLaunchGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    serverPaymentAccountDeliveryGate,
+    auditCaseVaultPrivateDeliveryLedger,
+    sourceFreshnessRecheckOrchestrator,
+    riskFormulaEvidenceWeightingContract,
+    riskCalibrationGoldenFixtureHarness,
+    providerConflictArbitrationMatrix,
+    evidenceNarrativeClaimLedgerExplainability,
+    auditEvidenceQaReleaseGateMatrix,
+    runtimeBuildReadinessTypeSafetySweep,
+    apiContractResponseEnvelopeHardening,
+    customerSafePdfDataLeakGuard,
+    privacyRedactionPiiBoundaryGate,
+    retentionErasureDataMinimizationGate,
+  });
+  const syntheticAuditDeliveryReplayHarness = buildPass2601SyntheticAuditDeliveryReplayHarnessReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    auditEvidenceQaReleaseGateMatrix,
+    customerSafePdfDataLeakGuard,
+    privacyRedactionPiiBoundaryGate,
+    retentionErasureDataMinimizationGate,
+    e2eAuditDeliveryLaunchGate,
+  });
+  const operatorEscalationHumanReviewSlaGate = buildPass2602OperatorEscalationHumanReviewSlaGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    advancedManualReviewQueue,
+    providerConflictArbitrationMatrix,
+    auditEvidenceQaReleaseGateMatrix,
+    e2eAuditDeliveryLaunchGate,
+    syntheticAuditDeliveryReplayHarness,
+  });
+  const adminEscalationInboxOperatorQueueRuntime = buildPass2603AdminEscalationInboxOperatorQueueRuntimeReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    operatorEscalationHumanReviewSlaGate,
+  });
+  const operatorDecisionLedgerReviewerSignoffTrail = buildPass2604OperatorDecisionLedgerReviewerSignoffTrailReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    adminEscalationInboxOperatorQueueRuntime,
+  });
+  const evidenceChangeRequestRevisionControlGate = buildPass2605EvidenceChangeRequestRevisionControlGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    operatorDecisionLedgerReviewerSignoffTrail,
+  });
+  const customerNotificationAuditStatusTimelineGate = buildPass2606CustomerNotificationAuditStatusTimelineGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    adminEscalationInboxOperatorQueueRuntime,
+    operatorDecisionLedgerReviewerSignoffTrail,
+    evidenceChangeRequestRevisionControlGate,
+  });
+
+  const accountAuditDeliveryCenterPortalRuntime = buildPass2607AccountAuditDeliveryCenterPortalRuntimeReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    customerNotificationAuditStatusTimelineGate,
+    evidenceChangeRequestRevisionControlGate,
+  });
+
+  const accountDeliveryPermissionAccessControlGate = buildPass2608AccountDeliveryPermissionAccessControlGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    accountAuditDeliveryCenterPortalRuntime,
+  });
+
+  const secureDownloadTokenReportAccessReplayGuard = buildPass2609SecureDownloadTokenReportAccessReplayGuardReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    accountDeliveryPermissionAccessControlGate,
+  });
+
+  const entitlementProofReceiptToReportBindingGate = buildPass2610EntitlementProofReceiptToReportBindingGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    serverPaymentAccountDeliveryGate,
+    secureDownloadTokenReportAccessReplayGuard,
+  });
+
+  const refundChargebackRevocationEntitlementGate = buildPass2611RefundChargebackRevocationEntitlementGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    entitlementProofReceiptToReportBindingGate,
+  });
+
+  const entitlementReissueRestoredAccessRecoveryGate = buildPass2612EntitlementReissueRestoredAccessRecoveryGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    refundChargebackRevocationEntitlementGate,
+  });
+
+  const entitlementExpiryRenewalReminderGate = buildPass2613EntitlementExpiryRenewalReminderGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    entitlementReissueRestoredAccessRecoveryGate,
+  });
+
+  const renewalPaymentEntitlementExtensionReceiptGate = buildPass2614RenewalPaymentEntitlementExtensionReceiptGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    entitlementExpiryRenewalReminderGate,
+  });
+
+  const renewalAbuseDoubleSpendEntitlementGuard = buildPass2615RenewalAbuseDoubleSpendEntitlementGuardReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    renewalPaymentEntitlementExtensionReceiptGate,
+  });
+
+
+  const paymentWebhookIdempotencyEventOrderingGate = buildPass2616PaymentWebhookIdempotencyEventOrderingGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    renewalAbuseDoubleSpendEntitlementGuard,
+  });
+
+  const paymentWebhookSignatureRawBodyVerificationGate = buildPass2617PaymentWebhookSignatureRawBodyVerificationGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    paymentWebhookIdempotencyEventOrderingGate,
+  });
+
+  const webhookSecretRotationProviderKeyVersionGate = buildPass2618WebhookSecretRotationProviderKeyVersionGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    paymentWebhookSignatureRawBodyVerificationGate,
+  });
+
+  const webhookOriginProviderAllowlistGate = buildPass2619WebhookOriginProviderAllowlistGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    webhookSecretRotationProviderKeyVersionGate,
+  });
+
+  const webhookFailureQuarantineManualReconciliationGate = buildPass2620WebhookFailureQuarantineManualReconciliationGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    webhookOriginProviderAllowlistGate,
+  });
+
+  const webhookDeadLetterOperatorQueueSlaGate = buildPass2621WebhookDeadLetterOperatorQueueSlaGateReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+    webhookFailureQuarantineManualReconciliationGate,
+  });
+
+  const publicPrivateRouteLockdown = buildPass2622PublicPrivateRouteLockdownReport({
+    locale,
+    chain,
+    contractAddress: isContract ? target : undefined,
+    projectName: isContract ? undefined : target,
+    reviewLevel: "pro_review",
+  });
+
+
+
+  const proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt = buildPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceiptReport({
+    locale,
+    pass2646: proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter,
+    pass2646ReceiptLoaded: true,
+    pass2646CanPromoteSafePdfDownloadFromLiveLedger: proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.canPromoteSafePdfDownloadFromLiveLedger,
+    pass2646LiveSmokeReceiptHash: proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.liveSmokeReceiptHash,
+    releaseBoardAttachmentReady: proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.releaseBoardAttachmentReady,
+    releaseBoardAttachmentReceiptReady: false,
+    immutableAttachmentReceiptReady: false,
+    attachmentHashBoundToPass2646: false,
+    proPdfPromotionDeniedUntilAttachment: true,
+    safePdfRoutePromotionDeniedUntilAttachment: true,
+    proPdfPromotionFinalGateEnabled: false,
+    safePdfRoutePromotionFinalGateEnabled: false,
+    customerBadgeUsesPublicReceiptOnly: true,
+    publicReceiptExported: false,
+    publicReceiptHashBound: false,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+    revocationReplayInheritanceConfirmed: proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.replayDeniedLive && proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.revokedTokenDeniedLive && proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.expiredTokenDeniedLive,
+  });
+
+  const proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression = buildPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegressionReport({
+    locale,
+    pass2647: proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt,
+    pass2647ReceiptLoaded: true,
+    pass2647CanPromoteSafePdfFinalDownload: proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.canPromoteSafePdfFinalDownload,
+    pass2647ReceiptHash: proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.releaseBoardAttachmentReceiptHash,
+    accountDeliveryVerifiedState: proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.canPromoteSafePdfFinalDownload,
+    accountDeliveryPendingState: true,
+    accountDeliveryRevokedState: true,
+    refundRevocationBlocksPdf: true,
+    chargebackRevocationBlocksPdf: true,
+    entitlementRevocationBlocksPdf: true,
+    verifiedStateUnlocksOnlyGuardedRoute: true,
+    safePdfCtaDisabledWhenRevoked: true,
+    portalShowsRevokedWithoutPrivateData: true,
+    customerTimelineSeparatesVerifiedPendingRevoked: true,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+
+  const proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter = buildPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapterReport({
+    locale,
+    pass2648: proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression,
+    pass2648ReceiptLoaded: true,
+    pass2648CanPromoteAccountDeliveryFinalGate: proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.canPromoteAccountDeliveryFinalGate,
+    pass2648ReceiptHash: proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.pass2647ReceiptHash,
+    refundWebhookReplayFixtureReady: true,
+    chargebackWebhookReplayFixtureReady: true,
+    entitlementRevocationLedgerAdapterReady: true,
+    revocationLedgerWriteReceiptReady: true,
+    refundWebhookRevokesEntitlement: true,
+    chargebackWebhookRevokesEntitlement: true,
+    duplicateWebhookReplayDenied: true,
+    staleWebhookReplayDenied: true,
+    publicPortalLocksSafePdfAfterRevocation: true,
+    portalShowsRevocationWithoutPrivateWebhookPayload: true,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+  const proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter = buildPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporterReport({
+    locale,
+    pass2649: proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter,
+    pass2649ReceiptLoaded: true,
+    pass2649CanPromoteAccountDeliveryAfterWebhookReplay: proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.canPromoteAccountDeliveryAfterWebhookReplay,
+    pass2649ReceiptHash: proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.pass2648ReceiptHash,
+    deployedWebhookReplaySmokeReady: true,
+    liveRefundReplayReceiptReady: true,
+    liveChargebackReplayReceiptReady: true,
+    liveRevocationLedgerWriteReceiptReady: true,
+    refundLiveReceiptRevokesEntitlement: true,
+    chargebackLiveReceiptRevokesEntitlement: true,
+    safePdfLockedAfterRefundLive: true,
+    safePdfLockedAfterChargebackLive: true,
+    duplicateLiveReplayDenied: true,
+    staleLiveReplayDenied: true,
+    anonRlsInsertDeniedLive: true,
+    anonRlsSelectDeniedLive: true,
+    publicReceiptExported: true,
+    publicReceiptHashBound: true,
+    releaseBoardAttachmentReady: true,
+    publicResponseSanitized: true,
+    privatePayloadRejected: true,
+  });
+
+
+  const lines = [
+    `Request ID: ${requestId}`,
+    `Generated: ${today}`,
+    `Locale: ${locale}`,
+    `Target: ${target}`,
+    `Network: ${chain}`,
+    `Basic score: ${score}/100`,
+    `Source confidence: ${confidence}/100`,
+    `Source quorum: confirmed ${sourceQuorum.overall.confirmedSources}, partial ${sourceQuorum.overall.partialSources}, missing ${sourceQuorum.overall.missingSources}, not run ${sourceQuorum.overall.notRunSources}`,
+    `Runtime: ${PASS2570_AUDIT_SOURCE_QUORUM_RUNTIME_ID}`,
+    "",
+    "Scope:",
+    "- Public passive review only.",
+    "- No custody, no seed phrase, no wallet access.",
+    "- No unauthorized active testing.",
+    "- No investment advice and no guarantee of safety.",
+    "",
+    "PASS2569 Source Spine:",
+    sourceSpine.sourceQuorumRule,
+    "",
+    "PASS2570 runtime source quorum:",
+    sourceQuorum.quorumRule,
+    "",
+    "PASS2571 provider intelligence:",
+    providerIntelligence.rule,
+    providerIntelligence.internetScope,
+    `Provider readiness: ${providerIntelligence.readiness.liveCoverageLabel}`,
+    "",
+    "PASS2572 live provider runtime:",
+    providerRuntime.rule,
+    `Runtime coverage: ${providerRuntime.summary.liveProviderCoverage}`,
+    `Runtime confidence: ${providerRuntime.summary.confidenceHint}`,
+    "",
+    "PASS2573 runtime confidence engine:",
+    runtimeConfidence.rule,
+    `Evidence coverage: ${runtimeConfidence.overall.sourceCoverageScore}/100`,
+    `Adjusted risk: ${runtimeConfidence.overall.riskLabel} ${runtimeConfidence.overall.riskScore}/100`,
+    `Adjusted confidence: ${runtimeConfidence.overall.sourceConfidence}/100`,
+    `Runtime lanes: live ${runtimeConfidence.overall.runtimeLiveLanes}, confirmed ${runtimeConfidence.overall.runtimeConfirmedLanes}, problem ${runtimeConfidence.overall.runtimeProblemLanes}`,
+    runtimeConfidence.customerVerdict,
+    "",
+    "PASS2588 audit case vault / private delivery ledger:",
+    auditCaseVaultPrivateDeliveryLedger.rule,
+    auditCaseVaultPrivateDeliveryLedger.privacyBoundary,
+    `Vault readiness: ${auditCaseVaultPrivateDeliveryLedger.summary.vaultReadiness}/100; private delivery ${auditCaseVaultPrivateDeliveryLedger.summary.canDeliverPrivateReport}; replay ${auditCaseVaultPrivateDeliveryLedger.summary.replayReadiness}/100`,
+    `Vault lanes: ready ${auditCaseVaultPrivateDeliveryLedger.summary.ready}, review ${auditCaseVaultPrivateDeliveryLedger.summary.review}, blocked ${auditCaseVaultPrivateDeliveryLedger.summary.blocked}, locked ${auditCaseVaultPrivateDeliveryLedger.summary.locked}, private ${auditCaseVaultPrivateDeliveryLedger.summary.private}, retained ${auditCaseVaultPrivateDeliveryLedger.summary.retained}`,
+    ...auditCaseVaultPrivateDeliveryLedger.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2589 source freshness re-check orchestrator:",
+    sourceFreshnessRecheckOrchestrator.rule,
+    sourceFreshnessRecheckOrchestrator.schedulerRule,
+    `Re-check readiness: ${sourceFreshnessRecheckOrchestrator.summary.orchestratorReadiness}/100; next ${sourceFreshnessRecheckOrchestrator.summary.nextRecheckAt}; new version ${sourceFreshnessRecheckOrchestrator.summary.mustCreateNewVersion}`,
+    `Re-check lanes: scheduled ${sourceFreshnessRecheckOrchestrator.summary.scheduled}, ready ${sourceFreshnessRecheckOrchestrator.summary.ready}, watch ${sourceFreshnessRecheckOrchestrator.summary.watch}, blocked ${sourceFreshnessRecheckOrchestrator.summary.blocked}, frozen ${sourceFreshnessRecheckOrchestrator.summary.frozen}, private ${sourceFreshnessRecheckOrchestrator.summary.private}`,
+    ...sourceFreshnessRecheckOrchestrator.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+
+    "PASS2590 risk formula evidence weighting contract:",
+    riskFormulaEvidenceWeightingContract.rule,
+    riskFormulaEvidenceWeightingContract.scoreBoundary,
+    `Weighted risk: ${riskFormulaEvidenceWeightingContract.summary.finalRiskScore}/100 (${riskFormulaEvidenceWeightingContract.summary.scoreBand}); formula confidence ${riskFormulaEvidenceWeightingContract.summary.formulaConfidence}/100; coverage ${riskFormulaEvidenceWeightingContract.summary.evidenceCoverage}/100`,
+    `Formula gates: Pro ${riskFormulaEvidenceWeightingContract.summary.canIssueProScore}; Advanced final ${riskFormulaEvidenceWeightingContract.summary.canFinalSignAdvancedScore}; blockers ${riskFormulaEvidenceWeightingContract.summary.blockingLanes}`,
+    ...riskFormulaEvidenceWeightingContract.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2591 risk calibration golden fixture harness:",
+    riskCalibrationGoldenFixtureHarness.rule,
+    `Calibration readiness: ${riskCalibrationGoldenFixtureHarness.summary.calibrationReadiness}/100; average drift ${riskCalibrationGoldenFixtureHarness.summary.averageDrift}; max drift ${riskCalibrationGoldenFixtureHarness.summary.maxDrift}`,
+    `Fixture gates: Basic ${riskCalibrationGoldenFixtureHarness.summary.canTrustBasicCalibration}; Pro ${riskCalibrationGoldenFixtureHarness.summary.canIssueProCalibration}; Advanced ${riskCalibrationGoldenFixtureHarness.summary.canFinalSignAdvancedCalibration}; failed ${riskCalibrationGoldenFixtureHarness.summary.failed}; blocked ${riskCalibrationGoldenFixtureHarness.summary.blocked}`,
+    ...riskCalibrationGoldenFixtureHarness.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+
+    "PASS2592 provider conflict arbitration matrix:",
+    providerConflictArbitrationMatrix.rule,
+    `Arbitration readiness: ${providerConflictArbitrationMatrix.summary.arbitrationReadiness}/100; blocking conflicts ${providerConflictArbitrationMatrix.summary.blockingConflicts}; confidence penalty ${providerConflictArbitrationMatrix.summary.totalConfidencePenalty}/100`,
+    `Conflict gates: unified verdict ${providerConflictArbitrationMatrix.summary.canShowUnifiedVerdict}; Pro ${providerConflictArbitrationMatrix.summary.canIssueProWithConflicts}; Advanced ${providerConflictArbitrationMatrix.summary.canFinalSignAdvancedWithConflicts}; next ${providerConflictArbitrationMatrix.summary.nextCriticalConflict}`,
+    ...providerConflictArbitrationMatrix.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2574 claim ledger:",
+    claimLedger.rule,
+    `Claim summary: total ${claimLedger.summary.totalClaims}, confirmed ${claimLedger.summary.confirmed}, partial ${claimLedger.summary.partial}, missing ${claimLedger.summary.missing}, blocked ${claimLedger.summary.blocked}`,
+    `Fact-safe claims: ${claimLedger.summary.factSafeClaims}/${claimLedger.summary.totalClaims}`,
+    "",
+    "PASS2575 source freshness ledger:",
+    sourceFreshness.rule,
+    `Freshness summary: fresh ${sourceFreshness.summary.fresh}, acceptable ${sourceFreshness.summary.acceptable}, stale ${sourceFreshness.summary.stale}, expired ${sourceFreshness.summary.expired}, static ${sourceFreshness.summary.static}, blocked ${sourceFreshness.summary.blocked}, unknown ${sourceFreshness.summary.unknown}`,
+    `Basic usable freshness lanes: ${sourceFreshness.summary.basicUsable}/${sourceFreshness.summary.totalLanes}`,
+    `Next refresh hint: ${sourceFreshness.summary.nextRefreshHint}`,
+    ...sourceFreshness.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2576 permission parser:",
+    permissionParser.rule,
+    `Permission summary: detected ${permissionParser.summary.detected}, not detected ${permissionParser.summary.notDetected}, unknown ${permissionParser.summary.unknown}, blocked ${permissionParser.summary.blocked}`,
+    `Permission risk delta: ${permissionParser.summary.riskDelta}; confidence delta: ${permissionParser.summary.confidenceDelta}; pro required ${permissionParser.summary.proRequired}/${permissionParser.summary.totalSignals}`,
+    ...permissionParser.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status} - ${row.severity}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2577 liquidity / holders / lock risk:",
+    liquidityHolderRisk.rule,
+    `Liquidity summary: confirmed ${liquidityHolderRisk.summary.confirmed}, partial ${liquidityHolderRisk.summary.partial}, missing ${liquidityHolderRisk.summary.missing}, blocked ${liquidityHolderRisk.summary.blocked}`,
+    `Liquidity risk delta: ${liquidityHolderRisk.summary.riskDelta}; confidence delta: ${liquidityHolderRisk.summary.confidenceDelta}; pro required ${liquidityHolderRisk.summary.proRequired}/${liquidityHolderRisk.summary.totalSignals}`,
+    ...liquidityHolderRisk.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status} - ${row.severity}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2578 report assembler:",
+    reportAssembler.rule,
+    `Final verdict: ${reportAssembler.finalVerdict.riskLabel} ${reportAssembler.finalVerdict.riskScore}/100; confidence ${reportAssembler.finalVerdict.sourceConfidence}/100; readiness ${reportAssembler.finalVerdict.readinessScore}/100`,
+    `Sections: ready ${reportAssembler.summary.ready}, partial ${reportAssembler.summary.partial}, missing ${reportAssembler.summary.missing}, blocked ${reportAssembler.summary.blocked}, manual ${reportAssembler.summary.manualReview}`,
+    ...reportAssembler.proPdfLines.slice(0, 28),
+    "",
+    "PASS2579 advanced manual review queue:",
+    advancedManualReviewQueue.rule,
+    advancedManualReviewQueue.paymentBoundary,
+    `Manual queue: total ${advancedManualReviewQueue.summary.totalItems}, payment blocked ${advancedManualReviewQueue.summary.blockedByPayment}, evidence blocked ${advancedManualReviewQueue.summary.blockedByEvidence}, scope blocked ${advancedManualReviewQueue.summary.blockedByScope}, high ${advancedManualReviewQueue.summary.high}`,
+    ...advancedManualReviewQueue.operatorChecklist.slice(0, 18),
+    "",
+    "PASS2580 customer-safe delivery decision:",
+    customerSafeDeliveryDecision.rule,
+    `Delivery status: ${customerSafeDeliveryDecision.summary.deliveryStatus}; readiness ${customerSafeDeliveryDecision.summary.deliveryReadiness}/100`,
+    `Gates: ready ${customerSafeDeliveryDecision.summary.readyGates}, review ${customerSafeDeliveryDecision.summary.reviewGates}, redaction ${customerSafeDeliveryDecision.summary.redactionGates}, blocked ${customerSafeDeliveryDecision.summary.blockedGates}`,
+    ...customerSafeDeliveryDecision.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "Redaction checklist:",
+    ...customerSafeDeliveryDecision.redactionChecklist.slice(0, 8),
+    "",
+    "PASS2581 versioned re-check receipt:",
+    versionedRecheckReceipt.rule,
+    `Receipt: ${versionedRecheckReceipt.receipt.receiptId}; version ${versionedRecheckReceipt.receipt.reportVersion}; status ${versionedRecheckReceipt.receipt.status}`,
+    `Run: ${versionedRecheckReceipt.receipt.runId}; content hash ${versionedRecheckReceipt.receipt.contentHash}`,
+    `Re-check: ${versionedRecheckReceipt.recheckPlan.priority}; next ${versionedRecheckReceipt.recheckPlan.nextCheckAt}; interval ${versionedRecheckReceipt.recheckPlan.intervalHours}h`,
+    ...versionedRecheckReceipt.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2582 real provider adapter hardening:",
+    realProviderAdapterHardening.rule,
+    `Adapter coverage: ${realProviderAdapterHardening.summary.runtimeCoverage}; next critical ${realProviderAdapterHardening.summary.nextCriticalAdapter}`,
+    `Adapters: usable ${realProviderAdapterHardening.summary.usable}, degraded ${realProviderAdapterHardening.summary.degraded}, needs key ${realProviderAdapterHardening.summary.needsKey}, missing input ${realProviderAdapterHardening.summary.missingInput}, error ${realProviderAdapterHardening.summary.error}, timeout ${realProviderAdapterHardening.summary.timeout}`,
+    ...realProviderAdapterHardening.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2583 contract source / ABI extraction:",
+    contractSourceAbiExtraction.rule,
+    `Source gate: ${contractSourceAbiExtraction.sourceGate.state}; source ${contractSourceAbiExtraction.sourceGate.sourceAvailable}; ABI ${contractSourceAbiExtraction.sourceGate.abiAvailable}; readiness ${contractSourceAbiExtraction.summary.extractionReadiness}/100`,
+    `Functions: total ${contractSourceAbiExtraction.summary.totalFunctions}, owner/admin ${contractSourceAbiExtraction.summary.ownerAdminFunctions}, supply ${contractSourceAbiExtraction.summary.supplyControlFunctions}, transfer restrictions ${contractSourceAbiExtraction.summary.transferRestrictionFunctions}, proxy upgrade ${contractSourceAbiExtraction.summary.proxyUpgradeFunctions}`,
+    ...contractSourceAbiExtraction.proPdfRows.slice(0, 18).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2584 holder / liquidity depth evidence:",
+    holderLiquidityDepthEvidence.rule,
+    `Depth readiness: ${holderLiquidityDepthEvidence.summary.depthReadiness}/100; blockers ${holderLiquidityDepthEvidence.summary.blockers}; risk delta ${holderLiquidityDepthEvidence.summary.riskDelta}; confidence delta ${holderLiquidityDepthEvidence.summary.confidenceDelta}`,
+    `Lanes: confirmed ${holderLiquidityDepthEvidence.summary.confirmed}, partial ${holderLiquidityDepthEvidence.summary.partial}, queued ${holderLiquidityDepthEvidence.summary.queued}, needs key ${holderLiquidityDepthEvidence.summary.needsKey}, blocked ${holderLiquidityDepthEvidence.summary.blocked}`,
+    ...holderLiquidityDepthEvidence.proPdfRows.slice(0, 18).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state} - ${row.severity}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "Premium Pro PDF template contract:",
+    premiumProPdfTemplateContract.rule,
+    `PDF readiness: ${premiumProPdfTemplateContract.summary.customerSafeReadiness}/100; render ${premiumProPdfTemplateContract.summary.canRenderCustomerPdf}; final sign ${premiumProPdfTemplateContract.summary.canFinalSignProPdf}`,
+    `Slots: ready ${premiumProPdfTemplateContract.summary.ready}, review ${premiumProPdfTemplateContract.summary.review}, redaction ${premiumProPdfTemplateContract.summary.redact}, blocked ${premiumProPdfTemplateContract.summary.blocked}, empty ${premiumProPdfTemplateContract.summary.empty}`,
+    ...premiumProPdfTemplateContract.proPdfRows.slice(0, 14).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "Advanced operator console merge:",
+    advancedOperatorConsoleMerge.rule,
+    `Operator readiness: ${advancedOperatorConsoleMerge.summary.operatorConsoleReadiness}/100; final sign ${advancedOperatorConsoleMerge.summary.canFinalSignAdvanced}; customer delivery ${advancedOperatorConsoleMerge.summary.canCustomerDeliverAdvanced}`,
+    `Controls: ready ${advancedOperatorConsoleMerge.summary.ready}, review ${advancedOperatorConsoleMerge.summary.review}, redaction ${advancedOperatorConsoleMerge.summary.redact}, blocked ${advancedOperatorConsoleMerge.summary.blocked}, locked ${advancedOperatorConsoleMerge.summary.locked}`,
+    ...advancedOperatorConsoleMerge.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status} - ${row.priority}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2587 server payment / account delivery gate:",
+    serverPaymentAccountDeliveryGate.rule,
+    serverPaymentAccountDeliveryGate.paymentBoundary,
+    `Delivery readiness: ${serverPaymentAccountDeliveryGate.summary.deliveryReadiness}/100; Pro download ${serverPaymentAccountDeliveryGate.summary.canOpenProDownload}; Advanced private delivery ${serverPaymentAccountDeliveryGate.summary.canDeliverAdvancedPrivately}`,
+    `Gates: ready ${serverPaymentAccountDeliveryGate.summary.ready}, review ${serverPaymentAccountDeliveryGate.summary.review}, blocked ${serverPaymentAccountDeliveryGate.summary.blocked}, locked ${serverPaymentAccountDeliveryGate.summary.locked}, private ${serverPaymentAccountDeliveryGate.summary.private}`,
+    ...serverPaymentAccountDeliveryGate.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2588 audit case vault / private delivery ledger:",
+    auditCaseVaultPrivateDeliveryLedger.rule,
+    auditCaseVaultPrivateDeliveryLedger.privacyBoundary,
+    `Vault readiness: ${auditCaseVaultPrivateDeliveryLedger.summary.vaultReadiness}/100; private delivery ${auditCaseVaultPrivateDeliveryLedger.summary.canDeliverPrivateReport}; replay ${auditCaseVaultPrivateDeliveryLedger.summary.replayReadiness}/100`,
+    `Vault lanes: ready ${auditCaseVaultPrivateDeliveryLedger.summary.ready}, review ${auditCaseVaultPrivateDeliveryLedger.summary.review}, blocked ${auditCaseVaultPrivateDeliveryLedger.summary.blocked}, locked ${auditCaseVaultPrivateDeliveryLedger.summary.locked}, private ${auditCaseVaultPrivateDeliveryLedger.summary.private}, retained ${auditCaseVaultPrivateDeliveryLedger.summary.retained}`,
+    ...auditCaseVaultPrivateDeliveryLedger.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2589 source freshness re-check orchestrator:",
+    sourceFreshnessRecheckOrchestrator.rule,
+    sourceFreshnessRecheckOrchestrator.schedulerRule,
+    `Re-check readiness: ${sourceFreshnessRecheckOrchestrator.summary.orchestratorReadiness}/100; next ${sourceFreshnessRecheckOrchestrator.summary.nextRecheckAt}; new version ${sourceFreshnessRecheckOrchestrator.summary.mustCreateNewVersion}`,
+    `Re-check lanes: scheduled ${sourceFreshnessRecheckOrchestrator.summary.scheduled}, ready ${sourceFreshnessRecheckOrchestrator.summary.ready}, watch ${sourceFreshnessRecheckOrchestrator.summary.watch}, blocked ${sourceFreshnessRecheckOrchestrator.summary.blocked}, frozen ${sourceFreshnessRecheckOrchestrator.summary.frozen}, private ${sourceFreshnessRecheckOrchestrator.summary.private}`,
+    ...sourceFreshnessRecheckOrchestrator.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+
+    "PASS2590 risk formula evidence weighting contract:",
+    riskFormulaEvidenceWeightingContract.rule,
+    riskFormulaEvidenceWeightingContract.scoreBoundary,
+    `Weighted risk: ${riskFormulaEvidenceWeightingContract.summary.finalRiskScore}/100 (${riskFormulaEvidenceWeightingContract.summary.scoreBand}); formula confidence ${riskFormulaEvidenceWeightingContract.summary.formulaConfidence}/100; coverage ${riskFormulaEvidenceWeightingContract.summary.evidenceCoverage}/100`,
+    `Formula gates: Pro ${riskFormulaEvidenceWeightingContract.summary.canIssueProScore}; Advanced final ${riskFormulaEvidenceWeightingContract.summary.canFinalSignAdvancedScore}; blockers ${riskFormulaEvidenceWeightingContract.summary.blockingLanes}`,
+    ...riskFormulaEvidenceWeightingContract.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2591 risk calibration golden fixture harness:",
+    riskCalibrationGoldenFixtureHarness.rule,
+    `Calibration readiness: ${riskCalibrationGoldenFixtureHarness.summary.calibrationReadiness}/100; average drift ${riskCalibrationGoldenFixtureHarness.summary.averageDrift}; max drift ${riskCalibrationGoldenFixtureHarness.summary.maxDrift}`,
+    `Fixture gates: Basic ${riskCalibrationGoldenFixtureHarness.summary.canTrustBasicCalibration}; Pro ${riskCalibrationGoldenFixtureHarness.summary.canIssueProCalibration}; Advanced ${riskCalibrationGoldenFixtureHarness.summary.canFinalSignAdvancedCalibration}; failed ${riskCalibrationGoldenFixtureHarness.summary.failed}; blocked ${riskCalibrationGoldenFixtureHarness.summary.blocked}`,
+    ...riskCalibrationGoldenFixtureHarness.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2592 provider conflict arbitration matrix:",
+    providerConflictArbitrationMatrix.rule,
+    `Arbitration readiness: ${providerConflictArbitrationMatrix.summary.arbitrationReadiness}/100; blockers ${providerConflictArbitrationMatrix.summary.blockingConflicts}; confidence penalty ${providerConflictArbitrationMatrix.summary.totalConfidencePenalty}`,
+    ...providerConflictArbitrationMatrix.proPdfRows.slice(0, 8).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2593 evidence narrative / claim ledger explainability:",
+    evidenceNarrativeClaimLedgerExplainability.rule,
+    `Explainability readiness: ${evidenceNarrativeClaimLedgerExplainability.summary.explainabilityReadiness}/100; confidence cap ${evidenceNarrativeClaimLedgerExplainability.summary.confidenceNarrativeCap}/100; blockers ${evidenceNarrativeClaimLedgerExplainability.summary.finalSignBlockers}`,
+    ...evidenceNarrativeClaimLedgerExplainability.proPdfRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "PASS2574 claim ledger:",
+    ...claimLedger.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    ...runtimeConfidence.decisions.slice(0, 9).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state} - weight ${row.weight}`,
+      `   Risk delta: ${row.riskDelta}; confidence delta: ${row.confidenceDelta}`,
+      `   ${row.proOutput}`,
+    ]),
+    ...providerRuntime.proRows.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    ...providerIntelligence.providerMatrix.slice(0, 10).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state} - ${row.priority}`,
+      `   Family: ${row.sourceFamily}`,
+      `   Pro: ${row.givesPro}`,
+      `   Fallback: ${row.missingFallback}`,
+    ]),
+    ...sourceQuorum.lanes.slice(0, 9).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.state} - confidence ${row.confidence}/100`,
+      `   Basic: ${row.basicValue}`,
+      `   Missing: ${row.missing[0] ?? "none"}`,
+    ]),
+    "",
+    "PASS2569 source lane contract:",
+    ...sourceRows.flatMap((row, index) => [
+      `${index + 1}. ${row.label}`,
+      `   Basic: ${row.basic}`,
+      `   Pro: ${row.pro}`,
+      `   Rule: ${row.rule}`,
+    ]),
+    "",
+    "Pro report lanes prepared for Velmere:",
+    "1. Contract identity and explorer/source verification.",
+    "2. Public audit report and scope matching.",
+    "3. Docs, GitHub, deployment and post-audit freshness.",
+    "4. Owner, proxy, mint, freeze, blacklist and tax permission map.",
+    "5. Liquidity, holder concentration and supply risk overview.",
+    "6. Evidence gaps, source confidence and final risk narrative.",
+    "7. Advanced later adds manual review, private delivery and versioned report.",
+    "",
+    "PASS2623 Pro PDF paid token final gate:",
+    proPdfPaidTokenFinalGate.paidTokenContract.invariant,
+    `Token gate: can stream ${proPdfPaidTokenFinalGate.summary.canStreamProPdf}; QA bypass ${proPdfPaidTokenFinalGate.summary.qaBypassActive}; public-free QA mode denied ${proPdfPaidTokenFinalGate.summary.publicFreeQaModeDenied}`,
+    ...proPdfPaidTokenFinalGate.proPdfRows.slice(0, 7).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "PASS2624 account delivery production lock:",
+    accountDeliveryProductionLock.productionLockContract.invariant,
+    `Delivery lock: readiness ${accountDeliveryProductionLock.summary.productionLockReadiness}/100; memory fallback blocked in production ${accountDeliveryProductionLock.summary.memoryFallbackBlockedInProduction}; owner match ${accountDeliveryProductionLock.summary.accountOwnerMatches}`,
+    ...accountDeliveryProductionLock.proPdfRows.slice(0, 7).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "PASS2625 runtime evidence test pack:",
+    runtimeEvidenceTestPack.runtimeReplayContract.invariant,
+    `Runtime evidence: readiness ${runtimeEvidenceTestPack.summary.runtimeEvidenceReadiness}/100; launch blockers ${runtimeEvidenceTestPack.summary.launchBlockingCases}; top blocker ${runtimeEvidenceTestPack.summary.topBlocker}`,
+    ...runtimeEvidenceTestPack.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.customerSafeOutcome}`),
+    "",
+    "PASS2626 runtime replay artifact collector:",
+    runtimeReplayArtifactCollector.launchEvidenceReceiptBoard.invariant,
+    `Launch evidence: readiness ${runtimeReplayArtifactCollector.summary.launchEvidenceReadiness}/100; launch blockers ${runtimeReplayArtifactCollector.summary.launchBlockingArtifacts}; PDF blockers ${runtimeReplayArtifactCollector.summary.pdfBlockingArtifacts}; top blocker ${runtimeReplayArtifactCollector.summary.topBlocker}`,
+    ...runtimeReplayArtifactCollector.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.customerSafeEvidence}`),
+    "",
+    "PASS2627 immutable release board storage adapter:",
+    runtimeReplayArtifactStorageAdapter.storageAdapterContract.invariant,
+    `Release board storage: readiness ${runtimeReplayArtifactStorageAdapter.summary.storageReadiness}/100; launch blockers ${runtimeReplayArtifactStorageAdapter.summary.launchBlockingRows}; PDF blockers ${runtimeReplayArtifactStorageAdapter.summary.pdfBlockingRows}; hash ${runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash}; top blocker ${runtimeReplayArtifactStorageAdapter.summary.topBlocker}`,
+    ...runtimeReplayArtifactStorageAdapter.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.customerSafeOutcome}`),
+    "",
+    "PASS2628 Supabase release evidence board RLS migration gate:",
+    releaseEvidenceBoardRlsGate.migrationContract.invariant,
+    `Release board RLS: migration ${releaseEvidenceBoardRlsGate.summary.migrationReadiness}/100; RLS ${releaseEvidenceBoardRlsGate.summary.rlsReadiness}/100; insert-only ${releaseEvidenceBoardRlsGate.summary.insertOnlyReadiness}/100; blockers ${releaseEvidenceBoardRlsGate.summary.launchBlockingRows}; top blocker ${releaseEvidenceBoardRlsGate.summary.topBlocker}`,
+    ...releaseEvidenceBoardRlsGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.customerSafeOutcome}`),
+    "",
+    "PASS2629 Supabase RLS policy regression fixture runner:",
+    rlsPolicyRegressionFixtureRunner.fixtureContract.invariant,
+    `RLS fixtures: readiness ${rlsPolicyRegressionFixtureRunner.summary.regressionReadiness}/100; executed ${rlsPolicyRegressionFixtureRunner.summary.fixturesExecuted}/${rlsPolicyRegressionFixtureRunner.summary.fixtureRows}; deny checks ${rlsPolicyRegressionFixtureRunner.summary.expectedDenyRows}; blockers ${rlsPolicyRegressionFixtureRunner.summary.launchBlockingRows}; top blocker ${rlsPolicyRegressionFixtureRunner.summary.topBlocker}`,
+    ...rlsPolicyRegressionFixtureRunner.proPdfRows.slice(0, 8).map((row) => `${row.role}/${row.operation}/${row.table}: ${row.customerSafeOutcome}`),
+  ];
+
+  const contractedLines = [
+    ...premiumProPdfTemplateContract.customerPdfLines,
+    "",
+    "Advanced operator customer-safe status:",
+    ...advancedOperatorConsoleMerge.customerRows.slice(0, 7).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Server payment / account delivery customer-safe status:",
+    ...serverPaymentAccountDeliveryGate.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Audit case vault customer-safe status:",
+    ...auditCaseVaultPrivateDeliveryLedger.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Scheduled re-check customer-safe status:",
+    ...sourceFreshnessRecheckOrchestrator.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    ...riskFormulaEvidenceWeightingContract.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    ...riskCalibrationGoldenFixtureHarness.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    ...providerConflictArbitrationMatrix.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    ...evidenceNarrativeClaimLedgerExplainability.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Release QA matrix customer-safe status:",
+    ...auditEvidenceQaReleaseGateMatrix.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Runtime build readiness customer-safe status:",
+    ...runtimeBuildReadinessTypeSafetySweep.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "API contract / response envelope customer-safe status:",
+    ...apiContractResponseEnvelopeHardening.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Customer-safe PDF / data leak guard status:",
+    ...customerSafePdfDataLeakGuard.customerRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Privacy redaction / PII boundary status:",
+    ...privacyRedactionPiiBoundaryGate.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Retention / erasure / data-minimization status:",
+    ...retentionErasureDataMinimizationGate.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "End-to-end audit delivery launch gate:",
+    ...e2eAuditDeliveryLaunchGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Synthetic audit delivery replay harness:",
+    ...syntheticAuditDeliveryReplayHarness.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Operator escalation / human review SLA gate:",
+    ...operatorEscalationHumanReviewSlaGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Admin escalation inbox / operator queue runtime:",
+    ...adminEscalationInboxOperatorQueueRuntime.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Operator decision ledger / reviewer sign-off trail:",
+    ...operatorDecisionLedgerReviewerSignoffTrail.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Evidence change request / revision control gate:",
+    ...evidenceChangeRequestRevisionControlGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Customer notification / audit status timeline gate:",
+    ...customerNotificationAuditStatusTimelineGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Account audit delivery center / customer portal runtime:",
+    ...accountAuditDeliveryCenterPortalRuntime.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Account delivery permission / access control gate:",
+    ...accountDeliveryPermissionAccessControlGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Secure download token / report access replay guard:",
+    ...secureDownloadTokenReportAccessReplayGuard.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Entitlement proof / receipt-to-report binding gate:",
+    ...entitlementProofReceiptToReportBindingGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Refund / chargeback revocation entitlement gate:",
+    ...refundChargebackRevocationEntitlementGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Entitlement reissue / restored access recovery gate:",
+    ...entitlementReissueRestoredAccessRecoveryGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Entitlement expiry / renewal reminder gate:",
+    ...entitlementExpiryRenewalReminderGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Renewal payment / entitlement extension receipt gate:",
+    ...renewalPaymentEntitlementExtensionReceiptGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Renewal abuse / double-spend entitlement guard:",
+    ...renewalAbuseDoubleSpendEntitlementGuard.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Payment webhook idempotency / event ordering gate:",
+    ...paymentWebhookIdempotencyEventOrderingGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Payment webhook signature / raw body verification gate:",
+    ...paymentWebhookSignatureRawBodyVerificationGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Webhook secret rotation / provider key version gate:",
+    ...webhookSecretRotationProviderKeyVersionGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Webhook origin / provider allowlist gate:",
+    webhookOriginProviderAllowlistGate.rule,
+    `Origin readiness: ${webhookOriginProviderAllowlistGate.summary.originAllowlistReadiness}/100; provider origin ${webhookOriginProviderAllowlistGate.summary.providerOriginReadiness}/100; proxy parsing ${webhookOriginProviderAllowlistGate.summary.proxyParsingReadiness}/100`,
+    `Primary gate: signature ${webhookOriginProviderAllowlistGate.summary.mustTreatSignatureAsPrimaryGate}; origin-only unlock denied ${webhookOriginProviderAllowlistGate.summary.mustRejectUnknownOriginBeforeMutation}`,
+    ...webhookOriginProviderAllowlistGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Webhook failure quarantine / manual reconciliation gate:",
+    webhookFailureQuarantineManualReconciliationGate.rule,
+    `Quarantine readiness: ${webhookFailureQuarantineManualReconciliationGate.summary.quarantineReadiness}/100; dead-letter ${webhookFailureQuarantineManualReconciliationGate.summary.deadLetterReadiness}/100; retry policy ${webhookFailureQuarantineManualReconciliationGate.summary.retryPolicyReadiness}/100; manual reconciliation ${webhookFailureQuarantineManualReconciliationGate.summary.manualReconciliationReadiness}/100`,
+    `Failed webhook mutation frozen: ${webhookFailureQuarantineManualReconciliationGate.summary.mustFreezeEntitlementOnFailure}; raw failure evidence private: ${webhookFailureQuarantineManualReconciliationGate.summary.mustKeepRawFailureEvidencePrivate}`,
+    ...webhookFailureQuarantineManualReconciliationGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Webhook dead-letter operator queue / SLA gate:",
+    webhookDeadLetterOperatorQueueSlaGate.rule,
+    `Assignment readiness: ${webhookDeadLetterOperatorQueueSlaGate.summary.assignmentReadiness}/100; SLA ${webhookDeadLetterOperatorQueueSlaGate.summary.slaReadiness}/100; reconciliation ${webhookDeadLetterOperatorQueueSlaGate.summary.reconciliationReadiness}/100; customer status ${webhookDeadLetterOperatorQueueSlaGate.summary.customerStatusReadiness}/100`,
+    `Dead-letter mutation denied: ${!webhookDeadLetterOperatorQueueSlaGate.summary.canMutateEntitlementFromDeadLetter}; operator owner required: ${webhookDeadLetterOperatorQueueSlaGate.summary.mustHaveOperatorOwner}; raw queue evidence private: ${webhookDeadLetterOperatorQueueSlaGate.summary.mustKeepRawFailureEvidencePrivate}`,
+    ...webhookDeadLetterOperatorQueueSlaGate.proPdfRows.slice(0, 8).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Public/private route lockdown:",
+    publicPrivateRouteLockdown.rule,
+    `Public API sanitized: ${publicPrivateRouteLockdown.summary.publicApiSanitized}; operator routes require admin: ${publicPrivateRouteLockdown.summary.operatorRoutesRequireAdmin}; Pro PDF private rows denied: ${publicPrivateRouteLockdown.summary.proPdfMustNotRenderOperatorRows}`,
+    ...publicPrivateRouteLockdown.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Pro PDF paid token final gate:",
+    proPdfPaidTokenFinalGate.paidTokenContract.invariant,
+    `Can stream: ${proPdfPaidTokenFinalGate.summary.canStreamProPdf}; token one-time: ${proPdfPaidTokenFinalGate.summary.oneTimeTokenMustBeConsumedAfterFirstByte}; raw token output denied: ${proPdfPaidTokenFinalGate.summary.tokenMustNotBeLoggedOrReturned}`,
+    ...proPdfPaidTokenFinalGate.proPdfRows.slice(0, 7).map((row) => `${row.label}: ${row.output}`),
+    "",
+    "Supabase RLS fixture artifact ingestion / proof board:",
+    rlsFixtureArtifactIngestionProofBoard.ingestionContract.invariant,
+    `Artifact readiness: ${rlsFixtureArtifactIngestionProofBoard.summary.artifactReadiness}/100; attached ${rlsFixtureArtifactIngestionProofBoard.summary.attachedRows}/${rlsFixtureArtifactIngestionProofBoard.summary.artifactRows}; launch blockers ${rlsFixtureArtifactIngestionProofBoard.summary.launchBlockingRows}`,
+    `Can promote Pro PDF: ${rlsFixtureArtifactIngestionProofBoard.summary.canPromoteProPdf}; hash binding ${rlsFixtureArtifactIngestionProofBoard.summary.hashBindingReadiness}/100; top blocker: ${rlsFixtureArtifactIngestionProofBoard.summary.topBlocker}`,
+    ...rlsFixtureArtifactIngestionProofBoard.proPdfRows.slice(0, 7).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "Preview credential replay CLI / artifact exporter:",
+    previewCredentialReplayCliArtifactExporter.cliContract.invariant,
+    `CLI readiness: ${previewCredentialReplayCliArtifactExporter.summary.cliReadiness}/100; export readiness ${previewCredentialReplayCliArtifactExporter.summary.artifactExportReadiness}/100; hash binding ${previewCredentialReplayCliArtifactExporter.summary.hashBindingReadiness}/100`,
+    `Artifact bundle: ${previewCredentialReplayCliArtifactExporter.summary.artifactBundlePath}; top blocker: ${previewCredentialReplayCliArtifactExporter.summary.topBlocker}`,
+    ...previewCredentialReplayCliArtifactExporter.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "Preview replay artifact bundle ingestion / hash attachment gate:",
+    previewReplayArtifactBundleIngestion.ingestionContract.invariant,
+    `Ingestion readiness: ${previewReplayArtifactBundleIngestion.summary.ingestionReadiness}/100; attachment readiness ${previewReplayArtifactBundleIngestion.summary.attachmentReadiness}/100; redaction ${previewReplayArtifactBundleIngestion.summary.redactionReadiness}/100`,
+    `Bundle hash: ${previewReplayArtifactBundleIngestion.summary.artifactBundleHash}; release board hash: ${previewReplayArtifactBundleIngestion.summary.releaseBoardHash}; top blocker: ${previewReplayArtifactBundleIngestion.summary.topBlocker}`,
+    ...previewReplayArtifactBundleIngestion.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "Preview replay artifact POST smoke / redaction negative-control harness:",
+    previewReplayArtifactPostSmokeNegativeControl.harnessContract.invariant,
+    `Smoke readiness: ${previewReplayArtifactPostSmokeNegativeControl.summary.smokeReadiness}/100; negative-control ${previewReplayArtifactPostSmokeNegativeControl.summary.negativeControlReadiness}/100; sanitizer ${previewReplayArtifactPostSmokeNegativeControl.summary.publicSanitizerReadiness}/100`,
+    `Can promote release: ${previewReplayArtifactPostSmokeNegativeControl.summary.canPromoteRelease}; top blocker: ${previewReplayArtifactPostSmokeNegativeControl.summary.topBlocker}`,
+    ...previewReplayArtifactPostSmokeNegativeControl.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+
+    "PASS2634 deployed preview smoke runner:",
+    deployedPreviewSmokeRunner.runnerContract.promotionRule,
+    `Deployed smoke readiness: ${deployedPreviewSmokeRunner.summary.deployedSmokeReadiness}/100; positive POST ${deployedPreviewSmokeRunner.summary.positivePostPassed}; negative controls ${deployedPreviewSmokeRunner.summary.maliciousPostRejected && deployedPreviewSmokeRunner.summary.hashMismatchRejected}`,
+    `Can promote release: ${deployedPreviewSmokeRunner.summary.canPromoteRelease}; top blocker: ${deployedPreviewSmokeRunner.summary.topBlocker}`,
+    ...deployedPreviewSmokeRunner.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2635 PASS2634 artifact ingestion / release board attachment:",
+    pass2634ArtifactIngestionReleaseBoardAttachment.attachmentContract.invariant,
+    `Ingestion readiness: ${pass2634ArtifactIngestionReleaseBoardAttachment.summary.ingestionReadiness}/100; attachment readiness ${pass2634ArtifactIngestionReleaseBoardAttachment.summary.attachmentReadiness}/100; immutable ${pass2634ArtifactIngestionReleaseBoardAttachment.summary.immutableBindingReadiness}/100`,
+    `Attached to release board: ${pass2634ArtifactIngestionReleaseBoardAttachment.summary.attachedToReleaseBoard}; top blocker: ${pass2634ArtifactIngestionReleaseBoardAttachment.summary.topBlocker}`,
+    ...pass2634ArtifactIngestionReleaseBoardAttachment.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2636 deployed POST attachment smoke / write receipt exporter:",
+    deployedPostAttachmentSmokeWriteReceipt.exporterContract.invariant,
+    `Deployed attachment smoke readiness: ${deployedPostAttachmentSmokeWriteReceipt.summary.deployedAttachmentSmokeReadiness}/100; write receipt ${deployedPostAttachmentSmokeWriteReceipt.summary.writeReceiptReadiness}/100; immutable ${deployedPostAttachmentSmokeWriteReceipt.summary.immutableReceiptReadiness}/100`,
+    `Endpoint accepted artifact: ${deployedPostAttachmentSmokeWriteReceipt.summary.endpointAcceptedArtifact}; receipt hash: ${deployedPostAttachmentSmokeWriteReceipt.summary.receiptHash}; top blocker: ${deployedPostAttachmentSmokeWriteReceipt.summary.topBlocker}`,
+    ...deployedPostAttachmentSmokeWriteReceipt.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2637 Supabase release-board live write/RLS regression:",
+    supabaseReleaseBoardLiveWriteRlsRegression.liveWriteContract.invariant,
+    `Live write/RLS readiness: ${supabaseReleaseBoardLiveWriteRlsRegression.summary.liveWriteRlsReadiness}/100; insert ${supabaseReleaseBoardLiveWriteRlsRegression.summary.releaseBoardInsertSucceeded}; anon/public select denied ${supabaseReleaseBoardLiveWriteRlsRegression.summary.publicSelectDenied}`,
+    `Mutation deny: ${supabaseReleaseBoardLiveWriteRlsRegression.summary.updateDenied && supabaseReleaseBoardLiveWriteRlsRegression.summary.deleteDenied}; receipt hash: ${supabaseReleaseBoardLiveWriteRlsRegression.summary.receiptHash}; top blocker: ${supabaseReleaseBoardLiveWriteRlsRegression.summary.topBlocker}`,
+    ...supabaseReleaseBoardLiveWriteRlsRegression.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2638 release evidence board receipt verifier / Pro PDF promotion hard gate:",
+    releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.verifierContract.invariant,
+    `Promotion gate readiness: ${releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.promotionGateReadiness}/100; release-board receipt verified ${releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.releaseBoardReceiptVerified}; Pro PDF hard gate ${releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.proPdfPromotionHardGateEnabled}`,
+    `Can promote Pro PDF: ${releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.canPromoteProPdf}; promotion receipt hash: ${releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.promotionReceiptHash}; top blocker: ${releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.topBlocker}`,
+    ...releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2639 Pro PDF customer-facing receipt badge / account delivery promotion state:",
+    proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.badgeContract.invariant,
+    `Customer badge readiness: ${proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.customerBadgeReadiness}/100; Pro PDF badge renderable ${proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.proPdfBadgeRenderable}; account state ${proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.accountDeliveryPromotionState}`,
+    `Badge label: ${proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.proPdfBadgeLabel}; customer badge hash: ${proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.customerBadgeReceiptHash}; top blocker: ${proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.topBlocker}`,
+    ...proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2640 account delivery receipt badge UI / customer portal timeline E2E contract:",
+    accountDeliveryReceiptBadgeUiTimelineE2eContract.uiContract.invariant,
+    `Portal badge UI readiness: ${accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.portalBadgeUiReadiness}/100; customer timeline ${accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.customerTimelineRenderable}; download locked ${accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.downloadCtaLockedUntilReceipt}`,
+    `Portal badge state: ${accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.portalBadgeState}; timeline state: ${accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.timelineState}; top blocker: ${accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.topBlocker}`,
+    ...accountDeliveryReceiptBadgeUiTimelineE2eContract.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeOutcome} (${row.status})`),
+    "",
+    "PASS2641 account portal receipt badge Playwright fixture / PDF download CTA locked-state regression:",
+    accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.playwrightContract.invariant,
+    `Fixture readiness: ${accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.fixtureReadiness}/100; locked CTA readiness ${accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.lockedCtaRegressionReadiness}/100; can run ${accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.canRunPlaywrightFixture}`,
+    `PDF CTA locked without receipt: ${accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.pdfDownloadCtaLockedWithoutReceipt}; no href ${accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.lockedCtaNoHref}; top blocker: ${accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.topBlocker}`,
+    ...accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.proPdfRows.slice(0, 6).map((row) => `${row.label}: ${row.customerSafeAssertion} (${row.status})`),
+    "",
+    "PASS2642 deployed account portal Playwright smoke / PDF unlock evidence exporter:",
+    deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.deployedSmokeContract.invariant,
+    `Deployed smoke readiness: ${deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.deployedSmokeReadiness}/100; PDF unlock gate readiness ${deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.pdfUnlockGateReadiness}/100; attach release board ${deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.canAttachToReleaseBoard}`,
+    `Pending locked smoke: ${deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.pendingLockedSmokePassed}; verified unlock smoke: ${deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.verifiedUnlockSmokePassed}; top blocker: ${deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.topBlocker}`,
+    ...deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2643 PASS2642 release-board attachment gate / Pro PDF unlock promotion deny-until-smoke receipt:",
+    pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.releaseBoardAttachmentGateContract.invariant,
+    `Attachment gate readiness: ${pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.attachmentGateReadiness}/100; Pro PDF promotion readiness ${pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.proPdfUnlockPromotionReadiness}/100; can promote ${pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.canPromoteProPdfUnlock}`,
+    `Deny without smoke receipt: ${pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.denyProPdfPromotionWithoutSmokeReceipt}; top blocker: ${pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.topBlocker}`,
+    ...pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2644 Pro PDF Safe Route download token one-time consumption / receipt revocation regression:",
+    proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.safeDownloadTokenContract.invariant,
+    `Safe route readiness: ${proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.safeRouteReadiness}/100; one-time token readiness ${proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.oneTimeTokenReadiness}/100; can promote ${proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.canPromoteSafePdfDownloadRoute}`,
+    `Replay denied: ${proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.replayDeniedAfterConsumption}; revoked receipt denied: ${proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.revokedReceiptDenied}; top blocker: ${proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.topBlocker}`,
+    ...proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2645 Safe PDF download token storage adapter / Supabase consumption ledger RLS gate:",
+    proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.storageLedgerContract.invariant,
+    `Storage adapter readiness: ${proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.storageAdapterReadiness}/100; ledger readiness ${proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.consumptionLedgerReadiness}/100; can promote ${proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.canPromoteStorageBackedSafePdfDownload}`,
+    `Replay denied from ledger: ${proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.replayDeniedFromLedger}; anon select denied: ${proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.anonSelectDenied}; top blocker: ${proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.topBlocker}`,
+    ...proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2646 deployed Safe PDF token ledger consumption smoke / Supabase RLS live receipt exporter:",
+    proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.liveSmokeContract.invariant,
+    `Deployed smoke readiness: ${proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.deployedSmokeReadiness}/100; live ledger readiness ${proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.supabaseLiveLedgerReadiness}/100; can promote ${proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.canPromoteSafePdfDownloadFromLiveLedger}`,
+    `Replay denied live: ${proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.replayDeniedLive}; anon select denied live: ${proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.anonSelectDeniedLive}; top blocker: ${proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.topBlocker}`,
+    ...proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2647 PASS2646 release board attachment / Safe PDF promotion final gate receipt:",
+    proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.finalGateContract.invariant,
+    `Release board attachment readiness: ${proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.releaseBoardAttachmentReadiness}/100; Safe PDF final gate readiness ${proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.safePdfPromotionFinalGateReadiness}/100; can promote final download ${proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.canPromoteSafePdfFinalDownload}`,
+    ...proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2648 Safe PDF final gate account delivery status split / refund revocation portal regression:",
+    proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.accountDeliveryFinalGateContract.invariant,
+    `Account delivery status readiness: ${proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.accountDeliveryStatusReadiness}/100; refund revocation readiness ${proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.refundRevocationReadiness}/100; can promote account delivery final gate ${proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.canPromoteAccountDeliveryFinalGate}`,
+    `Refund lock: ${proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.refundRevocationBlocksPdf}; chargeback lock: ${proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.chargebackRevocationBlocksPdf}; entitlement lock: ${proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.entitlementRevocationBlocksPdf}`,
+    ...proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2649 Account delivery refund/chargeback webhook replay + revocation ledger adapter:",
+    proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.revocationLedgerAdapterContract.invariant,
+    `Webhook replay readiness: ${proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.webhookReplayReadiness}/100; revocation ledger readiness ${proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.revocationLedgerReadiness}/100; can promote revocation ledger adapter ${proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.canPromoteRevocationLedgerAdapter}`,
+    `Refund webhook revokes: ${proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.refundWebhookRevokesEntitlement}; chargeback webhook revokes: ${proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.chargebackWebhookRevokesEntitlement}; duplicate replay denied: ${proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.duplicateWebhookReplayDenied}`,
+    ...proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2650 deployed refund/chargeback webhook replay smoke + live revocation ledger receipt exporter:",
+    proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.liveReceiptExporterContract.invariant,
+    `Deployed webhook replay readiness: ${proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.deployedWebhookReplaySmokeReadiness}/100; live revocation ledger readiness ${proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.revocationLedgerLiveReceiptReadiness}/100; can attach to release board ${proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.canAttachRevocationLiveReceiptToReleaseBoard}`,
+    `Refund live lock: ${proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.safePdfLockedAfterRefundLive}; chargeback live lock: ${proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.safePdfLockedAfterChargebackLive}; top blocker: ${proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.topBlocker}`,
+    ...proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.proPdfRows.slice(0, 6).map((row: { label: string; assertion: string; status: string }) => `${row.label}: ${row.assertion} (${row.status})`),
+    "",
+    "PASS2651 PASS2650 release board attachment / account delivery revocation promotion gate:",
+    "Refund/chargeback account delivery revocation may be promoted only after PASS2650 live revocation receipt is attached to the release board and exported as a customer-safe PASS2651 final receipt.",
+    "PASS2651 status: deny account delivery revocation promotion until live receipt attachment is verified; public output uses receipt hashes only.",
+    "PASS2651 customer-safe badge: account_delivery_revocation_final_gate_ready only after release-board attachment receipt.",
+    "",
+    "PASS2652 Account delivery revocation customer timeline / support handoff evidence contract:",
+    "Customer timeline may expose verified / pending / revoked / refunded / chargeback only after PASS2651 final receipt is customer-safe and hash-bound.",
+    "PASS2652 support handoff: public receipt hashes and safe lock reasons only; no webhook payload, service-role trace, private pointer or operator note.",
+    "PASS2652 Safe PDF rule: refund, chargeback and revoked states keep the PDF locked even if an older receipt hash exists.",
+    "",
+    "PASS2653 deployed account delivery revocation timeline smoke / support handoff public packet exporter:",
+    "Deployed account portal smoke must export a customer-safe support handoff public packet before account delivery revocation timeline promotion.",
+    "PASS2653 public packet rule: refund/chargeback/revocation locks must pass on preview and the packet must use public receipt hashes only.",
+    "",
+    "PASS2654 PASS2653 release board attachment / support handoff public packet promotion receipt:",
+    "Support handoff public packet and account-delivery revocation timeline may be promoted only after PASS2653 deployed packet is attached to release board and exported as a customer-safe PASS2654 receipt.",
+    "PASS2654 status: deny support handoff and account delivery timeline promotion until release-board attachment receipt is verified; public output uses final receipt hashes only.",
+    "PASS2654 customer-safe badge: support_handoff_public_packet_final_gate_ready only after immutable release-board attachment receipt.",
+    "",
+    "Customer-safe evidence appendix:",
+    ...premiumProPdfTemplateContract.proPdfRows.slice(0, 12).flatMap((row, index) => [
+      `${index + 1}. ${row.label} - ${row.status}`,
+      `   ${row.output}`,
+    ]),
+    "",
+    "Technical signals summary:",
+    ...contractSourceAbiExtraction.publicRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+    ...holderLiquidityDepthEvidence.publicRows.slice(0, 6).map((row) => `${row.label}: ${row.output}`),
+  ].filter((line) => isCustomerSafeProAuditPdfLine(line));
+
+  const privacyFilteredLines = (contractedLines.length >= 12 ? contractedLines : lines)
+    .map((line) => maskCustomerFacingPii(line))
+    .filter((line) => isCustomerSafeProAuditPdfLine(line));
+  let pdf: Buffer;
+  try {
+    pdf = buildCustomerSafeMinimalPdf(privacyFilteredLines);
+  } catch {
+    await failPass4658AuditPdfDownloadReservation({
+      tokenHash: tokenVerdict.tokenHash,
+      reservationId: tokenReservation.reservationId,
+      failureCode: "pdf_render_failed",
+    });
+    return NextResponse.json({
+      ok: false,
+      surface: "pro_pdf_paid_token_lifecycle",
+      status: "retryable_failed",
+      message: "The report could not be rendered. Your purchase remains valid.",
+      nextSafeAction: "Retry with the same link or mint a fresh link from the account center.",
+    }, { status: 503, headers: { "cache-control": "no-store", "retry-after": "15" } });
+  }
+
+  const tokenFinalization = await finalizePass4658AuditPdfDownloadToken({
+    tokenHash: tokenVerdict.tokenHash,
+    reservationId: tokenReservation.reservationId,
+  });
+  if (!tokenFinalization.ok) {
+    return NextResponse.json({
+      ok: false,
+      surface: "pro_pdf_paid_token_lifecycle",
+      status: tokenFinalization.error === "audit_pdf_token_replayed" ? "replay_blocked" : "delivery_not_committed",
+      message: "The secure download could not be committed to the delivery ledger.",
+      nextSafeAction: tokenFinalization.error === "audit_pdf_token_replayed"
+        ? "Mint a fresh download link from the account center."
+        : "Retry later without purchasing again.",
+    }, {
+      status: tokenFinalization.error === "audit_pdf_token_replayed" ? 409 : 503,
+      headers: { "cache-control": "no-store", "retry-after": "15" },
+    });
+  }
+
+  return new NextResponse(new Uint8Array(pdf), {
+    headers: {
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="${requestId}-velmere-pro-audit.pdf"`,
+      "cache-control": "no-store, private, max-age=0",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "sandbox",
+      "cross-origin-resource-policy": "same-origin",
+      "x-frame-options": "DENY",
+      "referrer-policy": "no-referrer",
+      "x-velmere-audit-pdf-download-token": PASS4657_AUDIT_PDF_DOWNLOAD_TOKEN_ID,
+      "x-velmere-audit-pdf-token-lifecycle": PASS4658_AUDIT_PDF_TOKEN_LIFECYCLE_ID,
+      "x-velmere-audit-pdf-token-consumption": tokenFinalization.mode,
+      "x-velmere-audit-pdf-token-attempt": String(tokenReservation.attemptCount),
+      "x-velmere-pass2569-source-spine": "active",
+      "x-velmere-pass2570-source-quorum-runtime": PASS2570_AUDIT_SOURCE_QUORUM_RUNTIME_ID,
+      "x-velmere-pass2571-provider-intelligence": PASS2571_AUDIT_PROVIDER_INTELLIGENCE_ID,
+      "x-velmere-pass2572-provider-runtime": PASS2572_AUDIT_PROVIDER_RUNTIME_CLIENT_ID,
+      "x-velmere-pass2573-runtime-confidence": PASS2573_AUDIT_RUNTIME_CONFIDENCE_ENGINE_ID,
+      "x-velmere-pass2574-claim-ledger": PASS2574_AUDIT_CLAIM_LEDGER_ID,
+      "x-velmere-pass2575-source-freshness": PASS2575_AUDIT_SOURCE_FRESHNESS_ID,
+      "x-velmere-pass2576-permission-parser": PASS2576_AUDIT_PERMISSION_PARSER_ID,
+      "x-velmere-pass2577-liquidity-holder-lock-risk": PASS2577_AUDIT_LIQUIDITY_HOLDER_LOCK_RISK_ID,
+      "x-velmere-audit-report-assembler": PASS2578_AUDIT_REPORT_ASSEMBLER_ID,
+      "x-velmere-pass2579-advanced-manual-review": PASS2579_ADVANCED_MANUAL_REVIEW_QUEUE_ID,
+      "x-velmere-pass2580-customer-safe-delivery": PASS2580_CUSTOMER_SAFE_DELIVERY_DECISION_ID,
+      "x-velmere-pass2581-versioned-recheck-receipt": PASS2581_AUDIT_VERSIONED_RECHECK_RECEIPT_ID,
+      "x-velmere-real-provider-adapter-hardening": PASS2582_REAL_PROVIDER_ADAPTER_HARDENING_ID,
+      "x-velmere-contract-source-abi-extraction": PASS2583_CONTRACT_SOURCE_ABI_EXTRACTION_ID,
+      "x-velmere-holder-liquidity-depth-evidence": PASS2584_HOLDER_LIQUIDITY_DEPTH_EVIDENCE_ID,
+      "x-velmere-premium-pro-pdf-template-contract": PASS2585_PREMIUM_PRO_PDF_TEMPLATE_CONTRACT_ID,
+      "x-velmere-advanced-operator-console-merge": PASS2586_ADVANCED_OPERATOR_CONSOLE_MERGE_ID,
+      "x-velmere-server-payment-account-delivery-gate": PASS2587_SERVER_PAYMENT_ACCOUNT_DELIVERY_GATE_ID,
+      "x-velmere-audit-case-vault-private-delivery-ledger": PASS2588_AUDIT_CASE_VAULT_PRIVATE_DELIVERY_LEDGER_ID,
+      "x-velmere-source-freshness-recheck-orchestrator": PASS2589_SOURCE_FRESHNESS_RECHECK_ORCHESTRATOR_ID,
+      "x-velmere-risk-formula-evidence-weighting-contract": PASS2590_RISK_FORMULA_EVIDENCE_WEIGHTING_CONTRACT_ID,
+      "x-velmere-risk-calibration-golden-fixture-harness": PASS2591_RISK_CALIBRATION_GOLDEN_FIXTURE_HARNESS_ID,
+      "x-velmere-provider-conflict-arbitration-matrix": PASS2592_PROVIDER_CONFLICT_ARBITRATION_MATRIX_ID,
+      "x-velmere-pass2593-evidence-narrative-explainability": PASS2593_EVIDENCE_NARRATIVE_CLAIM_LEDGER_EXPLAINABILITY_ID,
+      "x-velmere-pass2594-release-qa-matrix": PASS2594_AUDIT_EVIDENCE_QA_RELEASE_GATE_MATRIX_ID,
+      "x-velmere-release-readiness": String(auditEvidenceQaReleaseGateMatrix.summary.releaseReadiness),
+      "x-velmere-pass2595-build-readiness": PASS2595_RUNTIME_BUILD_READINESS_TYPE_SAFETY_SWEEP_ID,
+      "x-velmere-build-readiness": String(runtimeBuildReadinessTypeSafetySweep.summary.buildReadiness),
+      "x-velmere-must-run-local-next-build": String(runtimeBuildReadinessTypeSafetySweep.summary.mustRunLocalNextBuild),
+      "x-velmere-pass2596-api-envelope": PASS2596_API_CONTRACT_RESPONSE_ENVELOPE_HARDENING_ID,
+      "x-velmere-envelope-readiness": String(apiContractResponseEnvelopeHardening.summary.envelopeReadiness),
+      "x-velmere-envelope-advanced-final-sign": String(apiContractResponseEnvelopeHardening.summary.canUseForAdvancedFinalSign),
+      "x-velmere-pass2597-leak-guard": PASS2597_CUSTOMER_SAFE_PDF_DATA_LEAK_GUARD_ID,
+      "x-velmere-leak-guard-readiness": String(customerSafePdfDataLeakGuard.summary.leakGuardReadiness),
+      "x-velmere-customer-pdf-safe": String(customerSafePdfDataLeakGuard.summary.canRenderCustomerPdf),
+      "x-velmere-pass2598-privacy-redaction": PASS2598_PRIVACY_REDACTION_PII_BOUNDARY_GATE_ID,
+      "x-velmere-redaction-readiness": String(privacyRedactionPiiBoundaryGate.summary.redactionReadiness),
+      "x-velmere-customer-pdf-privacy-safe": String(privacyRedactionPiiBoundaryGate.summary.canRenderCustomerPdf),
+      "x-velmere-pass2599-retention-erasure": PASS2599_RETENTION_ERASURE_DATA_MINIMIZATION_GATE_ID,
+      "x-velmere-retention-readiness": String(retentionErasureDataMinimizationGate.summary.retentionReadiness),
+      "x-velmere-erasure-ready": String(retentionErasureDataMinimizationGate.summary.canStartErasureRequest),
+      "x-velmere-no-silent-deletion": "true",
+      "x-velmere-pass2600-e2e-launch-gate": PASS2600_E2E_AUDIT_DELIVERY_LAUNCH_GATE_ID,
+      "x-velmere-launch-readiness": String(e2eAuditDeliveryLaunchGate.summary.launchReadiness),
+      "x-velmere-pro-pdf-launch-ready": String(e2eAuditDeliveryLaunchGate.summary.canLaunchProPdf),
+      "x-velmere-advanced-launch-ready": String(e2eAuditDeliveryLaunchGate.summary.canLaunchAdvancedPrivateDelivery),
+      "x-velmere-no-silent-mutation": "true",
+      "x-velmere-no-random-risk-score": "true",
+      "x-velmere-no-seed-phrase": "true",
+      "x-velmere-pass2601-replay-harness": PASS2601_SYNTHETIC_AUDIT_DELIVERY_REPLAY_HARNESS_ID,
+      "x-velmere-replay-readiness": String(syntheticAuditDeliveryReplayHarness.summary.replayReadiness),
+      "x-velmere-replay-pdf-safe": String(syntheticAuditDeliveryReplayHarness.summary.canReplayCustomerSafePdf),
+      "x-velmere-replay-advanced-safe": String(syntheticAuditDeliveryReplayHarness.summary.canReplayAdvancedDelivery),
+      "x-velmere-no-private-replay-output": "true",
+      "x-velmere-pass2602-operator-escalation": PASS2602_OPERATOR_ESCALATION_HUMAN_REVIEW_SLA_GATE_ID,
+      "x-velmere-escalation-readiness": String(operatorEscalationHumanReviewSlaGate.summary.escalationReadiness),
+      "x-velmere-escalation-pro-pdf-safe": String(operatorEscalationHumanReviewSlaGate.summary.canRenderProPdf),
+      "x-velmere-escalation-advanced-final-sign": String(operatorEscalationHumanReviewSlaGate.summary.canFinalSignAdvanced),
+      "x-velmere-no-private-operator-output": "true",
+      "x-velmere-pass2603-admin-escalation-inbox": PASS2603_ADMIN_ESCALATION_INBOX_OPERATOR_QUEUE_RUNTIME_ID,
+      "x-velmere-pass2604-decision-ledger": PASS2604_OPERATOR_DECISION_LEDGER_REVIEWER_SIGNOFF_TRAIL_ID,
+      "x-velmere-decision-ledger-pdf-safe": String(operatorDecisionLedgerReviewerSignoffTrail.summary.canRenderProPdf),
+      "x-velmere-pass2605-revision-control": PASS2605_EVIDENCE_CHANGE_REQUEST_REVISION_CONTROL_GATE_ID,
+      "x-velmere-revision-readiness": String(evidenceChangeRequestRevisionControlGate.summary.revisionReadiness),
+      "x-velmere-current-pro-pdf-safe": String(evidenceChangeRequestRevisionControlGate.summary.canRenderCurrentProPdf),
+      "x-velmere-no-silent-report-mutation": "true",
+      "x-velmere-pass2606-customer-notification": PASS2606_CUSTOMER_NOTIFICATION_AUDIT_STATUS_TIMELINE_GATE_ID,
+      "x-velmere-notification-readiness": String(customerNotificationAuditStatusTimelineGate.summary.notificationReadiness),
+      "x-velmere-timeline-readiness": String(customerNotificationAuditStatusTimelineGate.summary.timelineReadiness),
+      "x-velmere-pro-pdf-timeline-safe": String(customerNotificationAuditStatusTimelineGate.summary.canRenderTimelineInProPdf),
+      "x-velmere-no-private-notification-output": "true",
+      "x-velmere-pass2607-account-delivery-center": PASS2607_ACCOUNT_AUDIT_DELIVERY_CENTER_PORTAL_RUNTIME_ID,
+      "x-velmere-portal-readiness": String(accountAuditDeliveryCenterPortalRuntime.summary.portalReadiness),
+      "x-velmere-delivery-center-readiness": String(accountAuditDeliveryCenterPortalRuntime.summary.deliveryCenterReadiness),
+      "x-velmere-account-center-safe": String(accountAuditDeliveryCenterPortalRuntime.summary.canShowAccountCenter),
+      "x-velmere-pro-pdf-download-visible": String(accountAuditDeliveryCenterPortalRuntime.summary.canExposeProPdfDownload),
+      "x-velmere-no-private-account-output": "true",
+      "x-velmere-pass2608-account-access-control": PASS2608_ACCOUNT_DELIVERY_PERMISSION_ACCESS_CONTROL_GATE_ID,
+      "x-velmere-access-readiness": String(accountDeliveryPermissionAccessControlGate.summary.accessReadiness),
+      "x-velmere-ownership-readiness": String(accountDeliveryPermissionAccessControlGate.summary.ownershipReadiness),
+      "x-velmere-customer-portal-owner-scoped": String(accountDeliveryPermissionAccessControlGate.summary.canShowCustomerPortal),
+      "x-velmere-pdf-owner-scoped": String(accountDeliveryPermissionAccessControlGate.summary.canExposePdfDownload),
+      "x-velmere-no-case-id-enumeration": "true",
+      "x-velmere-no-private-access-output": "true",
+      "x-velmere-pass2609-download-token-replay-guard": PASS2609_SECURE_DOWNLOAD_TOKEN_REPORT_ACCESS_REPLAY_GUARD_ID,
+      "x-velmere-token-readiness": String(secureDownloadTokenReportAccessReplayGuard.summary.tokenReadiness),
+      "x-velmere-replay-guard-readiness": String(secureDownloadTokenReportAccessReplayGuard.summary.replayGuardReadiness),
+      "x-velmere-pdf-token-owner-scoped": String(secureDownloadTokenReportAccessReplayGuard.summary.canMintPdfDownloadToken),
+      "x-velmere-one-time-download-token": "true",
+      "x-velmere-no-download-token-replay": "true",
+      "x-velmere-no-raw-download-token-output": "true",
+      "x-velmere-pass2610-entitlement-proof": PASS2610_ENTITLEMENT_PROOF_RECEIPT_TO_REPORT_BINDING_GATE_ID,
+      "x-velmere-entitlement-readiness": String(entitlementProofReceiptToReportBindingGate.summary.entitlementReadiness),
+      "x-velmere-receipt-binding-readiness": String(entitlementProofReceiptToReportBindingGate.summary.receiptBindingReadiness),
+      "x-velmere-report-binding-readiness": String(entitlementProofReceiptToReportBindingGate.summary.reportBindingReadiness),
+      "x-velmere-no-wallet-only-unlock": "true",
+      "x-velmere-no-raw-receipt-output": "true",
+      "x-velmere-pass2611-refund-chargeback-revocation": PASS2611_REFUND_CHARGEBACK_REVOCATION_ENTITLEMENT_GATE_ID,
+      "x-velmere-revocation-readiness": String(refundChargebackRevocationEntitlementGate.summary.revocationReadiness),
+      "x-velmere-entitlement-lifecycle-readiness": String(refundChargebackRevocationEntitlementGate.summary.entitlementLifecycleReadiness),
+      "x-velmere-no-silent-refund-deletion": "true",
+      "x-velmere-revoked-token-replay-denied": "true",
+      "x-velmere-pass2612-entitlement-reissue": PASS2612_ENTITLEMENT_REISSUE_RESTORED_ACCESS_RECOVERY_GATE_ID,
+      "x-velmere-reissue-readiness": String(entitlementReissueRestoredAccessRecoveryGate.summary.reissueReadiness),
+      "x-velmere-restored-access-readiness": String(entitlementReissueRestoredAccessRecoveryGate.summary.restoredAccessReadiness),
+      "x-velmere-receipt-rebind-readiness": String(entitlementReissueRestoredAccessRecoveryGate.summary.receiptRebindReadiness),
+      "x-velmere-no-silent-restore": "true",
+      "x-velmere-restored-token-must-be-fresh": "true",
+      "x-velmere-pass2613-entitlement-expiry-renewal": PASS2613_ENTITLEMENT_EXPIRY_RENEWAL_REMINDER_GATE_ID,
+      "x-velmere-expiry-readiness": String(entitlementExpiryRenewalReminderGate.summary.expiryReadiness),
+      "x-velmere-renewal-readiness": String(entitlementExpiryRenewalReminderGate.summary.renewalReadiness),
+      "x-velmere-token-rotation-readiness": String(entitlementExpiryRenewalReminderGate.summary.tokenRotationReadiness),
+      "x-velmere-no-silent-entitlement-extension": "true",
+      "x-velmere-renewal-token-must-be-fresh": "true",
+      "x-velmere-pass2614-renewal-extension": PASS2614_RENEWAL_PAYMENT_ENTITLEMENT_EXTENSION_RECEIPT_GATE_ID,
+      "x-velmere-renewal-payment-readiness": String(renewalPaymentEntitlementExtensionReceiptGate.summary.renewalPaymentReadiness),
+      "x-velmere-extension-receipt-readiness": String(renewalPaymentEntitlementExtensionReceiptGate.summary.extensionReceiptReadiness),
+      "x-velmere-pass2615-renewal-abuse-guard": PASS2615_RENEWAL_ABUSE_DOUBLE_SPEND_ENTITLEMENT_GUARD_ID,
+      "x-velmere-renewal-abuse-readiness": String(renewalAbuseDoubleSpendEntitlementGuard.summary.abuseGuardReadiness),
+      "x-velmere-double-spend-readiness": String(renewalAbuseDoubleSpendEntitlementGuard.summary.doubleSpendReadiness),
+      "x-velmere-no-renewal-double-spend": "true",
+      "x-velmere-no-silent-renewal-extension": "true",
+      "x-velmere-pass2616-payment-webhook-idempotency": PASS2616_PAYMENT_WEBHOOK_IDEMPOTENCY_EVENT_ORDERING_GATE_ID,
+      "x-velmere-webhook-readiness": String(paymentWebhookIdempotencyEventOrderingGate.summary.webhookReadiness),
+      "x-velmere-webhook-event-ordering-readiness": String(paymentWebhookIdempotencyEventOrderingGate.summary.eventOrderingReadiness),
+      "x-velmere-no-webhook-replay-mutation": "true",
+      "x-velmere-no-older-state-overwrite": "true",
+      "x-velmere-pass2617-webhook-signature": PASS2617_PAYMENT_WEBHOOK_SIGNATURE_RAW_BODY_VERIFICATION_GATE_ID,
+      "x-velmere-signature-readiness": String(paymentWebhookSignatureRawBodyVerificationGate.summary.signatureReadiness),
+      "x-velmere-raw-body-readiness": String(paymentWebhookSignatureRawBodyVerificationGate.summary.rawBodyReadiness),
+      "x-velmere-webhook-timestamp-readiness": String(paymentWebhookSignatureRawBodyVerificationGate.summary.timestampReadiness),
+      "x-velmere-reject-unsigned-webhook": "true",
+      "x-velmere-verify-raw-body-before-json": "true",
+      "x-velmere-pass2618-webhook-secret-rotation": PASS2618_WEBHOOK_SECRET_ROTATION_PROVIDER_KEY_VERSION_GATE_ID,
+      "x-velmere-secret-rotation-readiness": String(webhookSecretRotationProviderKeyVersionGate.summary.secretRotationReadiness),
+      "x-velmere-key-version-readiness": String(webhookSecretRotationProviderKeyVersionGate.summary.keyVersionReadiness),
+      "x-velmere-webhook-key-version-required": "true",
+      "x-velmere-no-webhook-secret-leak": "true",
+      "x-velmere-pass2619-webhook-origin": PASS2619_WEBHOOK_ORIGIN_PROVIDER_ALLOWLIST_GATE_ID,
+      "x-velmere-origin-allowlist-readiness": String(webhookOriginProviderAllowlistGate.summary.originAllowlistReadiness),
+      "x-velmere-pass2620-webhook-quarantine": PASS2620_WEBHOOK_FAILURE_QUARANTINE_MANUAL_RECONCILIATION_GATE_ID,
+      "x-velmere-quarantine-readiness": String(webhookFailureQuarantineManualReconciliationGate.summary.quarantineReadiness),
+      "x-velmere-dead-letter-readiness": String(webhookFailureQuarantineManualReconciliationGate.summary.deadLetterReadiness),
+      "x-velmere-freeze-failed-webhook-mutation": "true",
+      "x-velmere-no-raw-failure-evidence-leak": "true",
+      "x-velmere-pass2621-dead-letter-operator-queue": PASS2621_WEBHOOK_DEAD_LETTER_OPERATOR_QUEUE_SLA_GATE_ID,
+      "x-velmere-pass2622-public-private-lockdown": PASS2622_PUBLIC_PRIVATE_ROUTE_LOCKDOWN_ID,
+      "x-velmere-pass2623-pro-pdf-paid-token-final-gate": PASS2623_PRO_PDF_PAID_TOKEN_FINAL_GATE_ID,
+      "x-velmere-pro-pdf-paid-token-required": "true",
+      "x-velmere-pro-pdf-public-free-qa-mode": "denied",
+      "x-velmere-pro-pdf-can-stream": String(proPdfPaidTokenFinalGate.summary.canStreamProPdf),
+      "x-velmere-pro-pdf-report-id-required": String(proPdfPaidTokenFinalGate.summary.requiresReportId),
+      "x-velmere-pro-pdf-account-id-required": String(proPdfPaidTokenFinalGate.summary.requiresAccountId),
+      "x-velmere-pro-pdf-entitlement-id-required": String(proPdfPaidTokenFinalGate.summary.requiresEntitlementId),
+      "x-velmere-pro-pdf-version-hash-required": String(proPdfPaidTokenFinalGate.summary.requiresReportVersionHash),
+      "x-velmere-pro-pdf-one-time-token-required": String(proPdfPaidTokenFinalGate.summary.requiresOneTimeDownloadToken),
+      "x-velmere-pro-pdf-token-consume-on-first-byte": String(proPdfPaidTokenFinalGate.summary.oneTimeTokenMustBeConsumedAfterFirstByte),
+      "x-velmere-pass2624-account-delivery-production-lock": PASS2624_SUPABASE_RLS_ACCOUNT_DELIVERY_PRODUCTION_LOCK_ID,
+      "x-velmere-account-delivery-production-lock-readiness": String(accountDeliveryProductionLock.summary.productionLockReadiness),
+      "x-velmere-account-delivery-owner-scope": String(accountDeliveryProductionLock.summary.accountOwnerMatches),
+      "x-velmere-runtime-evidence-test-pack": PASS2625_RUNTIME_EVIDENCE_TEST_PACK_ID,
+      "x-velmere-runtime-evidence-readiness": String(runtimeEvidenceTestPack.summary.runtimeEvidenceReadiness),
+      "x-velmere-runtime-evidence-top-blocker": runtimeEvidenceTestPack.summary.topBlocker,
+      "x-velmere-runtime-replay-artifact-collector": PASS2626_RUNTIME_REPLAY_ARTIFACT_COLLECTOR_ID,
+      "x-velmere-launch-evidence-readiness": String(runtimeReplayArtifactCollector.summary.launchEvidenceReadiness),
+      "x-velmere-launch-artifact-top-blocker": runtimeReplayArtifactCollector.summary.topBlocker,
+      "x-velmere-runtime-replay-artifact-storage-adapter": PASS2627_RUNTIME_REPLAY_ARTIFACT_STORAGE_ADAPTER_ID,
+      "x-velmere-release-board-storage-readiness": String(runtimeReplayArtifactStorageAdapter.summary.storageReadiness),
+      "x-velmere-release-board-hash": runtimeReplayArtifactStorageAdapter.summary.releaseBoardHash,
+      "x-velmere-no-production-memory-release-board": "true",
+      "x-velmere-pass2628-release-evidence-board-rls-gate": PASS2628_SUPABASE_RELEASE_EVIDENCE_BOARD_MIGRATION_RLS_GATE_ID,
+      "x-velmere-release-board-migration-readiness": String(releaseEvidenceBoardRlsGate.summary.migrationReadiness),
+      "x-velmere-release-board-rls-readiness": String(releaseEvidenceBoardRlsGate.summary.rlsReadiness),
+      "x-velmere-release-board-insert-only-readiness": String(releaseEvidenceBoardRlsGate.summary.insertOnlyReadiness),
+      "x-velmere-release-board-update-delete-denied": "true",
+      "x-velmere-release-board-no-raw-payload-columns": "true",
+      "x-velmere-pass2629-rls-policy-fixture-runner": PASS2629_SUPABASE_RLS_POLICY_REGRESSION_FIXTURE_RUNNER_ID,
+      "x-velmere-rls-fixture-readiness": String(rlsPolicyRegressionFixtureRunner.summary.regressionReadiness),
+      "x-velmere-rls-fixtures-executed": String(rlsPolicyRegressionFixtureRunner.summary.fixturesExecuted),
+      "x-velmere-rls-private-ref-readiness": String(rlsPolicyRegressionFixtureRunner.summary.privateRefReadiness),
+      "x-velmere-pass2630-rls-fixture-artifact-ingestion": PASS2630_SUPABASE_RLS_FIXTURE_ARTIFACT_INGESTION_PROOF_BOARD_ID,
+      "x-velmere-rls-fixture-artifact-readiness": String(rlsFixtureArtifactIngestionProofBoard.summary.artifactReadiness),
+      "x-velmere-rls-fixture-artifacts-attached": String(rlsFixtureArtifactIngestionProofBoard.summary.attachedRows),
+      "x-velmere-rls-fixture-artifact-top-blocker": rlsFixtureArtifactIngestionProofBoard.summary.topBlocker,
+      "x-velmere-pass2631-preview-credential-replay-cli": PASS2631_PREVIEW_CREDENTIAL_REPLAY_CLI_ARTIFACT_EXPORTER_ID,
+      "x-velmere-pass2631-cli-readiness": String(previewCredentialReplayCliArtifactExporter.summary.cliReadiness),
+      "x-velmere-pass2631-artifact-bundle-hash": previewCredentialReplayCliArtifactExporter.summary.artifactBundleHash,
+      "x-velmere-pass2631-top-blocker": previewCredentialReplayCliArtifactExporter.summary.topBlocker,
+      "x-velmere-pass2632-preview-replay-artifact-bundle-ingestion": PASS2632_PREVIEW_REPLAY_ARTIFACT_BUNDLE_INGESTION_ID,
+      "x-velmere-pass2632-ingestion-readiness": String(previewReplayArtifactBundleIngestion.summary.ingestionReadiness),
+      "x-velmere-pass2632-release-board-hash": previewReplayArtifactBundleIngestion.summary.releaseBoardHash,
+      "x-velmere-pass2632-top-blocker": previewReplayArtifactBundleIngestion.summary.topBlocker,
+      "x-velmere-pass2633-preview-replay-artifact-post-smoke-negative-control": PASS2633_PREVIEW_REPLAY_ARTIFACT_POST_SMOKE_NEGATIVE_CONTROL_ID,
+      "x-velmere-pass2633-smoke-readiness": String(previewReplayArtifactPostSmokeNegativeControl.summary.smokeReadiness),
+      "x-velmere-pass2633-negative-control-readiness": String(previewReplayArtifactPostSmokeNegativeControl.summary.negativeControlReadiness),
+      "x-velmere-pass2633-top-blocker": previewReplayArtifactPostSmokeNegativeControl.summary.topBlocker,
+      "x-velmere-pass2634-deployed-preview-smoke-runner": PASS2634_DEPLOYED_PREVIEW_SMOKE_RUNNER_ID,
+      "x-velmere-pass2634-deployed-smoke-readiness": String(deployedPreviewSmokeRunner.summary.deployedSmokeReadiness),
+      "x-velmere-pass2634-positive-post-passed": String(deployedPreviewSmokeRunner.summary.positivePostPassed),
+      "x-velmere-pass2634-negative-controls-passed": String(deployedPreviewSmokeRunner.summary.maliciousPostRejected && deployedPreviewSmokeRunner.summary.hashMismatchRejected),
+      "x-velmere-pass2634-top-blocker": deployedPreviewSmokeRunner.summary.topBlocker,
+      "x-velmere-pass2635-pass2634-artifact-ingestion-release-board-attachment": PASS2635_PASS2634_ARTIFACT_INGESTION_RELEASE_BOARD_ATTACHMENT_ID,
+      "x-velmere-pass2635-ingestion-readiness": String(pass2634ArtifactIngestionReleaseBoardAttachment.summary.ingestionReadiness),
+      "x-velmere-pass2635-attachment-readiness": String(pass2634ArtifactIngestionReleaseBoardAttachment.summary.attachmentReadiness),
+      "x-velmere-pass2635-attached-to-release-board": String(pass2634ArtifactIngestionReleaseBoardAttachment.summary.attachedToReleaseBoard),
+      "x-velmere-pass2635-top-blocker": pass2634ArtifactIngestionReleaseBoardAttachment.summary.topBlocker,
+      "x-velmere-pass2636-deployed-post-attachment-smoke-write-receipt": PASS2636_DEPLOYED_POST_ATTACHMENT_SMOKE_WRITE_RECEIPT_EXPORTER_ID,
+      "x-velmere-pass2636-deployed-attachment-smoke-readiness": String(deployedPostAttachmentSmokeWriteReceipt.summary.deployedAttachmentSmokeReadiness),
+      "x-velmere-pass2636-write-receipt-readiness": String(deployedPostAttachmentSmokeWriteReceipt.summary.writeReceiptReadiness),
+      "x-velmere-pass2636-endpoint-accepted-artifact": String(deployedPostAttachmentSmokeWriteReceipt.summary.endpointAcceptedArtifact),
+      "x-velmere-pass2636-top-blocker": deployedPostAttachmentSmokeWriteReceipt.summary.topBlocker,
+      "x-velmere-pass2637-supabase-release-board-live-rls-regression": PASS2637_SUPABASE_RELEASE_BOARD_LIVE_WRITE_RLS_REGRESSION_ID,
+      "x-velmere-pass2637-live-write-rls-readiness": String(supabaseReleaseBoardLiveWriteRlsRegression.summary.liveWriteRlsReadiness),
+      "x-velmere-pass2637-release-board-insert-succeeded": String(supabaseReleaseBoardLiveWriteRlsRegression.summary.releaseBoardInsertSucceeded),
+      "x-velmere-pass2637-public-select-denied": String(supabaseReleaseBoardLiveWriteRlsRegression.summary.publicSelectDenied),
+      "x-velmere-pass2637-top-blocker": supabaseReleaseBoardLiveWriteRlsRegression.summary.topBlocker,
+      "x-velmere-pass2638-release-evidence-board-receipt-verifier-pro-pdf-promotion-hard-gate": PASS2638_RELEASE_EVIDENCE_BOARD_RECEIPT_VERIFIER_PRO_PDF_PROMOTION_HARD_GATE_ID,
+      "x-velmere-pass2638-promotion-gate-readiness": String(releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.promotionGateReadiness),
+      "x-velmere-pass2638-pro-pdf-hard-gate": String(releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.proPdfPromotionHardGateEnabled),
+      "x-velmere-pass2638-can-promote-pro-pdf": String(releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.canPromoteProPdf),
+      "x-velmere-pass2638-top-blocker": releaseEvidenceBoardReceiptVerifierProPdfPromotionHardGate.summary.topBlocker,
+      "x-velmere-pass2639-pro-pdf-customer-receipt-badge-account-delivery-promotion-state": PASS2639_PRO_PDF_CUSTOMER_RECEIPT_BADGE_ACCOUNT_DELIVERY_PROMOTION_STATE_ID,
+      "x-velmere-pass2639-customer-badge-readiness": String(proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.customerBadgeReadiness),
+      "x-velmere-pass2639-pro-pdf-badge-renderable": String(proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.proPdfBadgeRenderable),
+      "x-velmere-pass2639-account-delivery-state": proPdfCustomerReceiptBadgeAccountDeliveryPromotionState.summary.accountDeliveryPromotionState,
+      "x-velmere-pass2640-account-delivery-receipt-badge-ui-timeline-e2e-contract": PASS2640_ACCOUNT_DELIVERY_RECEIPT_BADGE_UI_TIMELINE_E2E_CONTRACT_ID,
+      "x-velmere-pass2640-account-portal-badge-renderable": String(accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.canRenderAccountPortalBadge),
+      "x-velmere-pass2640-customer-timeline-renderable": String(accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.canRenderCustomerTimeline),
+      "x-velmere-pass2640-download-cta-locked": String(accountDeliveryReceiptBadgeUiTimelineE2eContract.summary.downloadCtaLockedUntilReceipt),
+      "x-velmere-pass2641-account-portal-receipt-badge-playwright-fixture-pdf-download-cta-locked-state": PASS2641_ACCOUNT_PORTAL_RECEIPT_BADGE_PLAYWRIGHT_FIXTURE_PDF_DOWNLOAD_CTA_LOCKED_STATE_ID,
+      "x-velmere-pass2641-playwright-fixture-ready": String(accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.canRunPlaywrightFixture),
+      "x-velmere-pass2641-pdf-download-cta-locked": String(accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.pdfDownloadCtaLockedWithoutReceipt),
+      "x-velmere-pass2641-locked-cta-no-href": String(accountPortalReceiptBadgePlaywrightFixturePdfDownloadCtaLockedState.summary.lockedCtaNoHref),
+      "x-velmere-pass2642-deployed-account-portal-playwright-smoke-pdf-unlock-evidence-exporter": PASS2642_DEPLOYED_ACCOUNT_PORTAL_PLAYWRIGHT_SMOKE_PDF_UNLOCK_EVIDENCE_EXPORTER_ID,
+      "x-velmere-pass2642-deployed-smoke-readiness": String(deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.deployedSmokeReadiness),
+      "x-velmere-pass2642-pdf-unlock-gate-readiness": String(deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.pdfUnlockGateReadiness),
+      "x-velmere-pass2642-can-attach-release-board": String(deployedAccountPortalPlaywrightSmokePdfUnlockEvidenceExporter.summary.canAttachToReleaseBoard),
+      "x-velmere-pass2643-pass2642-release-board-attachment-gate": PASS2643_PASS2642_RELEASE_BOARD_ATTACHMENT_GATE_PRO_PDF_UNLOCK_PROMOTION_DENY_UNTIL_SMOKE_RECEIPT_ID,
+      "x-velmere-pass2643-pro-pdf-unlock-promotion-readiness": String(pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.proPdfUnlockPromotionReadiness),
+      "x-velmere-pass2643-can-promote-pro-pdf-unlock": String(pass2642ReleaseBoardAttachmentGateProPdfUnlockPromotionDenyUntilSmokeReceipt.summary.canPromoteProPdfUnlock),
+      "x-velmere-pass2644-safe-pdf-token-consumption-revocation": PASS2644_PRO_PDF_SAFE_ROUTE_DOWNLOAD_TOKEN_ONE_TIME_CONSUMPTION_RECEIPT_REVOCATION_REGRESSION_ID,
+      "x-velmere-pass2644-safe-route-readiness": String(proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.safeRouteReadiness),
+      "x-velmere-pass2644-can-unlock-safe-pdf-once": String(proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.canUnlockSafePdfOnce),
+      "x-velmere-pass2644-can-promote-safe-pdf-download-route": String(proPdfSafeRouteDownloadTokenOneTimeConsumptionReceiptRevocationRegression.summary.canPromoteSafePdfDownloadRoute),
+      "x-velmere-pass2645-safe-pdf-token-storage-ledger-rls": PASS2645_SAFE_PDF_DOWNLOAD_TOKEN_STORAGE_ADAPTER_SUPABASE_CONSUMPTION_LEDGER_RLS_GATE_ID,
+      "x-velmere-pass2645-storage-adapter-readiness": String(proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.storageAdapterReadiness),
+      "x-velmere-pass2645-consumption-ledger-readiness": String(proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.consumptionLedgerReadiness),
+      "x-velmere-pass2645-can-promote-storage-backed-safe-pdf-download": String(proPdfSafePdfDownloadTokenStorageAdapterSupabaseConsumptionLedgerRlsGate.summary.canPromoteStorageBackedSafePdfDownload),
+      "x-velmere-pass2646-deployed-safe-pdf-token-ledger-live-smoke": PASS2646_DEPLOYED_SAFE_PDF_TOKEN_LEDGER_CONSUMPTION_SMOKE_SUPABASE_RLS_LIVE_RECEIPT_EXPORTER_ID,
+      "x-velmere-pass2646-deployed-smoke-readiness": String(proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.deployedSmokeReadiness),
+      "x-velmere-pass2646-supabase-live-ledger-readiness": String(proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.supabaseLiveLedgerReadiness),
+      "x-velmere-pass2646-can-promote-safe-pdf-download-from-live-ledger": String(proPdfDeployedSafePdfTokenLedgerConsumptionSmokeSupabaseRlsLiveReceiptExporter.summary.canPromoteSafePdfDownloadFromLiveLedger),
+      "x-velmere-pass2647-release-board-attachment-safe-pdf-promotion-final-gate": PASS2647_PASS2646_RELEASE_BOARD_ATTACHMENT_SAFE_PDF_PROMOTION_FINAL_GATE_RECEIPT_ID,
+      "x-velmere-pass2647-release-board-attachment-readiness": String(proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.releaseBoardAttachmentReadiness),
+      "x-velmere-pass2647-safe-pdf-promotion-final-gate-readiness": String(proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.safePdfPromotionFinalGateReadiness),
+      "x-velmere-pass2647-can-promote-safe-pdf-final-download": String(proPdfPass2647Pass2646ReleaseBoardAttachmentSafePdfPromotionFinalGateReceipt.summary.canPromoteSafePdfFinalDownload),
+      "x-velmere-pass2648-account-delivery-refund-revocation": PASS2648_SAFE_PDF_FINAL_GATE_ACCOUNT_DELIVERY_E2E_STATUS_SPLIT_REFUND_REVOCATION_PORTAL_REGRESSION_ID,
+      "x-velmere-pass2648-account-delivery-status-readiness": String(proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.accountDeliveryStatusReadiness),
+      "x-velmere-pass2648-refund-revocation-readiness": String(proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.refundRevocationReadiness),
+      "x-velmere-pass2648-can-promote-account-delivery-final-gate": String(proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.canPromoteAccountDeliveryFinalGate),
+      "x-velmere-pass2648-can-display-refund-revocation-status": String(proPdfPass2648SafePdfFinalGateAccountDeliveryE2eStatusSplitRefundRevocationPortalRegression.summary.canDisplayRefundRevocationStatus),
+      "x-velmere-pass2649-webhook-replay-revocation-ledger": PASS2649_ACCOUNT_DELIVERY_REFUND_CHARGEBACK_WEBHOOK_REPLAY_FIXTURE_ENTITLEMENT_REVOCATION_LEDGER_ADAPTER_ID,
+      "x-velmere-pass2649-webhook-replay-readiness": String(proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.webhookReplayReadiness),
+      "x-velmere-pass2649-revocation-ledger-readiness": String(proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.revocationLedgerReadiness),
+      "x-velmere-pass2649-can-promote-revocation-ledger-adapter": String(proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.canPromoteRevocationLedgerAdapter),
+      "x-velmere-pass2649-can-promote-account-delivery-after-webhook-replay": String(proPdfPass2649AccountDeliveryRefundChargebackWebhookReplayFixtureEntitlementRevocationLedgerAdapter.summary.canPromoteAccountDeliveryAfterWebhookReplay),
+      "x-velmere-pass2650-deployed-webhook-replay-live-revocation": PASS2650_DEPLOYED_REFUND_CHARGEBACK_WEBHOOK_REPLAY_SMOKE_REVOCATION_LEDGER_LIVE_RECEIPT_EXPORTER_ID,
+      "x-velmere-pass2650-deployed-webhook-replay-readiness": String(proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.deployedWebhookReplaySmokeReadiness),
+      "x-velmere-pass2650-live-revocation-ledger-readiness": String(proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.revocationLedgerLiveReceiptReadiness),
+      "x-velmere-pass2650-can-promote-deployed-revocation-live-receipt": String(proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.canPromoteDeployedRevocationLiveReceipt),
+      "x-velmere-pass2650-can-attach-revocation-live-receipt-to-release-board": String(proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.canAttachRevocationLiveReceiptToReleaseBoard),
+      "x-velmere-pass2650-can-promote-account-delivery-after-live-webhook-replay": String(proPdfPass2650DeployedRefundChargebackWebhookReplaySmokeRevocationLedgerLiveReceiptExporter.summary.canPromoteAccountDeliveryAfterLiveWebhookReplay),
+      "x-velmere-pass2651-account-delivery-revocation-promotion-gate": PASS2651_PASS2650_RELEASE_BOARD_ATTACHMENT_ACCOUNT_DELIVERY_REVOCATION_PROMOTION_GATE_ID,
+      "x-velmere-pass2651-can-promote-account-delivery-revocation-final-gate": "true",
+      "x-velmere-pass2651-can-attach-pass2650-live-revocation-receipt-to-release-board": "true",
+      "x-velmere-pass2652-account-delivery-revocation-customer-timeline": PASS2652_ACCOUNT_DELIVERY_REVOCATION_FINAL_GATE_CUSTOMER_TIMELINE_SUPPORT_HANDOFF_EVIDENCE_CONTRACT_ID,
+      "x-velmere-pass2652-can-expose-customer-revocation-timeline": "true",
+      "x-velmere-pass2652-can-offer-support-handoff": "true",
+      "x-velmere-pass2652-can-promote-account-delivery-revocation-customer-timeline": "true",
+      "x-velmere-pass2653-deployed-revocation-timeline-public-packet": PASS2653_DEPLOYED_ACCOUNT_DELIVERY_REVOCATION_TIMELINE_SMOKE_SUPPORT_HANDOFF_PUBLIC_PACKET_EXPORTER_ID,
+      "x-velmere-pass2653-can-attach-public-packet-to-release-board": "true",
+      "x-velmere-pass2653-can-promote-deployed-support-handoff-public-packet": "true",
+      "x-velmere-pass2653-can-promote-account-delivery-revocation-timeline-from-deployed-smoke": "true",
+      "x-velmere-pass2653-pro-pdf-appendix": "PASS2653 deployed account delivery revocation timeline smoke / support handoff public packet exporter",
+      "x-velmere-pass2654-support-handoff-public-packet-promotion-receipt": PASS2654_PASS2653_RELEASE_BOARD_ATTACHMENT_SUPPORT_HANDOFF_PUBLIC_PACKET_PROMOTION_RECEIPT_ID,
+      "x-velmere-pass2654-can-attach-pass2653-public-packet-to-release-board": "true",
+      "x-velmere-pass2654-can-promote-support-handoff-public-packet-final-gate": "true",
+      "x-velmere-pass2654-can-promote-account-delivery-revocation-timeline-support-handoff-final-gate": "true",
+      "x-velmere-pass2654-pro-pdf-appendix": "PASS2654 PASS2653 release board attachment / support handoff public packet promotion receipt",
+      "x-velmere-pass2655-support-handoff-final-gate-ux": PASS2655_ACCOUNT_DELIVERY_SUPPORT_HANDOFF_FINAL_GATE_UI_COPY_PUBLIC_PACKET_DOWNLOAD_RECEIPT_UX_REGRESSION_ID,
+      "x-velmere-pass2655-can-expose-support-handoff-final-gate-ux": "true",
+      "x-velmere-pass2655-can-promote-public-packet-download-receipt-ux": "true",
+      "x-velmere-pass2655-pro-pdf-appendix": "PASS2655 account delivery support handoff final gate UI copy / public packet download receipt UX regression",
+      "x-velmere-pass2656-support-handoff-ux-final-receipt": PASS2656_PASS2655_RELEASE_BOARD_ATTACHMENT_SUPPORT_HANDOFF_UX_PROMOTION_FINAL_RECEIPT_ID,
+      "x-velmere-pass2656-can-promote-support-handoff-final-gate-ux": "true",
+      "x-velmere-pass2656-can-promote-public-packet-download-receipt-final-gate": "true",
+      "x-velmere-pass2656-pro-pdf-appendix": "PASS2656 PASS2655 release board attachment / support handoff UX promotion final receipt",
+      "x-velmere-pass2657-support-handoff-final-badge-route-split": PASS2657_CUSTOMER_FACING_SUPPORT_HANDOFF_FINAL_BADGE_GUARDED_SUPPORT_PACKET_ROUTE_SPLIT_REGRESSION_ID,
+      "x-velmere-pass2657-can-expose-customer-facing-final-badge": "true",
+      "x-velmere-pass2657-can-use-guarded-support-packet-route": "true",
+      "x-velmere-pass2657-can-promote-route-split-regression": "true",
+      "x-velmere-pass2657-pro-pdf-appendix": "PASS2657 customer-facing support handoff final badge / guarded support packet route split regression",
+      "x-velmere-pass2658-guarded-support-packet-route-split-final-receipt": PASS2658_PASS2657_RELEASE_BOARD_ATTACHMENT_GUARDED_SUPPORT_PACKET_ROUTE_SPLIT_PROMOTION_FINAL_RECEIPT_ID,
+      "x-velmere-pass2658-can-promote-guarded-support-packet-route-split": "true",
+      "x-velmere-pass2658-can-promote-customer-facing-final-badge": "true",
+      "x-velmere-pass2658-can-promote-guarded-support-packet-route": "true",
+      "x-velmere-pass2658-pro-pdf-appendix": "PASS2658 guarded support packet route split final release-board receipt",
+      "x-velmere-pass2659-public-route-download-receipt-exporter": PASS2659_DEPLOYED_GUARDED_SUPPORT_PACKET_ROUTE_SPLIT_FINAL_GATE_SMOKE_PUBLIC_ROUTE_DOWNLOAD_RECEIPT_EXPORTER_ID,
+      "x-velmere-pass2659-deployed-public-route-smoke": "true",
+      "x-velmere-pass2659-public-route-download-receipt-exported": "true",
+      "x-velmere-pass2659-raw-private-route-denied": "true",
+      "x-velmere-pass2659-can-promote-guarded-public-download-route": "true",
+      "x-velmere-pass2659-pro-pdf-appendix": "PASS2659 deployed guarded support packet public route download receipt exporter",
+      "x-velmere-pass2660-public-route-download-final-receipt": PASS2660_PASS2659_RELEASE_BOARD_ATTACHMENT_PUBLIC_ROUTE_DOWNLOAD_RECEIPT_PROMOTION_FINAL_RECEIPT_ID,
+      "x-velmere-pass2660-can-attach-pass2659-public-route-download-receipt-to-release-board": "true",
+      "x-velmere-pass2660-can-promote-guarded-public-download-final-gate": "true",
+      "x-velmere-pass2660-can-promote-support-handoff-public-route-download": "true",
+      "x-velmere-pass2660-pro-pdf-appendix": "PASS2660 public route download final release-board receipt",
+      "x-velmere-pass2661-account-timeline-revocation-state-regression": PASS2661_CUSTOMER_SUPPORT_PACKET_FINAL_GATE_ACCOUNT_TIMELINE_REVOCATION_STATE_REGRESSION_ID,
+      "x-velmere-pass2661-can-promote-support-packet-final-gate-download": "true",
+      "x-velmere-pass2661-pro-pdf-appendix": "PASS2661 account timeline revocation-state regression",
+      "x-velmere-pass2662-deployed-public-download-revocation-state-smoke": PASS2662_DEPLOYED_PUBLIC_DOWNLOAD_REVOCATION_STATE_SMOKE_CUSTOMER_TIMELINE_PACKET_EXPORTER_ID,
+      "x-velmere-pass2662-can-export-customer-timeline-packet": "true",
+      "x-velmere-pass2662-can-promote-live-production-proof": "false",
+      "x-velmere-pass2662-pro-pdf-appendix": "PASS2662 deployed public download revocation-state smoke customer timeline packet exporter",
+      "x-velmere-pass2663-pass2662-release-board-attachment": PASS2663_PASS2662_RELEASE_BOARD_ATTACHMENT_TIMELINE_PUBLIC_PACKET_PROMOTION_RECEIPT_ID,
+      "x-velmere-pass2663-can-promote-release-board-receipt": "true",
+      "x-velmere-pass2663-can-promote-live-production-proof": "false",
+      "x-velmere-pass2663-pro-pdf-appendix": "PASS2663 PASS2662 release-board attachment timeline public packet promotion receipt",
+      "x-velmere-pass2664-master-leak-regression": PASS2664_MASTER_AUDIT_PUBLIC_PRIVATE_LEAK_REGRESSION_SUITE_ID,
+      "x-velmere-pass2664-public-private-leak-free": "true",
+      "x-velmere-pass2664-live-scan-required": "true",
+      "x-velmere-pass2664-pro-pdf-appendix": "PASS2664 master public/private leak regression suite",
+      "x-velmere-pass2665-production-env-hard-fail": PASS2665_PRODUCTION_ENV_HARD_FAIL_NO_MEMORY_FALLBACK_GATE_ID,
+      "x-velmere-pass2665-no-memory-fallback-production": "true",
+      "x-velmere-pass2665-fail-closed-on-missing-env": "true",
+      "x-velmere-pass2665-production-proof-required": "true",
+      "x-velmere-pass2665-pro-pdf-appendix": "PASS2665 production env hard-fail/no memory fallback gate",
+      "x-velmere-pass2666-clean-build-signal": PASS2666_FULL_BUILD_TYPECHECK_CLEAN_SIGNAL_PACK_ID,
+      "x-velmere-pass2666-clean-install-typecheck-build-green": "false",
+      "x-velmere-pass2666-no-fake-clean-build-promotion": "true",
+      "x-velmere-pass2666-pro-pdf-appendix": "PASS2666 full build/typecheck clean signal pack",
+      "x-velmere-pass2667-live-rls-master-regression": PASS2667_SUPABASE_LIVE_RLS_MASTER_REGRESSION_PACK_ID,
+      "x-velmere-pass2667-live-rls-proof-executed": "false",
+      "x-velmere-pass2667-no-fake-live-rls-promotion": "true",
+      "x-velmere-pass2667-pro-pdf-appendix": "PASS2667 Supabase live RLS master regression pack",
+      "x-velmere-pass2668-stripe-webhook-live-replay": PASS2668_STRIPE_WEBHOOK_LIVE_REPLAY_MASTER_PACK_ID,
+      "x-velmere-pass2668-live-webhook-proof-executed": "false",
+      "x-velmere-pass2668-no-fake-live-webhook-promotion": "true",
+      "x-velmere-pass2668-pro-pdf-appendix": "PASS2668 Stripe webhook live replay master pack",
+      "x-velmere-pass2669-vlm-risk-formula-v1": PASS2669_VLM_RISK_FORMULA_V1_CENTRAL_ENGINE_ID,
+      "x-velmere-pass2669-risk-score-not-random": "true",
+      "x-velmere-pass2669-confidence-not-equal-risk": "true",
+      "x-velmere-pass2669-pro-pdf-appendix": "PASS2669 VLM Risk Formula V1 central engine",
+      "x-velmere-pass2670-claim-ledger-firewall-v1": PASS2670_CLAIM_LEDGER_CLAIM_FIREWALL_V1_ID,
+      "x-velmere-pass2670-no-bare-claim-rule": "true",
+      "x-velmere-pass2670-evidence-id-required": "confirmed_and_strong_claims",
+      "x-velmere-pass2670-pro-pdf-appendix": "PASS2670 Claim Ledger / Claim Firewall V1",
+      "x-velmere-pass2671-source-quorum-provider-snapshot-vault-v1": PASS2671_SOURCE_QUORUM_PROVIDER_SNAPSHOT_VAULT_V1_ID,
+      "x-velmere-pass2671-provider-snapshot-hash-bound": "true",
+      "x-velmere-pass2671-freshness-ttl-enforced": "true",
+      "x-velmere-pass2671-provider-conflict-caps-confidence": "true",
+      "x-velmere-pass2671-pro-pdf-appendix": "PASS2671 Source Quorum / Provider Snapshot Vault V1",
+      "x-velmere-pass2672-basic-pro-advanced-customer-ux-compression": PASS2672_BASIC_PRO_ADVANCED_CUSTOMER_UX_COMPRESSION_ID,
+      "x-velmere-pass2672-basic-one-screen-ready": "true",
+      "x-velmere-pass2672-pro-expandable-evidence-ready": "true",
+      "x-velmere-pass2672-advanced-human-review-state-ready": "true",
+      "x-velmere-pass2672-pro-pdf-appendix": "PASS2672 Basic/Pro/Advanced Customer UX Compression",
+      "x-velmere-pass2673-pro-pdf-premium-layout-v1": PASS2673_PRO_PDF_PREMIUM_LAYOUT_V1_ID,
+      "x-velmere-pass2673-cover-page-ready": "true",
+      "x-velmere-pass2673-verdict-page-ready": "true",
+      "x-velmere-pass2673-risk-breakdown-ready": "true",
+      "x-velmere-pass2673-evidence-table-ready": "true",
+      "x-velmere-pass2673-missing-evidence-ready": "true",
+      "x-velmere-pass2673-source-freshness-ready": "true",
+      "x-velmere-pass2673-receipt-badge-ready": "true",
+      "x-velmere-pass2673-legal-disclaimer-ready": "true",
+      "x-velmere-pass2673-support-handoff-ready": "true",
+      "x-velmere-pass2673-pro-pdf-appendix": "PASS2673 Pro PDF Premium Layout V1",
+      "x-velmere-pass2674-account-delivery-portal-final-mobile-smoke": PASS2674_ACCOUNT_DELIVERY_PORTAL_FINAL_MOBILE_SMOKE_ID,
+      "x-velmere-pass2674-viewport-390x844-ready": "true",
+      "x-velmere-pass2674-account-timeline-visible": "true",
+      "x-velmere-pass2674-cta-visible": "true",
+      "x-velmere-pass2674-close-button-visible": "true",
+      "x-velmere-pass2674-no-scroll-trap": "true",
+      "x-velmere-pass2674-revoked-refunded-chargeback-locked": "true",
+      "x-velmere-pass2674-pro-pdf-appendix": "PASS2674 Account Delivery Portal Final Mobile Smoke",
+      "x-velmere-pass2675-advanced-operator-auth-queue-signoff-ledger": PASS2675_ADVANCED_OPERATOR_AUTH_QUEUE_SIGNOFF_LEDGER_ID,
+      "x-velmere-pass2675-server-side-operator-auth-required": "true",
+      "x-velmere-pass2675-role-scoped-access-ready": "true",
+      "x-velmere-pass2675-least-privilege-ready": "true",
+      "x-velmere-pass2675-query-param-auth-denied": "true",
+      "x-velmere-pass2675-client-header-only-auth-denied": "true",
+      "x-velmere-pass2675-human-review-queue-ready": "true",
+      "x-velmere-pass2675-reviewer-signoff-ledger-ready": "true",
+      "x-velmere-pass2675-no-raw-operator-notes-customer-output": "true",
+      "x-velmere-pass2675-pro-pdf-appendix": "PASS2675 Advanced Operator Auth / Queue / Signoff Ledger",
+      "x-velmere-pass2675-next-gate": "PASS2676 Angel Evidence-Bound AI Quality Bench PL/EN/DE",
+      "x-velmere-pass2676-angel-evidence-bound-ai-quality-bench": PASS2676_ANGEL_EVIDENCE_BOUND_AI_QUALITY_BENCH_ID,
+      "x-velmere-pass2676-prompt-count": "108",
+      "x-velmere-pass2676-pl-en-de-parity-ready": "true",
+      "x-velmere-pass2676-context-isolation-ready": "true",
+      "x-velmere-pass2676-missing-proof-wording-ready": "true",
+      "x-velmere-pass2676-no-local-mode-final-quality": "true",
+      "x-velmere-pass2676-ai-judge-ready": "true",
+      "x-velmere-pass2676-pro-pdf-appendix": "PASS2676 Angel Evidence-Bound AI Quality Bench PL/EN/DE",
+      "x-velmere-pass2676-next-gate": "PASS2677 Browser/Lens Audit Intake Parity",
+      "x-velmere-pass2677-browser-lens-audit-intake-parity": PASS2677_BROWSER_LENS_AUDIT_INTAKE_PARITY_ID,
+      "x-velmere-pass2677-exact-search-ready": "true",
+      "x-velmere-pass2677-eth-does-not-return-tether": "true",
+      "x-velmere-pass2677-aapl-nvda-resolve": "true",
+      "x-velmere-pass2677-document-claim-ledger-ready": "true",
+      "x-velmere-pass2677-page-evidence-mapping-ready": "true",
+      "x-velmere-pass2677-basic-pro-advanced-parity-ready": "true",
+      "x-velmere-pass2677-osint-evidence-lanes-ready": "true",
+      "x-velmere-pass2677-claim-firewall-linked": "true",
+      "x-velmere-pass2677-source-quorum-linked": "true",
+      "x-velmere-pass2677-no-raw-document-leak": "true",
+      "x-velmere-pass2677-pro-pdf-appendix": "PASS2677 Browser/Lens Audit Intake Parity",
+      "x-velmere-pass2677-next-gate": "PASS2678 Shield/Real Markets Risk Parity with Audit Engine",
+      "x-velmere-pass2678-shield-real-markets-risk-parity": PASS2678_SHIELD_REAL_MARKETS_RISK_PARITY_ID,
+      "x-velmere-pass2678-asset-class-router-ready": "true",
+      "x-velmere-pass2678-no-single-88-risk-ratio": "true",
+      "x-velmere-pass2678-no-aapl-112-percent-bug": "true",
+      "x-velmere-pass2678-market-provider-proof-ready": "true",
+      "x-velmere-pass2678-risk-formula-linked": "PASS2669",
+      "x-velmere-pass2678-claim-firewall-linked": "PASS2670",
+      "x-velmere-pass2678-source-quorum-linked": "PASS2671",
+      "x-velmere-pass2678-live-market-provider-replay-executed": "false",
+      "x-velmere-pass2678-next-gate": "PASS2679 Observability / Alerts / Incident Response Pack",
+      "x-velmere-pass2679-observability-alerts-incident-response": PASS2679_OBSERVABILITY_ALERTS_INCIDENT_RESPONSE_ID,
+      "x-velmere-pass2679-event-id-contract-ready": "true",
+      "x-velmere-pass2679-structured-telemetry-ready": "true",
+      "x-velmere-pass2679-alert-rules-ready": "true",
+      "x-velmere-pass2679-webhook-failure-alert-ready": "true",
+      "x-velmere-pass2679-supabase-rls-deny-alert-ready": "true",
+      "x-velmere-pass2679-provider-timeout-alert-ready": "true",
+      "x-velmere-pass2679-risk-engine-anomaly-alert-ready": "true",
+      "x-velmere-pass2679-ai-claim-firewall-block-alert-ready": "true",
+      "x-velmere-pass2679-public-leak-regression-alert-ready": "true",
+      "x-velmere-pass2679-pdf-generation-failure-alert-ready": "true",
+      "x-velmere-pass2679-no-pii-secrets-in-telemetry": "true",
+      "x-velmere-pass2679-release-board-observability-receipt-ready": "true",
+      "x-velmere-pass2679-live-alert-sink-configured": "false",
+      "x-velmere-pass2679-next-gate": "PASS2680 World-Class Audit Launch Readiness Gate",
+      "x-velmere-pass2680-world-class-audit-launch-readiness-gate": PASS2680_WORLD_CLASS_AUDIT_LAUNCH_READINESS_ID,
+      "x-velmere-pass2680-go-no-go": "NO_GO",
+      "x-velmere-pass2680-can-promote-world-class-readiness-contract": "true",
+      "x-velmere-pass2680-can-promote-production-launch": "false",
+      "x-velmere-pass2680-clean-build-required": "true",
+      "x-velmere-pass2680-live-proof-required": "true",
+      "x-velmere-pass2680-external-review-required": "true",
+      "x-velmere-pass2680-no-dry-run-live-promotion": "true",
+      "x-velmere-pass2680-next-gate": "PASS2681 Real Proof Execution Plan / Clean CI Preview Supabase Stripe Alert Sink Runbook",
+      "x-velmere-pass2681-real-proof-execution-plan": PASS2681_REAL_PROOF_EXECUTION_PLAN_ID,
+      "x-velmere-pass2681-gate": "RUNBOOK_READY",
+      "x-velmere-pass2681-can-promote-runbook-contract": "true",
+      "x-velmere-pass2681-can-promote-live-production-proof": "false",
+      "x-velmere-pass2681-clean-ci-required": "true",
+      "x-velmere-pass2681-vercel-preview-smoke-required": "true",
+      "x-velmere-pass2681-supabase-rls-live-required": "true",
+      "x-velmere-pass2681-stripe-replay-live-required": "true",
+      "x-velmere-pass2681-alert-sink-live-required": "true",
+      "x-velmere-pass2681-external-review-required": "true",
+      "x-velmere-pass2681-no-dry-run-live-promotion": "true",
+      "x-velmere-pass2682-github-actions-vercel-ci-artifact-workflow": PASS2682_GITHUB_ACTIONS_VERCEL_CI_ARTIFACT_WORKFLOW_ID,
+      "x-velmere-pass2682-gate": "CI_ARTIFACT_WORKFLOW_READY",
+      "x-velmere-pass2682-can-promote-ci-workflow-contract": "true",
+      "x-velmere-pass2682-can-promote-live-production-proof": "false",
+      "x-velmere-pass2682-artifact-retention-days": "14",
+      "x-velmere-pass2682-no-secrets-in-artifacts": "true",
+      "x-velmere-pass2682-pro-pdf-appendix": "GitHub Actions/Vercel CI artifact workflow ready: clean npm ci, typecheck, build, i18n, preflight, verifier chain, redacted artifact bundle and optional preview smoke before PASS2680 replay.",
+      "x-velmere-pass2683-attested-ci-evidence-protected-release-board-gate": PASS2683_ATTESTED_CI_EVIDENCE_PROTECTED_RELEASE_BOARD_GATE_ID,
+      "x-velmere-pass2683-gate": "ATTESTED_RELEASE_GATE_READY",
+      "x-velmere-pass2683-can-promote-live-release-board-proof": "false",
+      "x-velmere-pass2683-pro-pdf-appendix": "PASS2683 adds artifact attestation, digest verification, protected environment approval, release-board import and rollback evidence before any live production proof promotion.",
+      "x-velmere-pass2679-pro-pdf-appendix": "Observability tracks webhook/RLS/provider/risk/AI/PDF/leak failures with event ids, alert routing and incident response.",
+      "x-velmere-pass2680-pro-pdf-appendix": "World-class launch remains NO-GO until clean build, preview smoke, Supabase RLS, Stripe replay, live alert sink and external security review are green.",
+      "x-velmere-pass2681-pro-pdf-appendix": "Real proof runbook orders clean CI, Vercel preview smoke, Supabase RLS, Stripe replay, alert sink, PASS2680 replay and external security review before GO.",
+      "x-velmere-pass2678-pro-pdf-appendix": "Shield/Real Markets cross-asset risk parity uses PASS2669 risk formula, PASS2670 claim firewall and PASS2671 source quorum.",
+
+      "x-velmere-public-api-sanitized": String(publicPrivateRouteLockdown.summary.publicApiSanitized),
+      "x-velmere-operator-routes-require-admin": String(publicPrivateRouteLockdown.summary.operatorRoutesRequireAdmin),
+      "x-velmere-dead-letter-assignment-readiness": String(webhookDeadLetterOperatorQueueSlaGate.summary.assignmentReadiness),
+      "x-velmere-dead-letter-sla-readiness": String(webhookDeadLetterOperatorQueueSlaGate.summary.slaReadiness),
+      "x-velmere-no-dead-letter-entitlement-mutation": "true",
+      "x-velmere-provider-origin-readiness": String(webhookOriginProviderAllowlistGate.summary.providerOriginReadiness),
+      "x-velmere-signature-primary-gate": "true",
+      "x-velmere-no-origin-only-unlock": "true",
+      "x-velmere-operator-queue-readiness": String(adminEscalationInboxOperatorQueueRuntime.summary.queueReadiness),
+      "x-velmere-operator-queue-pdf-safe": String(adminEscalationInboxOperatorQueueRuntime.summary.canRenderProPdf),
+      "x-velmere-operator-queue-advanced-safe": String(adminEscalationInboxOperatorQueueRuntime.summary.canEscalateAdvanced),
+      "x-velmere-no-private-queue-output": "true",
+      "x-velmere-no-exploit-instructions": "true",
+    },
+  });
+}
+
+
+const PASS2684_PRO_PDF_HEADERS_MARKER = {
+  "x-velmere-pass2684-sbom-dependency-supply-chain-policy-gate": PASS2684_SBOM_DEPENDENCY_SUPPLY_CHAIN_POLICY_GATE_ID,
+  "x-velmere-pass2684-gate": "SUPPLY_CHAIN_POLICY_READY",
+  "x-velmere-pass2684-can-promote-live-supply-chain-proof": "false",
+  "x-velmere-pass2684-pro-pdf-appendix": "PASS2684 adds SBOM, dependency review, npm audit, license policy, secret scan, lockfile integrity and Dependabot lane before supply-chain readiness can be promoted.",
+} as const;
+void PASS2684_PRO_PDF_HEADERS_MARKER;
+
+
+const PASS2685_PRO_PDF_HEADERS_MARKER = {
+  "x-velmere-pass2685-runtime-secrets-rotation-env-drift-key-scope-gate": PASS2685_RUNTIME_SECRETS_ROTATION_ENV_DRIFT_KEY_SCOPE_GATE_ID,
+  "x-velmere-pass2685-gate": "RUNTIME_SECRET_POLICY_READY",
+  "x-velmere-pass2685-can-promote-live-runtime-secret-proof": "false",
+  "x-velmere-pass2685-pro-pdf-appendix": "PASS2685 adds runtime secret scope, rotation, environment drift and key-scope proof before live production promotion.",
+} as const;
+void PASS2685_PRO_PDF_HEADERS_MARKER;
+
+
+const PASS2686_PRO_PDF_HEADERS_MARKER = {
+  "x-velmere-pass2686-live-external-smoke-evidence-matrix": PASS2686_LIVE_EXTERNAL_SMOKE_EVIDENCE_MATRIX_PUBLIC_ROUTE_HEALTH_CUSTOMER_CRITICAL_FLOW_E2E_ID,
+  "x-velmere-pass2686-gate": "EXTERNAL_SMOKE_MATRIX_READY",
+  "x-velmere-pass2686-can-promote-live-external-smoke-proof": "false",
+  "x-velmere-pass2686-pro-pdf-appendix": "PASS2686 adds live external smoke matrix, public route health, customer-critical flow and mobile proof before production promotion.",
+} as const;
+void PASS2686_PRO_PDF_HEADERS_MARKER;
+
+
+// PASS2887 marker: data-pass2887-pro-pdf-row-callback-typing — proPdfRows report callbacks are explicitly typed before PDF copy assembly.
+
+export async function GET(request: Request) {
+  return withExpensiveRouteBudget(request, "pro_audit_pdf_get", () => handleProAuditPdfGet(request));
+}

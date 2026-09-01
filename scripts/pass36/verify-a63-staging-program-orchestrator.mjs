@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const read=(p)=>JSON.parse(fs.readFileSync(p,"utf8"));
+const policy=read("config/pass36/a63-staging-program-orchestrator.json"),current=read("config/pass35/current-revision.json"),test=read("config/pass36/a63-staging-program-test-receipt.json");
+let checks=0;const check=(value,message)=>{assert.ok(value,message);checks++;};
+check(policy.schemaVersion==="velmere.pass36.a63.staging-program-orchestrator-policy.v1","policy schema");
+check(policy.revisionId==="VELMERE_PASS36_A63R0_STAGING_PROGRAM_ORCHESTRATOR_EVIDENCE_CHAIN","revision");
+check(policy.stages.length===10,"stage count");
+check(policy.stages.map(s=>s.id).join(",")==="A47,A48,A49,A50,A51,A52,A54,A55,A56,A57","stage order");
+check(new Set(policy.stages.map(s=>s.revisionId)).size===10,"unique revisions");
+check(new Set(policy.stages.map(s=>s.receiptPath)).size===10,"unique receipts");
+check(policy.stages.every(s=>Array.isArray(s.command)&&s.command[0]==="node"&&s.receiptPath.startsWith("artifacts/pass35/")),"commands and receipts");
+check(policy.stages.filter(s=>s.mutationRisk).map(s=>s.id).join(",")==="A48,A49,A50,A51,A52,A54,A57","mutation map");
+check(policy.runtime.node==="24.18.0"&&policy.runtime.npm==="11.16.0","runtime");
+check(policy.requiredPreconditions.criticalGate.passed===30&&policy.requiredPreconditions.criticalGate.blocked===0,"critical gate");
+check(policy.requiredPreconditions.lineage?.rule==="EXACT_A61_OR_SIGNED_A77_CLEAN_ROOT"&&policy.truthBoundary.includes("dual-control signed A77 clean root")&&policy.truthBoundary.includes("fail-closed"),"truth boundary");
+check(test.status==="PASS"&&test.scenarioCount>=38&&test.assertions>=150,"test receipt");
+check(fs.existsSync("scripts/a63-staging-program-orchestrator.mjs")&&fs.existsSync("scripts/a63-package-evidence.mjs"),"runners");
+check(fs.existsSync("VELMERE_RUN_A63_STAGING_PROGRAM_ORCHESTRATOR.cmd")&&fs.existsSync("VELMERE_A63_PATCH.txt"),"root files");
+check(current.sourceRevisionId===current.currentReleaseAuthorityRevisionId&&current.currentRootDescendantManifestRevisionId===current.sourceRevisionId&&fs.readFileSync("VELMERE_ACTIVE_PASS.txt","utf8").trim()===current.sourceRevisionId,"current source");
+check(current.stagingProgramOrchestratorRevisionId===policy.revisionId&&current.stagingProgramExecuted===false,"current program state");
+check(current.saleEnabled===false&&current.liveProven===false,"no promotion");
+const pkg=read("package.json");check(pkg.scripts["test:pass36:a63"]==="node scripts/pass36/test-a63-staging-program-orchestrator.mjs","package test");check(pkg.scripts["staging:program:a63"]==="node scripts/pass36/block-retired-staging-command.mjs A63","package run fail-closed");check(pkg.scripts["package:evidence:a63"]==="node scripts/a63-package-evidence.mjs","package evidence");
+console.log(JSON.stringify({status:"PASS_A63_STAGING_PROGRAM_ORCHESTRATOR",checks,stages:policy.stages.length,mutationStages:policy.stages.filter(s=>s.mutationRisk).length,saleEnabled:false,liveProven:false},null,2));

@@ -1,0 +1,80 @@
+import * as op00 from "@/lib/server/account-operations/account-vault-timeline-export-capsule-rebalance";
+import * as op01 from "@/lib/server/account-operations/consumed-ledger-download-history-rebalance";
+import * as op02 from "@/lib/server/account-operations/customer-export-recall-attestation-rebalance";
+import * as op03 from "@/lib/server/account-operations/customer-export-snapshot-parity-rebalance";
+import * as op04 from "@/lib/server/account-operations/customer-export-zero-leak-replay-rebalance";
+import * as op05 from "@/lib/server/account-operations/customer-notice-delivery-appeal-window-rebalance";
+import * as op06 from "@/lib/server/account-operations/download-consumption-replay-abuse-rebalance";
+import * as op07 from "@/lib/server/account-operations/entitlement-account-vault-retrieval-contract";
+import * as op08 from "@/lib/server/account-operations/entitlement-admin-override-dual-control-lock";
+import * as op09 from "@/lib/server/account-operations/entitlement-artifact-watermark-share-lock";
+import * as op10 from "@/lib/server/account-operations/entitlement-evidence-export-dispute-lock";
+import * as op11 from "@/lib/server/account-operations/entitlement-incident-response-disclosure-lock";
+import * as op12 from "@/lib/server/account-operations/entitlement-retention-erasure-lock";
+import * as op13 from "@/lib/server/account-operations/entitlement-revocation-chargeback-lock";
+import * as op14 from "@/lib/server/account-operations/entitlement-session-device-anomaly-lock";
+import * as op15 from "@/lib/server/account-operations/evidence-retention-expiry-support-boundary-rebalance";
+import * as op16 from "@/lib/server/account-operations/mobile-account-vault-resend-review-panel-rebalance";
+import * as op17 from "@/lib/server/account-operations/one-time-stream-token-inbox-delivery-rebalance";
+import * as op18 from "@/lib/server/account-operations/operator-dual-control-replacement-publish-rebalance";
+import * as op19 from "@/lib/server/account-operations/purge-job-receipt-appeal-reopen-rebalance";
+import * as op20 from "@/lib/server/account-operations/recall-resolution-support-replay-rebalance";
+import * as op21 from "@/lib/server/account-operations/refund-dispute-evidence-dual-control-rebalance";
+import * as op22 from "@/lib/server/account-operations/rls-support-dashboard-erasure-reconciliation-rebalance";
+import * as op23 from "@/lib/server/account-operations/scheduled-purge-worker-legal-hold-dsar-erasure-rebalance";
+import * as op24 from "@/lib/server/account-operations/snapshot-receipt-persistence-gate-rebalance";
+import * as op25 from "@/lib/server/account-operations/stream-close-resend-persistence-rebalance";
+import * as op26 from "@/lib/server/account-operations/support-dashboard-action-rls-policy-test-rebalance";
+import * as op27 from "@/lib/server/account-operations/support-replay-persistence-stream-gate-rebalance";
+import * as op28 from "@/lib/server/account-operations/support-resend-rotation-ack-rebalance";
+
+export const dynamic = "force-dynamic";
+
+const OPERATIONS = {
+  "account-vault-timeline-export-capsule-rebalance": op00,
+  "consumed-ledger-download-history-rebalance": op01,
+  "customer-export-recall-attestation-rebalance": op02,
+  "customer-export-snapshot-parity-rebalance": op03,
+  "customer-export-zero-leak-replay-rebalance": op04,
+  "customer-notice-delivery-appeal-window-rebalance": op05,
+  "download-consumption-replay-abuse-rebalance": op06,
+  "entitlement-account-vault-retrieval-contract": op07,
+  "entitlement-admin-override-dual-control-lock": op08,
+  "entitlement-artifact-watermark-share-lock": op09,
+  "entitlement-evidence-export-dispute-lock": op10,
+  "entitlement-incident-response-disclosure-lock": op11,
+  "entitlement-retention-erasure-lock": op12,
+  "entitlement-revocation-chargeback-lock": op13,
+  "entitlement-session-device-anomaly-lock": op14,
+  "evidence-retention-expiry-support-boundary-rebalance": op15,
+  "mobile-account-vault-resend-review-panel-rebalance": op16,
+  "one-time-stream-token-inbox-delivery-rebalance": op17,
+  "operator-dual-control-replacement-publish-rebalance": op18,
+  "purge-job-receipt-appeal-reopen-rebalance": op19,
+  "recall-resolution-support-replay-rebalance": op20,
+  "refund-dispute-evidence-dual-control-rebalance": op21,
+  "rls-support-dashboard-erasure-reconciliation-rebalance": op22,
+  "scheduled-purge-worker-legal-hold-dsar-erasure-rebalance": op23,
+  "snapshot-receipt-persistence-gate-rebalance": op24,
+  "stream-close-resend-persistence-rebalance": op25,
+  "support-dashboard-action-rls-policy-test-rebalance": op26,
+  "support-replay-persistence-stream-gate-rebalance": op27,
+  "support-resend-rotation-ack-rebalance": op28,
+} as const;
+
+type OperationKey = keyof typeof OPERATIONS;
+
+function resolveOperation(operation: string) {
+  return Object.prototype.hasOwnProperty.call(OPERATIONS, operation)
+    ? OPERATIONS[operation as OperationKey]
+    : null;
+}
+
+export async function GET(request: Request, context: { params: Promise<{ operation: string }> }) {
+  const { operation } = await context.params;
+  const handler = resolveOperation(operation);
+  if (!handler || typeof handler.GET !== "function") {
+    return Response.json({ ok: false, error: "unknown_account_operation", operation }, { status: 404 });
+  }
+  return handler.GET(request);
+}

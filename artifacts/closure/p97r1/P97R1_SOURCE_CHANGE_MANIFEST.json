@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "velmere.p97r1.source-change-manifest.v1",
+  "generatedAt": "2026-08-21T08:30:00.000Z",
+  "status": "PASS_DECLARED_DELTA_ONLY",
+  "parent": "P96R1",
+  "current": "P97R1",
+  "productionChanges": [
+    {
+      "path": "lib/server/search-route-modules/lens-report.ts",
+      "change": "MODIFIED",
+      "beforeBytes": 33862,
+      "beforeSha256": "3a30497ceec3b5e20f6075aa1a447472edab7c4b3101d62f4dafc3765390b71b",
+      "afterBytes": 35171,
+      "afterSha256": "6ed20e254f449ee85ee43226b360b399b11a9ecdec4be55d67ee7c2300e630e4"
+    },
+    {
+      "path": "lib/search/lens-pdf-durable-artifact-policy.ts",
+      "change": "ADDED",
+      "beforeBytes": null,
+      "beforeSha256": null,
+      "afterBytes": 8932,
+      "afterSha256": "d04bb99215d8e98bf8c45fbc1de57570d33feac1f4845631c15491387d889cf1"
+    }
+  ],
+  "governanceChanges": [
+    {
+      "path": "VELMERE_ACTIVE_PASS.txt",
+      "change": "MODIFIED",
+      "before": "P96R1",
+      "after": "P97R1"
+    }
+  ],
+  "newEvidenceScopes": [
+    "scripts/p97/",
+    "receipts/p97/",
+    "artifacts/p97/",
+    "artifacts/closure/p97r1/",
+    "tsconfig.p97-browser-pdf-policy-targeted.json",
+    "P97R1_PACKAGE_BUILD_RECIPE.json"
+  ],
+  "riskHistoryProductFilesChanged": [],
+  "physicalRepairs": [
+    "Browser Basic no longer allows a production direct/non-durable PDF path.",
+    "Canonical durable job identity is bound to the signed frozen report rather than client request headers or transport metadata.",
+    "Exact PDF receipt uses byte-level SHA-256 and verifies actual bytes, policy, length, mode and replay state.",
+    "Production missing durable store fails before renderer execution.",
+    "Local memory replay remains bounded and explicitly ineligible for Customer FINAL storage credit."
+  ],
+  "truthBoundary": "Exact source delta from P96. No staging, provider, rights, rendered Browser or Customer FINAL promotion."
+}

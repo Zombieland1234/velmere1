@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "velmere.p93r1.risk-history-canonical-public-boundary.v1",
+  "generatedAt": "2026-08-20T16:00:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_SOURCE_NO_SOCKET",
+  "physicalChanges": {
+    "canonicalResolution": "Exact canonical asset identifier takes precedence; an alias is accepted only when it maps to exactly one canonical history.",
+    "ambiguousAlias": "Returns no history and never merges events from multiple canonical assets.",
+    "publicNonEnumeration": "Unknown, ambiguous and private-only histories normalize to the same customer-safe empty projection.",
+    "eventIntegrity": "eventId is recomputed and cross-bound to canonical asset, timestamps, score, methodology, evidence and source metadata.",
+    "durability": "Read-only RPC success cannot promote durable write/readback status.",
+    "sharedReader": "Shield, Angel, reports and other consumers inherit the v2 canonical reader rather than the legacy canonical_id OR alias RPC.",
+    "costBoundary": "Public history is limited to 144 events and a bounded rate limiter; internal service-role history remains separately bounded to 5000."
+  },
+  "privacyAndSecurity": {
+    "rawEvidenceCustomerVisible": false,
+    "providerTopologyCustomerVisible": false,
+    "privateHistoryExistenceCustomerVisible": false,
+    "mixedCanonicalHistoryAccepted": false,
+    "legacyV1ProductionReaderAccepted": false
+  },
+  "database": {
+    "migration": "supabase/migrations/20260820000007_p93_risk_history_canonical_identity_public_resolution.sql",
+    "rpc": "velmere_read_risk_history_by_asset_v2",
+    "authorizedExecution": "NOT_EXECUTED",
+    "runtimeRlsServiceRoleProof": "WITHHELD"
+  },
+  "finalState": {
+    "riskIndicatorFinal": false,
+    "customerFinal": "0/20",
+    "global": "NO_GO / STOP_SELL"
+  },
+  "truthBoundary": "No-socket local/runtime/static/source proof only. It does not prove deployed HTTP timing indistinguishability, PostgreSQL migration execution, RLS, Browser accessibility, staging, production or real customer data."
+}

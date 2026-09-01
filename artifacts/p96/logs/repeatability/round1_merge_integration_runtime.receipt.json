@@ -1,0 +1,354 @@
+{
+  "schemaVersion": "velmere.p96.risk-history-sibling-merge-integration-runtime.v1",
+  "generatedAt": "2026-08-21T05:00:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_SIBLING_MERGE_INTEGRATION",
+  "checks": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "btc_fixture_stored",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "attempted": 1,
+          "candidateEvents": 1,
+          "stored": 1,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-301728dee8c8b16ca4d5c8dd91a248ceeae4f612"
+          ]
+        }
+      },
+      {
+        "id": "route_and_projection_v3",
+        "status": "PASS",
+        "detail": "velmere.risk-history.customer-route.v3"
+      },
+      {
+        "id": "route_binding_matches_exact_btc_request",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-customer-request-binding.v1",
+          "assetReference": "sha256:87685c379789555d9ac2cb311376fd64df1e8e7625747bcda5697cf85693b440",
+          "pageReference": "sha256:ba1c64f099472ea0624b7b5d78129433b36601909f3f0066ccf8be6e90798511",
+          "requestedLimit": 10,
+          "before": null
+        }
+      },
+      {
+        "id": "btc_page_canonical_identity",
+        "status": "PASS",
+        "detail": {
+          "canonicalAssetId": "market:p96-btc",
+          "symbol": "P96-BTC",
+          "name": "Asset p96-btc"
+        }
+      },
+      {
+        "id": "btc_page_memory_provenance_bounded",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-page-storage-proof.v2",
+          "pageSource": "MEMORY",
+          "pageReadState": "RUNTIME_PAGE_ONLY",
+          "pageIntegrityVerified": true,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "pageEvidenceDigest": "sha256:e2477884c812162bc48f9181b541950706e33bd2c3366744291f3765fab539f7",
+          "blockers": [
+            "database_page_read_not_verified",
+            "multi_year_retention_not_proven",
+            "backup_restore_not_proven"
+          ]
+        }
+      },
+      {
+        "id": "same_asset_request_and_history_align",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "ALIGNED_SAME_OBSERVATION",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 42.4,
+            "snapshotScore": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "eventReference": "sha256:4876be1cf6342dbbb66515ec63f0dd6c6437a55611e041579e50159381cda899"
+          },
+          "currentDisplayAllowed": true,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": true,
+          "timeDeltaMs": 0,
+          "scoreDelta": 0.4,
+          "disclosureRequired": false
+        }
+      },
+      {
+        "id": "same_asset_preserves_precise_current_and_integer_history",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "ALIGNED_SAME_OBSERVATION",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 42.4,
+            "snapshotScore": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "eventReference": "sha256:4876be1cf6342dbbb66515ec63f0dd6c6437a55611e041579e50159381cda899"
+          },
+          "currentDisplayAllowed": true,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": true,
+          "timeDeltaMs": 0,
+          "scoreDelta": 0.4,
+          "disclosureRequired": false
+        }
+      },
+      {
+        "id": "aligned_both_customer_views_allowed",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "ALIGNED_SAME_OBSERVATION",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 42.4,
+            "snapshotScore": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "eventReference": "sha256:4876be1cf6342dbbb66515ec63f0dd6c6437a55611e041579e50159381cda899"
+          },
+          "currentDisplayAllowed": true,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": true,
+          "timeDeltaMs": 0,
+          "scoreDelta": 0.4,
+          "disclosureRequired": false
+        }
+      },
+      {
+        "id": "btc_payload_rejected_for_eth_request",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "btc_current_cannot_be_relabelled_as_eth_history",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "IDENTITY_CONFLICT",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 42.4,
+            "snapshotScore": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 37,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:db16edee14f7e8611d193707368202a7db8f279d2cc234def9b085d49edf2f62",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:da71ca8cd0e7d8c5dc922cca5054e51cf8adee4ce290fa52f14f27a1d31883e4",
+            "eventReference": "sha256:3203b24a32a3bf49563ee25bae347e1e67213f10855fa95b9542eff4b0d80073"
+          },
+          "currentDisplayAllowed": false,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": false,
+          "timeDeltaMs": 0,
+          "scoreDelta": 5.4,
+          "disclosureRequired": true
+        }
+      },
+      {
+        "id": "identity_conflict_hides_current_but_preserves_history",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "IDENTITY_CONFLICT",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 42.4,
+            "snapshotScore": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 37,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:db16edee14f7e8611d193707368202a7db8f279d2cc234def9b085d49edf2f62",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:da71ca8cd0e7d8c5dc922cca5054e51cf8adee4ce290fa52f14f27a1d31883e4",
+            "eventReference": "sha256:3203b24a32a3bf49563ee25bae347e1e67213f10855fa95b9542eff4b0d80073"
+          },
+          "currentDisplayAllowed": false,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": false,
+          "timeDeltaMs": 0,
+          "scoreDelta": 5.4,
+          "disclosureRequired": true
+        }
+      },
+      {
+        "id": "newer_bound_history_withholds_stale_table_current",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "HISTORY_NEWER_THAN_CURRENT",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 42.4,
+            "snapshotScore": 42,
+            "observedAt": "2026-08-20T04:00:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 48,
+            "observedAt": "2026-08-20T04:01:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "eventReference": "sha256:833f402da82891d046681d355a119ee2a740c7aba8540dd6b492d96fa87b2e95"
+          },
+          "currentDisplayAllowed": false,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": true,
+          "timeDeltaMs": -60000,
+          "scoreDelta": -5.6,
+          "disclosureRequired": true
+        }
+      },
+      {
+        "id": "newer_unstored_current_is_not_silently_called_stored",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-current-alignment.v1",
+          "state": "CURRENT_NEWER_COMPARABLE",
+          "current": {
+            "schemaVersion": "velmere.risk-history-current-observation.v1",
+            "status": "AVAILABLE",
+            "score": 50.6,
+            "snapshotScore": 51,
+            "observedAt": "2026-08-20T04:02:00.000Z",
+            "canonicalAssetId": "market:p96-btc",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "blocker": null
+          },
+          "latestHistory": {
+            "score": 48,
+            "observedAt": "2026-08-20T04:01:00.000Z",
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:a66e76219c6b968c272f73c1815862de050d15cf39c0c20404d9e6726853b004",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "comparabilityKey": "sha256:cb7a863c297e68215ad0c635bc440edc0a42c405921753e56d657cfcc0e20035",
+            "eventReference": "sha256:833f402da82891d046681d355a119ee2a740c7aba8540dd6b492d96fa87b2e95"
+          },
+          "currentDisplayAllowed": true,
+          "historyDisplayAllowed": true,
+          "sameComparableSegment": true,
+          "timeDeltaMs": 60000,
+          "scoreDelta": 2.6,
+          "disclosureRequired": true
+        }
+      },
+      {
+        "id": "integrated_projection_contains_no_provider_url",
+        "status": "PASS"
+      },
+      {
+        "id": "integrated_projection_contains_no_raw_provider_material",
+        "status": "PASS"
+      },
+      {
+        "id": "request_binding_and_alignment_schemas_both_versioned",
+        "status": "PASS"
+      },
+      {
+        "id": "integrated_alignment_deterministic",
+        "status": "PASS"
+      }
+    ]
+  },
+  "execution": {
+    "networkSocketsUsed": false,
+    "realPostgreSqlExecuted": false,
+    "requestPageBindingExercised": true,
+    "currentHistoryAlignmentExercised": true,
+    "crossAssetResponseSwapRejected": true,
+    "staleCurrentWithheld": true
+  },
+  "truthBoundary": "This local no-socket integration proof exercises both formerly sibling P95 contracts in one current tree. It does not prove PostgreSQL, deployed HTTP/cache behavior, Browser rendering, real customer input, whole-project build, exact Windows or Customer FINAL."
+}

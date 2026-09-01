@@ -1,0 +1,48 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true,
+    "allowJs": false
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/api/stripe/webhook/route.ts",
+    "lib/db/order-service.ts",
+    "lib/payments/pass4657-stripe-webhook-state.ts",
+    "lib/security/payment-webhook-guard.ts",
+    "app/api/checkout/route.ts",
+    "app/api/checkout/vlm-service/route.ts",
+    "app/api/checkout/vlm-service/verify/route.ts",
+    "app/api/security/audit-intake/route.ts",
+    "app/api/security/audit-review/pro/claim/route.ts",
+    "app/api/security/audit-review/pro/settle/route.ts",
+    "app/api/security/audit-review/advanced/assign/route.ts",
+    "scripts/test-pass4657-payment-boundary-fuzz.ts",
+    "scripts/test-pass4657-critical-route-boundaries.ts",
+    "lib/auth/pass2363-account-session.ts",
+    "app/api/auth/session/route.ts",
+    "scripts/test-pass4657-account-auth-boundary.ts",
+    "lib/commerce/pass2024-vlm-paid-access.ts",
+    "lib/commerce/pass2024-vlm-paid-access-server.ts",
+    "lib/commerce/pass2025-vlm-entitlement-ledger.ts",
+    "lib/commerce/vlm-advanced-only-access-policy.ts",
+    "app/api/account/audit-messages/route.ts",
+    "app/api/market-integrity/report/route.ts",
+    "app/api/market-integrity/advanced-review-state/route.ts",
+    "app/api/market-integrity/advanced-review-replay-state/route.ts",
+    "lib/market-integrity/top1-entitlement-report-access.ts",
+    "scripts/test-pass4657-account-binding-idor.ts",
+    "app/api/market-integrity/real-markets/route.ts",
+    "app/api/market-integrity/report-access/route.ts",
+    "fixtures/route-modules/market-integrity/report-delivery-state.ts",
+    "lib/market-integrity/top1-pdf-report-payload.ts",
+    "scripts/test-pass4657-paid-entitlement-boundary.ts",
+    "lib/security/pass4657-audit-pdf-download-token.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "tests"
+  ]
+}

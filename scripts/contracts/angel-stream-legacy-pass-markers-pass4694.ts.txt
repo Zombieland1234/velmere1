@@ -1,0 +1,337 @@
+import { readJsonResponseBounded } from "@/lib/network/fetch-with-deadline";
+import { POST as angelPost } from "../route";
+import { sanitizeVlmText } from "@/lib/ai/vlm-security";
+import {
+  applySoftRateLimit,
+  assertSameOriginRequest,
+  rejectLargeContentLength,
+  securityJson,
+} from "@/lib/security/api-guard";
+
+export const runtime = "nodejs";
+
+const PASS2226_ANGEL_SERVER_STREAM_MARKER =
+  "pass2226-angel-server-streaming-sse-safe-fallback" as const;
+const PASS2228_ANGEL_LOW_LATENCY_STREAM_MARKER =
+  "pass2228-angel-immediate-sse-heartbeat-provider-bridge" as const;
+const PASS2229_ANGEL_STREAM_DEADLINE_MARKER =
+  "pass2229-angel-stream-deadline-soft-breaks-heartbeat" as const;
+const PASS2230_ANGEL_STREAM_GRACEFUL_GATE_MARKER =
+  "pass2230-angel-stream-graceful-payment-and-deadline-cleanup" as const;
+const PASS2231_ANGEL_STREAM_ABORTABLE_RUNTIME_MARKER =
+  "pass2231-angel-stream-abortable-provider-no-double-cancel" as const;
+const PASS2232_ANGEL_STREAM_RELEASE_GUARD_MARKER =
+  "pass2232-angel-stream-client-abort-safe-write-no-buffer-leak" as const;
+const PASS2233_ANGEL_STREAM_RECEIPT_MARKER =
+  "pass2233-angel-stream-runtime-receipts-heartbeat-redacted" as const;
+const PASS2234_ANGEL_STREAM_FINAL_QA_MARKER =
+  "pass2234-angel-stream-close-abort-clean-heartbeat-redacted" as const;
+const PASS2235_ANGEL_STREAM_TIMER_GUARD_MARKER =
+  "pass2235-angel-stream-hard-cap-finally-safe-heartbeat-close" as const;
+const PASS2236_ANGEL_STREAM_OPERABILITY_MARKER =
+  "pass2236-angel-stream-backpressure-manual-abort-safe-finish-reason" as const;
+const PASS2237_ANGEL_STREAM_LAUNCH_RECEIPT_MARKER =
+  "pass2237-angel-stream-launch-receipt-heartbeat-abort-safe" as const;
+const PASS2238_ANGEL_STREAM_CUTOVER_MARKER =
+  "pass2238-angel-stream-cutover-stale-safe-graceful-gate-redacted" as const;
+const ANGEL_STREAM_PROVIDER_DEADLINE_MS = 34_000;
+const ANGEL_STREAM_MAX_REPLY_CHARS = 12_000;
+const ANGEL_STREAM_MAX_CHUNKS = 180;
+const ANGEL_STREAM_MIN_DELTA_DELAY_MS = 10;
+
+type AngelJsonPayload = {
+  reply?: string;
+  providerMode?: string;
+  model?: string | null;
+  diagnostics?: Record<string, unknown>;
+  entitlement?: Record<string, unknown>;
+  error?: string;
+};
+
+function sseEncode(event: string, payload: Record<string, unknown>) {
+  return `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+}
+
+function chunkReply(reply: string) {
+  const clean = sanitizeVlmText(reply, 12_000).replace(/\r\n/g, "\n");
+  if (!clean) return [];
+  const chunks: string[] = [];
+  let cursor = 0;
+  while (cursor < clean.length) {
+    const remaining = clean.length - cursor;
+    const size = remaining > 900 ? 190 : remaining > 360 ? 128 : 80;
+    const chunkWindow = clean.slice(cursor, cursor + size + 42);
+    const softBreaks = Array.from(chunkWindow.matchAll(/[\s.,;:!?\n]/g)).map((match) => match.index ?? 0);
+    const bestBreak =
+      softBreaks.filter((index) => index >= size * 0.55 && index <= size + 42).at(-1) ??
+      softBreaks.filter((index) => index >= size * 0.45).at(0) ??
+      size;
+    const end = Math.min(clean.length, cursor + bestBreak);
+    chunks.push(clean.slice(cursor, Math.max(cursor + 1, end)));
+    cursor = Math.max(cursor + 1, end);
+  }
+  return chunks;
+}
+
+export async function POST(req: Request) {
+  const sizeGuard = rejectLargeContentLength(req, 48 * 1024);
+  if (sizeGuard) return sizeGuard;
+  const originGuard = assertSameOriginRequest(req, { allowMissingOrigin: true });
+  if (originGuard) return originGuard;
+  const rateLimit = applySoftRateLimit(req, {
+    keyPrefix: "angel-chat-stream",
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) return rateLimit.response;
+
+  let innerRequest: Request;
+  try {
+    innerRequest = req.clone();
+  } catch {
+    return securityJson({ ok: false, error: "Angel stream request could not be cloned." }, { status: 400 });
+  }
+
+  const requestId =
+    req.headers.get("x-velmere-angel-request") ||
+    globalThis.crypto?.randomUUID?.() ||
+    `angel-stream-${Date.now()}`;
+
+  let bridgeAbortController: AbortController | null = null;
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      let closed = false;
+      const write = (event: string, data: Record<string, unknown>) => {
+        if (closed) return;
+        try {
+          if (controller.desiredSize !== null && controller.desiredSize < -32) {
+            closed = true;
+            bridgeAbortController?.abort();
+            try {
+              controller.close();
+            } catch {
+              // Client may already be gone; backpressure close is best-effort only.
+            }
+            return;
+          }
+          controller.enqueue(
+            encoder.encode(
+              sseEncode(event, {
+                ...data,
+                requestId,
+                pass2226: PASS2226_ANGEL_SERVER_STREAM_MARKER,
+                pass2228: PASS2228_ANGEL_LOW_LATENCY_STREAM_MARKER,
+                pass2229: PASS2229_ANGEL_STREAM_DEADLINE_MARKER,
+                pass2230: PASS2230_ANGEL_STREAM_GRACEFUL_GATE_MARKER,
+                pass2231: PASS2231_ANGEL_STREAM_ABORTABLE_RUNTIME_MARKER,
+                pass2232: PASS2232_ANGEL_STREAM_RELEASE_GUARD_MARKER,
+                pass2233: PASS2233_ANGEL_STREAM_RECEIPT_MARKER,
+                pass2234: PASS2234_ANGEL_STREAM_FINAL_QA_MARKER,
+                pass2235: PASS2235_ANGEL_STREAM_TIMER_GUARD_MARKER,
+                pass2236: PASS2236_ANGEL_STREAM_OPERABILITY_MARKER,
+                pass2237: PASS2237_ANGEL_STREAM_LAUNCH_RECEIPT_MARKER,
+                pass2238: PASS2238_ANGEL_STREAM_CUTOVER_MARKER,
+              }),
+            ),
+          );
+        } catch {
+          closed = true;
+          bridgeAbortController?.abort();
+        }
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          // Browser can close the connection first; this must never crash the stream route.
+        }
+      };
+
+      write("meta", {
+        status: 102,
+        providerMode: "provider_pending",
+        statusLabel: "provider pending",
+        diagnostics: { requestId, bridge: PASS2228_ANGEL_LOW_LATENCY_STREAM_MARKER },
+      });
+
+      const heartbeatStartedAt = Date.now();
+      const heartbeat = setInterval(() => {
+        write("heartbeat", {
+          status: 102,
+          providerMode: "provider_pending",
+          statusLabel: "provider pending",
+          at: new Date().toISOString(),
+          elapsedMs: Date.now() - heartbeatStartedAt,
+          softDeadlineMs: ANGEL_STREAM_PROVIDER_DEADLINE_MS,
+        });
+      }, 2_500);
+
+      bridgeAbortController = new AbortController();
+      const providerAbortController = bridgeAbortController;
+      const requestAbortListener = () => providerAbortController.abort();
+      req.signal.addEventListener("abort", requestAbortListener, { once: true });
+      try {
+        let providerDeadlineTimer: ReturnType<typeof setTimeout> | null = null;
+        const providerDeadline = new Promise<Response>((resolve) => {
+          providerDeadlineTimer = setTimeout(() => {
+            providerAbortController.abort();
+            resolve(
+              securityJson(
+                {
+                  error: "Angel stream provider deadline reached safely.",
+                  diagnostics: {
+                    requestId,
+                    providerError: "provider_deadline",
+                    pass2226: PASS2226_ANGEL_SERVER_STREAM_MARKER,
+                    pass2228: PASS2228_ANGEL_LOW_LATENCY_STREAM_MARKER,
+                    pass2229: PASS2229_ANGEL_STREAM_DEADLINE_MARKER,
+                    pass2230: PASS2230_ANGEL_STREAM_GRACEFUL_GATE_MARKER,
+                    pass2231: PASS2231_ANGEL_STREAM_ABORTABLE_RUNTIME_MARKER,
+                    pass2232: PASS2232_ANGEL_STREAM_RELEASE_GUARD_MARKER,
+                    pass2233: PASS2233_ANGEL_STREAM_RECEIPT_MARKER,
+                    pass2234: PASS2234_ANGEL_STREAM_FINAL_QA_MARKER,
+                    pass2235: PASS2235_ANGEL_STREAM_TIMER_GUARD_MARKER,
+                    pass2236: PASS2236_ANGEL_STREAM_OPERABILITY_MARKER,
+                pass2237: PASS2237_ANGEL_STREAM_LAUNCH_RECEIPT_MARKER,
+                pass2238: PASS2238_ANGEL_STREAM_CUTOVER_MARKER,
+                  },
+                },
+                { status: 504 },
+              ),
+            );
+          }, ANGEL_STREAM_PROVIDER_DEADLINE_MS);
+        });
+        const providerRequest = new Request(innerRequest, { signal: providerAbortController.signal });
+        const innerResponse = await Promise.race([angelPost(providerRequest), providerDeadline]).catch((error) =>
+          securityJson(
+            {
+              error: "Angel stream bootstrap failed.",
+              diagnostics: {
+                requestId,
+                providerError: sanitizeVlmText(error instanceof Error ? error.message : error, 180),
+                pass2226: PASS2226_ANGEL_SERVER_STREAM_MARKER,
+                pass2228: PASS2228_ANGEL_LOW_LATENCY_STREAM_MARKER,
+                pass2229: PASS2229_ANGEL_STREAM_DEADLINE_MARKER,
+                pass2230: PASS2230_ANGEL_STREAM_GRACEFUL_GATE_MARKER,
+                pass2231: PASS2231_ANGEL_STREAM_ABORTABLE_RUNTIME_MARKER,
+                pass2232: PASS2232_ANGEL_STREAM_RELEASE_GUARD_MARKER,
+                pass2233: PASS2233_ANGEL_STREAM_RECEIPT_MARKER,
+                pass2236: PASS2236_ANGEL_STREAM_OPERABILITY_MARKER,
+                pass2237: PASS2237_ANGEL_STREAM_LAUNCH_RECEIPT_MARKER,
+                pass2238: PASS2238_ANGEL_STREAM_CUTOVER_MARKER,
+              },
+            },
+            { status: 500 },
+          ),
+        );
+        if (providerDeadlineTimer) clearTimeout(providerDeadlineTimer);
+        const status = innerResponse.status;
+        const payload = (await readJsonResponseBounded<AngelJsonPayload>(innerResponse, 128 * 1024).catch(() => ({} as AngelJsonPayload)));
+
+        write("meta", {
+          status,
+          providerMode: payload.providerMode ?? "unknown",
+          statusLabel: payload.providerMode ?? "provider ready",
+          model: payload.model ?? null,
+          diagnostics: payload.diagnostics ?? null,
+          entitlement: payload.entitlement ?? null,
+        });
+
+        if ((status < 200 || status >= 300) && payload.reply) {
+          write("meta", {
+            status,
+            providerMode: payload.providerMode ?? "gated_reply",
+            statusLabel: payload.providerMode ?? "gated reply",
+            diagnostics: payload.diagnostics ?? null,
+            entitlement: payload.entitlement ?? null,
+            gracefulGate: PASS2230_ANGEL_STREAM_GRACEFUL_GATE_MARKER,
+          });
+        } else if (status < 200 || status >= 300 || !payload.reply) {
+          write("error", {
+            error: payload.error ?? "Angel stream could not produce a reply.",
+            status,
+            providerMode: payload.providerMode ?? "error",
+            diagnostics: payload.diagnostics ?? null,
+          });
+          return;
+        }
+
+        const finalReply = sanitizeVlmText(String(payload.reply), ANGEL_STREAM_MAX_REPLY_CHARS);
+        const rawChunks = chunkReply(finalReply);
+        const chunks = rawChunks.slice(0, ANGEL_STREAM_MAX_CHUNKS);
+        const finishReason =
+          rawChunks.length > ANGEL_STREAM_MAX_CHUNKS
+            ? "chunk_cap_reached"
+            : finalReply.length >= ANGEL_STREAM_MAX_REPLY_CHARS
+              ? "reply_char_cap_reached"
+              : "complete";
+        for (const chunk of chunks) {
+          if (closed || providerAbortController.signal.aborted) return;
+          write("delta", { delta: chunk });
+          await new Promise((resolve) => setTimeout(resolve, ANGEL_STREAM_MIN_DELTA_DELAY_MS));
+        }
+        write("done", {
+          reply: finalReply,
+          providerMode: payload.providerMode ?? "unknown",
+          model: payload.model ?? null,
+          diagnostics: payload.diagnostics ?? null,
+          entitlement: payload.entitlement ?? null,
+          finishReason,
+        });
+      } catch (error) {
+        if (providerAbortController.signal.aborted) return;
+        write("error", {
+          error: "Angel stream failed safely.",
+          providerMode: "stream_error",
+          diagnostics: {
+            requestId,
+            providerError: sanitizeVlmText(error instanceof Error ? error.message : error, 180),
+            pass2231: PASS2231_ANGEL_STREAM_ABORTABLE_RUNTIME_MARKER,
+            pass2232: PASS2232_ANGEL_STREAM_RELEASE_GUARD_MARKER,
+            pass2234: PASS2234_ANGEL_STREAM_FINAL_QA_MARKER,
+            pass2235: PASS2235_ANGEL_STREAM_TIMER_GUARD_MARKER,
+            pass2236: PASS2236_ANGEL_STREAM_OPERABILITY_MARKER,
+                pass2237: PASS2237_ANGEL_STREAM_LAUNCH_RECEIPT_MARKER,
+                pass2238: PASS2238_ANGEL_STREAM_CUTOVER_MARKER,
+          },
+        });
+      } finally {
+        req.signal.removeEventListener("abort", requestAbortListener);
+        if (!providerAbortController.signal.aborted) providerAbortController.abort();
+        if (bridgeAbortController === providerAbortController) bridgeAbortController = null;
+        clearInterval(heartbeat);
+        close();
+      }
+    },
+    cancel() {
+      bridgeAbortController?.abort();
+      bridgeAbortController = null;
+      // Browser closed/reloaded the panel. PASS2231 aborts the bridge too; no duplicate cancel block.
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-store, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+      "X-Velmere-Angel-Stream": PASS2228_ANGEL_LOW_LATENCY_STREAM_MARKER,
+      "X-Velmere-Pass2229": PASS2229_ANGEL_STREAM_DEADLINE_MARKER,
+      "X-Velmere-Pass2230": PASS2230_ANGEL_STREAM_GRACEFUL_GATE_MARKER,
+      "X-Velmere-Pass2231": PASS2231_ANGEL_STREAM_ABORTABLE_RUNTIME_MARKER,
+      "X-Velmere-Pass2232": PASS2232_ANGEL_STREAM_RELEASE_GUARD_MARKER,
+      "X-Velmere-Pass2233": PASS2233_ANGEL_STREAM_RECEIPT_MARKER,
+      "X-Velmere-Pass2234": PASS2234_ANGEL_STREAM_FINAL_QA_MARKER,
+      "X-Velmere-Pass2235": PASS2235_ANGEL_STREAM_TIMER_GUARD_MARKER,
+      "X-Velmere-Pass2236": PASS2236_ANGEL_STREAM_OPERABILITY_MARKER,
+      "X-Velmere-Pass2237": PASS2237_ANGEL_STREAM_LAUNCH_RECEIPT_MARKER,
+      "X-Velmere-Pass2238": PASS2238_ANGEL_STREAM_CUTOVER_MARKER,
+    },
+  });
+}

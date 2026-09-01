@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "velmere.p36.exact-customer-pdf-integration.v1",
+  "generatedAt": "2026-08-13T15:00:00.000Z",
+  "status": "PASS_P36_EXACT_CUSTOMER_PDF_STORAGE_TO_DELIVERY_INTEGRATION",
+  "assertions": 61,
+  "pdf": {
+    "parser": "pdfinfo",
+    "version": "1.4",
+    "pages": 1,
+    "byteLength": 1784,
+    "sha256": "sha256:372243abfd1f1c8376b6a52bec68f97bcf59178fba665218dc05d2e11331eada",
+    "deterministicStructuralValidation": {
+      "valid": true,
+      "headerValid": true,
+      "eofValid": true,
+      "pageCount": 1,
+      "activeContentDetected": false
+    }
+  },
+  "exercised": [
+    "snapshot_build_and_verify",
+    "atomic_memory_snapshot_pdf_bundle",
+    "immutable_lookup_and_binding",
+    "exact_inline_attachment_delivery",
+    "tamper_detection",
+    "immutable_conflict",
+    "cross_account_denial",
+    "legacy_new_write_rejected",
+    "legacy_read_only_metadata_compatibility",
+    "legacy_preview_and_download_fail_closed_without_rerender",
+    "v3_pdf_availability_contract",
+    "signed_preview_cookie_route_handler",
+    "http_preview_download_byte_parity",
+    "http_cross_account_denial",
+    "pdf_structural_validation_shared_boundary",
+    "pdf_like_prefix_and_shallow_structure_rejection"
+  ],
+  "creditBoundary": {
+    "internalInMemoryIntegration": true,
+    "routeHandlerExecuted": true,
+    "durableDatabaseExecuted": false,
+    "deployedHttpExecuted": false,
+    "realCustomerExecuted": false
+  },
+  "sourceBindings": {
+    "routeHandler": {
+      "path": "lib/server/lazy-route-modules/account--customer-artifact.ts",
+      "byteLength": 16201,
+      "sha256": "f578b7e27589d0045f0278158c0b21db92cee0c42764915a502f701833632914"
+    },
+    "snapshotStore": {
+      "path": "lib/reporting/account-customer-artifact-store.ts",
+      "byteLength": 23203,
+      "sha256": "6d851c7ea1c59fe70b6922bc812994c8f32d88f561a89a93b8c69425be6bd975"
+    },
+    "immutablePdfBlob": {
+      "path": "lib/reporting/account-customer-artifact-pdf-blob.ts",
+      "byteLength": 8433,
+      "sha256": "39bbd2cacea4dd845dc72063e43253beac5456a153a7cb47fc72c0bff63ebc79"
+    },
+    "exactDelivery": {
+      "path": "lib/reporting/exact-customer-pdf-delivery.ts",
+      "byteLength": 3127,
+      "sha256": "2fb9b3a0dad27138c1866045b8afc534f7f71aa0e2a00151cd0aad260b5bbe47"
+    },
+    "structuralValidation": {
+      "path": "lib/reporting/pdf-structural-validation.ts",
+      "byteLength": 24702,
+      "sha256": "5427b1be2ed24364b54dbb4c73f20235ea7ea07ee026a76324b2de902be4501f"
+    }
+  },
+  "truthBoundary": "Current-source local integration executes the real route handler with a signed non-production preview cookie and exact immutable in-memory bytes. It grants no durable database/RLS, deployed HTTP, real-customer, retention, sale, GO_PAID or LIVE credit.",
+  "integritySha256": "sha256:2b2767c8421e493c7aa967670028b4c013c1a4a104695e1a7fbaa5e21733b216"
+}

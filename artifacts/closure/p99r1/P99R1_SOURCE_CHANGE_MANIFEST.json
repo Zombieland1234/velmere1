@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "velmere.p99r1.source-change-manifest.v1",
+  "generatedAt": "2026-08-21T15:00:00.000Z",
+  "status": "PASS_DECLARED_DELTA_ONLY",
+  "parent": "P98R1",
+  "current": "P99R1",
+  "productionChanges": [
+    {
+      "path": "lib/market-integrity/market-row-delivery-gate.ts",
+      "change": "MODIFIED",
+      "beforeBytes": 34621,
+      "beforeSha256": "9d7fea4d1ae1d44e6203e70fd8f527b4623f42686e7df34f0fe1f36dd5c824ed",
+      "afterBytes": 36170,
+      "afterSha256": "729ffd00bc79c7912d096afc2b82b6599c45cb84164cf5b8322e809e1d962723"
+    },
+    {
+      "path": "lib/server/market-integrity-route-modules/markets.ts",
+      "change": "MODIFIED",
+      "beforeBytes": 16774,
+      "beforeSha256": "b2b2d40fcf384e28be484386ce8b7f72cb4ae3ee7aa537e1afcb4f0ebd656379",
+      "afterBytes": 16408,
+      "afterSha256": "fbc2956b88067c23a8f744cbd8e0d98d36fdd674f3768e2b19a1ef65376f629c"
+    },
+    {
+      "path": "config/p99/real-markets-basic-field-rights-currentness-registry.json",
+      "change": "ADDED",
+      "beforeBytes": null,
+      "beforeSha256": null,
+      "afterBytes": 13317,
+      "afterSha256": "a6c2336a63c1c29d53418699c80678ff003b003455e156ab9667262435b853bb"
+    },
+    {
+      "path": "lib/compliance/provider-delivery-rights-gate.d.mts",
+      "change": "ADDED",
+      "beforeBytes": null,
+      "beforeSha256": null,
+      "afterBytes": 561,
+      "afterSha256": "c068f74efb46f02fbe8d77c146824a9523bd0f90a6f4ffc64b4097c8a7f9dc5f"
+    },
+    {
+      "path": "lib/market-integrity/real-markets-basic-field-policy.ts",
+      "change": "ADDED",
+      "beforeBytes": null,
+      "beforeSha256": null,
+      "afterBytes": 8758,
+      "afterSha256": "7ac1225b180628392616e58895453bb1a15690abbc8ea8f1299c578e132cbcfe"
+    }
+  ],
+  "governanceChanges": [
+    {
+      "path": "VELMERE_ACTIVE_PASS.txt",
+      "change": "MODIFIED",
+      "before": "P98R1",
+      "after": "P99R1"
+    }
+  ],
+  "newEvidenceScopes": [
+    "scripts/p99/",
+    "receipts/p99/",
+    "artifacts/p99/",
+    "artifacts/closure/p99r1/",
+    "tsconfig.p99-real-markets-basic-targeted.json",
+    "P99R1_PACKAGE_BUILD_RECIPE.json"
+  ],
+  "riskHistoryProductFilesChanged": [],
+  "physicalRepairs": [
+    "Real Markets Basic verifies exact field-level rights/currentness policy before any CoinGecko/Binance provider, durable-cache or fallback execution.",
+    "Current unverified rights produce a minimal customer-safe WITHHELD response with no market rows or internal provider topology.",
+    "The deterministic local customer reference fallback was removed from the customer markets route.",
+    "All 23 required fields have explicit semantic class, unit/currency, venue scope, currentness class, maximum age and execution-ineligibility contracts.",
+    "Price is classified as aggregated reference data and is never claimed live, venue-specific, executable or a trade quote.",
+    "Market-row evidence and public projections carry the semantic/currentness contract rather than inferring live status from HTTP success.",
+    "The field-policy verifier fully rebuilds the expected decision and rejects self-consistent recomputed-digest mutations.",
+    "A matching .d.mts declaration repairs Bundler TypeScript reachability for the existing .mjs rights gate."
+  ],
+  "truthBoundary": "Exact source delta from P98. No customer-display right, commercial right, provider call, route execution, real field, deployment, rendered Browser, build or FINAL promotion."
+}

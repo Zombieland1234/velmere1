@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "velmere.p92.targeted-strict-typescript.v1",
+  "generatedAt": "2026-08-20T20:00:00.000Z",
+  "status": "PASS_BOUNDED_TARGETED_STRICT_TYPESCRIPT",
+  "checks": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "customer_client_semantic",
+        "status": "PASS",
+        "returnCode": 0,
+        "config": "tsconfig.p92-risk-history-customer-client.json",
+        "log": "artifacts/p92/logs/typescript/P92_CUSTOMER_CLIENT_TYPESCRIPT.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "customer_ui_semantic_with_closed_ambient",
+        "status": "PASS",
+        "returnCode": 0,
+        "config": "tsconfig.p92-risk-history-ui-targeted.json",
+        "log": "artifacts/p92/logs/typescript/P92_CUSTOMER_UI_TYPESCRIPT.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "zeroFakeCredit": {
+    "wholeProjectSemanticTypeScript": false,
+    "realReactDependencyGraph": false,
+    "eslint": false,
+    "webpack": false,
+    "turbopack": false,
+    "exactWindows": false,
+    "customerFinal": "0/20"
+  },
+  "truthBoundary": "The pure client compiles against its real transitive source graph. The TSX control compiles strictly against closed ambient declarations because the SOURCE_ONLY environment has no installed React/Next dependency graph. Whole-project semantic TypeScript remains WITHHELD, not PASS or FAIL."
+}

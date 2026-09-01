@@ -1,0 +1,21 @@
+VELMÈRE PASS36 A102R44P33 — EXTERNAL CI STRIPE-MOCK PROTOCOL 12/12
+
+Revision: VELMERE_PASS36_A102R44P33_ACTION_REQUIRED_EXTERNAL_CI_STRIPE_MOCK_PROTOCOL12_SIGSTORE_OIDC_REAL_STRIPE_TEST_BLOCKED_NO_LIVE_CREDIT
+Parent: VELMERE_PASS36_A102R44P32_ACTION_REQUIRED_LOCAL_DURABLE_STRIPE_PROTOCOL_LIFECYCLE12_REAL_STRIPE_TEST_BLOCKED_NO_LIVE_CREDIT
+
+IMPLEMENTED
+- External disposable GitHub Actions execution against stripe/stripe-mock:v0.202.0.
+- Twelve protocol/schema cases: checkout schema, signed webhook, payment binding, entitlement activation, duplicate idempotency, event reordering, replay denial, refund schema, refund webhook, entitlement revocation, reconciliation and one-time dead-letter requeue.
+- Independent verifier 170/170 with physical artifact byte/hash bijection.
+- Sigstore/Cosign keyless GitHub OIDC attestation bound to exact R44P32 manifest and aggregate.
+- Negative runs preserved: secret admission blocked, readiness failure, patch-preimage refusal, refund-schema stale assumption and stale-parent success.
+
+TRUTH BOUNDARY
+- Classification: EXTERNAL_CI_STRIPE_MOCK_PROTOCOL_ONLY.
+- Stripe-mock is a schema/protocol mock, not Stripe TEST mode.
+- Real Stripe TEST remains 0/12.
+- No real Checkout redirect, payment method, webhook delivery, refund, customer, sale or LIVE credit.
+- Current-child exact Linux/browser/PDF/Windows release was not rerun.
+
+DECISION
+GLOBAL=NO_GO; LIVE=false; saleEnabled=false; productionApproved=false; worldClassProven=false.

@@ -1,0 +1,32 @@
+VELMERE PASS36 A102R8 — CHECKOUT PII + AUDIT CASE + PDF ACTIVITY BROWSER PERSISTENCE FAIL-CLOSED
+
+Revision:
+VELMERE_PASS36_A102R8_ACTION_REQUIRED_CHECKOUT_PII_AUDIT_CASE_AND_PDF_ACTIVITY_BROWSER_PERSISTENCE_FAIL_CLOSED_NO_REAL_CREDIT
+
+Parent:
+VELMERE_PASS36_A102R7_ACTION_REQUIRED_MOBILE_WALLET_DEEPLINK_QUERY_HASH_PRIVATE_PATH_AND_EXTERNAL_PROVIDER_PRIVACY_FAIL_CLOSED_NO_REAL_CREDIT
+
+LOCAL IMPLEMENTATION
+- Removed browser localStorage reads/writes for checkout drafts containing full name, email, address, city and country.
+- Checkout data remains only in React memory while the checkout component is open.
+- Added purge-only cleanup for legacy PL/EN/DE checkout draft keys; old values are never read or migrated.
+- Replaced persistent audit-case bookmarks with bounded current-tab memory and removed cross-tab storage-event synchronization.
+- Replaced persistent PDF download activity receipts with bounded current-tab memory.
+- Legacy audit-case and PDF receipt keys are removed without parsing or migration.
+- Returned bookmark and PDF receipt rows are defensively copied so caller mutation cannot alter the internal memory ledger.
+- Corrected PL/EN/DE UI copy: browser activity history is current-tab only and paid access remains server/account bound.
+
+LOCAL TESTS
+- A102R8 targeted browser privacy boundary: 41/41 PASS.
+- Existing A102R7/A102R6/A102R5, auth, paid-delivery, API, route, lazy-route, product-tier and zero-budget regressions remain mandatory.
+
+TRUTH BOUNDARY
+- No real shared-device, logout, account-switch or browser instrumentation matrix was executed.
+- No durable server checkout draft, audit bookmark or PDF activity receipt is proven.
+- No exact Node/npm build, exact Chromium/browser, staging, rights, legal/DPO, customer or assurance credit.
+- completedThrough=89; A90-A102 formal pass credit=false.
+- NO_GO; LIVE=false; saleEnabled=false; productionApproved=false; worldClassProven=false.
+
+PLANNING ESTIMATE
+- Approximate remaining checkpoints after A102R8: 26-38.
+- Most likely planning estimate: about 32, depending on exact-runtime/browser closure, real staging, A102 windows, rights, legal, real data, customer cohorts, assurance and repair revisions.

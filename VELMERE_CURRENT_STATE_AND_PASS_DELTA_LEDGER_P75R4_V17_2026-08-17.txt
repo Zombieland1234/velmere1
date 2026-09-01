@@ -1,0 +1,159 @@
+VELMÈRE — CURRENT STATE AND PASS DELTA LEDGER
+REVISION: P75R4 / V17
+DATE: 2026-08-17
+AUTHORITY: CANONICAL OWNER DIRECTIVE V17 — unchanged byte-for-byte from P71R5/P73R7
+PARENT PRODUCT CHECKPOINT: P73R7 / V17
+PASS DECISION: PASS_BOUNDED_P75R4_ADVANCED_AUDIT_AUTOMATION_RUNTIME_EXACT_WINDOWS
+P75R4 CREDIT CLASS: REAL_PRODUCT_SOURCE_REPAIR + ADVANCED_AUTOMATION_RUNTIME + FORWARD_DB_MIGRATION_SOURCE + EXACT_WINDOWS_ENGINEERING + MEMORY_RUNTIME + P73_AUTHORITY_REGRESSION + FAIL_CLOSED_NO_CUSTOMER_FINAL_PROMOTION
+GLOBAL RELEASE DECISION: NO_GO
+STOP_SELL: true
+LIVE: false
+saleEnabled: false
+productionApproved: false
+worldClassProven: false
+
+======================================================================
+EXECUTIVE DELTA — P73R7 → P75R4
+======================================================================
+Axis | P73R7 | P75R4 | Honest credit
+Canonical topology | 10 / 20 / 20 / 10 | unchanged | PASS_RETAINED
+Advanced execution semantics | V17 says automated; reachable legacy/manual runtime drift remained | worker claim/settle + atomic snapshot + automated PDF gate | PASS_BOUNDED_PRODUCT_REPAIR
+Advanced customer-history lane | writer/reader mismatch around advanced_automation | current lane durable/readable; legacy lane compatibility-only | PASS_BOUNDED_SOURCE
+DB event/reason constraints | PASS4616 events could conflict with PASS4615 CHECKs | forward migration expands current constraints; customer-safe reasons | PASS_BOUNDED_SOURCE
+Optional human QA | could mutate automation state / leak reviewer SLA fields | isolated internal-only; does not gate or replace automation | PASS_BOUNDED_PRODUCT_REPAIR
+Advanced PDF delivery gate | legacy manual-release/sign-off dependency | automated completion + immutable snapshot path | PASS_BOUNDED_PRODUCT_REPAIR
+Advanced worker orchestration | no Advanced claim/settle path | Advanced claim + settle path exists | PASS_BOUNDED_RUNTIME
+Atomic Advanced completion | absent | worker completion + immutable advanced snapshot | PASS_BOUNDED_RUNTIME
+Exact Windows engineering | PASS inherited P73R7 | PASS current P75R4 bytes | PASS_CURRENT
+Advanced memory runtime | not present | PASS (11 checks) | PASS_CURRENT
+P73 deployment-identity authority | 1 case | regression PASS (27 checks) + source byte identity | PASS_RETAINED
+Current Ancient8 runtime bytecode | 0/1 | 0/1 | WITHHELD
+Vulnerability/exploitability ground truth | 0 | 0 | WITHHELD
+Customer FINAL | 0/20 | 0/20 | WITHHELD
+Audit FINAL PDF | 0/3 | 0/3 | WITHHELD
+Rights | 2/203 | 2/203 | unchanged
+Paid value | 0/10 | 0/10 | unchanged
+Sale eligible | 0/20 | 0/20 | STOP_SELL
+Global | NO_GO | NO_GO | correct
+
+P75R4 closes a real architecture/runtime contradiction: current Advanced Audit no longer depends on human/manual review for execution or customer PDF delivery. It does NOT prove a live production Supabase migration, a vulnerability, exploitability, current Ancient8 bytecode, customer FINAL, Audit FINAL PDF, commercial rights, paid value, sale eligibility, LIVE, or world-class closure.
+
+======================================================================
+AUDIT FINDINGS CLOSED IN P75R4
+======================================================================
+1. audit-case-customer-history deserialization did not accept current advanced_automation consistently while legacy advanced_human_review remained accepted.
+2. PASS4616 used automation/reviewer event values without a forward expansion of PASS4615 history CHECK constraints.
+3. Durable Advanced had no Pro-equivalent worker lease claim/settle path.
+4. Advanced completion lacked atomic worker-complete + immutable-snapshot semantics.
+5. Advanced PDF token/download path still depended on a legacy manual-release gate.
+6. Optional human QA could interfere with machine review_state / lease state.
+7. Customer projection could expose optional-human reviewer/SLA state.
+8. Legacy-named manual-review status route still projected manual-release semantics.
+9. STOP_SELL for Advanced was already correct and is intentionally retained.
+
+The old identifiers advanced_human_review / paid_human_reviewed_service remain only where necessary for frozen historical replay or legacy billing compatibility. Current Advanced contract remains advanced_audit, automated, humanReviewRequired=false, publicCheckoutAllowed=false, NOT_FOR_SALE. They are not credited as current customer features.
+
+======================================================================
+PHYSICAL P75R4 SOURCE REPAIR
+======================================================================
+Changed build-relevant files: 7
+- lib/db/supabase-rpc-operation-registry.ts
+- lib/security/audit-case-customer-history.ts
+- lib/security/audit-report-snapshot-store.ts
+- lib/security/audit-review-orchestration.ts
+- lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts
+- lib/server/lazy-route-modules/security--audit-watch--pro-pdf.ts
+- lib/server/security-route-modules/audit-advanced-manual-review.ts
+
+Added build-relevant files: 3
+- app/api/security/audit-review/advanced/claim/route.ts
+- app/api/security/audit-review/advanced/settle/route.ts
+- lib/server/lazy-route-modules/security--audit-review--advanced--settle.ts
+
+Added forward migration:
+- supabase/migrations/20260817000001_p75_advanced_audit_automation_runtime.sql
+- SHA-256: fa56abf0a1dc4d72794ea916e7569f06fe5b601865fee1cd23198737a1773cc2
+
+Historical PASS4615/PASS4616/PASS4806 migration bytes are preserved; P75R4 does not rewrite historical migrations.
+
+======================================================================
+CURRENT BUILD PROJECTION + EXACT WINDOWS PROOF
+======================================================================
+Final proof run: 32076162156
+Proof head: da69eb05cee0b6d4359ab832c8c3532bbf2ab605
+Runner: Microsoft Windows Server 2025 / x64
+Node: v24.18.0
+npm: 11.16.0
+Exact product projection: 1601 files / 21,037,749 B
+Path-set SHA-256: 40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59
+Aggregate SHA-256: 748be4046784cb0581c3a6f123ed3670afd4e6849a9007bd98a144f820d7dff6
+Exact-Windows artifact ZIP SHA-256: da6acf89eab68b891602a91340254f5f76e960d1fb29b2038a4afaf1175ee8a7
+
+Hard engineering gate: PASS
+- exact parent reconstruction
+- exact P75 source delta
+- static automation/migration controls
+- native exact Node/npm environment
+- semantic TypeScript
+- zero-warning ESLint
+- Webpack production build
+- Turbopack production build
+- dependency/projection closure and post-build restoration
+
+Additional P75R4 controls:
+- Advanced automation memory runtime: PASS (11 checks)
+- P73R7 full authority regression on P75 bytes: PASS (27 checks)
+- P73 authority-critical source inheritance: byte-identical
+- first P75 run 32074365435: transport failure before product execution; 0 credit
+- repaired P75 run 32074700759: engineering PASS but P73 regression harness hardcoded p73r7-work/source and failed MODULE_NOT_FOUND before authority execution; 0 checkpoint credit
+- P75R4 fixes only that control-plane path binding; product projection is unchanged from the repaired P75 delta
+
+======================================================================
+DATABASE / DEPLOYMENT TRUTH BOUNDARY
+======================================================================
+The forward Supabase migration is present, statically validated, and the source/runtime memory path is tested. This checkpoint does NOT claim that the migration has been applied to a real production/staging Supabase database. No live durable-database execution credit is granted without a separate deployment + transaction proof.
+
+======================================================================
+P73R7 GROUND-TRUTH INHERITANCE
+======================================================================
+Deployment-identity ground-truth cases: 1 retained.
+Case: Ancient8 Multicall3 documented-address contradiction from P73R7.
+P75R4 changes none of the authority-critical P73 source files; byte-identity inheritance receipt is included.
+P75R4 also executes the P73R7 full authority regression on current P75 bytes.
+Current Ancient8 runtime bytecode remains unverified: 0/1. Vulnerability/exploitability ground truth remains 0.
+
+======================================================================
+CURRENT GLOBAL DENOMINATORS — ZERO FAKE CREDIT
+======================================================================
+Product families: 10
+Customer-facing rows: 20
+Current execution profiles: 20
+Material paid transitions: 10
+Customer FINAL: 0/20
+Audit FINAL PDF: 0/3
+Real Markets FINAL: 0/3
+Current Ancient8 runtime-bytecode cases: 0/1
+Vulnerability ground truth: 0
+Rights: 2/203 PASS; 201/203 WITHHELD
+Paid value: 0/10
+Sale eligible: 0/20
+Security/privacy FINAL: OPEN
+Accessibility/i18n FINAL: OPEN
+Convergence: 0/3
+LIVE: false
+GLOBAL: NO_GO / STOP_SELL
+
+======================================================================
+NEXT HIGHEST-VALUE CLOSURE
+======================================================================
+1. Prove/apply the P75R4 forward migration in an isolated durable Supabase environment and exercise Advanced claim → settle → immutable snapshot transaction with rollback/negative controls; no production credit until this exists.
+2. Move Audit from deployment-identity evidence to independent vulnerability/exploitability/adjudication ground truth on a proof-friendly real target.
+3. Execute real customer Basic/Pro/Advanced path and produce the first honest Customer FINAL + Audit FINAL PDF without weakening the V17 evidence gates.
+4. Continue Real Markets rights-safe price lane, Browser/Shield/Shield Pro final execution/value proof, Market Impact/Whale Watch real data/rights, Angel groundedness/injection campaign, then security/privacy/accessibility/operations + 3 convergence rounds.
+
+CANONICAL AUTHORITY AFTER P75R4
+- Canonical Owner Directive: V17 unchanged byte-for-byte.
+- Current State & Pass Delta Ledger: P75R4 / V17 (this file).
+- Current SOURCE_ONLY: P75R4 / V17 deterministic package.
+
+Truth rule: no packaging, CI, source repair, internal QA, AI simulation, human assignment, payment event, or legacy compatibility identifier may create customer FINAL, paid-value, rights, sale, LIVE, or WORLD_CLASS credit without the separate required evidence.

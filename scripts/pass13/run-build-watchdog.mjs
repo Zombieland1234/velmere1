@@ -1,0 +1,8 @@
+import fs from 'node:fs'; import path from 'node:path'; import {spawnSync} from 'node:child_process';
+import {treeDigest, writeJson, PASS13_DIR, now} from './common.mjs';
+const mode=process.argv[2]; if(!['webpack','turbopack'].includes(mode))throw new Error('mode must be webpack or turbopack');
+const seconds=Number(process.env.PASS13_BUILD_TIMEOUT_SECONDS||1800); const before=treeDigest({sourceOnly:true}); const log=path.join(PASS13_DIR,`PASS13_BUILD_${mode.toUpperCase()}.log`); fs.rmSync('.next',{recursive:true,force:true});
+const next=path.resolve('node_modules/.bin/next'); const args=['build',mode==='webpack'?'--webpack':'--turbopack']; const started=Date.now();
+const r=spawnSync('/usr/bin/timeout',['--signal=TERM','--kill-after=15s',`${seconds}s`,next,...args],{encoding:'utf8',maxBuffer:256*1024*1024,env:{...process.env,NEXT_TELEMETRY_DISABLED:'1'}}); const durationMs=Date.now()-started; fs.writeFileSync(log,`${r.stdout||''}${r.stderr||''}`);
+const after=treeDigest({sourceOnly:true}); const timedOut=r.status===124||r.status===137||r.signal==='SIGTERM'||r.signal==='SIGKILL'; const ok=r.status===0&&!timedOut&&before.sha256===after.sha256;
+const out={schemaVersion:'velmere.pass13.build-watchdog.v1',generatedAt:now(),mode,ok,status:ok?'PASS':timedOut?'FAIL_TIMEOUT':'FAIL',exitCode:r.status,signal:r.signal??null,timedOut,timeoutSeconds:seconds,durationMs,sourceBefore:before.sha256,sourceAfter:after.sha256,sourceImmutable:before.sha256===after.sha256,log:path.relative(process.cwd(),log),logTail:`${r.stdout||''}${r.stderr||''}`.trim().split(/\r?\n/).slice(-100)}; writeJson(path.join(PASS13_DIR,`PASS13_BUILD_${mode.toUpperCase()}.json`),out); console.log(JSON.stringify(out,null,2)); if(!ok)process.exit(1);

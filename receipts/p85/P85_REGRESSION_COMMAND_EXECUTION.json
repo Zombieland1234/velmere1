@@ -1,0 +1,279 @@
+{
+  "schemaVersion": "velmere.p85.regression-command-execution.v1",
+  "status": "PASS",
+  "results": [
+    {
+      "name": "P85_OWNER_VISIBLE_REPEATABILITY",
+      "command": [
+        "python3",
+        "scripts/p85/verify-p85-runtime-repeatability.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 3.297,
+      "log": "artifacts/p85/logs/P85_OWNER_VISIBLE_REPEATABILITY.log"
+    },
+    {
+      "name": "P85_OWNER_VISIBLE_STATIC",
+      "command": [
+        "python3",
+        "scripts/p85/test-p85-owner-visible-artifact-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.586,
+      "log": "artifacts/p85/logs/P85_OWNER_VISIBLE_STATIC.log"
+    },
+    {
+      "name": "P85_P84_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p85/verify-p85-p84-owner-read-compatibility.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.611,
+      "log": "artifacts/p85/logs/P85_P84_COMPATIBILITY.log"
+    },
+    {
+      "name": "P85_P80_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p85/verify-p85-p80-immutable-artifact-compatibility.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.108,
+      "log": "artifacts/p85/logs/P85_P80_COMPATIBILITY.log"
+    },
+    {
+      "name": "P85_CHANGED_MODULE_IMPORTS",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p85/test-p85-changed-module-imports.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.62,
+      "log": "artifacts/p85/logs/P85_CHANGED_MODULE_IMPORTS.log"
+    },
+    {
+      "name": "P85_TARGETED_TYPESCRIPT",
+      "command": [
+        "tsc",
+        "--noEmit",
+        "--target",
+        "ES2022",
+        "--lib",
+        "ES2022,DOM",
+        "--module",
+        "ESNext",
+        "--moduleResolution",
+        "Bundler",
+        "--skipLibCheck",
+        "--strict",
+        "--noResolve",
+        "scripts/p85/p85-targeted-types.d.ts",
+        "lib/reporting/account-customer-artifact-owner-visible-read.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.418,
+      "log": "artifacts/p85/logs/P85_TARGETED_TYPESCRIPT.log"
+    },
+    {
+      "name": "P84_OWNER_READ_REPEATABILITY",
+      "command": [
+        "python3",
+        "scripts/p84/verify-p84-runtime-repeatability.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 4.407,
+      "log": "artifacts/p85/logs/P84_OWNER_READ_REPEATABILITY.log"
+    },
+    {
+      "name": "P84_P83_ATOMIC_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p84/verify-p84-p83-atomic-publication-compatibility.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 2.038,
+      "log": "artifacts/p85/logs/P84_P83_ATOMIC_COMPATIBILITY.log"
+    },
+    {
+      "name": "P82_SUCCESSFUL_QUORUM_INTEGRITY_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p82/test-p82-successful-quorum-integrity-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.803,
+      "log": "artifacts/p85/logs/P82_SUCCESSFUL_QUORUM_INTEGRITY_RUNTIME.log"
+    },
+    {
+      "name": "P82_SUCCESSFUL_QUORUM_INTEGRITY_STATIC",
+      "command": [
+        "python3",
+        "scripts/p82/test-p82-successful-quorum-integrity-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.541,
+      "log": "artifacts/p85/logs/P82_SUCCESSFUL_QUORUM_INTEGRITY_STATIC.log"
+    },
+    {
+      "name": "P80_AUDIT_EXACT_IMMUTABLE_ACCOUNT_ARTIFACT_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p80/test-p80-audit-exact-immutable-artifact-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 2.206,
+      "log": "artifacts/p85/logs/P80_AUDIT_EXACT_IMMUTABLE_ACCOUNT_ARTIFACT_RUNTIME.log"
+    },
+    {
+      "name": "P79_HISTORICAL_DEPLOYMENT_CUSTOMER_PATH_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p79/test-p79-historical-deployment-customer-path-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.175,
+      "log": "artifacts/p85/logs/P79_HISTORICAL_DEPLOYMENT_CUSTOMER_PATH_RUNTIME.log"
+    },
+    {
+      "name": "P79_CUSTOMER_PATH_STATIC",
+      "command": [
+        "python3",
+        "scripts/p79/test-p79-customer-path-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.573,
+      "log": "artifacts/p85/logs/P79_CUSTOMER_PATH_STATIC.log"
+    },
+    {
+      "name": "P78_PRIVATE_PROVIDER_EVIDENCE_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p78/test-p78-private-provider-evidence-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.645,
+      "log": "artifacts/p85/logs/P78_PRIVATE_PROVIDER_EVIDENCE_RUNTIME.log"
+    },
+    {
+      "name": "P78_STANDARD_JSON_CUSTOMER_PATH_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p78/test-p78-standard-json-customer-path-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.857,
+      "log": "artifacts/p85/logs/P78_STANDARD_JSON_CUSTOMER_PATH_RUNTIME.log"
+    },
+    {
+      "name": "P78_THIRDWEB_DEVELOPMENT_MICRO_CORPUS_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p78/test-p78-thirdweb-micro-corpus-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.899,
+      "log": "artifacts/p85/logs/P78_THIRDWEB_DEVELOPMENT_MICRO_CORPUS_RUNTIME.log"
+    },
+    {
+      "name": "P78_REAL_AUDIT_DATAFLOW_STATIC",
+      "command": [
+        "python3",
+        "scripts/p78/test-p78-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.597,
+      "log": "artifacts/p85/logs/P78_REAL_AUDIT_DATAFLOW_STATIC.log"
+    },
+    {
+      "name": "P78R3_CUSTOMER_PATH_STATIC",
+      "command": [
+        "python3",
+        "scripts/p78/test-p78r3-customer-path-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.586,
+      "log": "artifacts/p85/logs/P78R3_CUSTOMER_PATH_STATIC.log"
+    },
+    {
+      "name": "P75_ADVANCED_AUTOMATION_CURRENT_REGRESSION",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p75/test-p75-advanced-automation-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.209,
+      "log": "artifacts/p85/logs/P75_ADVANCED_AUTOMATION_CURRENT_REGRESSION.log"
+    },
+    {
+      "name": "P77_DETERMINISTIC_DELIVERY_CURRENT_STATIC",
+      "command": [
+        "python3",
+        "scripts/p81/test-p77-deterministic-delivery-current-static.py",
+        "--source-root",
+        "/mnt/data/p85_current",
+        "--receipt",
+        "/mnt/data/p85_current/receipts/p85/P85_P77_DETERMINISTIC_DELIVERY_CURRENT_STATIC_REGRESSION.json"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.583,
+      "log": "artifacts/p85/logs/P77_DETERMINISTIC_DELIVERY_CURRENT_STATIC.log"
+    },
+    {
+      "name": "EXACT_PDF_UNIT",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "--test",
+        "tests/security/a102-exact-customer-pdf-delivery.test.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.465,
+      "log": "artifacts/p85/logs/EXACT_PDF_UNIT.log"
+    },
+    {
+      "name": "EXACT_PDF_INTEGRATION",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "--test",
+        "tests/security/a102-p36-exact-customer-pdf-integration.test.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.97,
+      "log": "artifacts/p85/logs/EXACT_PDF_INTEGRATION.log"
+    }
+  ],
+  "historicalRestore": {
+    "restoredFiles": [
+      "artifacts/closure/p36/P36_EXACT_CUSTOMER_PDF_INTEGRATION.json",
+      "receipts/p78/P78_PRIVATE_PROVIDER_EVIDENCE_RUNTIME.json",
+      "receipts/p78/P78_STANDARD_JSON_CUSTOMER_PATH_RUNTIME.json",
+      "receipts/p79/P79_HISTORICAL_DEPLOYMENT_CUSTOMER_PATH_RUNTIME.json",
+      "receipts/p80/P80_AUDIT_EXACT_IMMUTABLE_ACCOUNT_ARTIFACT_RUNTIME.json"
+    ],
+    "removedUnexpectedNewFiles": [],
+    "restoredCount": 5,
+    "removedCount": 0
+  },
+  "rootStillExists": true,
+  "truthBoundary": "Commands ran on a clean P84 child. Historical receipts and artifacts were restored byte-for-byte from the verified P84 parent after execution. This command receipt grants no PostgreSQL/Supabase runtime, real JWT/RLS, deployed HTTP parity, current chain fact, exploitability, Customer FINAL or Audit FINAL PDF credit."
+}

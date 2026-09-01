@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import { buildWorldclassMarketOutput } from "../../lib/worldclass/market-output-adapter.mjs";
+const sha="a".repeat(64);
+const base={matrixId:"r44p18",caseId:"case-1",surface:"real_markets",locale:"en",requiredSections:["scope","limitations"],expectedOutcome:"available"};
+const corpus={id:"case-1",surface:"real_markets"};
+const packet=(providerId="coinbase",providerRights)=>({schemaVersion:"x",caseId:"case-1",surface:"real_markets",asOf:"2026-08-05T00:00:00.000Z",asset:{canonicalIdentity:"btc",symbol:"BTC",name:"Bitcoin",assetClass:"crypto"},sources:[{sourceId:"s1",providerId,family:"primary_market",canonicalIdentity:"btc",observedAt:"2026-08-05T00:00:00.000Z",licenseStatus:"verified",payloadSha256:sha,...(providerRights?{providerRights}:{}),values:{price:100,returns_24h:1,volume_24h:2,market_cap_or_notional:3,risk_signal:10,session_status:"open",official_signal:"ok"}}]});
+const run=(tier,evidencePacket,extra={})=>buildWorldclassMarketOutput({matrixRow:{...base,tier},corpusCase:corpus,evidencePacket,sourceSha256:sha,corpusSha256:sha,...extra});
+const checks=[];const check=(id,fn)=>{try{fn();checks.push({id,ok:true});}catch(error){checks.push({id,ok:false,error:error.message});}};
+check("coinbase-customer-output-blocked-by-authoritative-matrix",()=>{const out=run("basic",packet("coinbase"));assert.equal(out.status,"blocked");assert.equal(out.evidence[0].providerRights.publicDisplayAllowed,false);assert.ok(out.evidence[0].providerRights.customerDecisionReceiptSha256?.length===64);});
+check("coinpaprika-customer-output-blocked-by-authoritative-matrix",()=>{const out=run("basic",packet("coinpaprika"));assert.equal(out.status,"blocked");assert.equal(out.evidence[0].providerRights.publicDisplayAllowed,false);});
+check("self-asserted-true-rights-cannot-bypass",()=>{const out=run("basic",packet("coinbase",{publicDisplayAllowed:true,customerDeliveryAllowed:true,commercialUseAllowed:true,paidTierAllowed:true,blockers:[]}));assert.equal(out.status,"blocked");assert.equal(out.evidence[0].providerRights.publicDisplayAllowed,false);});
+check("unknown-provider-fails-closed",()=>{const out=run("basic",packet("unknown-provider"));assert.equal(out.status,"blocked");assert.ok(out.evidence[0].providerRights.blockers.includes("provider_rights_record_missing"));});
+check("paid-output-blocked-even-with-entitlement",()=>{const out=run("pro",packet("coinbase"),{entitlementStatus:"verified"});assert.equal(out.status,"blocked");assert.ok(out.blockers.includes("commercial_rights_unverified"));});
+check("synthetic-compatibility-explicit-and-nondefault",()=>{const blocked=run("basic",packet("fixture-primary"));const synthetic=run("basic",packet("fixture-primary"),{rightsMode:"synthetic_fixture"});assert.equal(blocked.status,"blocked");assert.equal(synthetic.status,"passed");assert.equal(synthetic.evidence[0].providerRights.rightsMode,"synthetic_fixture");});
+check("unsupported-rights-mode-throws",()=>assert.throws(()=>run("basic",packet("coinbase"),{rightsMode:"magic"})));
+const failed=checks.filter(x=>!x.ok);console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p18.market-output-rights-boundary-test.v3",status:failed.length?"FAIL":"PASS",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,rows:checks},null,2));process.exit(failed.length?1:0);

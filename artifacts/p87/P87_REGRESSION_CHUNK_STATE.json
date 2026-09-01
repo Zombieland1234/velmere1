@@ -1,0 +1,499 @@
+{
+  "schemaVersion": "velmere.p87.regression-chunk-state.v1",
+  "commandCount": 27,
+  "results": [
+    {
+      "index": 0,
+      "name": "P87_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p87/test-p87-real-markets-exact-pdf-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.545,
+      "stdoutBytes": 64049,
+      "stdoutSha256": "d2ca95d05f5dc727f3b0ef1e1038e21811b18a847fbf47628ee1d98ebf1793ca",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/00_P87_RUNTIME.log",
+      "logSha256": "d2ca95d05f5dc727f3b0ef1e1038e21811b18a847fbf47628ee1d98ebf1793ca"
+    },
+    {
+      "index": 1,
+      "name": "P87_REPEATABILITY",
+      "command": [
+        "python3",
+        "scripts/p87/verify-p87-runtime-repeatability.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 3.696,
+      "stdoutBytes": 1675,
+      "stdoutSha256": "ff712f9960d5f18ddc9974e097e05269a63093e23d341eda2f8fd941168c66c1",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/01_P87_REPEATABILITY.log",
+      "logSha256": "ff712f9960d5f18ddc9974e097e05269a63093e23d341eda2f8fd941168c66c1"
+    },
+    {
+      "index": 2,
+      "name": "P87_STATIC",
+      "command": [
+        "python3",
+        "scripts/p87/test-p87-real-markets-exact-pdf-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.561,
+      "stdoutBytes": 56,
+      "stdoutSha256": "c52ce7d5af2372497355f4e958ad6effe28272bc94b3a66ae5588b1e7498c73e",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/02_P87_STATIC.log",
+      "logSha256": "c52ce7d5af2372497355f4e958ad6effe28272bc94b3a66ae5588b1e7498c73e"
+    },
+    {
+      "index": 3,
+      "name": "P87_IMPORTS",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p87/test-p87-changed-module-imports.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.16,
+      "stdoutBytes": 242,
+      "stdoutSha256": "a2a16ffda646f7a5e16c78ee7f9dc4c4d52fbce7f405a00bf2bcf614d2fdb491",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/03_P87_IMPORTS.log",
+      "logSha256": "a2a16ffda646f7a5e16c78ee7f9dc4c4d52fbce7f405a00bf2bcf614d2fdb491"
+    },
+    {
+      "index": 4,
+      "name": "P87_TARGETED_TYPESCRIPT",
+      "command": [
+        "tsc",
+        "--pretty",
+        "false",
+        "--noEmit",
+        "--target",
+        "ES2022",
+        "--lib",
+        "ES2022,DOM",
+        "--module",
+        "ESNext",
+        "--moduleResolution",
+        "Bundler",
+        "--skipLibCheck",
+        "--strict",
+        "--noResolve",
+        "scripts/p87/p87-targeted-types.d.ts",
+        "lib/market-integrity/customer-report-exact-pdf-token.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.478,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/04_P87_TARGETED_TYPESCRIPT.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 5,
+      "name": "P87_P86_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p87/verify-p87-p86-compatibility.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 3.932,
+      "stdoutBytes": 54,
+      "stdoutSha256": "89fafc02fa49eaba7708c0834799319b463f480aa56fdc781557ea8b0ddf729f",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/05_P87_P86_COMPATIBILITY.log",
+      "logSha256": "89fafc02fa49eaba7708c0834799319b463f480aa56fdc781557ea8b0ddf729f"
+    },
+    {
+      "index": 6,
+      "name": "P86_REPEATABILITY",
+      "command": [
+        "python3",
+        "scripts/p86/verify-p86-runtime-repeatability.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 4.548,
+      "stdoutBytes": 1572,
+      "stdoutSha256": "873b6edb387555e2c66b08ecf0870de497c831c4184d84573144f77fb3a63fb6",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/06_P86_REPEATABILITY.log",
+      "logSha256": "873b6edb387555e2c66b08ecf0870de497c831c4184d84573144f77fb3a63fb6"
+    },
+    {
+      "index": 7,
+      "name": "P86_P85_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p86/verify-p86-p85-compatibility.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.881,
+      "stdoutBytes": 12214,
+      "stdoutSha256": "66141a8d1e65f04d6e303549dcb5ec7ce0b54c61ec9c30c792770466b43e0f9e",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/07_P86_P85_COMPATIBILITY.log",
+      "logSha256": "66141a8d1e65f04d6e303549dcb5ec7ce0b54c61ec9c30c792770466b43e0f9e"
+    },
+    {
+      "index": 8,
+      "name": "P86_IMPORTS",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p86/test-p86-changed-module-imports.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.565,
+      "stdoutBytes": 235,
+      "stdoutSha256": "a73de6534de810cb4caf971cb57651fa1d512dd276b2d204fee866d317f534ed",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/08_P86_IMPORTS.log",
+      "logSha256": "a73de6534de810cb4caf971cb57651fa1d512dd276b2d204fee866d317f534ed"
+    },
+    {
+      "index": 9,
+      "name": "P86_TARGETED_TYPESCRIPT",
+      "command": [
+        "tsc",
+        "--pretty",
+        "false",
+        "--noEmit",
+        "--target",
+        "ES2022",
+        "--lib",
+        "ES2022,DOM",
+        "--module",
+        "ESNext",
+        "--moduleResolution",
+        "Bundler",
+        "--skipLibCheck",
+        "--strict",
+        "--noResolve",
+        "scripts/p86/p86-targeted-types.d.ts",
+        "lib/reporting/customer-artifact-pdf-availability.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.363,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/09_P86_TARGETED_TYPESCRIPT.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 10,
+      "name": "P84_OWNER_READ_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p84/test-p84-audit-customer-artifact-owner-read-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.97,
+      "stdoutBytes": 11388,
+      "stdoutSha256": "65855657cf00983ec46c24558af025626b500422b421685b4b8ec94972bc60c7",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/10_P84_OWNER_READ_RUNTIME.log",
+      "logSha256": "65855657cf00983ec46c24558af025626b500422b421685b4b8ec94972bc60c7"
+    },
+    {
+      "index": 11,
+      "name": "P84_OWNER_READ_REPEATABILITY",
+      "command": [
+        "python3",
+        "scripts/p84/verify-p84-runtime-repeatability.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 4.076,
+      "stdoutBytes": 13713,
+      "stdoutSha256": "3eca56d003f7bcd82b268c1ff8845fcfa4210110b6d5521fd28e3bd1c1a4168c",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/11_P84_OWNER_READ_REPEATABILITY.log",
+      "logSha256": "3eca56d003f7bcd82b268c1ff8845fcfa4210110b6d5521fd28e3bd1c1a4168c"
+    },
+    {
+      "index": 12,
+      "name": "P84_P83_ATOMIC_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p84/verify-p84-p83-atomic-publication-compatibility.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 2.029,
+      "stdoutBytes": 7859,
+      "stdoutSha256": "633441c6b0b427118fc9aca9e1672f4547b4ca77bf449256a68e4b44f911137b",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/12_P84_P83_ATOMIC_COMPATIBILITY.log",
+      "logSha256": "633441c6b0b427118fc9aca9e1672f4547b4ca77bf449256a68e4b44f911137b"
+    },
+    {
+      "index": 13,
+      "name": "P82_QUORUM_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p82/test-p82-successful-quorum-integrity-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.808,
+      "stdoutBytes": 56,
+      "stdoutSha256": "9959541b3551c1cf21e2e8623661b7d9a08b0377ebeb65ff1b9acd54da6a5a05",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/13_P82_QUORUM_RUNTIME.log",
+      "logSha256": "9959541b3551c1cf21e2e8623661b7d9a08b0377ebeb65ff1b9acd54da6a5a05"
+    },
+    {
+      "index": 14,
+      "name": "P82_QUORUM_STATIC",
+      "command": [
+        "python3",
+        "scripts/p82/test-p82-successful-quorum-integrity-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.622,
+      "stdoutBytes": 77,
+      "stdoutSha256": "dd178c826390dc30d2fa41a5f3ab006deb0584c3529c36cbee3da7c14cd10011",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/14_P82_QUORUM_STATIC.log",
+      "logSha256": "dd178c826390dc30d2fa41a5f3ab006deb0584c3529c36cbee3da7c14cd10011"
+    },
+    {
+      "index": 15,
+      "name": "P80_IMMUTABLE_AUDIT_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p80/test-p80-audit-exact-immutable-artifact-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 2.037,
+      "stdoutBytes": 249,
+      "stdoutSha256": "a7fd60be91ceea5872003ff9c3b9c4dd8517163f8d6bf410043da694cce82f3d",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/15_P80_IMMUTABLE_AUDIT_RUNTIME.log",
+      "logSha256": "a7fd60be91ceea5872003ff9c3b9c4dd8517163f8d6bf410043da694cce82f3d"
+    },
+    {
+      "index": 16,
+      "name": "P79_HISTORICAL_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p79/test-p79-historical-deployment-customer-path-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.159,
+      "stdoutBytes": 179,
+      "stdoutSha256": "cca197b1127ceece1faf039305d8a592bd6587b3058d198d097ac4fcaa5df44b",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/16_P79_HISTORICAL_RUNTIME.log",
+      "logSha256": "cca197b1127ceece1faf039305d8a592bd6587b3058d198d097ac4fcaa5df44b"
+    },
+    {
+      "index": 17,
+      "name": "P79_CUSTOMER_PATH_STATIC",
+      "command": [
+        "python3",
+        "scripts/p79/test-p79-customer-path-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.568,
+      "stdoutBytes": 59,
+      "stdoutSha256": "1708aba2e86a5d40d23ef44f5ca5c4eaed3931198cbed13815c891f5d84a3e5f",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/17_P79_CUSTOMER_PATH_STATIC.log",
+      "logSha256": "1708aba2e86a5d40d23ef44f5ca5c4eaed3931198cbed13815c891f5d84a3e5f"
+    },
+    {
+      "index": 18,
+      "name": "P78_PRIVATE_PROVIDER_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p78/test-p78-private-provider-evidence-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.651,
+      "stdoutBytes": 4209,
+      "stdoutSha256": "22f4fec43e8ec69fb50e54d55b71ab6cb9ac6ea4a34b18c23339559e0a4de46c",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/18_P78_PRIVATE_PROVIDER_RUNTIME.log",
+      "logSha256": "22f4fec43e8ec69fb50e54d55b71ab6cb9ac6ea4a34b18c23339559e0a4de46c"
+    },
+    {
+      "index": 19,
+      "name": "P78_STANDARD_JSON_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p78/test-p78-standard-json-customer-path-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.749,
+      "stdoutBytes": 6931,
+      "stdoutSha256": "ddf92c24c83e8a100a03498a1f0fe354d154b60431bd6272481d0b9c7d671bbb",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/19_P78_STANDARD_JSON_RUNTIME.log",
+      "logSha256": "ddf92c24c83e8a100a03498a1f0fe354d154b60431bd6272481d0b9c7d671bbb"
+    },
+    {
+      "index": 20,
+      "name": "P78_THIRDWEB_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p78/test-p78-thirdweb-micro-corpus-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.848,
+      "stdoutBytes": 8626,
+      "stdoutSha256": "ba5208753b0d6a7cc8bff5922a448c7a906d707e62e9d673c84c4501bc9dccc3",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/20_P78_THIRDWEB_RUNTIME.log",
+      "logSha256": "ba5208753b0d6a7cc8bff5922a448c7a906d707e62e9d673c84c4501bc9dccc3"
+    },
+    {
+      "index": 21,
+      "name": "P78_DATAFLOW_STATIC",
+      "command": [
+        "python3",
+        "scripts/p78/test-p78-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.602,
+      "stdoutBytes": 3829,
+      "stdoutSha256": "9ab787b80b234d2fbe15985a3d2d8a233df74272cf3bb77735e9575f543c1ffa",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/21_P78_DATAFLOW_STATIC.log",
+      "logSha256": "9ab787b80b234d2fbe15985a3d2d8a233df74272cf3bb77735e9575f543c1ffa"
+    },
+    {
+      "index": 22,
+      "name": "P78R3_CUSTOMER_PATH_STATIC",
+      "command": [
+        "python3",
+        "scripts/p78/test-p78r3-customer-path-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.634,
+      "stdoutBytes": 59,
+      "stdoutSha256": "e2de525c8defe9a85a750c6443ec2da6db25ee6b9daa6f249f3fdf762fa5e69d",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/22_P78R3_CUSTOMER_PATH_STATIC.log",
+      "logSha256": "e2de525c8defe9a85a750c6443ec2da6db25ee6b9daa6f249f3fdf762fa5e69d"
+    },
+    {
+      "index": 23,
+      "name": "P75_ADVANCED_AUTOMATION_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p75/test-p75-advanced-automation-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.218,
+      "stdoutBytes": 4448,
+      "stdoutSha256": "5dd6326dd9001311919518053319a01df82711455e67f9914436fbf7ce3b70eb",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/23_P75_ADVANCED_AUTOMATION_RUNTIME.log",
+      "logSha256": "5dd6326dd9001311919518053319a01df82711455e67f9914436fbf7ce3b70eb"
+    },
+    {
+      "index": 24,
+      "name": "P77_DETERMINISTIC_DELIVERY_STATIC",
+      "command": [
+        "python3",
+        "scripts/p81/test-p77-deterministic-delivery-current-static.py",
+        "--source-root",
+        "/mnt/data/velmere_p87_work/current",
+        "--receipt",
+        "/mnt/data/velmere_p87_work/current/receipts/p87/P87_P77_DETERMINISTIC_DELIVERY_CURRENT_STATIC_REGRESSION.json"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.568,
+      "stdoutBytes": 2901,
+      "stdoutSha256": "c7ac1249cc6ab64fdfa607ca68f54939840c2ef5735dc33574600e28e2a0319b",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/24_P77_DETERMINISTIC_DELIVERY_STATIC.log",
+      "logSha256": "c7ac1249cc6ab64fdfa607ca68f54939840c2ef5735dc33574600e28e2a0319b"
+    },
+    {
+      "index": 25,
+      "name": "EXACT_PDF_UNIT",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "--test",
+        "tests/security/a102-exact-customer-pdf-delivery.test.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.659,
+      "stdoutBytes": 346,
+      "stdoutSha256": "d26a4187ae79bd8297ac87b8c0e43a04965d59469176004a819092f497a1c8c5",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/25_EXACT_PDF_UNIT.log",
+      "logSha256": "d26a4187ae79bd8297ac87b8c0e43a04965d59469176004a819092f497a1c8c5"
+    },
+    {
+      "index": 26,
+      "name": "ACCOUNT_ARTIFACT_PARITY_STATIC",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-account-artifact-preview-download-parity.test.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.292,
+      "stdoutBytes": 55,
+      "stdoutSha256": "ba64f4561a237793ae1025d8d8f91812fecacf3b493b2df1e45136fd8768f2ed",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log": "artifacts/p87/logs/regression-chunk/26_ACCOUNT_ARTIFACT_PARITY_STATIC.log",
+      "logSha256": "ba64f4561a237793ae1025d8d8f91812fecacf3b493b2df1e45136fd8768f2ed"
+    }
+  ]
+}

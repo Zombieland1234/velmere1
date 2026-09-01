@@ -1,0 +1,472 @@
+{
+  "schemaVersion": "velmere.p96.risk-history-request-storage-runtime.v1",
+  "generatedAt": "2026-08-20T01:00:00.000Z",
+  "status": "PASS_BOUNDED_NO_SOCKET_REQUEST_BOUND_PAGE_PROVENANCE",
+  "checks": {
+    "total": 44,
+    "passed": 44,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "memory_fixture_stored",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "attempted": 4,
+          "candidateEvents": 4,
+          "stored": 4,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-98318e96169e25bf748547e12f9b4c85be49f513",
+            "risk-history-b8551bd5b607c61c7cffce5611ebd4710c2c1421",
+            "risk-history-182874fb7eeccb93eb1a140b389ac5308cc77478",
+            "risk-history-fbe134c055e9246ebb92ee818e80a265581e2147"
+          ]
+        }
+      },
+      {
+        "id": "route_v3_and_projection_v3",
+        "status": "PASS",
+        "detail": {
+          "route": "velmere.risk-history.customer-route.v3",
+          "projection": "velmere.risk-history.customer.v3"
+        }
+      },
+      {
+        "id": "route_request_binding_exact",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-customer-request-binding.v1",
+          "assetReference": "sha256:c2724fcecbf34af111c9031cdf62a42ec10721c23f39e7deaf1bb972fcc387a2",
+          "pageReference": "sha256:0634983b09b4da4d0938463550f8680e636aedba463c87d9eb61349f467f3bcc",
+          "requestedLimit": 2,
+          "before": null
+        }
+      },
+      {
+        "id": "request_binding_has_no_raw_asset_id",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-customer-request-binding.v1",
+          "assetReference": "sha256:c2724fcecbf34af111c9031cdf62a42ec10721c23f39e7deaf1bb972fcc387a2",
+          "pageReference": "sha256:0634983b09b4da4d0938463550f8680e636aedba463c87d9eb61349f467f3bcc",
+          "requestedLimit": 2,
+          "before": null
+        }
+      },
+      {
+        "id": "client_accepts_exact_request",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history.customer-window.v1",
+          "requestedLimit": 2,
+          "before": null,
+          "returnedObservations": 2,
+          "hasOlder": true,
+          "nextBefore": "2026-08-20T01:02:00.000Z",
+          "isLatestWindow": true,
+          "reachesTrackingStart": false,
+          "completeVisibleHistory": false,
+          "oldestIncludedAt": "2026-08-20T01:02:00.000Z",
+          "newestIncludedAt": "2026-08-20T01:03:00.000Z"
+        }
+      },
+      {
+        "id": "memory_page_proof_is_request_scoped",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-page-storage-proof.v2",
+          "pageSource": "MEMORY",
+          "pageReadState": "RUNTIME_PAGE_ONLY",
+          "pageIntegrityVerified": true,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "pageEvidenceDigest": "sha256:4f984d3099365af19cda309b13726db3caf6c7d3551d1d52783aa6199b73e4e1",
+          "blockers": [
+            "database_page_read_not_verified",
+            "multi_year_retention_not_proven",
+            "backup_restore_not_proven"
+          ]
+        }
+      },
+      {
+        "id": "memory_page_proof_has_all_required_blockers",
+        "status": "PASS",
+        "detail": [
+          "database_page_read_not_verified",
+          "multi_year_retention_not_proven",
+          "backup_restore_not_proven"
+        ]
+      },
+      {
+        "id": "page_evidence_digest_independently_recomputed",
+        "status": "PASS",
+        "detail": "sha256:4f984d3099365af19cda309b13726db3caf6c7d3551d1d52783aa6199b73e4e1"
+      },
+      {
+        "id": "customer_fetch_path_and_policy_are_exact",
+        "status": "PASS",
+        "detail": [
+          {
+            "input": "/api/market-integrity/history?id=market%3Ap95&limit=2",
+            "method": "GET",
+            "cache": "no-store",
+            "credentials": "same-origin",
+            "redirect": "error"
+          },
+          {
+            "input": "/api/market-integrity/history?id=market%3Aother&limit=2",
+            "method": "GET",
+            "cache": "no-store",
+            "credentials": "same-origin",
+            "redirect": "error"
+          }
+        ]
+      },
+      {
+        "id": "customer_fetch_rejects_cross_asset_cached_response",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_wrong_asset_for_valid_payload",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_wrong_limit_for_valid_payload",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_wrong_cursor_for_valid_payload",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_tampered_asset_reference",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_tampered_page_reference",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_tampered_page_source",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_tampered_page_read_state",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_durable_retention_overclaim",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_backup_restore_overclaim",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_tampered_page_evidence_digest",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_tampered_event_reference",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_storage_extra_field",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "client_rejects_top_level_extra_field",
+        "status": "PASS",
+        "detail": "invalid_customer_projection"
+      },
+      {
+        "id": "second_page_binding_is_cursor_specific",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-customer-request-binding.v1",
+          "assetReference": "sha256:c2724fcecbf34af111c9031cdf62a42ec10721c23f39e7deaf1bb972fcc387a2",
+          "pageReference": "sha256:310b2e4a6138d4cf263b744b6635da00488b91d233af316af1ca150fcf703c7a",
+          "requestedLimit": 2,
+          "before": "2026-08-20T01:02:00.000Z"
+        }
+      },
+      {
+        "id": "second_page_evidence_digest_is_page_specific",
+        "status": "PASS"
+      },
+      {
+        "id": "two_bound_pages_merge_to_complete_history",
+        "status": "PASS",
+        "detail": {
+          "asset": {
+            "canonicalAssetId": "market:p95",
+            "symbol": "P95",
+            "name": "Asset P95"
+          },
+          "history": [
+            {
+              "eventReference": "sha256:cfe766385788681ab4fd2f66847c71695cdc916bb286ca1ca3f1df09c5c14266",
+              "observedAt": "2026-08-20T01:00:00.000Z",
+              "score": 40,
+              "level": "medium",
+              "confidence": 76,
+              "eventTypes": [
+                "TRACKING_STARTED"
+              ],
+              "changeReasons": [
+                "Velmère began verified tracking for this asset."
+              ],
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:105e2482d6db8a01e9c856a5d8eaf0b021f4a23cf0d666f866ed13746c585523",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparabilityKey": "sha256:516c595754562a3ccef6ddce0585dcdd7a195002cf95c3fe359e0c605080c6f8",
+              "comparableToPrevious": false,
+              "isProbability": false,
+              "probabilityPercent": null
+            },
+            {
+              "eventReference": "sha256:42ddeac04e37d3565116374cfb3b67dcd3f04d7596fed4d1e5cecdae5e445183",
+              "observedAt": "2026-08-20T01:01:00.000Z",
+              "score": 41,
+              "level": "medium",
+              "confidence": 76,
+              "eventTypes": [
+                "SCORE_CHANGED",
+                "EVIDENCE_CHANGED"
+              ],
+              "changeReasons": [
+                "The version-bound descriptive risk score changed.",
+                "The evidence receipt bound to the observation changed."
+              ],
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:105e2482d6db8a01e9c856a5d8eaf0b021f4a23cf0d666f866ed13746c585523",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparabilityKey": "sha256:516c595754562a3ccef6ddce0585dcdd7a195002cf95c3fe359e0c605080c6f8",
+              "comparableToPrevious": true,
+              "isProbability": false,
+              "probabilityPercent": null
+            },
+            {
+              "eventReference": "sha256:4548f5835534b816061dae1987c45ffbffa87aac9571c695b2b63706172788e1",
+              "observedAt": "2026-08-20T01:02:00.000Z",
+              "score": 42,
+              "level": "medium",
+              "confidence": 76,
+              "eventTypes": [
+                "SCORE_CHANGED",
+                "EVIDENCE_CHANGED"
+              ],
+              "changeReasons": [
+                "The version-bound descriptive risk score changed.",
+                "The evidence receipt bound to the observation changed."
+              ],
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:105e2482d6db8a01e9c856a5d8eaf0b021f4a23cf0d666f866ed13746c585523",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparabilityKey": "sha256:516c595754562a3ccef6ddce0585dcdd7a195002cf95c3fe359e0c605080c6f8",
+              "comparableToPrevious": true,
+              "isProbability": false,
+              "probabilityPercent": null
+            },
+            {
+              "eventReference": "sha256:dd4a588395f004dac20a8ef1741198db200ce635e6a7be36ac8139da25cd9f8f",
+              "observedAt": "2026-08-20T01:03:00.000Z",
+              "score": 43,
+              "level": "medium",
+              "confidence": 76,
+              "eventTypes": [
+                "SCORE_CHANGED",
+                "EVIDENCE_CHANGED"
+              ],
+              "changeReasons": [
+                "The version-bound descriptive risk score changed.",
+                "The evidence receipt bound to the observation changed."
+              ],
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:105e2482d6db8a01e9c856a5d8eaf0b021f4a23cf0d666f866ed13746c585523",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparabilityKey": "sha256:516c595754562a3ccef6ddce0585dcdd7a195002cf95c3fe359e0c605080c6f8",
+              "comparableToPrevious": true,
+              "isProbability": false,
+              "probabilityPercent": null
+            }
+          ],
+          "segments": [
+            {
+              "comparabilityKey": "sha256:516c595754562a3ccef6ddce0585dcdd7a195002cf95c3fe359e0c605080c6f8",
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:105e2482d6db8a01e9c856a5d8eaf0b021f4a23cf0d666f866ed13746c585523",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparableWithPreviousSegment": false,
+              "startedAt": "2026-08-20T01:00:00.000Z",
+              "endedAt": "2026-08-20T01:03:00.000Z"
+            }
+          ],
+          "trackingStartedAt": "2026-08-20T01:00:00.000Z",
+          "observations": 4,
+          "loadedPages": 2,
+          "hasOlder": false,
+          "nextBefore": null,
+          "completeVisibleHistory": true
+        }
+      },
+      {
+        "id": "merge_rejects_cross_asset_request_binding",
+        "status": "PASS",
+        "detail": "incompatible_history_pages"
+      },
+      {
+        "id": "merge_rejects_duplicate_page_binding",
+        "status": "PASS",
+        "detail": "incompatible_history_pages"
+      },
+      {
+        "id": "global_durable_state_cannot_promote_memory_page",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-page-storage-proof.v2",
+          "pageSource": "MEMORY",
+          "pageReadState": "RUNTIME_PAGE_ONLY",
+          "pageIntegrityVerified": true,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "pageEvidenceDigest": "sha256:4f984d3099365af19cda309b13726db3caf6c7d3551d1d52783aa6199b73e4e1",
+          "blockers": [
+            "database_page_read_not_verified",
+            "multi_year_retention_not_proven",
+            "backup_restore_not_proven"
+          ]
+        }
+      },
+      {
+        "id": "route_no_longer_exposes_global_ledger_status_fields",
+        "status": "PASS"
+      },
+      {
+        "id": "unknown_ambiguous_private_public_state_is_identical",
+        "status": "PASS"
+      },
+      {
+        "id": "empty_responses_do_not_expose_private_identity",
+        "status": "PASS"
+      },
+      {
+        "id": "database_page_response_proof_is_separate_from_durability",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-page-storage-proof.v2",
+          "pageSource": "DATABASE",
+          "pageReadState": "DATABASE_PAGE_RESPONSE_VERIFIED",
+          "pageIntegrityVerified": true,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "pageEvidenceDigest": "sha256:e921f5950597a12d1caee69b47d4328848b52a405315eccbe4160d769873ccb9",
+          "blockers": [
+            "multi_year_retention_not_proven",
+            "backup_restore_not_proven"
+          ]
+        }
+      },
+      {
+        "id": "database_rpc_method_and_body_are_exact",
+        "status": "PASS",
+        "detail": [
+          {
+            "path": "/rest/v1/rpc/velmere_read_public_risk_history_by_asset_v1",
+            "body": {
+              "p_asset_id": "market:p95",
+              "p_limit": 2,
+              "p_before": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "database_page_digest_differs_from_memory_page_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "merge_rejects_mixed_memory_and_database_pages",
+        "status": "PASS",
+        "detail": "incompatible_history_pages"
+      },
+      {
+        "id": "configured_database_outage_fails_closed_without_memory_page",
+        "status": "PASS",
+        "detail": 503
+      },
+      {
+        "id": "page_evidence_builder_rejects_event_count_above_limit",
+        "status": "PASS",
+        "detail": "risk_history_page_event_count_invalid"
+      },
+      {
+        "id": "page_evidence_builder_rejects_wrong_next_cursor",
+        "status": "PASS",
+        "detail": "risk_history_page_next_cursor_invalid"
+      },
+      {
+        "id": "page_evidence_builder_rejects_event_at_cursor",
+        "status": "PASS",
+        "detail": "risk_history_page_event_cursor_invalid"
+      },
+      {
+        "id": "page_evidence_builder_rejects_malformed_binding_shape",
+        "status": "PASS",
+        "detail": "risk_history_page_evidence_input_invalid"
+      },
+      {
+        "id": "request_path_is_same_origin_and_cursor_canonical",
+        "status": "PASS"
+      },
+      {
+        "id": "request_binding_builder_rejects_invalid_cursor",
+        "status": "PASS",
+        "detail": "risk_history_customer_request_cursor_invalid"
+      },
+      {
+        "id": "request_binding_shape_rejects_extra_field",
+        "status": "PASS",
+        "detail": "shape_rejected"
+      }
+    ]
+  },
+  "execution": {
+    "networkSocketsUsed": false,
+    "realPostgreSqlExecuted": false,
+    "cryptographicRequestBindingExercised": true,
+    "pageEvidenceDigestIndependentlyRecomputed": true,
+    "processGlobalDurabilityBleedRejected": true,
+    "memoryAndDatabasePageSourcesSeparated": true,
+    "crossAssetAndCrossCursorReplayRejected": true,
+    "nonEnumeratingEmptySemanticsExercised": true
+  },
+  "zeroFakeCredit": {
+    "stagingExecuted": false,
+    "productionExecuted": false,
+    "multiYearRetentionProven": false,
+    "backupRestoreProven": false,
+    "browserRendered": false,
+    "riskIndicatorFinal": false,
+    "customerFinal": "0/20",
+    "live": false
+  },
+  "truthBoundary": "This bounded no-socket proof verifies cryptographic binding of each customer response to the requested asset/limit/cursor, page-specific evidence digests, per-page DATABASE versus MEMORY provenance, rejection of process-global durability bleed, strict multi-page merging and non-enumerating empty behavior. It does not execute PostgreSQL, prove retention/backup restoration, render a Browser, deploy HTTP, use real customer-authorized input, run exact Windows or establish Customer FINAL."
+}

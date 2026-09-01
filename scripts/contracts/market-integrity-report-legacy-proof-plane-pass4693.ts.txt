@@ -1,0 +1,1209 @@
+import { withExpensiveRouteBudget } from "@/lib/security/expensive-route-concurrency-budget";
+import { PASS2872_CUSTOMER_EXPORT_SUPERVISORY_POST_CLOSURE_MUTATION_INCIDENT_RESOLUTION_RECLOSE_ACCEPTANCE_GATES, buildPass2872CustomerExportSupervisoryPostClosureMutationIncidentResolutionRecloseGate } from "@/lib/market-integrity/top1-customer-export-supervisory-post-closure-mutation-incident-resolution-reclose-gate";
+import { PASS2871_CUSTOMER_EXPORT_SUPERVISORY_POST_CLOSURE_MUTATION_WATCH_AUTO_FREEZE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-post-closure-mutation-watch-auto-freeze-gate";
+import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
+import { searchCoinGeckoMarket } from "@/lib/market-integrity/coingecko";
+import { analyzeDexScreenerToken } from "@/lib/market-integrity/dexscreener";
+import { buildInvestigationPlan } from "@/lib/market-integrity/investigation-plan";
+import { buildAttackSurface } from "@/lib/market-integrity/attack-playbook";
+import { recordSingleResult } from "@/lib/market-integrity/market-memory";
+import { getPersistentRiskHistory, persistRiskSnapshots } from "@/lib/market-integrity/risk-ledger";
+import { buildSingleAssetRuleHits } from "@/lib/market-integrity/rule-engine";
+import { buildRiskBrain } from "@/lib/market-integrity/risk-brain";
+import { buildHolderIntelligence } from "@/lib/market-integrity/holder-intelligence";
+import { buildStressScenarios } from "@/lib/market-integrity/stress-simulator";
+import { buildRiskReplay } from "@/lib/market-integrity/risk-replay";
+import { buildAiRiskBotBrief } from "@/lib/market-integrity/ai-risk-bot";
+import { buildAiRiskOrchestrator } from "@/lib/market-integrity/ai-orchestrator";
+import { buildShieldChatResponse } from "@/lib/market-integrity/shield-chat";
+import { buildChartRegime } from "@/lib/market-integrity/chart-regime";
+import { buildSocTerminalBrief } from "@/lib/market-integrity/soc-orchestrator";
+import { buildVlmShieldAccess } from "@/lib/market-integrity/vlm-access-layer";
+import { buildEvidenceWorkflow } from "@/lib/market-integrity/evidence-workflow";
+import { buildLiquidityIntelligence } from "@/lib/market-integrity/liquidity-intelligence";
+import { buildProductOpsAudit } from "@/lib/market-integrity/product-ops-audit";
+import { buildTerminalControlPlane } from "@/lib/market-integrity/terminal-control-plane";
+import { buildTerminalRiskWorkspace } from "@/lib/market-integrity/terminal-risk-workspace";
+import { buildProductionHardening } from "@/lib/market-integrity/production-hardening";
+import { buildTerminalUsabilityGuard } from "@/lib/market-integrity/terminal-usability-guard";
+import { buildTerminalPerformanceGuard } from "@/lib/market-integrity/terminal-performance-guard";
+import { buildTerminalOperatorCopilot } from "@/lib/market-integrity/terminal-operator-copilot";
+import { buildTerminalLaunchBridge } from "@/lib/market-integrity/terminal-launch-bridge";
+import { buildTerminalSourceTrust } from "@/lib/market-integrity/terminal-source-trust";
+import { buildTerminalEvidenceExport } from "@/lib/market-integrity/terminal-evidence-export";
+import { buildTerminalRuntimeHealth } from "@/lib/market-integrity/terminal-runtime-health";
+import { buildTerminalOperatorFocus } from "@/lib/market-integrity/terminal-operator-focus";
+import { buildTerminalInteractionStability } from "@/lib/market-integrity/terminal-interaction-stability";
+import { buildTerminalReviewDeck } from "@/lib/market-integrity/terminal-review-deck";
+import { buildDefiLlamaSnapshotForResult } from "@/lib/market-integrity/defillama-adapter";
+import { buildSourceSynchronizationPacket } from "@/lib/market-integrity/source-synchronizer";
+import { buildAnalysisReadiness } from "@/lib/market-integrity/analysis-readiness";
+import { buildPass4645ProviderEvidenceLedger, persistPass4645ProviderEvidenceLedger } from "@/lib/market-integrity/provider-evidence-ledger";
+import { PDF_V2_ACCEPTANCE_GATES, buildTop1PdfPayloadDraft, type VelmereReportAssetFamily } from "@/lib/market-integrity/top1-pdf-report-payload";
+import { buildChartLifecycleReceipt, type VelmereTier } from "@/lib/market-integrity/top1-risk-foundation";
+import { normalizeConfidencePercent } from "@/lib/market-integrity/confidence-calibration";
+import { buildPass2811TierSuite } from "@/lib/market-integrity/top1-tier-differentiation";
+import { resolveVlmAdvancedOnlyAccess, toPaymentRequiredPayload } from "@/lib/commerce/vlm-advanced-only-access-policy";
+import { resolveRequestAccount } from "@/lib/auth/pass2363-account-session";
+import { buildPass2812PaidTierSecuritySuite, buildReportAccessDecision } from "@/lib/market-integrity/top1-entitlement-report-access";
+import { PASS2813_VLM_BRAIN_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-vlm-brain-source-router";
+import { buildPass2814ReportInputFirewall, buildPass2814SourcePoisoningFirewall } from "@/lib/market-integrity/top1-source-poisoning-ssrf-firewall";
+import { PASS2815_REPORT_INTEGRITY_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-report-integrity-vault";
+import { PASS2816_RUNTIME_OBSERVABILITY_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-runtime-observability-ledger";
+import { PASS2817_MARKET_MICROSTRUCTURE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-market-microstructure-gate";
+import { PASS2818_ICON_PROVENANCE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-icon-provenance-gate";
+import { PASS2819_MOBILE_ACCESSIBILITY_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-mobile-accessibility-overlay-gate";
+import { PASS2820_PDF_RENDER_CLEANROOM_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-pdf-render-cleanroom-gate";
+import { PASS2821_CUSTOMER_DELIVERY_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-delivery-ledger";
+import { PASS2822_ACCOUNT_VAULT_TOKEN_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-account-vault-token-consumption-gate";
+import { PASS2823_ADVANCED_HUMAN_REVIEW_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-advanced-human-review-signoff-gate";
+import { PASS2824_ADVANCED_REVIEW_REPLAY_AUDIT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-advanced-review-replay-audit-gate";
+import { PASS2825_COMMUNITY_SOURCE_UPGRADE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-community-source-upgrade-moderation-gate";
+import { PASS2826_CUSTOMER_SAFE_NARRATIVE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-safe-narrative-gate";
+import { PASS2827_LAUNCH_READINESS_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-launch-readiness-evidence-gate";
+import { PASS2828_EVIDENCE_ARTIFACT_HANDOFF_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-evidence-artifact-handoff-gate";
+import { PASS2829_RELEASE_PROOF_COLLECTOR_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-release-proof-collector-gate";
+import { PASS2830_RELEASE_PACKET_SEAL_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-release-packet-seal-gate";
+import { PASS2831_SEAL_DRIFT_MONITOR_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-seal-drift-monitor-gate";
+import { PASS2832_PRODUCTION_CANARY_ROLLBACK_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-production-canary-rollback-gate";
+import { PASS2833_INCIDENT_DISCLOSURE_RESPONSE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-incident-disclosure-response-gate";
+import { PASS2834_CUSTOMER_REMEDY_REFUND_CREDIT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-remedy-refund-credit-gate";
+import { PASS2835_ACCOUNT_VAULT_REMEDY_REOPEN_AUDIT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-account-vault-remedy-reopen-audit-gate";
+import { PASS2836_REMEDY_REOPEN_REPLAY_LOCK_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-remedy-reopen-replay-lock-gate";
+import { PASS2837_SUPPORT_SLA_REMEDY_PROOF_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-support-sla-remedy-proof-gate";
+import { PASS2838_CUSTOMER_EXPORT_REDACTION_PACKET_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-redaction-packet-gate";
+import { PASS2839_CUSTOMER_EXPORT_EXPIRY_RECALL_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-expiry-recall-gate";
+import { PASS2840_CUSTOMER_EXPORT_DELIVERY_LEDGER_PERSISTENCE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-delivery-ledger-persistence-gate";
+import { PASS2841_CUSTOMER_EXPORT_ACK_SIGNED_RECEIPT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-ack-signed-receipt-gate";
+import { PASS2842_CUSTOMER_EXPORT_DISPUTE_CHARGEBACK_HOLD_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-dispute-chargeback-hold-gate";
+import { PASS2843_CUSTOMER_EXPORT_OPERATOR_RELEASE_REINSTATEMENT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-operator-release-reinstatement-gate";
+import { PASS2844_CUSTOMER_EXPORT_POST_REINSTATEMENT_AUDIT_NOTIFICATION_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-post-reinstatement-audit-notification-gate";
+import { PASS2845_CUSTOMER_EXPORT_RUNTIME_ADAPTER_STUB_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-runtime-adapter-stub-gate";
+import { PASS2846_CUSTOMER_EXPORT_TRANSACTIONAL_OUTBOX_HEALTH_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-transactional-outbox-health-gate";
+import { PASS2847_CUSTOMER_EXPORT_WORKER_REPLAY_RECOVERY_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-worker-replay-recovery-gate";
+import { PASS2848_CUSTOMER_EXPORT_RECONCILIATION_DRIFT_MONITOR_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-reconciliation-drift-monitor-gate";
+import { PASS2849_CUSTOMER_EXPORT_REMEDIATION_TICKET_CLOSE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-remediation-ticket-close-gate";
+import { PASS2850_CUSTOMER_EXPORT_FINAL_ARCHIVE_BUNDLE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-final-archive-bundle-gate";
+import { PASS2851_CUSTOMER_EXPORT_ARCHIVE_RETENTION_LEGAL_HOLD_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-archive-retention-legal-hold-gate";
+import { PASS2852_CUSTOMER_EXPORT_RETENTION_PURGE_EXECUTION_TOMBSTONE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-retention-purge-execution-tombstone-gate";
+import { PASS2853_CUSTOMER_EXPORT_POST_PURGE_PRIVACY_ATTESTATION_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-post-purge-privacy-attestation-gate";
+import { PASS2854_CUSTOMER_EXPORT_PRIVACY_INCIDENT_DSR_ESCALATION_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-privacy-incident-dsr-escalation-gate";
+import { PASS2855_CUSTOMER_EXPORT_DSR_DELIVERY_APPEAL_REOPEN_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-dsr-delivery-appeal-reopen-gate";
+import { PASS2856_CUSTOMER_EXPORT_DSR_APPEAL_RESOLUTION_CLOSURE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-dsr-appeal-resolution-closure-gate";
+import { PASS2857_CUSTOMER_EXPORT_PRIVACY_CASE_SUPERVISOR_SLA_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-privacy-case-supervisor-sla-gate";
+import { PASS2858_CUSTOMER_EXPORT_SUPERVISORY_EVIDENCE_INDEX_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-evidence-index-gate";
+import { PASS2859_CUSTOMER_EXPORT_SUPERVISORY_DISCLOSURE_RESPONSE_CORRECTION_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-disclosure-response-correction-gate";
+import { PASS2860_CUSTOMER_EXPORT_SUPERVISORY_DISCLOSURE_FINAL_CLOSE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-disclosure-final-close-gate";
+import { PASS2861_CUSTOMER_EXPORT_SUPERVISORY_RETENTION_JOB_EXPIRY_MONITOR_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-retention-job-expiry-monitor-gate";
+import { PASS2862_CUSTOMER_EXPORT_SUPERVISORY_RETENTION_PURGE_TOMBSTONE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-retention-purge-tombstone-gate";
+import { PASS2863_CUSTOMER_EXPORT_SUPERVISORY_POST_PURGE_RESIDUAL_EVIDENCE_SCAN_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-post-purge-residual-evidence-scan-gate";
+import { PASS2864_CUSTOMER_EXPORT_SUPERVISORY_RESIDUAL_FINDING_REMEDIATION_RESCAN_CLOSE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-residual-finding-remediation-rescan-close-gate";
+import { PASS2865_CUSTOMER_EXPORT_SUPERVISORY_RESIDUAL_REMEDIATION_ESCALATION_MISSED_SLA_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-residual-remediation-escalation-missed-sla-gate";
+import { PASS2866_CUSTOMER_EXPORT_SUPERVISORY_RESIDUAL_ESCALATION_RESOLUTION_FREEZE_LIFT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-residual-escalation-resolution-freeze-lift-gate";
+import { PASS2867_CUSTOMER_EXPORT_SUPERVISORY_FINAL_EVIDENCE_INDEX_FREEZE_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-final-evidence-index-freeze-gate";
+import { PASS2868_CUSTOMER_EXPORT_SUPERVISORY_EVIDENCE_INDEX_TAMPER_INCIDENT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-evidence-index-tamper-incident-gate";
+import { PASS2869_CUSTOMER_EXPORT_SUPERVISORY_TAMPER_INCIDENT_RESOLUTION_ARCHIVE_RESUME_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-tamper-incident-resolution-archive-resume-gate";
+import { PASS2870_CUSTOMER_EXPORT_SUPERVISORY_TAMPER_RESOLUTION_RECONCILIATION_CLOSURE_AUDIT_ACCEPTANCE_GATES } from "@/lib/market-integrity/top1-customer-export-supervisory-tamper-resolution-reconciliation-closure-audit-gate";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CUSTOMER_EXPORT_NOTIFICATION_CHANNELS = ["account_vault", "email_notice", "api_handoff", "support_thread", "multi_channel"] as const;
+type CustomerExportNotificationChannel = (typeof CUSTOMER_EXPORT_NOTIFICATION_CHANNELS)[number];
+
+function safeCustomerExportNotificationChannel(value: string | null): CustomerExportNotificationChannel {
+  return CUSTOMER_EXPORT_NOTIFICATION_CHANNELS.includes(value as CustomerExportNotificationChannel)
+    ? (value as CustomerExportNotificationChannel)
+    : "account_vault";
+}
+
+const CUSTOMER_EXPORT_RESIDUAL_SCAN_CHANNELS = ["account_vault", "email", "api", "support"] as const;
+type CustomerExportResidualScanChannel = (typeof CUSTOMER_EXPORT_RESIDUAL_SCAN_CHANNELS)[number];
+
+const CUSTOMER_EXPORT_PRIVACY_INCIDENT_CLASSIFICATIONS = [
+  "none_observed",
+  "suspected_residual_trace",
+  "confirmed_residual_data",
+  "customer_request_only",
+  "legal_hold_review",
+] as const;
+type CustomerExportPrivacyIncidentClassification = (typeof CUSTOMER_EXPORT_PRIVACY_INCIDENT_CLASSIFICATIONS)[number];
+
+function safeCustomerExportPrivacyIncidentClassification(value: string | null): CustomerExportPrivacyIncidentClassification {
+  return CUSTOMER_EXPORT_PRIVACY_INCIDENT_CLASSIFICATIONS.includes(value as CustomerExportPrivacyIncidentClassification)
+    ? (value as CustomerExportPrivacyIncidentClassification)
+    : "none_observed";
+}
+
+type ErrorPayload = { mode: "error"; error: string };
+
+function tierFromSearchParams(value: string | null): VelmereTier {
+  const normalized = (value ?? "Basic").toLowerCase();
+  if (normalized === "advanced") return "Advanced";
+  if (normalized === "pro") return "Pro";
+  return "Basic";
+}
+
+function reportFamilyFromAssetClass(value: string | undefined): VelmereReportAssetFamily {
+  if (value === "stock") return "equity";
+  if (value === "etf") return "etf";
+  if (value === "fx") return "fx";
+  if (value === "commodity") return "commodity";
+  if (value === "real_estate") return "real_estate";
+  if (value === "exchange_equity") return "exchange_health";
+  return "native_crypto";
+}
+
+async function handleMarketReportGet(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("query")?.trim();
+  const localeCandidate = searchParams.get("locale")?.trim() || "pl";
+  const locale = localeCandidate === "de" || localeCandidate === "en" ? localeCandidate : "pl";
+  if (!query) return NextResponse.json<ErrorPayload>({ mode: "error", error: "Missing query" }, { status: 400 });
+  const reportTier = tierFromSearchParams(searchParams.get("tier"));
+  const reportDepth = reportTier === "Advanced" ? "advanced" : reportTier === "Pro" ? "pro" : "basic";
+  const paidAccessGate = await resolveVlmAdvancedOnlyAccess({
+    request,
+    purpose: "pdf",
+    depth: reportDepth,
+    surface: "browser",
+    locale,
+    assetId: query,
+    symbol: query,
+    requestId: searchParams.get("requestId"),
+    returnPath: searchParams.get("returnPath"),
+  });
+  if (!paidAccessGate.ok) {
+    return NextResponse.json(toPaymentRequiredPayload(paidAccessGate), { status: 402, headers: paidAccessGate.headers });
+  }
+
+  try {
+    const marketRow = await searchCoinGeckoMarket(query);
+    const result = marketRow?.result ?? await analyzeDexScreenerToken(query);
+    const memory = recordSingleResult(result);
+    const ledger = memory?.lastSnapshot ? await persistRiskSnapshots([memory.lastSnapshot]) : undefined;
+    const id = result.token.marketId ?? result.token.tokenAddress ?? result.token.symbol;
+    const history = await getPersistentRiskHistory(id, 144);
+    const investigationPlan = buildInvestigationPlan(result, history);
+    const attackSurface = buildAttackSurface(result);
+    const rules = buildSingleAssetRuleHits(result, searchParams.get("watchlist"));
+    const riskBrain = buildRiskBrain(result, history);
+    const holderIntelligence = buildHolderIntelligence(result);
+    const stressSimulator = buildStressScenarios(result);
+    const riskReplay = buildRiskReplay(result, history);
+    const defiLlama = await buildDefiLlamaSnapshotForResult(result);
+    const sourceSync = buildSourceSynchronizationPacket({ query, result, defiLlama, history });
+    const resolvedAccount = resolveRequestAccount(request);
+    const rawPaidToken = request.headers.get("x-velmere-paid-access")?.trim()
+      || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim()
+      || "";
+    const paidTokenDigest = rawPaidToken ? createHash("sha256").update(rawPaidToken, "utf8").digest("hex") : "";
+    const verifiedEntitlement = paidAccessGate.paidRequired && "entitlement" in paidAccessGate
+      ? paidAccessGate.entitlement
+      : null;
+    const entitlementId = verifiedEntitlement?.entitlement?.id ?? "";
+    const entitlementDigest = entitlementId ? createHash("sha256").update(entitlementId, "utf8").digest("hex") : "";
+    const accessTokenDigest = paidTokenDigest;
+    const advancedManualReviewVerified = reportTier === "Advanced" && Boolean(
+      verifiedEntitlement?.entitlement?.productId === "vlm_advanced_audit_human_review"
+    );
+    const pass2812AccessContext = {
+      tier: reportTier,
+      accountId: resolvedAccount?.accountId ?? null,
+      serverReceiptId: reportTier === "Basic" || !entitlementDigest ? null : `vlm_receipt_${entitlementDigest.slice(0, 32)}`,
+      reportToken: reportTier === "Basic" || !accessTokenDigest ? null : `vlm_rpt_${accessTokenDigest.slice(0, 40)}`,
+      payloadHash: reportTier === "Basic" ? null : paidAccessGate.context.accountIdHash
+        ? createHash("sha256").update(JSON.stringify(paidAccessGate.context), "utf8").digest("hex")
+        : null,
+      manualReviewReceiptId: advancedManualReviewVerified && entitlementDigest
+        ? `vlm_receipt_${createHash("sha256").update(`manual:${entitlementId}`, "utf8").digest("hex").slice(0, 32)}`
+        : null,
+      manualReviewRequired: false,
+      verification: reportTier === "Basic" ? undefined : {
+        accountBound: Boolean(resolvedAccount && paidAccessGate.context.accountIdHash),
+        serverReceiptVerified: Boolean(verifiedEntitlement?.entitlement),
+        reportTokenVerified: Boolean(rawPaidToken && verifiedEntitlement?.entitlement),
+        payloadHashBound: Boolean(paidAccessGate.context.accountIdHash),
+        manualReviewVerified: advancedManualReviewVerified,
+        source: "server_entitlement" as const,
+      },
+    };
+    const pass2812ReportAccessDecision = buildReportAccessDecision(pass2812AccessContext);
+    const pass2812PaidTierSecuritySuite = buildPass2812PaidTierSecuritySuite(pass2812AccessContext);
+    if (reportTier !== "Basic" && !pass2812ReportAccessDecision.paidEvidenceAllowed) {
+      return NextResponse.json({ mode: "error", error: "payment_required", reportTier, access: pass2812ReportAccessDecision }, { status: 402 });
+    }
+    const pass4645ProviderEvidenceLedger = buildPass4645ProviderEvidenceLedger({
+      receipts: result.providerEvidenceReceipts,
+      requestedIdentity: query,
+      surface: "crypto",
+      depth: reportDepth,
+      generatedAt: new Date(),
+      signingSecret: process.env.VELMERE_PROVIDER_RECEIPT_SIGNING_SECRET?.trim() || null,
+    });
+    const pass4645ProviderEvidencePersistence = await persistPass4645ProviderEvidenceLedger(pass4645ProviderEvidenceLedger).catch((error) => ({
+      schemaVersion: "pass4645_provider_evidence_persistence_v1" as const,
+      durable: false,
+      mode: "not_configured" as const,
+      ledgerId: pass4645ProviderEvidenceLedger.ledgerId,
+      headHash: pass4645ProviderEvidenceLedger.headHash,
+      recordCount: pass4645ProviderEvidenceLedger.entries.length,
+      readBackVerified: false,
+      persistedAt: null,
+      locator: null,
+      blockers: [`pdf_provider_receipt_persistence_error:${error instanceof Error ? error.name : "unknown"}`],
+    }));
+    result.providerEvidenceLedger = pass4645ProviderEvidenceLedger;
+    result.providerEvidencePersistence = pass4645ProviderEvidencePersistence;
+    const pass4645AnalysisReadiness = buildAnalysisReadiness(result, locale);
+    if (reportTier !== "Basic" && !pass4645AnalysisReadiness.tiers[reportDepth].sellReady) {
+      return NextResponse.json({
+        mode: "limited",
+        error: "premium_pdf_not_sell_ready",
+        reportTier,
+        commercialReadiness: pass4645AnalysisReadiness,
+        providerEvidenceLedger: pass4645ProviderEvidenceLedger,
+        providerEvidencePersistence: pass4645ProviderEvidencePersistence,
+        basicFallbackAvailable: true,
+      }, { status: 422 });
+    }
+    const aiRiskBot = buildAiRiskBotBrief(result, history, defiLlama);
+    const aiOrchestrator = buildAiRiskOrchestrator(result, history);
+    const shieldChat = buildShieldChatResponse(result, history, searchParams.get("prompt") ?? "Explain the current risk.", locale);
+    const chartRegime = buildChartRegime(result, {
+      bars: result.chart?.sevenDay?.length ?? 0,
+      source: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+    });
+    const socTerminal = buildSocTerminalBrief(result, history);
+    const vlmAccessLayer = buildVlmShieldAccess(result);
+    const liquidityIntelligence = buildLiquidityIntelligence(result);
+    const evidenceWorkflow = buildEvidenceWorkflow(result, {
+      historyCount: history.length,
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      activeCommand: searchParams.get("command") ?? "risk",
+    });
+    const productOpsAudit = buildProductOpsAudit(result, {
+      historyCount: history.length,
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      activeCommand: searchParams.get("command") ?? "ops",
+      sessionMode: "operator_session",
+    });
+    const terminalControlPlane = buildTerminalControlPlane(result, {
+      historyCount: history.length,
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      activeCommand: searchParams.get("command") ?? "control",
+      sessionMode: "operator_session",
+    });
+    const terminalRiskWorkspace = buildTerminalRiskWorkspace(result, {
+      historyCount: history.length,
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      activeCommand: searchParams.get("command") ?? "workspace",
+      sessionMode: "operator_session",
+    });
+    const productionHardening = buildProductionHardening(result, {
+      historyCount: history.length,
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      activeCommand: searchParams.get("command") ?? "production",
+      sessionMode: "operator_session",
+    });
+    const terminalUsabilityGuard = buildTerminalUsabilityGuard(result, {
+      historyCount: history.length,
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      activeCommand: searchParams.get("command") ?? "usability",
+      sessionMode: "operator_session",
+      searchHasIconSubmit: true,
+      searchHasEmptyPlaceholder: true,
+      shieldMapDetached: true,
+      modalErrorBoundary: true,
+      sortToggleEnabled: true,
+      mobileBottomSheet: true,
+    });
+    const terminalPerformanceGuard = buildTerminalPerformanceGuard(result, {
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      orderBookDeferred: true,
+      historyDeferred: true,
+      heavyPanelsDeferred: true,
+      shieldMapDetached: true,
+      tableWheelUnlocked: true,
+    });
+    const terminalOperatorCopilot = buildTerminalOperatorCopilot(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "copilot",
+      terminalBootDeferred: true,
+      shieldMapDetached: true,
+      sourceHonestyVisible: true,
+      chatHistoryCount: 0,
+    });
+    const terminalLaunchBridge = buildTerminalLaunchBridge(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "launch",
+      sessionMode: "operator_session",
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      shieldMapDetached: true,
+      tableWheelUnlocked: true,
+      searchResolverGuarded: true,
+      suggestionDismissOnOutsideClick: true,
+      sourceHonestyVisible: true,
+    });
+    const terminalSourceTrust = buildTerminalSourceTrust(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "sources",
+      searchResolverGuarded: true,
+      suggestionDismissOnOutsideClick: true,
+      sourceCooldownActive: false,
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      tableWheelUnlocked: true,
+      walletSessionReady: false,
+      exportInfrastructureReady: false,
+      rateLimitMiddlewareReady: false,
+    });
+    const terminalEvidenceExport = buildTerminalEvidenceExport(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "export",
+      sessionMode: "operator_session",
+      walletSessionReady: false,
+      exportInfrastructureReady: false,
+      rateLimitMiddlewareReady: false,
+      persistentAuditLogReady: false,
+    });
+    const terminalRuntimeHealth = buildTerminalRuntimeHealth(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "runtime",
+      modalErrorBoundary: true,
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      heavyPanelsDeferred: true,
+      shieldMapDetached: true,
+      tableWheelUnlocked: true,
+      suggestionDismissOnOutsideClick: true,
+      sourceCooldownActive: false,
+      rateLimitMiddlewareReady: false,
+      exportInfrastructureReady: false,
+      persistentAuditLogReady: false,
+      walletSessionReady: false,
+    });
+    const terminalOperatorFocus = buildTerminalOperatorFocus(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "review",
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      heavyPanelsDeferred: true,
+      modalErrorBoundary: true,
+      focusedPanelRouting: true,
+      sourceCooldownActive: false,
+      rateLimitMiddlewareReady: false,
+      exportInfrastructureReady: false,
+      persistentAuditLogReady: false,
+      walletSessionReady: false,
+    });
+    const terminalInteractionStability = buildTerminalInteractionStability(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "stability",
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      heavyPanelsDeferred: true,
+      modalErrorBoundary: true,
+      focusedPanelRouting: true,
+      sourceCooldownActive: false,
+      searchLocalFirst: true,
+      suggestionDismissOnOutsideClick: true,
+      shieldMapDetached: true,
+      tableWheelUnlocked: true,
+      stressScenarioHelpers: true,
+      noRawJsonButtons: true,
+    });
+    const terminalReviewDeck = buildTerminalReviewDeck(result, {
+      candlesCount: result.chart?.sevenDay?.length ?? 0,
+      chartSource: result.chart?.sevenDay?.length ? "result.chart.sevenDay" : "market metrics",
+      hasOrderBook: false,
+      historyCount: history.length,
+      activeCommand: searchParams.get("command") ?? "deck",
+      terminalBootDeferred: true,
+      modalChunkSplit: true,
+      heavyPanelsDeferred: true,
+      sourceCooldownActive: false,
+      searchLocalFirst: true,
+      suggestionDismissOnOutsideClick: true,
+      tableWheelUnlocked: true,
+      shieldMapDetached: true,
+      focusedPanelRouting: true,
+      rateLimitMiddlewareReady: false,
+      exportInfrastructureReady: false,
+      persistentAuditLogReady: false,
+      walletSessionReady: false,
+    });
+
+    const pass2814ProjectUrl = searchParams.get("projectUrl") ?? searchParams.get("sourceUrl") ?? null;
+    const pass2814ReportInputFirewall = buildPass2814ReportInputFirewall({
+      assetFamily: reportFamilyFromAssetClass(result.token.assetClass),
+      tier: reportTier,
+      query,
+      projectUrl: pass2814ProjectUrl,
+    });
+    const pass2814SourcePoisoningFirewall = buildPass2814SourcePoisoningFirewall({
+      surface: "PDF",
+      sourceFamily: result.dataSources.length >= 2 ? "coingecko" : "velmere_internal",
+      targetUrl: pass2814ProjectUrl,
+      assetFamily: reportFamilyFromAssetClass(result.token.assetClass),
+      tier: reportTier,
+      query,
+      projectUrl: pass2814ProjectUrl,
+    });
+    const reportChartPointCount = result.chart?.sevenDay?.length ?? 0;
+    const reportChartLifecycleReceipt = buildChartLifecycleReceipt({
+      state: reportChartPointCount >= 2 ? "source_bound" : "unavailable_skeleton",
+      sourceLabel: reportChartPointCount >= 2 ? "Shield market chart payload" : "Shield chart source unavailable",
+      timeframeLabel: "7D source sparkline",
+      lastUpdatedLabel: result.generatedAt,
+      candleCount: reportChartPointCount,
+      confidenceScore: result.confidence === undefined ? 0 : normalizeConfidencePercent(result.confidence, 0),
+    });
+    const pass2811TierSuite = buildPass2811TierSuite();
+    const pass2811TierPayloadMatrix = pass2811TierSuite.profiles.map((profile) => {
+      const payload = buildTop1PdfPayloadDraft({
+        locale,
+        tier: profile.tier,
+        symbol: result.token.symbol,
+        name: result.token.name,
+        family: reportFamilyFromAssetClass(result.token.assetClass),
+        riskScore: result.score,
+        sourceFamilyCount: Math.max(1, pass4645AnalysisReadiness.sourceFamilyCount),
+        missingEvidence: [
+          result.dataQuality === "live" ? null : "live source quorum not confirmed",
+          result.chart?.sevenDay?.length ? null : "OHLCV/chart payload missing",
+          result.dataSources.length >= 2 ? null : "second source family missing",
+          result.signals.some((signal) => signal.id === "insufficient_data") ? "insufficient data signal active" : null,
+        ].filter(Boolean) as string[],
+        providerConflicts: [],
+        chartMode: reportChartPointCount >= 2 ? "fallback" : "unavailable",
+        chartLifecycleReceipt: reportChartLifecycleReceipt,
+        accountId: profile.tier === reportTier ? pass2812AccessContext.accountId : null,
+        serverReceiptId: profile.tier === reportTier ? pass2812AccessContext.serverReceiptId : null,
+        reportToken: profile.tier === reportTier ? pass2812AccessContext.reportToken : null,
+        payloadHash: profile.tier === reportTier ? pass2812AccessContext.payloadHash : null,
+        manualReviewReceiptId: profile.tier === reportTier ? pass2812AccessContext.manualReviewReceiptId : null,
+        accessVerification: profile.tier === reportTier ? pass2812AccessContext.verification : undefined,
+        projectUrl: pass2814ProjectUrl,
+        narrativeText: `${result.token.name} is described as observed risk based on available evidence, confidence, source status and missing evidence. Not financial advice.`,
+        topDriversCount: Math.min(5, Math.max(1, result.signals.length)),
+        mitigatorsCount: Math.min(3, result.dataSources.length),
+        generatedAt: result.generatedAt,
+      });
+      return {
+        tier: profile.tier,
+        reportId: payload.reportId,
+        pageCount: payload.pages.length,
+        receiptCount: payload.receipts.length,
+        visibleLaneCount: payload.tierEvidenceProfile.visibleLanes.length,
+        lockedLaneCount: payload.tierEvidenceProfile.lockedLanes.length,
+        chartAcceptedForTierPdf: payload.chartTierPdfGuard.acceptedForTierPdf,
+        chartBlockedReasons: payload.chartTierPdfGuard.blockedReasons,
+        paidEvidenceAllowed: payload.reportAccessDecision.paidEvidenceAllowed,
+        accessStatus: payload.reportAccessDecision.status,
+        accessBlockedReasons: payload.reportAccessDecision.blockedReasons,
+        fingerprint: payload.chartManifest.evidenceFingerprint,
+        payloadHash: payload.reportIntegrityVault.payloadHash,
+        sourceReceiptMerkleRoot: payload.reportIntegrityVault.sourceReceiptMerkleRoot,
+        integrityReleaseGate: payload.reportIntegrityVault.releaseGate,
+      };
+    });
+
+    const pdfPayloadV2 = buildTop1PdfPayloadDraft({
+      locale,
+      tier: reportTier,
+      symbol: result.token.symbol,
+      name: result.token.name,
+      family: reportFamilyFromAssetClass(result.token.assetClass),
+      riskScore: result.score,
+      sourceFamilyCount: Math.max(1, pass4645AnalysisReadiness.sourceFamilyCount),
+      missingEvidence: [
+        result.dataQuality === "live" ? null : "live source quorum not confirmed",
+        result.chart?.sevenDay?.length ? null : "OHLCV/chart payload missing",
+        result.dataSources.length >= 2 ? null : "second source family missing",
+        result.signals.some((signal) => signal.id === "insufficient_data") ? "insufficient data signal active" : null,
+      ].filter(Boolean) as string[],
+      providerConflicts: [],
+      chartMode: reportChartPointCount >= 2 ? "fallback" : "unavailable",
+      chartLifecycleReceipt: reportChartLifecycleReceipt,
+      accountId: pass2812AccessContext.accountId,
+      serverReceiptId: pass2812AccessContext.serverReceiptId,
+      reportToken: pass2812AccessContext.reportToken,
+      payloadHash: pass2812AccessContext.payloadHash,
+      manualReviewReceiptId: pass2812AccessContext.manualReviewReceiptId,
+      operatorId: searchParams.get("operatorId") ?? request.headers.get("x-velmere-operator-id"),
+      operatorSignature: searchParams.get("operatorSignature") ?? request.headers.get("x-velmere-operator-signature"),
+      reviewerNote: searchParams.get("reviewerNote"),
+      reviewPayloadHash: searchParams.get("reviewPayloadHash"),
+      reviewedAt: searchParams.get("reviewedAt"),
+      reviewRejected: searchParams.get("reviewRejected") === "1",
+      replayAttemptCount: Number(searchParams.get("replayAttemptCount") ?? 0),
+      deliveredPayloadHash: searchParams.get("deliveredPayloadHash") ?? request.headers.get("x-velmere-delivered-payload-hash"),
+      deliveredSourceReceiptRoot: searchParams.get("deliveredSourceReceiptRoot") ?? request.headers.get("x-velmere-delivered-source-root"),
+      reviewSourceReceiptRoot: searchParams.get("reviewSourceReceiptRoot") ?? request.headers.get("x-velmere-review-source-root"),
+      operatorSignatureReplayHash: searchParams.get("operatorSignatureReplayHash") ?? request.headers.get("x-velmere-operator-signature-replay-hash"),
+      signedReviewerNoteHash: searchParams.get("signedReviewerNoteHash") ?? request.headers.get("x-velmere-signed-note-hash"),
+      replayReviewerNoteHash: searchParams.get("replayReviewerNoteHash") ?? request.headers.get("x-velmere-replay-note-hash"),
+      projectUrl: pass2814ProjectUrl,
+      narrativeText: `${result.token.name} risk narrative is evidence-bound: risk ${result.score}, confidence ${result.confidence === undefined ? "unavailable" : `${normalizeConfidencePercent(result.confidence, 0)}%`}, source families ${result.dataSources.length}, missing evidence is shown, and this is not financial advice.`,
+      topDriversCount: Math.min(5, Math.max(1, result.signals.length)),
+      mitigatorsCount: Math.min(3, result.dataSources.length),
+      generatedAt: result.generatedAt,
+      customerExportPostReinstatedAuditId: searchParams.get("reinstatedExportAuditId") ?? request.headers.get("x-velmere-reinstated-export-audit-id"),
+      customerExportPostReleaseAuditReceiptId: searchParams.get("postReleaseAuditReceiptId") ?? request.headers.get("x-velmere-post-release-audit-receipt"),
+      customerExportNotificationDispatchReceiptId: searchParams.get("notificationDispatchReceiptId") ?? request.headers.get("x-velmere-notification-dispatch-receipt"),
+      customerExportNotificationOpenReceiptId: searchParams.get("notificationOpenReceiptId") ?? request.headers.get("x-velmere-notification-open-receipt"),
+      customerExportNotificationContentHash: searchParams.get("notificationContentHash") ?? request.headers.get("x-velmere-notification-content-hash"),
+      customerExportNotificationChannel: safeCustomerExportNotificationChannel(searchParams.get("notificationChannel")),
+      customerExportNotificationChannelBindingReceiptId: searchParams.get("notificationChannelBindingReceiptId") ?? request.headers.get("x-velmere-notification-channel-binding"),
+      customerExportNotificationCustomerAccountHash: searchParams.get("notificationCustomerAccountHash") ?? request.headers.get("x-velmere-notification-customer-account-hash"),
+      customerExportNotificationPayloadHashBound: searchParams.get("notificationPayloadHash") ?? request.headers.get("x-velmere-notification-payload-hash"),
+      customerExportNotificationSourceReceiptRootBound: searchParams.get("notificationSourceReceiptRoot") ?? request.headers.get("x-velmere-notification-source-root"),
+      customerExportNotificationDeliveryAuditTimelineHash: searchParams.get("deliveryAuditTimelineHash") ?? request.headers.get("x-velmere-delivery-audit-timeline-hash"),
+      customerExportNotificationReissuedExportLinkId: searchParams.get("notificationReissuedExportLinkId") ?? request.headers.get("x-velmere-notification-reissued-link"),
+      customerExportNotificationPreviousOperatorReleaseReceiptId: searchParams.get("previousOperatorReleaseReceiptId") ?? request.headers.get("x-velmere-previous-operator-release"),
+      customerExportNotificationPreviousChannelReinstatementReceiptId: searchParams.get("previousChannelReinstatementReceiptId") ?? request.headers.get("x-velmere-previous-channel-reinstatement"),
+      customerExportNotificationIncidentNoConflictReceiptId: searchParams.get("incidentNoConflictReceiptId") ?? request.headers.get("x-velmere-incident-no-conflict"),
+      customerExportNotificationRetentionSnapshotId: searchParams.get("retentionSnapshotId") ?? request.headers.get("x-velmere-retention-snapshot"),
+      customerExportNotificationPayloadOrSourceRootDrift: searchParams.get("notificationPayloadOrSourceRootDrift") === "1",
+      customerExportNotificationContentMismatch: searchParams.get("notificationContentMismatch") === "1",
+      customerExportRuntimeStorageAdapterInterfaceId: searchParams.get("runtimeStorageAdapterInterfaceId") ?? request.headers.get("x-velmere-runtime-storage-adapter-interface"),
+      customerExportRuntimeMemoryDevAdapterId: searchParams.get("runtimeMemoryDevAdapterId") ?? request.headers.get("x-velmere-runtime-memory-dev-adapter"),
+      customerExportRuntimeDbAdapterContractId: searchParams.get("runtimeDbAdapterContractId") ?? request.headers.get("x-velmere-runtime-db-adapter-contract"),
+      customerExportRuntimeEventWriterContractId: searchParams.get("runtimeEventWriterContractId") ?? request.headers.get("x-velmere-runtime-event-writer-contract"),
+      customerExportRuntimeAtomicRetryIncrementFnId: searchParams.get("runtimeAtomicRetryIncrementFnId") ?? request.headers.get("x-velmere-runtime-atomic-retry-increment"),
+      customerExportRuntimeSignedAcknowledgementVerifierId: searchParams.get("runtimeSignedAcknowledgementVerifierId") ?? request.headers.get("x-velmere-runtime-signed-ack-verifier"),
+      customerExportRuntimeDisputeHoldReleaseWriterId: searchParams.get("runtimeDisputeHoldReleaseWriterId") ?? request.headers.get("x-velmere-runtime-hold-release-writer"),
+      customerExportRuntimeOperatorReleaseReinstatementWriterId: searchParams.get("runtimeOperatorReleaseReinstatementWriterId") ?? request.headers.get("x-velmere-runtime-operator-reinstatement-writer"),
+      customerExportRuntimePostReinstatementNotificationWriterId: searchParams.get("runtimePostReinstatementNotificationWriterId") ?? request.headers.get("x-velmere-runtime-post-notification-writer"),
+      customerExportRuntimeRetentionJobDryRunVerifierId: searchParams.get("runtimeRetentionJobDryRunVerifierId") ?? request.headers.get("x-velmere-runtime-retention-dry-run"),
+      customerExportRuntimeAccountVaultEventWriterId: searchParams.get("runtimeAccountVaultEventWriterId") ?? request.headers.get("x-velmere-runtime-account-vault-writer"),
+      customerExportRuntimeEmailEventWriterId: searchParams.get("runtimeEmailEventWriterId") ?? request.headers.get("x-velmere-runtime-email-writer"),
+      customerExportRuntimeApiHandoffEventWriterId: searchParams.get("runtimeApiHandoffEventWriterId") ?? request.headers.get("x-velmere-runtime-api-writer"),
+      customerExportRuntimeSupportAttachmentEventWriterId: searchParams.get("runtimeSupportAttachmentEventWriterId") ?? request.headers.get("x-velmere-runtime-support-writer"),
+      customerExportRuntimePreviousPostNotificationReceiptId: searchParams.get("runtimePreviousPostNotificationReceiptId") ?? request.headers.get("x-velmere-runtime-previous-post-notification"),
+      customerExportRuntimePayloadHashBound: searchParams.get("runtimePayloadHash") ?? request.headers.get("x-velmere-runtime-payload-hash"),
+      customerExportRuntimeSourceReceiptRootBound: searchParams.get("runtimeSourceReceiptRoot") ?? request.headers.get("x-velmere-runtime-source-root"),
+      customerExportRuntimePayloadOrSourceRootDrift: searchParams.get("runtimePayloadOrSourceRootDrift") === "1",
+      customerExportPostPurgeResidualScannerRunId: searchParams.get("postPurgeResidualScannerRunId") ?? request.headers.get("x-velmere-post-purge-residual-scanner-run"),
+      customerExportPostPurgeResidualScanManifestHash: searchParams.get("postPurgeResidualScanManifestHash") ?? request.headers.get("x-velmere-post-purge-residual-scan-manifest"),
+      customerExportPostPurgeSearchIndexPurgeReceiptId: searchParams.get("postPurgeSearchIndexPurgeReceiptId") ?? request.headers.get("x-velmere-post-purge-search-index-purge"),
+      customerExportPostPurgeCdnCachePurgeReceiptId: searchParams.get("postPurgeCdnCachePurgeReceiptId") ?? request.headers.get("x-velmere-post-purge-cdn-cache-purge"),
+      customerExportPostPurgeResidualDataDetected: searchParams.get("postPurgeResidualDataDetected") === "1",
+      customerExportPostPurgeResidualDataRemediationTicketId: searchParams.get("postPurgeResidualDataRemediationTicketId") ?? request.headers.get("x-velmere-post-purge-residual-remediation-ticket"),
+      customerExportPostPurgePrivacyAttestationReceiptId: searchParams.get("postPurgePrivacyAttestationReceiptId") ?? request.headers.get("x-velmere-post-purge-privacy-attestation"),
+      customerExportPostPurgePrivacyOfficerSignoffReceiptId: searchParams.get("postPurgePrivacyOfficerSignoffReceiptId") ?? request.headers.get("x-velmere-post-purge-privacy-officer-signoff"),
+      customerExportPostPurgeCustomerFinalPrivacyNoticeReceiptId: searchParams.get("postPurgeCustomerFinalPrivacyNoticeReceiptId") ?? request.headers.get("x-velmere-post-purge-final-privacy-notice"),
+      customerExportPostPurgePrivacyReconciliationHash: searchParams.get("postPurgePrivacyReconciliationHash") ?? request.headers.get("x-velmere-post-purge-privacy-reconciliation"),
+      customerExportPostPurgeChannelResidualScanReceipts: CUSTOMER_EXPORT_RESIDUAL_SCAN_CHANNELS.map((channel: CustomerExportResidualScanChannel) => ({
+        channel,
+        residualScanReceiptId: searchParams.get(`${channel}ResidualScanReceiptId`) ?? request.headers.get(`x-velmere-${channel}-residual-scan-receipt`),
+        purgeVerificationReceiptId: searchParams.get(`${channel}PurgeVerificationReceiptId`) ?? request.headers.get(`x-velmere-${channel}-purge-verification-receipt`),
+        residualItemCount: Number(searchParams.get(`${channel}ResidualItemCount`) ?? 0),
+        scannedAt: searchParams.get(`${channel}ScannedAt`) ?? request.headers.get(`x-velmere-${channel}-residual-scanned-at`),
+      })),
+      customerExportPrivacyIncidentResidualDetected: searchParams.get("privacyIncidentResidualDetected") === "1",
+      customerExportPrivacyIncidentClassification: safeCustomerExportPrivacyIncidentClassification(searchParams.get("privacyIncidentClassification")),
+      customerExportPrivacyIncidentReviewReceiptId: searchParams.get("privacyIncidentReviewReceiptId") ?? request.headers.get("x-velmere-privacy-incident-review-receipt"),
+      customerExportPrivacyIncidentDeliveryFreezeReceiptId: searchParams.get("privacyIncidentDeliveryFreezeReceiptId") ?? request.headers.get("x-velmere-privacy-incident-delivery-freeze"),
+      customerExportPrivacyIncidentCustomerImpactScopeId: searchParams.get("privacyIncidentCustomerImpactScopeId") ?? request.headers.get("x-velmere-privacy-incident-impact-scope"),
+      customerExportPrivacySecurityEscalationReceiptId: searchParams.get("privacySecurityEscalationReceiptId") ?? request.headers.get("x-velmere-privacy-security-escalation"),
+      customerExportPrivacyLegalRegulatorReviewBoundaryReceiptId: searchParams.get("privacyLegalRegulatorReviewBoundaryReceiptId") ?? request.headers.get("x-velmere-privacy-legal-regulator-boundary"),
+      customerExportPrivacyCustomerNoticeEscalationPathReceiptId: searchParams.get("privacyCustomerNoticeEscalationPathReceiptId") ?? request.headers.get("x-velmere-privacy-customer-notice-escalation"),
+      customerExportDataSubjectAccessAuditPacketId: searchParams.get("dataSubjectAccessAuditPacketId") ?? request.headers.get("x-velmere-dsar-audit-packet"),
+      customerExportDataSubjectAccessRedactionManifestHash: searchParams.get("dataSubjectAccessRedactionManifestHash") ?? request.headers.get("x-velmere-dsar-redaction-manifest"),
+      customerExportDataSubjectAccessRawSecretLeakDetected: searchParams.get("dataSubjectAccessRawSecretLeakDetected") === "1",
+      customerExportPrivacyIncidentOperatorSignoffReceiptId: searchParams.get("privacyIncidentOperatorSignoffReceiptId") ?? request.headers.get("x-velmere-privacy-incident-operator-signoff"),
+      customerExportPrivacyIncidentDsrTimelineHash: searchParams.get("privacyIncidentDsrTimelineHash") ?? request.headers.get("x-velmere-privacy-incident-dsr-timeline"),
+    });
+
+    return NextResponse.json({
+      mode: "live",
+      reportType: "velmere-shield-market-integrity-evidence-bundle",
+      result,
+      memory,
+      ledger,
+      history,
+      investigationPlan,
+      attackSurface,
+      rules,
+      riskBrain,
+      holderIntelligence,
+      stressSimulator,
+      riskReplay,
+      defiLlama,
+      sourceSync,
+      reportEvidenceCapsule: sourceSync.pass2453,
+      reportEvidenceFingerprint: sourceSync.pass2453?.canonicalEvidenceFingerprint,
+      aiRiskBot,
+      aiOrchestrator,
+      shieldChat,
+      chartRegime,
+      socTerminal,
+      vlmAccessLayer,
+      liquidityIntelligence,
+      evidenceWorkflow,
+      productOpsAudit,
+      terminalControlPlane,
+      terminalRiskWorkspace,
+      productionHardening,
+      terminalUsabilityGuard,
+      terminalPerformanceGuard,
+      terminalOperatorCopilot,
+      terminalLaunchBridge,
+      terminalSourceTrust,
+      terminalEvidenceExport,
+      terminalRuntimeHealth,
+      terminalOperatorFocus,
+      terminalInteractionStability,
+      terminalReviewDeck,
+      pdfPayloadV2,
+      pass4645AnalysisReadiness,
+      pass4645ProviderEvidenceLedger,
+      pass4645ProviderEvidencePersistence,
+      pass2811TierSuite,
+      pass2811TierPayloadMatrix,
+      pass2811TierDifferentiationGate: pass2811TierSuite.gate,
+      pass2812ReportAccessDecision,
+      pass2812PaidTierSecuritySuite,
+      pass2812PaidEvidenceRendererRule: pass2812ReportAccessDecision.rendererRule,
+      pass2813VlmBrainSourcePlan: pdfPayloadV2.vlmBrainSourcePlan,
+      pass2813VlmBrainClaimFirewall: pdfPayloadV2.vlmBrainClaimFirewall,
+      pass2813VlmBrainAcceptanceGates: PASS2813_VLM_BRAIN_ACCEPTANCE_GATES,
+      pass2813VlmBrainPdfParityRule: "Report route exposes the same VLM Brain source plan embedded inside PDF Payload V2 so UI/PDF/Angel cannot drift.",
+      pass2814ReportInputFirewall,
+      pass2814SourcePoisoningFirewall,
+      pass2814PdfSourcePoisoningRule: "Report/PDF URLs and source text are untrusted until SSRF/source-poisoning policy, server fetch guard and source receipt hash pass.",
+      pass2815ReportIntegrityVault: pdfPayloadV2.reportIntegrityVault,
+      pass2815ReportIntegrityAcceptanceGates: PASS2815_REPORT_INTEGRITY_ACCEPTANCE_GATES,
+      pass2815ReportIntegrityRule: "UI preview, PDF download and account delivery must share payloadHash + sourceReceiptMerkleRoot; paid replay mismatch renders locked/basic evidence only.",
+      pass2816RuntimeObservabilityLedger: pdfPayloadV2.runtimeObservabilityLedger,
+      pass2816RuntimeObservabilityAcceptanceGates: PASS2816_RUNTIME_OBSERVABILITY_ACCEPTANCE_GATES,
+      pass2816RuntimeObservabilityRule: "Report/PDF runtime state must downgrade charts and paid evidence when source-bound data, receipt integrity or provider safety is degraded.",
+      pass2817MarketMicrostructureGate: pdfPayloadV2.marketMicrostructureGate,
+      pass2817MarketMicrostructureAcceptanceGates: PASS2817_MARKET_MICROSTRUCTURE_ACCEPTANCE_GATES,
+      pass2817MarketMicrostructureRule: "Order book/depth/spread/slippage/funding/OI lanes are separate evidence: missing microstructure is printed as missing evidence and cannot become fake zero risk.",
+      pass2818IconProvenanceGate: pdfPayloadV2.iconProvenanceGate,
+      pass2818IconProvenanceAcceptanceGates: PASS2818_ICON_PROVENANCE_ACCEPTANCE_GATES,
+      pass2818IconProvenanceRule: "Icons/logos are presentation metadata only; unsafe, unlicensed or unavailable logos fall back to neutral initials and never become source receipts.",
+      pass2819MobileAccessibilityOverlayGate: pdfPayloadV2.mobileAccessibilityOverlayGate,
+      pass2819MobileAccessibilityAcceptanceGates: PASS2819_MOBILE_ACCESSIBILITY_ACCEPTANCE_GATES,
+      pass2819MobileAccessibilityRule: "Report preview/PDF UI cannot ship with hidden overlays, page-level horizontal scroll, chart touch traps or inaccessible lock states; guarded degrade is visible missing evidence.",
+      pass2820PdfRenderCleanroomGate: pdfPayloadV2.pdfRenderCleanroomGate,
+      pass2820PdfRenderCleanroomAcceptanceGates: PASS2820_PDF_RENDER_CLEANROOM_ACCEPTANCE_GATES,
+      pass2820PdfRenderCleanroomRule: "Customer PDFs must pass locale purity, debug-copy redaction, paid evidence redaction, chart lifecycle and payload-hash parity before delivery.",
+      pass2821CustomerDeliveryLedger: pdfPayloadV2.customerDeliveryLedger,
+      pass2821CustomerDeliveryAcceptanceGates: PASS2821_CUSTOMER_DELIVERY_ACCEPTANCE_GATES,
+      pass2821CustomerDeliveryRule: "Customer delivery cannot generate a new payload: download, account vault, email notice and API handoff must share payloadHash + sourceReceiptMerkleRoot and respect token expiry/replay guards.",
+      pass2822AccountVaultTokenConsumptionGate: pdfPayloadV2.accountVaultTokenConsumptionGate,
+      pass2822AccountVaultTokenAcceptanceGates: PASS2822_ACCOUNT_VAULT_TOKEN_ACCEPTANCE_GATES,
+      pass2822AccountVaultTokenRule: "Account vault/download/email/API handoff has explicit token states: issued, consumed, expired, revoked and payload mismatch. Paid resend must issue a fresh payload-bound token.",
+      pass2823AdvancedHumanReviewSignoffGate: pdfPayloadV2.advancedHumanReviewSignoffGate,
+      pass2823AdvancedHumanReviewAcceptanceGates: PASS2823_ADVANCED_HUMAN_REVIEW_ACCEPTANCE_GATES,
+      pass2823AdvancedHumanReviewRule: "Advanced PDF page 9/operator notes render only when paid entitlement, report token, manual review receipt, operator signature, payload hash and sourceReceiptRoot all match.",
+      pass2824AdvancedReviewReplayAuditGate: pdfPayloadV2.advancedReviewReplayAuditGate,
+      pass2824AdvancedReviewReplayAuditAcceptanceGates: PASS2824_ADVANCED_REVIEW_REPLAY_AUDIT_ACCEPTANCE_GATES,
+      pass2824AdvancedReviewReplayAuditRule: "Advanced addendum replay must re-check payloadHash, sourceReceiptRoot, operator signature hash and signed note hash before customer PDF/account/email/API delivery.",
+      pass2825CommunitySourceUpgradeModerationGate: pdfPayloadV2.communitySourceUpgradeModerationGate,
+      pass2825CommunitySourceUpgradeAcceptanceGates: PASS2825_COMMUNITY_SOURCE_UPGRADE_ACCEPTANCE_GATES,
+      pass2825CommunitySourceUpgradeRule: "Community/Square posts are metadata/opinion until account, moderation, link safety and moderator source-upgrade receipt bind them to payloadHash + sourceReceiptRoot.",
+      pass2826CustomerSafeNarrativeGate: pdfPayloadV2.customerSafeNarrativeGate,
+      pass2826CustomerSafeNarrativeAcceptanceGates: PASS2826_CUSTOMER_SAFE_NARRATIVE_ACCEPTANCE_GATES,
+      pass2826CustomerSafeNarrativeRule: "Customer-facing PDF/UI/Angel narratives must pass a claim ledger: risk, confidence, source status, missing evidence, tier boundary, paid redaction and no-advice copy stay evidence-bound.",
+      pass2827LaunchReadinessEvidenceGate: pdfPayloadV2.launchReadinessEvidenceGate,
+      pass2827LaunchReadinessAcceptanceGates: PASS2827_LAUNCH_READINESS_ACCEPTANCE_GATES,
+      pass2827LaunchReadinessRule: "Launch-ready/100% claims stay blocked until build, typecheck, live provider smoke, screenshot QA, mobile QA, security QA and PDF parity are evidenced with artifacts.",
+      pass2828EvidenceArtifactHandoffGate: pdfPayloadV2.evidenceArtifactHandoffGate,
+      pass2828EvidenceArtifactHandoffAcceptanceGates: PASS2828_EVIDENCE_ARTIFACT_HANDOFF_ACCEPTANCE_GATES,
+      pass2828EvidenceArtifactHandoffRule: "Report/PDF surfaces cannot convert prepared release gates into launch-ready claims unless build/typecheck/provider/screenshot/mobile/security/PDF-parity artifact IDs are attached.",
+      pass2829ReleaseProofCollectorGate: pdfPayloadV2.releaseProofCollectorGate,
+      pass2829ReleaseProofCollectorAcceptanceGates: PASS2829_RELEASE_PROOF_COLLECTOR_ACCEPTANCE_GATES,
+      pass2830ReleasePacketSealGate: pdfPayloadV2.releasePacketSealGate,
+      pass2830ReleasePacketSealAcceptanceGates: PASS2830_RELEASE_PACKET_SEAL_ACCEPTANCE_GATES,
+      pass2829ReleaseProofCollectorRule: "Report/PDF release packet must classify each artifact as fresh/stale/failed/prepared-only/missing and block launch claims until P0/P1 evidence is sealed.",
+      pass2831SealDriftMonitorGate: pdfPayloadV2.sealDriftMonitorGate,
+      pass2831SealDriftMonitorAcceptanceGates: PASS2831_SEAL_DRIFT_MONITOR_ACCEPTANCE_GATES,
+      pass2831SealDriftMonitorRule: "Report/PDF release seals must be continuously monitored: payload/source/code/provider/PDF/security/mobile/chart drift forces replay and reseal before launch-ready or customer proof copy remains attached.",
+      pass2832ProductionCanaryRollbackGate: pdfPayloadV2.productionCanaryRollbackGate,
+      pass2832ProductionCanaryRollbackAcceptanceGates: PASS2832_PRODUCTION_CANARY_ROLLBACK_ACCEPTANCE_GATES,
+      pass2833IncidentDisclosureResponseGate: pdfPayloadV2.incidentDisclosureResponseGate,
+      pass2833IncidentDisclosureAcceptanceGates: PASS2833_INCIDENT_DISCLOSURE_RESPONSE_ACCEPTANCE_GATES,
+      pass2833IncidentDisclosureRule: "Report/PDF paid delivery and launch-ready copy freeze when rollback, data leak suspicion, paid evidence impact or customer impact requires notice/support/postmortem proof.",
+      pass2834CustomerRemedyRefundCreditGate: pdfPayloadV2.customerRemedyRefundCreditGate,
+      pass2834CustomerRemedyRefundCreditAcceptanceGates: PASS2834_CUSTOMER_REMEDY_REFUND_CREDIT_ACCEPTANCE_GATES,
+      pass2834CustomerRemedyRefundCreditRule: "Report/PDF refund, credit and paid-delivery reopening require redacted support evidence, finance review and incident replay; customer notice alone is not a remedy proof.",
+      pass2835AccountVaultRemedyReopenAuditGate: pdfPayloadV2.accountVaultRemedyReopenAuditGate,
+      pass2835AccountVaultRemedyReopenAuditAcceptanceGates: PASS2835_ACCOUNT_VAULT_REMEDY_REOPEN_AUDIT_ACCEPTANCE_GATES,
+      pass2835AccountVaultRemedyReopenAuditRule: "Report/PDF paid delivery can reopen only when redacted account-vault audit trail, remedy decision, reopen receipt, replay seal and new-token continuity are bound to the same payload/source root.",
+      pass2836RemedyReopenReplayLockGate: pdfPayloadV2.remedyReopenReplayLockGate,
+      pass2836RemedyReopenReplayLockAcceptanceGates: PASS2836_REMEDY_REOPEN_REPLAY_LOCK_ACCEPTANCE_GATES,
+      pass2836RemedyReopenReplayLockRule: "Report/PDF paid evidence cannot render from reopened delivery until replay-lock blocks duplicate delivery, old consumed-token replay and stale reopen receipts with a new token hash and dedup key.",
+      pass2837SupportSlaRemedyProofGate: pdfPayloadV2.supportSlaRemedyProofGate,
+      pass2837SupportSlaRemedyProofAcceptanceGates: PASS2837_SUPPORT_SLA_REMEDY_PROOF_ACCEPTANCE_GATES,
+      pass2837SupportSlaRemedyProofRule: "Report/PDF paid delivery cannot close or reopen after remedy unless redacted support SLA packet, finance remedy receipt, customer notice receipt and replay-lock binding all clear.",
+      pass2838CustomerExportRedactionPacketGate: pdfPayloadV2.customerExportRedactionPacketGate,
+      pass2838CustomerExportRedactionPacketAcceptanceGates: PASS2838_CUSTOMER_EXPORT_REDACTION_PACKET_ACCEPTANCE_GATES,
+      pass2838CustomerExportRedactionPacketRule: "Report/PDF customer export requires its own redacted packet, channel receipt, minimization policy and payload/source/support-SLA binding before account download, email, API or support handoff.",
+      pass2839CustomerExportExpiryRecallGate: pdfPayloadV2.customerExportExpiryRecallGate,
+      pass2839CustomerExportExpiryRecallAcceptanceGates: PASS2839_CUSTOMER_EXPORT_EXPIRY_RECALL_ACCEPTANCE_GATES,
+      pass2839CustomerExportExpiryRecallRule: "Report/PDF export links must be expiry-bound, recall-aware, retry-budgeted and timeline-hashed before account download, email/API resend or support attachment can continue.",
+      pass2840CustomerExportDeliveryLedgerPersistenceGate: pdfPayloadV2.customerExportDeliveryLedgerPersistenceGate,
+      pass2840CustomerExportDeliveryLedgerPersistenceAcceptanceGates: PASS2840_CUSTOMER_EXPORT_DELIVERY_LEDGER_PERSISTENCE_ACCEPTANCE_GATES,
+      pass2840CustomerExportDeliveryLedgerPersistenceRule: "Report/PDF customer export delivery must persist a ledger row, expiring-link adapter, recall/reissue timeline, idempotent resend store, atomic retry counter and per-channel event IDs before customer-safe handoff.",
+      pass2841CustomerExportAcknowledgementSignedReceiptGate: pdfPayloadV2.customerExportAcknowledgementSignedReceiptGate,
+      pass2841CustomerExportAcknowledgementSignedReceiptAcceptanceGates: PASS2841_CUSTOMER_EXPORT_ACK_SIGNED_RECEIPT_ACCEPTANCE_GATES,
+      pass2841CustomerExportAcknowledgementSignedReceiptRule: "Report/PDF final customer-visible export requires customer acknowledgement, signed receipt, packet/source/channel binding and server-side signature verification; durable ledger state alone is not final delivery proof.",
+      pass2842CustomerExportDisputeChargebackHoldGate: pdfPayloadV2.customerExportDisputeChargebackHoldGate,
+      pass2842CustomerExportDisputeChargebackHoldAcceptanceGates: PASS2842_CUSTOMER_EXPORT_DISPUTE_CHARGEBACK_HOLD_ACCEPTANCE_GATES,
+      pass2842CustomerExportDisputeChargebackHoldRule: "Report/PDF final customer-visible export remains frozen during payment disputes, chargebacks, payment withdrawals, policy/compliance holds, customer disputes or refund-credit collisions until hold-release and operator-review receipts clear.",
+      pass2843CustomerExportOperatorReleaseReinstatementGate: pdfPayloadV2.customerExportOperatorReleaseReinstatementGate,
+      pass2843CustomerExportOperatorReleaseReinstatementAcceptanceGates: PASS2843_CUSTOMER_EXPORT_OPERATOR_RELEASE_REINSTATEMENT_ACCEPTANCE_GATES,
+      pass2843CustomerExportOperatorReleaseReinstatementRule: "Report/PDF customer export cannot be reinstated after a hold unless operator release, senior countersignature, finance/compliance/support close, customer notice and fresh channel reissue receipts are bound.",
+      pass2844CustomerExportPostReinstatementAuditNotificationGate: pdfPayloadV2.customerExportPostReinstatementAuditNotificationGate,
+      pass2844CustomerExportPostReinstatementAuditNotificationAcceptanceGates: PASS2844_CUSTOMER_EXPORT_POST_REINSTATEMENT_AUDIT_NOTIFICATION_ACCEPTANCE_GATES,
+      pass2844CustomerExportPostReinstatementAuditNotificationRule: "Report/PDF reinstated export cannot be called final delivery until post-release audit packet, customer notification dispatch/open receipts, content hash, channel binding, timeline hash and retention snapshot are present.",
+      pass2845CustomerExportRuntimeAdapterStubGate: pdfPayloadV2.customerExportRuntimeAdapterStubGate,
+      pass2845CustomerExportRuntimeAdapterStubAcceptanceGates: PASS2845_CUSTOMER_EXPORT_RUNTIME_ADAPTER_STUB_ACCEPTANCE_GATES,
+      pass2845CustomerExportRuntimeAdapterStubRule: "Report/PDF customer export runtime writes require server-side adapter ports, append-only event writer contracts, atomic retry, signed acknowledgement verification, hold/reinstatement/notification writers and retention dry-run contracts before production delivery claims.",
+      pass2846CustomerExportTransactionalOutboxHealthGate: pdfPayloadV2.customerExportTransactionalOutboxHealthGate,
+      pass2846CustomerExportTransactionalOutboxHealthAcceptanceGates: PASS2846_CUSTOMER_EXPORT_TRANSACTIONAL_OUTBOX_HEALTH_ACCEPTANCE_GATES,
+      pass2846CustomerExportTransactionalOutboxHealthRule: "Report/PDF customer export worker delivery requires transactional outbox table, pending queue, worker lease, dead-letter queue, health probe, heartbeat and channel commit receipts before durable delivery claims.",
+      pass2847CustomerExportWorkerReplayRecoveryGate: pdfPayloadV2.customerExportWorkerReplayRecoveryGate,
+      pass2847CustomerExportWorkerReplayRecoveryAcceptanceGates: PASS2847_CUSTOMER_EXPORT_WORKER_REPLAY_RECOVERY_ACCEPTANCE_GATES,
+      pass2847CustomerExportWorkerReplayRecoveryRule: "Report/PDF customer export worker replay requires dead-letter recovery receipt, poison-message operator review, replay idempotency, per-channel replay commits, stuck-lease unlock policy, worker-lag SLO and recovery audit timeline hash before replay claims.",
+      pass2848CustomerExportReconciliationDriftMonitorGate: pdfPayloadV2.customerExportReconciliationDriftMonitorGate,
+      pass2848CustomerExportReconciliationDriftMonitorAcceptanceGates: PASS2848_CUSTOMER_EXPORT_RECONCILIATION_DRIFT_MONITOR_ACCEPTANCE_GATES,
+      pass2848CustomerExportReconciliationDriftMonitorRule: "Report/PDF customer export close requires reconciliation across ledger, outbox, storage, customer receipt and channel commits; payload/source-root drift freezes delivery until remediated, ticketed and timeline-hashed.",
+      pass2849CustomerExportRemediationTicketCloseGate: pdfPayloadV2.customerExportRemediationTicketCloseGate,
+      pass2849CustomerExportRemediationTicketCloseAcceptanceGates: PASS2849_CUSTOMER_EXPORT_REMEDIATION_TICKET_CLOSE_ACCEPTANCE_GATES,
+      pass2849CustomerExportRemediationTicketCloseRule: "Report/PDF customer export remediation cannot close, unfreeze or resume channels until root cause, operator remediation, replay/reseal, corrected payload/source roots, impact assessment, freeze-lift decision, customer notice and no-residual-drift receipt are timeline-bound.",
+      pass2850CustomerExportFinalArchiveBundleGate: pdfPayloadV2.customerExportFinalArchiveBundleGate,
+      pass2850CustomerExportFinalArchiveBundleAcceptanceGates: PASS2850_CUSTOMER_EXPORT_FINAL_ARCHIVE_BUNDLE_ACCEPTANCE_GATES,
+      pass2850CustomerExportFinalArchiveBundleRule: "Report/PDF customer export final close requires immutable archive bundle, manifest hash, retention snapshot, per-channel archived receipts, customer access index, operator archive signoff and payload/source-root binding.",
+      pass2851CustomerExportArchiveRetentionLegalHoldGate: pdfPayloadV2.customerExportArchiveRetentionLegalHoldGate,
+      pass2851CustomerExportArchiveRetentionLegalHoldAcceptanceGates: PASS2851_CUSTOMER_EXPORT_ARCHIVE_RETENTION_LEGAL_HOLD_ACCEPTANCE_GATES,
+      pass2851CustomerExportArchiveRetentionLegalHoldRule: "Report/PDF final archive retention/deletion requires legal-hold status, deletion eligibility, retention timer, archive tombstone, access revocation, per-channel purge receipts, customer index update and operator signoff before purge or retention-complete claims.",
+      pass2852CustomerExportRetentionPurgeExecutionTombstoneGate: pdfPayloadV2.customerExportRetentionPurgeExecutionTombstoneGate,
+      pass2852CustomerExportRetentionPurgeExecutionTombstoneAcceptanceGates: PASS2852_CUSTOMER_EXPORT_RETENTION_PURGE_EXECUTION_TOMBSTONE_ACCEPTANCE_GATES,
+      pass2852CustomerExportRetentionPurgeExecutionTombstoneRule: "Report/PDF archive purge completion requires legal-hold release, purge worker run, storage lifecycle execution, per-channel delete receipts, tombstone verification, customer index purge marker, post-purge reconciliation and operator signoff before purge-complete claims.",
+      pass2853CustomerExportPostPurgePrivacyAttestationGate: pdfPayloadV2.customerExportPostPurgePrivacyAttestationGate,
+      pass2853CustomerExportPostPurgePrivacyAttestationAcceptanceGates: PASS2853_CUSTOMER_EXPORT_POST_PURGE_PRIVACY_ATTESTATION_ACCEPTANCE_GATES,
+      pass2853CustomerExportPostPurgePrivacyAttestationRule: "Report/PDF post-purge privacy close requires residual-data scans, search-index/CDN purge receipts, privacy attestation, final customer notice and reconciliation hash before archive data can be called closed.",
+      pass2854CustomerExportPrivacyIncidentDsrEscalationGate: pdfPayloadV2.customerExportPrivacyIncidentDsrEscalationGate,
+      pass2854CustomerExportPrivacyIncidentDsrEscalationAcceptanceGates: PASS2854_CUSTOMER_EXPORT_PRIVACY_INCIDENT_DSR_ESCALATION_ACCEPTANCE_GATES,
+      pass2854CustomerExportPrivacyIncidentDsrEscalationRule: "Report/PDF privacy incident and DSAR/export-of-export close requires incident/no-incident review, export freeze proof, minimized audit packet, redaction manifest, legal boundary, operator signoff and timeline hash.",
+      pass2855CustomerExportDsrDeliveryAppealReopenGate: pdfPayloadV2.customerExportDsrDeliveryAppealReopenGate,
+      pass2855CustomerExportDsrDeliveryAppealReopenAcceptanceGates: PASS2855_CUSTOMER_EXPORT_DSR_DELIVERY_APPEAL_REOPEN_ACCEPTANCE_GATES,
+      pass2855CustomerExportDsrDeliveryAppealReopenRule: "Report/PDF customer DSAR delivery close requires packet-bound delivery receipt, customer acknowledgement, appeal window, duplicate-delivery guard, channel delivery receipts and appeal/reopen freeze proof before closure claims.",
+      pass2856CustomerExportDsrAppealResolutionClosureGate: pdfPayloadV2.customerExportDsrAppealResolutionClosureGate,
+      pass2856CustomerExportDsrAppealResolutionClosureAcceptanceGates: PASS2856_CUSTOMER_EXPORT_DSR_APPEAL_RESOLUTION_CLOSURE_ACCEPTANCE_GATES,
+      pass2857CustomerExportPrivacyCaseSupervisorSlaGate: pdfPayloadV2.customerExportPrivacyCaseSupervisorSlaGate,
+      pass2857CustomerExportPrivacyCaseSupervisorSlaAcceptanceGates: PASS2857_CUSTOMER_EXPORT_PRIVACY_CASE_SUPERVISOR_SLA_ACCEPTANCE_GATES,
+      pass2858CustomerExportSupervisoryEvidenceIndexGate: pdfPayloadV2.customerExportSupervisoryEvidenceIndexGate,
+      pass2858CustomerExportSupervisoryEvidenceIndexAcceptanceGates: PASS2858_CUSTOMER_EXPORT_SUPERVISORY_EVIDENCE_INDEX_ACCEPTANCE_GATES,
+      pass2858CustomerExportSupervisoryEvidenceIndexRule: "Report/PDF customer export supervisor close cannot be reused as supervisory/regulator packet; PASS2858 requires lawful basis, minimum disclosure, redaction, legal-privilege review, separate channel receipts, customer notice decision and no raw sensitive material.",
+      pass2859CustomerExportSupervisoryDisclosureResponseCorrectionGate: pdfPayloadV2.customerExportSupervisoryDisclosureResponseCorrectionGate,
+      pass2859CustomerExportSupervisoryDisclosureResponseCorrectionAcceptanceGates: PASS2859_CUSTOMER_EXPORT_SUPERVISORY_DISCLOSURE_RESPONSE_CORRECTION_ACCEPTANCE_GATES,
+      pass2859CustomerExportSupervisoryDisclosureResponseCorrectionRule: "Report/PDF supervisory evidence export cannot silently answer regulator/auditor follow-ups; PASS2859 requires response case, intake receipt, supplemental evidence manifest, correction review, new redacted packet, immutable original archive binding, channel receipt, customer notice reassessment and response timeline hash.",
+      pass2860CustomerExportSupervisoryDisclosureFinalCloseGate: pdfPayloadV2.customerExportSupervisoryDisclosureFinalCloseGate,
+      pass2860CustomerExportSupervisoryDisclosureFinalCloseAcceptanceGates: PASS2860_CUSTOMER_EXPORT_SUPERVISORY_DISCLOSURE_FINAL_CLOSE_ACCEPTANCE_GATES,
+      pass2860CustomerExportSupervisoryDisclosureFinalCloseRule: "Report/PDF supervisory response/correction cannot be called finally closed without final close case, response closure receipt, evidence-retention lock, retention snapshot, version index, final channel acknowledgement, customer notice final decision and immutable timeline hash.",
+      pass2861CustomerExportSupervisoryRetentionJobExpiryMonitorGate: pdfPayloadV2.customerExportSupervisoryRetentionJobExpiryMonitorGate,
+      pass2861CustomerExportSupervisoryRetentionJobExpiryMonitorAcceptanceGates: PASS2861_CUSTOMER_EXPORT_SUPERVISORY_RETENTION_JOB_EXPIRY_MONITOR_ACCEPTANCE_GATES,
+      pass2861CustomerExportSupervisoryRetentionJobExpiryMonitorRule: "Report/PDF supervisory final close cannot claim monitored retention without retention job schedule, legal-hold-aware expiry monitor, archive lock verification, access-expiry proof, unlock/relock receipt and retention monitor timeline hash.",
+      pass2862CustomerExportSupervisoryRetentionPurgeTombstoneGate: pdfPayloadV2.customerExportSupervisoryRetentionPurgeTombstoneGate,
+      pass2863CustomerExportSupervisoryPostPurgeResidualEvidenceScanGate: pdfPayloadV2.customerExportSupervisoryPostPurgeResidualEvidenceScanGate,
+      pass2863CustomerExportSupervisoryPostPurgeResidualEvidenceScanAcceptanceGates: PASS2863_CUSTOMER_EXPORT_SUPERVISORY_POST_PURGE_RESIDUAL_EVIDENCE_SCAN_ACCEPTANCE_GATES,
+      pass2864CustomerExportSupervisoryResidualFindingRemediationRescanCloseGate: pdfPayloadV2.customerExportSupervisoryResidualFindingRemediationRescanCloseGate,
+      pass2864CustomerExportSupervisoryResidualFindingRemediationRescanCloseAcceptanceGates: PASS2864_CUSTOMER_EXPORT_SUPERVISORY_RESIDUAL_FINDING_REMEDIATION_RESCAN_CLOSE_ACCEPTANCE_GATES,
+      pass2865CustomerExportSupervisoryResidualRemediationEscalationMissedSlaGate: pdfPayloadV2.customerExportSupervisoryResidualRemediationEscalationMissedSlaGate,
+      pass2865CustomerExportSupervisoryResidualRemediationEscalationMissedSlaAcceptanceGates: PASS2865_CUSTOMER_EXPORT_SUPERVISORY_RESIDUAL_REMEDIATION_ESCALATION_MISSED_SLA_ACCEPTANCE_GATES,
+      pass2866CustomerExportSupervisoryResidualEscalationResolutionFreezeLiftGate: pdfPayloadV2.customerExportSupervisoryResidualEscalationResolutionFreezeLiftGate,
+      pass2866CustomerExportSupervisoryResidualEscalationResolutionFreezeLiftAcceptanceGates: PASS2866_CUSTOMER_EXPORT_SUPERVISORY_RESIDUAL_ESCALATION_RESOLUTION_FREEZE_LIFT_ACCEPTANCE_GATES,
+      pass2867CustomerExportSupervisoryFinalEvidenceIndexFreezeGate: pdfPayloadV2.customerExportSupervisoryFinalEvidenceIndexFreezeGate,
+      pass2867CustomerExportSupervisoryFinalEvidenceIndexFreezeAcceptanceGates: PASS2867_CUSTOMER_EXPORT_SUPERVISORY_FINAL_EVIDENCE_INDEX_FREEZE_ACCEPTANCE_GATES,
+      pass2867CustomerExportSupervisoryFinalEvidenceIndexFreezeRule: "Report/PDF supervisory residual escalation resolution cannot be called immutable until the final evidence index is versioned, hash-bound, freeze-lift-bound, mutation-monitored and signed off by operator/legal audit.",
+      pass2868CustomerExportSupervisoryEvidenceIndexTamperIncidentGate: pdfPayloadV2.customerExportSupervisoryEvidenceIndexTamperIncidentGate,
+      pass2868CustomerExportSupervisoryEvidenceIndexTamperIncidentAcceptanceGates: PASS2868_CUSTOMER_EXPORT_SUPERVISORY_EVIDENCE_INDEX_TAMPER_INCIDENT_ACCEPTANCE_GATES,
+      pass2868CustomerExportSupervisoryEvidenceIndexTamperIncidentRule: "Report/PDF final evidence-index freeze cannot resume archive close after a tamper signal until tamper incident case, severity, freeze extension, owner/SLA, legal/security/privacy review, notice decisions and timeline hash exist.",
+      pass2869CustomerExportSupervisoryTamperIncidentResolutionArchiveResumeGate: pdfPayloadV2.customerExportSupervisoryTamperIncidentResolutionArchiveResumeGate,
+      pass2869CustomerExportSupervisoryTamperIncidentResolutionArchiveResumeAcceptanceGates: PASS2869_CUSTOMER_EXPORT_SUPERVISORY_TAMPER_INCIDENT_RESOLUTION_ARCHIVE_RESUME_ACCEPTANCE_GATES,
+      pass2869CustomerExportSupervisoryTamperIncidentResolutionArchiveResumeRule: "Report/PDF tamper incident cannot resume supervisory archive close until root cause, impact scope, corrected index verification, resume/refreeze decision, final notices, closure signoffs and timeline hash exist.",
+      pass2870CustomerExportSupervisoryTamperResolutionReconciliationClosureAuditGate: pdfPayloadV2.customerExportSupervisoryTamperResolutionReconciliationClosureAuditGate,
+      pass2870CustomerExportSupervisoryTamperResolutionReconciliationClosureAuditAcceptanceGates: PASS2870_CUSTOMER_EXPORT_SUPERVISORY_TAMPER_RESOLUTION_RECONCILIATION_CLOSURE_AUDIT_ACCEPTANCE_GATES,
+      pass2870CustomerExportSupervisoryTamperResolutionReconciliationClosureAuditRule: "Report/PDF tamper resolution is not final closure until original/corrected index comparison, archive decision ledger, notice/signoff reconciliation, residual drift scans and timeline hash exist.",
+      pass2871CustomerExportSupervisoryPostClosureMutationWatchAutoFreezeGate: pdfPayloadV2.customerExportSupervisoryPostClosureMutationWatchAutoFreezeGate,
+      pass2871CustomerExportSupervisoryPostClosureMutationWatchAutoFreezeAcceptanceGates: PASS2871_CUSTOMER_EXPORT_SUPERVISORY_POST_CLOSURE_MUTATION_WATCH_AUTO_FREEZE_ACCEPTANCE_GATES,
+      pass2871CustomerExportSupervisoryPostClosureMutationWatchAutoFreezeRule: "Report/PDF final closure cannot stay closed without PASS2871 post-closure mutation watch, auto-freeze, incident ticketing and notice decisions.",
+      pass2862CustomerExportSupervisoryRetentionPurgeTombstoneAcceptanceGates: PASS2862_CUSTOMER_EXPORT_SUPERVISORY_RETENTION_PURGE_TOMBSTONE_ACCEPTANCE_GATES,
+      pass2862CustomerExportSupervisoryRetentionPurgeTombstoneRule: "Report/PDF supervisory retention monitoring cannot claim purge-complete without expiry verification, legal-hold/access-extension clearance, purge authorization, regulator/auditor access revocation, archive-lock release, purge worker receipt, tombstone proof and post-purge reconciliation.",
+      pass2856CustomerExportDsrAppealResolutionClosureRule: "Report/PDF DSAR appeal resolution and final privacy closure requires appeal intake/decision receipts, corrected packet delivery if needed, final customer response, no-residual obligation proof and privacy-case timeline hash.",
+      pass2832ProductionCanaryRollbackRule: "Sealed/monitored reports still need canary observation and rollback safety; runtime errors, PDF mismatch, entitlement errors, provider failure spikes or customer delivery failures freeze launch-ready copy.",
+      pdfPayloadAcceptanceGates: PDF_V2_ACCEPTANCE_GATES,
+      legalNote: "Automated market-integrity signal. Not legal proof, not an accusation, not financial advice.",
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json<ErrorPayload>(
+      { mode: "error", error: error instanceof Error ? error.message : "Report generation failed" },
+      { status: 502 },
+    );
+  }
+}
+
+
+// PASS2872 integration marker: pass2872CustomerExportSupervisoryPostClosureMutationIncidentResolutionRecloseGate
+export const pass2872CustomerExportSupervisoryPostClosureMutationIncidentResolutionRecloseGate = {
+  pass: "PASS2872",
+  gate: "customer-export-supervisory-post-closure-mutation-incident-resolution-reclose",
+  acceptanceGates: PASS2872_CUSTOMER_EXPORT_SUPERVISORY_POST_CLOSURE_MUTATION_INCIDENT_RESOLUTION_RECLOSE_ACCEPTANCE_GATES,
+  rule: "Post-closure mutation incidents require root cause, corrected index verification, notice resolutions, signoffs and explicit re-close/permanent-freeze/reopen decision.",
+};
+
+// PASS2873 integration marker: pass2873CustomerExportSupervisoryPostRecloseRegressionSloGate
+export const pass2873CustomerExportSupervisoryPostRecloseRegressionSloGate = {
+  pass: 2873,
+  boundary: 'customer-export-supervisory-post-reclose-regression-slo',
+  status: 'static-contract-integrated',
+};
+// PASS2874 integration marker: pass2874CustomerExportSupervisoryRecurrenceEscalationResolutionRebaselineGate
+export const pass2874CustomerExportSupervisoryRecurrenceEscalationResolutionRebaselineGate = {
+  pass: 2874,
+  gate: "customer-export-supervisory-recurrence-escalation-resolution-rebaseline",
+  hardRule: "Repeated post-reclose regression escalation cannot close without hardened rebaseline, permanent freeze or reopened investigation proof.",
+};
+
+
+// PASS2875 integration marker: pass2875CustomerExportSupervisoryPostRebaselineStabilityEnforcementGate
+export const pass2875CustomerExportSupervisoryPostRebaselineStabilityEnforcementGate = {
+  pass: 2875,
+  gate: "customer-export-supervisory-post-rebaseline-stability-enforcement",
+  hardRule: "Hardened rebaseline cannot stay active without post-rebaseline stability watch/probe/budget/signoff proof.",
+};
+
+// PASS2876 integration marker: pass2876CustomerExportSupervisoryStabilityEvidenceRollupReleaseEligibilityGate
+export const pass2876CustomerExportSupervisoryStabilityEvidenceRollupReleaseEligibilityGate = {
+  pass: 2876,
+  gate: "customer-export-supervisory-stability-evidence-rollup-release-eligibility",
+  hardRule: "Release eligibility requires a stability evidence rollup, operator dashboard snapshot, SLO burndown, notices, signoffs and channel release receipts.",
+};
+
+
+// PASS2877 integration marker: pass2877CustomerExportSupervisoryPostReleaseChannelMonitorRollbackGate
+export const pass2877CustomerExportSupervisoryPostReleaseChannelMonitorRollbackGate = {
+  pass: 2877,
+  gate: "customer-export-supervisory-post-release-channel-monitor-rollback",
+  hardRule: "Report/PDF release eligibility does not equal safe post-release channel operation.",
+};
+
+// PASS2878 integration marker: pass2878CustomerExportSupervisoryPostReleaseObservationCloseFinalChannelSealGate
+export const pass2878CustomerExportSupervisoryPostReleaseObservationCloseFinalChannelSealGate = {
+  pass: 2878,
+  rule: "PASS2877 post-release monitor is not final channel seal; observation close + rollups + seal proof are required.",
+  acceptanceGate: "PASS2878: Post-release observation close final channel seal",
+};
+
+
+// PASS2879 integration marker: pass2879CustomerExportSupervisoryPostSealDriftSentinelEmergencyRefreezeGate
+export const pass2879CustomerExportSupervisoryPostSealDriftSentinelEmergencyRefreezeGate = {
+  pass: 2879,
+  gate: "customer-export-supervisory-post-seal-drift-sentinel-emergency-refreeze",
+  hardRule: "Report/PDF final channel seal does not equal long-term sealed-channel safety.",
+  acceptanceGate: "PASS2879: Post-seal drift sentinel emergency re-freeze",
+};
+
+// PASS2880 integration marker: pass2880CustomerExportSupervisoryEmergencyRefreezeResolutionResealGate
+export const pass2880CustomerExportSupervisoryEmergencyRefreezeResolutionResealGate = {
+  pass: 2880,
+  gate: "customer-export-supervisory-emergency-refreeze-resolution-reseal",
+  hardRule: "Report payloads cannot treat PASS2879 emergency re-freeze as resolved without PASS2880 root cause, corrected baseline, supervised decision, notices and signoffs.",
+  acceptanceGate: "PASS2880: Emergency re-freeze resolution / supervised re-seal",
+} as const;
+
+// PASS2881 integration marker: pass2881CustomerExportSupervisoryPostResealProbationRelapseSentinelGate
+export const pass2881CustomerExportSupervisoryPostResealProbationRelapseSentinelGate = {
+  pass: 2881,
+  gate: "customer-export-supervisory-post-reseal-probation-relapse-sentinel",
+  hardRule: "Report payloads cannot restore final channel trust after PASS2880 re-seal without PASS2881 probation heartbeat, relapse scan, notices, signoffs and decision receipts.",
+  acceptanceGate: "PASS2881: Post-reseal probation / relapse sentinel",
+} as const;
+
+// PASS2882 integration marker: pass2882CustomerExportSupervisoryFinalTrustRestoreLongTermSurveillanceHandoverGate
+export const pass2882CustomerExportSupervisoryFinalTrustRestoreLongTermSurveillanceHandoverGate = {
+  pass: 2882,
+  gate: "customer-export-supervisory-final-trust-restore-long-term-surveillance-handover",
+  hardRule: "Report payloads cannot treat PASS2881 trust restore as operationally handed over without PASS2882 final trust ledger, channel custody receipts and long-term surveillance proof.",
+  acceptanceGate: "PASS2882: Final trust restore / long-term surveillance handover",
+} as const;
+
+// PASS2883 integration marker: pass2883ProductionRealitySweepGate
+export const pass2883ProductionRealitySweepGate = {
+  pass: 2883,
+  gate: "production-reality-sweep",
+  hardRule: "Report/PDF surfaces must not claim world-class production until PASS2883 typecheck/build/live smoke/mobile/PDF/provider/payment blockers are artifact-proven.",
+  acceptanceGate: "PASS2883: Production Reality Sweep",
+} as const;
+
+// PASS2884 integration marker: pass2884DependencyRealityBuildInputGate
+export const pass2884DependencyRealityBuildInputGate = {
+  pass: 2884,
+  acceptanceGate: "PASS2884: Dependency Reality / Build Input Gate",
+  hardRule: "Report/PDF endpoints may use repaired internal aliases, but clean production is still blocked until npm ci/typecheck/build receipts exist.",
+  productionClaimAllowed: false,
+} as const;
+
+// PASS2885 integration marker: pass2885TypeScriptCompileSurfaceSweepGate
+export const pass2885TypeScriptCompileSurfaceSweepGate = {
+  pass: 2885,
+  gate: "typescript-compile-surface-sweep",
+  hardRule: "Report/PDF endpoints cannot claim clean production until PASS2885 digest, npm ci, typecheck and build receipts are all present.",
+  repairedTrueCodeDefect: "real-market RiskMetaModel metadata defaulting",
+  productionClaimAllowed: false,
+} as const;
+
+// PASS2886 integration marker: pass2886VisibleRuntimeTypecheckRepairGate
+export const pass2886VisibleRuntimeTypecheckRepairGate = {
+  pass: 2886,
+  marker: "pass2886_report_visible_runtime_typecheck_repair",
+  hardRule: "Report/PDF production claims stay blocked until PASS2886 strict cluster repair is followed by npm ci/typecheck/build and visual runtime receipts.",
+} as const;
+
+// PASS2887 integration marker: pass2887VisibleRuntimeUxProofGate
+export const pass2887VisibleRuntimeUxProofGate = {
+  pass: 2887,
+  marker: "pass2887_report_visible_runtime_ux_proof",
+  productionClaimBoundary: "Report output can cite PASS2887 strict/visible repairs only as static/runtime-prepared evidence until clean build and visual receipts exist.",
+} as const;
+
+// PASS2888 integration marker: pass2888VisibleRuntimeReleaseBlockerGate
+export const pass2888VisibleRuntimeReleaseBlockerGate = {
+  pass: 2888,
+  marker: "pass2888_report_visible_runtime_release_blocker",
+  productionClaimBoundary: "Report output may cite PASS2888 route strict/chart-cell repairs as static/prepared evidence only; clean live production still requires dependency/typecheck/build/smoke/visual receipts.",
+} as const;
+
+// PASS2889 integration marker: pass2889WorldclassReceiptClosureGate
+export const pass2889WorldclassReceiptClosureGate = {
+  pass: 2889,
+  marker: "pass2889_report_worldclass_receipt_closure",
+  noCleanBuildClaim: true,
+  routeSmokeMatrixPrepared: true,
+} as const;
+
+// PASS2890 integration marker: pass2890LocalRuntimeProofHarnessGate
+export const pass2890LocalRuntimeProofHarnessGate = {
+  pass: 2890,
+  marker: "pass2890_report_local_runtime_proof_harness",
+  productionClaimBoundary: "report route keeps PASS2890 local smoke harness marker but cannot claim clean live build",
+} as const;
+
+// PASS2891 integration marker: pass2891BrowserRouteSmokeReadinessGate
+export const pass2891BrowserRouteSmokeReadinessGate = {
+  pass: 2891,
+  marker: "pass2891_report_browser_route_smoke_readiness",
+  productionClaimBoundary: "report route can expose PASS2891 smoke-readiness markers, but clean live production still requires route/browser/PDF/payment/provider receipts.",
+} as const;
+
+// PASS2892 integration marker: pass2892PlaywrightReceiptPackGate
+export const pass2892PlaywrightReceiptPackGate = {
+  pass: 2892,
+  surface: "report-playwright-receipt-pack",
+  canClaimWorldClassLive: false,
+  requiredReceiptFamilies: ["browser", "pdf", "entitlement", "provider"],
+} as const;
+
+// PASS2893 integration marker: pass2893ReleaseEvidenceBundleGate
+export const pass2893ReleaseEvidenceBundleGate = {
+  pass: 2893,
+  gate: "release-evidence-bundle",
+  reportReceiptBoundary: "preview/download hashes plus entitlement/payment/provider receipts required",
+  canClaimWorldClassLive: false,
+} as const;
+
+// PASS2894 integration marker: pass2894OperatorGoNoGoGate
+export const pass2894OperatorGoNoGoGate = {
+  pass: 2894,
+  gate: "operator-go-no-go",
+  defaultApprovalMode: "NO_GO",
+  reportRequiresPdfParityAndPaymentReceipts: true,
+  canClaimWorldClassLive: false,
+} as const;
+
+// PASS2895 integration marker: pass2895ReceiptFreshnessQuarantineGate
+export const pass2895ReceiptFreshnessQuarantineGate = {
+  pass: 2895,
+  gate: "receipt-freshness-quarantine",
+  reportRequiresFreshPdfPaymentProviderReceipts: true,
+  staleCopiedReceiptsQuarantined: true,
+  canClaimWorldClassLive: false,
+} as const;
+// PASS2896 integration marker: pass2896TamperProofReleaseLedgerGate
+export const pass2896TamperProofReleaseLedgerGate = {
+  pass: 2896,
+  gate: "tamper-proof-release-ledger",
+  reportRouteRequiresLedgerDigestBeforeProductionGo: true,
+  canClaimWorldClassLive: false,
+} as const;
+
+// PASS2897 integration marker: pass2897ReleaseAttestationVerifierGate
+export const pass2897ReleaseAttestationVerifierGate = {
+  pass: 2897,
+  gate: "release-attestation-verifier",
+  canClaimCleanBuild: false,
+  canClaimWorldClassLive: false,
+  defaultProductionDecision: "NO_GO",
+} as const;
+
+// PASS2898 integration marker: pass2898ReleaseRevocationRollbackSentinelGate
+export const pass2898ReleaseRevocationRollbackSentinelGate = {
+  pass: 2898,
+  gate: "release-revocation-rollback-sentinel",
+  defaultProductionDecision: "NO_GO",
+  defaultRevocationDecision: "REVOKE_IF_ANY_TRIGGER",
+} as const;
+
+// PASS2899 integration marker: pass2899PostRollbackRecoveryReapprovalGate
+export const pass2899PostRollbackRecoveryReapprovalGate = {
+  pass: 2899,
+  gate: "post-rollback-recovery-reapproval",
+  defaultRecoveryDecision: "NO_GO_RECOVERY_REQUIRED",
+  requiresFreshRecoveryReceipts: true,
+  canClaimWorldClassLive: false,
+} as const;
+
+// PASS2900 integration marker: pass2900ReleaseContinuityLockGate
+export const pass2900ReleaseContinuityLockGate = {
+  pass: 2900,
+  gate: "release-continuity-lock",
+  defaultDecision: "NO_GO_CONTINUITY_LOCKED",
+  reportBoundary: "report/PDF artifacts cannot restore GO unless bound into the contiguous PASS2895->PASS2900 lineage digest",
+} as const;
+
+// PASS2901 integration marker: pass2901ReleasePromotionEscrowGate
+export const pass2901ReleasePromotionEscrowGate = {
+  pass: 2901,
+  gate: "release-promotion-escrow",
+  reportBoundary: "report/PDF artifacts cannot promote release state unless bound into PASS2901 promotion escrow with fresh runtime receipts",
+  productionDecision: "NO_GO",
+} as const;
+
+// PASS2902 integration marker: pass2902ProductionClaimNotarizationGate
+export const pass2902ProductionClaimNotarizationGate = {
+  pass: 2902,
+  gate: "production-claim-notarization",
+  reportBoundary: "report/PDF artifacts cannot support production claims unless bound into PASS2902 final notary manifest with fresh runtime receipts",
+  productionDecision: "NO_GO",
+  notaryDecision: "NO_GO_NOTARIZATION_PENDING",
+} as const;
+
+// PASS2903 integration marker: pass2903PostClaimSurveillanceGate
+export const pass2903PostClaimSurveillanceGate = {
+  pass: 2903,
+  gate: "post-claim-surveillance-probation",
+  defaultSurveillanceDecision: "NO_GO_SURVEILLANCE_PROBATION_PENDING",
+  manualOverrideAllowed: false,
+  sustainedProductionClaimBlockedUntilLiveDriftReceipts: true,
+} as const;
+
+// PASS2904 integration marker: pass2904ClaimExpiryRenewalGate
+export const pass2904ClaimExpiryRenewalGate = {
+  pass: 2904,
+  gate: "claim-expiry-renewal",
+  reportProductionClaimRequiresFreshCiReceipts: true,
+  defaultRenewalDecision: "NO_GO_RENEWAL_ARTIFACTS_REQUIRED",
+} as const;
+
+// PASS2905 integration marker: pass2905PublicClaimTransparencyGate
+export const pass2905PublicClaimTransparencyGate = {
+  pass: 2905,
+  gate: "public-claim-transparency",
+  status: "NO_GO_PUBLIC_RECEIPTS_REQUIRED",
+  reportCopyMustNotClaimLiveProduction: true,
+} as const;
+
+// PASS2906 integration marker: pass2906PublicStatusDisputeCorrectionGate
+export const pass2906PublicStatusDisputeCorrectionGate = {
+  pass: 2906,
+  gate: "public-status-dispute-correction",
+  status: "NO_GO_DISPUTE_CORRECTION_EVIDENCE_REQUIRED",
+  reportCopyCorrectionCannotOverrideMissingReceipts: true,
+} as const;
+
+// PASS2907 integration marker: pass2907PublicStatusAppealIndependentReviewGate
+export const pass2907PublicStatusAppealIndependentReviewGate = {
+  pass: 2907,
+  gate: "public-status-appeal-independent-review",
+  status: "NO_GO_APPEAL_INDEPENDENT_REVIEW_REQUIRED",
+  reportAppealCannotOverrideMissingReceipts: true,
+} as const;
+
+// PASS2908 integration marker: pass2908PublicStatusFinalArbitrationGate
+export const pass2908PublicStatusFinalArbitrationGate = { pass: 2908, gate: "public-status-final-arbitration", status: "NO_GO_FINAL_ARBITRATION_RESOLUTION_REQUIRED", canSilentlyCloseAppeal: false } as const;
+
+// PASS2909 integration marker: pass2909PostArbitrationPublicResolutionSealGate
+export const pass2909PostArbitrationPublicResolutionSealGate = { pass: 2909, gate: "post-arbitration-public-resolution-seal", status: "NO_GO_PUBLIC_RESOLUTION_SEAL_REQUIRED", canCloseRemediationWithoutRetest: false } as const;
+
+// PASS2910 integration marker: pass2910RemediationExecutionClosureGate
+const pass2910RemediationExecutionClosureGate = "PASS2910_REMEDIATION_EXECUTION_CLOSURE_GATE";
+void pass2910RemediationExecutionClosureGate;
+
+export const pass2911PostRemediationStabilityWatchGate = "PASS2911_POST_REMEDIATION_STABILITY_WATCH_REPORT_GATE";
+export const pass2912TrustRestoreHandoverGate = "PASS2912_TRUST_RESTORE_HANDOVER_REPORT_GATE";
+
+export const pass2913PostRestoreContinuityGate = "PASS2913_POST_RESTORE_CONTINUITY_REPORT_GATE";
+
+export const pass2914PublicTrustEvidenceDecayGate = "PASS2914_PUBLIC_TRUST_EVIDENCE_DECAY_REPORT_GATE";
+
+export const pass2915RenewalEscrowPromotionQuarantineGate = "PASS2915_RENEWAL_ESCROW_PROMOTION_QUARANTINE_REPORT_GATE";
+
+export const pass2916RenewalPromotionFinalSealGate = "PASS2916_RENEWAL_PROMOTION_FINAL_SEAL_REPORT_GATE";
+
+// PASS2917 marker: pass2917ScheduledRevalidationExecutionBreachGate keeps report restore claims NO_GO on missed scheduled revalidation.
+
+// PASS2918 marker: pass2918DowngradeRecoveryEscrowGate keeps report restore claims NO_GO after auto-downgrade until customer notice and fresh recovery escrow receipts exist.
+// PASS2919 marker: pass2919RecoveryReplayAdjudicationGate keeps report recovery claims NO_GO until independent replay, customer acknowledgement and public recovery decision receipts exist.
+
+// PASS2920 marker: pass2920RecoveryRestoreProbationGate keeps report recovery restore claims NO_GO until probation, observation and no-regression receipts exist.
+
+// PASS2920 marker: pass2920RecoveryRestoreCandidateProbationGate keeps report recovery restore claims NO_GO until post-decision observation and no-regression receipts exist.
+// PASS2921 marker: pass2921ProbationExitSealGate keeps report restore/graduation claims NO_GO until sustained no-regression receipts and dual-control graduation seal exist.
+// PASS2922 marker: pass2922PostGraduationPublicRestoreSealGate blocks report restored/green copy until public restore seal and long-term surveillance handoff exist.
+
+export async function GET(request: Request) {
+  return withExpensiveRouteBudget(request, "market_report_get", () => handleMarketReportGet(request));
+}

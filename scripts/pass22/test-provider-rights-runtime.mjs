@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { resolveProviderRights, canonicalLicenseState } from "../../lib/compliance/provider-rights-resolver.mjs";
+import { evaluateDataLicenseEligibility } from "../../lib/worldclass/data-license-eligibility.mjs";
+const registry=JSON.parse(fs.readFileSync("config/pass21/provider-commercial-rights-registry.json","utf8"));
+const base={schemaVersion:"velmere.pass22.provider-rights-evidence-manifest.v1",evidence:[]};
+const valid={schemaVersion:"velmere.pass22.provider-rights-evidence.v1",providerId:"binance",evidenceId:"pre_0123456789abcdef01234567",documentKind:"SIGNED_CONTRACT",documentSha256:"a".repeat(64),capturedAt:"2026-07-19T00:00:00.000Z",effectiveAt:"2026-07-19T00:00:00.000Z",expiresAt:"2027-07-19T00:00:00.000Z",jurisdiction:"EU",reviewer:{reviewerIdHash:"b".repeat(64),reviewedAt:"2026-07-19T01:00:00.000Z",legalReview:true},reviewDecision:"APPROVED",rights:{displayUseAllowed:true,commercialUseAllowed:true,redistributionAllowed:false,modelTrainingAllowed:false}};
+const tests=[];function test(name,fn){try{tests.push({name,ok:Boolean(fn())});}catch(e){tests.push({name,ok:false,error:String(e?.stack??e)});}}
+test("missing_evidence_blocks",()=>!resolveProviderRights({providerId:"binance",registry,evidenceManifest:base,now:"2026-07-20T00:00:00.000Z"}).allowed);
+test("unknown_provider_blocks",()=>resolveProviderRights({providerId:"unknown",registry,evidenceManifest:base,now:"2026-07-20T00:00:00.000Z"}).blockers.includes("provider_not_registered"));
+test("approved_display_allows",()=>resolveProviderRights({providerId:"binance",purpose:"display",registry,evidenceManifest:{...base,evidence:[valid]},now:"2026-07-20T00:00:00.000Z"}).allowed);
+test("approved_commercial_allows",()=>resolveProviderRights({providerId:"binance",purpose:"commercial",registry,evidenceManifest:{...base,evidence:[valid]},now:"2026-07-20T00:00:00.000Z"}).allowed);
+test("ungranted_redistribution_blocks",()=>!resolveProviderRights({providerId:"binance",purpose:"redistribution",registry,evidenceManifest:{...base,evidence:[valid]},now:"2026-07-20T00:00:00.000Z"}).allowed);
+test("expired_blocks",()=>!resolveProviderRights({providerId:"binance",registry,evidenceManifest:{...base,evidence:[{...valid,expiresAt:"2026-07-19T00:00:00.000Z"}]},now:"2026-07-20T00:00:00.000Z"}).allowed);
+test("canonical_state_verified",()=>canonicalLicenseState({providerId:"binance",registry,evidenceManifest:{...base,evidence:[valid]},now:"2026-07-20T00:00:00.000Z"}).licenseStatus==="verified");
+const cell={cellId:"c",caseId:"case",surface:"shield",tier:"pro",fieldId:"price",canonicalIdentity:"BTC",maxAgeSeconds:300,minimumIndependentFamilies:1,allowedLicenseStates:["verified"],requiresCommercialRights:true,requiresEntitlement:true,specialGates:[]};
+const row={sourceId:"binance",providerId:"binance",family:"primary_market",canonicalIdentity:"BTC",fieldId:"price",observedAt:"2026-07-20T00:00:00.000Z",licenseStatus:"verified",payloadSha256:"c".repeat(64)};
+test("canonical_mode_rejects_unbound_verified_string",()=>evaluateDataLicenseEligibility({cell,evidenceRows:[row],entitlementStatus:"verified",evidenceMode:"canonical",now:"2026-07-20T00:00:10.000Z"}).blockers.includes("provider_rights_evidence_not_bound"));
+test("canonical_mode_accepts_bound_evidence",()=>evaluateDataLicenseEligibility({cell,evidenceRows:[{...row,rightsEvidenceId:valid.evidenceId,rightsDocumentSha256:valid.documentSha256,rightsVerified:true}],entitlementStatus:"verified",evidenceMode:"canonical",now:"2026-07-20T00:00:10.000Z"}).status==="eligible");
+test("synthetic_mode_backwards_compatible",()=>evaluateDataLicenseEligibility({cell,evidenceRows:[row],entitlementStatus:"verified",evidenceMode:"synthetic",now:"2026-07-20T00:00:10.000Z"}).status==="eligible");
+const failed=tests.filter(x=>!x.ok);const report={schemaVersion:"velmere.pass22.provider-rights-runtime-tests.v1",generatedAt:"2026-07-20T15:00:00.000Z",ok:failed.length===0,pass:tests.length-failed.length,fail:failed.length,tests,truthBoundary:"Synthetic compatibility is retained, while canonical mode rejects self-asserted licenseStatus without reviewed provider-rights evidence binding."};
+fs.mkdirSync(".velmere/pass22-diagnostics",{recursive:true});fs.writeFileSync(".velmere/pass22-diagnostics/provider-rights-runtime-tests.json",JSON.stringify(report,null,2)+"\n");console.log(JSON.stringify(report,null,2));if(!report.ok)process.exit(1);

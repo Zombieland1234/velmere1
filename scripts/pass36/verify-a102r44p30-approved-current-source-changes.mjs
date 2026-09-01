@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
+const REV="VELMERE_PASS36_A102R44P30_ACTION_REQUIRED_EXACT_CURRENT_BYTE_LINUX_DUAL_BUILD_BROWSER_PDF_AND_PARENT_EXTERNAL_RLS_NO_LIVE_CREDIT";
+const PARENT="VELMERE_PASS36_A102R44P29_ACTION_REQUIRED_R44P27_AUTHORITY_FORK_RECONCILIATION_DUAL_CONTROL_TRUST_QUARANTINE_72H_WATCHDOG_AND_CREDENTIAL_HYGIENE_NO_LIVE_CREDIT";
+const PM="_velmere/PASS36_A102R44P29_SOURCE_ONLY_MANIFEST.json";
+const CM="_velmere/PASS36_A102R44P30_SOURCE_ONLY_MANIFEST.json";
+const LEDGER="config/pass36/a102r44p30-approved-current-source-changes.json";
+const MIG="config/pass36/a102r44p30-inherited-eslint-cleanup-migration.json";
+const sha=(bytes)=>crypto.createHash("sha256").update(bytes).digest("hex");
+const forbidden=new Set([".cache",".git",".turbo",".velmere","__pycache__","artifacts","build","cache","coverage","dist","node_modules","out","playwright-report","temp","test-results","tmp"]);
+const reject=(rel)=>{const parts=rel.split("/"),top=parts[0]??"";return forbidden.has(top)||top.startsWith(".next")||top===".env"||top.startsWith(".env.")||parts.includes("__pycache__")||rel.endsWith(".pyc")||rel.endsWith(".tsbuildinfo")||rel.endsWith(".map");};
+function collect(){const rows=[];function walk(directory,prefix=""){for(const entry of fs.readdirSync(directory,{withFileTypes:true}).sort((a,b)=>Buffer.from(a.name).compare(Buffer.from(b.name)))){const rel=prefix?`${prefix}/${entry.name}`:entry.name;if(rel===CM||rel===LEDGER)continue;const full=path.join(directory,entry.name),stat=fs.lstatSync(full);if(stat.isSymbolicLink())throw new Error(`symlink:${rel}`);if(entry.isDirectory()){if(!reject(rel))walk(full,rel);continue;}if(!entry.isFile()||reject(rel))continue;const bytes=fs.readFileSync(full);rows.push({path:rel,byteLength:bytes.length,sha256:sha(bytes),mode:stat.mode&0o777});}}walk(ROOT);return rows.sort((a,b)=>Buffer.from(a.path).compare(Buffer.from(b.path)));}
+const parent=JSON.parse(fs.readFileSync(path.join(ROOT,PM))),ledger=JSON.parse(fs.readFileSync(path.join(ROOT,LEDGER))),migration=JSON.parse(fs.readFileSync(path.join(ROOT,MIG)));
+const parentMap=new Map(parent.entries.map((row)=>[row.path,row])),currentMap=new Map(collect().map((row)=>[row.path,row])),changes=[];
+for(const rel of [...new Set([...parentMap.keys(),...currentMap.keys()])].sort()){const before=parentMap.get(rel),after=currentMap.get(rel);if(!before&&after)changes.push({path:rel,change:"ADDED",after});else if(before&&!after)changes.push({path:rel,change:"DELETED",before});else if(before&&after&&(before.sha256!==after.sha256||before.byteLength!==after.byteLength||before.mode!==after.mode))changes.push({path:rel,change:"MODIFIED",before,after});}
+const same=(a,b)=>(a==null&&b==null)||(a&&b&&a.path===b.path&&a.byteLength===b.byteLength&&a.sha256===b.sha256&&a.mode===b.mode);
+const history=changes.filter((row)=>row.change!=="ADDED"&&/(?:^|[/_.-])a102r44p(?:[0-9]|1[0-9]|2[0-9])(?:[/_.-]|$)/iu.test(row.path));
+const migrated=new Map(migration.rows.map((row)=>[row.path,row]));
+const historyApproved=history.length===migration.rows.length&&history.every((row)=>{const allowed=migrated.get(row.path);return allowed&&row.change==="MODIFIED"&&same(row.before,allowed.before)&&same(row.after,allowed.after);});
+const removed=changes.filter((row)=>row.change==="DELETED"&&(row.path.toLowerCase().includes("test")||row.path.includes("/tests/")));
+const checks=[];const add=(id,ok,detail=null)=>checks.push({id,ok:Boolean(ok),detail});
+add("schema",ledger.schemaVersion==="velmere.pass36.a102r44p30.approved-source-changes.v1");
+add("revision",ledger.revisionId===REV&&ledger.parentRevisionId===PARENT);
+add("parent-hash",ledger.parentManifestSha256===sha(fs.readFileSync(path.join(ROOT,PM))));
+add("changes-exact",ledger.changes.length===changes.length&&ledger.changes.every((expected,index)=>{const actual=changes[index];return expected.path===actual.path&&expected.change===actual.change&&same(expected.before,actual.before)&&same(expected.after,actual.after);}));
+add("counts",ledger.addedCount===changes.filter((row)=>row.change==="ADDED").length&&ledger.modifiedCount===changes.filter((row)=>row.change==="MODIFIED").length&&ledger.deletedCount===0);
+add("history-migration-exact",historyApproved&&ledger.historyMutations===history.length,{history:history.map((row)=>row.path)});
+add("no-unapproved-history",history.every((row)=>migrated.has(row.path)));
+add("no-deletion",changes.every((row)=>row.change!=="DELETED"));
+add("no-test-removal",removed.length===0&&ledger.removedTests===0);
+add("no-collapse",ledger.denominatorCollapse===false);
+add("required-added",ledger.requiredAddedFiles.every((file)=>changes.some((row)=>row.path===file&&row.change==="ADDED")));
+add("required-modified",ledger.requiredModifiedFiles.every((file)=>changes.some((row)=>row.path===file&&row.change==="MODIFIED")));
+add("decision",ledger.decision==="APPROVED_ACTION_REQUIRED_NO_PROMOTION");
+add("manifest-excluded",!changes.some((row)=>row.path===CM));
+add("ledger-excluded",!changes.some((row)=>row.path===LEDGER));
+const failed=checks.filter((row)=>!row.ok);
+console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p30.approved-source-changes-verification.v2",status:failed.length?"FAIL":"PASS",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,changes:changes.length,historyMutations:history.length,rows:checks},null,2));
+if(failed.length)process.exit(1);

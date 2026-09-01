@@ -1,0 +1,340 @@
+{
+  "schemaVersion": "velmere.pass35.a49.stripe-test-payment-acceptance.v1",
+  "revisionId": "VELMERE_PASS35_A49_STRIPE_TEST_PAYMENT_REFUND_RECONCILIATION_ACCEPTANCE",
+  "parentRevisionId": "VELMERE_PASS35_A48_STAGING_TENANT_ISOLATION_ACCEPTANCE",
+  "generatedAt": "2026-08-13T04:42:19.090Z",
+  "startedAt": "2026-08-13T04:42:18.972Z",
+  "fixtureMode": true,
+  "decision": "FIXTURE_FAIL",
+  "testModeProven": false,
+  "stagingPaymentProven": false,
+  "liveModeProven": false,
+  "productionPaymentProven": false,
+  "saleEnabled": false,
+  "truthBoundary": "A49 proves only one Stripe test-mode payment/refund rail and one disposable staging replay of signed checkout/refund webhooks, entitlement refund state, duplicate-event idempotency and aggregate reconciliation worker output. It does not prove live-mode charging, production admin access, disputes, SCA/3DS/BLIK browser UX, accounting/tax settlement, continuous availability, customer value, independent assurance or sale readiness.",
+  "runtime": {
+    "node": "24.11.1",
+    "npm": "10.9.2",
+    "expectedNode": "24.18.0",
+    "expectedNpm": "11.16.0"
+  },
+  "source": {
+    "before": {
+      "ok": false,
+      "reason": "source_file_missing:.env.example",
+      "digest": null,
+      "rows": 4146
+    },
+    "after": {
+      "ok": false,
+      "reason": "source_file_missing:.env.example",
+      "digest": null,
+      "rows": 4146
+    }
+  },
+  "stripe": {
+    "mode": "test",
+    "paymentIntentSha256": "7196d9c073cebb4872b5d5e444f14865e4400a950b45ee5f42d7436cc6a54d0c",
+    "refundSha256": "6ac6d992ffcaad3a269ed87155f5c4cc2a58af83c29b12ab5f3d0f14b01015e5",
+    "chargeSha256": "a3936f17a742c04171a2cc8d78f9e4725d51218f5c77473945ab25116f2e5a38",
+    "livemode": false
+  },
+  "summary": {
+    "checks": 24,
+    "passed": 21,
+    "failed": 3
+  },
+  "failures": [
+    {
+      "id": "source-fingerprint-before",
+      "ok": false,
+      "status": "FAIL",
+      "detail": {
+        "rows": 4146,
+        "digest": null,
+        "reason": "source_file_missing:.env.example"
+      }
+    },
+    {
+      "id": "stripe-charge-fully-refunded",
+      "ok": false,
+      "status": "FAIL",
+      "detail": {
+        "chargeSha256": "a3936f17a742c04171a2cc8d78f9e4725d51218f5c77473945ab25116f2e5a38",
+        "livemode": false,
+        "refunded": false,
+        "amount": 100,
+        "amountRefunded": 50,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "source-fingerprint-unchanged",
+      "ok": false,
+      "status": "FAIL",
+      "detail": {
+        "before": null,
+        "after": null,
+        "rows": 4146,
+        "reason": "source_file_missing:.env.example"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "id": "source-fingerprint-before",
+      "ok": false,
+      "status": "FAIL",
+      "detail": {
+        "rows": 4146,
+        "digest": null,
+        "reason": "source_file_missing:.env.example"
+      }
+    },
+    {
+      "id": "precondition-a48-verified",
+      "ok": true,
+      "status": "FIXTURE_PASS",
+      "detail": {
+        "fixture": true,
+        "decision": "VERIFIED_STAGING_TENANT_ISOLATION"
+      }
+    },
+    {
+      "id": "runtime-exact",
+      "ok": true,
+      "status": "FIXTURE_PASS",
+      "detail": {
+        "node": "24.11.1",
+        "npm": "10.9.2",
+        "expected": {
+          "node": "24.18.0",
+          "npm": "11.16.0"
+        },
+        "fixture": true
+      }
+    },
+    {
+      "id": "confirmation-token",
+      "ok": true,
+      "status": "FIXTURE_PASS",
+      "detail": {
+        "present": true,
+        "fixture": true
+      }
+    },
+    {
+      "id": "staging-url-safety",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "hostClass": "fixture_localhost",
+        "originSha256": "afb82b86cb1fef3d752f2462936976fb6844f5a6a2de876a3d26922a2aad4f9b"
+      }
+    },
+    {
+      "id": "stripe-test-key-boundary",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "secretTest": true,
+        "publishableTest": true,
+        "webhookConfigured": true,
+        "lifecycleStrong": true,
+        "workerStrong": true
+      }
+    },
+    {
+      "id": "test-account-signin",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "authenticated": true,
+        "bindingState": "ready",
+        "accountDigest": "db133a7ac99cb4d127204e802df117a0162a1eca3dacdd96efc38737ba09e2ab"
+      }
+    },
+    {
+      "id": "checkout-stop-sell-preserved",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 409,
+        "error": "product_cell_not_sell_ready",
+        "chargeAllowed": false,
+        "sessionIssued": false
+      }
+    },
+    {
+      "id": "webhook-missing-signature-rejected",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 400,
+        "error": "Missing Stripe signature."
+      }
+    },
+    {
+      "id": "webhook-invalid-signature-rejected",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 400,
+        "error": "Invalid Stripe webhook signature."
+      }
+    },
+    {
+      "id": "stripe-payment-intent-created",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "idSha256": "7196d9c073cebb4872b5d5e444f14865e4400a950b45ee5f42d7436cc6a54d0c",
+        "livemode": false,
+        "amount": 100,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "stripe-payment-intent-succeeded",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": "succeeded",
+        "amount": 100,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "signed-checkout-webhook-accepted",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "received": true,
+        "kind": "vlm_paid_access",
+        "entitlementPersisted": true,
+        "evidencePersisted": true
+      }
+    },
+    {
+      "id": "checkout-webhook-replay-idempotent",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "duplicate": true,
+        "received": true
+      }
+    },
+    {
+      "id": "stripe-refund-created",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "idSha256": "6ac6d992ffcaad3a269ed87155f5c4cc2a58af83c29b12ab5f3d0f14b01015e5",
+        "status": "succeeded",
+        "amount": 100,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "stripe-charge-fully-refunded",
+      "ok": false,
+      "status": "FAIL",
+      "detail": {
+        "chargeSha256": "a3936f17a742c04171a2cc8d78f9e4725d51218f5c77473945ab25116f2e5a38",
+        "livemode": false,
+        "refunded": false,
+        "amount": 100,
+        "amountRefunded": 50,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "signed-refund-webhook-accepted",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "received": true,
+        "stateUpdated": true,
+        "type": "charge.refunded"
+      }
+    },
+    {
+      "id": "refund-webhook-replay-idempotent",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "duplicate": true,
+        "received": true
+      }
+    },
+    {
+      "id": "entitlement-refund-idempotent",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "ok": true,
+        "idempotent": true,
+        "previousStatus": "refunded",
+        "nextStatus": "refunded",
+        "ledgerMode": "durable"
+      }
+    },
+    {
+      "id": "reconciliation-worker-authorized",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "ok": true,
+        "skipped": false
+      }
+    },
+    {
+      "id": "reconciliation-worker-aggregate-only",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "leaseAcquired": true,
+        "scannedCount": 2,
+        "staleReleasedCount": 0,
+        "retryReadyCount": 0,
+        "deadLetteredCount": 0,
+        "severity": "none"
+      }
+    },
+    {
+      "id": "session-revoked",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "logoutStatus": 200,
+        "authenticatedAfter": false
+      }
+    },
+    {
+      "id": "source-fingerprint-unchanged",
+      "ok": false,
+      "status": "FAIL",
+      "detail": {
+        "before": null,
+        "after": null,
+        "rows": 4146,
+        "reason": "source_file_missing:.env.example"
+      }
+    },
+    {
+      "id": "evidence-redaction",
+      "ok": true,
+      "status": "PASS",
+      "detail": {
+        "leakClasses": []
+      }
+    }
+  ]
+}

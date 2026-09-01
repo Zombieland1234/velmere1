@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "velmere.full-materialized-clean-current-working-source-backup.v1",
+  "status": "PASS_CLEAN_MATERIALIZED_WORKING_SOURCE_BACKUP_READY",
+  "createdDate": "2026-08-28",
+  "baseAuthority": {
+    "candidate": "R7_MERGED_CURRENT_SOURCE",
+    "fileCount": 9958,
+    "payloadByteLength": 505761383,
+    "aggregateIdentitySha256": "50d59f5f028ef73b279fa3930889fcbf2ab5bc5e36ab4e8cec97be5ed49be67e",
+    "manifestWithHeaderSha256": "af63491cf2922c6391d25fcf25a7d8efb6e76d128f4f9ca1dcf07b36471b0a2f",
+    "pathSetSha256": "4a2c092e3d4b7d3b14a0bbda21be00aa61f61d74b1296fa1cd895eadce397ad8"
+  },
+  "reconstruction": {
+    "exactUnchangedFilesReusedFrom2026_08_25MaterializedSource": 9950,
+    "exactAuthorityFilesReplacedFromCurrentRiskV5ExecutionSource": [
+      "ENV_PRODUCTION_READY.example",
+      "lib/jobs/durable-computation-replay.ts",
+      "lib/market-integrity/risk-ledger.ts",
+      "lib/reporting/account-customer-artifact-store.ts",
+      "lib/server/search-route-modules/lens-report.ts",
+      "scripts/current-execution/test-r7-staging-foundation-contract.mjs",
+      "scripts/r7/build-r7-windows-transport.py"
+    ],
+    "exactAuthorityFilesAddedFromCurrentRiskV5ExecutionSource": [
+      "supabase/migrations/20260827000013_r7_audit_basic_pgcrypto_search_path_runtime_fix.sql"
+    ],
+    "all9958AuthorityRowsHashVerified": true
+  },
+  "workingSuccessor": {
+    "receiptStatus": "PASS_VALIDATED_WORKING_SUCCESSOR_CANDIDATE",
+    "controlHeadSha": "bafd368d6bf4b0c64bab1d4e35495093e0fc1cbf",
+    "validatedCandidateChanges": [
+      {
+        "path": "lib/security/audit-basic-customer-bridge-client.ts",
+        "changeKind": "addWorkingSuccessorPath",
+        "baseSha256": null,
+        "workingSha256": "cd058d8c57ae2f8185a4ac50c20eb7c2f45c1a5dd3d72a5694d36e9dc57b60f9",
+        "bytes": 2074
+      },
+      {
+        "path": "app/api/audit/basic/case/route.ts",
+        "changeKind": "addWorkingSuccessorPath",
+        "baseSha256": null,
+        "workingSha256": "3cb537a14cd3b4ea5c8d842cf9ed2db6cdef76d58c0a607f3c3e02630902fa81",
+        "bytes": 2101
+      },
+      {
+        "path": "app/api/audit/basic/report/route.ts",
+        "changeKind": "addWorkingSuccessorPath",
+        "baseSha256": null,
+        "workingSha256": "2d9e5a40e6d129850f3da99294074ff78ad308470897c542124a830a9fbc91f1",
+        "bytes": 3435
+      },
+      {
+        "path": "app/api/audit/basic/report/restore/route.ts",
+        "changeKind": "addWorkingSuccessorPath",
+        "baseSha256": null,
+        "workingSha256": "fa7acef144db355894157e54c01367f3ffba860745b4407a07b950799cece063",
+        "bytes": 1811
+      },
+      {
+        "path": "app/api/whale-watch/route.ts",
+        "changeKind": "addWorkingSuccessorPath",
+        "baseSha256": null,
+        "workingSha256": "c97d243f7a2423f28699152a7ca365bd9981934c75697423b178e5bcbde75e84",
+        "bytes": 4318
+      }
+    ],
+    "validation": {
+      "typecheck": "PASS",
+      "targetedEslint": "PASS",
+      "webpack": "PASS",
+      "auditV5CustomerLifecycleSourceRunId": "33122699919",
+      "auditV5CustomerLifecycleResult": "PASS",
+      "whalePublicRouteSourceRunId": "33123256667",
+      "whalePublicRouteResult": "PASS"
+    },
+    "authoritySnapshot": false,
+    "truthBoundary": "Five validated application files are layered over the exact 9958-file base authority. They passed the validations recorded in the working-successor receipt, but do not constitute a new formal source-authority snapshot or Customer FINAL credit."
+  },
+  "finalWorkingSource": {
+    "materializedFileCount": 9963,
+    "workingAggregateSha256": "f68397775770a009a506c0af8ba2bbe36943b21fdad4babfca04571fb345c45d",
+    "workingManifestSha256": "7e10c2cc63c8a47c70dd51303b3d63cd2af75a56f3429c5b8f6048a96810b7d4",
+    "authoritySupportMetadataFileCount": 4,
+    "declaredSelfIdentitySupportNotPresentInExecutionExport": [
+      "VELMERE_R7_CURRENT_SOURCE_MANIFEST.tsv",
+      "artifacts/r7/VELMERE_R7_SOURCE_IDENTITY.json"
+    ]
+  },
+  "cleaning": {
+    "excludedRuntimeAndLocalPaths": [
+      ".git metadata",
+      ".velmere",
+      "node_modules",
+      ".next",
+      ".pytest_cache",
+      "current-execution-out",
+      "artifacts/r7/local",
+      "__pycache__",
+      "*.pyc",
+      "local .env / secret files"
+    ],
+    "sourceControlledEvidencePreserved": true,
+    "historicalReceiptsTestsMigrationsAndEvidenceRemoved": false,
+    "reason": "Clean means runtime/local junk removed; formal source/evidence history is preserved to retain reproducibility and auditability."
+  },
+  "embeddedControlRepository": {
+    "path": "_VELMERE_BACKUP/VELMERE_FULL_CURRENT_REPOSITORY_CONTROL_2026-08-28.zip",
+    "sha256": "d9748d76c9cfe9bfb5abf49bbb1357e7f1a91d4888ffa3c931c7c80f7c5f330e",
+    "bytes": 19464645,
+    "treeSha": "dc66ec5f3220b514d067eeed0ce2caf77dba39a3",
+    "note": "Complete Git-tracked control repository tree corresponding to the current branch content after temporary exporter cleanup."
+  },
+  "formalStatusSnapshot": {
+    "customerFinal": "4/20",
+    "paidValueFinal": "0/10",
+    "finalRows": [
+      "Browser Basic",
+      "Risk Indicator",
+      "Shield Basic",
+      "Market Impact"
+    ],
+    "snapshotNature": "Latest directly confirmed append-only ledger state from this closure session; live Supabase database itself is not embedded in this source backup."
+  },
+  "excludedFromBackup": [
+    "live Supabase database contents",
+    "Git history/.git metadata",
+    "GitHub Actions run history and remote artifacts except the embedded control-repo snapshot",
+    "Supabase Edge Function deployed runtime state",
+    "external licensed runtime font assets",
+    "dependency installs and build caches",
+    "credentials/secrets"
+  ],
+  "truthBoundary": "This is the clean, fully materialized current Velmere working-source backup: exact 9958-file R7 full-source authority reconstructed and hash-verified, with the five latest validated working-successor application files layered on top, plus current authority support metadata and an embedded complete Git-tracked control-repository backup. Live databases, deployment state, credentials and external runtime assets are intentionally not embedded.",
+  "securityCleanScan": {
+    "schemaVersion": "velmere.clean-backup-security-scan.v1",
+    "status": "PASS_NO_CONFIRMED_REAL_SECRETS",
+    "scanDate": "2026-08-28",
+    "materializedSourceHighRiskRawPatternHits": 13,
+    "confirmedRealSecretHits": 0,
+    "falsePositiveClassification": "All 13 hits are literal private-key denylist markers inside Velmere security/packaging scanner source code, not PEM key material.",
+    "controlRepositoryHighRiskPatternHits": 0,
+    "patternsChecked": [
+      "private PEM key markers",
+      "GitHub PAT/classic token patterns",
+      "AWS access key IDs",
+      "OpenAI sk-* key pattern",
+      "Slack xox* token pattern",
+      "Supabase sb_secret_* key pattern"
+    ],
+    "pathSafety": "PASS: no .git, node_modules, .next, .velmere, .pytest_cache, current-execution-out, artifacts/r7/local, __pycache__, *.pyc, or local .env secret paths in materialized source denominator.",
+    "note": "Pattern scanning is an additional backup hygiene control. It does not replace the project's source-controlled secret scanners."
+  },
+  "finalArchive": {
+    "fileName": "VELMERE_FULL_MATERIALIZED_CLEAN_CURRENT_SOURCE_2026-08-28.zip",
+    "bytes": 243164456,
+    "sha256": "6f8b552b378bf0c98172c94663c9796bf5a1d8742bdaaa2a624ce0fc05789a7e",
+    "zipCrcTest": "PASS"
+  }
+}

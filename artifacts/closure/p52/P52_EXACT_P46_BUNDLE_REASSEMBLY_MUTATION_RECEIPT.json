@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "velmere.p52.exact-p46-bundle-reassembly-and-negative-mutation-campaign.v1",
+  "status": "PASS",
+  "decision": "PASS_EXACT_P46_BUNDLE_REASSEMBLED_AND_ALL_NEGATIVE_MUTATIONS_FAIL_CLOSED",
+  "parts": [
+    {
+      "index": 0,
+      "name": "p46-current-source.bundle.part-00",
+      "byteLength": 8388608,
+      "sha256": "0e2e557955a5d9f1b18acb23488f56aee524a7d3f87808b5720bb4e7d35395f0",
+      "observedByteLength": 8388608,
+      "observedSha256": "0e2e557955a5d9f1b18acb23488f56aee524a7d3f87808b5720bb4e7d35395f0",
+      "pass": true
+    },
+    {
+      "index": 1,
+      "name": "p46-current-source.bundle.part-01",
+      "byteLength": 8388608,
+      "sha256": "00d5fbca6747578d4b86a0a8de39e96b3971cb5633f6b00dd586aa34b9d6f5e3",
+      "observedByteLength": 8388608,
+      "observedSha256": "00d5fbca6747578d4b86a0a8de39e96b3971cb5633f6b00dd586aa34b9d6f5e3",
+      "pass": true
+    },
+    {
+      "index": 2,
+      "name": "p46-current-source.bundle.part-02",
+      "byteLength": 8388608,
+      "sha256": "93a058f365058c3b5a0feb2c717740132bf198399a30e91369c3036e292805a9",
+      "observedByteLength": 8388608,
+      "observedSha256": "93a058f365058c3b5a0feb2c717740132bf198399a30e91369c3036e292805a9",
+      "pass": true
+    },
+    {
+      "index": 3,
+      "name": "p46-current-source.bundle.part-03",
+      "byteLength": 8388608,
+      "sha256": "e2c7043812d88a59d72a3d9d770318ee73a5341e41b03d1383ae85de697741d8",
+      "observedByteLength": 8388608,
+      "observedSha256": "e2c7043812d88a59d72a3d9d770318ee73a5341e41b03d1383ae85de697741d8",
+      "pass": true
+    },
+    {
+      "index": 4,
+      "name": "p46-current-source.bundle.part-04",
+      "byteLength": 8388608,
+      "sha256": "130a730e70b978741b60e720d9d197f5bad89354a88917b9d397d3a1f99edf4d",
+      "observedByteLength": 8388608,
+      "observedSha256": "130a730e70b978741b60e720d9d197f5bad89354a88917b9d397d3a1f99edf4d",
+      "pass": true
+    },
+    {
+      "index": 5,
+      "name": "p46-current-source.bundle.part-05",
+      "byteLength": 3695292,
+      "sha256": "eb0d33defcae797b0924d0b78674a0752618c8133f76be0758c99d3d80b42543",
+      "observedByteLength": 3695292,
+      "observedSha256": "eb0d33defcae797b0924d0b78674a0752618c8133f76be0758c99d3d80b42543",
+      "pass": true
+    }
+  ],
+  "bundle": {
+    "byteLength": 45638332,
+    "sha256": "8b3000e19d78acb05b75facf442352b55e7e49cb7af76c64261f72c949c07b55",
+    "expected": {
+      "byteLength": 45638332,
+      "sha256": "8b3000e19d78acb05b75facf442352b55e7e49cb7af76c64261f72c949c07b55",
+      "commit": "2d37f3c711aaf63b7f263971fccc93c5748f654e"
+    },
+    "pass": true
+  },
+  "git": {
+    "bundleVerify": "PASS_COMPLETE_HISTORY_SHA1",
+    "head": "2d37f3c711aaf63b7f263971fccc93c5748f654e",
+    "fsckFullStrict": "PASS_NO_OUTPUT"
+  },
+  "negativeMutations": {
+    "executed": 6,
+    "detected": 6,
+    "cases": [
+      {
+        "name": "missing_part_03",
+        "detected": true,
+        "error": "part_count_mismatch",
+        "expectedToken": "part_count_mismatch",
+        "expectedTokenObserved": true
+      },
+      {
+        "name": "swap_part_01_02",
+        "detected": true,
+        "error": "part_order_mismatch:1",
+        "expectedToken": "part_order_mismatch",
+        "expectedTokenObserved": true
+      },
+      {
+        "name": "single_byte_mutation_part_00",
+        "detected": true,
+        "error": "part_sha_mismatch:0",
+        "expectedToken": "part_sha_mismatch",
+        "expectedTokenObserved": true
+      },
+      {
+        "name": "truncate_final_part",
+        "detected": true,
+        "error": "part_size_mismatch:5",
+        "expectedToken": "part_size_mismatch",
+        "expectedTokenObserved": true
+      },
+      {
+        "name": "duplicate_extra_part",
+        "detected": true,
+        "error": "part_count_mismatch",
+        "expectedToken": "part_count_mismatch",
+        "expectedTokenObserved": true
+      },
+      {
+        "name": "wrong_expected_commit",
+        "detected": true,
+        "error": "commit_mismatch:2d37f3c711aaf63b7f263971fccc93c5748f654e:0000000000000000000000000000000000000000",
+        "expectedToken": "commit_mismatch",
+        "expectedTokenObserved": true
+      }
+    ]
+  },
+  "truthBoundary": "PASS proves deterministic reassembly and integrity enforcement for the exact historical P46 Git bundle. It does not grant native Windows build, Browser, PDF, rights, value, sale, production or world-class credit.",
+  "integritySha256": "e7645805f8f32659bfb9fe898b9c252395c4f725c7231f2a527d1c14a3f32bc1"
+}

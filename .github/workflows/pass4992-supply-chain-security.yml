@@ -1,0 +1,122 @@
+name: PASS4992 Supply Chain Security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pass4992-supply-chain-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency diff policy
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Reject newly introduced high or critical dependency risk
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          fail-on-scopes: runtime, development, unknown
+          show-openssf-scorecard: true
+          warn-on-openssf-scorecard-level: 3
+          retry-on-snapshot-warnings: true
+
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - actions
+          - javascript-typescript
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended,security-and-quality
+
+      - name: Analyze source
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          category: /language:${{ matrix.language }}
+
+  offline-contract:
+    name: Offline SBOM, VEX, provenance and fail-closed gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      CI: "true"
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+
+      - name: Verify policy and adversarial release gate
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          node --check scripts/pass4992/supply-chain-release.mjs
+          node --check scripts/pass4992/build-offline-receipt.mjs
+          node --check scripts/pass4992/test-supply-chain-release.mjs
+          node scripts/pass4992/test-supply-chain-release.mjs
+
+      - name: Build source-bound offline evidence
+        run: node scripts/pass4992/build-offline-receipt.mjs --expect-release-blocked
+
+      - name: Upload offline evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pass4992-offline-supply-chain-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            artifacts/pass4992/PASS4992_CYCLONEDX_SBOM.cdx.json
+            artifacts/pass4992/PASS4992_OPENVEX.json
+            artifacts/pass4992/PASS4992_OFFLINE_UNTRUSTED_PROVENANCE.intoto.json
+            artifacts/pass4992/PASS4992_HIGH_PRECISION_SECRET_SCAN.json
+            artifacts/pass4992/PASS4992_RELEASE_GATE.json
+            artifacts/pass4992/PASS4992_OFFLINE_IMPLEMENTATION_RECEIPT.json
+            artifacts/pass4992/PASS4992_SUPPLY_CHAIN_ADVERSARIAL_TEST.json

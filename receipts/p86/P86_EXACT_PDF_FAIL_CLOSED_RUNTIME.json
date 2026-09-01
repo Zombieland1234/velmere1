@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "velmere.p86.exact-pdf-fail-closed-runtime.v1",
+  "generatedAt": "2026-08-20T03:50:00Z",
+  "status": "PASS_BOUNDED_LOCAL_ROUTE_HANDLER_EXACT_BYTES_ONLY",
+  "classification": "DEFENSIVE_LOCAL_EXACT_PDF_STORAGE_TO_CUSTOMER_ROUTE_INTEGRATION",
+  "runtime": {
+    "python": "3.13.5",
+    "node": "v22.16.0",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.41",
+    "command": "node --import ./scripts/pass11/register-offline-ts-loader.mjs tests/security/a102-p36-exact-customer-pdf-integration.test.ts"
+  },
+  "checks": {
+    "total": 61,
+    "passed": 61,
+    "failed": 0,
+    "sourceReceipt": "receipts/p86/P86_EXACT_PDF_ROUTE_INTEGRATION.json",
+    "sourceReceiptSha256": "d095c3bdac2d004300fe174f2a24be8f2463ce20f8e9a442cf859bbc84df9157"
+  },
+  "executionValidation": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p86_runtime_process_exit_zero",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_nested_status_green",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_assertion_count_current",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_new_legacy_write_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_legacy_metadata_read_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_both_legacy_dispositions_blocked",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_v3_contract_executed",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_no_deployed_credit",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_runtime_no_real_customer_credit",
+        "status": "PASS"
+      }
+    ]
+  },
+  "behavior": {
+    "exactPreviewDownloadByteIdentical": true,
+    "legacyMetadataReadOnly": true,
+    "legacyPreviewRoutePublished": false,
+    "legacyDownloadRoutePublished": false,
+    "legacyPreviewStatus": 409,
+    "legacyDownloadStatus": 409,
+    "legacyRerenderPerformed": false,
+    "newLegacySnapshotConstructionAllowed": false
+  },
+  "nestedReceiptIntegrity": "sha256:2b2767c8421e493c7aa967670028b4c013c1a4a104695e1a7fbaa5e21733b216",
+  "stdout": {
+    "bytes": 2879,
+    "sha256": "d095c3bdac2d004300fe174f2a24be8f2463ce20f8e9a442cf859bbc84df9157"
+  },
+  "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "zeroFakeCredit": {
+    "durableDatabaseExecuted": false,
+    "deployedHttpExecuted": false,
+    "realCustomerExecuted": false,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "exactWindows": "WITHHELD"
+  },
+  "truthBoundary": "Executes the real local lazy route handler with signed preview cookies and immutable in-memory bytes. PostgreSQL/Supabase, real JWT/RLS, deployed HTTP, production migration, Customer FINAL and exact Windows remain WITHHELD."
+}

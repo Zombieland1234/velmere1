@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "velmere.p35.static-screen.v1",
+  "status": "PASS",
+  "changedSourceFiles": 28,
+  "changedTsTsx": 12,
+  "changedJsMjsCjs": 3,
+  "changedPython": 8,
+  "jsonFilesParsed": 1669,
+  "jsonParseErrors": [],
+  "credentialLiteralHits": [],
+  "commands": [
+    {
+      "name": "python_compile",
+      "command": [
+        "/opt/pyvenv/bin/python3",
+        "-m",
+        "py_compile",
+        "scripts/closure/build-p35-authority-handoff.py",
+        "scripts/closure/build-p35-internal-ai-availability-ledger.py",
+        "scripts/closure/build-p35-paid-readiness.py",
+        "scripts/closure/build-p35-parent-diff.py",
+        "scripts/closure/build-p35-source-identity.py",
+        "scripts/closure/build-p35-static-screen.py",
+        "scripts/closure/package-p35-current-source.py",
+        "scripts/closure/verify-p35-internal-ai-availability-ledger.py"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "node_check:scripts/closure/build-p35-evidence-availability-matrix.mjs",
+      "command": [
+        "node",
+        "--check",
+        "scripts/closure/build-p35-evidence-availability-matrix.mjs"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "node_check:tests/security/a102-p35-authority-handoff.test.mjs",
+      "command": [
+        "node",
+        "--check",
+        "tests/security/a102-p35-authority-handoff.test.mjs"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "node_check:tests/security/a102-p35-internal-ai-availability-ledger.test.mjs",
+      "command": [
+        "node",
+        "--check",
+        "tests/security/a102-p35-internal-ai-availability-ledger.test.mjs"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "changed_ts_transpile_diagnostic",
+      "command": [
+        "node",
+        "/mnt/data/velmere_p35_work/artifacts/closure/p35/p35-transpile-diagnostic.cjs",
+        "/opt/nvm/versions/node/v22.16.0/lib/node_modules/typescript/lib/typescript.js",
+        "app/api/checkout/vlm-service/readiness/route.ts",
+        "app/api/checkout/vlm-service/route.ts",
+        "lib/commerce/vlm-current-evidence-availability-matrix.ts",
+        "lib/commerce/vlm-evidence-availability.ts",
+        "lib/reporting/exact-customer-pdf-delivery.ts",
+        "lib/server/lazy-route-modules/account--customer-artifact.ts",
+        "tests/security/a102-account-artifact-preview-download-parity.test.ts",
+        "tests/security/a102-current-evidence-availability-matrix.test.ts",
+        "tests/security/a102-evidence-availability-artifact-methodology-binding.test.ts",
+        "tests/security/a102-evidence-availability-dynamic-tier.test.ts",
+        "tests/security/a102-exact-customer-pdf-delivery.test.ts",
+        "tests/security/a102-public-tier-readiness-contract.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "{\"typescriptVersion\":\"5.8.3\",\"files\":12,\"errors\":[]}\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "test:tests/security/a102-evidence-availability-dynamic-tier.test.ts",
+      "command": [
+        "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+        "--import",
+        "/mnt/data/velmere_p35_work/scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-evidence-availability-dynamic-tier.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "Evidence availability / dynamic tier eligibility: PASS (33/33)\n",
+      "stderrTail": "(node:6861) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "test:tests/security/a102-current-evidence-availability-matrix.test.ts",
+      "command": [
+        "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+        "--import",
+        "/mnt/data/velmere_p35_work/scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-current-evidence-availability-matrix.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "Current evidence availability matrix: PASS (13/13)\n",
+      "stderrTail": "(node:6873) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "test:tests/security/a102-exact-customer-pdf-delivery.test.ts",
+      "command": [
+        "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+        "--import",
+        "/mnt/data/velmere_p35_work/scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-exact-customer-pdf-delivery.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "Exact customer PDF delivery: PASS (10/10)\n",
+      "stderrTail": "(node:6885) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "test:tests/security/a102-account-artifact-preview-download-parity.test.ts",
+      "command": [
+        "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+        "--import",
+        "/mnt/data/velmere_p35_work/scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-account-artifact-preview-download-parity.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "Account artifact preview/download parity: PASS (19/19)\n",
+      "stderrTail": "(node:6897) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "test:tests/security/a102-public-tier-readiness-contract.test.ts",
+      "command": [
+        "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+        "--import",
+        "/mnt/data/velmere_p35_work/scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-public-tier-readiness-contract.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "Public tier readiness contract: PASS (16/16)\n",
+      "stderrTail": "(node:6909) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "test:tests/security/a102-evidence-availability-artifact-methodology-binding.test.ts",
+      "command": [
+        "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+        "--import",
+        "/mnt/data/velmere_p35_work/scripts/pass11/register-offline-ts-loader.mjs",
+        "tests/security/a102-evidence-availability-artifact-methodology-binding.test.ts"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "Evidence availability/artifact methodology binding: PASS (20/20)\n",
+      "stderrTail": "(node:6921) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "p35_ai_verifier",
+      "command": [
+        "/opt/pyvenv/bin/python3",
+        "scripts/closure/verify-p35-internal-ai-availability-ledger.py"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "{\"status\": \"PASS\", \"basePass\": true, \"rowCount\": 5147, \"cohortCount\": 10, \"profileCoverage\": 33, \"matrixProfiles\": 33, \"analysisEligibleProfiles\": 11, \"saleEligibleProfiles\": 0, \"externalTracksCompleted\": 0, \"mutationsDetected\": 12, \"mutationDenominator\": 12, \"receiptSha256\": \"d996259594ad06d45e6716cd479c7c5a9a9124abb1924349c56a67781854fc78\"}\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "p35_ai_test",
+      "command": [
+        "node",
+        "tests/security/a102-p35-internal-ai-availability-ledger.test.mjs"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "P35 internal AI availability ledger: PASS (20/20)\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "p32_profile_verifier",
+      "command": [
+        "/opt/pyvenv/bin/python3",
+        "scripts/closure/verify-p32-profile-execution-receipts.py"
+      ],
+      "returnCode": 0,
+      "stdoutTail": "{\n  \"schemaVersion\": \"velmere.p32.profile-execution-verifier-receipt.v1\",\n  \"state\": \"PASS_PROFILE_EXECUTION_RECEIPTS_FAIL_CLOSED\",\n  \"summary\": {\n    \"checks\": 5,\n    \"passed\": 5,\n    \"failed\": 0\n  },\n  \"profileCounts\": 33,\n  \"executedInternalFixtureRegression\": 30,\n  \"blockedBrowser\": 3,\n  \"finalHoldoutsFrozen\": 0,\n  \"mutations\": [\n    {\n      \"mutationId\": \"promote_browser_execution\",\n      \"detected\": true\n    },\n    {\n      \"mutationId\": \"claim_final_holdout\",\n      \"detected\": true\n    },\n    {\n      \"mutationId\": \"claim_customer_value\",\n      \"detected\": true\n    },\n    {\n      \"mutationId\": \"shrink_profile_denominator\",\n      \"detected\": true\n    }\n  ],\n  \"truthBoundary\": \"This verifier protects against converting internal fixture execution into Browser, final-holdout, customer-value, paid or sale credit.\",\n  \"failures\": [],\n  \"checks\": [\n    {\n      \"id\": \"manifest:valid\",\n      \"passed\": true,\n      \"detail\": []\n    },\n    {\n      \"id\": \"summary:state\",\n      \"passed\": true,\n      \"detail\": \"STRUCTURAL_FIXTURE_DELTA_ONLY_NOT_FINAL_VALUE_CAMPAIGN\"\n    },\n    {\n      \"id\": \"summary:profile-counts\",\n      \"passed\": true,\n      \"detail\": {\n        \"total\": 33,\n        \"executedInternalFixtureRegression\": 30,\n        \"blockedBrowser\": 3,\n        \"finalHoldoutsFrozen\": 0,\n        \"finalHoldoutsExecuted\": 0\n      }\n    },\n    {\n      \"id\": \"summary:no-value-metrics\",\n      \"passed\": true,\n      \"detail\": [\n        \"NEW_FACT\",\n        \"NEW_EVIDENCE\",\n        \"NEW_REASONING\",\n        \"NEW_ACTION\",\n        \"NEW_WORKFLOW\",\n        \"REPHRASE\",\n        \"DUPLICATE\",\n        \"decision-change\",\n        \"ground-truth accuracy on final holdout\",\n        \"blinded customer utility\",\n        \"willingness-to-pay\",\n        \"refund-risk\",\n        \"latency/cost on production runtime\"\n      ]\n    },\n    {\n      \"id\": \"mutations:detected\",\n      \"passed\": true,\n      \"detail\": [\n        {\n          \"mutationId\": \"promote_browser_execution\",\n          \"detected\": true\n        },\n        {\n          \"mutationId\": \"claim_final_holdout\",\n          \"detected\": true\n        },\n        {\n          \"mutationId\": \"claim_customer_value\",\n          \"detected\": true\n        },\n        {\n          \"mutationId\": \"shrink_profile_denominator\",\n          \"detected\": true\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderrTail": ""
+    }
+  ],
+  "commandsPassed": 14,
+  "commandsTotal": 14,
+  "sourceIdentity": {
+    "fileCount": 6557,
+    "payloadBytes": 233228475,
+    "sourceAggregateSha256": "ddd765b2279d7c5f310a26cc4cba349bee38629d2f44ad5b1d323dc6df91a202",
+    "receiptSha256": "8ec3b9e44cb74c1f13cb6ae889dfdb10a4621022155849e3c3f8546c0080f916"
+  },
+  "internalAi": {
+    "rows": 5147,
+    "denominator": 5147,
+    "cohorts": 10,
+    "profiles": 33,
+    "mutationsDetected": 12,
+    "mutationDenominator": 12
+  },
+  "eligibility": {
+    "profiles": 33,
+    "analysisEligible": 11,
+    "saleEligible": 0
+  },
+  "paidReadiness": {
+    "axes": 12,
+    "internalPass": 6,
+    "releasePass": 0,
+    "goPaidAllowed": false
+  },
+  "truthBoundary": "Static/transpile/current-source tests do not grant exact project typecheck, production build, Browser/staging, final holdout, real-customer, legal/provider-rights, GO_PAID or external proof credit."
+}

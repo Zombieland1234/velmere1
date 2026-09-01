@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";import fs from "node:fs";import path from "node:path";
+const [a,b]=process.argv.slice(2);if(!a||!b)throw new Error("usage: repeatability <run1> <run2>");const sha=x=>crypto.createHash("sha256").update(x).digest("hex");
+function rows(root,base=""){let out=[];for(const e of fs.readdirSync(root,{withFileTypes:true})){const rel=base?`${base}/${e.name}`:e.name;const abs=path.join(root,e.name);if(e.isDirectory())out=out.concat(rows(abs,rel));else if(e.isFile()){const bytes=fs.readFileSync(abs);out.push({path:rel,bytes:bytes.length,sha256:sha(bytes)});}}return out.sort((x,y)=>Buffer.compare(Buffer.from(x.path),Buffer.from(y.path)));}
+const left=rows(path.resolve(a)),right=rows(path.resolve(b));const same=JSON.stringify(left)===JSON.stringify(right);const digest=sha(Buffer.from(JSON.stringify(left)));console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p43.repeatability.v1",status:same?"PASS_R44P43_REPEATABILITY_2_OF_2_BYTE_IDENTICAL":"FAIL_R44P43_REPEATABILITY",files:left.length,digest,left,rightDigest:sha(Buffer.from(JSON.stringify(right))),same},null,2));if(!same)process.exit(1);

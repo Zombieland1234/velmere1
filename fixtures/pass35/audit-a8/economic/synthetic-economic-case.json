@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a8-economic-case.v1",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "caseRef": "AUD-PASS35-A8-A10-0001",
+  "observedAt": "2026-07-22T20:30:00.000Z",
+  "chainId": "1",
+  "blockNumber": "19400000",
+  "contractAddress": "0x1111111111111111111111111111111111111111",
+  "sourceToBytecodeReceiptSha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "chainProviderReceiptSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "marketDataReceiptSha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "economicMethodologySha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "forkReplayReceiptPath": "fixtures/pass35/audit-a7/PASS35_A7_FORK_REPLAY_SYNTHETIC_RECEIPT.json",
+  "forkReplayReceiptFileSha256": "sha256:1b2568d0a2bb01a6f621ec50a7245f9da1962eefb97b987c42e5d1e862e3746b",
+  "forkReplayEmbeddedReceiptSha256": "sha256:051a7a4c19d38c41bc4dfa60d599596c3ecf1e3bd3a0ed38fac124766acc7d88",
+  "scenarios": [
+    {
+      "scenarioId": "A10_ORACLE_MANIPULATION",
+      "type": "ORACLE_MANIPULATION",
+      "applicabilityReason": "Synthetic oracle-dependent collateral scenario.",
+      "parameters": {
+        "referencePriceE6": "100000000",
+        "manipulatedPriceE6": "125000000",
+        "positionNotionalUsdE6": "2000000000000",
+        "attackCostUsdE6": "50000000000",
+        "expectedGrossProfitUsdE6": "250000000000",
+        "maxDeviationBps": "500"
+      }
+    },
+    {
+      "scenarioId": "A10_MEV_SANDWICH",
+      "type": "MEV_SANDWICH",
+      "applicabilityReason": "Synthetic AMM trade with measurable execution loss.",
+      "parameters": {
+        "userTradeUsdE6": "100000000000",
+        "poolLiquidityUsdE6": "3000000000000",
+        "estimatedLossUsdE6": "2500000000",
+        "maxLossBps": "100"
+      }
+    },
+    {
+      "scenarioId": "A10_LIQUIDITY_DRAIN",
+      "type": "LIQUIDITY_DRAIN",
+      "applicabilityReason": "Synthetic privileged liquidity withdrawal path.",
+      "parameters": {
+        "poolLiquidityUsdE6": "1000000000000",
+        "removableLiquidityUsdE6": "700000000000",
+        "maxDrainBps": "1500",
+        "withdrawalDelaySec": "0",
+        "minimumDelaySec": "86400"
+      }
+    },
+    {
+      "scenarioId": "A10_GOVERNANCE_TAKEOVER",
+      "type": "GOVERNANCE_TAKEOVER",
+      "applicabilityReason": "Synthetic governance concentration and timelock scenario.",
+      "parameters": {
+        "totalVotingPower": "1000000",
+        "attackerVotingPower": "420000",
+        "quorumBps": "4000",
+        "timelockSec": "0",
+        "minimumTimelockSec": "172800",
+        "emergencyPauseAvailable": false
+      }
+    },
+    {
+      "scenarioId": "A10_PRIVILEGED_KEY",
+      "type": "PRIVILEGED_KEY_COMPROMISE",
+      "applicabilityReason": "Synthetic single-key privileged control scenario.",
+      "parameters": {
+        "signerCount": "3",
+        "threshold": "1",
+        "minimumThreshold": "2",
+        "timelockSec": "0",
+        "minimumTimelockSec": "86400",
+        "emergencyPauseAvailable": false
+      }
+    }
+  ]
+}

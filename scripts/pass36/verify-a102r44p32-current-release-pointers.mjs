@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const REV = 'VELMERE_PASS36_A102R44P32_ACTION_REQUIRED_LOCAL_DURABLE_STRIPE_PROTOCOL_LIFECYCLE12_REAL_STRIPE_TEST_BLOCKED_NO_LIVE_CREDIT';
+const PARENT = 'VELMERE_PASS36_A102R44P31_ACTION_REQUIRED_EXTERNAL_CI_LOCALSTACK_STORAGE_KMS_EMAIL10_SIGSTORE_OIDC_AND_PARENT_EXACT_RELEASE_NO_LIVE_CREDIT';
+const authority = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/pass36/current-release-authority.json'), 'utf8'));
+const release = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/current-release.json'), 'utf8'));
+const revision = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/pass35/current-revision.json'), 'utf8'));
+const checks = []; const add = (id, ok, detail = null) => checks.push({ id, ok: Boolean(ok), detail });
+add('authority-revision', authority.authorityRevisionId === REV && authority.sourceRevisionId === REV && authority.worldClassCompletionProgramRevisionId === REV);
+add('authority-parent', authority.parentRevisionId === PARENT && authority.sourceParentRevisionId === PARENT);
+add('authority-current-source', authority.currentSource?.revisionId === REV && authority.currentSource?.parentRevisionId === PARENT && authority.currentSource?.checkpointClass === 'ACTION_REQUIRED');
+add('release-revision', release.currentReleaseAuthorityRevisionId === REV && release.currentRootDescendantManifestRevisionId === REV && release.sourceRevisionId === REV);
+add('release-parent', release.sourceParentRevisionId === PARENT);
+add('revision-revision', revision.currentRevisionId === REV && revision.currentReleaseAuthorityRevisionId === REV && revision.currentRootDescendantManifestRevisionId === REV && revision.sourceRevisionId === REV);
+add('revision-parent', revision.parentRevisionId === PARENT && revision.sourceParentRevisionId === PARENT);
+add('p32-denominator', [authority, release, revision].every((row) => row.a102r44p32LocalStripeProtocolCases === 12 && row.a102r44p32IndependentVerifierChecks === 45 && row.a102r44p32RealStripeTestCases === 0 && row.a102r44p32RealStripeTestCredit === false));
+add('p32-classification', [authority, release, revision].every((row) => row.a102r44p32Classification === 'LOCAL_DISPOSABLE_STRIPE_API_FIXTURE_AND_WEBHOOK_LEDGER_ONLY'));
+add('no-promotion', [authority, release, revision].every((row) => row.LIVE === false && row.saleEnabled === false && row.productionApproved === false));
+add('active-pass', fs.readFileSync(path.join(ROOT, 'VELMERE_ACTIVE_PASS.txt'), 'utf8').trim() === REV);
+add('roadmap', fs.readFileSync(path.join(ROOT, 'VELMERE_WORLD_CLASS_MAX_ROADMAP_PASS35.txt'), 'utf8').includes('PASS36 A102R44P32'));
+const failed = checks.filter((row) => !row.ok);
+console.log(JSON.stringify({ schemaVersion: 'velmere.pass36.a102r44p32.current-release-pointer-verification.v1', status: failed.length ? 'FAIL' : 'PASS', checks: checks.length, passed: checks.length - failed.length, failed: failed.length, rows: checks }, null, 2));
+if (failed.length) process.exit(1);

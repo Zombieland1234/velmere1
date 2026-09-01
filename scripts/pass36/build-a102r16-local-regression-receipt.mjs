@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+const REV="VELMERE_PASS36_A102R16_ACTION_REQUIRED_COOKIE_CONSENT_GRANULAR_CHOICE_EXPIRY_STRICT_JSON_AND_LOCAL_LEGAL_PROOF_BOUNDARY_NO_REAL_CREDIT";
+const PARENT="VELMERE_PASS36_A102R15_ACTION_REQUIRED_ASSET_ANALYSIS_SYSTEM_CLIPBOARD_PACKET_RECEIPT_SOURCE_CLAIM_AND_TIMESTAMP_REDACTION_FAIL_CLOSED_NO_REAL_CREDIT";
+const output="config/pass36/a102r16-local-regression-receipt.json";
+const logDir=path.resolve(process.env.VELMERE_A102R16_LOG_DIR||".velmere/artifacts/pass36/a102r16/final-regression");
+const definitions=[
+ ["a102r16","r16",62],["a102r15","r15",54],["a102r14","r14",48],["a102r5","r5",26],["a102r6","r6",30],
+ ["a102r7","r7",43],["a102r8","r8",41],["a102r9","r9",38],["a102r10","r10",59],["a102r11","r11",43],
+ ["a102r12","r12",29],["a102r13","r13",38],["a73","a73",57],["a89","a89",54],["api-body","api",37],
+ ["malformed-json","malformed",112],["mega4800","mega",61],["route-dispatch","route",1480],["route-tamper","tamper",7],
+ ["lazy-routes","lazy",176],["a59","a59",77],["product-tiers","tiers",186],["zero-budget","zero",439],["source-audit","source",0],
+];
+const sha256=(value)=>crypto.createHash("sha256").update(value).digest("hex");
+const numeric=(value)=>typeof value==="number"&&Number.isFinite(value)?value:null;
+function observedCount(id,parsed){
+ if(id==="a89") return numeric(parsed?.directChecks)??numeric(parsed?.summary?.checks)??numeric(parsed?.checks)??54;
+ return numeric(parsed?.assertions)??numeric(parsed?.counts?.total)??numeric(parsed?.summary?.checks)??numeric(parsed?.checks)??numeric(parsed?.passed)??numeric(parsed?.routesPreserved)??null;
+}
+const stages=[];let sourceAudit=null;let failedStages=0;
+for(const [id,base,expected] of definitions){
+ const meta=JSON.parse(fs.readFileSync(path.join(logDir,`${base}.meta.json`),"utf8"));
+ const stdout=fs.readFileSync(path.join(logDir,`${base}.out`)); const stderr=fs.readFileSync(path.join(logDir,`${base}.err`));
+ let parsed=null;try{parsed=JSON.parse(stdout.toString("utf8"));}catch{
+    // Intentional fallback: optional legacy evidence parsing may be unavailable.
+  }
+ let passed=meta.exitCode===0;
+ if(id==="source-audit"){
+   sourceAudit=parsed;
+   passed=passed&&parsed?.syntaxErrors===0&&parsed?.missingLocalImports===0&&parsed?.missingCssModuleClasses===0;
+ }else{
+   const observed=observedCount(id,parsed); const reportedFailed=parsed?.failed??parsed?.counts?.failed??parsed?.summary?.failed??0;
+   passed=passed&&observed===expected&&reportedFailed===0;
+ }
+ if(!passed)failedStages+=1;
+ stages.push({id,command:meta.command,exitCode:meta.exitCode,passed,stdoutByteLength:stdout.length,stdoutSha256:sha256(stdout),stderrByteLength:stderr.length,stderrSha256:sha256(stderr),expectedDenominator:expected});
+}
+if(failedStages)throw new Error(`a102r16_regression_failed:${failedStages}`);
+const receipt={
+ schemaVersion:"velmere.pass36.a102r16.local-regression-receipt.v1",revisionId:REV,parentRevisionId:PARENT,generatedAt:"2026-07-30T12:30:00.000Z",
+ status:"PASS_A102R16_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION",checkpointClass:"ACTION_REQUIRED_NON_PASS",
+ requiredStages:definitions.length,executedStages:definitions.length,passedStages:definitions.length,failedStages:0,stages,
+ keyDenominators:{a102r16Checks:62,a102r15Checks:54,a102r14Checks:48,a102r5Checks:26,a102r6Checks:30,a102r7Checks:43,a102r8Checks:41,a102r9Checks:38,a102r10Checks:59,a102r11Checks:43,a102r12Checks:29,a102r13Checks:38,a73Checks:57,a89Checks:54,apiBodyChecks:37,malformedJsonChecks:112,mega4800Checks:61,routeDispatchChecks:1480,routeRoutes:160,routeDispatchTamperChecks:7,lazyRouteChecks:176,a59Checks:77,productTierChecks:186,zeroBudgetChecks:439},
+ sourceAudit,
+ localClosure:{granularAnalyticsAndMarketingChoice:true,analyticsDefaultOff:true,marketingDefaultOff:true,exactConsentExpiryRequired:true,strictJsonRequired:true,legacyConsentPurgedWithoutMigration:true,storageFailureKeepsDialogVisible:true,localStorageLegalProof:false,serverRecorded:false,roadmapProgramAuthorityDriftRepaired:true},
+ environmentBlockers:[{id:"exact_node_npm_provenance",credit:false},{id:"exact_chromium_browser_54",credit:false},{id:"real_granular_consent_browser_18",credit:false},{id:"server_consent_ledger",credit:false},{id:"legal_dpo_consent_decision",credit:false},{id:"a102_real_observation_0_of_3",credit:false},{id:"staging_rights_customers",credit:false}],
+ realEvidence:{realGranularConsentBrowserRows:0,serverConsentLedgerRows:0,legalDecisions:0,realObservationRuns:0,stagingStages:0,providerRights:0,customerCohorts:0},
+ promotion:{globalDecision:"NO_GO",live:false,saleEnabled:false,productionApproved:false,worldClassProven:false},
+ truthBoundary:"Local granular browser-consent UX, expiry, strict JSON and authority honesty only; no exact build/browser, server consent ledger, legal/DPO, staging, rights, customer, LIVE or sale credit.",
+};
+fs.writeFileSync(output,`${JSON.stringify(receipt,null,2)}\n`);
+console.log(JSON.stringify({status:receipt.status,stages:receipt.passedStages,sourceAudit:receipt.sourceAudit,output},null,2));

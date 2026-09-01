@@ -1,0 +1,15 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import { REV,PARENT,MANIFEST,PARENT_MANIFEST,STATE,RECEIPT,sha256,canonicalJson,readJson,collect,payload } from "./a102r19-source-boundary.mjs";
+const root=process.cwd(),state=readJson(root,STATE),parent=readJson(root,PARENT_MANIFEST),receipt=readJson(root,RECEIPT);
+if(state.revisionId!==REV||state.parentRevisionId!==PARENT)throw new Error("a102r19_state_identity");
+if(parent.revisionId!==PARENT||!parent.manifestDigestSha256)throw new Error("a102r19_parent_manifest_identity");
+if(receipt.revisionId!==REV||receipt.status!=="PASS_A102R19_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION")throw new Error("a102r19_receipt_identity");
+const inventory=collect(root);if(inventory.rejected.length)throw new Error(`a102r19_rejected:${JSON.stringify(inventory.rejected)}`);
+const claims={};for(let i=90;i<=116;i++)claims[`a${i}PassCredit`]=false;
+Object.assign(claims,{exactA77R1ToA80R1Credit:false,freshExactBuildBrowserCredit:false,cssCustomerMinimalismChecks:33,activeGlobalStylesheets:3,activeGlobalKeyframeNames:361,duplicateGlobalKeyframeNames:0,removedDuplicateOrDeadKeyframeBlocks:7,globalsCssBytesReduced:627,customerSurfacesSimplified:3,internalProofMarkersRetained:true,realBrowserRows:0,screenshotParityRows:0,realObservationRuns:0,stagingCredit:false,exactBuildBrowserCredit:false,liveProven:false,saleEnabled:false,productionApproved:false,worldClassProven:false});
+const output={schemaVersion:"velmere.pass36.a102r19.current-root-descendant-manifest.v1",revisionId:REV,parentRevisionId:PARENT,parentDescendantManifestDigestSha256:parent.manifestDigestSha256,generatedAt:"2026-07-30T18:35:00.000Z",checkpointClass:"ACTION_REQUIRED_NON_PASS",completedThrough:89,coveredWorkRange:"A90-A102_LOCAL_ACTIVE_CSS_ANIMATION_NAMESPACE_AND_CUSTOMER_UI_MINIMALISM_NO_FORMAL_PASS_CREDIT",payload:payload(inventory.rows),localRegressionReceiptSha256:sha256(fs.readFileSync(path.join(root,RECEIPT))),claims,denominators:state.denominators??state.realDenominators,skuDecisions:state.skuDecisions};
+output.manifestDigestSha256=sha256(canonicalJson(output));
+fs.writeFileSync(path.join(root,MANIFEST),`${JSON.stringify(output,null,2)}\n`);
+console.log(JSON.stringify({status:"BUILT_A102R19_DESCENDANT_ACTION_REQUIRED_NO_PROMOTION",payload:output.payload,manifestDigestSha256:output.manifestDigestSha256},null,2));

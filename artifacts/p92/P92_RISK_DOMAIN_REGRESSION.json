@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "velmere.p92.risk-domain-regression.v1",
+  "generatedAt": "2026-08-20T20:30:00.000Z",
+  "status": "PASS_BOUNDED_WITH_EXPLICIT_ENVIRONMENT_WITHHELDS",
+  "commands": {
+    "total": 5,
+    "passed": 3,
+    "withheld": 2,
+    "failed": 0
+  },
+  "aggregateExecutedChecksAcrossOverlappingHarnesses": 8,
+  "rows": [
+    {
+      "id": "MARKET_RISK_DELIVERY_GATE",
+      "status": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "expected": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "checks": 0,
+      "returnCode": 1,
+      "timedOut": false,
+      "elapsedSeconds": 0.974,
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/pass6/test-market-risk-delivery-gate.ts"
+      ],
+      "markersMatched": true,
+      "log": "artifacts/p92/logs/regression/risk-domain/01_MARKET_RISK_DELIVERY_GATE.log",
+      "logSha256": "27f78b9310bb7a3621eed5072f59c571c85d8bc88c7212935bde00b4286a5860"
+    },
+    {
+      "id": "RISK_CALIBRATION_INVARIANTS",
+      "status": "PASS",
+      "expected": "PASS",
+      "checks": 6,
+      "returnCode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 0.647,
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/pass4826/test-risk-calibration-invariants.ts"
+      ],
+      "markersMatched": true,
+      "log": "artifacts/p92/logs/regression/risk-domain/02_RISK_CALIBRATION_INVARIANTS.log",
+      "logSha256": "7e7d476196ac753e002f5965976af18eebe153aa811ceebcab9917b0b5de0d12"
+    },
+    {
+      "id": "RISK_INPUT_FAIL_CLOSED",
+      "status": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "expected": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "checks": 0,
+      "returnCode": 1,
+      "timedOut": false,
+      "elapsedSeconds": 0.349,
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/pass4826/test-risk-input-fail-closed.ts"
+      ],
+      "markersMatched": true,
+      "log": "artifacts/p92/logs/regression/risk-domain/03_RISK_INPUT_FAIL_CLOSED.log",
+      "logSha256": "27f78b9310bb7a3621eed5072f59c571c85d8bc88c7212935bde00b4286a5860"
+    },
+    {
+      "id": "RISK_ENGINE_SAFETY",
+      "status": "PASS",
+      "expected": "PASS",
+      "checks": 1,
+      "returnCode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 0.024,
+      "command": [
+        "node",
+        "scripts/verify-risk-engine-safety.mjs"
+      ],
+      "markersMatched": true,
+      "log": "artifacts/p92/logs/regression/risk-domain/04_RISK_ENGINE_SAFETY.log",
+      "logSha256": "1e828a5de2e89d009aa9eab6cecc3d5d60e72fdb3a43ddb895b6e5efbe9c86b6"
+    },
+    {
+      "id": "VLM_RISK_FAIL_CLOSED",
+      "status": "PASS",
+      "expected": "PASS",
+      "checks": 1,
+      "returnCode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 0.421,
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/test-vlm-risk-fail-closed.ts"
+      ],
+      "markersMatched": true,
+      "log": "artifacts/p92/logs/regression/risk-domain/05_VLM_RISK_FAIL_CLOSED.log",
+      "logSha256": "732af3339eea415effe0eca62c0ee2e6ad3035ef66885ae676f72c37f6cd2790"
+    }
+  ],
+  "zeroFakeCredit": {
+    "withheldCommandsCredited": false,
+    "wholeProjectDependencyGraph": false,
+    "browserRendered": false,
+    "customerFinal": "0/20"
+  },
+  "truthBoundary": "Three risk-domain regressions execute on P92 bytes. Two transitive route/input harnesses remain explicitly WITHHELD because SOURCE_ONLY lacks the installed zod dependency; their nonzero executions receive zero credit. This is not Browser, deployed route, provider, build or Customer FINAL proof."
+}

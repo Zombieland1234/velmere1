@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { runA22Benchmark, verifyA22Benchmark, verifyA22Policy } from "../../lib/security/pass35-a22-severity-triage-runtime.mjs";
+const read=(p)=>JSON.parse(readFileSync(p,"utf8"));let assertions=0;const check=(value,message)=>{assert.ok(value,message);assertions++;};
+const policy=read("config/pass35/a22-severity-triage-policy.json"),contract=read("config/pass35/a22-severity-triage-runtime-contract.json"),receipt=read("artifacts/pass35/PASS35_A22_SEVERITY_TRIAGE_RECEIPT.json"),status=read("config/pass35/current-status-register.json"),zero=read("config/pass35/zero-budget-functional-roadmap.json"),current=read("config/current-release.json"),audit=read("config/pass35/audit-program.json"),envelope=read("config/pass35/audit-execution-envelope.json"),product=read("config/pass35/product-tier-content-contract.json");
+check(verifyA22Policy(policy),"policy");const runtime=runA22Benchmark(policy);check(verifyA22Benchmark(runtime,policy),"runtime");
+check(runtime.denominators.cases===192&&runtime.denominators.frozen===72&&runtime.denominators.mutations===2304,"denominators");
+check(runtime.frozen.severityAccuracy===1&&runtime.frozen.suppressionAccuracy===1&&runtime.frozen.weightedKappa===1&&runtime.mutation.killRate===1,"metrics");
+check(runtime.frozen.falseCriticalRemediated===0&&runtime.frozen.unjustifiedCritical===0,"critical safety");
+check(contract.canonicalWeightedPlanningPercent===47.7&&contract.canonicalStrictDonePercent===16.3&&contract.zeroBudgetWeightedPlanningPercent===87.5,"percentages");
+check(contract.progressDeltaVsA21.canonicalPercentagePoints===1.2&&contract.progressDeltaVsA21.zeroBudgetPercentagePoints===0.7,"delta A21");
+check(contract.progressDeltaVsA16.canonicalPercentagePoints===7&&contract.progressDeltaVsA16.zeroBudgetPercentagePoints===7.5,"delta A16");
+check(receipt.evidenceBoundSeverityTriageComplete===true&&receipt.blastRadiusClassificationComplete===true&&receipt.attackChainAggregationComplete===true,"receipt implementation");
+check(receipt.independentHumanRatersClaimed===false&&receipt.exploitabilityClaimAllowed===false&&receipt.paidGateEligible===false&&receipt.sellEnabled===false,"receipt truth");
+const row=status.rows.find((item)=>item.id==="AUD16_A14_SEVERITY_TRIAGE");check(row?.status==="DONE"&&row.blocker==="NONE_LOCAL_FOR_DECLARED_BOUNDED_A14_TRIAGE_IMPLEMENTATION","status row");
+for(const id of ["ZB56_EVIDENCE_BOUND_SEVERITY_TRIAGE","ZB57_ATTACK_CHAIN_BLAST_RADIUS_RUNTIME","ZB58_SEVERITY_UNCERTAINTY_FROZEN_BENCHMARK"])check(zero.capabilities.find((item)=>item.id===id)?.status==="DONE",`zero ${id}`);
+check(audit.controls.find((item)=>item.id==="A14")?.status==="IMPLEMENTED_LOCAL_EVIDENCE_BOUND_SEVERITY_ATTACK_CHAIN_BENCHMARKED_NOT_HUMAN_ADJUDICATED","audit program");
+const family=envelope.capabilityInventory.find((item)=>item.familyId==="severity_triage_attack_chain");check(family?.state==="IMPLEMENTED_LOCAL_EVIDENCE_BOUND_TRIAGE_BENCHMARKED_REAL_ADJUDICATION_MISSING"&&family.mayNotClaim.includes("A14 paid gate passed"),"envelope truth");
+const auditSurface=product.surfaces.find((surface)=>surface.surfaceId==="audit_evm");check(product.a22SeverityTriage?.paidGateEligible===false&&product.a22SeverityTriage.requiredProFields.every((field)=>auditSurface.tiers.pro.requiredFields.includes(field)),"product Pro binding");
+check(product.a22SeverityTriage.requiredAdvancedFields.every((field)=>auditSurface.tiers.advanced.requiredFields.includes(field)),"product Advanced binding");
+check(current.sourceRevisionId===policy.sourceRevisionId&&current.a22SeverityTriageContractPath==="config/pass35/a22-severity-triage-runtime-contract.json","current pointer");
+check(existsSync("artifacts/release/PASS35_A22_SEVERITY_TRIAGE.md")&&existsSync("artifacts/release/PASS35_A22_PRODUCT_ROADMAP_SUMMARY.json"),"release artifacts");
+check(status.sellEnabledCount===0&&status.globalDecision==="NO_GO"&&status.visualFreeze.mismatches===0,"global truth");
+console.log(JSON.stringify({status:"PASS_A22_CONTROL_PLANE",assertions,cases:runtime.denominators.cases,mutations:runtime.denominators.mutations,canonical:contract.canonicalWeightedPlanningPercent,strict:contract.canonicalStrictDonePercent,zeroBudget:contract.zeroBudgetWeightedPlanningPercent,sellEnabled:0},null,2));

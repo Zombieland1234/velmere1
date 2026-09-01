@@ -1,0 +1,73 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import { readJson, REVISION, signedPayloadBytes, sha256, unresolvedArtifactSetSha256, validateGenesis, validateGovernance } from "./a77-clean-root-migration-lib.mjs";
+const root=process.cwd();
+const policy=readJson(root,"config/pass36/a77-clean-root-migration-policy.json");
+const genesis=readJson(root,policy.cleanRoot.genesisPath);
+const actual=validateGenesis(root,genesis,policy,{verifyCurrentPayload:false});
+assert.equal(actual.passed,true,JSON.stringify(actual.checks.filter((r)=>!r.passed)));
+const now=Date.parse("2026-07-27T08:00:00.000Z");
+const subjectOrg=sha256("velmere-subject-organization");
+const independentOrg=sha256("independent-assurance-organization");
+function keyRow(keyId,org,affiliation,roles,pair){return{keyId,organizationIdHash:org,affiliation,roles,algorithm:"ED25519",status:"ACTIVE",notBefore:"2026-07-27T06:00:00.000Z",notAfter:"2027-07-27T06:00:00.000Z",conflictOfInterest:false,publicKeyPem:pair.publicKey.export({type:"spki",format:"pem"})};}
+const ownerPair=crypto.generateKeyPairSync("ed25519"),chairPair=crypto.generateKeyPairSync("ed25519"),extraPair=crypto.generateKeyPairSync("ed25519");
+const trustRoots={schemaVersion:policy.governance.trustRootsSchema,subjectOrganizationIdHash:subjectOrg,issuedAt:"2026-07-27T07:00:00.000Z",expiresAt:"2027-07-27T07:00:00.000Z",keys:[keyRow("owner-key-0001",subjectOrg,"SUBJECT",["ACCOUNTABLE_RELEASE_OWNER"],ownerPair),keyRow("chair-key-0001",independentOrg,"INDEPENDENT",["INDEPENDENT_ASSURANCE_CHAIR"],chairPair),keyRow("extra-key-00001",sha256("extra-org"),"INDEPENDENT",["INDEPENDENT_ASSURANCE_CHAIR"],extraPair)]};
+function anchored(trust){const text=`${JSON.stringify(trust,null,2)}\n`;return sha256(Buffer.from(text,"utf8"));}
+function baseAttestation(){const value={schemaVersion:policy.governance.attestationSchema,decision:policy.governance.decision,revisionId:REVISION,genesisDigestSha256:genesis.genesisDigestSha256,payloadAggregateSha256:genesis.payload.aggregateSha256,unresolvedLegacyArtifactSetSha256:unresolvedArtifactSetSha256(policy),issuedAt:"2026-07-27T07:45:00.000Z",expiresAt:"2026-08-27T07:45:00.000Z",conditions:structuredClone(policy.governance.conditions),signatures:[]};const payload=signedPayloadBytes(value);value.signatures=[{keyId:"owner-key-0001",role:"ACCOUNTABLE_RELEASE_OWNER",algorithm:"ED25519",signature:crypto.sign(null,payload,ownerPair.privateKey).toString("base64url")},{keyId:"chair-key-0001",role:"INDEPENDENT_ASSURANCE_CHAIR",algorithm:"ED25519",signature:crypto.sign(null,payload,chairPair.privateKey).toString("base64url")}];return value;}
+const clone=(v)=>structuredClone(v);
+const scenarios=[];
+function scenario(id,mutate,expected=true){const t=clone(trustRoots),a=baseAttestation();let expectedSha=anchored(t);mutate({trust:t,attestation:a,setExpectedSha:(v)=>expectedSha=v,resign:()=>{const payload=signedPayloadBytes(a);a.signatures=[{keyId:"owner-key-0001",role:"ACCOUNTABLE_RELEASE_OWNER",algorithm:"ED25519",signature:crypto.sign(null,payload,ownerPair.privateKey).toString("base64url")},{keyId:"chair-key-0001",role:"INDEPENDENT_ASSURANCE_CHAIR",algorithm:"ED25519",signature:crypto.sign(null,payload,chairPair.privateKey).toString("base64url")}];}});if(expectedSha===anchored(trustRoots))expectedSha=anchored(t);scenarios.push({id,t,a,expectedSha,expected});}
+scenario("valid",()=>{},true);
+scenario("trust-anchor-mismatch",x=>x.setExpectedSha("0".repeat(64)),false);
+scenario("trust-anchor-invalid",x=>x.setExpectedSha("bad"),false);
+scenario("trust-schema",x=>x.trust.schemaVersion="wrong",false);
+scenario("trust-unknown",x=>x.trust.extra=true,false);
+scenario("trust-subject-invalid",x=>x.trust.subjectOrganizationIdHash="bad",false);
+scenario("trust-issued-future",x=>x.trust.issuedAt="2026-07-28T07:00:00.000Z",false);
+scenario("trust-expired",x=>x.trust.expiresAt="2026-07-27T07:30:00.000Z",false);
+scenario("trust-duplicate-key",x=>x.trust.keys[1].keyId=x.trust.keys[0].keyId,false);
+scenario("trust-too-few-keys",x=>x.trust.keys=[x.trust.keys[0]],false);
+scenario("key-unknown-field",x=>x.trust.keys[0].extra=true,false);
+scenario("key-bad-org",x=>x.trust.keys[0].organizationIdHash="bad",false);
+scenario("key-wrong-algorithm",x=>x.trust.keys[0].algorithm="RSA",false);
+scenario("key-revoked",x=>x.trust.keys[0].status="REVOKED",false);
+scenario("key-wrong-affiliation",x=>x.trust.keys[0].affiliation="INDEPENDENT",false);
+scenario("key-no-role",x=>x.trust.keys[0].roles=[],false);
+scenario("key-conflict",x=>x.trust.keys[1].conflictOfInterest=true,false);
+scenario("key-future",x=>x.trust.keys[1].notBefore="2026-07-28T00:00:00.000Z",false);
+scenario("key-expired",x=>x.trust.keys[1].notAfter="2026-07-27T07:30:00.000Z",false);
+scenario("key-malformed-pem",x=>x.trust.keys[1].publicKeyPem="bad",false);
+scenario("attestation-schema",x=>x.attestation.schemaVersion="wrong",false);
+scenario("attestation-unknown",x=>x.attestation.extra=true,false);
+scenario("attestation-decision",x=>x.attestation.decision="APPROVE_PRODUCTION",false);
+scenario("attestation-revision",x=>x.attestation.revisionId="A77_WRONG",false);
+scenario("attestation-genesis",x=>x.attestation.genesisDigestSha256="1".repeat(64),false);
+scenario("attestation-payload",x=>x.attestation.payloadAggregateSha256="2".repeat(64),false);
+scenario("attestation-legacy-set",x=>x.attestation.unresolvedLegacyArtifactSetSha256="3".repeat(64),false);
+scenario("attestation-issued-future",x=>x.attestation.issuedAt="2026-07-28T00:00:00.000Z",false);
+scenario("attestation-expired",x=>x.attestation.expiresAt="2026-07-27T07:50:00.000Z",false);
+scenario("condition-staging-false",x=>x.attestation.conditions.stagingEntryOnly=false,false);
+scenario("condition-legacy-recovered",x=>x.attestation.conditions.legacyRecoveryClaimed=true,false);
+scenario("condition-production",x=>x.attestation.conditions.productionApproved=true,false);
+scenario("condition-live",x=>x.attestation.conditions.liveProven=true,false);
+scenario("condition-sale",x=>x.attestation.conditions.saleEnabled=true,false);
+scenario("signature-missing",x=>x.attestation.signatures.pop(),false);
+scenario("signature-extra",x=>x.attestation.signatures.push(clone(x.attestation.signatures[1])),false);
+scenario("signature-duplicate-key",x=>x.attestation.signatures[1].keyId=x.attestation.signatures[0].keyId,false);
+scenario("signature-role-missing",x=>x.attestation.signatures[1].role="ACCOUNTABLE_RELEASE_OWNER",false);
+scenario("signature-wrong-algorithm",x=>x.attestation.signatures[0].algorithm="RSA",false);
+scenario("signature-untrusted-key",x=>x.attestation.signatures[1].keyId="unknown-key",false);
+scenario("signature-role-unauthorized",x=>x.trust.keys[1].roles=["ACCOUNTABLE_RELEASE_OWNER"],false);
+scenario("signature-chair-subject",x=>{x.trust.keys[1].affiliation="SUBJECT";x.trust.keys[1].organizationIdHash=subjectOrg;},false);
+scenario("signature-owner-independent",x=>x.trust.keys[0].affiliation="INDEPENDENT",false);
+scenario("signature-same-organization",x=>x.trust.keys[1].organizationIdHash=subjectOrg,false);
+scenario("signature-truncated",x=>x.attestation.signatures[0].signature="AA",false);
+scenario("signature-tampered",x=>x.attestation.signatures[1].signature=x.attestation.signatures[1].signature.replace(/^./u,"A"),false);
+scenario("payload-changed-after-sign",x=>x.attestation.expiresAt="2026-09-27T07:45:00.000Z",false);
+let assertions=0;
+for(const row of scenarios){const result=validateGovernance({policy,genesis,trustRoots:row.t,expectedTrustRootsSha256:row.expectedSha,attestation:row.a,nowMs:now});assert.equal(result.passed,row.expected,`${row.id}:${JSON.stringify(result.checks.filter((x)=>!x.passed).slice(0,3))}`);assert.equal(result.decision,row.expected?policy.governance.verifiedDecision:policy.governance.rejectedDecision,row.id);assert.ok(result.checks.length>=30,row.id);assertions+=3;}
+const receipt={schemaVersion:"velmere.pass36.a77.clean-root-migration-test-receipt.v1",revisionId:REVISION,status:"PASS",generatedAt:policy.deterministicEpoch,genesisChecks:actual.checks.length,genesisDigestSha256:genesis.genesisDigestSha256,scenarioCount:scenarios.length,negativeScenarios:scenarios.filter((r)=>!r.expected).length,assertions,legacyVerifiedExact:0,legacyRequiredExact:2,governanceApproved:false,liveProven:false,saleEnabled:false};
+fs.writeFileSync("config/pass36/a77-clean-root-migration-test-receipt.json",`${JSON.stringify(receipt,null,2)}\n`);
+console.log(JSON.stringify(receipt,null,2));

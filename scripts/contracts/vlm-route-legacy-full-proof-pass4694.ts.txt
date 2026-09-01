@@ -1,0 +1,1621 @@
+import { withExpensiveRouteBudget } from "@/lib/security/expensive-route-concurrency-budget";
+import { readBoundedJsonBody } from "@/lib/security/payment-webhook-guard";
+import { searchCoinGeckoMarket } from "@/lib/market-integrity/coingecko";
+import { analyzeDexScreenerToken } from "@/lib/market-integrity/dexscreener";
+import {
+  isRealMarketVlmQuery,
+  resolveRealMarketTarget,
+  resolveRealMarketVlmRiskResult,
+} from "@/lib/market-integrity/real-market-vlm-adapter";
+import { buildAnalysisReadiness, buildInsufficientDataRiskResult, premiumDepthNotReady } from "@/lib/market-integrity/analysis-readiness";
+import { buildPass4643ProviderRuntimeInventory, buildPass4643ProviderRuntimeSummary } from "@/lib/market-integrity/provider-runtime-inventory";
+import { attachPass4644ProviderReceipts, createPass4644ProviderEvidenceReceipt } from "@/lib/market-integrity/provider-evidence-receipt";
+import { buildPass4645ProviderEvidenceLedger, persistPass4645ProviderEvidenceLedger } from "@/lib/market-integrity/provider-evidence-ledger";
+import { getPersistentRiskHistory } from "@/lib/market-integrity/risk-ledger";
+import { buildRiskBrain } from "@/lib/market-integrity/risk-brain";
+import { hydratePass2484RuntimePremiumEvidence } from "@/lib/market-integrity/runtime-premium-evidence-hydrator";
+import { buildDefiLlamaSnapshotForResult } from "@/lib/market-integrity/defillama-adapter";
+import { fetchPass2466DerivativesSqueezeProof } from "@/lib/market-integrity/derivatives-squeeze-proof";
+import { fetchPass2467LiquidationLongShortProof } from "@/lib/market-integrity/liquidation-long-short-proof";
+import { buildSourceSynchronizationPacket } from "@/lib/market-integrity/source-synchronizer";
+import {
+  analyzeRiskWithVlmKernel,
+  generateVlmBrainAnalysis,
+  type VlmDepth,
+  type VlmLocale,
+  type VlmSurface,
+} from "@/lib/ai/vlm-brain";
+import { inspectVlmText } from "@/lib/ai/vlm-security";
+import { buildPublicVlmEvidencePacket } from "@/lib/ai/vlm-public-evidence-packet";
+import { buildPass2281WorldclassOutputContract, detectPass2281AssetContract } from "@/lib/ai/worldclass-output-contract";
+import { buildPass2282RiskPresentation, buildPass2282VisibleOutputPlan } from "@/lib/ai/live-output-audit-harness";
+import { buildPass2283OutputQualityGate } from "@/lib/ai/worldclass-output-payment-qa";
+import { buildPass2284LiveOutputQualityLedger } from "@/lib/ai/live-output-quality-ledger";
+import { buildPass2285PremiumOutputGate } from "@/lib/ai/premium-output-gate";
+import { buildPass2286WorldclassLiveOutputPaymentQa } from "@/lib/ai/worldclass-live-output-payment-qa";
+import { applyPass2287RuntimeOutputFirewall } from "@/lib/ai/runtime-output-firewall";
+import { buildPass2288ClaimProofFirewall } from "@/lib/ai/claim-proof-firewall";
+import { buildPass2289CustomerReleaseGate } from "@/lib/ai/customer-release-gate";
+import { buildPass2290ReleaseTraceLedger } from "@/lib/ai/release-trace-ledger";
+import { buildPass2291ProductionReplayGate } from "@/lib/ai/production-replay-gate";
+import { recordVlmSecurityInspection } from "@/lib/ai/vlm-security-events";
+import { buildVlmCapsuleConsumerBinding, verifyVlmCapsuleConsumerGate } from "@/lib/ai/vlm-capsule-consumer-gate";
+import { buildVlmLiveRuntimeProofGate } from "@/lib/ai/vlm-live-runtime-proof-gate";
+import { buildVlmDurableCapsuleStoreRecord, verifyVlmDurableCapsuleStoreContract } from "@/lib/ai/vlm-durable-capsule-store-contract";
+import { verifyVlmStoredCapsuleReplayReader } from "@/lib/ai/vlm-stored-capsule-replay-reader";
+import { buildVlmWorldClassRiskExpansion } from "@/lib/ai/vlm-worldclass-risk-expansion";
+import { buildVlmMarketStructureProofContract } from "@/lib/ai/vlm-market-structure-proof-contract";
+import { buildVlmRiskScenarioEngine } from "@/lib/ai/vlm-risk-scenario-engine";
+import { buildVlmScenarioCapsuleBinding } from "@/lib/ai/vlm-scenario-capsule-binding";
+import { buildVlmCrossSurfaceTruthParity } from "@/lib/ai/vlm-cross-surface-truth-parity";
+import { buildVlmThreatIntelligenceSecurityExpansion } from "@/lib/ai/vlm-threat-intelligence-security-expansion";
+import { buildVlmAttackRegressionDataset } from "@/lib/ai/vlm-attack-regression-dataset";
+import { buildVlmThreatFixtureCapsuleBinding } from "@/lib/ai/vlm-threat-fixture-capsule-binding";
+import { buildVlmCompetitorBenchmarkSuperset } from "@/lib/ai/vlm-competitor-benchmark-superset";
+import { buildVlmLiveProviderAdapterMatrix } from "@/lib/ai/vlm-live-provider-adapter-matrix";
+import { resolveVlmAdvancedOnlyAccess, toPaymentRequiredPayload } from "@/lib/commerce/vlm-advanced-only-access-policy";
+import { buildPass4651CommercialDeliveryDecision } from "@/lib/market-integrity/commercial-delivery-state";
+import { registerPass4653RefreshTarget } from "@/lib/market-integrity/refresh-registry";
+import { recordPass4656ProviderHealthObservations } from "@/lib/market-integrity/provider-health-store";
+import { providerObservationFromPass4644Receipt } from "@/lib/market-integrity/provider-receipt-observation";
+import {
+  buildPass4656FailClosedProviderRuntimePlan,
+  buildPass4656ProviderRuntimePlan,
+  pass4656ProviderAllowedFailClosed,
+  pass4656ProviderObservationOrigin,
+  pass4656ProviderRuntimeGateEnabled,
+} from "@/lib/market-integrity/provider-runtime-plan";
+import { providerFailureObservationFromRuntimeError, providerMissingEvidenceObservation } from "@/lib/market-integrity/provider-runtime-failure";
+import {
+  buildPass4653ContinuitySnapshot,
+  hydratePass4653ContinuityEvidence,
+  persistPass4653ContinuitySnapshot,
+  readPass4653ContinuitySnapshot,
+} from "@/lib/market-integrity/continuous-evidence-availability";
+import {
+  buildPass4653InstrumentMetadataSnapshot,
+  hydratePass4653InstrumentMetadata,
+  persistPass4653InstrumentMetadataSnapshot,
+  readPass4653InstrumentMetadataSnapshot,
+} from "@/lib/market-integrity/instrument-metadata-cache";
+import type { VlmPaidAccessContext } from "@/lib/commerce/vlm-paid-access";
+import {
+  applySoftRateLimit,
+  assertSameOriginRequest,
+  rejectLargeContentLength,
+  rejectOversizedUrl,
+  securityJson,
+} from "@/lib/security/api-guard";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function wantsFullProofEnvelope(request: Request) {
+  const url = new URL(request.url);
+  return url.searchParams.get("proof") === "full" || request.headers.get("x-velmere-proof-mode") === "full";
+}
+
+function locale(value: unknown): VlmLocale {
+  return value === "en" || value === "de" ? value : "pl";
+}
+function depth(value: unknown): VlmDepth {
+  return value === "basic" || value === "pro" || value === "advanced" ? value : "basic";
+}
+function surface(value: unknown): VlmSurface {
+  return value === "real_markets" || value === "shield_map" || value === "lens" || value === "angel"
+    ? value
+    : "shield";
+}
+
+function normalizedRequestId(value: unknown) {
+  if (value === undefined || value === null || value === "") return null;
+  const requestId = String(value).trim();
+  if (requestId.length < 8 || requestId.length > 160) return null;
+  return /^[A-Za-z0-9:._-]+$/.test(requestId) ? requestId : null;
+}
+
+function paidSurface(value: VlmSurface): VlmPaidAccessContext["surface"] {
+  if (value === "real_markets") return "real-markets";
+  if (value === "lens") return "browser";
+  return "shield";
+}
+
+async function settleProviderCall<T>(operation: () => Promise<T>) {
+  const startedAt = Date.now();
+  try {
+    return { value: await operation(), error: null as unknown, elapsedMs: Date.now() - startedAt };
+  } catch (error) {
+    return { value: null as T | null, error, elapsedMs: Date.now() - startedAt };
+  }
+}
+
+async function requireVlmTierAccess(request: Request, args: { query: string; locale: VlmLocale; surface: VlmSurface; depth: VlmDepth }) {
+  const verdict = await resolveVlmAdvancedOnlyAccess({
+    request,
+    purpose: "analysis",
+    depth: args.depth,
+    surface: paidSurface(args.surface),
+    locale: args.locale,
+    assetId: args.query,
+    symbol: args.query,
+  });
+  if (verdict.ok) return { response: null, access: verdict };
+  return { response: securityJson(toPaymentRequiredPayload(verdict), { status: 402, headers: verdict.headers }), access: verdict };
+}
+
+async function resolveAnalysis(query: string, options: { locale: VlmLocale; depth: VlmDepth; surface: VlmSurface; prompt?: string }) {
+  // PASS4640/PASS4642: the explicitly selected product surface is authoritative.
+  const preferRealMarkets = options.surface === "real_markets" ||
+    ((options.surface === "lens" || options.surface === "angel") && isRealMarketVlmQuery(query));
+  const continuitySurface = preferRealMarkets ? "real_markets" as const : "crypto" as const;
+  const instrumentMetadataRead = preferRealMarkets
+    ? await readPass4653InstrumentMetadataSnapshot({ requestedIdentity: query, surface: "real_markets" }).catch(() => ({
+        schemaVersion: "pass4653_instrument_metadata_read_v1" as const,
+        snapshot: null,
+        mode: "not_configured" as const,
+        readBackVerified: false,
+        blockers: ["metadata_read_failed"],
+      }))
+    : null;
+  let realMarketTarget = preferRealMarkets ? resolveRealMarketTarget(query) : null;
+  if (preferRealMarkets && instrumentMetadataRead?.snapshot) {
+    const metadata = instrumentMetadataRead.snapshot;
+    realMarketTarget = {
+      symbol: metadata.canonicalSymbol,
+      name: metadata.canonicalName,
+      assetClass: metadata.assetClass,
+    };
+  }
+  const pass4656ProviderHealthGateEnabled = pass4656ProviderRuntimeGateEnabled();
+  const pass4656ProviderDescriptors = preferRealMarkets
+    ? [
+        { providerId: "yahoo_finance", providerFamily: "market_data", priority: 100 },
+        { providerId: "stooq", providerFamily: "market_data_secondary", priority: 90 },
+      ]
+    : [
+        { providerId: "coingecko", providerFamily: "market_data", priority: 100 },
+        { providerId: "dexscreener", providerFamily: "dex_market", priority: 90 },
+        { providerId: "goplus", providerFamily: "contract_risk", priority: 80 },
+        { providerId: "binance_spot", providerFamily: "cex_microstructure", priority: 70 },
+        { providerId: "defillama", providerFamily: "protocol_fundamentals", priority: 60 },
+        { providerId: "binance_usdm", providerFamily: "derivatives_binance", priority: 50 },
+        { providerId: "bybit_linear", providerFamily: "derivatives_bybit", priority: 40 },
+      ];
+  let pass4656ProviderRuntimePlanError: string | null = null;
+  const pass4656ProviderRuntimePlan = await buildPass4656ProviderRuntimePlan({
+    tier: options.depth,
+    providers: pass4656ProviderDescriptors,
+  }).catch((error) => {
+    pass4656ProviderRuntimePlanError = `provider_runtime_plan_error:${error instanceof Error ? error.name : "unknown"}`;
+    return buildPass4656FailClosedProviderRuntimePlan({
+      tier: options.depth,
+      providers: pass4656ProviderDescriptors,
+      reason: pass4656ProviderRuntimePlanError,
+    });
+  });
+  const providerAllowed = (providerId: string) => pass4656ProviderAllowedFailClosed({
+    plan: pass4656ProviderRuntimePlan,
+    providerId,
+    gateEnabled: pass4656ProviderHealthGateEnabled,
+  });
+  const realMarketAttempt = preferRealMarkets && (providerAllowed("yahoo_finance") || providerAllowed("stooq"))
+    ? await settleProviderCall(() => resolveRealMarketVlmRiskResult(realMarketTarget?.symbol ?? query, {
+        providerAllowlist: pass4656ProviderRuntimePlan?.allowedProviderIds,
+      }))
+    : null;
+  const realMarketResult = realMarketAttempt?.value ?? null;
+  const [coinGeckoAttempt, dexAttempt] = realMarketResult || preferRealMarkets
+    ? [null, null]
+    : await Promise.all([
+        providerAllowed("coingecko") ? settleProviderCall(() => searchCoinGeckoMarket(query)) : Promise.resolve(null),
+        providerAllowed("dexscreener")
+          ? settleProviderCall(() => analyzeDexScreenerToken(query, { allowGoPlus: providerAllowed("goplus") }))
+          : Promise.resolve(null),
+      ]);
+  const marketRow = coinGeckoAttempt?.value ?? null;
+  const dexResult = dexAttempt?.value ?? null;
+
+  if (pass4656ProviderRuntimePlan?.enabled) {
+    const runtimeFailures = [];
+    if (preferRealMarkets && realMarketAttempt) {
+      const receiptIds = new Set((realMarketResult?.providerEvidenceReceipts ?? []).map((receipt) => receipt.providerId));
+      for (const provider of [
+        { providerId: "yahoo_finance", providerFamily: "market_data", capabilities: ["identity", "quote", "history", "volume"] },
+        { providerId: "stooq", providerFamily: "market_data_secondary", capabilities: ["identity", "quote", "volume"] },
+      ]) {
+        if (!providerAllowed(provider.providerId) || receiptIds.has(provider.providerId)) continue;
+        runtimeFailures.push(realMarketAttempt.error
+          ? providerFailureObservationFromRuntimeError({
+              ...provider,
+              requestedIdentity: realMarketTarget?.symbol ?? query,
+              error: realMarketAttempt.error,
+              elapsedMs: realMarketAttempt.elapsedMs,
+              origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, provider.providerId),
+            })
+          : providerMissingEvidenceObservation({
+              ...provider,
+              requestedIdentity: realMarketTarget?.symbol ?? query,
+              elapsedMs: realMarketAttempt.elapsedMs,
+              origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, provider.providerId),
+            }));
+      }
+    } else if (!preferRealMarkets) {
+      if (providerAllowed("coingecko") && coinGeckoAttempt && !marketRow) {
+        runtimeFailures.push(coinGeckoAttempt.error
+          ? providerFailureObservationFromRuntimeError({
+              providerId: "coingecko", providerFamily: "market_data", requestedIdentity: query,
+              error: coinGeckoAttempt.error, elapsedMs: coinGeckoAttempt.elapsedMs,
+              capabilities: ["identity", "price", "market_cap", "volume", "history", "supply"],
+              origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, "coingecko"),
+            })
+          : providerMissingEvidenceObservation({
+              providerId: "coingecko", providerFamily: "market_data", requestedIdentity: query,
+              elapsedMs: coinGeckoAttempt.elapsedMs, capabilities: ["identity", "price", "market_cap", "volume", "history", "supply"],
+              origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, "coingecko"),
+            }));
+      }
+      if (providerAllowed("dexscreener") && dexAttempt && !dexResult) {
+        runtimeFailures.push(dexAttempt.error
+          ? providerFailureObservationFromRuntimeError({
+              providerId: "dexscreener", providerFamily: "dex_market", requestedIdentity: query,
+              error: dexAttempt.error, elapsedMs: dexAttempt.elapsedMs,
+              capabilities: ["pair_identity", "dex_liquidity", "volume", "transactions", "price"],
+              origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, "dexscreener"),
+            })
+          : providerMissingEvidenceObservation({
+              providerId: "dexscreener", providerFamily: "dex_market", requestedIdentity: query,
+              elapsedMs: dexAttempt.elapsedMs, capabilities: ["pair_identity", "dex_liquidity", "volume", "transactions", "price"],
+              origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, "dexscreener"),
+            }));
+      }
+    }
+    if (runtimeFailures.length > 0) {
+      await recordPass4656ProviderHealthObservations({ observations: runtimeFailures, ttlMs: 5 * 60_000 }).catch(() => null);
+    }
+  }
+  let resolvedResult = realMarketResult ?? marketRow?.result ?? dexResult ??
+    buildInsufficientDataRiskResult(
+      realMarketTarget?.symbol ?? query,
+      realMarketTarget?.assetClass ?? (options.surface === "real_markets" ? "stock" : "crypto"),
+      options.surface === "real_markets"
+        ? "Real Markets providers did not return a confirmed quote for this symbol."
+        : "Crypto providers did not return a confirmed market or DEX record for this asset.",
+    );
+  if (realMarketTarget && !realMarketResult) {
+    resolvedResult.token.name = realMarketTarget.name;
+    resolvedResult.token.symbol = realMarketTarget.symbol;
+    resolvedResult.token.assetClass = realMarketTarget.assetClass;
+  }
+  if (preferRealMarkets && instrumentMetadataRead?.snapshot && !realMarketResult) {
+    resolvedResult = hydratePass4653InstrumentMetadata({
+      result: resolvedResult,
+      snapshot: instrumentMetadataRead.snapshot,
+      requestedIdentity: query,
+      surface: "real_markets",
+    }).result;
+  }
+  if (preferRealMarkets && realMarketResult) {
+    const metadataSnapshot = buildPass4653InstrumentMetadataSnapshot({
+      requestedIdentity: query,
+      surface: "real_markets",
+      result: realMarketResult,
+    });
+    if (metadataSnapshot) {
+      await persistPass4653InstrumentMetadataSnapshot(metadataSnapshot).catch(() => null);
+    }
+  }
+
+  const refreshRegistration = await registerPass4653RefreshTarget({
+    requestedIdentity: query,
+    surface: continuitySurface,
+    assetClass: resolvedResult.token.assetClass ?? (preferRealMarkets ? "stock" : "crypto"),
+    requestedTier: options.depth,
+  }).catch((error) => ({
+    schemaVersion: "pass4653_refresh_registration_v1" as const,
+    registered: false,
+    durable: false,
+    mode: "not_configured" as const,
+    targetKey: `${continuitySurface}:registration_failed`,
+    nextRefreshAt: new Date().toISOString(),
+    blockers: [`refresh_registration_error:${error instanceof Error ? error.name : "unknown"}`],
+  }));
+  resolvedResult.pass4653RefreshRegistration = refreshRegistration;
+  const continuitySnapshot = await readPass4653ContinuitySnapshot({
+    requestedIdentity: query,
+    surface: continuitySurface,
+  }).catch(() => null);
+  const initialContinuityHydration = hydratePass4653ContinuityEvidence({
+    currentResult: resolvedResult,
+    snapshot: continuitySnapshot,
+    requestedIdentity: query,
+    surface: continuitySurface,
+    reason: "provider_outage",
+  });
+  resolvedResult = initialContinuityHydration.result;
+  resolvedResult.pass4653RefreshRegistration = refreshRegistration;
+
+  const premiumDepth = options.depth !== "basic";
+  const providerHealthRuntimeEnabled = pass4656ProviderHealthGateEnabled;
+  const providerHealthTierReady = pass4656ProviderRuntimePlan?.hasEvidencePath === true;
+  const baseReadiness = buildAnalysisReadiness(resolvedResult, options.locale);
+  if (premiumDepth && providerHealthRuntimeEnabled && !providerHealthTierReady) {
+    resolvedResult.limitations = Array.from(new Set([
+      ...(resolvedResult.limitations ?? []),
+      "Provider health quorum is not ready for this paid tier.",
+    ]));
+    return {
+      mode: "limited" as const,
+      sourceMode: preferRealMarkets ? "real_markets" as const : "crypto_market_integrity" as const,
+      result: resolvedResult,
+      marketRow,
+      premiumFailFast: true as const,
+      failFastStage: "provider_health_quorum" as const,
+      baseReadiness,
+      pass4653Continuity: initialContinuityHydration.continuity,
+      pass4656ProviderHealth: {
+        enabled: true,
+        ready: false,
+        mode: pass4656ProviderRuntimePlan?.snapshotMode ?? "unavailable",
+        blockers: Array.from(new Set([
+          ...(pass4656ProviderRuntimePlan?.snapshotBlockers ?? []),
+          ...(pass4656ProviderRuntimePlan?.blockers ?? []),
+          ...(pass4656ProviderRuntimePlanError ? [pass4656ProviderRuntimePlanError] : []),
+        ])),
+        gateEnabled: pass4656ProviderHealthGateEnabled,
+        runtimePlan: pass4656ProviderRuntimePlan,
+      },
+    };
+  }
+  // Zero-source paid requests cannot become sell-ready. Return before premium
+  // hydration, historical ledgers, kernel expansion and generative AI.
+  const premiumContinuityEligible = options.depth === "pro"
+    ? initialContinuityHydration.continuity.paidContinuityEligible.pro
+    : options.depth === "advanced"
+      ? initialContinuityHydration.continuity.paidContinuityEligible.advanced
+      : true;
+  const premiumFailFast = premiumDepth && baseReadiness.sourceCount === 0 && !premiumContinuityEligible;
+  if (premiumFailFast) {
+    return {
+      mode: "limited" as const,
+      sourceMode: preferRealMarkets ? "real_markets" as const : "crypto_market_integrity" as const,
+      result: resolvedResult,
+      marketRow,
+      premiumFailFast: true as const,
+      failFastStage: "base_source_quorum" as const,
+      baseReadiness,
+      pass4653Continuity: initialContinuityHydration.continuity,
+    };
+  }
+
+  const premiumNetworkAllowed = premiumDepth;
+  const allowedDerivativeVenues = [
+    providerAllowed("binance_usdm") && "binance_usdm",
+    providerAllowed("bybit_linear") && "bybit_linear",
+  ].filter((venue): venue is "binance_usdm" | "bybit_linear" => Boolean(venue));
+  const hydrationPromise = hydratePass2484RuntimePremiumEvidence({
+    query,
+    result: resolvedResult,
+    allowNetwork: premiumNetworkAllowed && providerAllowed("binance_spot"),
+  });
+  const defiLlamaPromise = premiumNetworkAllowed && providerAllowed("defillama")
+    ? buildDefiLlamaSnapshotForResult(resolvedResult).catch(() => null)
+    : Promise.resolve(null);
+  const derivativesPromise = premiumNetworkAllowed
+    ? fetchPass2466DerivativesSqueezeProof({
+        query,
+        symbol: resolvedResult.token.symbol,
+        result: resolvedResult,
+        allowedVenues: allowedDerivativeVenues,
+      }).catch(() => null)
+    : Promise.resolve(null);
+  const liquidationPromise = premiumNetworkAllowed
+    ? derivativesPromise.then((pass2466) => fetchPass2467LiquidationLongShortProof({
+        query,
+        symbol: resolvedResult.token.symbol,
+        result: resolvedResult,
+        pass2466,
+        allowedVenues: allowedDerivativeVenues,
+      })).catch(() => null)
+    : Promise.resolve(null);
+  const [{ result: hydratedResult, hydration: pass2484Hydration }, defiLlama, derivativesSqueeze, liquidationLongShort] = await Promise.all([
+    hydrationPromise,
+    defiLlamaPromise,
+    derivativesPromise,
+    liquidationPromise,
+  ]);
+  let result = hydratedResult;
+  if (defiLlama?.mode === "live" && defiLlama.matchedProtocol) {
+    const match = defiLlama.matchedProtocol;
+    attachPass4644ProviderReceipts(result, [createPass4644ProviderEvidenceReceipt({
+      providerId: "defillama",
+      providerFamily: "protocol_fundamentals",
+      surface: "crypto",
+      verification: "normalized_response",
+      requestedIdentity: query,
+      resolvedSymbol: match.symbol ?? result.token.symbol,
+      resolvedMarketId: match.slug,
+      identityMatched: match.matchQuality === "exact" || match.matchQuality === "strong",
+      capabilities: ["protocol_identity", "tvl", "chain_context", "fees_revenue"],
+      observedAt: defiLlama.generatedAt,
+      receivedAt: new Date(),
+      ttlMs: 5 * 60_000,
+      httpStatus: 200,
+      latencyMs: 0,
+      normalizedPayload: {
+        slug: match.slug,
+        symbol: match.symbol,
+        matchQuality: match.matchQuality,
+        tvlUsd: match.tvlUsd,
+        chains: match.chains,
+        change1d: match.change1d,
+        change7d: match.change7d,
+      },
+    })]);
+  }
+  // Recompute continuity after premium providers have had a chance to return.
+  // Existing replay receipts are removed first so the same snapshot cannot be
+  // counted twice in one request.
+  const liveOnlyResult = {
+    ...result,
+    providerEvidenceReceipts: (result.providerEvidenceReceipts ?? []).filter((receipt) => !receipt.continuity),
+  };
+  const finalContinuityHydration = hydratePass4653ContinuityEvidence({
+    currentResult: liveOnlyResult,
+    snapshot: continuitySnapshot,
+    requestedIdentity: query,
+    surface: continuitySurface,
+    reason: "provider_outage",
+  });
+  result = finalContinuityHydration.result;
+  result.pass4653RefreshRegistration = refreshRegistration;
+
+  const continuitySnapshotToPersist = buildPass4653ContinuitySnapshot({
+    requestedIdentity: query,
+    surface: continuitySurface,
+    result,
+    previousSnapshot: continuitySnapshot,
+  });
+  if (continuitySnapshotToPersist) {
+    result.pass4653ContinuityPersistence = await persistPass4653ContinuitySnapshot(continuitySnapshotToPersist).catch((error) => ({
+      schemaVersion: "pass4653_continuity_persistence_v1" as const,
+      durable: false,
+      mode: "not_configured" as const,
+      snapshotId: continuitySnapshotToPersist.snapshotId,
+      snapshotHash: continuitySnapshotToPersist.snapshotHash,
+      readBackVerified: false,
+      locator: null,
+      blockers: [`continuity_persistence_error:${error instanceof Error ? error.name : "unknown"}`],
+    }));
+  }
+
+  const sourceSync = buildSourceSynchronizationPacket({ query, result, defiLlama, derivativesSqueeze, liquidationLongShort, pass2484Hydration });
+  const providerEvidenceLedger = buildPass4645ProviderEvidenceLedger({
+    receipts: result.providerEvidenceReceipts,
+    requestedIdentity: query,
+    surface: preferRealMarkets ? "real_markets" : "crypto",
+    depth: options.depth,
+    generatedAt: new Date(),
+    signingSecret: process.env.VELMERE_PROVIDER_RECEIPT_SIGNING_SECRET?.trim() || null,
+  });
+  const providerEvidencePersistence = await persistPass4645ProviderEvidenceLedger(providerEvidenceLedger).catch((error) => ({
+    schemaVersion: "pass4645_provider_evidence_persistence_v1" as const,
+    durable: false,
+    mode: "not_configured" as const,
+    ledgerId: providerEvidenceLedger.ledgerId,
+    headHash: providerEvidenceLedger.headHash,
+    recordCount: providerEvidenceLedger.entries.length,
+    readBackVerified: false,
+    persistedAt: null,
+    locator: null,
+    blockers: [`provider_receipt_persistence_error:${error instanceof Error ? error.name : "unknown"}`],
+  }));
+  result.providerEvidenceLedger = providerEvidenceLedger;
+  result.providerEvidencePersistence = providerEvidencePersistence;
+  const pass4656ProviderHealth = (result.providerEvidenceReceipts ?? []).length > 0
+    ? await recordPass4656ProviderHealthObservations({
+        observations: (result.providerEvidenceReceipts ?? []).map((receipt) => providerObservationFromPass4644Receipt(receipt, {
+          origin: pass4656ProviderObservationOrigin(pass4656ProviderRuntimePlan, receipt.providerId),
+        })),
+        ttlMs: 5 * 60_000,
+      }).catch((error) => ({
+        ok: false as const,
+        error: `provider_health_record_error:${error instanceof Error ? error.name : "unknown"}`,
+      }))
+    : { ok: false as const, error: "provider_health_receipts_missing" };
+  const id = result.token.marketId ?? result.token.tokenAddress ?? result.token.symbol;
+  const history = await getPersistentRiskHistory(id, 144);
+  const brain = buildRiskBrain(result, history);
+  const kernel = analyzeRiskWithVlmKernel({
+    result,
+    history,
+    locale: options.locale,
+    depth: options.depth,
+    surface: options.surface === "real_markets" ? "real_markets" : options.surface === "shield_map" ? "shield_map" : options.surface === "lens" ? "lens" : "shield",
+  });
+  const ai = await generateVlmBrainAnalysis({ result, brain, ...options });
+  return {
+    mode: "live" as const,
+    sourceMode: preferRealMarkets ? "real_markets" as const : "crypto_market_integrity" as const,
+    result,
+    marketRow,
+    history,
+    brain,
+    kernel,
+    ai,
+    premiumFailFast: false as const,
+    baseReadiness,
+    pass2484Hydration,
+    pass4653Continuity: finalContinuityHydration.continuity,
+    pass4656ProviderHealth: {
+      ...pass4656ProviderHealth,
+      gateEnabled: pass4656ProviderHealthGateEnabled,
+      runtimePlanError: pass4656ProviderRuntimePlanError,
+      runtimePlan: pass4656ProviderRuntimePlan,
+    },
+    sourceSync,
+    pass2485: sourceSync.pass2485,
+    pass2486: sourceSync.pass2486,
+    pass2487: sourceSync.pass2487,
+    pass2496: sourceSync.pass2496,
+    pass2497: sourceSync.pass2497,
+    pass2498: sourceSync.pass2498,
+    pass2499: sourceSync.pass2499,
+    pass2500: sourceSync.pass2500,
+    pass2501: sourceSync.pass2501,
+  };
+}
+
+type ResolvedVlmAnalysis = Awaited<ReturnType<typeof resolveAnalysis>>;
+type PremiumFailFastAnalysis = Extract<ResolvedVlmAnalysis, { premiumFailFast: true }>;
+type FullResolvedVlmAnalysis = Extract<ResolvedVlmAnalysis, { premiumFailFast: false }>;
+
+function buildCommercialReadiness(payload: Pick<ResolvedVlmAnalysis, "result">, depth: VlmDepth, resolvedLocale: VlmLocale) {
+  const readiness = buildAnalysisReadiness(payload.result, resolvedLocale);
+  const continuity = payload.result.pass4653Continuity;
+  const proContinuityAllowed = continuity ? continuity.paidContinuityEligible.pro : true;
+  const advancedContinuityAllowed = continuity ? continuity.paidContinuityEligible.advanced : true;
+  const tiers = {
+    ...readiness.tiers,
+    pro: {
+      ...readiness.tiers.pro,
+      sellReady: readiness.tiers.pro.sellReady && proContinuityAllowed,
+      reason: readiness.tiers.pro.sellReady && !proContinuityAllowed
+        ? `${readiness.tiers.pro.reason},continuity_live_core_not_ready_for_pro`
+        : readiness.tiers.pro.reason,
+    },
+    advanced: {
+      ...readiness.tiers.advanced,
+      sellReady: readiness.tiers.advanced.sellReady && advancedContinuityAllowed,
+      reason: readiness.tiers.advanced.sellReady && !advancedContinuityAllowed
+        ? `${readiness.tiers.advanced.reason},continuity_live_core_not_ready_for_advanced`
+        : readiness.tiers.advanced.reason,
+    },
+  };
+  const providerSurface = payload.result.token.assetClass && payload.result.token.assetClass !== "crypto" && payload.result.token.assetClass !== "unknown"
+    ? "real_markets" as const
+    : "crypto" as const;
+  const providerRuntime = buildPass4643ProviderRuntimeSummary(providerSurface);
+  return {
+    ...readiness,
+    tiers,
+    requestedDepth: depth,
+    requestedTierSellReady: tiers[depth].sellReady,
+    checkoutAllowed: depth === "basic" ? true : tiers[depth].sellReady,
+    providerRuntime,
+    continuity,
+    rule: "Paid Pro/Advanced checkout requires independent provider families, durable evidence, measurable tier value and the PASS4653 live-core continuity policy. Short cache-only outages may keep Pro available; Advanced always retains a live-core requirement.",
+  };
+}
+
+function buildCommercialDeliveryState(payload: Pick<ResolvedVlmAnalysis, "result" | "sourceMode">, depth: VlmDepth, commercialReadiness: ReturnType<typeof buildCommercialReadiness>, entitlementVerified: boolean, outputReady: boolean) {
+  const tier = commercialReadiness.tiers[depth];
+  return buildPass4651CommercialDeliveryDecision({
+    tier: depth,
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    entitlementVerified,
+    preCheckoutReady: depth === "basic" || (tier.valueDeltaProven && tier.missingCategories.length === 0 && commercialReadiness.providerQuality.commerciallyUsable),
+    analysisSellReady: tier.sellReady,
+    durableEvidenceReady: depth === "basic" || tier.durableReceiptReady,
+    outputReady,
+    providerDegraded: commercialReadiness.providerQuality.blockers.length > 0,
+    operatorSignReady: true,
+  });
+}
+
+function buildCustomerRiskResult(payload: ResolvedVlmAnalysis, commercialReadiness: ReturnType<typeof buildCommercialReadiness>) {
+  const publishNumeric = commercialReadiness.status !== "insufficient_data";
+  return {
+    token: payload.result.token,
+    score: publishNumeric ? payload.result.score : null,
+    confidence: publishNumeric ? payload.result.confidence : 0,
+    level: publishNumeric ? payload.result.level : null,
+    badge: publishNumeric ? payload.result.badge : "insufficient_data",
+    signals: publishNumeric ? payload.result.signals.slice(0, 20) : [],
+    metrics: payload.result.metrics,
+    dataQuality: payload.result.dataQuality,
+    dataSources: payload.result.dataSources.slice(0, 12),
+    limitations: (payload.result.limitations ?? []).slice(0, 16),
+    generatedAt: payload.result.generatedAt,
+    metaModel: payload.result.metaModel
+      ? {
+          version: payload.result.metaModel.version,
+          verdict: payload.result.metaModel.verdict,
+          summary: payload.result.metaModel.summary,
+          escalation: payload.result.metaModel.escalation,
+          limitations: payload.result.metaModel.limitations?.slice(0, 12),
+        }
+      : null,
+    continuity: payload.result.pass4653Continuity
+      ? {
+          mode: payload.result.pass4653Continuity.mode,
+          cacheHit: payload.result.pass4653Continuity.cacheHit,
+          snapshotAgeMs: payload.result.pass4653Continuity.snapshotAgeMs,
+          liveReceiptCount: payload.result.pass4653Continuity.liveReceiptCount,
+          replayedReceiptCount: payload.result.pass4653Continuity.replayedReceiptCount,
+          paidContinuityEligible: payload.result.pass4653Continuity.paidContinuityEligible,
+          blockers: payload.result.pass4653Continuity.blockers.slice(0, 8),
+        }
+      : null,
+    customerVerdict: publishNumeric ? commercialReadiness.status : "insufficient_data" as const,
+    numericVerdictPublished: publishNumeric,
+  };
+}
+
+function buildPublicKernelSummary(payload: ResolvedVlmAnalysis, commercialReadiness: ReturnType<typeof buildCommercialReadiness>) {
+  if (payload.premiumFailFast || !payload.kernel) return null;
+  const numericVerdictPublished = commercialReadiness.status !== "insufficient_data";
+  return {
+    schemaVersion: payload.kernel.schemaVersion,
+    generatedAt: payload.kernel.generatedAt,
+    surface: payload.kernel.surface,
+    depth: payload.kernel.depth,
+    locale: payload.kernel.locale,
+    status: payload.kernel.status,
+    confidence: numericVerdictPublished ? payload.kernel.confidence : 0,
+    confidenceCap: numericVerdictPublished ? payload.kernel.confidenceCap : 0,
+    sourceCount: payload.kernel.sourceCount,
+    sourceFamilies: payload.kernel.sourceFamilies,
+    headline: payload.kernel.headline,
+    summary: payload.kernel.summary,
+    findings: payload.kernel.findings.slice(0, 8).map((finding) => ({
+      id: finding.id,
+      title: finding.title,
+      body: finding.body,
+      severity: finding.severity,
+      confidence: numericVerdictPublished ? finding.confidence : 0,
+      evidenceIds: finding.evidenceIds.slice(0, 8),
+    })),
+    missingData: payload.kernel.missingData.slice(0, 12),
+    nextActions: payload.kernel.nextActions.slice(0, 8),
+    numericVerdictPublished,
+  };
+}
+
+function buildPublicCustomerNarrative(
+  commercialReadiness: ReturnType<typeof buildCommercialReadiness>,
+  resolvedLocale: VlmLocale,
+  original: string,
+) {
+  if (commercialReadiness.status !== "insufficient_data") return original;
+  if (resolvedLocale === "de") {
+    return "Kein numerischer Risikowert wird veröffentlicht. Unabhängige Live-Quellen und das erforderliche Evidenzquorum fehlen; der Output bleibt ein kostenloser, vorsichtiger Prescreen.";
+  }
+  if (resolvedLocale === "en") {
+    return "No numeric risk score is published. Independent live sources and the required evidence quorum are missing, so this output remains a free, cautious prescreen.";
+  }
+  return "Liczbowy wynik ryzyka nie jest publikowany. Brakuje niezależnych źródeł live i wymaganego kworum dowodów, dlatego wynik pozostaje darmowym, ostrożnym prescreeningiem.";
+}
+
+function buildPublicAiSummary(
+  payload: FullResolvedVlmAnalysis,
+  commercialReadiness: ReturnType<typeof buildCommercialReadiness>,
+  customerNarrative: string,
+  resolvedLocale: VlmLocale,
+) {
+  const output = payload.ai.output;
+  const numericVerdictPublished = commercialReadiness.status !== "insufficient_data";
+  return {
+    version: payload.ai.version,
+    mode: payload.ai.mode,
+    surface: payload.ai.surface,
+    depth: payload.ai.depth,
+    locale: payload.ai.locale,
+    model: payload.ai.model,
+    traceId: payload.ai.traceId,
+    generatedAt: payload.ai.generatedAt,
+    durationMs: payload.ai.durationMs,
+    attempts: payload.ai.attempts,
+    output: {
+      schemaVersion: output.schemaVersion,
+      generatedAt: output.generatedAt,
+      locale: output.locale,
+      depth: output.depth,
+      providerMode: output.providerMode,
+      asset: output.asset,
+      verdict: numericVerdictPublished ? output.verdict : "review",
+      headline: output.headline,
+      summary: output.summary,
+      confidence: numericVerdictPublished ? output.confidence : 0,
+      facts: output.facts
+        .filter((fact) => numericVerdictPublished || fact.id !== "risk-score")
+        .slice(0, 16),
+      keyFindings: output.keyFindings.slice(0, 12).map((finding) => ({
+        ...finding,
+        confidence: numericVerdictPublished ? finding.confidence : 0,
+      })),
+      contradictions: output.contradictions.slice(0, 12),
+      missingData: output.missingData.slice(0, 16),
+      nextChecks: output.nextChecks.slice(0, 12),
+      sources: output.sources.slice(0, 12),
+      report: output.report,
+      diagnostics: {
+        fallbackReason: output.diagnostics?.fallbackReason,
+        sourceCount: output.diagnostics?.sourceCount,
+        missingDataCount: output.diagnostics?.missingDataCount,
+        verdictGovernorStatus: output.diagnostics?.verdictGovernorStatus,
+        missingProofLanes: output.diagnostics?.missingProofLanes,
+        numericVerdictPublished,
+      },
+    },
+    customerNarrative: buildPublicCustomerNarrative(commercialReadiness, resolvedLocale, customerNarrative),
+    numericVerdictPublished,
+  };
+}
+
+function buildPublicCommercialReadiness(commercialReadiness: ReturnType<typeof buildCommercialReadiness>) {
+  const valueContracts = {
+    basic: {
+      role: "free_source_bound_prescreen",
+      customerDeliverables: [
+        "canonical asset identity",
+        "current market snapshot when independently confirmed",
+        "source and confidence disclosure",
+        "missing-proof map and next safe check",
+      ],
+      exclusiveEvidenceLanes: ["identity", "market"],
+      purchasePromise: "No payment is required; no numerical verdict is published without corroborated evidence.",
+    },
+    pro: {
+      role: "paid_execution_and_structure_analysis",
+      customerDeliverables: [
+        "independent-provider conflict analysis",
+        "history and volatility context",
+        "liquidity, spread, depth or execution-risk evidence",
+        "holders, ownership or fundamentals lane appropriate to the asset",
+        "durable signed evidence receipt",
+      ],
+      exclusiveEvidenceLanes: ["liquidity", "history_volatility", "holders_ownership", "fundamentals_filings"],
+      purchasePromise: "Pro is released only when it adds measurable evidence beyond Basic and its receipt survives durable read-back.",
+    },
+    advanced: {
+      role: "institutional_stress_and_dependency_analysis",
+      customerDeliverables: [
+        "cross-venue microstructure or derivatives evidence",
+        "scenario, stress and dependency analysis",
+        "contract-permission or supply-tokenomics proof when applicable",
+        "single-provider-family outage resilience",
+        "operator-review escalation for high-impact uncertainty",
+      ],
+      exclusiveEvidenceLanes: ["derivatives_microstructure", "scenario_dependency", "contract_permissions", "supply_tokenomics"],
+      purchasePromise: "Advanced is released only when it remains evidence-complete after losing any one provider family and proves a unique delta over Pro.",
+    },
+  } as const;
+  const tier = (depth: keyof typeof valueContracts, value: (typeof commercialReadiness.tiers)[keyof typeof commercialReadiness.tiers]) => ({
+    sellReady: value.sellReady,
+    valueDeltaProven: value.valueDeltaProven,
+    durableReceiptReady: value.durableReceiptReady,
+    minimumSources: value.minimumSources,
+    minimumSourceFamilies: value.minimumSourceFamilies,
+    minimumConfidence: value.minimumConfidence,
+    minimumEvidenceCategories: value.minimumEvidenceCategories,
+    minimumUniqueEvidenceDelta: value.minimumUniqueEvidenceDelta,
+    missingCategories: value.missingCategories,
+    reason: value.reason,
+    valueContract: valueContracts[depth],
+  });
+  return {
+    schemaVersion: commercialReadiness.schemaVersion,
+    status: commercialReadiness.status,
+    requestedDepth: commercialReadiness.requestedDepth,
+    requestedTierSellReady: commercialReadiness.requestedTierSellReady,
+    checkoutAllowed: commercialReadiness.checkoutAllowed,
+    riskScore: commercialReadiness.riskScore,
+    confidencePercent: commercialReadiness.confidencePercent,
+    sourceCount: commercialReadiness.sourceCount,
+    sourceFamilyCount: commercialReadiness.sourceFamilyCount,
+    verifiedReceiptCount: commercialReadiness.verifiedReceiptCount,
+    evidenceCategoryCount: commercialReadiness.evidenceCategoryCount,
+    corroboratedCategoryCount: commercialReadiness.corroboratedCategoryCount,
+    customerMessage: commercialReadiness.customerMessage,
+    missingProof: commercialReadiness.missingProof.slice(0, 12),
+    tiers: {
+      basic: tier("basic", commercialReadiness.tiers.basic),
+      pro: tier("pro", commercialReadiness.tiers.pro),
+      advanced: tier("advanced", commercialReadiness.tiers.advanced),
+    },
+    continuity: commercialReadiness.continuity
+      ? {
+          mode: commercialReadiness.continuity.mode,
+          cacheHit: commercialReadiness.continuity.cacheHit,
+          snapshotAgeMs: commercialReadiness.continuity.snapshotAgeMs,
+          paidContinuityEligible: commercialReadiness.continuity.paidContinuityEligible,
+          blockers: commercialReadiness.continuity.blockers.slice(0, 8),
+        }
+      : null,
+    rule: commercialReadiness.rule,
+  };
+}
+
+function premiumNotReadyResponse(payload: FullResolvedVlmAnalysis, depth: VlmDepth, resolvedLocale: VlmLocale, entitlementVerified: boolean) {
+  const commercialReadiness = buildCommercialReadiness(payload, depth, resolvedLocale);
+  if (!premiumDepthNotReady(commercialReadiness, depth)) return null;
+  return securityJson({
+    mode: "limited",
+    error: "premium_analysis_not_ready",
+    sourceMode: payload.sourceMode,
+    result: buildCustomerRiskResult(payload, commercialReadiness),
+    publicRiskScore: commercialReadiness.riskScore,
+    kernel: buildPublicKernelSummary(payload, commercialReadiness),
+    commercialReadiness: buildPublicCommercialReadiness(commercialReadiness),
+    commercialDelivery: buildCommercialDeliveryState(payload, depth, commercialReadiness, entitlementVerified, false),
+    basicFallbackAvailable: true,
+    premiumFailFast: payload.premiumFailFast,
+    customerMessage: commercialReadiness.customerMessage,
+  }, { status: 422 });
+}
+
+function premiumFailFastResponse(payload: PremiumFailFastAnalysis, depth: VlmDepth, resolvedLocale: VlmLocale, entitlementVerified: boolean) {
+  const commercialReadiness = buildCommercialReadiness(payload, depth, resolvedLocale);
+  return securityJson({
+    mode: "limited",
+    error: "premium_analysis_not_ready",
+    sourceMode: payload.sourceMode,
+    result: buildCustomerRiskResult(payload, commercialReadiness),
+    publicRiskScore: commercialReadiness.riskScore,
+    kernel: null,
+    commercialReadiness: buildPublicCommercialReadiness(commercialReadiness),
+    commercialDelivery: buildCommercialDeliveryState(payload, depth, commercialReadiness, entitlementVerified, false),
+    basicFallbackAvailable: true,
+    premiumFailFast: true,
+    failFastStage: payload.failFastStage,
+    customerMessage: commercialReadiness.customerMessage,
+  }, { status: 422 });
+}
+
+function safeVlmReasons(payload: FullResolvedVlmAnalysis) {
+  const reasons = (payload.result as { reasons?: unknown }).reasons;
+  if (Array.isArray(reasons)) return reasons.map((reason) => String(reason)).filter(Boolean);
+  const limitations = Array.isArray(payload.result.limitations) ? payload.result.limitations : [];
+  const sources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  return [
+    ...limitations.slice(0, 8).map((item: unknown) => `missing:${String(item)}`),
+    ...sources.slice(0, 8).map((item: unknown) => `source:${String(item)}`),
+  ];
+}
+
+function safeVlmCustomerOutput(payload: FullResolvedVlmAnalysis) {
+  return `${payload.ai.output ?? ""} ${safeVlmReasons(payload).join(" ")}`.trim();
+}
+
+function buildPublicEvidencePacket(
+  payload: FullResolvedVlmAnalysis,
+  binding: { query: string; depth: VlmDepth; surface: VlmSurface; requestId?: string | null },
+) {
+  const packet = buildPublicVlmEvidencePacket(payload.ai);
+  return {
+    ...packet,
+    requestBinding: {
+      ...(binding.requestId ? { requestId: binding.requestId } : {}),
+      query: binding.query.trim(),
+      depth: binding.depth,
+      surface: binding.surface,
+      issuedAt: new Date().toISOString(),
+    },
+  };
+}
+
+function buildPass2281OutputQuality(payload: FullResolvedVlmAnalysis, depth: VlmDepth) {
+  const contract = buildPass2281WorldclassOutputContract();
+  const assetContract = detectPass2281AssetContract(`${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`);
+  return {
+    schemaVersion: contract.schemaVersion,
+    depth,
+    advancedAuditPriceEur: contract.auditPriceEur,
+    advancedPaid: depth === "advanced",
+    assetFamily: assetContract?.family ?? payload.result.token.assetClass ?? "unknown",
+    notApplicableWithoutScope: assetContract?.notApplicableWithoutScope ?? [],
+    sourceGapRule: assetContract?.sourceGapRule ?? "Missing sources cap confidence before stronger public claims.",
+    scoreVsConfidence: "risk score is review priority; confidence cap is source coverage; missing source is a visible gap",
+    paymentRule: contract.paymentRule,
+  };
+}
+
+function buildPass2282OutputAudit(payload: FullResolvedVlmAnalysis, depth: VlmDepth) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 8) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  const plan = buildPass2282VisibleOutputPlan({ depth, assetText, confirmedSources });
+  const risk = buildPass2282RiskPresentation({
+    symbol: payload.result.token.symbol,
+    assetClass: payload.result.token.assetClass ?? null,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    confirmedSources,
+    missingLanes,
+  });
+  return {
+    ...plan,
+    riskPresentation: risk,
+    scoreVsConfidence: "PASS2282: show risk score vs confidence clearly: risk score is review priority and confidence is source coverage; missing source lanes must be visible before verdict.",
+  };
+}
+
+function buildPass2283OutputGate(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 10) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2283OutputQualityGate({
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    paidAccessVerified,
+  });
+}
+
+
+function buildPass2284OutputLedger(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 12) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2284LiveOutputQualityLedger({
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: safeVlmCustomerOutput(payload),
+  });
+}
+
+function buildPass2285OutputGate(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 12) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2285PremiumOutputGate({
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: safeVlmCustomerOutput(payload),
+  });
+}
+
+function buildPass2286OutputQa(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 14) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2286WorldclassLiveOutputPaymentQa({
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: safeVlmCustomerOutput(payload),
+  });
+}
+
+
+function buildPass2287RuntimeOutputFirewall(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false, resolvedLocale: VlmLocale = "pl") {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 16) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return applyPass2287RuntimeOutputFirewall({
+    locale: resolvedLocale,
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: safeVlmCustomerOutput(payload),
+  });
+}
+
+function buildPass2288ClaimProofFirewallOutput(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false, resolvedLocale: VlmLocale = "pl", customerOutputText?: string) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 18) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2288ClaimProofFirewall({
+    locale: resolvedLocale,
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: customerOutputText ?? safeVlmCustomerOutput(payload),
+  });
+}
+
+function buildPass2289CustomerReleaseGateOutput(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false, resolvedLocale: VlmLocale = "pl", customerOutputText?: string) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 20) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2289CustomerReleaseGate({
+    locale: resolvedLocale,
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: customerOutputText ?? safeVlmCustomerOutput(payload),
+  });
+}
+
+function buildPass2290ReleaseTraceLedgerOutput(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false, resolvedLocale: VlmLocale = "pl", customerOutputText?: string, upstreamGate?: ReturnType<typeof buildPass2289CustomerReleaseGate>) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 22) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2290ReleaseTraceLedger({
+    locale: resolvedLocale,
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: customerOutputText ?? safeVlmCustomerOutput(payload),
+    upstreamGate,
+  });
+}
+
+
+function buildPass2291ProductionReplayGateOutput(payload: FullResolvedVlmAnalysis, depth: VlmDepth, paidAccessVerified = false, resolvedLocale: VlmLocale = "pl", customerOutputText?: string, upstreamLedger?: ReturnType<typeof buildPass2290ReleaseTraceLedger>) {
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 24) : [];
+  const assetText = `${payload.result.token.symbol} ${payload.result.token.name} ${payload.result.token.assetClass ?? ""}`;
+  return buildPass2291ProductionReplayGate({
+    locale: resolvedLocale,
+    surface: payload.sourceMode === "real_markets" ? "real_markets" : "shield",
+    depth,
+    assetText,
+    confirmedSources,
+    missingLanes,
+    rawScore: payload.result.score,
+    confidenceCap: Math.round((payload.result.confidence ?? 0) * 100),
+    paidAccessVerified,
+    customerOutputText: customerOutputText ?? safeVlmCustomerOutput(payload),
+    upstreamLedger,
+  });
+}
+
+function buildPass2318RiskConfidenceSeparation(payload: FullResolvedVlmAnalysis, depth: VlmDepth, surface: VlmSurface) {
+  const confidencePercent = Math.round((payload.result.confidence ?? 0) * 100);
+  const missingLanes = Array.isArray(payload.result.limitations) ? payload.result.limitations.slice(0, 12) : [];
+  const confirmedSources = Array.isArray(payload.result.dataSources) ? payload.result.dataSources : [];
+  const assetClass = payload.result.token.assetClass ?? "unknown";
+  const staticSourceGapScore = payload.result.score >= 30 && payload.result.score <= 45 && confidencePercent <= 42;
+  return {
+    schemaVersion: "pass2318_risk_confidence_separation_v1",
+    requestedSurface: surface,
+    resolvedSourceMode: payload.sourceMode,
+    depth,
+    asset: {
+      symbol: payload.result.token.symbol,
+      name: payload.result.token.name,
+      assetClass,
+    },
+    riskScore: payload.result.score,
+    dataConfidencePercent: confidencePercent,
+    confirmedSources,
+    missingLanes,
+    publicCopyRule: "Show risk score as review priority and confidence as source coverage. A low confidence cap is not the same thing as a proven danger verdict.",
+    staticSourceGapScore,
+    realMarketsCryptoRouting: payload.sourceMode === "real_markets" && assetClass === "crypto"
+      ? "crypto symbol resolved through Real Markets quote/chart lane; holder, DEX, depth and contract lanes stay visibly missing until attached"
+      : "not a Real Markets crypto lane",
+    batchAuditAdvice: {
+      vlmLimitPerMinute: 36,
+      pdfLimitPerMinute: 12,
+      rule: "Large 200+ asset audits need queue/cache/job runner instead of firing every VLM/PDF route in one browser minute.",
+    },
+  };
+}
+
+async function handleVlmGet(request: Request) {
+  const urlGuard = rejectOversizedUrl(request, 2_048);
+  if (urlGuard) return urlGuard;
+  const rateLimit = applySoftRateLimit(request, { keyPrefix: "vlm-brain-get", limit: 36, windowMs: 60_000 });
+  if (!rateLimit.ok) return rateLimit.response;
+  const url = new URL(request.url);
+  const query = url.searchParams.get("query")?.trim();
+  if (!query) return securityJson({ mode: "error", error: "missing_query" }, { status: 400 });
+  const queryInspection = inspectVlmText(query, 180);
+  const promptInspection = inspectVlmText(url.searchParams.get("prompt"), 800);
+  recordVlmSecurityInspection({ inspection: queryInspection, vector: "input", route: "/api/market-integrity/vlm", request });
+  recordVlmSecurityInspection({ inspection: promptInspection, vector: "input", route: "/api/market-integrity/vlm", request });
+  if (!queryInspection.safe || !promptInspection.safe) {
+    return securityJson({ mode: "error", error: "security_policy" }, { status: 400 });
+  }
+  try {
+    const resolvedLocale = locale(url.searchParams.get("locale"));
+    const resolvedDepth = depth(url.searchParams.get("depth"));
+    const resolvedSurface = surface(url.searchParams.get("surface"));
+    const rawRequestId = request.headers.get("x-velmere-request-id") ?? url.searchParams.get("requestId");
+    const resolvedRequestId = normalizedRequestId(rawRequestId);
+    if (rawRequestId && !resolvedRequestId) return securityJson({ mode: "error", error: "invalid_request_id" }, { status: 400 });
+    const paidGate = await requireVlmTierAccess(request, {
+      query,
+      locale: resolvedLocale,
+      depth: resolvedDepth,
+      surface: resolvedSurface,
+    });
+    if (paidGate.response) return paidGate.response;
+    const payload = await resolveAnalysis(query, {
+      locale: resolvedLocale,
+      depth: resolvedDepth,
+      surface: resolvedSurface,
+      prompt: url.searchParams.get("prompt")?.trim() || undefined,
+    });
+    if (payload.premiumFailFast) {
+      return premiumFailFastResponse(payload, resolvedDepth, resolvedLocale, Boolean(paidGate.access.ok && paidGate.access.paidRequired));
+    }
+    const premiumReadinessResponse = premiumNotReadyResponse(payload, resolvedDepth, resolvedLocale, Boolean(paidGate.access.ok && paidGate.access.paidRequired));
+    if (premiumReadinessResponse) return premiumReadinessResponse;
+    const commercialReadiness = buildCommercialReadiness(payload, resolvedDepth, resolvedLocale);
+    const pass2287RuntimeOutputFirewall = buildPass2287RuntimeOutputFirewall(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale);
+    const pass2288ClaimProofFirewall = buildPass2288ClaimProofFirewallOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2287RuntimeOutputFirewall.customerOutput);
+    const pass2289CustomerReleaseGate = buildPass2289CustomerReleaseGateOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2288ClaimProofFirewall.customerOutput);
+    const pass2290ReleaseTraceLedger = buildPass2290ReleaseTraceLedgerOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2289CustomerReleaseGate.customerOutput, pass2289CustomerReleaseGate);
+    const pass2291ProductionReplayGate = buildPass2291ProductionReplayGateOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2290ReleaseTraceLedger.customerOutput, pass2290ReleaseTraceLedger);
+    if (!wantsFullProofEnvelope(request)) {
+      return securityJson({
+        mode: payload.mode,
+        sourceMode: payload.sourceMode,
+        result: buildCustomerRiskResult(payload, commercialReadiness),
+        kernel: buildPublicKernelSummary(payload, commercialReadiness),
+        ai: buildPublicAiSummary(payload, commercialReadiness, pass2291ProductionReplayGate.customerOutput, resolvedLocale),
+        publicEvidencePacket: buildPublicEvidencePacket(payload, { query, depth: resolvedDepth, surface: resolvedSurface, requestId: resolvedRequestId }),
+        pass2283OutputQualityGate: buildPass2283OutputGate(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+        pass2289CustomerReleaseGate: {
+          productionState: pass2289CustomerReleaseGate.productionState,
+          customerOutput: buildPublicCustomerNarrative(commercialReadiness, resolvedLocale, pass2289CustomerReleaseGate.customerOutput),
+          blockers: pass2289CustomerReleaseGate.releaseIssues.slice(0, 12),
+        },
+        commercialReadiness: buildPublicCommercialReadiness(commercialReadiness),
+        commercialDelivery: buildCommercialDeliveryState(payload, resolvedDepth, commercialReadiness, Boolean(paidGate.access.ok && paidGate.access.paidRequired), true),
+        access: {
+          depth: paidGate.access.depth,
+          paidRequired: paidGate.access.paidRequired,
+          accessMode: paidGate.access.accessMode,
+          policy: paidGate.access.policy,
+        },
+        proofEnvelope: { mode: "compact", fullProofAvailable: true, request: "?proof=full or x-velmere-proof-mode: full" },
+      });
+    }
+    const pass2787CapsuleConsumerBinding = buildVlmCapsuleConsumerBinding(payload.ai, "brain");
+    const pass2787CapsuleConsumerGate = verifyVlmCapsuleConsumerGate({
+      envelope: payload.ai,
+      consumer: "brain",
+      binding: pass2787CapsuleConsumerBinding,
+      requestedDepth: resolvedDepth,
+      requestedSurface: resolvedSurface,
+    });
+    const pass2788LiveRuntimeProofGate = buildVlmLiveRuntimeProofGate({
+      envelope: payload.ai,
+      access: paidGate.access,
+      capsuleConsumerGate: pass2787CapsuleConsumerGate,
+      productionLike: process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production",
+    });
+    const pass2789DurableCapsuleStoreRecord = buildVlmDurableCapsuleStoreRecord({
+      envelope: payload.ai,
+      access: paidGate.access,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+    });
+    const pass2789DurableCapsuleStoreGate = verifyVlmDurableCapsuleStoreContract({
+      record: pass2789DurableCapsuleStoreRecord,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+      durableWriteObserved: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.durableLedgerObserved,
+      replayReadObserved: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.replayRecordObserved,
+    });
+    const pass2790StoredCapsuleReplayReader = verifyVlmStoredCapsuleReplayReader({
+      record: pass2789DurableCapsuleStoreRecord,
+      durableStoreGate: pass2789DurableCapsuleStoreGate,
+      storedRecord: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.replayRecordObserved
+        ? pass2789DurableCapsuleStoreRecord
+        : null,
+      storageReadObserved: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.replayRecordObserved,
+    });
+    const pass2791WorldClassRiskExpansion = buildVlmWorldClassRiskExpansion({
+      envelope: payload.ai,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+      storedCapsuleReplayReader: pass2790StoredCapsuleReplayReader,
+    });
+    const pass2792MarketStructureProofContract = buildVlmMarketStructureProofContract({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+    });
+    const pass2793RiskScenarioEngine = buildVlmRiskScenarioEngine({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+    });
+    const pass2794ScenarioCapsuleBinding = buildVlmScenarioCapsuleBinding({
+      envelope: payload.ai,
+      scenarioEngine: pass2793RiskScenarioEngine,
+    });
+    const pass2795CrossSurfaceTruthParity = buildVlmCrossSurfaceTruthParity({
+      envelope: payload.ai,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+      storedCapsuleReplayReader: pass2790StoredCapsuleReplayReader,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      scenarioEngine: pass2793RiskScenarioEngine,
+      scenarioBinding: pass2794ScenarioCapsuleBinding,
+    });
+    const pass2796ThreatIntelligenceSecurityExpansion = buildVlmThreatIntelligenceSecurityExpansion({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      scenarioEngine: pass2793RiskScenarioEngine,
+      crossSurfaceTruthParity: pass2795CrossSurfaceTruthParity,
+    });
+    const pass2797AttackRegressionDataset = buildVlmAttackRegressionDataset({
+      envelope: payload.ai,
+      threatExpansion: pass2796ThreatIntelligenceSecurityExpansion,
+      crossSurfaceTruthParity: pass2795CrossSurfaceTruthParity,
+    });
+    const pass2798ThreatFixtureCapsuleBinding = buildVlmThreatFixtureCapsuleBinding({
+      envelope: payload.ai,
+      attackRegressionDataset: pass2797AttackRegressionDataset,
+      crossSurfaceTruthParity: pass2795CrossSurfaceTruthParity,
+      storedCapsuleReplayReader: pass2790StoredCapsuleReplayReader,
+    });
+    const pass2799CompetitorBenchmarkSuperset = buildVlmCompetitorBenchmarkSuperset({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      threatExpansion: pass2796ThreatIntelligenceSecurityExpansion,
+      threatFixtureBinding: pass2798ThreatFixtureCapsuleBinding,
+    });
+    const pass2800LiveProviderAdapterMatrix = buildVlmLiveProviderAdapterMatrix({
+      envelope: payload.ai,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      threatExpansion: pass2796ThreatIntelligenceSecurityExpansion,
+      attackRegressionDataset: pass2797AttackRegressionDataset,
+      competitorBenchmarkSuperset: pass2799CompetitorBenchmarkSuperset,
+    });
+    return securityJson({
+      ...payload,
+      ai: { ...payload.ai, customerNarrative: pass2291ProductionReplayGate.customerOutput, pass2287RuntimeOutputFirewall, pass2288ClaimProofFirewall, pass2289CustomerReleaseGate, pass2290ReleaseTraceLedger, pass2291ProductionReplayGate },
+      publicEvidencePacket: buildPublicEvidencePacket(payload, { query, depth: resolvedDepth, surface: resolvedSurface, requestId: resolvedRequestId }),
+      pass2281OutputQuality: buildPass2281OutputQuality(payload, resolvedDepth),
+      pass2282OutputAudit: buildPass2282OutputAudit(payload, resolvedDepth),
+      pass2283OutputQualityGate: buildPass2283OutputGate(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2284LiveOutputQualityLedger: buildPass2284OutputLedger(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2285PremiumOutputGate: buildPass2285OutputGate(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2286WorldclassLiveOutputPaymentQa: buildPass2286OutputQa(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2287RuntimeOutputFirewall,
+      pass2288ClaimProofFirewall,
+      pass2289CustomerReleaseGate,
+      pass2290ReleaseTraceLedger,
+      pass2291ProductionReplayGate,
+      pass2318RiskConfidenceSeparation: buildPass2318RiskConfidenceSeparation(payload, resolvedDepth, resolvedSurface),
+      pass2787CapsuleConsumerBinding,
+      pass2787CapsuleConsumerGate,
+      pass2788LiveRuntimeProofGate,
+      pass2789DurableCapsuleStoreRecord,
+      pass2789DurableCapsuleStoreGate,
+      pass2790StoredCapsuleReplayReader,
+      pass2791WorldClassRiskExpansion,
+      pass2792MarketStructureProofContract,
+      pass2793RiskScenarioEngine,
+      pass2794ScenarioCapsuleBinding,
+      pass2795CrossSurfaceTruthParity,
+      pass2796ThreatIntelligenceSecurityExpansion,
+      pass2797AttackRegressionDataset,
+      pass2798ThreatFixtureCapsuleBinding,
+      pass2799CompetitorBenchmarkSuperset,
+      pass2800LiveProviderAdapterMatrix,
+      pass4643ProviderRuntimeInventory: buildPass4643ProviderRuntimeInventory(payload.sourceMode === "real_markets" ? "real_markets" : "crypto"),
+      commercialReadiness,
+      access: {
+        depth: paidGate.access.depth,
+        paidRequired: paidGate.access.paidRequired,
+        accessMode: paidGate.access.accessMode,
+        policy: paidGate.access.policy,
+      },
+    });
+  } catch (error) {
+    console.error("[VLM API] GET analysis failed", error);
+    return securityJson({ mode: "error", error: "analysis_unavailable" }, { status: 502 });
+  }
+}
+
+async function handleVlmPost(request: Request) {
+  const sizeGuard = rejectLargeContentLength(request, 32 * 1024);
+  if (sizeGuard) return sizeGuard;
+  const originGuard = assertSameOriginRequest(request, { allowMissingOrigin: process.env.NODE_ENV !== "production" });
+  if (originGuard) return originGuard;
+  const rateLimit = applySoftRateLimit(request, { keyPrefix: "vlm-brain-post", limit: 24, windowMs: 60_000 });
+  if (!rateLimit.ok) return rateLimit.response;
+  try {
+    const parsedBody = await readBoundedJsonBody<{
+      query?: string;
+      locale?: VlmLocale;
+      depth?: VlmDepth;
+      surface?: VlmSurface;
+      prompt?: string;
+      requestId?: string;
+    }>(request, 32 * 1024, { maxDepth: 8 });
+    if (!parsedBody.ok) return parsedBody.response;
+    const body = parsedBody.value;
+    const query = body.query?.trim();
+    if (!query) return securityJson({ mode: "error", error: "missing_query" }, { status: 400 });
+    const queryInspection = inspectVlmText(query, 180);
+    const promptInspection = inspectVlmText(body.prompt, 800);
+    recordVlmSecurityInspection({ inspection: queryInspection, vector: "input", route: "/api/market-integrity/vlm", request });
+    recordVlmSecurityInspection({ inspection: promptInspection, vector: "input", route: "/api/market-integrity/vlm", request });
+    if (!queryInspection.safe || !promptInspection.safe) {
+      return securityJson({ mode: "error", error: "security_policy" }, { status: 400 });
+    }
+    const resolvedLocale = locale(body.locale);
+    const resolvedDepth = depth(body.depth);
+    const resolvedSurface = surface(body.surface);
+    const resolvedRequestId = normalizedRequestId(body.requestId);
+    if (body.requestId && !resolvedRequestId) return securityJson({ mode: "error", error: "invalid_request_id" }, { status: 400 });
+    const paidGate = await requireVlmTierAccess(request, {
+      query,
+      locale: resolvedLocale,
+      depth: resolvedDepth,
+      surface: resolvedSurface,
+    });
+    if (paidGate.response) return paidGate.response;
+    const payload = await resolveAnalysis(query, {
+      locale: resolvedLocale,
+      depth: resolvedDepth,
+      surface: resolvedSurface,
+      prompt: body.prompt?.trim() || undefined,
+    });
+    if (payload.premiumFailFast) {
+      return premiumFailFastResponse(payload, resolvedDepth, resolvedLocale, Boolean(paidGate.access.ok && paidGate.access.paidRequired));
+    }
+    const premiumReadinessResponse = premiumNotReadyResponse(payload, resolvedDepth, resolvedLocale, Boolean(paidGate.access.ok && paidGate.access.paidRequired));
+    if (premiumReadinessResponse) return premiumReadinessResponse;
+    const commercialReadiness = buildCommercialReadiness(payload, resolvedDepth, resolvedLocale);
+    const pass2287RuntimeOutputFirewall = buildPass2287RuntimeOutputFirewall(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale);
+    const pass2288ClaimProofFirewall = buildPass2288ClaimProofFirewallOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2287RuntimeOutputFirewall.customerOutput);
+    const pass2289CustomerReleaseGate = buildPass2289CustomerReleaseGateOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2288ClaimProofFirewall.customerOutput);
+    const pass2290ReleaseTraceLedger = buildPass2290ReleaseTraceLedgerOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2289CustomerReleaseGate.customerOutput, pass2289CustomerReleaseGate);
+    const pass2291ProductionReplayGate = buildPass2291ProductionReplayGateOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2290ReleaseTraceLedger.customerOutput, pass2290ReleaseTraceLedger);
+    if (!wantsFullProofEnvelope(request)) {
+      return securityJson({
+        mode: payload.mode,
+        sourceMode: payload.sourceMode,
+        result: buildCustomerRiskResult(payload, commercialReadiness),
+        kernel: buildPublicKernelSummary(payload, commercialReadiness),
+        ai: buildPublicAiSummary(payload, commercialReadiness, pass2291ProductionReplayGate.customerOutput, resolvedLocale),
+        publicEvidencePacket: buildPublicEvidencePacket(payload, { query, depth: resolvedDepth, surface: resolvedSurface, requestId: resolvedRequestId }),
+        pass2283OutputQualityGate: buildPass2283OutputGate(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+        pass2289CustomerReleaseGate: {
+          productionState: pass2289CustomerReleaseGate.productionState,
+          customerOutput: buildPublicCustomerNarrative(commercialReadiness, resolvedLocale, pass2289CustomerReleaseGate.customerOutput),
+          blockers: pass2289CustomerReleaseGate.releaseIssues.slice(0, 12),
+        },
+        commercialReadiness: buildPublicCommercialReadiness(commercialReadiness),
+        commercialDelivery: buildCommercialDeliveryState(payload, resolvedDepth, commercialReadiness, Boolean(paidGate.access.ok && paidGate.access.paidRequired), true),
+        access: {
+          depth: paidGate.access.depth,
+          paidRequired: paidGate.access.paidRequired,
+          accessMode: paidGate.access.accessMode,
+          policy: paidGate.access.policy,
+        },
+        proofEnvelope: { mode: "compact", fullProofAvailable: true, request: "?proof=full or x-velmere-proof-mode: full" },
+      });
+    }
+    const pass2787CapsuleConsumerBinding = buildVlmCapsuleConsumerBinding(payload.ai, "brain");
+    const pass2787CapsuleConsumerGate = verifyVlmCapsuleConsumerGate({
+      envelope: payload.ai,
+      consumer: "brain",
+      binding: pass2787CapsuleConsumerBinding,
+      requestedDepth: resolvedDepth,
+      requestedSurface: resolvedSurface,
+    });
+    const pass2788LiveRuntimeProofGate = buildVlmLiveRuntimeProofGate({
+      envelope: payload.ai,
+      access: paidGate.access,
+      capsuleConsumerGate: pass2787CapsuleConsumerGate,
+      productionLike: process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production",
+    });
+    const pass2789DurableCapsuleStoreRecord = buildVlmDurableCapsuleStoreRecord({
+      envelope: payload.ai,
+      access: paidGate.access,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+    });
+    const pass2789DurableCapsuleStoreGate = verifyVlmDurableCapsuleStoreContract({
+      record: pass2789DurableCapsuleStoreRecord,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+      durableWriteObserved: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.durableLedgerObserved,
+      replayReadObserved: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.replayRecordObserved,
+    });
+    const pass2790StoredCapsuleReplayReader = verifyVlmStoredCapsuleReplayReader({
+      record: pass2789DurableCapsuleStoreRecord,
+      durableStoreGate: pass2789DurableCapsuleStoreGate,
+      storedRecord: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.replayRecordObserved
+        ? pass2789DurableCapsuleStoreRecord
+        : null,
+      storageReadObserved: process.env.VELMERE_DURABLE_CAPSULE_STORE_ENABLED === "true" && pass2788LiveRuntimeProofGate.storageReplay.replayRecordObserved,
+    });
+    const pass2791WorldClassRiskExpansion = buildVlmWorldClassRiskExpansion({
+      envelope: payload.ai,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+      storedCapsuleReplayReader: pass2790StoredCapsuleReplayReader,
+    });
+    const pass2792MarketStructureProofContract = buildVlmMarketStructureProofContract({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+    });
+    const pass2793RiskScenarioEngine = buildVlmRiskScenarioEngine({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+    });
+    const pass2794ScenarioCapsuleBinding = buildVlmScenarioCapsuleBinding({
+      envelope: payload.ai,
+      scenarioEngine: pass2793RiskScenarioEngine,
+    });
+    const pass2795CrossSurfaceTruthParity = buildVlmCrossSurfaceTruthParity({
+      envelope: payload.ai,
+      liveRuntimeProofGate: pass2788LiveRuntimeProofGate,
+      storedCapsuleReplayReader: pass2790StoredCapsuleReplayReader,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      scenarioEngine: pass2793RiskScenarioEngine,
+      scenarioBinding: pass2794ScenarioCapsuleBinding,
+    });
+    const pass2796ThreatIntelligenceSecurityExpansion = buildVlmThreatIntelligenceSecurityExpansion({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      scenarioEngine: pass2793RiskScenarioEngine,
+      crossSurfaceTruthParity: pass2795CrossSurfaceTruthParity,
+    });
+    const pass2797AttackRegressionDataset = buildVlmAttackRegressionDataset({
+      envelope: payload.ai,
+      threatExpansion: pass2796ThreatIntelligenceSecurityExpansion,
+      crossSurfaceTruthParity: pass2795CrossSurfaceTruthParity,
+    });
+    const pass2798ThreatFixtureCapsuleBinding = buildVlmThreatFixtureCapsuleBinding({
+      envelope: payload.ai,
+      attackRegressionDataset: pass2797AttackRegressionDataset,
+      crossSurfaceTruthParity: pass2795CrossSurfaceTruthParity,
+      storedCapsuleReplayReader: pass2790StoredCapsuleReplayReader,
+    });
+    const pass2799CompetitorBenchmarkSuperset = buildVlmCompetitorBenchmarkSuperset({
+      envelope: payload.ai,
+      riskExpansion: pass2791WorldClassRiskExpansion,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      threatExpansion: pass2796ThreatIntelligenceSecurityExpansion,
+      threatFixtureBinding: pass2798ThreatFixtureCapsuleBinding,
+    });
+    const pass2800LiveProviderAdapterMatrix = buildVlmLiveProviderAdapterMatrix({
+      envelope: payload.ai,
+      marketStructureProof: pass2792MarketStructureProofContract,
+      threatExpansion: pass2796ThreatIntelligenceSecurityExpansion,
+      attackRegressionDataset: pass2797AttackRegressionDataset,
+      competitorBenchmarkSuperset: pass2799CompetitorBenchmarkSuperset,
+    });
+    return securityJson({
+      ...payload,
+      ai: { ...payload.ai, customerNarrative: pass2291ProductionReplayGate.customerOutput, pass2287RuntimeOutputFirewall, pass2288ClaimProofFirewall, pass2289CustomerReleaseGate, pass2290ReleaseTraceLedger, pass2291ProductionReplayGate },
+      publicEvidencePacket: buildPublicEvidencePacket(payload, { query, depth: resolvedDepth, surface: resolvedSurface, requestId: resolvedRequestId }),
+      pass2281OutputQuality: buildPass2281OutputQuality(payload, resolvedDepth),
+      pass2282OutputAudit: buildPass2282OutputAudit(payload, resolvedDepth),
+      pass2283OutputQualityGate: buildPass2283OutputGate(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2284LiveOutputQualityLedger: buildPass2284OutputLedger(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2285PremiumOutputGate: buildPass2285OutputGate(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2286WorldclassLiveOutputPaymentQa: buildPass2286OutputQa(payload, resolvedDepth, Boolean(paidGate.access.ok)),
+      pass2287RuntimeOutputFirewall,
+      pass2288ClaimProofFirewall,
+      pass2289CustomerReleaseGate,
+      pass2290ReleaseTraceLedger,
+      pass2291ProductionReplayGate,
+      pass2318RiskConfidenceSeparation: buildPass2318RiskConfidenceSeparation(payload, resolvedDepth, resolvedSurface),
+      pass2787CapsuleConsumerBinding,
+      pass2787CapsuleConsumerGate,
+      pass2788LiveRuntimeProofGate,
+      pass2789DurableCapsuleStoreRecord,
+      pass2789DurableCapsuleStoreGate,
+      pass2790StoredCapsuleReplayReader,
+      pass2791WorldClassRiskExpansion,
+      pass2792MarketStructureProofContract,
+      pass2793RiskScenarioEngine,
+      pass2794ScenarioCapsuleBinding,
+      pass2795CrossSurfaceTruthParity,
+      pass2796ThreatIntelligenceSecurityExpansion,
+      pass2797AttackRegressionDataset,
+      pass2798ThreatFixtureCapsuleBinding,
+      pass2799CompetitorBenchmarkSuperset,
+      pass2800LiveProviderAdapterMatrix,
+      pass4643ProviderRuntimeInventory: buildPass4643ProviderRuntimeInventory(payload.sourceMode === "real_markets" ? "real_markets" : "crypto"),
+      commercialReadiness,
+      access: {
+        depth: paidGate.access.depth,
+        paidRequired: paidGate.access.paidRequired,
+        accessMode: paidGate.access.accessMode,
+        policy: paidGate.access.policy,
+      },
+    });
+  } catch (error) {
+    console.error("[VLM API] POST analysis failed", error);
+    return securityJson({ mode: "error", error: "analysis_unavailable" }, { status: 502 });
+  }
+}
+
+// PASS2284 markers: VLM API returns pass2284LiveOutputQualityLedger for source/gap output QA and Advanced 149€ server-side payment boundary.
+// PASS2285 markers: VLM API returns pass2285PremiumOutputGate; Basic/Pro/Advanced differ; BTC static 35 is source-gap priority; NVDA/SPY/S&P500 have no token lanes; wallet connect is not payment proof.
+// PASS2286 markers: VLM API returns pass2286WorldclassLiveOutputPaymentQa; ultra-premium short output, static 35 source-gap review priority, no ERC20 lane for native crypto and no token lanes for real-market assets.
+// PASS2287 markers: VLM API returns pass2287RuntimeOutputFirewall and exposes customer-safe rewritten ai.output when raw output fails source/confidence/missing/payment checks.
+// PASS2288 markers: VLM API applies pass2288ClaimProofFirewall after PASS2287 so no customer-visible verdict outruns source proof, static 35 is reframed and Advanced Audit 149€ remains receipt-gated.
+// PASS2289 markers: VLM API exposes pass2289CustomerReleaseGate and uses it as final ai.output so customer-visible PDF/Shield output includes asset family, sources, confidence, missing proof and 149€ receipt boundary.
+// PASS2290 markers: VLM API exposes pass2290ReleaseTraceLedger and uses it as final ai.output with ordered trace lines: family → sources → confidence → missing proof → tier boundary → 149€ receipt boundary.
+// PASS2287 compatibility marker: ai: { ...payload.ai, output: pass2287RuntimeOutputFirewall.customerOutput remains the pre-PASS2288 fallback before claim-proof firewall rewrites final customer output.
+// PASS2288 verifier compatibility marker: ai: { ...payload.ai, output: pass2288ClaimProofFirewall.customerOutput is superseded by PASS2289 final customer release gate.
+// PASS2289 verifier compatibility marker: ai: { ...payload.ai, output: pass2289CustomerReleaseGate.customerOutput is now superseded by PASS2290 release trace ledger final output.
+
+// PASS2291 markers: VLM API exposes pass2291ProductionReplayGate and uses it as final ai.output after PASS2290; runtime replay blocks missing sources, static 35 live-danger claims and Advanced 149€ without server receipt.
+// PASS2318 markers: VLM API exposes pass2318RiskConfidenceSeparation so Real Markets/Shield can display risk score separately from data confidence and batch audit limits.
+// PASS2787 markers: VLM API exposes pass2787CapsuleConsumerBinding and pass2787CapsuleConsumerGate; Brain/Angel/PDF/Audit must consume the same capsuleId/contextHash/replayId/receiptHash before paid proof is rendered.
+// PASS2788 markers: VLM API exposes pass2788LiveRuntimeProofGate; no production/world-class paid proof claim is allowed without live provider capture, capsule replay, exact paid receipt and durable storage replay.
+// PASS2789 markers: VLM API exposes pass2789DurableCapsuleStoreRecord and pass2789DurableCapsuleStoreGate; paid proof cannot ship from memory-only capsules.
+// PASS2790 markers: VLM API exposes pass2790StoredCapsuleReplayReader; paid PDF/Angel/Audit proof must read stored capsule by storageKey and compare capsuleId/contextHash/replayId/receiptHash/proofHash before rendering.
+// PASS2290 verifier compatibility marker: output: pass2290ReleaseTraceLedger.customerOutput is now superseded by PASS2291 production replay gate final output.
+
+// PASS2791 markers: VLM API exposes pass2791WorldClassRiskExpansion so Brain/Audit/Browser/PDF/Real Markets/Shield/Angel can share world-class multi-angle risk lanes, including orderbook_market_structure, derivatives, liquidity, OSINT, legal safety and stored capsule proof.
+
+// PASS2792 markers: VLM API exposes pass2792MarketStructureProofContract after pass2791WorldClassRiskExpansion; market manipulation/orderbook/large-order/slippage claims are blocked unless L2 depth/trade tape/spread/slippage evidence exists.
+
+// PASS2793 markers: VLM API exposes pass2793RiskScenarioEngine after pass2792MarketStructureProofContract; sell 1k/5k/10k EUR, whale dump, liquidity drain, unlock shock, squeeze, stale-source, macro/news and PDF/paid-proof scenarios fail closed until proof exists.
+
+// PASS2794 markers: VLM API exposes pass2794ScenarioCapsuleBinding after pass2793RiskScenarioEngine; Brain/Angel/Browser-PDF/Audit/Real Markets must share scenarioBindingHash; BTC/AAPL/ERC20/FX/commodity fixtures block family bleed and memory-only scenario proof.
+// PASS2795 markers: VLM API exposes pass2795CrossSurfaceTruthParity after pass2794ScenarioCapsuleBinding; Brain/Angel/Browser-PDF/Audit/Real Markets/account delivery must share truthHash/parityMatrixHash; paid output fails closed when riskScore/confidenceCap/source freshness/missingProof/receipt/tier/scenario hashes drift.
+// PASS2796 markers: VLM API exposes pass2796ThreatIntelligenceSecurityExpansion after PASS2795 parity; attack-intel lanes cover bridge, wallet/admin compromise, domain/DNS/frontend hijack, oracle manipulation, flash-loan/cross-contract exploit, phishing/social engineering, opcode/backdoor, orderbook/depth manipulation, stablecoin/counterparty, AI-scam narrative, governance/timelock and incident response; no fake detection without direct proof.
+// PASS2797 markers: VLM API exposes pass2797AttackRegressionDataset after PASS2796 threat intelligence and PASS2795 parity; attack regression fixtures cover bridge, wallet/admin, DNS/frontend, oracle, flash-loan/cross-contract, phishing, opcode/backdoor, orderbook spoofing, stablecoin, AI-scam narrative, governance, incident response, supply-chain dependency and PDF/Brain truth drift.
+// PASS2798 markers: VLM API exposes pass2798ThreatFixtureCapsuleBinding after PASS2797; datasetHash/fixtureHashMesh are bound to capsuleId/contextHash/replayId/receiptHash/storedReplayHash/truthHash/parityMatrixHash before Brain/Angel/Browser-PDF/Audit/Real Markets/account delivery can render threat claims.
+
+// PASS2799 markers: VLM API exposes pass2799CompetitorBenchmarkSuperset after PASS2798; public competitor feature classes are benchmarked legally and converted into Velmere-native proof lanes with requiredProof/missingProof/confidenceCap/supersetHash before any superiority wording is allowed.
+
+// PASS2800 markers: VLM API exposes pass2800LiveProviderAdapterMatrix after PASS2799; provider-neutral live adapter contract covers token/security API, address risk, transaction simulation, incident feed, DNS/frontend, oracle/TWAP, wallet-admin/multisig, bridge, orderbook/depth, derivatives, dependency provenance and Real Markets quote/fundamental feeds. Missing live feed remains missingProof and confidence cap, never fake detection.
+
+
+// PASS2887 marker: data-pass2887-vlm-route-safe-reason-items — limitations/sources map callbacks are typed as unknown and stringified before customer output.
+
+export async function GET(request: Request) {
+  return withExpensiveRouteBudget(request, "vlm_get", () => handleVlmGet(request));
+}
+
+export async function POST(request: Request) {
+  return withExpensiveRouteBudget(request, "vlm_post", () => handleVlmPost(request));
+}

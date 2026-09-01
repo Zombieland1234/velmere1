@@ -1,0 +1,47 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root=process.cwd();
+const REV='VELMERE_PASS36_A102R26_ACTION_REQUIRED_ASSET_DETAIL_CHART_SHARED_CACHE_INFLIGHT_RACE_REFERENCE_REFRESH_AND_NO_FLICKER_RECOVERY_NO_REAL_CREDIT';
+const receipt=JSON.parse(fs.readFileSync(path.join(root,'config/pass36/a102r26-local-regression-receipt.json'),'utf8'));
+let checks=0;
+const ok=(v,id)=>{checks+=1;assert.ok(v,id)};
+
+ok(receipt.revisionId===REV,'revision');
+ok(receipt.status==='PASS_A102R26_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION','status');
+ok(receipt.requiredStages===31&&receipt.executedStages===31&&receipt.passedStages===31&&receipt.failedStages===0,'stages');
+ok(Array.isArray(receipt.stages)&&receipt.stages.length===31,'stage_rows');
+ok(receipt.stages.every((r)=>r.exitCode===0),'exit_codes');
+ok(new Set(receipt.stages.map((r)=>r.id)).size===31,'unique_ids');
+ok(receipt.keyDenominators.a102r26BoundaryChecks===33,'targeted');
+ok(receipt.keyDenominators.a102r25ParentRegressionChecks>=10,'parent_regression');
+ok(receipt.keyDenominators.devBootstrapCriticalHashes===71,'bootstrap');
+ok(receipt.keyDenominators.parallelConsumersNetworkRequests===1,'parallel_dedup');
+ok(receipt.keyDenominators.referenceCacheTtlMs===300000,'reference_ttl');
+ok(receipt.keyDenominators.liveCacheTtlMs===12000,'live_ttl');
+ok(receipt.keyDenominators.chartCacheEntryLimit===96,'cache_limit');
+ok(receipt.keyDenominators.localReferenceAutoRefresh===false,'reference_no_refresh');
+ok(receipt.keyDenominators.lastKnownGoodAutoRefresh===false,'last_known_no_refresh');
+ok(receipt.keyDenominators.refreshKeepsExistingCandles===true,'refresh_keeps_chart');
+ok(receipt.keyDenominators.fullChartLoaderDuringRefresh===false,'no_full_refresh_loader');
+ok(receipt.keyDenominators.undeclaredRemoteModeReadsRemaining===0,'remote_mode_drift_closed');
+ok(receipt.keyDenominators.routeDispatchChecks===1480,'route_dispatch');
+ok(receipt.keyDenominators.routeRoutes===160,'public_routes');
+ok(receipt.keyDenominators.lazyRouteChecks===176,'lazy');
+ok(receipt.keyDenominators.a57Checks===1138,'a57');
+ok(receipt.keyDenominators.protectedIntegrityRows===1073,'a57_protected');
+ok(receipt.keyDenominators.apiBodyChecks===37,'api');
+ok(receipt.keyDenominators.malformedJsonChecks===112,'json');
+ok(receipt.keyDenominators.mega4800Checks===61,'mega');
+ok(receipt.keyDenominators.a59Checks===77,'a59');
+ok(receipt.keyDenominators.productTierChecks===186,'tiers');
+ok(receipt.keyDenominators.zeroBudgetChecks===439,'zero_budget');
+ok(receipt.sourceAudit.syntaxErrors===0&&receipt.sourceAudit.missingLocalImports===0&&receipt.sourceAudit.missingCssModuleClasses===0,'source_audit');
+ok(Array.isArray(receipt.environmentBlockers)&&receipt.environmentBlockers.some((row)=>row.id==='exact_node_npm_project_dependencies'&&row.credit===false),'no_exact_build');
+ok(receipt.environmentBlockers.some((row)=>row.id==='exact_playwright_chromium'&&row.credit===false),'no_browser');
+ok(receipt.realEvidence.providerRights===0&&receipt.realEvidence.browserRows===0,'no_real_data');
+ok(receipt.promotion.globalDecision==='NO_GO'&&receipt.promotion.live===false&&receipt.promotion.saleEnabled===false,'no_promotion');
+ok(receipt.promotion.productionApproved===false&&receipt.promotion.worldClassProven===false,'no_release');
+console.log(JSON.stringify({status:'PASS_A102R26_LOCAL_REGRESSION_RECEIPT_NO_PROMOTION',checksPassed:checks,checksFailed:0},null,2));

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "velmere.p85.p80-immutable-artifact-compatibility.v1",
+  "status": "PASS",
+  "runtime": {
+    "python": "3.13.5"
+  },
+  "legacyHarness": {
+    "status": "FAIL",
+    "passed": 98,
+    "total": 103,
+    "supersededAssertions": [
+      "p80_audit_message_link_lookup_owner_and_snapshot_scoped",
+      "p80_generic_account_route_hides_unlinked_audit_direct_reads",
+      "p80_generic_account_route_hides_unlinked_audit_list_rows",
+      "p80_watch_orders_store_bind_message",
+      "p80_watch_stores_pdf_bytes_not_metadata_only"
+    ]
+  },
+  "checks": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p85_p80_legacy_static_fails_only_five_superseded_assertions",
+        "status": "PASS",
+        "detail": {
+          "returnCode": 1,
+          "failed": [
+            "p80_audit_message_link_lookup_owner_and_snapshot_scoped",
+            "p80_generic_account_route_hides_unlinked_audit_direct_reads",
+            "p80_generic_account_route_hides_unlinked_audit_list_rows",
+            "p80_watch_orders_store_bind_message",
+            "p80_watch_stores_pdf_bytes_not_metadata_only"
+          ]
+        }
+      },
+      {
+        "id": "p85_p80_legacy_static_remaining_98_green",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_p80_runtime_exact_artifact_67_of_67",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_replacement_database_rls_requires_exact_link",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_replacement_filters_before_limit",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_replacement_list_and_get_use_owner_rpc",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_replacement_has_no_direct_table_read_in_helper",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_replacement_cross_binds_snapshot_artifact_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_preserves_p84_atomic_single_write_boundary",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_restored_historical_p80_static_receipt_byte_for_byte",
+        "status": "PASS",
+        "detail": "d8571fb3937ae9ca58d99ff4ba3f72c330452e737dbc2035bfedada813cb9156"
+      }
+    ]
+  },
+  "truthBoundary": "P80 exact immutable PDF runtime remains green. Five historical static assertions describe pre-P83/P84/P85 plumbing. P85 validates stricter atomic publication plus database-enforced owner visibility without rewriting the frozen P80 receipt."
+}

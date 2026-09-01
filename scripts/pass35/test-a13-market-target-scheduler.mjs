@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { buildDynamicMarketDenominator, buildProviderCatalogSnapshot } from '../../lib/market-integrity/pass35-market-runtime-coverage.mjs';
+import { buildPass35A13MarketTargetSchedule, verifyPass35A13MarketTargetSchedule } from '../../lib/market-integrity/pass35-market-target-scheduler.mjs';
+
+let checks=0;const check=(value,message)=>{checks+=1;assert.ok(value,message);};
+const sha=(value)=>`sha256:${createHash('sha256').update(String(value)).digest('hex')}`;
+const now='2026-07-22T20:00:00.000Z';
+const providers=['binance','mexc','coinbase','kraken'];
+const snapshots=providers.map((providerId,pIndex)=>buildProviderCatalogSnapshot({providerId,providerFamily:providerId,providerState:'LIVE',observedAt:now,rawPayloadDigest:sha(providerId),termsMode:'PUBLIC_FREE_UNVERIFIED',instruments:Array.from({length:80},(_,index)=>({providerInstrumentId:`AS${String(index+1).padStart(3,'0')}${providerId}`,canonicalAssetId:`crypto:AS${String(index+1).padStart(3,'0')}`,assetClass:'crypto',symbol:`AS${String(index+1).padStart(3,'0')}`,baseSymbol:`AS${String(index+1).padStart(3,'0')}`,quoteSymbol:index%3===0?'USD':'USDT',venue:providerId,marketType:'spot',status:index===79&&pIndex===3?'HALTED':'ACTIVE',sourceRef:`${providerId}:${index}`}))}));
+const denominator=buildDynamicMarketDenominator({snapshots,evaluatedAt:now,maxSnapshotAgeSeconds:900});
+check(denominator.activeAssetDenominator===80,'asset denominator');
+check(denominator.activeListingDenominator===319,'listing denominator');
+const schedule=buildPass35A13MarketTargetSchedule({denominator,generatedAt:now});
+check(verifyPass35A13MarketTargetSchedule(schedule),'schedule verify');
+check(schedule.fullCatalogPlanned&&schedule.assetPlanCount===80,'full asset plan');
+check(schedule.jobCount===319*3,'all listing roles scheduled');
+check(schedule.shieldBasicAssetPlanCount===80,'shield basic coverage');
+check(schedule.shieldProAssetPlanCount===80&&schedule.marketImpactAssetPlanCount===80,'order book coverage');
+check(schedule.providerPlans.length===4&&schedule.providerPlans.every((row)=>row.jobCount>0),'provider plans');
+check(schedule.jobs.every((job)=>job.state==='SCHEDULED'&&job.requestBudgetPerMinute>0&&job.maximumConcurrent>0),'budgeted jobs');
+check(new Set(schedule.jobs.map((job)=>job.jobId)).size===schedule.jobCount,'job ids unique');
+check(schedule.sellEnabled===false&&!schedule.paidDeliveryEligible,'billing lock');
+check(schedule.executionStatus==='PLAN_ONLY_NOT_NETWORK_EXECUTED','no execution claim');
+const firstBinance=schedule.jobs.filter((job)=>job.providerId==='binance');
+check(firstBinance.every((job,index)=>index===0||job.scheduledAt>=firstBinance[index-1].scheduledAt),'monotonic provider schedule');
+const tampered=structuredClone(schedule);tampered.jobCount=1;check(!verifyPass35A13MarketTargetSchedule(tampered),'tamper rejected');
+const quoteOnly=buildPass35A13MarketTargetSchedule({denominator,generatedAt:now,roles:['spot_quote']});
+check(quoteOnly.jobCount===319&&quoteOnly.marketImpactAssetPlanCount===0,'role scope');
+console.log(JSON.stringify({status:'PASS_A13_MARKET_TARGET_SCHEDULER',checks,activeAssets:denominator.activeAssetDenominator,activeListings:denominator.activeListingDenominator,jobs:schedule.jobCount,shieldBasicAssets:schedule.shieldBasicAssetPlanCount,shieldProAssets:schedule.shieldProAssetPlanCount,marketImpactAssets:schedule.marketImpactAssetPlanCount,visualChangesMade:false,paidDeliveryEligible:false,networkExecutionClaimed:false},null,2));

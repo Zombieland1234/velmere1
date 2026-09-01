@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "velmere.p93.failure-adjudication.v1",
+  "generatedAt": "2026-08-20T14:00:00.000Z",
+  "status": "PASS_COMPLETE_FAILURE_ADJUDICATION_ZERO_CREDIT",
+  "failures": {
+    "total": 13,
+    "zeroCredit": 13,
+    "unadjudicated": 0,
+    "rows": [
+      {
+        "id": "BASELINE_P91_CONTRACT_NO_LOADER",
+        "status": "HARNESS_INVOCATION_DEFECT_ZERO_CREDIT",
+        "reason": "Canonical offline TS loader omitted; corrected invocation is separately green.",
+        "log": "artifacts/p93/logs/failures/00_baseline_p91_contract_without_loader.log",
+        "bytes": 699,
+        "sha256": "fd8d104ae620c15890c02910cc38ac148a230243419674b645ef42852aebb517"
+      },
+      {
+        "id": "BASELINE_P91_LEDGER_NO_LOADER",
+        "status": "HARNESS_INVOCATION_DEFECT_ZERO_CREDIT",
+        "reason": "Canonical offline TS loader omitted; corrected invocation is separately adjudicated.",
+        "log": "artifacts/p93/logs/failures/01_baseline_p91_ledger_without_loader.log",
+        "bytes": 699,
+        "sha256": "fd8d104ae620c15890c02910cc38ac148a230243419674b645ef42852aebb517"
+      },
+      {
+        "id": "BASELINE_P92_CLIENT_NO_LOADER",
+        "status": "HARNESS_INVOCATION_DEFECT_ZERO_CREDIT",
+        "reason": "Canonical offline TS loader omitted; corrected invocation is separately green.",
+        "log": "artifacts/p93/logs/failures/02_baseline_p92_client_without_loader.log",
+        "bytes": 706,
+        "sha256": "9c7465e75e9d145ddbe45375c8a90f15f0153ac71c811a3a54b32805e6bf51ab"
+      },
+      {
+        "id": "P93_STATIC_FIRST_ASSERTION",
+        "status": "TEST_ASSERTION_DEFECT_ZERO_CREDIT",
+        "reason": "First static expectation did not match the implemented customer-client constant; test was repaired without weakening source.",
+        "log": "artifacts/p93/logs/failures/03_p93_static_first_assertion_defect.log",
+        "bytes": 649,
+        "sha256": "08fc9dc226c06edbb61b9718cd1ea9d4db8bc972b02ccf0f6dc24e04216d2ec8"
+      },
+      {
+        "id": "P93_STATIC_INTERNAL_LIMIT_STALE",
+        "status": "TEST_EXPECTATION_SUPERSEDED_ZERO_CREDIT",
+        "reason": "After the shared reader moved to v2, the SQL service-role limit became 5000 while the public route remained 144. The old max-144 SQL assertion was stale.",
+        "log": "artifacts/p93/logs/failures/04_p93_static_stale_max_assumption.log",
+        "bytes": 558,
+        "sha256": "7cea1fee4434f96a9192c4d8c8d4a9c9bf24e30ec582afdd49e000a7b2e0204c"
+      },
+      {
+        "id": "P93_TARGETED_TS_STALE_AMBIENT",
+        "status": "HISTORICAL_AMBIENT_DEFECT_ZERO_CREDIT",
+        "reason": "P91 closed ambient lacked P93 exports. A new P93 ambient/config was added; P91 files were restored byte-for-byte.",
+        "log": "artifacts/p93/logs/failures/05_p93_targeted_ts_stale_historical_ambient.log",
+        "bytes": 804,
+        "sha256": "789014f7aa630160fd81bdd865dd969ef627814c1a71f46f8d6e8f6eeac0506c"
+      },
+      {
+        "id": "P91_LEDGER_V1_ONLY",
+        "status": "SUPERSEDED_V1_READER_ZERO_CREDIT",
+        "reason": "Historical no-socket transport implements only velmere_read_risk_history_by_asset_v1. P93 intentionally requires v2; new P93 durability compatibility is green.",
+        "log": "artifacts/p93/logs/failures/10_p91_ledger_v1_only_superseded.log",
+        "bytes": 574,
+        "sha256": "88f0ee6b8cd4063aae2d9a8ee93644eadad80df005902f1c4de3ff8fcb9f88a1"
+      },
+      {
+        "id": "P91_STATIC_OLD_PROJECTION",
+        "status": "SUPERSEDED_PUBLIC_CONTRACT_ZERO_CREDIT",
+        "reason": "Historical static test requires buildCustomerRiskHistoryProjection and old route semantics; P93 strict public projection replaces them.",
+        "log": "artifacts/p93/logs/failures/11_p91_static_v1_projection_superseded.log",
+        "bytes": 621,
+        "sha256": "3919ec6f9267c9f42e5fe39e9ad368ffccd14faa65c420750cc3276ae9853fda"
+      },
+      {
+        "id": "P91_TYPESCRIPT_OLD_AMBIENT",
+        "status": "SUPERSEDED_CLOSED_AMBIENT_ZERO_CREDIT",
+        "reason": "Historical ambient declarations do not include P93 exports or api-guard; P93 targeted TS is the current proof.",
+        "log": "artifacts/p93/logs/failures/12_p91_targeted_ts_stale_ambient_superseded.log",
+        "bytes": 1193,
+        "sha256": "c9b3b69819a4cee50d9d55bbbabd96a3e1500b35fadd0e29ce86f0d5f7fd8e5a"
+      },
+      {
+        "id": "P91_REPEATABILITY_SUPERSEDED",
+        "status": "SUPERSEDED_COMPOSITE_ZERO_CREDIT",
+        "reason": "Composite includes the superseded P91 ledger/static/type rows. P93 repeatability independently covers current replacements.",
+        "log": "artifacts/p93/logs/failures/13_p91_repeatability_contains_superseded_rows.log",
+        "bytes": 2126,
+        "sha256": "0ee931f45a0d0502d4b69333889771b037d6c2e75005e0a5b691b586645bd7f7"
+      },
+      {
+        "id": "P92_UI_STATIC_OLD_ROUTE",
+        "status": "SUPERSEDED_P92_ROUTE_CONTRACT_ZERO_CREDIT",
+        "reason": "Historical test requires literal no-store max-age=0 and limit clamping to 500; P93 uses securityJson and rejects limits above 144.",
+        "log": "artifacts/p93/logs/failures/14_p92_ui_static_old_route_contract_superseded.log",
+        "bytes": 486,
+        "sha256": "c4b3e1916b1ee0ab0d1df8b24dc475c6bb40f6f4cf801761113e58804b7d021d"
+      },
+      {
+        "id": "P92_REACHABILITY_TIMEOUT",
+        "status": "TIMEOUT_ZERO_CREDIT",
+        "reason": "Historical command emitted no output before bounded orchestration timeout. P93 current reachability is green and repeatable.",
+        "log": "artifacts/p93/logs/failures/15_p92_reachability_timeout_adjudication.txt",
+        "bytes": 557,
+        "sha256": "0db477450aae14de771ffcc5c9ff8b91bd9818ac5ba07f9092d536b32871f953"
+      },
+      {
+        "id": "P93_CLOSURE_MANIFEST_SCOPE",
+        "status": "HARNESS_SCOPE_DEFECT_ZERO_CREDIT",
+        "reason": "The first closure compared an excluded current package manifest against the included parent manifest and reported a false deletion. Parent/current diff scope is now symmetric; package manifest identity is verified separately.",
+        "log": "artifacts/p93/logs/failures/16_p93_closure_parent_manifest_scope_defect.log",
+        "bytes": 831,
+        "sha256": "f76f9297045fe85712169843a296ab07448148eb8dede96468283bb6b89f5a39"
+      }
+    ]
+  },
+  "replacementProofs": [
+    "P93_RISK_HISTORY_CANONICAL_RESOLUTION_RUNTIME 42/42",
+    "P93_RISK_HISTORY_DURABLE_CANONICAL_COMPATIBILITY_RUNTIME 14/14",
+    "P93_RISK_HISTORY_CANONICAL_RESOLUTION_STATIC 84/84",
+    "P93_CHANGED_MODULE_REACHABILITY 12/12",
+    "P93_TARGETED_STRICT_TYPESCRIPT 3/3",
+    "P93_RUNTIME_REPEATABILITY 24/24"
+  ],
+  "zeroFakeCredit": {
+    "failedOrTimedOutRunsCredited": false,
+    "retryUntilGreen": false,
+    "historicalHarnessesRewritten": false,
+    "customerFinal": "0/20"
+  },
+  "truthBoundary": "This receipt records and classifies every material first-failure, stale historical contract and timeout encountered during P93. It grants no product credit by itself. Current replacement proofs remain separately bounded and do not create Browser, PostgreSQL, staging or Customer FINAL evidence."
+}

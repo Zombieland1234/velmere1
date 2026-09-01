@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+import fs from "node:fs"; import path from "node:path";
+import {REV,PARENT,MANIFEST,PARENT_MANIFEST,STATE,PROGRAM,RECEIPT,sha256,canonicalJson,readJson,collect,payload} from "./a102r12-source-boundary.mjs";
+const root=process.cwd(); const manifest=readJson(root,MANIFEST); const parent=readJson(root,PARENT_MANIFEST); const authority=readJson(root,"config/pass36/current-release-authority.json"); const state=readJson(root,STATE); const program=readJson(root,PROGRAM); const receiptBytes=fs.readFileSync(path.join(root,RECEIPT)); const inventory=collect(root); const checks=[]; const add=(id,p,d=null)=>checks.push({id,passed:Boolean(p),detail:d});
+add("manifest:revision",manifest.revisionId===REV,manifest.revisionId); add("manifest:parent",manifest.parentRevisionId===PARENT,manifest.parentRevisionId);
+add("manifest:parent-identity",parent.revisionId===PARENT&&Boolean(parent.manifestDigestSha256)); add("manifest:parent-digest",manifest.parentDescendantManifestDigestSha256===parent.manifestDigestSha256);
+const core={...manifest}; delete core.manifestDigestSha256; add("manifest:self-digest",manifest.manifestDigestSha256===sha256(canonicalJson(core)));
+add("manifest:inventory-safe",inventory.rejected.length===0,inventory.rejected); add("manifest:payload",JSON.stringify(manifest.payload)===JSON.stringify(payload(inventory.rows)),{expected:manifest.payload,observed:payload(inventory.rows)});
+add("manifest:receipt-binding",manifest.localRegressionReceiptSha256===sha256(receiptBytes));
+add("authority:current",authority.authorityRevisionId===REV&&authority.currentSource?.revisionId===REV&&authority.currentRootDescendantManifestPath===MANIFEST&&authority.worldClassCompletionProgramPath===PROGRAM);
+add("state:current",state.revisionId===REV&&state.parentRevisionId===PARENT&&state.passCredit?.A102===false&&state.passCredit?.A103ToA116===false);
+add("program:current",program.revisionId===REV&&program.parentRevisionId===PARENT&&program.formalRemainingEntries===31);
+const c=manifest.claims??{};
+add("claims:no-promotion",c.a102PassCredit===false&&c.a103PassCredit===false&&c.a116PassCredit===false&&c.freshExactBuildBrowserCredit===false&&c.realObservationRuns===0&&c.stagingCredit===false&&c.adminProductDraftLocalStorageAuthorityRemoved===true&&c.adminProductDraftCurrentTabMemoryOnly===true&&c.adminProductDraftScopeDigestRequired===true&&c.adminProductImportResponseStrictJsonRequired===true&&c.durableServerAdminDraftStorageVerified===false&&c.realAdminProductDraftBrowserRows===0&&c.saleEnabled===false&&c.liveProven===false&&c.productionApproved===false&&c.worldClassProven===false,c);
+const failed=checks.filter(r=>!r.passed);
+console.log(JSON.stringify({decision:failed.length?"FAIL":"PASS_A102R12_DESCENDANT_ACTION_REQUIRED_NO_PROMOTION",status:failed.length?"FAIL_A102R12_DESCENDANT":"PASS_A102R12_DESCENDANT_ACTION_REQUIRED_NO_PROMOTION",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,results:checks},null,2));
+process.exit(failed.length?1:0);

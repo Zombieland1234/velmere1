@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+import fs from "node:fs"; import path from "node:path";
+const root=process.cwd(); const db=JSON.parse(fs.readFileSync(path.join(root,".velmere/pass14-diagnostics/database-contract-audit.json"),"utf8")); const cfg=JSON.parse(fs.readFileSync(path.join(root,"config/pass21/rls-table-classification.json"),"utf8"));
+const deploy=db.planes.find(x=>x.name==="deployable_migrations"); const actual=[...(deploy.rlsWithoutPolicyAndNotServiceRoleOnly??[])].sort(); const declared=[...(cfg.tables??[])].map(x=>x.table).sort(); const missing=actual.filter(x=>!declared.includes(x)); const extra=declared.filter(x=>!actual.includes(x)); const duplicate=declared.filter((x,i)=>declared.indexOf(x)!==i);
+const counts={}; for(const row of cfg.tables??[]) counts[row.classification]=(counts[row.classification]??0)+1;
+const blockers=(cfg.tables??[]).filter(x=>x.blocksStaging);
+const result={schemaVersion:"velmere.pass21.rls-classification-audit.v1",generatedAt:"2026-07-20T13:00:00.000Z",ok:missing.length===0&&extra.length===0&&duplicate.length===0,deployableTables:deploy.tablesDeclared,rlsEnabledTables:deploy.rlsEnabledTables,rlsWithoutPolicy:deploy.rlsWithoutPolicy.length,previouslyUnclassified:actual.length,classified:declared.length,classificationCounts:counts,stagingPolicyBlockers:blockers.length,missing,extra,duplicate,status:blockers.length?"CLASSIFIED_WITH_EXPLICIT_STAGING_BLOCKERS":"CLASSIFIED",truthBoundary:cfg.truthBoundary};
+const out=path.join(root,".velmere/pass21-diagnostics/rls-classification-audit.json");fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(result,null,2)+"\n");console.log(JSON.stringify(result,null,2));if(!result.ok)process.exit(1);

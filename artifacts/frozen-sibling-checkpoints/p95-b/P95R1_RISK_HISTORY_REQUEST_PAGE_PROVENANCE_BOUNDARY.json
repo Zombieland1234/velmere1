@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "velmere.p95r1.risk-history-request-page-provenance-boundary.v1",
+  "generatedAt": "2026-08-21T01:30:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_SOURCE_NO_SOCKET",
+  "physicalChanges": {
+    "exactRequestBinding": "Every customer response is bound to the normalized requested asset, public limit and exact canonical cursor.",
+    "crossRequestRejection": "A self-consistent response for another asset, limit or cursor is rejected fail-closed.",
+    "pageEvidence": "The page evidence digest binds page source, resolution, canonical asset, request binding and ordered event references/timestamps.",
+    "perPageStorageTruth": "DATABASE and MEMORY are page-specific states; a process-global durable status cannot be inherited by another request.",
+    "durabilityBoundary": "Neither page source claims multi-year retention, PITR or backup/restore.",
+    "multiPageBoundary": "Merged pages must retain one asset reference, exact cursor chain, unique page references and one page source.",
+    "customerWording": "PL/EN/DE text describes database-page integrity or runtime-memory scope without durable-history overclaim."
+  },
+  "cryptographicBoundary": {
+    "algorithm": "SHA-256 canonical JSON",
+    "purpose": "closed request/page routing and integrity binding",
+    "serverAuthenticityOrSignature": false,
+    "tlsStillRequired": true
+  },
+  "privacyAndSecurity": {
+    "rawRequestedAssetIdInBinding": false,
+    "providerTopologyCustomerVisible": false,
+    "rawEvidenceCustomerVisible": false,
+    "crossAssetCachedResponseAccepted": false,
+    "globalDurabilityBleedAccepted": false
+  },
+  "database": {
+    "migrationChangedInP95": false,
+    "authorizedExecution": "NOT_EXECUTED",
+    "runtimeRlsServiceRoleProof": "WITHHELD",
+    "retentionProof": "WITHHELD",
+    "backupRestoreProof": "WITHHELD"
+  },
+  "finalState": {
+    "riskIndicatorFinal": false,
+    "customerFinal": "0/20",
+    "global": "NO_GO / STOP_SELL"
+  },
+  "truthBoundary": "No-socket local/runtime/static/source proof only. SHA-256 references are not signatures. This does not prove deployed HTTP, PostgreSQL persistence, retention, restore, Browser, staging, production or real customer data."
+}

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "velmere.p96r1.failure-adjudication-reference.v1",
+  "generatedAt": "2026-08-21T05:10:00.000Z",
+  "status": "PASS_ALL_FAILURES_PRESERVED_AND_ADJUDICATED",
+  "sourceReceipt": "receipts/p96/P96_FAILURE_ADJUDICATION.json",
+  "sourceSha256": "e042f9912b26f1a7319ec6feab1abb27f0798444a452bd87961d75dc1524b231",
+  "cases": [
+    {
+      "id": "P96_GOVERNANCE_000_DUPLICATE_P95_CHECKPOINT_ID",
+      "classification": "GOVERNANCE_SOURCE_IDENTITY_CONFLICT",
+      "firstResult": "FAIL_CLOSED",
+      "credit": 0,
+      "evidence": "receipts/p96/P96_P95_SIBLING_BRANCH_RECONCILIATION.json",
+      "rootCause": "Two different sibling SOURCE_ONLY packages, both direct children of P94, were independently named P95R1 and carried different product/tree/package identities.",
+      "adjudication": "Neither P95 was rewritten or silently selected. Both were frozen as P95-A and P95-B; P96 was rebuilt from verified P94 and integrated the exact union of both deltas with fresh tests.",
+      "evidencePresent": true,
+      "evidenceSha256": "sha256:1e0e6d72a7e0794a0e629b25068cf1d097ca5447ead3eebbf747ce02c1e78d41"
+    },
+    {
+      "id": "P96_STATIC_000_STALE_ACTIVE_PASS_ASSERTION",
+      "classification": "TEST_HARNESS_DEFECT",
+      "firstResult": "FAIL_68_OF_69",
+      "credit": 0,
+      "evidence": "artifacts/p96/logs/alignment_static_first.log",
+      "rootCause": "The copied P95-A static harness still required VELMERE_ACTIVE_PASS=P95R1 after the integrated source had correctly moved to P96R1.",
+      "adjudication": "Updated only the stale checkpoint assertion to P96R1; product requirements and alignment checks were not weakened; rerun passed 69/69.",
+      "evidencePresent": true,
+      "evidenceSha256": "sha256:8545ee9e2e6dfceab8afb9266e214857b6579b4773e3cecfd102e25f860928d1"
+    },
+    {
+      "id": "P96_INTEGRATION_001_FUTURE_FIXTURE_TIMESTAMP",
+      "classification": "TEST_FIXTURE_DEFECT_CORRECT_PRODUCT_REJECTION",
+      "firstResult": "FAIL",
+      "credit": 0,
+      "evidence": "artifacts/p96/logs/failures/P96_INTEGRATION_001_FUTURE_FIXTURE_TIMESTAMP_ZERO_CREDIT.log",
+      "rootCause": "The first integration fixture used an observation timestamp later than the route generatedAt boundary. The customer parser correctly rejected the projection.",
+      "adjudication": "Moved only the fixture timestamp into the valid deterministic historical window; kept the future-timestamp rejection boundary; rerun passed 17/17.",
+      "evidencePresent": true,
+      "evidenceSha256": "sha256:6adf6992c9c8f8075b9ebdf3af20adc25e958eac439386eec4d9645220130f3f"
+    },
+    {
+      "id": "P96_STATIC_001_SHORTHAND_HISTORY_FALSE_NEGATIVE",
+      "classification": "TEST_HARNESS_FALSE_NEGATIVE",
+      "firstResult": "FAIL",
+      "credit": 0,
+      "evidence": "artifacts/p96/logs/failures/P96_STATIC_001_SHORTHAND_HISTORY_FALSE_NEGATIVE_ZERO_CREDIT.log",
+      "rootCause": "The static harness searched for the explicit text 'history: history' while the valid TypeScript source used object-property shorthand 'history,'.",
+      "adjudication": "Replaced the text-only expectation with a syntax-tolerant source requirement that still proves the canonical history object reaches the alignment call; rerun passed 28/28.",
+      "evidencePresent": true,
+      "evidenceSha256": "sha256:b21dcbc6f3c3782c4f5a0d578dcf1fecdc2702d49bcadd945b9732c79a0bcf20"
+    },
+    {
+      "id": "P96_GOVERNANCE_001_MASTER_DIRECTIVE_ANCHOR_MISMATCH",
+      "classification": "TOOLING_FAILURE_NON_PRODUCT",
+      "firstResult": "NO_OUTPUT",
+      "credit": 0,
+      "evidence": "artifacts/p96/logs/failures/P96_GOVERNANCE_001_MASTER_DIRECTIVE_ANCHOR_MISMATCH_ZERO_CREDIT.log",
+      "rootCause": "The first automated directive edit relied on a formatting anchor that did not match the complete source byte-for-byte.",
+      "adjudication": "No old directive was changed. The exact section boundary was re-read, subsection 1.1 was inserted deterministically, and completeness for sections 0–88 plus sentinels was reverified.",
+      "evidencePresent": true,
+      "evidenceSha256": "sha256:5b1d0f199f764aeff56e98b74288c82d3fb16df60fc01526c624e49fccfe8057"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "preservedEvidence": 5,
+    "creditedFailures": 0,
+    "unresolved": 0
+  },
+  "truthBoundary": "This receipt preserves and adjudicates the governance collision and every material first-run P96 failure identified during reconciliation. It does not convert any failed attempt into PASS credit; only later current-byte executions are credited."
+}

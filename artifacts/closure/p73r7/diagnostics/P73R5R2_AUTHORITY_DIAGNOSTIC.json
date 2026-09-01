@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "velmere.p73r5r2.authority-diagnostic.v1",
+  "status": "DIAGNOSTIC_ONLY_ZERO_CREDIT",
+  "productAggregateSha256": "1c0f505f6d580ef49cc3b6fdb1e52518b341e4da96a3f2729b5b7d05cd9a4401",
+  "evidence": {
+    "schemaVersion": "pass5001-audit-adjudicated-authority-evidence-v1",
+    "state": "confirmed",
+    "generatedAt": "2026-08-17T16:16:49.732Z",
+    "target": {
+      "chain": "ancient8",
+      "chainId": "888888888",
+      "contractAddress": "0xca11bde05977b3631167028862be2a173976ca11",
+      "projectName": "Multicall3",
+      "canonicalReferenceId": "p70-multicall3-canonical-reference"
+    },
+    "category": "deployment_identity",
+    "adverseKind": "wrong_contract_at_expected_address",
+    "severity": "critical",
+    "riskFloor": 90,
+    "confidence": 96,
+    "finding": "Multicall3 deployment identity mismatch on ancient8: the expected canonical address 0xca11bde05977b3631167028862be2a173976ca11 is not the address currently documented by the official chain authority.",
+    "customerLine": "Critical deployment-identity mismatch: official ancient8 documentation assigns Multicall3 to 0x4200000000000000000000000000000000000007, while the project maintainer independently documents that the canonical 0xca11bde05977b3631167028862be2a173976ca11 deployment on ancient8 was created with a compromised deployer key as a different contract. Current runtime bytecode remains unverified until RPC quorum is available.",
+    "proPdfLine": "Deployment identity contradiction confirmed by two independent authorities. canonical=0xca11bde05977b3631167028862be2a173976ca11; official_chain_documented=0x4200000000000000000000000000000000000007; repo=mds1/multicall3; sourceCommit=b667d67ecfa5361a81e8f110234ce242613b0012; p70Source=sha256:2054218939d3fa0f52f8ce1a33658d570a550671f63197356ee5744f7e188b1e; runtimeBytecode=current_unverified.",
+    "documentedAlternateAddress": "0x4200000000000000000000000000000000000007",
+    "authorityRoots": [
+      "docs.ancient8.gg",
+      "raw.githubusercontent.com"
+    ],
+    "receipts": [
+      {
+        "schemaVersion": "velmere.audit-authority-receipt.v1",
+        "id": "authority-chain-docs-aea70444e454bb426d1b",
+        "authorityClass": "chain_official_docs",
+        "providerId": "official-docs:docs.ancient8.gg",
+        "providerFamily": "official_chain_authority",
+        "upstreamRoot": "docs.ancient8.gg",
+        "independenceEligible": true,
+        "targetBound": true,
+        "statusCode": 200,
+        "contentType": "text/html",
+        "bodyBytes": 470894,
+        "bodyDigest": "sha256:dc9c749e66c86d7b4cb4ad8baaa3dbda16d77472318219ae5eccb66d68f8e21c",
+        "requestUrlDigest": "sha256:aea70444e454bb426d1bd028d89d0c9ea2d4674d660d063c90931243e8e0ecc0",
+        "observedAt": "2026-08-17T16:16:49.119Z",
+        "sourceTimestamp": null,
+        "sourceTimestampProvenance": "transport_received",
+        "assertions": [
+          "chain:ancient8",
+          "project:Multicall3",
+          "documented_address:0x4200000000000000000000000000000000000007",
+          "requested_address_absent:true"
+        ],
+        "receiptDigest": "sha256:d8d129dda4bbb07b52bc3d55194d15dbe483d65ba333d3afe29cee68c1e3c722"
+      },
+      {
+        "schemaVersion": "velmere.audit-authority-receipt.v1",
+        "id": "authority-project-maintainer-30f455302e89bd6dd49b",
+        "authorityClass": "project_maintainer",
+        "providerId": "github-pinned-readme:mds1/multicall3@b667d67ecfa5361a81e8f110234ce242613b0012",
+        "providerFamily": "project_maintainer_repository_authority",
+        "upstreamRoot": "raw.githubusercontent.com",
+        "independenceEligible": true,
+        "targetBound": true,
+        "statusCode": 200,
+        "contentType": "text/plain",
+        "bodyBytes": 25797,
+        "bodyDigest": "sha256:fd8a929918ebcc9a2cf26c3d072c0566718937e2f980751ba2be4e1b8b143b9e",
+        "requestUrlDigest": "sha256:30f455302e89bd6dd49b371f16229012ab8a0a73b685782662c781450c4e1f22",
+        "observedAt": "2026-08-17T16:16:49.721Z",
+        "sourceTimestamp": null,
+        "sourceTimestampProvenance": "transport_received",
+        "assertions": [
+          "repository:mds1/multicall3",
+          "source_commit:b667d67ecfa5361a81e8f110234ce242613b0012",
+          "project:Multicall3",
+          "chain:ancient8",
+          "wrong_contract_address:0xca11bde05977b3631167028862be2a173976ca11"
+        ],
+        "receiptDigest": "sha256:f7988a2c627b0a3d0c20f69c776f2ccf8550891c4162aa968477cc0e7db59421"
+      }
+    ],
+    "blockers": [
+      "current_runtime_bytecode_quorum_unavailable"
+    ],
+    "truthBoundary": "This evidence proves a deployment-identity contradiction, not a source-code vulnerability or exploitability finding. The 90/100 risk floor applies only to the audited deployment identity because using the wrong contract at an expected canonical address is a critical integrity hazard; current runtime bytecode remains explicitly unverified until independent RPC quorum exists.",
+    "evidenceDigest": "sha256:f4f356b993a4877d26dd8f15149b576f921b66fee85c188abc7c67972d9fbdd3"
+  },
+  "verify": true,
+  "thrown": null,
+  "customerFinalOutputCredit": 0,
+  "auditFinalPdfCredit": 0,
+  "rightsCredit": 0,
+  "paidValueCredit": 0,
+  "saleCredit": 0,
+  "live": false
+}

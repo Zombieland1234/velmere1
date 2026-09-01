@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "velmere.p37.p36-package-completeness-repair.v1",
+  "revision": "P37_V15_PACKAGE_REPRODUCIBILITY_AND_A85_BINDING",
+  "state": "IMPLEMENTED_AND_TESTED_INTERNAL",
+  "generatedAt": "2026-08-13T21:32:00.000Z",
+  "p36Archive": {
+    "sha256": "23f645cdab7500e3fe8dc0015b40769ee8b2d7ef2f66479f686a217c5cdf7759",
+    "crcPass": true,
+    "entries": 6778,
+    "sourceIdentityFileCount": 6568,
+    "sourceIdentityFilesPresentInArchive": 6560,
+    "sourceIdentityFilesMissingFromArchive": 8,
+    "sourceIdentityCompleteAfterCleanUnpack": false
+  },
+  "rootCause": {
+    "script": "scripts/closure/package-p36-current-source.py",
+    "rule": "SENSITIVE_SUFFIXES included .pem without content classification",
+    "effect": "Eight public verification keys were excluded as if they were secrets."
+  },
+  "missingPaths": [
+    "config/release-verification/pass4734-offline-candidate-public.pem",
+    "config/release-verification/pass4735-offline-candidate-public.pem",
+    "config/release-verification/pass4736-offline-candidate-public.pem",
+    "config/release-verification/pass4737-offline-candidate-public.pem",
+    "config/release-verification/pass4738-offline-candidate-public.pem",
+    "config/release-verification/pass4739-offline-candidate-public.pem",
+    "config/release-verification/pass4740-offline-candidate-public.pem",
+    "config/release-verification/pass4741-offline-candidate-public.pem"
+  ],
+  "restoredFromHistoricalExactBytes": [
+    {
+      "path": "config/release-verification/pass4734-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "94f762ac4e5cc7215e91337a8df9e33bf76f28de4a0d573926c02cbaa76d5fc4",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4735-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "584b6e8605a32fc0ed5fcc7aaff9f231f7f8b921cb2770c141172e9be77c4d1d",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4736-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "803083a1e7738684ee33e47a6b01ccacae587b6c7c51e1cf978b0660310826a8",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4737-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "076a2c4672913e30534f539152b998968c487d305dbaee3d8ea2edccbd0bfe59",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4738-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "9cd65f75c4690a29ccfeb99a2595f227744b33c16f5815db380d3ab8d00d1f4b",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4739-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "294a4186efed47ccd4a4f4fc13d24d25220d20d8da8d1212e12a9f261b8dc7cb",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4740-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "eac54629554b6922abd7ed074eda64d59fec4cb1a68b8240611a762ba115f98f",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    },
+    {
+      "path": "config/release-verification/pass4741-offline-candidate-public.pem",
+      "byteLength": 113,
+      "sha256": "3b2c22b2876b6e7a171e9057e504ae73f9fbe5162c8b13bb6d3f4981a084919f",
+      "classification": "PUBLIC_VERIFICATION_KEY"
+    }
+  ],
+  "restoration": {
+    "restoredCount": 8,
+    "denominator": 8,
+    "allHashesMatchP36SourceIdentity": true,
+    "allArePublicKeys": true,
+    "privateKeyMaterial": 0,
+    "currentP36SourceAggregateReproducedBeforeP37Changes": true,
+    "p36SourceAggregateSha256": "d945d3fd3ed4fb0401faa843f13aaab523ab1bd548339015077c420c873abe82"
+  },
+  "p37Fix": {
+    "script": "scripts/closure/package-p37-current-source.py",
+    "policy": "CONTENT_AWARE_PEM_CLASSIFICATION",
+    "publicPem": "INCLUDE",
+    "privatePem": "FAIL_CLOSED",
+    "ambiguousPem": "FAIL_CLOSED",
+    "syntheticClassifierTestsRequired": true,
+    "cleanUnpackSourceIdentityReplayRequired": true
+  },
+  "credit": {
+    "p36DefectDetected": true,
+    "exactPublicKeyBytesRestored": true,
+    "p37SourcePackagingFixImplemented": true,
+    "p37FinalPackageCreditPendingDeterministicPackaging": true,
+    "productRuntimeCredit": false,
+    "goInternalCredit": false,
+    "goPaidCredit": false
+  },
+  "truthBoundary": "This receipt proves a packaging completeness defect and restores only public verification keys. It does not alter product code or grant runtime, build, Browser, customer, sale, GO_INTERNAL or GO_PAID credit.",
+  "integritySha256": "fafb2a36797ae5a585f59ccdf31051543a060e828e0ab10a4ece5de01a7c9e85"
+}

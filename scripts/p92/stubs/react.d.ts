@@ -1,0 +1,13 @@
+export type ReactNode = unknown;
+export type RefObject<T> = { current: T };
+export type SetStateAction<S> = S | ((previous: S) => S);
+export type Dispatch<A> = (value: A) => void;
+export type PointerEvent<T = Element> = { pointerType: string; target: EventTarget & T; currentTarget: EventTarget & T; stopPropagation(): void; preventDefault(): void };
+export type MouseEvent<T = Element> = { target: EventTarget & T; currentTarget: EventTarget & T; stopPropagation(): void; preventDefault(): void };
+export type KeyboardEvent<T = Element> = { key: string; target: EventTarget & T; currentTarget: EventTarget & T; stopPropagation(): void; preventDefault(): void };
+export function useCallback<Args extends unknown[], Result>(callback: (...args: Args) => Result, deps: readonly unknown[]): (...args: Args) => Result;
+export function useEffect(effect: () => void | (() => void), deps?: readonly unknown[]): void;
+export function useId(): string;
+export function useMemo<T>(factory: () => T, deps: readonly unknown[]): T;
+export function useRef<T>(initial: T | null): { current: T | null };
+export function useState<S>(initial: S | (() => S)): [S, Dispatch<SetStateAction<S>>];

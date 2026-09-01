@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "velmere.p97.first-failure-capture-note.v1",
+  "generatedAt": "2026-08-21T08:00:00.000Z",
+  "status": "ZERO_CREDIT_FIRST_FAILURE_PRESERVED_AS_NOTE",
+  "failureId": "P97_RUNTIME_001_ASCII_FIXTURE_FALSE_NEGATIVE",
+  "observedResult": "FAIL",
+  "rawLogPath": "artifacts/p97/logs/failures/p97-runtime-first.log",
+  "rawLogByteLength": 0,
+  "captureLimitation": "The first failing command was observed during execution, but the tee capture file remained empty. No unobserved error text is reconstructed or invented.",
+  "rootCause": "The negative fixture used only ASCII bytes, for which the prior text-hash path and exact byte-hash path happened to produce the same digest. The negative control therefore could not distinguish the defect.",
+  "adjudication": "The fixture was changed to include non-text binary bytes. The product code had already been corrected to sha256BytesDigest. The current-byte runtime now proves the text digest is not substituted for the exact byte digest.",
+  "credit": 0
+}

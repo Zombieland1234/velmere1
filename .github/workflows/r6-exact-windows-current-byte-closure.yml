@@ -1,0 +1,101 @@
+name: R6 Exact Windows Current-Byte Closure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  exact-windows:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact current bytes
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          check-latest: false
+          cache: npm
+
+      - name: Assert exact source and npm identity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'unexpected Node version' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'unexpected npm version' }
+          $pkg = (Get-FileHash package.json -Algorithm SHA256).Hash.ToLowerInvariant()
+          $lock = (Get-FileHash package-lock.json -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($pkg -ne 'de067fe9cd5611ebf9c719ca0be30e5b149d19b002268a0ce496acb10f871c1c') { throw 'package.json hash mismatch' }
+          if ($lock -ne 'e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb') { throw 'package-lock.json hash mismatch' }
+          New-Item -ItemType Directory -Force artifacts/r6/windows | Out-Null
+          [ordered]@{
+            schemaVersion = 'velmere.r6.exact-windows-environment.v1'
+            generatedAt = (Get-Date).ToUniversalTime().ToString('o')
+            repository = $env:GITHUB_REPOSITORY
+            sourceSha = $env:GITHUB_SHA
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            runnerOs = $env:RUNNER_OS
+            runnerArch = $env:RUNNER_ARCH
+            runnerName = $env:RUNNER_NAME
+            node = (node --version).Trim()
+            npm = (npm --version).Trim()
+            packageJsonSha256 = $pkg
+            packageLockSha256 = $lock
+            billingActivationPerformed = $false
+          } | ConvertTo-Json -Depth 8 | Set-Content artifacts/r6/windows/VELMERE_R6_EXACT_WINDOWS_ENVIRONMENT.json -Encoding utf8NoBOM
+
+      - name: Install exact lockfile dependency tree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm ci --ignore-scripts --audit=false --fund=false --prefer-online
+          node -e "const p=require('./node_modules/@electric-sql/pglite/package.json'); if(p.name!=='@electric-sql/pglite'||p.version!=='0.5.4') process.exit(2); console.log(JSON.stringify({name:p.name,version:p.version,license:p.license}))"
+
+      - name: Run exact TypeScript and ESLint
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm run typecheck
+          npm run lint
+
+      - name: Run exact Webpack and Turbopack builds
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm run build:webpack
+          if (Test-Path .next) { Remove-Item .next -Recurse -Force }
+          npm run build:turbopack
+
+      - name: Run current-execution campaign twice
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python scripts/r6/run-r6-isolated-current-execution-campaign.py --output artifacts/r6/windows/VELMERE_R6_WINDOWS_CAMPAIGN_RUN1.json --env-receipt current-execution-out/r6/windows-run1/RUNTIME_ENV_CONTRACT_RECEIPT.json --workers 4 --timeout-seconds 120
+          python scripts/r6/run-r6-isolated-current-execution-campaign.py --output artifacts/r6/windows/VELMERE_R6_WINDOWS_CAMPAIGN_RUN2.json --env-receipt current-execution-out/r6/windows-run2/RUNTIME_ENV_CONTRACT_RECEIPT.json --workers 4 --timeout-seconds 120
+          python scripts/r6/build-r6-repeatability.py --run1 artifacts/r6/windows/VELMERE_R6_WINDOWS_CAMPAIGN_RUN1.json --run2 artifacts/r6/windows/VELMERE_R6_WINDOWS_CAMPAIGN_RUN2.json --output artifacts/r6/windows/VELMERE_R6_WINDOWS_REPEATABILITY.json
+
+      - name: Upload exact Windows evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: velmere-r6-exact-windows-current-byte-closure
+          path: |
+            artifacts/r6/windows
+            current-execution-out/r6/windows-run1
+            current-execution-out/r6/windows-run2
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

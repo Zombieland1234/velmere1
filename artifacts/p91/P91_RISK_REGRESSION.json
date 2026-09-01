@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "velmere.p91.risk-regression.v1",
+  "generatedAt": "2026-08-20T19:12:00.000Z",
+  "status": "PASS_BOUNDED_WITH_EXPLICIT_ENVIRONMENT_WITHHELDS",
+  "commands": {
+    "total": 5,
+    "passed": 3,
+    "withheld": 2,
+    "failed": 0
+  },
+  "aggregateExecutedChecksAcrossOverlappingHarnesses": 8,
+  "rows": [
+    {
+      "id": "MARKET_RISK_DELIVERY_GATE",
+      "log": "artifacts/p91/logs/regression/risk/01_MARKET_RISK_DELIVERY_GATE.log",
+      "status": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "checks": 0,
+      "patterns": [
+        "Cannot find package 'zod'"
+      ],
+      "markersMatched": true,
+      "logSha256": "20ea4f70722879603021934154ff997b0efb8f92c5b24b229b07e1856288bffc"
+    },
+    {
+      "id": "RISK_CALIBRATION_INVARIANTS",
+      "log": "artifacts/p91/logs/regression/risk/02_RISK_CALIBRATION_INVARIANTS.log",
+      "status": "PASS",
+      "checks": 6,
+      "patterns": [
+        "PASS equal-score isotonic aggregation",
+        "PASS validation thresholds cannot be weakened"
+      ],
+      "markersMatched": true,
+      "logSha256": "7e7d476196ac753e002f5965976af18eebe153aa811ceebcab9917b0b5de0d12"
+    },
+    {
+      "id": "RISK_INPUT_FAIL_CLOSED",
+      "log": "artifacts/p91/logs/regression/risk/03_RISK_INPUT_FAIL_CLOSED.log",
+      "status": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "checks": 0,
+      "patterns": [
+        "Cannot find package 'zod'"
+      ],
+      "markersMatched": true,
+      "logSha256": "20ea4f70722879603021934154ff997b0efb8f92c5b24b229b07e1856288bffc"
+    },
+    {
+      "id": "RISK_ENGINE_SAFETY",
+      "log": "artifacts/p91/logs/regression/risk/04_RISK_ENGINE_SAFETY.log",
+      "status": "PASS",
+      "checks": 1,
+      "patterns": [
+        "Risk engine safety checks passed."
+      ],
+      "markersMatched": true,
+      "logSha256": "1e828a5de2e89d009aa9eab6cecc3d5d60e72fdb3a43ddb895b6e5efbe9c86b6"
+    },
+    {
+      "id": "VLM_RISK_FAIL_CLOSED",
+      "log": "artifacts/p91/logs/regression/risk/05_VLM_RISK_FAIL_CLOSED.log",
+      "status": "PASS",
+      "checks": 1,
+      "patterns": [
+        "PASS: VLM risk scores remain unavailable"
+      ],
+      "markersMatched": true,
+      "logSha256": "732af3339eea415effe0eca62c0ee2e6ad3035ef66885ae676f72c37f6cd2790"
+    }
+  ],
+  "truthBoundary": "Three risk-domain regressions pass on current bytes. Two route/input harnesses are explicitly withheld because SOURCE_ONLY lacks the installed zod dependency; their failed executions receive zero credit and are preserved in closed logs. This grants no whole-project build, provider, current-data, Customer FINAL or exact-Windows credit."
+}

@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { runA30Benchmark, verifyA30Benchmark, verifyA30Policy } from "../../lib/security/pass35-a30-threat-model-runtime.mjs";
+const policy = JSON.parse(readFileSync("config/pass35/a30-threat-model-policy.json", "utf8"));
+assert.equal(verifyA30Policy(policy), true);
+const report = runA30Benchmark(policy);
+assert.equal(verifyA30Benchmark(report, policy), true);
+assert.equal(report.denominators.cases, 192);
+assert.equal(report.denominators.frozen, 72);
+assert.equal(report.denominators.mutations, 2304);
+assert.equal(report.frozen.accuracy, 1);
+assert.equal(report.frozen.unsafeEligible, 0);
+assert.equal(report.frozen.falseBlocks, 0);
+assert.equal(report.mutation.killRate, 1);
+assert.equal(report.claims.protocolSpecificAssumptionsHumanValidated, false);
+assert.equal(report.claims.businessLogicHumanReviewed, false);
+assert.equal(report.claims.realArchitectureWorkshopExecuted, false);
+assert.equal(report.claims.everyRealWorldThreatModeled, false);
+assert.equal(report.claims.independentRerun, false);
+assert.equal(report.claims.paidGateEligible, false);
+assert.equal(report.claims.sellEnabled, false);
+console.log(JSON.stringify({ status: "PASS_A30_THREAT_MODEL", cases: report.denominators.cases, frozen: report.denominators.frozen, mutations: report.denominators.mutations, accuracy: report.frozen.accuracy, mutationKillRate: report.mutation.killRate, sellEnabled: 0 }, null, 2));

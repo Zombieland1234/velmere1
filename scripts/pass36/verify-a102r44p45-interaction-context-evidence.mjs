@@ -1,0 +1,41 @@
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+
+const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
+const stable = (value) => {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stable(value[key])}`).join(",")}}`;
+};
+const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, "utf8"));
+const root = path.resolve(process.argv[2] ?? "");
+if (!root || !fs.existsSync(root)) throw new Error("evidence_root_required");
+const summary = readJson(path.join(root, "R44P45_INTERACTION_CONTEXT_SUMMARY.json"));
+const controls = fs.readdirSync(path.join(root, "controls")).filter((name) => name.endsWith(".json")).sort().map((name) => readJson(path.join(root, "controls", name)));
+const synthetic = fs.readdirSync(path.join(root, "synthetic")).filter((name) => name.endsWith(".json")).sort().map((name) => readJson(path.join(root, "synthetic", name)));
+const checks = [];
+const check = (id, ok, detail = null) => checks.push({ id, ok: Boolean(ok), detail });
+const selfDigestOk = (row) => {
+  const { evidenceSha256, ...core } = row;
+  return evidenceSha256 === sha256(stable(core));
+};
+check("summary-schema", summary.schemaVersion === "velmere.pass36.a102r44p45.interaction-context-summary.v1");
+check("summary-digest", selfDigestOk(summary));
+check("analyzer-revision", summary.analyzerRevision === "R44P45_CONTEXT_QUALIFIED_INTERACTION_ORDERING_V3");
+check("controls-count", controls.length === 29, controls.length);
+check("synthetic-count", synthetic.length === 13, synthetic.length);
+check("case-digests", [...controls, ...synthetic].every(selfDigestOk));
+check("control-alert-recount", summary.publicControlCandidatesWithAlerts === controls.filter((row) => row.rootRuleIds.length > 0).length);
+check("control-rate-recount", summary.candidateAlertRate === Number((summary.publicControlCandidatesWithAlerts / controls.length).toFixed(6)));
+check("bounded-review-recount", summary.boundedContextReviewRows === controls.reduce((total, row) => total + row.rootSuppressions.length, 0));
+check("synthetic-pass-recount", summary.syntheticPass === synthetic.filter((row) => row.pass).length && synthetic.every((row) => row.pass));
+check("no-formal-fpr", summary.formalFalsePositiveRateCredit === false && controls.every((row) => row.creditBoundary.formalFalsePositiveRateCredit === false));
+check("no-human-credit", summary.independentHumanAdjudicationCredit === false && controls.every((row) => row.creditBoundary.independentHumanAdjudicationCredit === false));
+check("no-sale-live", summary.saleCredit === false && summary.liveCredit === false && [...controls, ...synthetic].every((row) => row.creditBoundary.saleCredit === false && row.creditBoundary.liveCredit === false));
+check("suppression-classes", controls.flatMap((row) => row.rootSuppressions).every((row) => row.classification === "BOUNDED_CONTEXT_REVIEW_NOT_CONFIRMED_VULNERABILITY" && row.independentReviewRequired === true));
+check("expected-patterns", ["CHECKED_TEMPORARY_MINT_ALLOWANCE_RECOVERY_AND_BURN", "PRE_AND_POST_CALL_STATE_REVALIDATION_BEFORE_TERMINAL_WRITE"].every((id) => summary.boundedContextPatterns.includes(id)));
+const failed = checks.filter((row) => !row.ok);
+const result = { schemaVersion: "velmere.pass36.a102r44p45.interaction-context-verifier.v1", ok: failed.length === 0, checks, failed };
+console.log(JSON.stringify(result));
+if (failed.length) process.exitCode = 1;

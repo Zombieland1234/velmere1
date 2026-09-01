@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import fs from "node:fs";
+const migration = JSON.parse(fs.readFileSync("config/pass36/a102r44p23-local-e2e-denominator-migration.json", "utf8"));
+const historical = fs.readFileSync(migration.historicalTestPath);
+const sha = crypto.createHash("sha256").update(historical).digest("hex");
+const current = fs.readFileSync("scripts/pass36/test-a102r44p23-disposable-customer-lifecycle-e2e.mjs", "utf8");
+const currentIds = [...current.matchAll(/check\("([^"]+)/gu)].map((match) => match[1]);
+const checks = [];
+const check = (id, ok) => { checks.push({ id, ok: Boolean(ok) }); assert.ok(ok, id); };
+check("01-schema", migration.schemaVersion === "velmere.pass36.a102r44p23.local-e2e-denominator-migration.v1");
+check("02-historical-sha", sha === migration.historicalTestSha256);
+check("03-old-denominator", migration.oldDenominator === 14 && migration.historicalCheckIds.length === 14);
+check("04-new-denominator", migration.newDenominator === 63 && currentIds.length === 63);
+check("05-added-count", migration.addedCapabilityCount === 49);
+check("06-no-removals", migration.removedCapabilityCount === 0);
+check("07-current-ids-bound", JSON.stringify(currentIds) === JSON.stringify(migration.currentCheckIds));
+check("08-no-staging-promotion", migration.creditBoundary.stagingCredit === false && migration.creditBoundary.liveCredit === false);
+check("09-critical-new-flows", ["payment-amount-binding-denied","terminal-entitlement-reactivation-denied","account-delete-redacts-raw-account-and-source","concurrent-token-exactly-once"].every((needle) => currentIds.some((id) => id.includes(needle))));
+console.log(JSON.stringify({ schemaVersion: "velmere.pass36.a102r44p23.local-e2e-denominator-migration-verification.v1", status: "PASS", checks: checks.length, passed: checks.length, failed: 0, rows: checks }, null, 2));

@@ -1,0 +1,57 @@
+name: P42 Exact Windows Node24 Lifecycle Quarantine
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p42-exact-windows-lifecycle-quarantine-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-windows-lifecycle-quarantine:
+    runs-on: windows-2025
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout exact current source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Assert exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Verify canonical fail-closed lifecycle quarantine
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path p42-out | Out-Null
+          python scripts/pass42/verify-p42-lifecycle-quarantine.py --root . --output p42-out/P42_EXACT_WINDOWS_LIFECYCLE_QUARANTINE_RECEIPT.json --require-windows
+
+      - name: Acquire and inspect exact target lifecycle archives without execution
+        shell: pwsh
+        run: |
+          python scripts/pass42/acquire-p42-lifecycle-evidence.py --root . --target windows-x64 --output-dir p42-out/quarantine --receipt p42-out/P42_WINDOWS_LIFECYCLE_ARCHIVE_EVIDENCE.json
+
+      - name: Upload exact quarantine evidence even when a later gate is blocked
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p42-exact-windows-node24-lifecycle-quarantine
+          path: p42-out
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7

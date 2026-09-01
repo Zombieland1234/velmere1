@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { analyzeA19SoliditySource, runA19AuditStaticBenchmark, verifyA19AuditStaticBenchmark, verifyA19AuditStaticPolicy } from "../../lib/security/pass35-a19-audit-static-benchmark-runtime.mjs";
+const policy = JSON.parse(readFileSync("config/pass35/a19-audit-static-benchmark-policy.json", "utf8"));
+assert.equal(verifyA19AuditStaticPolicy(policy), true);
+const runtime = runA19AuditStaticBenchmark(policy);
+assert.equal(verifyA19AuditStaticBenchmark(runtime, policy), true);
+assert.equal(runtime.localStaticBenchmarkPass, true, JSON.stringify(runtime.failedGates));
+assert.equal(runtime.denominators.cases, 240);
+assert.equal(runtime.denominators.mutations, 2880);
+assert.equal(runtime.paidGateEligible, false);
+assert.equal(runtime.independentExternalFamily, false);
+assert.equal(runtime.fullAuditClaimAllowed, false);
+const decoy = `pragma solidity ^0.8.24; contract Safe { string constant X="tx.origin selfdestruct delegatecall"; // target.call(data)\n function ok() external {} }`;
+assert.deepEqual(analyzeA19SoliditySource(decoy, policy).findingIds, []);
+const badPolicy = structuredClone(policy); badPolicy.hardStops.syntheticBenchmarkMayUnlockPaid = true;
+assert.equal(verifyA19AuditStaticPolicy(badPolicy), false);
+const tampered = structuredClone(runtime); tampered.frozen.recall = 0;
+assert.equal(verifyA19AuditStaticBenchmark(tampered, policy), false);
+console.log(`PASS35 A19 audit static benchmark: 240/240 cases; 2880/2880 mutations; frozen recall=${runtime.frozen.recall} specificity=${runtime.frozen.specificity} precision=${runtime.frozen.precision} F1=${runtime.frozen.f1}`);

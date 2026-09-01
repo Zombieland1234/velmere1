@@ -1,0 +1,397 @@
+import { NextResponse } from "next/server";
+import { resolveRequestAccount } from "@/lib/auth/pass2363-account-session";
+import { buildPass2812PaidTierSecuritySuite, buildReportAccessDecision } from "@/lib/market-integrity/top1-entitlement-report-access";
+import { buildPass2813VlmBrainClaimFirewall, buildPass2813VlmBrainSourcePlan } from "@/lib/market-integrity/top1-vlm-brain-source-router";
+import { buildPass2814SourcePoisoningFirewall } from "@/lib/market-integrity/top1-source-poisoning-ssrf-firewall";
+import { VELMERE_SOURCE_REGISTRY_V1, buildSourceReceipt, type VelmereTier } from "@/lib/market-integrity/top1-risk-foundation";
+import type { VelmereReportAssetFamily } from "@/lib/market-integrity/top1-pdf-report-payload";
+import { buildPass2815ReportIntegrityVault } from "@/lib/market-integrity/top1-report-integrity-vault";
+import { buildPass2816RuntimeObservabilityLedger } from "@/lib/market-integrity/top1-runtime-observability-ledger";
+import { buildPass2817MarketMicrostructureGate } from "@/lib/market-integrity/top1-market-microstructure-gate";
+import { buildPass2818IconProvenanceGate } from "@/lib/market-integrity/top1-icon-provenance-gate";
+import { buildPass2819MobileAccessibilityOverlayGate } from "@/lib/market-integrity/top1-mobile-accessibility-overlay-gate";
+import { buildPass2820PdfRenderCleanroomGate } from "@/lib/market-integrity/top1-pdf-render-cleanroom-gate";
+import { PASS2821_CUSTOMER_DELIVERY_ACCEPTANCE_GATES, buildPass2821CustomerDeliveryLedger } from "@/lib/market-integrity/top1-customer-delivery-ledger";
+import { PASS2822_ACCOUNT_VAULT_TOKEN_ACCEPTANCE_GATES, buildPass2822AccountVaultTokenConsumptionGate } from "@/lib/market-integrity/top1-account-vault-token-consumption-gate";
+import { PASS2823_ADVANCED_HUMAN_REVIEW_ACCEPTANCE_GATES, buildPass2823AdvancedHumanReviewGate } from "@/lib/market-integrity/top1-advanced-human-review-signoff-gate";
+import { PASS2824_ADVANCED_REVIEW_REPLAY_AUDIT_ACCEPTANCE_GATES, buildPass2824AdvancedReviewReplayAuditGate } from "@/lib/market-integrity/top1-advanced-review-replay-audit-gate";
+import { PASS2825_COMMUNITY_SOURCE_UPGRADE_ACCEPTANCE_GATES, buildPass2825CommunitySourceUpgradeModerationGate } from "@/lib/market-integrity/top1-community-source-upgrade-moderation-gate";
+import { PASS2826_CUSTOMER_SAFE_NARRATIVE_ACCEPTANCE_GATES, buildPass2826CustomerSafeNarrativeGate } from "@/lib/market-integrity/top1-customer-safe-narrative-gate";
+import { PASS2827_LAUNCH_READINESS_ACCEPTANCE_GATES, buildPass2827LaunchReadinessEvidenceGate } from "@/lib/market-integrity/top1-launch-readiness-evidence-gate";
+import { PASS2828_EVIDENCE_ARTIFACT_HANDOFF_ACCEPTANCE_GATES, buildPass2828EvidenceArtifactHandoffGate } from "@/lib/market-integrity/top1-evidence-artifact-handoff-gate";
+import { PASS2829_RELEASE_PROOF_COLLECTOR_ACCEPTANCE_GATES, buildPass2829ReleaseProofCollectorGate } from "@/lib/market-integrity/top1-release-proof-collector-gate";
+import { PASS2830_RELEASE_PACKET_SEAL_ACCEPTANCE_GATES, buildPass2830ReleasePacketSealGate } from "@/lib/market-integrity/top1-release-packet-seal-gate";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function tierFromRequest(value: string | null): VelmereTier {
+  const normalized = (value ?? "Basic").toLowerCase();
+  if (normalized === "advanced") return "Advanced";
+  if (normalized === "pro") return "Pro";
+  return "Basic";
+}
+
+function familyFromRequest(value: string | null): VelmereReportAssetFamily {
+  const normalized = (value ?? "unknown").toLowerCase();
+  if (["native_crypto", "erc20", "stablecoin", "defi_protocol", "exchange_health", "equity", "etf", "fx", "commodity", "real_estate"].includes(normalized)) {
+    return normalized as VelmereReportAssetFamily;
+  }
+  return "unknown";
+}
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const account = resolveRequestAccount(request);
+  const accessContext = {
+    tier: tierFromRequest(url.searchParams.get("tier")),
+    accountId: account?.accountId ?? null,
+    serverReceiptId: null,
+    reportToken: null,
+    payloadHash: null,
+    manualReviewReceiptId: null,
+    verification: {
+      accountBound: Boolean(account),
+      serverReceiptVerified: false,
+      reportTokenVerified: false,
+      payloadHashBound: false,
+      manualReviewVerified: false,
+      source: "diagnostic_only" as const,
+    },
+  };
+  const decision = buildReportAccessDecision(accessContext);
+  const pass2813BrainPlan = buildPass2813VlmBrainSourcePlan({
+    assetFamily: familyFromRequest(url.searchParams.get("family")),
+    tier: accessContext.tier,
+    sourceFamilyCount: Number(url.searchParams.get("sourceFamilyCount") ?? 1),
+    missingEvidenceCount: Number(url.searchParams.get("missingEvidenceCount") ?? 0),
+    providerConflictCount: Number(url.searchParams.get("providerConflictCount") ?? 0),
+    chartSourceBound: url.searchParams.get("chartSourceBound") === "1",
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    manualReviewPresent: Boolean(accessContext.manualReviewReceiptId),
+  });
+
+  const pass2814SourcePoisoningFirewall = buildPass2814SourcePoisoningFirewall({
+    surface: "PDF",
+    sourceFamily: "velmere_internal",
+    targetUrl: url.searchParams.get("sourceUrl") ?? url.searchParams.get("projectUrl"),
+    assetFamily: familyFromRequest(url.searchParams.get("family")),
+    tier: accessContext.tier,
+    query: url.searchParams.get("query"),
+    projectUrl: url.searchParams.get("projectUrl") ?? url.searchParams.get("sourceUrl"),
+  });
+
+  const reportAccessGeneratedAt = new Date().toISOString();
+  const pass2815ReportIntegrityVault = buildPass2815ReportIntegrityVault({
+    reportId: `VLM-ACCESS-${(url.searchParams.get("query") ?? "diagnostic").replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 24) || "DIAGNOSTIC"}`,
+    tier: accessContext.tier,
+    payloadHash: accessContext.payloadHash,
+    generatedAt: reportAccessGeneratedAt,
+    sourceReceipts: VELMERE_SOURCE_REGISTRY_V1.slice(0, accessContext.tier === "Basic" ? 3 : accessContext.tier === "Pro" ? 7 : VELMERE_SOURCE_REGISTRY_V1.length).map((entry, index) => buildSourceReceipt(entry, new Date().toISOString(), index * 18)),
+    reportAccessDecision: decision,
+    sourcePoisoningFirewall: pass2814SourcePoisoningFirewall,
+  });
+
+  const pass2816ReportAccessRuntimeObservability = buildPass2816RuntimeObservabilityLedger({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    requestedUnits: 1,
+    sourceBoundUnits: decision.paidEvidenceAllowed ? 1 : 0,
+    skeletonOrMissingUnits: decision.paidEvidenceAllowed ? 0 : 1,
+    containedFailures: decision.paidEvidenceAllowed ? 0 : 1,
+    hardFailures: pass2815ReportIntegrityVault.releaseGate.status === "block" || pass2814SourcePoisoningFirewall.releaseGate.status === "block" ? 1 : 0,
+    serverUnitBudget: 1,
+    softTimeoutMs: 1200,
+    retryAfterMs: 30000,
+    maxConcurrentBatches: 1,
+    batchMode: "report",
+  });
+
+  const pass2817ReportAccessMicrostructureGate = buildPass2817MarketMicrostructureGate({
+    tier: accessContext.tier,
+    assetFamily: familyFromRequest(url.searchParams.get("family")),
+    chartSourceBound: url.searchParams.get("chartSourceBound") === "1",
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    runtimeState: pass2816ReportAccessRuntimeObservability.runtimeState,
+    sourceFamilyCount: Number(url.searchParams.get("sourceFamilyCount") ?? 1),
+    orderBookLevels: Number(url.searchParams.get("orderBookLevels") ?? 0),
+    spreadBps: url.searchParams.has("spreadBps") ? Number(url.searchParams.get("spreadBps")) : null,
+    slippageBps: url.searchParams.has("slippageBps") ? Number(url.searchParams.get("slippageBps")) : null,
+    depthUsd: url.searchParams.has("depthUsd") ? Number(url.searchParams.get("depthUsd")) : null,
+  });
+
+  const pass2818ReportAccessIconProvenanceGate = buildPass2818IconProvenanceGate({
+    surface: "Report Access",
+    symbol: url.searchParams.get("symbol") ?? url.searchParams.get("query") ?? "DIAGNOSTIC",
+    assetFamily: familyFromRequest(url.searchParams.get("family")),
+    tier: accessContext.tier,
+    licenseApproved: url.searchParams.get("iconLicenseApproved") === "1" ? true : undefined,
+  });
+  const pass2819ReportAccessMobileAccessibilityGate = buildPass2819MobileAccessibilityOverlayGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    viewportClass: "mobile_390",
+    backgroundScrollLock: true,
+    focusReturn: true,
+    escapeClose: true,
+    outsideClickClose: true,
+    safeAreaPadding: true,
+    horizontalTableContained: true,
+    chartTouchDoesNotTrapPageScroll: true,
+    reducedMotionFallback: true,
+    ariaLabelsPresent: true,
+    hiddenOverlayClickCaptureBlocked: true,
+  });
+
+  const pass2820ReportAccessPdfRenderCleanroomGate = buildPass2820PdfRenderCleanroomGate({
+    surface: "Report Access",
+    locale: (url.searchParams.get("locale") === "pl" || url.searchParams.get("locale") === "de") ? (url.searchParams.get("locale") as "pl" | "de") : "en",
+    tier: accessContext.tier,
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    sourceChartAccepted: url.searchParams.get("chartSourceBound") === "1",
+    fixtureLabelPresent: true,
+    pages: [
+      { page: 1, title: "Cover / score / confidence / report ID", requiredForTier: "Basic", status: "prepared" },
+      { page: 4, title: "Source receipt table", requiredForTier: "Pro", status: "requires_live_receipts" },
+      { page: 9, title: "Human review notes", requiredForTier: "Advanced", status: "requires_human_review" },
+    ],
+  });
+
+  const pass2821ReportAccessCustomerDeliveryLedger = buildPass2821CustomerDeliveryLedger({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    accountBound: Boolean(accessContext.accountId),
+    serverReceiptPresent: Boolean(accessContext.serverReceiptId),
+    oneTimeReportTokenPresent: Boolean(accessContext.reportToken),
+    payloadHash: accessContext.payloadHash ?? pass2815ReportIntegrityVault.payloadHash,
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+    pdfCleanroomStatus: pass2820ReportAccessPdfRenderCleanroomGate.status,
+    runtimeState: pass2816ReportAccessRuntimeObservability.runtimeState,
+    manualReviewReceiptPresent: Boolean(accessContext.manualReviewReceiptId),
+    expiresInMinutes: accessContext.tier === "Basic" ? 15 : accessContext.tier === "Pro" ? 10 : 5,
+  });
+
+  const pass2822ReportAccessAccountVaultTokenGate = buildPass2822AccountVaultTokenConsumptionGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    accountBound: Boolean(accessContext.accountId),
+    serverReceiptPresent: Boolean(accessContext.serverReceiptId),
+    reportToken: accessContext.reportToken,
+    reportTokenStatus: (url.searchParams.get("tokenStatus") === "consumed" || url.searchParams.get("tokenStatus") === "expired" || url.searchParams.get("tokenStatus") === "revoked") ? (url.searchParams.get("tokenStatus") as "consumed" | "expired" | "revoked") : null,
+    payloadHash: accessContext.payloadHash ?? pass2815ReportIntegrityVault.payloadHash,
+    deliveredPayloadHash: url.searchParams.get("deliveredPayloadHash"),
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+    customerDeliveryStatus: pass2821ReportAccessCustomerDeliveryLedger.status,
+    pdfCleanroomStatus: pass2820ReportAccessPdfRenderCleanroomGate.status,
+    runtimeState: pass2816ReportAccessRuntimeObservability.runtimeState,
+    issuedAt: reportAccessGeneratedAt,
+    expiresInMinutes: accessContext.tier === "Basic" ? 15 : accessContext.tier === "Pro" ? 10 : 5,
+    replayCount: Number(url.searchParams.get("replayCount") ?? 0),
+    resendRequested: url.searchParams.get("resend") === "1",
+  });
+
+
+  const pass2823ReportAccessAdvancedHumanReviewGate = buildPass2823AdvancedHumanReviewGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    manualReviewReceiptId: accessContext.manualReviewReceiptId,
+    operatorId: url.searchParams.get("operatorId") ?? request.headers.get("x-velmere-operator-id"),
+    operatorSignature: url.searchParams.get("operatorSignature") ?? request.headers.get("x-velmere-operator-signature"),
+    payloadHash: accessContext.payloadHash ?? pass2815ReportIntegrityVault.payloadHash,
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+    reviewPayloadHash: url.searchParams.get("reviewPayloadHash") ?? request.headers.get("x-velmere-review-payload-hash"),
+    reviewerNote: url.searchParams.get("reviewerNote"),
+    generatedAt: reportAccessGeneratedAt,
+    reviewedAt: url.searchParams.get("reviewedAt"),
+    reviewRejected: url.searchParams.get("reviewRejected") === "1",
+    runtimeState: pass2816ReportAccessRuntimeObservability.runtimeState,
+    tokenState: pass2822ReportAccessAccountVaultTokenGate.tokenState,
+    expiresInMinutes: 1440,
+  });
+
+  const pass2824ReportAccessAdvancedReviewReplayAuditGate = buildPass2824AdvancedReviewReplayAuditGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    previousGate: pass2823ReportAccessAdvancedHumanReviewGate,
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    payloadHash: accessContext.payloadHash ?? pass2815ReportIntegrityVault.payloadHash,
+    deliveredPayloadHash: url.searchParams.get("deliveredPayloadHash") ?? request.headers.get("x-velmere-delivered-payload-hash"),
+    reviewPayloadHash: url.searchParams.get("reviewPayloadHash") ?? request.headers.get("x-velmere-review-payload-hash"),
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+    deliveredSourceReceiptRoot: url.searchParams.get("deliveredSourceReceiptRoot") ?? request.headers.get("x-velmere-delivered-source-root"),
+    reviewSourceReceiptRoot: url.searchParams.get("reviewSourceReceiptRoot") ?? request.headers.get("x-velmere-review-source-root"),
+    operatorSignatureHash: pass2823ReportAccessAdvancedHumanReviewGate.operatorSignatureHash,
+    operatorSignatureReplayHash: url.searchParams.get("operatorSignatureReplayHash") ?? request.headers.get("x-velmere-operator-signature-replay-hash"),
+    reviewerNote: url.searchParams.get("reviewerNote"),
+    signedReviewerNoteHash: url.searchParams.get("signedReviewerNoteHash") ?? request.headers.get("x-velmere-signed-note-hash"),
+    replayReviewerNoteHash: url.searchParams.get("replayReviewerNoteHash") ?? request.headers.get("x-velmere-replay-note-hash"),
+    replayAttemptCount: Number(url.searchParams.get("replayAttemptCount") ?? request.headers.get("x-velmere-replay-attempt-count") ?? 0),
+    tokenState: pass2822ReportAccessAccountVaultTokenGate.tokenState,
+    runtimeState: pass2816ReportAccessRuntimeObservability.runtimeState,
+  });
+
+  const pass2825ReportAccessCommunitySourceUpgradeGate = buildPass2825CommunitySourceUpgradeModerationGate({
+    surface: "Report Access",
+    contentType: "api",
+    title: url.searchParams.get("communityTitle") ?? "Report access community source check",
+    body: url.searchParams.get("communityBody"),
+    tags: [accessContext.tier, familyFromRequest(url.searchParams.get("family")), "report-access"],
+    authorRole: (url.searchParams.get("communityRole") as "anonymous" | "member" | "verified_project" | "moderator" | "admin" | "operator" | null) ?? "operator",
+    accountBound: Boolean(accessContext.accountId),
+    walletBound: false,
+    firstPost: url.searchParams.get("communityFirstPost") === "1",
+    postsInWindow: Number(url.searchParams.get("communityPostsInWindow") ?? 0),
+    moderationState: url.searchParams.get("communityModerationState") === "approved" ? "approved" : "queued",
+    unsafeLinkBlocked: url.searchParams.get("communityUnsafeLink") === "1",
+    linkCount: Number(url.searchParams.get("communityLinkCount") ?? 0),
+    requestedSourceUpgrade: url.searchParams.get("communitySourceUpgrade") === "1",
+    sourceReceiptId: url.searchParams.get("communitySourceReceiptId"),
+    moderatorId: url.searchParams.get("communityModeratorId"),
+    payloadHash: accessContext.payloadHash ?? pass2815ReportIntegrityVault.payloadHash,
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+  });
+
+  const pass2826ReportAccessCustomerSafeNarrativeGate = buildPass2826CustomerSafeNarrativeGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    assetFamily: familyFromRequest(url.searchParams.get("family")),
+    locale: (url.searchParams.get("locale") === "pl" || url.searchParams.get("locale") === "de") ? (url.searchParams.get("locale") as "pl" | "de") : "en",
+    narrativeText: url.searchParams.get("narrative") ?? "Report access narrative is evidence-bound, paid-redacted where required, and not financial advice.",
+    riskScorePresent: true,
+    confidenceScorePresent: true,
+    sourceFamilyCount: Number(url.searchParams.get("sourceFamilyCount") ?? 1),
+    missingEvidenceCount: Number(url.searchParams.get("missingEvidenceCount") ?? 0),
+    providerConflictCount: Number(url.searchParams.get("providerConflictCount") ?? 0),
+    topDriversCount: Number(url.searchParams.get("topDriversCount") ?? 1),
+    mitigatorsCount: Number(url.searchParams.get("mitigatorsCount") ?? 1),
+    confidenceCapReason: "Report access confidence is capped by entitlement, receipt parity and missing evidence state.",
+    paidEvidenceAllowed: decision.paidEvidenceAllowed,
+    advancedReviewAllowed: pass2823ReportAccessAdvancedHumanReviewGate.decision === "operator_signed" && pass2824ReportAccessAdvancedReviewReplayAuditGate.releaseGate.status === "allow",
+    sourceReceiptPresent: true,
+    methodologyLinked: true,
+    missingEvidenceShown: true,
+    tierBoundaryShown: true,
+    notAdviceShown: true,
+    localePure: pass2820ReportAccessPdfRenderCleanroomGate.releaseGate.status !== "block",
+  });
+
+  const pass2827ReportAccessLaunchReadinessGate = buildPass2827LaunchReadinessEvidenceGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    buildPassed: false,
+    typecheckPassed: false,
+    i18nPassed: true,
+    verifierPassedCount: 8,
+    verifierTotalCount: 10,
+    liveProviderSmokePassed: false,
+    screenshotQaPassed: false,
+    mobileQaPassed: true,
+    securityQaPassed: pass2814SourcePoisoningFirewall.releaseGate.status !== "block" && pass2815ReportIntegrityVault.releaseGate.status !== "block",
+    pdfParityPassed: Boolean(pass2815ReportIntegrityVault.payloadHash) && Boolean(pass2815ReportIntegrityVault.sourceReceiptMerkleRoot),
+    runtimeState: pass2816ReportAccessRuntimeObservability.runtimeState,
+    payloadHashPresent: Boolean(pass2815ReportIntegrityVault.payloadHash),
+    sourceReceiptRootPresent: Boolean(pass2815ReportIntegrityVault.sourceReceiptMerkleRoot),
+    paidEvidenceRedacted: true,
+    p0OpenCount: 1,
+    p1OpenCount: 2,
+  });
+
+  const pass2828ReportAccessEvidenceArtifactGate = buildPass2828EvidenceArtifactHandoffGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    buildArtifactId: url.searchParams.get("buildArtifactId"),
+    typecheckArtifactId: url.searchParams.get("typecheckArtifactId"),
+    i18nArtifactId: url.searchParams.get("i18nArtifactId") ?? "check-i18n-prepared-report-access",
+    verifierArtifactId: url.searchParams.get("verifierArtifactId") ?? "pass2828-verifier-prepared-report-access",
+    liveProviderSmokeArtifactId: url.searchParams.get("liveProviderSmokeArtifactId"),
+    screenshotPackArtifactId: url.searchParams.get("screenshotPackArtifactId"),
+    mobileScreenshotPackArtifactId: url.searchParams.get("mobileScreenshotPackArtifactId"),
+    securityScanArtifactId: url.searchParams.get("securityScanArtifactId"),
+    pdfParityPacketArtifactId: url.searchParams.get("pdfParityPacketArtifactId"),
+    payloadHash: pass2815ReportIntegrityVault.payloadHash,
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+  });
+
+  const pass2829ReportAccessReleaseProofCollectorGate = buildPass2829ReleaseProofCollectorGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    handoffGate: pass2828ReportAccessEvidenceArtifactGate,
+    payloadHash: pass2815ReportIntegrityVault.payloadHash,
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+    sealedPacketRequested: url.searchParams.get("sealed") === "1" || url.searchParams.get("sealed") === "true",
+  });
+
+  const pass2830ReportAccessReleasePacketSealGate = buildPass2830ReleasePacketSealGate({
+    surface: "Report Access",
+    tier: accessContext.tier,
+    collectorGate: pass2829ReportAccessReleaseProofCollectorGate,
+    payloadHash: pass2815ReportIntegrityVault.payloadHash,
+    sourceReceiptRoot: pass2815ReportIntegrityVault.sourceReceiptMerkleRoot,
+    requestedSeal: url.searchParams.get("seal") === "1" || url.searchParams.get("seal") === "true",
+    revoked: url.searchParams.get("revoked") === "1" || url.searchParams.get("revoked") === "true",
+    codeRefChanged: url.searchParams.get("codeRefChanged") === "1" || url.searchParams.get("codeRefChanged") === "true",
+  });
+
+  return NextResponse.json(
+    {
+      ok: true,
+      pass: 2830,
+      pass2825LegacyCompatibility: { pass: 2825, rule: "PASS2825 Community/Square source-upgrade diagnostics remain present while PASS2826 adds customer-safe narrative claim ledger." },
+      pass2824LegacyCompatibility: { pass: 2824, rule: "PASS2824 replay/drift audit remains present while PASS2825 adds Community/Square source-upgrade moderation boundary." },
+      pass2823LegacyCompatibility: { pass: 2823, rule: "PASS2823 human review signoff remains present while PASS2824 adds replay/drift audit before redisplay." },
+      pass2822LegacyCompatibility: { pass: 2822, rule: "PASS2822 token consumption diagnostics remain present while PASS2823 adds Advanced human-review signoff." },
+      decision,
+      suite: buildPass2812PaidTierSecuritySuite(accessContext),
+      pass2813BrainPlan,
+      pass2813ClaimFirewall: buildPass2813VlmBrainClaimFirewall(pass2813BrainPlan),
+      pass2814SourcePoisoningFirewall,
+      pass2815ReportIntegrityVault,
+      pass2816ReportAccessRuntimeObservability,
+      pass2817ReportAccessMicrostructureGate,
+      pass2818ReportAccessIconProvenanceGate,
+      pass2819ReportAccessMobileAccessibilityGate,
+      pass2820ReportAccessPdfRenderCleanroomGate,
+      pass2820CustomerSafeCopy: "Report access does not render a customer PDF unless locale purity, paid redaction, debug-copy redaction, chart lifecycle and payload-hash parity pass.",
+      pass2821ReportAccessCustomerDeliveryLedger,
+      pass2821CustomerDeliveryAcceptanceGates: PASS2821_CUSTOMER_DELIVERY_ACCEPTANCE_GATES,
+      pass2821CustomerSafeCopy: "Customer delivery is a separate final gate: download, account vault, email notice and API handoff must share payloadHash + sourceReceiptMerkleRoot and obey expiring one-time report tokens.",
+      pass2822ReportAccessAccountVaultTokenGate,
+      pass2822AccountVaultTokenAcceptanceGates: PASS2822_ACCOUNT_VAULT_TOKEN_ACCEPTANCE_GATES,
+      pass2822CustomerSafeCopy: "Report delivery token state is explicit: consumed, expired, revoked or payload-mismatched tokens cannot show paid evidence and need a fresh server-side issue/resend path.",
+      pass2823ReportAccessAdvancedHumanReviewGate,
+      pass2823AdvancedHumanReviewAcceptanceGates: PASS2823_ADVANCED_HUMAN_REVIEW_ACCEPTANCE_GATES,
+      pass2823CustomerSafeCopy: "Advanced operator notes are locked until server receipt, report token, fresh manual review receipt, pseudonymous operator signature, payload hash and sourceReceiptRoot all match.",
+      pass2824ReportAccessAdvancedReviewReplayAuditGate,
+      pass2824AdvancedReviewReplayAuditAcceptanceGates: PASS2824_ADVANCED_REVIEW_REPLAY_AUDIT_ACCEPTANCE_GATES,
+      pass2824CustomerSafeCopy: "Advanced addendum replay is blocked on payload/source-root/signature/note drift; report access can re-display only the signed sanitized addendum envelope.",
+      pass2825ReportAccessCommunitySourceUpgradeGate,
+      pass2825CommunitySourceUpgradeAcceptanceGates: PASS2825_COMMUNITY_SOURCE_UPGRADE_ACCEPTANCE_GATES,
+      pass2825CustomerSafeCopy: "Community/Square posts are non-source metadata until account, moderation, link-safety and moderator source-upgrade receipt bind them to payloadHash + sourceReceiptRoot.",
+      pass2826ReportAccessCustomerSafeNarrativeGate,
+      pass2826CustomerSafeNarrativeAcceptanceGates: PASS2826_CUSTOMER_SAFE_NARRATIVE_ACCEPTANCE_GATES,
+      pass2826CustomerSafeCopy: "Report access exposes the same customer-safe narrative claim ledger used by PDF/UI/Angel: neutral language, source binding, missing evidence, paid redaction and no-advice copy.",
+      pass2827ReportAccessLaunchReadinessGate,
+      pass2827LaunchReadinessAcceptanceGates: PASS2827_LAUNCH_READINESS_ACCEPTANCE_GATES,
+      pass2827CustomerSafeCopy: "Report access cannot call itself launch-ready while build/typecheck/provider smoke/screenshot/mobile/security/PDF parity proofs are missing or prepared-only.",
+      pass2828ReportAccessEvidenceArtifactGate,
+      pass2828EvidenceArtifactHandoffAcceptanceGates: PASS2828_EVIDENCE_ARTIFACT_HANDOFF_ACCEPTANCE_GATES,
+      pass2828CustomerSafeCopy: "Report access must list artifact IDs/statuses for build, typecheck, live provider smoke, screenshots, mobile QA, security QA and PDF parity before launch-ready language is allowed.",
+      pass2829ReportAccessReleaseProofCollectorGate,
+      pass2829ReleaseProofCollectorAcceptanceGates: PASS2829_RELEASE_PROOF_COLLECTOR_ACCEPTANCE_GATES,
+      pass2829CustomerSafeCopy: "Report access cannot attach launch-ready language to customer surfaces until the release proof collector marks P0/P1 artifacts fresh and sealed.",
+      pass2830ReportAccessReleasePacketSealGate,
+      pass2830ReleasePacketSealAcceptanceGates: PASS2830_RELEASE_PACKET_SEAL_ACCEPTANCE_GATES,
+      pass2830CustomerSafeCopy: "Report access can reference a release packet seal only when it is tied to the exact payloadHash/sourceReceiptRoot/releasePacketId; stale or revoked seals keep launch-ready and 100% claims blocked.",
+      pass2819CustomerSafeCopy: "Report access and PDF preview must remain keyboard reachable, safe-area visible and free of hidden overlay click capture before paid evidence renders.",
+      pass2818CustomerSafeCopy: "Icon/logo provenance is separate from evidence; unsafe or unlicensed icons render fallback initials and never unlock paid/source receipts.",
+      pass2817CustomerSafeCopy: "Microstructure fields are not unlocked or trusted by report access alone; order book/depth/slippage/OI/funding lanes need source receipts and paid entitlement where required.",
+      pass2816CustomerSafeCopy: "Runtime status is metadata only: degraded/circuit-open gates lock paid evidence and render missing evidence instead of silently failing.",
+      pass2815CustomerSafeCopy: "Report access is not enough by itself; payload hash, receipt Merkle root and replay guard must match before paid evidence renders.",
+      pass2814CustomerSafeCopy: "Paid evidence, source URLs and community/source text stay untrusted until entitlement, SSRF/source-poisoning and receipt-hash gates pass.",
+      customerSafeCopy: "This endpoint explains whether paid evidence can render and how VLM Brain should route the source plan. It does not create payment proof and does not accept wallet connect as entitlement.",
+    },
+    { headers: { "cache-control": "no-store" } },
+  );
+}

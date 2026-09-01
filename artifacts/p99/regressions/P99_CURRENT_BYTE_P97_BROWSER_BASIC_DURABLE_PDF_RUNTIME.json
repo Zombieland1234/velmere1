@@ -1,0 +1,451 @@
+{
+  "schemaVersion": "velmere.p97.browser-basic-durable-pdf-runtime.v1",
+  "generatedAt": "2026-08-21T08:00:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_DURABLE_RENDER_ONCE_REPLAY",
+  "checks": {
+    "total": 43,
+    "passed": 43,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "basic_policy_verifies",
+        "status": "PASS",
+        "detail": {
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "depth": "basic",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "accountBound": false,
+          "requireDurableStore": true,
+          "canonicalRequestId": "signed-lens-report:lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "subjectBinding": {
+            "kind": "anonymous",
+            "value": "signed-lens-report:lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "anonymousBindingUsesSignedReportIdentity": true,
+          "directNonDurableAllowed": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a"
+        }
+      },
+      {
+        "id": "basic_requires_durable_store",
+        "status": "PASS"
+      },
+      {
+        "id": "anonymous_subject_uses_signed_report",
+        "status": "PASS"
+      },
+      {
+        "id": "basic_policy_digest_canonical",
+        "status": "PASS"
+      },
+      {
+        "id": "account_policy_verifies",
+        "status": "PASS"
+      },
+      {
+        "id": "account_binding_is_exact",
+        "status": "PASS"
+      },
+      {
+        "id": "policy_rejects_basic_nondurable",
+        "status": "PASS"
+      },
+      {
+        "id": "policy_rejects_direct_mode_permission",
+        "status": "PASS"
+      },
+      {
+        "id": "policy_rejects_request_id_swap",
+        "status": "PASS"
+      },
+      {
+        "id": "policy_rejects_subject_swap",
+        "status": "PASS"
+      },
+      {
+        "id": "policy_rejects_report_swap",
+        "status": "PASS"
+      },
+      {
+        "id": "policy_rejects_digest_recompute_omission",
+        "status": "PASS"
+      },
+      {
+        "id": "transport_metadata_cannot_fork_canonical_job",
+        "status": "PASS",
+        "detail": {
+          "identityA": {
+            "jobId": "dcj_cdd75c8a4c34ce7611936a68345eb0f607c8eab8d6858ef9",
+            "inputHash": "4620d2836cd72683db90609ca2216b875a854ff4e2312157a68a90799287dfe7",
+            "subjectHash": "c1d6ad2430c47d9f1d4e1b71a1a50071fab3332b7c4fe8489ab0b7437c60ae8f",
+            "subjectSource": "anonymous",
+            "requestIdPresent": true
+          },
+          "identityB": {
+            "jobId": "dcj_cdd75c8a4c34ce7611936a68345eb0f607c8eab8d6858ef9",
+            "inputHash": "4620d2836cd72683db90609ca2216b875a854ff4e2312157a68a90799287dfe7",
+            "subjectHash": "c1d6ad2430c47d9f1d4e1b71a1a50071fab3332b7c4fe8489ab0b7437c60ae8f",
+            "subjectSource": "anonymous",
+            "requestIdPresent": true
+          }
+        }
+      },
+      {
+        "id": "different_signed_report_gets_different_job",
+        "status": "PASS"
+      },
+      {
+        "id": "local_first_run_memory_bounded",
+        "status": "PASS"
+      },
+      {
+        "id": "local_second_run_replays_exact_blob",
+        "status": "PASS"
+      },
+      {
+        "id": "same_signed_report_executes_once",
+        "status": "PASS",
+        "detail": {
+          "executeCount": 1
+        }
+      },
+      {
+        "id": "same_signed_report_same_job",
+        "status": "PASS",
+        "detail": {
+          "first": "dcj_cdd75c8a4c34ce7611936a68345eb0f607c8eab8d6858ef9",
+          "second": "dcj_cdd75c8a4c34ce7611936a68345eb0f607c8eab8d6858ef9",
+          "expected": "dcj_cdd75c8a4c34ce7611936a68345eb0f607c8eab8d6858ef9"
+        }
+      },
+      {
+        "id": "memory_replay_exact_bytes",
+        "status": "PASS"
+      },
+      {
+        "id": "byte_digest_is_exact_pdf_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "text_digest_is_not_substituted_for_byte_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "memory_receipt_verifies",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "memory_receipt_bounded_not_final",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt_binds_policy_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "direct_receipt_verifies_as_rejected_state",
+        "status": "PASS"
+      },
+      {
+        "id": "direct_mode_explicitly_noneligible",
+        "status": "PASS"
+      },
+      {
+        "id": "database_receipt_verifies",
+        "status": "PASS"
+      },
+      {
+        "id": "database_receipt_only_storage_axis_eligible",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt_rejects_extra_field",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10",
+          "extra": true
+        }
+      },
+      {
+        "id": "receipt_rejects_policy_digest_swap",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_pdf_digest_swap",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_pdf_length_swap",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 46,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_storage_state_forgery",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "DURABLE_DATABASE_BLOB_VERIFIED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_final_eligibility_forgery",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": true,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_retention_forgery",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": true,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_restore_forgery",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": true,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_replayed_flip",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": false,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_report_swap",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:cb161b8bddb51c23decc50b4f4658e5b5b1342cea919d4db9c756ae4bd1c8f10"
+        }
+      },
+      {
+        "id": "receipt_rejects_receipt_digest_swap",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.p97.lens-pdf-durability-receipt.v1",
+          "policyId": "p97-lens-pdf-render-once-durable-store-first-v1",
+          "reportId": "lens-report-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "depth": "basic",
+          "accountBound": false,
+          "policyDigest": "sha256:5bde29bd2abc052eadc3ec7c221e2e37af1d52e79e9b3f48b834e1a25cafd91a",
+          "computationMode": "memory_non_production",
+          "replayed": true,
+          "pdfSha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+          "pdfByteLength": 45,
+          "storageState": "LOCAL_MEMORY_EXACT_BLOB_BOUNDED",
+          "customerFinalStorageEligible": false,
+          "durableRetentionClaimed": false,
+          "backupRestoreProven": false,
+          "receiptDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+        }
+      },
+      {
+        "id": "receipt_rejects_self_consistent_forgery_without_expected_policy",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt_rejects_wrong_exact_bytes",
+        "status": "PASS"
+      },
+      {
+        "id": "production_missing_store_fails_before_render",
+        "status": "PASS",
+        "detail": {
+          "message": "durable_computation_store_required"
+        }
+      },
+      {
+        "id": "production_missing_store_does_not_render",
+        "status": "PASS",
+        "detail": {
+          "productionExecuteCount": 0
+        }
+      }
+    ]
+  },
+  "exactLocalArtifact": {
+    "byteLength": 45,
+    "sha256": "sha256:afb07968b800750d35d4a58644e6bdc426c1fba37545df8d21be265c5e63dc72",
+    "executionCount": 1,
+    "replayed": true
+  },
+  "environment": {
+    "networkSocketsUsed": false,
+    "realSupabaseExecuted": false,
+    "productionStoreConfigured": false
+  },
+  "customerCredit": {
+    "browserBasicFinal": false,
+    "customerFinalNumeratorDelta": 0,
+    "reason": "Memory replay is a local bounded proof. Production without a configured durable store fails before rendering. No deployed route, real database, Browser journey, rights/currentness, exact Windows or customer-authorized input was proven."
+  },
+  "truthBoundary": "Proves the Browser PDF durable policy, signed-report idempotency, exact binary SHA-256, bounded local memory replay, production fail-closed behavior and receipt mutation rejection. It does not prove Supabase persistence, account storage, deployed preview/download, retention, restore, Browser Basic FINAL or Customer FINAL."
+}

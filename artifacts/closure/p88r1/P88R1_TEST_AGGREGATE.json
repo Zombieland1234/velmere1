@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "velmere.p88r1.current-source-test-aggregate.v1",
+  "generatedAt": "2026-08-20T15:00:00.000Z",
+  "status": "PASS_BOUNDED",
+  "currentRegressionReceipt": "receipts/p88/P88_CURRENT_SOURCE_SEGMENTED_REGRESSION.json",
+  "currentRegressionReceiptSha256": "99e514ac77df805dbdedc0ccc249101fb6798433a629869e7ca39e4963f649ae",
+  "commandsOrReceiptsPassed": 34,
+  "aggregateExecutedChecksAcrossOverlappingHarnesses": 1510,
+  "aggregateIndependentEvidenceClaim": false,
+  "authorityBindingChecks": 17,
+  "providerCapacityChecks": 35,
+  "executionAdjudication": [
+    {
+      "event": "initial_monolithic_orchestrator_timeout",
+      "result": "NO_CREDIT",
+      "classification": "HARNESS_ORCHESTRATION_FAILURE_NOT_PRODUCT_RESULT",
+      "detail": "The first all-in-one runner timed out after producing logs through the P82 static lane and emitted no aggregate receipt. Remaining commands were executed individually; this segmented receipt verifies the complete current evidence set."
+    },
+    {
+      "event": "p87_p86_historical_compatibility_nonzero",
+      "result": "SUPERSEDED_NOT_COUNTED",
+      "detail": "The old lane lacked its exact P86 base locally and freezes schema identity. P88 intentionally appends an ordered exact-PDF migration; replacement P88 compatibility verifies 19/19 without granting old semantics new guarantees."
+    },
+    {
+      "event": "p75_advanced_automation_historical_nonzero",
+      "result": "SUPERSEDED_NOT_COUNTED",
+      "detail": "Exactly two v1 atomic-completion assertions fail because P88 requires the stronger exact-PDF v2 operation. The 35 passing assertions from this nonzero harness are not partially credited."
+    },
+    {
+      "event": "p86_p85_first_attempt_missing_parent",
+      "result": "NO_CREDIT_FIRST_ATTEMPT",
+      "detail": "The first attempt lacked the exact P85 base. After extracting the supplied exact P85 SOURCE_ONLY, the same compatibility proof passed 10/10; only that rerun is counted."
+    },
+    {
+      "event": "p88_provider_capacity_first_attempt_import_resolution",
+      "result": "NO_CREDIT_FIRST_ATTEMPT",
+      "detail": "Direct Node import failed on an extensionless TypeScript dependency in the harness environment. The first failure log is retained; the repaired independent source-contract verifier passed 35/35."
+    },
+    {
+      "event": "segmented_regression_verifier_first_attempt_marker_mismatch",
+      "result": "NO_CREDIT_FIRST_ATTEMPT",
+      "detail": "The verifier initially looked for a nested total field while the current P88 runtime stdout uses checks: 74. The execution evidence itself was unchanged; the marker contract was corrected and the failed verifier log retained."
+    }
+  ],
+  "supersededLogs": [
+    {
+      "path": "artifacts/p88/logs/regression/10_P87_P86_COMPATIBILITY.log",
+      "credit": "NONE"
+    },
+    {
+      "path": "artifacts/p88/logs/regression/28_P75_ADVANCED_AUTOMATION_RUNTIME.log",
+      "credit": "NONE"
+    },
+    {
+      "path": "artifacts/p88/logs/regression/12_P86_P85_COMPATIBILITY.log",
+      "credit": "NONE"
+    },
+    {
+      "path": "artifacts/p88/logs/regression/34A_P88_AUDIT_PAID_PROVIDER_CAPACITY_FAILED_IMPORT.log",
+      "credit": "NONE"
+    },
+    {
+      "path": "artifacts/p88/logs/regression/35A_P88_SEGMENTED_REGRESSION_VERIFIER_FAILED_MARKER.log",
+      "credit": "NONE"
+    }
+  ],
+  "zeroFakeCredit": {
+    "countsAreOverlapping": true,
+    "independentEvidenceCount": null,
+    "detectorAccuracy": null,
+    "realProvidersExecutedByP88": false,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "saleEligible": "0/20",
+    "exactWindows": "WITHHELD"
+  },
+  "truthBoundary": "1510 is the sum of overlapping local/static/runtime/regression assertions whose evidence files are verified here. It is not an independent-evidence count, accuracy result, provider quorum, customer count, FINAL numerator, database/staging proof, deployed HTTP proof, rights proof or exact-Windows proof."
+}

@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { runA23Benchmark, verifyA23Benchmark, verifyA23Policy } from "../../lib/security/pass35-a23-remediation-closure-runtime.mjs";
+const read=(p)=>JSON.parse(readFileSync(p,"utf8"));let assertions=0;const check=(v,m)=>{assert.ok(v,m);assertions++;};
+const policy=read("config/pass35/a23-remediation-closure-policy.json"),a22=read("config/pass35/a22-severity-triage-policy.json"),contract=read("config/pass35/a23-remediation-closure-runtime-contract.json"),receipt=read("artifacts/pass35/PASS35_A23_REMEDIATION_CLOSURE_RECEIPT.json"),status=read("config/pass35/current-status-register.json"),zero=read("config/pass35/zero-budget-functional-roadmap.json"),current=read("config/current-release.json"),audit=read("config/pass35/audit-program.json"),envelope=read("config/pass35/audit-execution-envelope.json"),product=read("config/pass35/product-tier-content-contract.json");
+check(verifyA23Policy(policy),"policy");const runtime=runA23Benchmark(policy,a22);check(verifyA23Benchmark(runtime,policy),"runtime");
+check(runtime.denominators.cases===192&&runtime.denominators.frozen===72&&runtime.denominators.mutations===2304,"denominators");
+check(runtime.frozen.closureAccuracy===1&&runtime.frozen.unsafeClosureSuppression===1&&runtime.frozen.unsafeClosures===0&&runtime.frozen.falseBlocks===0&&runtime.mutation.killRate===1,"metrics");
+check(contract.canonicalWeightedPlanningPercent===48.8&&contract.canonicalStrictDonePercent===18.6&&contract.zeroBudgetWeightedPlanningPercent===88.1,"percentages");
+check(contract.progressDeltaVsA22.canonicalPercentagePoints===1.1&&contract.progressDeltaVsA22.zeroBudgetPercentagePoints===0.6,"delta A22");
+check(contract.progressDeltaVsA16.canonicalPercentagePoints===8.1&&contract.progressDeltaVsA16.zeroBudgetPercentagePoints===8.1,"delta A16");
+check(receipt.exactPrePostBindingComplete&&receipt.patchImpactCoverageComplete&&receipt.familyDerivedRetestMatrixComplete&&receipt.regressionFindingGateComplete&&receipt.postPatchSeverityGateComplete&&receipt.supersessionInvalidationComplete,"receipt implementation");
+check(receipt.realFixClaimed===false&&receipt.signedClosureClaimed===false&&receipt.qualifiedReviewerClaimed===false&&receipt.independentRetestClaimed===false&&receipt.paidGateEligible===false&&receipt.sellEnabled===false,"receipt truth");
+const row=status.rows.find((item)=>item.id==="AUD17_A15_REMEDIATION_RETEST");check(row?.status==="DONE"&&row.blocker==="NONE_LOCAL_FOR_DECLARED_BOUNDED_A15_REMEDIATION_CLOSURE_IMPLEMENTATION"&&row.missing.length===0,"status row");
+for(const id of ["ZB59_PATCH_IMPACT_COVERAGE_GRAPH","ZB60_FAMILY_DERIVED_RETEST_CLOSURE_MATRIX","ZB61_REMEDIATION_CLOSURE_FROZEN_BENCHMARK"])check(zero.capabilities.find((item)=>item.id===id)?.status==="DONE",`zero ${id}`);
+check(audit.controls.find((item)=>item.id==="A15")?.status==="IMPLEMENTED_LOCAL_EVIDENCE_BOUND_REMEDIATION_CLOSURE_BENCHMARKED_NOT_SIGNED","audit program");
+const family=envelope.capabilityInventory.find((item)=>item.familyId==="remediation_retest_local_contract");check(family?.state==="IMPLEMENTED_LOCAL_EVIDENCE_BOUND_CLOSURE_BENCHMARKED_REAL_SIGNED_CLOSURE_MISSING"&&family.mayNotClaim.includes("A15 paid gate passed"),"envelope truth");
+const auditSurface=product.surfaces.find((surface)=>surface.surfaceId==="audit_evm");check(product.a23RemediationClosure?.paidGateEligible===false&&product.a23RemediationClosure.requiredProFields.every((field)=>auditSurface.tiers.pro.requiredFields.includes(field)),"product Pro");check(product.a23RemediationClosure.requiredAdvancedFields.every((field)=>auditSurface.tiers.advanced.requiredFields.includes(field)),"product Advanced");
+check(current.sourceRevisionId===policy.sourceRevisionId&&current.a23RemediationClosureContractPath==="config/pass35/a23-remediation-closure-runtime-contract.json","current pointer");
+check(existsSync("artifacts/release/PASS35_A23_REMEDIATION_CLOSURE.md")&&existsSync("artifacts/release/PASS35_A23_PRODUCT_ROADMAP_SUMMARY.json"),"release artifacts");
+check(JSON.stringify(status.statusPrecedence)===JSON.stringify(["this register","A32 roadmap current-status section","machine-generated readiness dashboard","A31 and earlier addenda as historical implementation notes only","base roadmap as target requirements"]),"status precedence under A32");
+check(status.sellEnabledCount===0&&status.globalDecision==="NO_GO"&&status.visualFreeze.mismatches===0,"global truth");
+console.log(JSON.stringify({status:"PASS_A23_CONTROL_PLANE_UNDER_A32",assertions,cases:runtime.denominators.cases,mutations:runtime.denominators.mutations,canonical:contract.canonicalWeightedPlanningPercent,strict:contract.canonicalStrictDonePercent,zeroBudget:contract.zeroBudgetWeightedPlanningPercent,sellEnabled:0},null,2));

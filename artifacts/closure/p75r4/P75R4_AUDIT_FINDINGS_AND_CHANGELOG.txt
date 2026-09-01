@@ -1,0 +1,63 @@
+VELMERE P75R4 — AUDIT FINDINGS AND CHANGELOG
+Date: 2026-08-17
+Authority: V17
+Parent product checkpoint: P73R7
+Product parent commit: f8a327154e019a28bf43d65be390fef5db2bf05d
+
+SCOPE
+- Audit latest three canonical Library artifacts: V17 Directive, P73R7 Ledger, P73R7 SOURCE_ONLY.
+- Verify byte identity between Library Directive/Ledger and SOURCE_ONLY copies.
+- Audit reachable Advanced Audit execution semantics against V17 automated-Advanced governance.
+- Repair reachable runtime/database/manual-release drift without granting customer FINAL, sale, rights, LIVE, or vulnerability credit.
+
+CANONICAL INPUT AUDIT
+- V17 Library copy == SOURCE_ONLY copy byte-for-byte.
+- P73R7 Ledger Library copy == SOURCE_ONLY copy byte-for-byte.
+- P73R7 SOURCE_ONLY ZIP CRC PASS; canonical parent preserved.
+
+MATERIAL FINDINGS
+1. Durable customer-history reader did not accept current queue lane advanced_automation even though V17/current orchestration uses it.
+2. PASS4615 history CHECK constraints only admitted legacy advanced_human_review. PASS4616 later emitted automation_claimed / automation_completed / reviewer_assigned / retry/dead-letter events without forward-expanding the original table constraints.
+3. Advanced Audit had no first-class worker claim/settle path matching Pro automation semantics.
+4. Advanced immutable snapshot completion remained coupled to the legacy manual-release flow; customer PDF gate still depended on manual release.
+5. Optional human QA could alter execution state / become customer-visible in memory or durable paths, contrary to V17 zero customer feature/release credit.
+6. Legacy package/billing identifiers remain intentionally readable for compatibility; CURRENT_AUDIT_TIER_CONTRACTS.advanced is automated, humanReviewRequired=false and NOT_FOR_SALE. They were not blindly deleted.
+
+PHYSICAL P75 PRODUCT REPAIR
+- Current/legacy-safe history deserialization and customer-safe reason normalization.
+- Advanced worker claim/settle orchestration added.
+- Advanced atomic completion + immutable snapshot path added.
+- Supabase RPC registry extended for Advanced automation operations.
+- Customer PDF/token delivery now gates Advanced on processingMode=advanced_automation + completed rather than manual release.
+- Legacy manual-review route converted to a compatibility status alias with no manual release gate and no customer-visible human/SLA credit.
+- Optional human QA isolated from execution state and customer history/projection.
+- Forward migration 20260817000001_p75_advanced_audit_automation_runtime.sql added; historical migrations remain byte-identical.
+- STOP_SELL preserved. Advanced remains NOT_FOR_SALE.
+
+LOCAL CONTROL RESULTS
+- Static controls: 37/37 PASS broad audit campaign.
+- CI static control script: 29/29 PASS.
+- P75 build-relevant projection: 1601 files / 21,037,749 bytes.
+- Path-set SHA-256: 40b966b3bc2497a1d1d18b967ec867f182f76030af23d15329e42c6057268d59
+- Content aggregate SHA-256: 748be4046784cb0581c3a6f123ed3670afd4e6849a9007bd98a144f820d7dff6
+
+EXACT-WINDOWS RUN HISTORY / ZERO-FAKE-CREDIT
+- P75 run 32074365435: FAIL before product due CI bundle transport SHA mismatch. 0 checkpoint credit.
+- P75R1 run 32074700759: exact engineering PASS, but P73 authority regression harness used hard-coded p73r7-work/source and failed MODULE_NOT_FOUND before authority tests. 0 checkpoint credit.
+- P75R2 run 32075409126: exact engineering PASS and path binding PASS; Advanced memory test itself failed to execute because tsx transformed the .ts test as CJS and rejected top-level await. Product runtime was not adjudicated by that test. 0 checkpoint credit.
+- P75R3/R4: harness execution switched to ESM .mts without changing product bytes. P75R4 also publishes a GitHub status locator for exact run/artifact discovery.
+- FINAL P75R4 EXACT-WINDOWS RUN: 32076162156 on da69eb05cee0b6d4359ab832c8c3532bbf2ab605.
+- FINAL JOB: SUCCESS. Exact Windows engineering PASS; static control PASS; Advanced memory runtime PASS 11/11; P73R7 full authority regression PASS 27/27; zero-fake-credit boundary PASS.
+- Exact-Windows artifact SHA-256: da6acf89eab68b891602a91340254f5f76e960d1fb29b2038a4afaf1175ee8a7.
+- FINAL P75R4 EXACT-WINDOWS STATUS: PASS_BOUNDED_ADVANCED_AUTOMATION_RUNTIME. This is a bounded product/runtime checkpoint, not a release/customer-FINAL checkpoint.
+
+UNCHANGED TRUTH BOUNDARY
+- Customer FINAL 0/20.
+- Audit FINAL PDF 0/3.
+- Current Ancient8 runtime-bytecode proof 0/1.
+- Vulnerability ground truth 0.
+- Rights 2/203.
+- Paid value 0/10.
+- Sale eligible 0/20.
+- LIVE=false; STOP_SELL=true; Global NO_GO.
+- Source/runtime repairs do NOT prove that the forward migration has been applied to a real durable Supabase environment.

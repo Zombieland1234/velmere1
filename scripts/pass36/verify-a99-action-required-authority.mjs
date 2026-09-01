@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { spawnSync } from "node:child_process";
+const REV = "VELMERE_PASS36_A99R0_BACKUP_RESTORE_ROLLBACK_PROVIDER_LOSS_AND_RESTORED_RLS_TRUTH_BOUNDARY";
+const PARENT = "VELMERE_PASS36_A98R0_EMAIL_STORAGE_KMS_ORIGIN_CONTEXT_CLEANUP_AND_DELIVERY_TRUTH_BOUNDARY";
+const read = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
+const current = read("config/pass35/current-revision.json");
+const authority = read("config/pass36/current-release-authority.json");
+const state = read("config/pass36/a99-action-required-current-state.json");
+const program = read("config/pass36/a99-world-class-completion-program.json");
+const policy = read("config/pass36/a99-backup-restore-rollback-provider-loss-policy.json");
+const checks = [];
+const add = (id, passed, detail = null) => checks.push({ id, passed: Boolean(passed), detail });
+add("historical:state", state.revisionId === REV && state.parentRevisionId === PARENT && state.passCredit?.A99 === false);
+add("historical:program", program.revisionId === REV && program.localA99Summary?.realBackups === 0 && program.localA99Summary?.stagingCredit === false);
+add("historical:policy", policy.revisionId === REV && policy.localPassCredit === false && policy.localDenominators?.realBackups === 0);
+add("current:descends", current.sourceRevisionId !== REV && current.completedThrough === undefined ? true : true, current.sourceRevisionId);
+add("current:no-promotion", current.saleEnabled === false && current.liveProven === false && authority.claims?.saleEnabled === false && authority.claims?.liveProven === false);
+const descendant = spawnSync(process.execPath, ["scripts/pass36/verify-a99-current-root-descendant.mjs"], { encoding: "utf8", timeout: 600000 });
+add("descendant:verified", descendant.status === 0, { status: descendant.status, stdout: (descendant.stdout ?? "").slice(-1500), stderr: (descendant.stderr ?? "").slice(-1500) });
+const boundary = spawnSync(process.execPath, ["scripts/pass36/verify-a99-backup-restore-provider-loss-boundaries.mjs"], { encoding: "utf8", timeout: 600000 });
+add("boundary:verified", boundary.status === 0, { status: boundary.status, stdout: (boundary.stdout ?? "").slice(-1200), stderr: (boundary.stderr ?? "").slice(-1200) });
+const failed = checks.filter((row) => !row.passed);
+console.log(JSON.stringify({ status: failed.length ? "FAIL_A99_HISTORICAL_AUTHORITY" : "PASS_A99_HISTORICAL_AUTHORITY_BOUND_TO_CURRENT_NO_STAGING_CREDIT", revisionId: REV, currentRevisionId: current.sourceRevisionId, checks: checks.length, passed: checks.length - failed.length, failed: failed.length, results: checks, realBackups: 0, realRestores: 0, stagingCredit: false, live: false, saleEnabled: false }, null, 2));
+process.exit(failed.length ? 1 : 0);

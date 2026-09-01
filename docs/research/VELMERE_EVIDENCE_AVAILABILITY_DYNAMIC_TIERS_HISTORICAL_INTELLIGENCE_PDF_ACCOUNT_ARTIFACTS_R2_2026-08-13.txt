@@ -1,0 +1,3304 @@
+VELMÈRE — EVIDENCE AVAILABILITY, DYNAMIC TIER ELIGIBILITY & HISTORICAL INTELLIGENCE
+KONCEPCJA PRODUKTOWA / ROZWINIĘCIE POMYSŁU
+Data: 2026-08-13
+Status: PRODUCT IDEA / REQUIREMENT CANDIDATE / NOT IMPLEMENTED BY DECLARATION
+
+======================================================================
+0. CEL
+======================================================================
+
+Pomysł polega na tym, aby Velmère NIE zachowywało się jak zwykły sklep, w którym
+Basic / Pro / Advanced są zawsze aktywne niezależnie od jakości danych.
+
+Zamiast tego każdy produkt i każdy tier powinien być dynamicznie dostępny wyłącznie
+wtedy, gdy system posiada wystarczające, odpowiednio świeże, zgodne, legalnie
+używalne i technicznie osiągalne evidence do uczciwego dostarczenia obiecanej wartości.
+
+Najważniejsza zasada:
+
+NIE:
+"Tier istnieje w cenniku => można go kupić."
+
+TYLKO:
+"Tier istnieje w cenniku => system robi preflight => jeśli evidence spełnia kontrakt
+tego tieru => zakup zostaje aktywowany."
+
+Jeżeli warunki nie są spełnione:
+- zakup zostaje zablokowany;
+- klient dostaje uczciwy powód;
+- system może zaproponować niższy dostępny tier;
+- system może zaoferować Historical Snapshot;
+- system może pokazać ostatni moment pełnej dostępności;
+- system może pokazać następny zaplanowany re-check;
+- system NIE wymyśla ETA, jeśli go nie zna.
+
+To ma być przewaga jakościowa Velmère:
+system potrafi odmówić sprzedaży produktu, którego nie może w danej chwili
+uczciwie dostarczyć na wymaganym poziomie.
+
+
+======================================================================
+1. GŁÓWNY MODUŁ — VELMÈRE EVIDENCE AVAILABILITY ENGINE
+======================================================================
+
+Proponowana nazwa wewnętrzna:
+Velmère Evidence Availability Engine (VEAE)
+
+Odpowiada za:
+1. sprawdzenie jakości i dostępności wejść;
+2. sprawdzenie freshness;
+3. sprawdzenie provider conflicts;
+4. sprawdzenie required evidence;
+5. sprawdzenie praw/licencji;
+6. sprawdzenie runtime reachability;
+7. sprawdzenie health wymaganych usług;
+8. sprawdzenie tier-specific requirements;
+9. wyznaczenie najwyższego uczciwie dostępnego tieru;
+10. sterowanie checkoutem;
+11. sterowanie customer-facing state;
+12. wskazanie Historical Snapshot, jeżeli current nie jest dostępne;
+13. zlecenie następnego re-checku;
+14. przechowywanie historii availability;
+15. generowanie evidence receipt decyzji AVAILABLE / UNAVAILABLE.
+
+VEAE NIE powinien opierać swojej końcowej decyzji wyłącznie na odpowiedzi AI.
+
+AI/VLM Brain może:
+- wykrywać brakujące evidence;
+- klasyfikować kontekst;
+- proponować wymagane dodatkowe kontrole;
+- opisywać klientowi ograniczenie;
+- szukać sprzeczności.
+
+Ale ostateczne saleEligible=true/false powinno wynikać z deterministycznego
+policy/eligibility engine.
+
+
+======================================================================
+2. CUSTOMER-FACING AVAILABILITY STATES
+======================================================================
+
+Proponowane stany:
+
+AVAILABLE
+Produkt/tier posiada wszystkie wymagane krytyczne evidence. Zakup aktywny.
+
+AVAILABLE_WITH_LIMITATIONS
+Produkt jest dostępny, ale istnieją jawne niekrytyczne ograniczenia.
+Zakup może być aktywny tylko, jeśli kontrakt tieru dopuszcza ten stan.
+
+WAITING_FOR_FRESH_EVIDENCE
+Wymagane źródło istnieje, ale observation jest zbyt stary albo oczekujemy
+na nową weryfikację.
+
+HISTORICAL_ONLY
+Nie można uczciwie dostarczyć current intelligence, ale istnieje prawidłowo
+oznaczony snapshot historyczny.
+
+TEMPORARILY_UNAVAILABLE
+Produkt był osiągalny, ale obecnie krytyczna zależność nie spełnia wymagań.
+
+UNSUPPORTED
+Ten asset/contract/use case nie jest obsługiwany przez dany tier.
+
+CONFLICTED
+Krytyczne źródła przedstawiają materialnie sprzeczne informacje i polityka
+tieru nie pozwala jeszcze na bezpieczną adjudykację.
+
+RIGHTS_BLOCKED
+Dane są technicznie osiągalne, ale nie ma potwierdzonych praw do ich użycia
+w danym customer/commercial context.
+
+SYSTEM_DEGRADED
+Dane są wystarczające, ale runtime/operational health nie pozwala bezpiecznie
+dostarczyć produktu.
+
+W customer UI można użyć prostszych komunikatów, bez ujawniania wewnętrznej topologii.
+
+
+======================================================================
+3. TRUTH/FRESHNESS CLASSIFICATION DANYCH
+======================================================================
+
+Każdy istotny input powinien otrzymać osobny stan:
+
+REAL_CURRENT
+REAL_RECENT
+REAL_STALE
+DERIVED_CURRENT
+DERIVED_FROM_STALE
+CONFLICTED
+UNAVAILABLE
+UNSUPPORTED
+FIXTURE
+NOT_IMPLEMENTED
+
+Dodatkowo freshness:
+CURRENT
+RECENT
+DELAYED
+STALE
+HISTORICAL
+
+Nie należy używać jednego progu minut dla wszystkich danych.
+
+10 minut może znaczyć zupełnie coś innego dla:
+- BTC podczas gwałtownego rynku;
+- ECB rate;
+- kwartalnego filing SEC;
+- immutable smart-contract bytecode;
+- holder distribution;
+- order book;
+- market impact;
+- corporate action;
+- RWA reserve attestation.
+
+FreshnessPolicy powinno być per source / field / asset class / market state / product / tier.
+
+
+======================================================================
+4. DYNAMICZNA DOSTĘPNOŚĆ BASIC / PRO / ADVANCED
+======================================================================
+
+BASIC
+Najbardziej odporny i szeroko dostępny tier.
+Może działać przy częściowej dostępności danych, jeżeli:
+- critical minimum evidence istnieje;
+- brakujące dane są jawnie oznaczone;
+- brakujące dane nie powodują fałszywego wniosku;
+- Basic nadal daje rzeczywistą wartość.
+
+Basic NIE może być celowo osłabiany, żeby wymusić Pro.
+
+PRO
+Powinien wymagać:
+- dodatkowych evidence families;
+- lepszego cross-checku;
+- większej freshness krytycznych pól;
+- głębszego reasoning;
+- dodatkowych derivations;
+- historii tam, gdzie jest wartością;
+- większej traceability;
+- dodatkowych testów.
+
+Jeżeli krytyczna warstwa Pro jest niedostępna:
+Pro = TEMPORARILY_UNAVAILABLE
+Basic może nadal działać.
+
+ADVANCED
+Najostrzejszy gate.
+Dla Audit może wymagać m.in.:
+- source;
+- exact compiler/settings;
+- deployed runtime identity, jeżeli scope tego wymaga;
+- proxy/admin mapping;
+- spec/trust model;
+- dynamic testing;
+- fuzz/invariants;
+- business-logic inputs;
+- evidence dla multi-lane AI review;
+- contradiction/adjudication completion;
+- evidence-pack completeness.
+
+Jeżeli krytyczny warunek odpada:
+Advanced purchase = disabled.
+
+Klient widzi np.:
+Advanced temporarily unavailable
+Missing: verified deployment identity + protocol specification
+Pro available now
+
+
+======================================================================
+5. PREFLIGHT PRZED ZAKUPEM
+======================================================================
+
+USER SELECTS ASSET/CONTRACT
+-> IDENTITY CHECK
+-> SOURCE / PROVIDER CHECK
+-> FRESHNESS CHECK
+-> CONFLICT CHECK
+-> RIGHTS CHECK
+-> PRODUCT-SPECIFIC EVIDENCE CHECK
+-> RUNTIME / OPERATIONS CHECK
+-> TIER ELIGIBILITY
+-> CHECKOUT DISPLAY
+
+Heavy/expensive analysis nie powinno być wykonywane tylko po to, aby ustalić eligibility.
+Powinien istnieć szybki, tani preflight evidence contract.
+
+
+======================================================================
+6. PRZYKŁAD CUSTOMER UI
+======================================================================
+
+AUDIT
+
+Basic
+AVAILABLE
+Ready now
+Evidence sufficient for Basic analysis.
+Last eligibility check: 04:31:22
+
+Pro
+AVAILABLE
+Ready now
+Additional dynamic and evidence checks available.
+Last eligibility check: 04:31:25
+
+Advanced
+WAITING FOR EVIDENCE
+Missing:
+- protocol specification
+- verified deployed implementation
+
+Last fully eligible:
+12 Aug 2026, 22:41
+
+Next automatic check:
+04:45
+
+Availability ETA:
+Unknown
+
+REAL MARKETS
+
+Current Intelligence
+TEMPORARILY UNAVAILABLE
+
+Last verified current snapshot:
+04:18:14
+
+Reason:
+Primary source stale.
+
+Historical Snapshot:
+AVAILABLE
+
+Change Analysis:
+AVAILABLE
+
+
+======================================================================
+7. LAST AVAILABLE / NEXT CHECK / ETA
+======================================================================
+
+System powinien rozdzielać:
+
+LAST FULLY AVAILABLE
+Ostatni moment, w którym wszystkie wymagania były spełnione.
+
+NEXT AUTOMATIC CHECK
+Kiedy Velmère ponownie spróbuje ocenić eligibility.
+
+ESTIMATED RESTORATION
+Szacowany czas faktycznej dostępności.
+
+Trzecie pole można pokazywać WYŁĄCZNIE, jeżeli istnieją dane uzasadniające estimate.
+
+Jeżeli nie wiemy:
+Next automatic check: 05:00
+Estimated restoration: Unknown
+
+Nie wolno zgadywać "Available in 10 minutes".
+
+Później można zbudować restoration model na podstawie:
+- provider outage history;
+- maintenance schedules;
+- source publication schedule;
+- historical retry recovery;
+- market session;
+- service health.
+
+
+======================================================================
+8. HISTORYCZNE DANE NIE SĄ GORSZYM PRODUKTEM
+======================================================================
+
+Stare dane nie muszą oznaczać danych bezwartościowych.
+Jeżeli są prawidłowo oznaczone i legalnie przechowywane, mogą być osobnym produktem.
+
+Zastosowania:
+- forensic analysis;
+- incident reconstruction;
+- before/after comparison;
+- liquidity history;
+- holder/concentration history;
+- whale-flow history;
+- oracle health history;
+- permissions history;
+- deployment-change history;
+- risk-state history;
+- evidence history;
+- RWA reserve evidence history;
+- market-state comparison;
+- what changed analysis.
+
+Zamiast "10 minut starsze = 10% taniej" lepiej stworzyć osobne semantycznie produkty.
+
+
+======================================================================
+9. PRODUKTY CZASOWE
+======================================================================
+
+CURRENT INTELLIGENCE
+Najświeższy uczciwie dostępny evidence state.
+
+RECENT SNAPSHOT
+Najnowszy snapshot, który nie spełnia już warunku current, ale nadal jest użyteczny.
+
+HISTORICAL EVIDENCE
+Dokładnie oznaczony historyczny evidence pack.
+
+CHANGE ANALYSIS
+Porównanie dwóch punktów w czasie.
+
+INCIDENT WINDOW
+Rekonstrukcja evidence w konkretnym oknie czasowym.
+
+BEFORE / AFTER
+Stan bezpośrednio przed i po exploicie, upgrade, dużym transferze,
+zmianie oracle, liquidity event, governance event lub market shock.
+
+EVIDENCE TIMELINE
+Chronologia istotnych zmian.
+
+
+======================================================================
+10. VELMÈRE EVIDENCE TIME MACHINE
+======================================================================
+
+Jedna z najmocniejszych możliwych funkcji.
+
+UI:
+NOW | 10m | 1h | 6h | 24h | 7d | 30d
+
+Użytkownik wybiera punkt czasu i widzi historyczny stan:
+- price;
+- liquidity;
+- volume;
+- permissions;
+- proxy implementation;
+- admin;
+- holders;
+- concentration;
+- oracle;
+- provider disagreement;
+- whale activity;
+- risk/review priority;
+- evidence completeness;
+- VLM Brain conclusion;
+- missing evidence;
+- truth states.
+
+Wszystko musi być timestamp-bound.
+Nie wolno rekonstruować historycznego stanu z obecnych danych, jeśli nie posiadamy
+historycznego evidence.
+
+
+======================================================================
+11. WHAT CHANGED? — VLM BRAIN DELTA ANALYSIS
+======================================================================
+
+VLM Brain dostaje dwa zatwierdzone evidence snapshots i analizuje wyłącznie delta.
+
+Przykład:
+Between 03:20 and 04:10:
+- liquidity: -18.2%
+- holder concentration: +4.1 pp
+- proxy implementation: unchanged
+- admin permissions: unchanged
+- oracle freshness: degraded
+- provider disagreement: increased
+- two large transfers observed
+- no evidence that transfers were sales
+- risk priority: MODERATE -> ELEVATED
+
+Reason for priority change:
+liquidity deterioration + provider disagreement
+
+Missing:
+current second-provider confirmation
+
+To może mieć większą wartość niż sama tabela aktualnych liczb.
+
+
+======================================================================
+12. CZEGO NIE ROBIĆ Z CENĄ HISTORYCZNYCH DANYCH
+======================================================================
+
+Nie rekomendowane:
+Current = €79
+10 min old = €72
+20 min old = €65
+30 min old = €58
+
+Problemy:
+- wygląda jak automatyczna przecena;
+- freshness nie jest liniowa;
+- różne dane mają różne TTL;
+- 10 minut może być bez znaczenia albo krytyczne;
+- klient nie rozumie, za co płaci.
+
+
+======================================================================
+13. LEPSZY MODEL CENOWY
+======================================================================
+
+Cena powinna wynikać z produktu i użyteczności, nie samego wieku.
+
+Przykład:
+Basic Current Snapshot — free / included
+Pro Current Intelligence — paid
+Advanced Evidence Analysis — paid
+Historical Snapshot — free / low-cost / included credits
+Historical Evidence Pack — paid tylko jeśli daje materialną wartość
+Change Analysis — Pro feature / paid
+Incident Reconstruction — Advanced / separate analysis
+Evidence Time Machine — Pro / Advanced subscription feature
+
+Ceny są hipotezą.
+Najpierw testujemy:
+- customer value;
+- time saved;
+- decision change;
+- WTP;
+- refund risk;
+- cost to deliver.
+
+
+======================================================================
+14. RIGHTS / LICENSING GATE DLA HISTORYCZNYCH DANYCH
+======================================================================
+
+Techniczny dostęp do danych nie oznacza prawa do:
+- wyświetlania;
+- cache;
+- przechowywania;
+- archiwizacji;
+- tworzenia historii;
+- derivations;
+- publikowania w PDF;
+- używania w AI/RAG;
+- sprzedaży;
+- redystrybucji.
+
+Każde źródło powinno dostać rights profile:
+DISPLAY_CURRENT_ALLOWED
+CACHE_ALLOWED
+HISTORICAL_STORAGE_ALLOWED
+DERIVATION_ALLOWED
+AI_RAG_ALLOWED
+PDF_ALLOWED
+COMMERCIAL_USE_ALLOWED
+REDISTRIBUTION_ALLOWED
+ATTRIBUTION_REQUIRED
+RETENTION_LIMIT
+CUSTOMER_EXPORT_ALLOWED
+
+Jeżeli Historical Storage = false:
+Time Machine nie przechowuje tej warstwy.
+
+Jeżeli Commercial Use = false:
+dany evidence nie zwiększa paid eligibility.
+
+Jeżeli PDF = false:
+nie trafia do płatnego raportu PDF.
+
+
+======================================================================
+15. DYNAMICZNY CHECKOUT
+======================================================================
+
+Checkout nie powinien mieć trzech zawsze aktywnych przycisków.
+
+Basic
+AVAILABLE
+[Run Basic]
+
+Pro
+AVAILABLE
+[Buy Pro]
+
+Advanced
+TEMPORARILY UNAVAILABLE
+Missing required evidence
+[Notify / Check again]
+
+lub:
+
+Advanced
+HISTORICAL ANALYSIS AVAILABLE
+Current analysis unavailable
+[Open historical options]
+
+Authority rule:
+payment proof NIE MOŻE nadpisać sale eligibility.
+
+saleEligibility musi być zatwierdzone po stronie serwera przed:
+- checkout creation;
+- payment acceptance;
+- entitlement creation;
+- artifact delivery.
+
+
+======================================================================
+16. AUDIT-SPECIFIC ELIGIBILITY
+======================================================================
+
+AUDIT BASIC — przykładowe minimum:
+- parsable source;
+- supported language/version;
+- source hash;
+- analyzer execution;
+- supported detector families;
+- limitations inventory.
+
+AUDIT PRO — Basic +:
+- deeper dynamic testing where applicable;
+- targeted reproducers;
+- compiler/settings evidence;
+- additional evidence graph;
+- stronger remediation;
+- dependency/proxy mapping.
+
+AUDIT ADVANCED — Pro +:
+- deployment identity where required;
+- business logic/specification;
+- trust model;
+- invariants;
+- privileged roles;
+- oracle assumptions;
+- economic assumptions;
+- multi-lane adversarial review;
+- FN hunter;
+- contradiction adjudication;
+- full evidence pack.
+
+Jeżeli user chce Advanced, ale nie ma specification:
+"Advanced requires protocol specification."
+"Pro is available now."
+
+To zmniejsza refund risk i fałszywe expectations.
+
+
+======================================================================
+17. SHIELD / REAL MARKETS ELIGIBILITY
+======================================================================
+
+Przykładowy Shield Pro contract:
+- asset identity;
+- current enough on-chain state;
+- provider/source authority;
+- legal rights;
+- liquidity evidence;
+- permissions;
+- timestamp;
+- no unresolved critical conflict.
+
+Advanced może wymagać:
+- history;
+- cross-source comparison;
+- alerts/monitoring;
+- concentration trends;
+- event reconstruction;
+- historical deltas.
+
+Jeżeli feed jest stale:
+- nie pokazujemy current quote jako current;
+- current product może zostać zablokowany;
+- Historical Snapshot może pozostać dostępny.
+
+
+======================================================================
+18. PROVIDER DISAGREEMENT JAKO FUNKCJA
+======================================================================
+
+Jeżeli provider A i B się różnią, Velmère nie musi tylko zgłaszać błędu.
+Może stworzyć value:
+
+PROVIDER DISAGREEMENT
+Source A: X
+Source B: Y
+Difference: Z
+Observation alignment: ...
+Potential reason: timing / venue / methodology / stale / unresolved
+Customer state: CONFLICTED
+
+Klient dostaje informację, że źródła się nie zgadzają, zamiast jednej arbitralnie
+wybranej liczby.
+
+System NIE może wymyślać przyczyny konfliktu bez evidence.
+
+
+======================================================================
+19. CUSTOMER TRUST PANEL
+======================================================================
+
+DATA STATUS
+Freshness: CURRENT
+Last full evidence: 04:22:17
+Sources: 7 / 8
+Conflicted: 0
+Missing: 1 non-critical
+Rights: eligible
+Analysis eligibility: ADVANCED
+Next verification: 04:23
+
+Stan zdegradowany:
+Freshness: DEGRADED
+Sources: 4 / 8
+Missing critical: liquidity depth
+Available tiers: BASIC, PRO
+Advanced: TEMPORARILY UNAVAILABLE
+Last Advanced availability: 03:51
+
+
+======================================================================
+20. AVAILABILITY HISTORY
+======================================================================
+
+System powinien zachowywać:
+- kiedy tier był available;
+- kiedy został wyłączony;
+- dlaczego;
+- jaki requirement zawiódł;
+- kiedy wrócił;
+- czy problem wynikał ze źródła, prawa, runtime czy danych;
+- average outage;
+- history source reliability.
+
+Później można tworzyć:
+- availability SLA;
+- source reliability score;
+- restoration estimate;
+- provider reliability comparison.
+
+Każdy score musi mieć zdefiniowaną semantykę.
+
+
+======================================================================
+21. AUTOMATIC FALLBACK
+======================================================================
+
+Advanced unavailable -> offer Pro
+Pro unavailable -> offer Basic
+Current unavailable -> offer Historical Snapshot
+
+Ale nigdy:
+Advanced opłacony -> po cichu dostarczony Pro.
+
+Klient przed płatnością musi znać:
+- dokładny tier;
+- availability state;
+- ograniczenia;
+- timestamp;
+- current vs historical.
+
+
+======================================================================
+22. REFUND / DELIVERY SAFETY — RACE CONDITION
+======================================================================
+
+Eligibility może zmienić się między preflightem a payment confirmation.
+
+Przykład:
+04:00 preflight = Pro available
+04:01 payment
+04:01:05 provider becomes critically stale
+
+Policy A:
+jeżeli analiza nie rozpoczęta -> block execution + cancellation/refund.
+
+Policy B:
+jeżeli degraded Pro jest dozwolony -> wymagana jawna zgoda klienta.
+
+Nigdy:
+silent downgrade albo dostarczenie gorszego produktu po pełnej cenie.
+
+Powinien istnieć drugi server-side eligibility gate przed entitlement/delivery.
+
+
+======================================================================
+23. ANTI-GAMING / SECURITY
+======================================================================
+
+Testy:
+- client-side enable manipulation;
+- direct checkout URL;
+- direct API call;
+- forged payment proof;
+- stale eligibility token;
+- replay eligibility token;
+- eligibility changed after checkout;
+- entitlement mismatch;
+- Basic account requesting Advanced artifact;
+- historical/current confusion;
+- provider response spoof;
+- cached AVAILABLE after source failure;
+- rights state revoked but cached;
+- race conditions;
+- duplicate webhook;
+- refund/revoke;
+- cross-tenant artifact access.
+
+Final authority zawsze server-side.
+
+
+======================================================================
+24. ELIGIBILITY RECEIPT
+======================================================================
+
+Każda decyzja może generować receipt:
+
+eligibilityId
+product
+tier
+assetOrSubject
+evaluatedAt
+sourceHash
+policyVersion
+requiredEvidence
+availableEvidence
+missingEvidence
+freshnessStates
+conflicts
+rightsStates
+runtimeHealth
+saleEligible
+historicalEligible
+lastFullyEligibleAt
+nextCheckAt
+estimatedRestoration
+estimatedRestorationConfidence
+reasonCodes
+receiptHash
+
+Pozwala to odtworzyć, dlaczego system pozwolił albo odmówił sprzedaży.
+
+
+======================================================================
+25. VLM BRAIN — ROLA
+======================================================================
+
+VLM Brain może:
+- analizować missing evidence;
+- wykrywać potencjalne sprzeczności;
+- wyjaśniać klientowi reason;
+- wykrywać, że Advanced nie wniesie nowej wartości;
+- proponować dodatkowy evidence request;
+- robić What Changed?;
+- syntetyzować historical evidence;
+- tworzyć action plan;
+- interpretować provider disagreement;
+- rekomendować abstention.
+
+Nie może:
+- sam wytworzyć entitlement;
+- zmienić NOT_FOR_SALE na AVAILABLE;
+- uznać brakującego evidence za istniejące;
+- podnieść stale do current;
+- zmienić rights-blocked na allowed;
+- stworzyć fikcyjnego ETA.
+
+
+======================================================================
+26. VALUE-AWARE TIER WITHHOLDING
+======================================================================
+
+Tier nie powinien być dostępny tylko dlatego, że technicznie można go wygenerować.
+
+Może istnieć osobny warunek:
+VALUE_ELIGIBLE.
+
+Przykład:
+Advanced technically possible = true
+ale preliminary delta check pokazuje:
+Advanced adds no material new evidence over Pro.
+
+Wtedy:
+Advanced = VALUE_WITHHELD / NOT_OFFERED
+
+Customer message:
+"For this contract, Pro already captures the maximum currently supported evidence.
+Advanced is not offered because it would not add sufficient verified value."
+
+To może być bardzo mocny element trust:
+Velmère nie sprzedaje droższego tieru tylko dlatego, że może.
+
+
+======================================================================
+27. CENY A ZŁOŻONOŚĆ CASE
+======================================================================
+
+Nie rekomendowane:
+chaotyczny dynamic pricing per minute.
+
+Możliwe później:
+- stałe ceny tierów;
+- credits;
+- history add-on;
+- incident reconstruction;
+- team/export/API features;
+- complexity surcharge tylko jeśli transparentny i uzasadniony.
+
+Cena powinna być związana z:
+- materialnym output delta;
+- compute cost;
+- customer utility;
+- evidence depth;
+- workflow value;
+- real WTP.
+
+
+======================================================================
+28. POWIADOMIENIA O DOSTĘPNOŚCI
+======================================================================
+
+Jeżeli tier jest unavailable:
+"Notify me when Advanced becomes available"
+
+Trigger:
+TEMPORARILY_UNAVAILABLE -> AVAILABLE
+
+Nie obiecujemy godziny, jeśli jej nie znamy.
+
+Przydatne dla:
+- audit evidence completion;
+- provider recovery;
+- RWA attestations;
+- market/session refresh;
+- delayed filings;
+- missing specification supplied later.
+
+
+======================================================================
+29. CACHE & FRESHNESS POLICY
+======================================================================
+
+Pola:
+observedAt
+retrievedAt
+cachedAt
+feedUpdatedAt
+expiresAt
+freshnessClass
+
+Public UI powinien pokazywać timestamp tego, co faktycznie mierzymy.
+
+Nie wolno:
+"Updated now"
+
+jeżeli UI odświeżył się teraz, ale dane pochodzą sprzed godziny.
+
+
+======================================================================
+30. EVENT-DRIVEN REVALIDATION
+======================================================================
+
+Eligibility powinno zostać unieważnione po materialnej zmianie:
+- source changed;
+- contract upgraded;
+- admin changed;
+- provider lost;
+- provider rights changed;
+- market session changed;
+- data became stale;
+- second source conflicts;
+- legal status changed;
+- methodology changed;
+- model changed;
+- schema changed;
+- security incident;
+- runtime degraded.
+
+Old PASS nie może przetrwać bez revalidation.
+
+
+======================================================================
+31. PRZYKŁADOWY TIER POLICY
+======================================================================
+
+product: AUDIT
+tier: ADVANCED
+
+requires:
+- sourceIdentity = PASS
+- compilerIdentity = PASS
+- supportedScope = PASS
+- specification = PRESENT
+- trustModel = PRESENT
+- runtimeIdentity >= REQUIRED_LEVEL
+- dynamicTests = PASS
+- invariantSet = PRESENT
+- evidenceCompleteness >= POLICY_THRESHOLD
+- unresolvedCriticalConflicts = 0
+- rightsCommercial = PASS
+- runtimeHealth = PASS
+- valueDeltaVsPro = MATERIAL
+
+onFailure:
+- disableCheckout = true
+- suggestTier = PRO
+- allowHistorical = according_to_rights
+- scheduleRecheck = true
+- explainMissingEvidence = true
+
+
+======================================================================
+32. CUSTOMER VALUE TESTY
+======================================================================
+
+1. Czy klient rozumie, dlaczego tier jest niedostępny?
+2. Czy rozumie current vs historical?
+3. Czy ufa bardziej systemowi, który potrafi odmówić sprzedaży?
+4. Czy last available pomaga?
+5. Czy next check jest przydatny?
+6. Czy klient chce notification?
+7. Czy Historical Snapshot ma wartość?
+8. Czy Change Analysis ma większą wartość niż surowe historical data?
+9. Czy Evidence Time Machine zmienia decyzję?
+10. Czy klient zapłaci za historical/delta analysis?
+11. Czy dynamiczna availability wpływa dobrze na conversion?
+12. Czy ograniczenia są wystarczająco jasne?
+
+
+======================================================================
+33. METRYKI SYSTEMU
+======================================================================
+
+Technical:
+- false availability rate;
+- false unavailability rate;
+- stale-as-current incidents;
+- rights violation incidents;
+- eligibility race failures;
+- provider conflict detection;
+- time to revalidation;
+- availability per tier;
+- recovery time;
+- eligibility cache errors.
+
+Customer:
+- availability explanation comprehension;
+- conversion when available;
+- waitlist/notification conversion;
+- Historical Snapshot usage;
+- Change Analysis usage;
+- refund rate;
+- complaints caused by freshness;
+- trust rating;
+- perceived professionalism;
+- WTP current vs historical vs change analysis.
+
+
+======================================================================
+34. HARD FAILS
+======================================================================
+
+- sprzedaż tieru mimo niespełnionego critical requirement;
+- stale data jako current;
+- historical snapshot bez timestamp;
+- payment bypass availability;
+- AI zmieniające sale authority;
+- unknown rights traktowane jako commercial allowed;
+- silent downgrade;
+- fake ETA;
+- current claim z historycznych danych;
+- unresolved provider conflict ukryty przed klientem;
+- Advanced sprzedany mimo braku materialnego delta;
+- invalid/revoked evidence zachowane jako current;
+- checkout state niezgodny z server authority.
+
+
+======================================================================
+35. POTENCJALNA PRZEWAGA VELMÈRE
+======================================================================
+
+Nie:
+"mamy więcej danych".
+
+Tylko:
+"wiemy, kiedy dane są wystarczające, kiedy nie są, skąd pochodzą,
+kiedy były prawdziwe, czy się zgadzają i czy na ich podstawie uczciwie
+można sprzedać konkretny poziom analizy."
+
+Potencjalny brand differentiator:
+Velmère does not sell certainty it cannot evidence.
+
+System:
+- wykrywa brak evidence;
+- obniża scope;
+- blokuje nieuczciwą sprzedaż;
+- zachowuje historyczne evidence;
+- pokazuje zmianę w czasie;
+- potrafi powiedzieć "nie wiem";
+- potrafi powiedzieć "Advanced nie wniesie tu wystarczająco dużo ponad Pro".
+
+
+======================================================================
+36. PRIORYTET WDROŻENIA
+======================================================================
+
+P0 — LOGIKA / TRUTH
+1. Evidence Availability Engine.
+2. TierPolicy Basic/Pro/Advanced.
+3. Server-side saleEligibility.
+4. Freshness policies per field/source/product.
+5. Rights gating.
+6. Current vs Historical truth.
+7. Eligibility receipt.
+8. Revalidation after material change.
+9. Checkout race/replay tests.
+
+P1 — CUSTOMER PRODUCT
+10. customer availability states.
+11. reason display.
+12. last fully available.
+13. next automatic check.
+14. lower-tier fallback.
+15. Historical Snapshot.
+16. availability notification.
+17. Data Status panel.
+
+P2 — HIGH-VALUE INTELLIGENCE
+18. Evidence Time Machine.
+19. What Changed?.
+20. Historical Evidence Pack.
+21. Incident Window.
+22. Before/After.
+23. provider disagreement analysis.
+
+P3 — LATER / ONLY AFTER DATA
+24. restoration ETA model.
+25. availability reliability analytics.
+26. value-aware automatic tier withholding.
+27. source reliability comparisons.
+28. advanced price experiments.
+
+
+======================================================================
+37. NIE LICZYĆ POMYSŁU JAKO GOTOWEJ FUNKCJI
+======================================================================
+
+Ten dokument jest propozycją produktu.
+
+Dopóki funkcje nie istnieją fizycznie w CURRENT SOURCE i nie przejdą testów:
+- nie podbijają GO_INTERNAL;
+- nie podbijają paid readiness;
+- nie podbijają customer value;
+- nie są częścią marketingowych claimów.
+
+Najpierw:
+implementacja -> reachable runtime -> test -> actual output -> customer value.
+
+Dopiero potem feature otrzymuje credit.
+
+
+======================================================================
+38. PODSUMOWANIE KONCEPCJI
+======================================================================
+
+Pomysł nie powinien zostać sprowadzony do:
+"starsze dane = taniej".
+
+Mocniejsza forma to:
+
+VELMÈRE EVIDENCE AVAILABILITY SYSTEM
+
+łączący:
+EVIDENCE QUALITY
++
+FRESHNESS
++
+PROVIDER AGREEMENT
++
+RIGHTS
++
+RUNTIME HEALTH
++
+TIER VALUE
++
+CHECKOUT AUTHORITY
++
+HISTORICAL INTELLIGENCE
++
+VLM BRAIN
+
+Na tej podstawie decyduje:
+- jaki produkt można uczciwie dostarczyć;
+- jaki tier można kupić;
+- czego brakuje;
+- czy istnieje Historical Snapshot;
+- kiedy system sprawdzi ponownie;
+- czy Advanced faktycznie ma więcej wartości niż Pro.
+
+Najważniejsze rozszerzenia:
+1. Dynamic Basic / Pro / Advanced Availability.
+2. Automatic stop-sell when evidence is insufficient.
+3. Customer-visible reason bez internal topology leakage.
+4. Last Fully Available.
+5. Next Automatic Check.
+6. Honest Unknown ETA.
+7. Historical Snapshot.
+8. Evidence Time Machine.
+9. What Changed? analysis.
+10. Before/After i Incident Window.
+11. Rights-aware historical storage.
+12. Tier-specific freshness/evidence contracts.
+13. Server-authoritative eligibility.
+14. Value-aware Advanced withholding.
+15. VLM Brain jako evidence interpreter, nie sale authority.
+
+Potencjalny finalny efekt:
+Velmère nie wygląda jak system, który zawsze próbuje coś sprzedać.
+Wygląda jak system assurance/intelligence, który najpierw sprawdza,
+czy ma wystarczające dowody do wykonania obietnicy produktu.
+
+To może być jednocześnie:
+- zabezpieczeniem technicznym;
+- zabezpieczeniem komercyjnym;
+- ograniczeniem refund risk;
+- elementem zgodności i truth;
+- realnym elementem customer trust;
+- wyróżnikiem marki Velmère.
+
+
+======================================================================
+39. ROZSZERZENIE R2 — PDF 1:1, ACCOUNT ARTIFACTS I PŁATNE SNAPSHOTY
+======================================================================
+
+Status tego rozszerzenia:
+PRODUCT REQUIREMENT CANDIDATE / NOT IMPLEMENTED BY DECLARATION
+
+Zakres:
+- naprawienie różnicy między podglądem a pobranym PDF-em;
+- profesjonalizacja raportów PDF;
+- przypisywanie płatnych Audit Pro / Advanced do konta;
+- ustalenie retencji i bezpiecznego wygasania artefaktów;
+- przypisywanie płatnych analiz Shield / Shield Pro / Real Markets do konta;
+- ponowne otwieranie dokładnego snapshotu w interaktywnym oknie;
+- wersjonowanie, korekty, download, access control, privacy i lifecycle;
+- znalezienie ukrytych detali, które zwykle wychodzą dopiero po uruchomieniu produktu.
+
+Ten dokument NIE przyznaje żadnej funkcji kredytu.
+Kredyt dopiero po:
+CURRENT SOURCE -> build -> reachable runtime -> test -> customer output -> evidence receipt.
+
+
+======================================================================
+40. GŁÓWNA DECYZJA PRODUKTOWA
+======================================================================
+
+Velmère powinno posiadać jeden centralny system artefaktów klienta:
+
+VELMÈRE EVIDENCE VAULT
+
+Evidence Vault przechowuje zakupione lub przypisane użytkownikowi wyniki:
+
+- Audit reports;
+- Audit PDF;
+- Audit interactive result;
+- Shield analysis snapshots;
+- Shield Pro snapshots;
+- Real Markets Pro snapshots;
+- Real Markets Advanced snapshots;
+- Angel/VLM Brain evidence-backed sessions, jeśli produkt później to przewiduje;
+- Change Analysis;
+- Historical Evidence Pack;
+- Incident Window;
+- correction/revocation notices;
+- evidence and delivery receipts.
+
+Kluczowa zasada:
+
+PŁATNOŚĆ NIE POWINNA TWORZYĆ TYLKO CHWILOWEGO EKRANU.
+
+Płatność lub uprawnienie powinny utworzyć albo przypisać do konta konkretny,
+wersjonowany i odtwarzalny artefakt.
+
+
+======================================================================
+41. PDF PREVIEW I DOWNLOAD MUSZĄ BYĆ TYM SAMYM ARTEFAKTEM
+======================================================================
+
+Obecny problem opisany przez właściciela:
+
+- PDF widoczny w podglądzie wygląda inaczej;
+- PDF pobrany wygląda gorzej;
+- customer expectation nie zgadza się z finalnym plikiem;
+- podgląd nie jest uczciwą reprezentacją dostarczanego produktu.
+
+Finalny kontrakt:
+
+PREVIEW PDF BYTES
+=
+DOWNLOAD PDF BYTES
+
+Nie tylko podobne dane.
+Nie tylko ten sam tekst.
+Nie tylko ten sam layout model.
+
+Dokładnie ten sam finalny zapisany plik PDF.
+
+Dopuszczalna różnica HTTP:
+
+Preview:
+Content-Disposition: inline
+
+Download:
+Content-Disposition: attachment; filename="...pdf"
+
+Body PDF powinno mieć ten sam SHA-256.
+
+
+======================================================================
+42. CZEGO NIE ROBIĆ PRZY PDF
+======================================================================
+
+Nie rekomendowane:
+
+1. Preview jako React/HTML, download jako osobny PDF renderer.
+2. Preview generowany z jednej wersji danych, download z późniejszego refetchu.
+3. Preview z inną szerokością, fontami lub line wrapping.
+4. Preview jako customer-friendly card, download jako techniczny dump.
+5. Download renderowany ponownie przy każdym kliknięciu.
+6. Preview z aktualnym outputem, download z cache starego outputu.
+7. Preview tylko pierwszych sekcji bez jawnej etykiety "sample".
+8. Ukryte różnice Basic/Pro/Advanced pomiędzy preview i download.
+9. PDF jako zrzuty ekranów zamiast prawdziwego tekstu.
+10. Dwa niezależne pipeline'y, które mogą się rozjechać.
+
+Jeżeli Velmère chce posiadać marketingowy skrócony podgląd przed zakupem,
+nie może nazywać go pełnym PDF Preview.
+
+Powinien nazywać się np.:
+
+- Redacted Sample;
+- Example Pages;
+- Purchase Preview;
+- Limited Preview;
+- Sample Report.
+
+Po zakupie:
+
+Full Preview = dokładnie finalny PDF.
+
+
+======================================================================
+43. JEDEN CANONICAL REPORT MODEL
+======================================================================
+
+Rekomendowana architektura:
+
+SOURCE / ANALYSIS OUTPUT
+        |
+        v
+CANONICAL CUSTOMER REPORT MODEL
+        |
+        +--> interactive customer view
+        |
+        +--> canonical PDF renderer
+        |
+        +--> evidence receipt
+        |
+        +--> account artifact metadata
+
+Canonical Customer Report Model powinien być jawnie wersjonowany.
+
+Przykład:
+
+velmere.audit-report.public.v3
+
+Nie powinno istnieć:
+- osobne niezależne pole do preview;
+- inne pole do PDF;
+- inna truth-state logika do account view;
+- inne finding ordering zależnie od powierzchni.
+
+Dozwolone są różne projekcje tego samego modelu,
+ale muszą być jawne i testowane.
+
+
+======================================================================
+44. CANONICAL PDF ARTIFACT PIPELINE
+======================================================================
+
+Rekomendowany przepływ:
+
+1. Zamrożenie wejścia analizy.
+2. Zamrożenie canonical public report model.
+3. Walidacja schemaVersion.
+4. Walidacja customer-safe projection.
+5. Generacja PDF dokładnie jeden raz.
+6. Pełny PDF QA.
+7. Obliczenie SHA-256.
+8. Zapis immutable artifact.
+9. Przypisanie artifactId do konta.
+10. Preview serwuje zapisane bytes jako inline.
+11. Download serwuje te same bytes jako attachment.
+12. Każda korekta tworzy nową wersję, nigdy silent overwrite.
+
+Ważne:
+
+Download NIE powinien ponownie wykonywać AI, providera ani całego audytu.
+Download powinien dostarczyć istniejący, zamrożony artefakt.
+
+
+======================================================================
+45. EXACT PDF PARITY RECEIPT
+======================================================================
+
+Każdy finalny PDF powinien mieć receipt:
+
+pdfArtifactId
+reportId
+reportVersion
+accountIdBinding
+product
+productTier
+subjectId
+analysisSnapshotId
+publicReportSchemaVersion
+rendererVersion
+generatedAt
+sourceFingerprint
+analysisOutputHash
+publicProjectionHash
+pdfSha256
+pageCount
+pageSizes
+fontInventory
+metadataHash
+previewEndpointHash
+downloadEndpointHash
+previewDownloadByteIdentical
+qaState
+correctionState
+retentionExpiresAt
+rightsState
+
+PASS:
+
+previewEndpointHash == downloadEndpointHash == pdfSha256
+
+
+======================================================================
+46. PDF 1:1 — TESTY OBOWIĄZKOWE
+======================================================================
+
+A. BYTE PARITY
+- preview HTTP body SHA-256;
+- download HTTP body SHA-256;
+- exact equality.
+
+B. CONTENT
+- page count;
+- A4 page dimensions;
+- extracted text;
+- section inventory;
+- finding count;
+- evidence reference count;
+- locale;
+- tier;
+- report ID;
+- version.
+
+C. VISUAL
+- raster każdej strony;
+- clipping;
+- overlap;
+- blank page;
+- overflow;
+- text touching edges;
+- broken tables;
+- broken code wrapping;
+- missing icon/image;
+- missing footer/header;
+- font substitution;
+- unexpected line wrap.
+
+D. ACCESSIBILITY
+- selectable real text;
+- tagged structure where supported;
+- reading order;
+- headings;
+- lists;
+- tables;
+- links;
+- alt text for meaningful images;
+- decorative graphics marked as artifacts where possible;
+- language metadata.
+
+E. SECURITY
+- no internal PASS numbers;
+- no queue IDs;
+- no storage path;
+- no provider secret;
+- no operator field;
+- no raw internal graph;
+- no tenant identifier leak;
+- no hidden active content unless explicitly allowed;
+- no customer-inaccessible attachment.
+
+F. DOWNLOAD
+- correct Content-Type application/pdf;
+- safe filename;
+- filename and filename* compatibility;
+- no path traversal in filename;
+- no user-controlled response header injection.
+
+
+======================================================================
+47. PIXEL-PERFECT A VIEWER DIFFERENCES
+======================================================================
+
+"1:1" powinno znaczyć:
+
+- ten sam dokument;
+- te same bytes;
+- te same strony;
+- ten sam tekst;
+- ten sam layout zapisany w PDF.
+
+Nie należy obiecywać, że:
+
+- Chrome PDF Viewer;
+- Firefox PDF Viewer;
+- Android viewer;
+- Adobe Acrobat;
+- systemowy podgląd telefonu
+
+pokażą identyczne przyciski, toolbar albo antyaliasing.
+
+Viewer może wyglądać inaczej.
+Dokument nie może wyglądać inaczej merytorycznie ani layoutowo.
+
+Dlatego Velmère powinno testować:
+
+DOCUMENT PARITY = exact.
+VIEWER CHROME = outside document contract.
+
+
+======================================================================
+48. PROFESJONALNY STANDARD WIZUALNY PDF
+======================================================================
+
+PDF nie może wyglądać jak techniczny export debugowy.
+
+Powinien posiadać jeden design system Velmère:
+
+- czytelną typografię;
+- duże marginesy;
+- powtarzalny grid;
+- ograniczoną liczbę fontów;
+- logiczne odstępy;
+- jasną hierarchię;
+- spokojny premium wygląd;
+- brak zbędnych dekoracji;
+- wykresy czytelne również po wydruku;
+- kolory niebędące jedynym nośnikiem znaczenia;
+- poprawny kontrast;
+- prawidłowe tabele;
+- brak maleńkiego tekstu tylko po to, aby zmieścić więcej danych.
+
+Rekomendowany kierunek A4:
+
+- body około 9.5–11 pt zależnie od fontu;
+- table text nie mniejszy bez mocnego uzasadnienia;
+- code/evidence monospace z bezpiecznym wrappingiem;
+- margines około 16–22 mm;
+- powtarzalny header/footer;
+- numery stron;
+- report ID i version w footerze;
+- section headings zawsze razem z pierwszą częścią treści;
+- unikanie samotnych nagłówków na końcu strony;
+- unikanie rozcinania finding summary pomiędzy strony;
+- repeated table headers na nowych stronach.
+
+To są rekomendacje projektowe, nie automatyczny standard prawny.
+
+
+======================================================================
+49. PROPONOWANA STRUKTURA AUDIT PDF
+======================================================================
+
+1. COVER
+- Velmère;
+- Audit Basic / Pro / Advanced;
+- contract/project name;
+- chain/address, jeśli dotyczy;
+- source-only / deployment-bound status;
+- generatedAt;
+- evidence observation window;
+- report ID;
+- report version;
+- confidentiality state;
+- truth limitation.
+
+2. EXECUTIVE SUMMARY
+- co przeanalizowano;
+- najważniejszy wynik;
+- top risks;
+- czego nie przeanalizowano;
+- recommended next action;
+- readiness/assurance state bez fake certainty.
+
+3. SCOPE
+- exact files/contracts;
+- exact compiler/settings;
+- dependencies;
+- chain/runtime identity;
+- exclusions;
+- limitations;
+- tools/model versions.
+
+4. SYSTEM / TRUST MODEL
+- privileged roles;
+- admin;
+- upgrade path;
+- oracle assumptions;
+- external dependencies;
+- value flows;
+- assets at risk;
+- emergency controls.
+
+5. FINDINGS
+Każdy finding:
+- ID;
+- title;
+- status;
+- technical severity;
+- exploit preconditions;
+- exploitability evidence;
+- impact;
+- affected component;
+- evidence;
+- reproduction;
+- remediation;
+- missing proof;
+- source location;
+- reviewer disagreement, jeśli istnieje.
+
+6. POSITIVE / VERIFIED CONTROLS
+Nie tylko błędy.
+Pokazać, co faktycznie sprawdzono i nie znaleziono problemu,
+ale bez twierdzenia, że niewykryte ryzyko nie istnieje.
+
+7. MISSING EVIDENCE / UNRESOLVED
+- source missing;
+- spec missing;
+- deployment binding missing;
+- unresolved conflict;
+- provider unavailable;
+- unsupported detector family.
+
+8. METHODOLOGY
+- deterministic tools;
+- static;
+- dynamic;
+- fuzz/invariants;
+- AI lanes;
+- evidence handling;
+- limitations.
+
+9. APPENDIX
+- hashes;
+- file inventory;
+- tool versions;
+- evidence receipts;
+- schemas;
+- timeline;
+- raw references customer-safe.
+
+10. AUTHENTICITY
+- report hash;
+- version;
+- generated timestamp;
+- optional verification code;
+- correction/supersession status.
+
+
+======================================================================
+50. BASIC / PRO / ADVANCED PDF DELTA
+======================================================================
+
+BASIC PDF
+
+Powinien być krótki, czytelny i uczciwy.
+Nie może być celowo brzydki ani bezużyteczny.
+
+Może zawierać:
+- scope;
+- key findings;
+- evidence summary;
+- limitations;
+- missing evidence;
+- next actions;
+- concise appendix.
+
+PRO PDF
+
+Musi dodawać materialną wartość:
+- deeper evidence;
+- attack preconditions;
+- stronger reproduction;
+- remediation;
+- affected paths/functions;
+- traceability;
+- additional dynamic evidence;
+- more complete methodology;
+- richer technical appendix.
+
+ADVANCED PDF
+
+Musi dodawać nowy workflow/evidence, nie objętość:
+- frozen specification/trust model;
+- business-logic analysis;
+- invariants/economic assumptions;
+- multi-lane adjudication;
+- contradiction register;
+- false-negative hunt;
+- deeper deployment/runtime binding;
+- fix/re-audit history if performed;
+- evidence pack;
+- signed/authenticity/correction trail;
+- professional executive + technical package.
+
+Jeżeli Advanced nie dodaje materialnej wartości dla konkretnego case:
+nie powinien być oferowany tylko po to, aby wygenerować dłuższy PDF.
+
+
+======================================================================
+51. PRE-PURCHASE VS POST-PURCHASE PDF PREVIEW
+======================================================================
+
+Potrzebne są dwa odrębne pojęcia.
+
+A. PRE-PURCHASE SAMPLE
+
+Może być:
+- ograniczony;
+- zredagowany;
+- przykładowy;
+- z watermarkiem SAMPLE;
+- bez pełnych findings;
+- bez pełnej evidence.
+
+Musi być jasno nazwany SAMPLE / LIMITED PREVIEW.
+
+B. OWNED FULL PREVIEW
+
+Po przypisaniu artefaktu do konta:
+- dokładny finalny PDF;
+- te same bytes co download;
+- wszystkie strony;
+- wyszukiwanie;
+- zoom;
+- thumbnails;
+- page navigation;
+- download.
+
+Nie wolno mieszać tych dwóch funkcji.
+
+
+======================================================================
+52. AUDIT JAKO ACCOUNT ARTIFACT
+======================================================================
+
+Po ukończeniu Audit Pro / Advanced system powinien utworzyć:
+
+1. Interactive Audit Result;
+2. Final PDF;
+3. Evidence receipt;
+4. Delivery receipt;
+5. Account artifact record;
+6. Retention policy;
+7. correction/version history.
+
+Użytkownik powinien widzieć raport w:
+
+MY AUDITS
+lub
+EVIDENCE VAULT
+
+Karta raportu:
+- project/contract;
+- tier;
+- generatedAt;
+- analysis window;
+- source/deployment binding;
+- status;
+- version;
+- expiry;
+- open interactive result;
+- preview PDF;
+- download PDF;
+- compare version;
+- delete;
+- support/correction.
+
+
+======================================================================
+53. JAK DŁUGO AUDYT POWINIEN BYĆ NA KONCIE
+======================================================================
+
+7 dni jest zbyt krótkie jako domyślna retencja dla płatnego profesjonalnego audytu.
+Klient może potrzebować raportu do:
+- poprawki kodu;
+- rozmowy z zespołem;
+- inwestorem;
+- compliance;
+- ponownej weryfikacji;
+- dokumentacji release;
+- sporu lub supportu.
+
+Rekomendowana HIPOTEZA produktowa do testu:
+
+Audit Basic:
+- 7 dni na koncie;
+- możliwość pobrania;
+- opcjonalnie konto nie jest wymagane dla jednorazowego Basic.
+
+Audit Pro:
+- 90 dni pełnego dostępu na koncie;
+- PDF do pobrania;
+- ostrzeżenie 14 / 7 / 1 dzień przed wygaśnięciem.
+
+Audit Advanced:
+- 365 dni pełnego dostępu na koncie;
+- PDF do pobrania;
+- pełna version/correction history;
+- ostrzeżenie 30 / 14 / 7 / 1 dzień przed wygaśnięciem.
+
+To NIE jest ostateczna decyzja prawna ani cenowa.
+To rekomendowany punkt startowy do customer/WTP/cost testu.
+
+
+======================================================================
+54. RETENCJA RAPORTU ≠ RETENCJA SUROWEGO KODU
+======================================================================
+
+Bardzo ważne rozdzielenie:
+
+A. RAW CUSTOMER INPUT
+- source code;
+- uploaded archive;
+- private documentation;
+- secrets accidentally included;
+- custom specification;
+- private deployment data.
+
+B. DERIVED CUSTOMER ARTIFACT
+- customer-safe report;
+- PDF;
+- public projection JSON;
+- evidence references;
+- summary;
+- finding data.
+
+Rekomendowana hipoteza:
+
+Raw uploaded source:
+- delete 7 dni po final delivery;
+- opcja "delete immediately after completion";
+- opcja wcześniejszego ręcznego usunięcia;
+- brak użycia do treningu bez osobnej wyraźnej zgody;
+- backup expiry musi być jawny.
+
+Final Audit artifact:
+- Pro 90 dni;
+- Advanced 365 dni;
+- local downloaded PDF pozostaje u klienta;
+- przed wygaśnięciem export reminder.
+
+Dlaczego:
+minimalizuje prywatność i ryzyko przechowywania source,
+a jednocześnie nie zabiera klientowi płatnego raportu po 7 dniach.
+
+
+======================================================================
+55. RETENTION POLICY ENGINE
+======================================================================
+
+Finalna retencja nie może zależeć tylko od tieru.
+
+Powinna wynikać z:
+
+retention = MINIMUM OF:
+- product policy;
+- customer contract;
+- rights/licence limit;
+- privacy/data minimization limit;
+- account deletion state;
+- legal hold where lawfully applicable;
+- security incident override;
+- user-requested early deletion.
+
+Przykładowe pola:
+
+retentionPolicyId
+artifactClass
+product
+productTier
+createdAt
+availableUntil
+rawInputDeleteAt
+backupDeleteBy
+sourceRightsRetentionLimit
+customerRequestedDeleteAt
+legalHoldState
+expiryNotificationSchedule
+autoDeleteState
+
+
+======================================================================
+56. CO DZIEJE SIĘ PO WYGAŚNIĘCIU
+======================================================================
+
+Nie należy po prostu pokazywać 404.
+
+Lifecycle:
+
+ACTIVE
+-> EXPIRING
+-> EXPIRED
+-> DELETION_PENDING
+-> DELETED
+
+Po EXPIRED:
+- full content niedostępny;
+- karta może nadal pokazać minimalny receipt:
+  report ID, tier, generatedAt, expiry, deletion state;
+- możliwość przywrócenia tylko jeśli artefakt jeszcze nie został usunięty
+  i terms na to pozwalają;
+- brak ukrytego permanentnego storage wbrew polityce.
+
+Po DELETED:
+- nie wolno "przywracać" z nieudokumentowanego backupu;
+- backup lifecycle musi zostać uwzględniony;
+- billing/tax records są osobną kategorią niż report content.
+
+
+======================================================================
+57. SUBSCRIPTION VS ONE-OFF PURCHASE
+======================================================================
+
+Trzeba rozdzielić:
+
+ONE-OFF AUDIT PURCHASE
+- dostęp do konkretnego raportu;
+- nie daje stałego Pro/Advanced dla wszystkich przyszłych analiz;
+- report retention według konkretnej polityki.
+
+SUBSCRIPTION
+- uprawnienie do określonej liczby analiz / funkcji;
+- dostęp do Evidence Vault podczas aktywności;
+- osobna grace period po anulowaniu;
+- nie powinno automatycznie usuwać pobranych wcześniej raportów.
+
+Proponowana hipoteza grace period:
+- 30 dni po końcu subskrypcji na export istniejących artefaktów;
+- brak nowych płatnych analiz po entitlement expiry;
+- później retencja per artifact.
+
+
+======================================================================
+58. SHIELD / SHIELD PRO / REAL MARKETS JAKO INTERAKTYWNE SNAPSHOTY
+======================================================================
+
+Pomysł właściciela jest prawidłowy:
+
+Płatne informacje Shield / Shield Pro / Real Markets Pro / Advanced
+nie muszą być głównie PDF-em.
+
+Powinny zostać przypisane do konta jako:
+
+INTERACTIVE ANALYSIS SNAPSHOT
+
+Po kliknięciu w Evidence Vault otwiera się ten sam typ modal/window,
+który użytkownik zobaczył przy wygenerowaniu analizy.
+
+Najważniejsza zasada:
+
+NIE refetchować automatycznie bieżących danych i udawać,
+że jest to ten sam zakupiony wynik.
+
+Otwieramy dokładny zapisany snapshot:
+
+"Analysis snapshot from 2026-08-13 04:22:17 UTC"
+
+
+======================================================================
+59. CO TRZEBA ZAPISAĆ DLA INTERAKTYWNEGO SNAPSHOTU
+======================================================================
+
+Nie wystarczy zapisać tylko kilku wartości.
+
+Snapshot może zawierać:
+
+artifactId
+accountIdBinding
+product
+productTier
+subjectIdentity
+subjectType
+analysisSnapshotAt
+observationWindow
+publicProjectionSchemaVersion
+rendererCompatibilityVersion
+sourceFingerprint
+providerSet
+rightsProfile
+truthStates
+freshnessStates
+conflictStates
+analysisOutput
+customerSafeEvidence
+chartSeriesSnapshot
+selectedTimeRange
+availableTabs
+paidFeatureStates
+missingEvidence
+limitations
+modelVersion
+methodologyVersion
+createdAt
+expiresAt
+correctionState
+snapshotHash
+
+
+======================================================================
+60. "TO SAMO OKNO" — CO TO DOKŁADNIE ZNACZY
+======================================================================
+
+Są dwa możliwe kontrakty:
+
+A. SAME CONTENT / SAME SEMANTICS
+- te same dane;
+- ten sam timestamp;
+- te same findings;
+- te same truth states;
+- te same tabs dostępne;
+- ten sam tier depth.
+
+B. PIXEL-IDENTICAL UI FOREVER
+- identyczny wygląd również po redesignie aplikacji.
+
+Rekomendacja:
+
+Gwarantować A.
+Nie gwarantować bezwarunkowo B.
+
+Dlaczego:
+- aplikacja będzie się rozwijać;
+- accessibility może wymagać zmian;
+- mobile layout może się zmienić;
+- stare komponenty mogą zostać wycofane.
+
+Aby zachować profesjonalizm:
+- snapshot posiada schemaVersion;
+- aktualny renderer ma adapter do starych wersji;
+- jeśli stary snapshot nie może być interaktywnie odtworzony,
+  system pokazuje archived read-only representation;
+- merytoryczna treść nie może się zmienić.
+
+
+======================================================================
+61. SNAPSHOT NIE MOŻE SIĘ SAM AKTUALIZOWAĆ
+======================================================================
+
+Zakupiona analiza historyczna powinna być immutable.
+
+Nie wolno po tygodniu otworzyć jej i po cichu pokazać nowych danych.
+
+Powinny istnieć osobne akcje:
+
+OPEN ORIGINAL SNAPSHOT
+RUN NEW CURRENT ANALYSIS
+COMPARE WITH CURRENT
+COMPARE WITH ANOTHER SNAPSHOT
+
+Jeżeli aktualne dane są niedostępne:
+
+Original snapshot: available
+Current comparison: temporarily unavailable
+Reason: ...
+
+
+======================================================================
+62. WHAT CHANGED? Z KONTA
+======================================================================
+
+Evidence Vault powinien pozwolić zaznaczyć dwa artefakty:
+
+Snapshot A
+Snapshot B
+
+I uruchomić:
+
+WHAT CHANGED?
+
+Porównanie musi używać zamrożonych snapshotów,
+nie obecnie pobranych danych.
+
+Wynik:
+- new facts;
+- removed facts;
+- changed evidence;
+- freshness changes;
+- provider changes;
+- permission changes;
+- liquidity changes;
+- findings resolved/new;
+- decision-change;
+- limitations.
+
+To może być później osobny Pro/Advanced workflow.
+
+
+======================================================================
+63. REKOMENDOWANA RETENCJA SHIELD / REAL MARKETS SNAPSHOT
+======================================================================
+
+Płatny snapshot nie powinien znikać po 7 dniach,
+bo jego wartością może być właśnie historia.
+
+Rekomendowana hipoteza:
+
+Basic/free snapshot:
+- 7 dni;
+- ograniczona liczba zapisów.
+
+Pro snapshot:
+- 90 dni;
+- reopen + compare;
+- export summary, jeżeli rights pozwalają.
+
+Advanced snapshot:
+- 365 dni;
+- Evidence Time Machine;
+- richer comparison;
+- incident window;
+- history/version context.
+
+Ale finalna retencja jest ograniczona przez rights source.
+Jeżeli provider nie pozwala na długie przechowywanie,
+Velmère nie może obiecać 365 dni dla tych pól.
+
+Wtedy możliwe:
+- przechowywanie dozwolonych derivations;
+- usunięcie raw provider values;
+- zachowanie customer receipt;
+- jawne ograniczenie.
+
+
+======================================================================
+64. PDF DLA SHIELD / MARKETS — OPCJONALNY, NIE GŁÓWNY
+======================================================================
+
+Shield/Real Markets powinny być przede wszystkim interaktywne.
+
+Można później dodać:
+
+EXPORT SNAPSHOT TO PDF
+
+Ale:
+- PDF musi powstać z tego samego snapshotu;
+- timestamp i truth states muszą być zachowane;
+- nie może pobierać nowych danych;
+- rights muszą pozwalać na PDF/export;
+- export nie może udawać current po czasie.
+
+Primary product:
+interactive evidence snapshot.
+
+Secondary:
+portable PDF/export.
+
+
+======================================================================
+65. ACCOUNT ARTIFACT LIFECYCLE
+======================================================================
+
+Proponowane stany:
+
+QUEUED
+PROCESSING
+FINALIZING
+QA_FAILED
+READY
+DELIVERED
+OPENED
+DOWNLOADED
+CORRECTED
+SUPERSEDED
+REVOKED
+EXPIRING
+EXPIRED
+DELETION_PENDING
+DELETED
+FAILED
+REFUNDED
+
+Każdy stan musi mieć jawne przejścia.
+
+Przykład:
+
+PROCESSING -> READY
+wyłącznie po:
+- canonical report valid;
+- customer projection valid;
+- PDF/snapshot QA PASS;
+- hash stored;
+- account binding stored.
+
+
+======================================================================
+66. ATOMIC DELIVERY
+======================================================================
+
+Klient nie może dostać połowy raportu jako finalnego produktu.
+
+Wymagane:
+
+- temporary generation space;
+- validation;
+- atomic finalization;
+- immutable final ID;
+- READY dopiero po kompletnym QA;
+- no partial download;
+- idempotent retry;
+- duplicated worker does not create two entitlements/artifacts.
+
+Jeżeli PDF generation fails:
+- artifact remains FAILED/QA_FAILED;
+- nie pokazuje się jako READY;
+- checkout/delivery policy uruchamia retry albo refund/support path.
+
+
+======================================================================
+67. ACCOUNT OWNERSHIP I AUTHORIZATION
+======================================================================
+
+Artefakt musi być przypisany do:
+
+- authenticated account;
+- tenant, jeżeli organizacje istnieją;
+- exact purchase/entitlement;
+- exact order/customer relationship.
+
+Każdy endpoint:
+- open;
+- preview;
+- download;
+- compare;
+- delete;
+- export;
+- share;
+- correction;
+
+musi wykonywać object-level authorization.
+
+UUID nie jest authorization.
+Nieprzewidywalny link nie jest authorization.
+Signed URL nie zastępuje account policy.
+
+
+======================================================================
+68. SECURE DOWNLOAD CONTRACT
+======================================================================
+
+Rekomendacja:
+
+1. Użytkownik klika download.
+2. Server sprawdza session/account/tenant/artifact/retention/revocation.
+3. Server wydaje krótko ważny download token lub streamuje bezpośrednio.
+4. Token jest związany z:
+   - artifactId;
+   - accountId;
+   - expiry;
+   - action=download;
+   - optional single use.
+5. Object storage nie jest publiczny.
+6. Każdy download jest logowany bez ujawniania treści.
+
+Przykładowa ważność signed URL:
+5–15 minut jako hipoteza techniczna.
+
+Nie traktować tej liczby jako wymogu prawnego.
+
+
+======================================================================
+69. SHARE LINK — TYLKO JAKO OSOBNA FUNKCJA
+======================================================================
+
+Nie należy automatycznie tworzyć publicznych linków do audytów.
+
+Opcjonalna przyszła funkcja:
+
+SHARE REPORT
+
+Musi posiadać:
+- explicit owner action;
+- scope: view/download;
+- expiry;
+- revoke;
+- password/recipient binding, jeśli wymagane;
+- audit log;
+- no raw source;
+- no hidden tenant metadata;
+- no search engine indexing.
+
+Advanced team workflow może mieć:
+- invite collaborator;
+- role-based view;
+- comments;
+- approval;
+- fix review.
+
+Ale nie liczyć tego jako gotowe, dopóki nie istnieje.
+
+
+======================================================================
+70. CORRECTION / REVOCATION / SUPERSESSION
+======================================================================
+
+Raportu nie wolno po cichu nadpisywać.
+
+Jeżeli wykryto błąd:
+
+Report v1
+status: SUPERSEDED or CORRECTED
+
+Report v2
+status: ACTIVE
+
+Użytkownik powinien zobaczyć:
+- co poprawiono;
+- dlaczego;
+- kiedy;
+- czy decyzja/severity się zmieniła;
+- czy v1 może nadal być używany;
+- link do nowej wersji.
+
+Jeżeli poważny błąd:
+- notify;
+- revoke old download if necessary and contractually allowed;
+- preserve correction receipt;
+- nie usuwać dowodu błędu w historii wewnętrznej.
+
+
+======================================================================
+71. REPORT AUTHENTICITY
+======================================================================
+
+PDF może zawierać:
+- report ID;
+- version;
+- SHA-256;
+- generatedAt;
+- Velmère methodology ID;
+- verification code.
+
+Opcjonalny verification endpoint powinien ujawniać minimalnie:
+- authentic / unknown / revoked / superseded;
+- report ID;
+- version;
+- hash;
+- generatedAt.
+
+Nie powinien ujawniać:
+- customer identity;
+- private project name;
+- findings;
+- raw content
+
+bez authorization/explicit sharing.
+
+
+======================================================================
+72. REPORT VERSIONING
+======================================================================
+
+Rozdzielić:
+
+analysisRunId
+reportId
+reportVersion
+pdfArtifactId
+interactiveArtifactId
+
+Jedna analiza może mieć:
+- interactive artifact;
+- PDF artifact;
+- corrected PDF;
+- export;
+- evidence receipt.
+
+Nie nadawać temu wszystkiemu jednego niejasnego ID.
+
+
+======================================================================
+73. DATA MODEL — ACCOUNT ARTIFACT
+======================================================================
+
+Przykładowy kontrakt:
+
+AccountArtifact {
+  artifactId
+  accountId
+  tenantId?
+  product
+  tier
+  artifactType
+  subjectIdentity
+  analysisRunId
+  snapshotAt
+  createdAt
+  status
+  schemaVersion
+  rendererVersion
+  publicProjectionHash
+  contentHash
+  rightsProfileId
+  retentionPolicyId
+  availableUntil
+  correctedBy?
+  supersedes?
+  purchaseId?
+  entitlementId?
+  openedAt?
+  downloadedAt?
+  deletedAt?
+}
+
+artifactType:
+- AUDIT_INTERACTIVE
+- AUDIT_PDF
+- SHIELD_SNAPSHOT
+- SHIELD_PRO_SNAPSHOT
+- REAL_MARKETS_SNAPSHOT
+- CHANGE_ANALYSIS
+- HISTORICAL_EVIDENCE_PACK
+- INCIDENT_WINDOW
+- DELIVERY_RECEIPT
+- CORRECTION_NOTICE
+
+
+======================================================================
+74. ACCOUNT UI — EVIDENCE VAULT
+======================================================================
+
+Proponowane filtry:
+- product;
+- tier;
+- subject;
+- status;
+- date;
+- current/historical;
+- expiring;
+- corrected;
+- downloaded;
+- organization/project.
+
+Każda karta:
+- artifact name;
+- product/tier;
+- snapshot time;
+- generated time;
+- current/historical badge;
+- truth/freshness state at generation;
+- version;
+- retention expiry;
+- status;
+- open;
+- download, jeśli PDF;
+- compare;
+- delete;
+- support.
+
+Nie pokazywać:
+- internal queue;
+- PASS number;
+- storage path;
+- provider credential;
+- operator state.
+
+
+======================================================================
+75. CURRENT VS HISTORICAL LABELING W EVIDENCE VAULT
+======================================================================
+
+Po otwarciu starego snapshotu musi być widoczne:
+
+HISTORICAL SNAPSHOT
+Observed at: ...
+Generated at: ...
+Age: ...
+Not current market state.
+
+Jeżeli dane nadal są aktualne z natury, np. immutable bytecode,
+nie należy bezmyślnie oznaczać wszystkiego jako stale.
+
+Freshness powinno być per field.
+
+Przykład:
+- deployed bytecode: still verified current;
+- market price: historical;
+- holder concentration: historical;
+- report conclusion: historical conclusion based on frozen evidence.
+
+
+======================================================================
+76. RE-RUN I REFRESH
+======================================================================
+
+Płatny artifact nie daje automatycznie darmowego wiecznego refreshu.
+
+Możliwe modele:
+
+ONE-OFF:
+- original snapshot retained;
+- re-run wymaga nowego credit/purchase.
+
+SUBSCRIPTION:
+- określona liczba refresh;
+- monitoring interval;
+- current eligibility.
+
+CORRECTION:
+- bezpłatna poprawka błędu Velmère;
+- nie traktować jako nowego zakupu.
+
+Każda akcja musi jasno mówić:
+- new analysis;
+- refresh;
+- comparison;
+- correction.
+
+
+======================================================================
+77. PAYMENT -> ANALYSIS -> DELIVERY FLOW
+======================================================================
+
+Proponowany przepływ:
+
+1. Tier eligibility preflight.
+2. Price/terms disclosure.
+3. Checkout creation.
+4. Payment confirmation.
+5. Re-check eligibility.
+6. Freeze input/snapshot.
+7. Create analysisRunId.
+8. Execute analysis.
+9. Build canonical report.
+10. Build PDF/interactive artifact.
+11. QA.
+12. Bind to account.
+13. Mark READY.
+14. Notify user.
+15. Delivery/open/download.
+
+Jeżeli eligibility spada po payment, przed startem:
+- cancel/refund;
+- offer lower tier only with explicit consent;
+- no silent downgrade.
+
+
+======================================================================
+78. FAILURE / REFUND MATRIX
+======================================================================
+
+A. PAYMENT SUCCESS, ANALYSIS NOT STARTED, ELIGIBILITY LOST
+- automatic cancel/refund;
+- explain;
+- optional notify when available.
+
+B. ANALYSIS STARTED, PROVIDER LOST, TIER NO LONGER DELIVERABLE
+- pause/fail closed;
+- retry window;
+- if unresolved: refund or explicit alternative.
+
+C. PDF QA FAIL
+- do not deliver broken PDF;
+- retry renderer;
+- if final failure: support/refund.
+
+D. INTERACTIVE SNAPSHOT QA FAIL
+- no READY state;
+- no broken account artifact.
+
+E. CUSTOMER DOWNLOADS, THEN REPORT CORRECTED
+- notify;
+- v1 superseded;
+- provide v2;
+- preserve correction history.
+
+
+======================================================================
+79. CUSTOMER NOTIFICATIONS
+======================================================================
+
+Możliwe notification events:
+- analysis started;
+- analysis ready;
+- analysis failed;
+- refund initiated;
+- report corrected;
+- report superseded;
+- report expires in 30/14/7/1 days;
+- raw input deleted;
+- Advanced now available;
+- current comparison available;
+- provider/source restored;
+- rights change affects artifact.
+
+Użytkownik powinien móc zarządzać notification preferences,
+ale krytyczne correction/security notices mogą mieć osobny kontrakt.
+
+
+======================================================================
+80. PRIVACY / SOURCE CODE SAFETY
+======================================================================
+
+Audit input może zawierać:
+- secrets;
+- private keys;
+- API keys;
+- personal data;
+- internal URLs;
+- comments;
+- customer names;
+- unpublished business logic.
+
+Przed analizą:
+- secret candidate scan;
+- warning;
+- encrypted transport;
+- access minimization;
+- tenant-safe workspace;
+- no public logs;
+- no prompt leakage;
+- no use for model training without explicit consent;
+- deletion policy.
+
+Raport customer-safe nie powinien automatycznie kopiować sekretów z source.
+
+
+======================================================================
+81. STORAGE COST I ZERO-EURO APPROACH
+======================================================================
+
+Evidence Vault można utrzymać rozsądnie, jeżeli:
+- raw source ma krótką retencję;
+- PDF jest kompresowany;
+- JSON snapshots są kompresowane;
+- duplicate inputs deduplicated by hash where privacy policy allows;
+- thumbnails są generowane raz;
+- historyczne chart series są ograniczone do dozwolonej resolution;
+- expired content jest faktycznie usuwany;
+- logi nie kopiują całych payloadów;
+- free-tier storage jest używany tylko po sprawdzeniu terms/security.
+
+Nie należy oszczędzać przez:
+- public buckets;
+- brak backup policy;
+- przechowywanie bez encryption;
+- brak deletion verification;
+- nadpisywanie artefaktów.
+
+
+======================================================================
+82. BACKUP / RESTORE DLA PŁATNYCH ARTEFAKTÓW
+======================================================================
+
+Jeżeli Velmère obiecuje 90/365 dni dostępu,
+musi umieć odtworzyć artefakt po awarii.
+
+Testy:
+- backup exists;
+- restore one artifact;
+- restore account index;
+- verify hash after restore;
+- tenant binding preserved;
+- expiry preserved;
+- deleted artifact does not reappear after restore;
+- corrected/superseded state preserved.
+
+RPO/RTO muszą zostać ustalone przed GO_PAID.
+
+
+======================================================================
+83. ACCESSIBILITY PDF I INTERAKTYWNEGO VIEWERA
+======================================================================
+
+Profesjonalny PDF powinien dążyć do:
+- prawdziwego tekstu;
+- logicznej struktury;
+- headings;
+- prawidłowego reading order;
+- bookmarks;
+- tables/lists semantics;
+- link semantics;
+- language metadata;
+- alt text;
+- decorative artifacts hidden from assistive tech;
+- niepolegania wyłącznie na kolorze.
+
+Interactive viewer:
+- keyboard;
+- focus;
+- zoom;
+- readable mobile layout;
+- screen-reader labels;
+- status announcements;
+- no focus trap;
+- clear current/historical badge.
+
+PDF parity nie może pogarszać accessibility.
+
+
+======================================================================
+84. PDF METADATA
+======================================================================
+
+Minimum:
+- Title;
+- Author/Producer: Velmère;
+- Subject;
+- Keywords only if customer-safe;
+- CreationDate;
+- ModDate;
+- Language;
+- report ID/version;
+- no local filesystem paths;
+- no developer username;
+- no internal temporary file names;
+- no source archive path.
+
+Metadata także jest customer-visible outputem i wymaga firewall.
+
+
+======================================================================
+85. LOCALE PARITY PL / EN / DE
+======================================================================
+
+PDF oraz interactive artifact powinny zachować:
+- ten sam finding count;
+- ten sam truth state;
+- ten sam severity/exploitability meaning;
+- ten sam scope;
+- te same missing evidence;
+- te same timestamps;
+- prawidłowe liczby/daty/currency;
+- brak mixed language.
+
+Tłumaczenie nie może zmienić merytorycznej decyzji.
+
+
+======================================================================
+86. ARTIFACT SCHEMA MIGRATION
+======================================================================
+
+Stare płatne artefakty muszą pozostać czytelne po zmianie aplikacji.
+
+Wymagane:
+- schemaVersion;
+- migration adapter;
+- renderer compatibility matrix;
+- test stary snapshot -> nowy renderer;
+- fail closed przy unknown schema;
+- archived read-only fallback.
+
+Nie wolno:
+- raw spread unknown payload;
+- utrata pól;
+- ciche reinterpretowanie starego risk score.
+
+
+======================================================================
+87. SEARCH I INDEX W EVIDENCE VAULT
+======================================================================
+
+Search powinien indeksować customer-safe projection,
+nie raw source i nie internal receipts.
+
+Możliwe pola:
+- report title;
+- project/asset;
+- tier;
+- finding title;
+- date;
+- status;
+- tags.
+
+Security:
+- tenant-filtered index;
+- delete propagation;
+- expiry propagation;
+- no cross-account snippets;
+- no search result for revoked/deleted content.
+
+
+======================================================================
+88. EXPORT I PORTABILITY
+======================================================================
+
+Audit:
+- PDF;
+- optional customer-safe JSON;
+- CSV finding list, jeśli ma wartość;
+- evidence receipt.
+
+Shield/Markets:
+- interactive snapshot;
+- optional PDF summary;
+- optional JSON/CSV only if rights permit;
+- screenshot is not enough as canonical data export.
+
+Export musi zachować:
+- timestamp;
+- truth states;
+- schema/version;
+- limitations;
+- rights/attribution where required.
+
+
+======================================================================
+89. PROFESSIONAL DETAILS, O KTÓRYCH ŁATWO ZAPOMNIEĆ
+======================================================================
+
+1. Time zone w raportach.
+2. ObservedAt vs GeneratedAt.
+3. Current vs historical per field.
+4. Report version.
+5. Correction status.
+6. Source-only vs deployment-bound.
+7. Expiry date.
+8. Raw input deletion date.
+9. Account ownership.
+10. Organization ownership.
+11. PDF filename.
+12. Special characters in filename.
+13. Mobile preview.
+14. Offline/local download.
+15. Broken download retry.
+16. Duplicate click/idempotency.
+17. Payment race.
+18. Refund and revoke.
+19. Account deletion.
+20. Subscription cancellation.
+21. Rights expiry.
+22. Provider terms change.
+23. Model/methodology version.
+24. Snapshot UI backward compatibility.
+25. Chart series timezone.
+26. Corporate action/reorg corrections.
+27. Old report corrected after user download.
+28. Expiry notification.
+29. Backup restore.
+30. No deleted artifact resurrection.
+31. No public object storage path.
+32. No share link by default.
+33. No internal PDF metadata leak.
+34. No PDF active scripts.
+35. No HTML-to-PDF external resource leak.
+36. Remote fonts/images pinned or embedded.
+37. Deterministic rendering.
+38. Table row split.
+39. Long URL/code wrapping.
+40. Empty/one-item sections.
+41. Very large report pagination.
+42. Zero-findings report.
+43. Unsupported input report.
+44. Partial evidence report.
+45. Conflicted provider report.
+46. Customer-visible reason for missing section.
+47. Artifact tamper detection.
+48. Download hash verification.
+49. Receipt without exposing content.
+50. Support/correction route.
+
+
+======================================================================
+90. SECURITY TEST DENOMINATOR DLA EVIDENCE VAULT
+======================================================================
+
+At minimum:
+
+AUTHORIZATION
+- Account A reads Account B artifact;
+- Account A downloads Account B PDF;
+- tenant A searches tenant B;
+- expired user session;
+- revoked entitlement;
+- downgraded subscription;
+- deleted account.
+
+OBJECT REFERENCES
+- numeric ID change;
+- UUID swap;
+- filename swap;
+- signed URL reuse;
+- signed URL after expiry;
+- signed URL wrong account;
+- share token brute force.
+
+LIFECYCLE
+- refund;
+- chargeback;
+- correction;
+- supersession;
+- expiry;
+- deletion;
+- backup restore;
+- retry;
+- duplicate webhook;
+- event reorder.
+
+PDF
+- preview/download mismatch;
+- path injection filename;
+- PDF metadata leak;
+- malformed PDF;
+- active content;
+- broken fonts;
+- clipping;
+- redaction bypass.
+
+SNAPSHOT
+- old snapshot silently refreshed;
+- historical labelled current;
+- rights-blocked field retained;
+- unknown schema accepted;
+- migration loses truth state;
+- UI opens wrong tier.
+
+
+======================================================================
+91. REDACTION SECURITY
+======================================================================
+
+Jeżeli istnieje pre-purchase redacted sample:
+
+Nie wolno polegać tylko na:
+- CSS blur;
+- overlay;
+- hidden DOM;
+- black rectangle na tekście;
+- client-side removal.
+
+Redacted sample powinien być osobnym customer-safe artifact,
+w którym poufne dane nie istnieją w payloadzie/PDF text layer.
+
+Test:
+- text extraction;
+- copy/paste;
+- PDF object inspection;
+- accessibility tree;
+- metadata;
+- attachments.
+
+
+======================================================================
+92. PDF DESIGN QA PANEL
+======================================================================
+
+Poza technicznym QA powinien istnieć AI/internal visual review.
+
+Role:
+- customer readability reviewer;
+- security report reviewer;
+- executive reviewer;
+- accessibility reviewer;
+- layout attacker;
+- locale reviewer.
+
+Pytania:
+- Czy pierwsza strona od razu mówi, co to za raport?
+- Czy klient wie, co zrobić dalej?
+- Czy finding jest zrozumiały?
+- Czy evidence jest odróżnione od inference?
+- Czy limitations są widoczne?
+- Czy raport wygląda jak płatny produkt?
+- Czy jest za gęsty?
+- Czy Pro/Advanced wyglądają bogaciej przez wartość, nie filler?
+
+AI review = internal only.
+
+
+======================================================================
+93. ZERO-FINDINGS REPORT
+======================================================================
+
+Brak findingów nie może dawać pustego lub podejrzanego PDF.
+
+Raport powinien wyjaśnić:
+- wykonany scope;
+- tested families;
+- unsupported families;
+- evidence coverage;
+- limitations;
+- false-negative risk;
+- next checks;
+- że "no finding detected" nie oznacza "secure".
+
+To jest ważne dla refund risk i customer trust.
+
+
+======================================================================
+94. REPORT Z CZĘŚCIOWYM EVIDENCE
+======================================================================
+
+Jeżeli Basic jest dostępny, ale Pro/Advanced nie:
+
+PDF Basic powinien pokazać:
+- co było dostępne;
+- czego brakowało;
+- dlaczego głębszy tier nie został zaoferowany;
+- jaki input mógłby odblokować Pro/Advanced;
+- timestamp.
+
+Nie wolno reklamować niedostępnej sekcji jako "coming soon" w płatnym report,
+jeżeli klient jej nie kupił.
+
+
+======================================================================
+95. ACCOUNT DELETION
+======================================================================
+
+Przy usunięciu konta:
+- potwierdzenie;
+- lista skutków;
+- artifact deletion schedule;
+- raw source deletion;
+- share link revocation;
+- search index deletion;
+- backup expiry;
+- billing/legal record separation;
+- organization transfer rules.
+
+Jeżeli report należy do organization, a użytkownik odchodzi:
+nie wolno automatycznie usuwać organization artifact bez polityki.
+
+
+======================================================================
+96. ORGANIZATIONS / TEAM OWNERSHIP — FUTURE
+======================================================================
+
+Advanced może później posiadać:
+- organization vault;
+- roles;
+- owner/admin/viewer;
+- comments;
+- approvals;
+- fix review;
+- shared report;
+- audit trail.
+
+Ale na początku można zrobić account-only.
+Nie budować enterprise scaffoldu bez customer value proof.
+
+
+======================================================================
+97. SUPPORT I DISPUTE
+======================================================================
+
+Każdy płatny artifact powinien mieć:
+
+REPORT A PROBLEM
+
+Kategorie:
+- PDF layout broken;
+- download failed;
+- factual correction;
+- wrong project/account;
+- missing evidence;
+- refund request;
+- unauthorized access concern;
+- report not understood.
+
+Support receipt powinien być związany z artifactId,
+ale public UI nie pokazuje internal ticket topology.
+
+
+======================================================================
+98. METRYKI PRODUKTOWE
+======================================================================
+
+PDF:
+- preview open rate;
+- download rate;
+- preview/download mismatch count;
+- PDF QA failure rate;
+- render retry rate;
+- mobile preview failure;
+- time to first page;
+- customer readability score;
+- support complaints.
+
+Evidence Vault:
+- artifact reopen rate;
+- compare usage;
+- expiry export rate;
+- deletion requests;
+- correction rate;
+- unauthorized access attempts;
+- restored artifact tests;
+- subscription retention.
+
+Tier value:
+- Pro PDF new evidence vs Basic;
+- Advanced new workflow vs Pro;
+- decision change;
+- time saved;
+- refund risk;
+- WTP.
+
+
+======================================================================
+99. HARD FAILS — PDF I ACCOUNT ARTIFACTS
+======================================================================
+
+- preview i download mają inne bytes;
+- preview wygląda lepiej niż final delivery bez jawnej etykiety sample;
+- zakupiony report nie jest przypisany do właściwego konta;
+- Account A może otworzyć Account B;
+- PDF download po refund/revoke mimo policy;
+- raw source pozostaje bez polityki retencji;
+- report znika po 7 dniach bez wcześniejszej jasnej informacji;
+- report silently overwritten;
+- old snapshot silently refreshes;
+- historical data pokazane jako current;
+- rights-blocked data w płatnym export;
+- PDF ma internal/debug metadata;
+- PDF ma clipping/overlap/blank pages;
+- PDF składa się wyłącznie z obrazów tekstu;
+- customer cannot export before expiry;
+- deleted content wraca po backup restore;
+- unknown artifact schema rendered permissively;
+- payment creates entitlement without sale eligibility;
+- lower tier silently delivered after higher-tier purchase;
+- report content not bound to exact analysis snapshot.
+
+
+======================================================================
+100. REKOMENDOWANY PLAN WDROŻENIA
+======================================================================
+
+P0 — NATYCHMIAST
+
+1. Zidentyfikować obecne dwa pipeline'y preview/download.
+2. Wybrać jeden canonical PDF artifact pipeline.
+3. Generować PDF raz.
+4. Zapisać artifact + hash.
+5. Preview inline z tych samych bytes.
+6. Download attachment z tych samych bytes.
+7. Dodać exact hash parity test.
+8. Dodać pełny visual PDF QA.
+9. Usunąć wszystkie internal topology leaks z PDF metadata/content.
+10. Dodać report/artifact/version IDs.
+
+P1 — ACCOUNT DELIVERY
+
+11. Evidence Vault / My Audits.
+12. AccountArtifact schema.
+13. Audit Pro/Advanced account binding.
+14. 90/365-day retention hypothesis.
+15. raw input 7-day deletion hypothesis.
+16. expiry warnings.
+17. secure preview/download authorization.
+18. refund/revoke/correction lifecycle.
+19. support route.
+
+P2 — INTERACTIVE SNAPSHOTS
+
+20. Shield/Real Markets public snapshot schema.
+21. Immutable stored snapshot.
+22. Reopen same semantic modal.
+23. current/historical labels.
+24. Run New Analysis.
+25. Compare with Current.
+26. migration adapter.
+27. rights-aware retention.
+
+P3 — HIGH VALUE
+
+28. What Changed?
+29. Evidence Time Machine.
+30. Incident Window.
+31. Before/After.
+32. report authenticity verification.
+33. optional PDF export from snapshots.
+34. organization/team vault only after demand.
+
+
+======================================================================
+101. PROPOSED ACCEPTANCE CONTRACT — PDF
+======================================================================
+
+PDF_PREVIEW_DOWNLOAD_PARITY = PASS only if:
+
+- exact final artifact stored;
+- preview body hash == download body hash;
+- page count equal;
+- extracted text equal;
+- locale/tier/report/version equal;
+- visual QA PASS;
+- accessibility checks PASS or explicit limitation;
+- no customer-internal leakage;
+- correct account authorization;
+- correction/retention state valid.
+
+
+======================================================================
+102. PROPOSED ACCEPTANCE CONTRACT — PAID AUDIT ACCOUNT
+======================================================================
+
+PAID_AUDIT_ACCOUNT_DELIVERY = PASS only if:
+
+- paid/sale eligibility valid;
+- artifact READY;
+- artifact bound to account;
+- PDF and interactive output available;
+- secure download;
+- retention disclosed before purchase;
+- expiry date visible;
+- raw input deletion policy visible;
+- refund/revoke tested;
+- cross-account denial tested;
+- correction versioning tested;
+- backup/restore tested for promised retention.
+
+
+======================================================================
+103. PROPOSED ACCEPTANCE CONTRACT — INTERACTIVE SNAPSHOT
+======================================================================
+
+INTERACTIVE_SNAPSHOT_ACCOUNT_DELIVERY = PASS only if:
+
+- exact public projection frozen;
+- snapshotAt visible;
+- current/historical semantics correct;
+- no silent refetch;
+- same content reopens;
+- schema/version pinned;
+- account authorization enforced;
+- rights permit retention;
+- compare/new analysis are separate actions;
+- expiry/correction/deletion tested.
+
+
+======================================================================
+104. RUTHLESS PRODUCT VERDICT
+======================================================================
+
+Pomysły właściciela są sensowne i mogą mocno podnieść profesjonalizm Velmère.
+
+Najmocniejsze elementy:
+
+1. Full preview i download jako ten sam PDF.
+2. Płatny Audit jako trwały artefakt konta, nie chwilowy ekran.
+3. Pro 90 dni i Advanced 365 dni jako rozsądna hipoteza startowa.
+4. Krótsza retencja raw source niż final report.
+5. Shield/Real Markets jako interaktywne immutable snapshots.
+6. Reopen dokładnego historycznego stanu.
+7. New Current Analysis jako osobna akcja.
+8. What Changed? pomiędzy snapshotami.
+9. Correction history zamiast silent overwrite.
+10. Evidence Vault jako wspólne centrum wyników.
+
+Najważniejsza korekta do pomysłu:
+
+Nie należy obiecywać, że stare interaktywne okno będzie pixel-identical po każdym
+przyszłym redesignie. Należy gwarantować ten sam zapisany content, timestamp,
+truth states, evidence i tier depth, z wersjonowanym rendererem.
+
+Najważniejsza korekta retencji:
+
+7 dni jest dobre dla Basic/raw temporary input,
+ale zbyt krótkie dla płatnego Pro/Advanced report.
+
+Najlepsza początkowa hipoteza:
+
+Basic artifact: 7 dni
+Pro artifact: 90 dni
+Advanced artifact: 365 dni
+Raw uploaded source: 7 dni po delivery lub earlier deletion
+
+Z zastrzeżeniem:
+rights, privacy, legal terms i storage cost mogą skrócić lub zmienić politykę.
+
+
+======================================================================
+105. RESEARCH BASIS / OFFICIAL DIRECTIONS
+======================================================================
+
+Poniższe źródła wspierają kierunek techniczny, ale nie ustalają same cen ani
+konkretnych okresów 7/90/365 dni.
+
+1. MDN — HTTP Content-Disposition
+   Oficjalna dokumentacja zachowania inline vs attachment.
+   Kierunek Velmère: ten sam PDF body, inny sposób prezentacji/pobrania.
+   https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition
+
+2. OWASP — Insecure Direct Object Reference Prevention Cheat Sheet
+   Każdy dokument/artefakt wymaga object-level authorization dla read/download/
+   update/delete/export; nie wystarczy niezgadywalny identyfikator.
+   https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html
+
+3. EUR-Lex — GDPR Article 5
+   Data minimization, storage limitation, integrity/confidentiality i accountability.
+   Kierunek Velmère: krótsza retencja raw source, jawna retencja artefaktów,
+   prawdziwe deletion lifecycle.
+   https://eur-lex.europa.eu/eli/reg/2016/679/oj
+
+4. W3C/WAI — WCAG 2.2 oraz PDF techniques
+   Tagged PDF, reading order, headings, lists, tables, links, actual text,
+   headers/footers i dostępność dokumentu.
+   https://www.w3.org/WAI/WCAG22/Techniques/
+
+External professional legal/privacy review remains separate where required.
+
+
+======================================================================
+106. FINALNA ZASADA R2
+======================================================================
+
+Velmère nie powinno dostarczać raportu jako jednorazowego efektu renderowania.
+
+Powinno dostarczać:
+
+ZAMROŻONY INPUT
++
+ZAMROŻONY CUSTOMER OUTPUT
++
+WERSJONOWANY ARTEFAKT
++
+DOKŁADNY PDF LUB INTERAKTYWNY SNAPSHOT
++
+ACCOUNT OWNERSHIP
++
+RETENTION
++
+CORRECTION HISTORY
++
+SECURE DELIVERY
++
+EVIDENCE RECEIPT
+
+PDF Preview nie jest obietnicą przybliżoną.
+Jest podglądem tego samego pliku, który klient pobierze.
+
+Płatna analiza nie znika po zamknięciu modala.
+Trafia do Evidence Vault.
+
+Stary snapshot nie udaje nowego.
+Otwiera się jako dokładny historyczny stan.
+
+Każdy kolejny current run jest nową analizą,
+a każda poprawka jest nową wersją.
+
+END

@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+import { createHash } from "node:crypto";
+import { readFileSync, statSync, writeFileSync } from "node:fs";
+import { executeForkReplayAdapter } from "./audit-fork-replay-adapter.mjs";
+const sha256 = (value) => `sha256:${createHash("sha256").update(value).digest("hex")}`;
+const stable = (value) => value === null || typeof value !== "object" ? JSON.stringify(value) : Array.isArray(value) ? `[${value.map(stable).join(",")}]` : `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stable(value[key])}`).join(",")}}`;
+const casePath = "fixtures/pass35/audit-a7/fork-replay/synthetic-fork-replay-case.json";
+const toolPath = "fixtures/pass35/audit-a7/fork-replay/fake-fork-tool.json";
+const entrypointPath = "fixtures/pass35/audit-a7/fake-fork-replay.mjs";
+const input = JSON.parse(readFileSync(casePath, "utf8"));
+const tool = JSON.parse(readFileSync(toolPath, "utf8"));
+tool.expectedEntrypointSha256 = sha256(readFileSync(entrypointPath));
+writeFileSync(toolPath, `${JSON.stringify(tool, null, 2)}\n`);
+const receipt = executeForkReplayAdapter({ rootPath: process.cwd(), casePath, caseInput: input, toolSpec: tool });
+if (receipt.status !== "VERIFIED" || receipt.realCaseExecution !== false || receipt.paidGateEligible !== false) throw new Error(`a7_synthetic_receipt_invalid:${receipt.blockers.join(",")}`);
+writeFileSync("fixtures/pass35/audit-a7/PASS35_A7_FORK_REPLAY_SYNTHETIC_RECEIPT.json", `${JSON.stringify(receipt, null, 2)}\n`, { mode: 0o600 });
+const planPath = "config/pass35/a08-foundry-invariant-plan.json";
+const plan = JSON.parse(readFileSync(planPath, "utf8"));
+plan.projectInventory = [plan.foundryConfigPath, plan.targetSourcePath, plan.invariantTestPath].map((file) => ({ path: file, sha256: sha256(readFileSync(file)), byteLength: statSync(file).size }));
+plan.projectInventorySha256 = sha256(stable(plan.projectInventory));
+plan.modelSourceSha256 = sha256(readFileSync(plan.modelSourcePath));
+writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`);
+console.log(JSON.stringify({ status: "PASS_A7_SYNTHETIC_RECEIPTS_BUILT", forkReplayReceiptSha256: receipt.receiptSha256, transactionCount: receipt.replay.transactionCount, assertionCount: receipt.replay.assertionCount, projectInventorySha256: plan.projectInventorySha256, paidGateEligible: false }, null, 2));

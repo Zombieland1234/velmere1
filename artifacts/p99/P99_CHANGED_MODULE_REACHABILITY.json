@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "velmere.p99.changed-module-reachability.v1",
+  "generatedAt": "2026-08-21T14:25:00.000Z",
+  "status": "PASS_BOUNDED_IMPORT_AND_TRANSPILE",
+  "checks": {
+    "total": 6,
+    "passed": 4,
+    "withheld": 2,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "field_policy_import",
+        "status": "PASS",
+        "detail": 7
+      },
+      {
+        "id": "market_row_gate_import",
+        "status": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+        "detail": "Error: Cannot find package 'zod' imported from /mnt/data/velmere_p99_work/lib/market-integrity/data-backbone.ts"
+      },
+      {
+        "id": "markets_route_import",
+        "status": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+        "detail": "Error: Cannot find package 'zod' imported from /mnt/data/velmere_p99_work/lib/market-integrity/data-backbone.ts"
+      },
+      {
+        "id": "transpile_lib/market-integrity/real-markets-basic-field-policy.ts",
+        "status": "PASS",
+        "detail": []
+      },
+      {
+        "id": "transpile_lib/market-integrity/market-row-delivery-gate.ts",
+        "status": "PASS",
+        "detail": []
+      },
+      {
+        "id": "transpile_lib/server/market-integrity-route-modules/markets.ts",
+        "status": "PASS",
+        "detail": []
+      }
+    ]
+  },
+  "zeroFakeCredit": {
+    "routeAndGateImports": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+    "routeExecuted": false,
+    "providerNetworkExecuted": false,
+    "rightsApproved": false,
+    "wholeProjectTypeScript": false,
+    "eslint": false,
+    "build": false,
+    "exactWindows": false,
+    "customerFinal": "0/20"
+  },
+  "truthBoundary": "Imports the new rights/semantic policy and transpiles all three changed TypeScript production files. The market-row gate and customer route imports remain WITHHELD because the external zod dependency graph is absent. Transpile is not semantic route execution, provider execution, build, exact Windows or Customer FINAL."
+}

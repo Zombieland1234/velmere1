@@ -1,0 +1,431 @@
+{
+  "schemaVersion": "velmere.p85.owner-visible-customer-artifact-static.v1",
+  "status": "PASS",
+  "runtime": {
+    "python": "3.13.5",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.41"
+  },
+  "files": {
+    "supabase/migrations/20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql": {
+      "bytes": 10316,
+      "sha256": "e0dd448ef289a0468bb21de9dce07915288cc246aadc22a91b95a8420939f207"
+    },
+    "supabase/migrations/20260820000002_p84_audit_customer_artifact_owner_read_path.sql": {
+      "bytes": 17389,
+      "sha256": "2a26411401d1143f4d0c94cbb7ab6867290ab340c7ff70470cd2f03ef3ee98f8"
+    },
+    "lib/db/schema.sql": {
+      "bytes": 218925,
+      "sha256": "2fcfa784374b5948d1341d70298e154ac75ac90856f0204c519bcf2e3c8703a6"
+    },
+    "lib/reporting/account-customer-artifact-owner-visible-read.ts": {
+      "bytes": 7583,
+      "sha256": "ba918c98a6a4bb003dea11c7aa9c180a12252ed8999af7d5f15cafe1bc3bde6f"
+    },
+    "lib/reporting/account-customer-artifact-store.ts": {
+      "bytes": 23203,
+      "sha256": "6d851c7ea1c59fe70b6922bc812994c8f32d88f561a89a93b8c69425be6bd975"
+    },
+    "lib/server/lazy-route-modules/account--customer-artifact.ts": {
+      "bytes": 18420,
+      "sha256": "f2397af3e046f106acfe0dd9c492c0aeb171d712133247ad71f6a0b26230c8ec"
+    },
+    "lib/account/audit-account-messages.ts": {
+      "bytes": 40554,
+      "sha256": "97f3979d59a533de3203efea8d43ec1c5966fad2753abf561313bf95d6a15030"
+    },
+    "lib/reporting/audit-exact-artifact-owner-readable-publisher.ts": {
+      "bytes": 13201,
+      "sha256": "205b979abca4223389e48dd8023ad1db8a4133c2872b6d774c6ebd37a4beb2fa"
+    },
+    "scripts/p85/test-p85-owner-visible-artifact-runtime.mjs": {
+      "bytes": 22695,
+      "sha256": "6787f723b76ff6fcb9b656d28a75b373326f8d6d6619de92cda09c22bf38aedc"
+    }
+  },
+  "discoveredDefects": [
+    {
+      "id": "P85-DEFECT-01-DIRECT-OWNER-REST-COULD-BYPASS-AUDIT-PUBLICATION-LINK",
+      "severity": "HIGH_CUSTOMER_PRIVACY_AND_EVIDENCE_INTEGRITY_BLOCKER",
+      "status": "REPAIRED_IN_SOURCE_STATIC_PROVEN_RUNTIME_POSTGRES_WITHHELD",
+      "description": "P84 owner RLS allowed a signed owner to query their own Audit snapshot/PDF directly before the immutable publication link existed. P85 makes exact link existence and digest binding part of snapshot/PDF RLS itself."
+    },
+    {
+      "id": "P85-DEFECT-02-LIMIT-BEFORE-ORPHAN-FILTER-AND-N-PLUS-ONE-READS",
+      "severity": "MEDIUM_AVAILABILITY_AND_SCALING_BLOCKER",
+      "status": "REPAIRED_IN_SOURCE_STATIC_AND_LOCAL_RPC_RUNTIME_PROVEN",
+      "description": "The route fetched at most 50 snapshots before filtering hidden Audit rows and issued one link query per Audit artifact. P85 filters publication visibility before LIMIT in PostgreSQL and uses one closed owner-scoped RPC."
+    },
+    {
+      "id": "P85-DEFECT-03-PREVIEW-ACCOUNT-IDENTITY-ACCEPTED-BY-DURABLE-READ-HELPER",
+      "severity": "MEDIUM_BOUNDARY_CONFUSION_BLOCKER",
+      "status": "REPAIRED_AND_RUNTIME_PROVEN",
+      "description": "The first P85 implementation accepted preview:* account strings even though the durable RPC is only valid for authenticated real owners. The helper now rejects preview owners before RPC."
+    }
+  ],
+  "checks": {
+    "total": 86,
+    "passed": 86,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p85_file_exists:supabase/migrations/20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql",
+        "status": "PASS",
+        "detail": 10316
+      },
+      {
+        "id": "p85_file_exists:supabase/migrations/20260820000002_p84_audit_customer_artifact_owner_read_path.sql",
+        "status": "PASS",
+        "detail": 17389
+      },
+      {
+        "id": "p85_file_exists:lib/db/schema.sql",
+        "status": "PASS",
+        "detail": 218925
+      },
+      {
+        "id": "p85_file_exists:lib/reporting/account-customer-artifact-owner-visible-read.ts",
+        "status": "PASS",
+        "detail": 7583
+      },
+      {
+        "id": "p85_file_exists:lib/reporting/account-customer-artifact-store.ts",
+        "status": "PASS",
+        "detail": 23203
+      },
+      {
+        "id": "p85_file_exists:lib/server/lazy-route-modules/account--customer-artifact.ts",
+        "status": "PASS",
+        "detail": 18420
+      },
+      {
+        "id": "p85_file_exists:lib/account/audit-account-messages.ts",
+        "status": "PASS",
+        "detail": 40554
+      },
+      {
+        "id": "p85_file_exists:lib/reporting/audit-exact-artifact-owner-readable-publisher.ts",
+        "status": "PASS",
+        "detail": 13201
+      },
+      {
+        "id": "p85_file_exists:scripts/p85/test-p85-owner-visible-artifact-runtime.mjs",
+        "status": "PASS",
+        "detail": 22695
+      },
+      {
+        "id": "p85_ordered_migration_after_p84",
+        "status": "PASS",
+        "detail": [
+          "20260820000002_p84_audit_customer_artifact_owner_read_path.sql",
+          "20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql"
+        ]
+      },
+      {
+        "id": "p85_migration_transaction_wrapped",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_migration_has_closed_markers",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_schema_has_same_closed_block",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rls_enabled:velmere_customer_artifact_snapshots",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rls_enabled:velmere_customer_artifact_pdf_blobs",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rls_enabled:velmere_audit_customer_artifact_links",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_select_regrant_is_authenticated_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_select_regrant_is_authenticated_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_old_owner_policy_removed",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_old_owner_policy_removed",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_policy_owner_and_salted_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_audit_requires_exact_payload_and_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_audit_requires_link_exists",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_link_cross_binding:l.snapshot_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_link_cross_binding:l.account_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_link_cross_binding:l.account_id_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_link_cross_binding:l.artifact_snapshot_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_link_cross_binding:l.artifact_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_snapshot_link_cross_binding:l.pdf_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_non_audit_owner_read_retained",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_audit_requires_link_exists",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_link_cross_binding:l.pdf_blob_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_link_cross_binding:l.snapshot_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_link_cross_binding:l.account_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_link_cross_binding:l.account_id_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_link_cross_binding:l.artifact_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_pdf_link_cross_binding:l.pdf_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_rpc_signature_has_no_account_parameter",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_get_rpc_signature_has_no_account_parameter",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_both_rpcs_security_invoker",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_both_rpcs_stable",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_both_rpcs_fixed_search_path",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpcs_derive_owner_from_auth_binding",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_limit_validated_1_50",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_get_snapshot_id_validated",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_projection_version_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_never_reads_full_message_ledger",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_joins_only_minimal_link_ledger",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_link_cross_binding:l.snapshot_id = s.snapshot_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_link_cross_binding:l.account_id = s.account_id",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_link_cross_binding:l.account_id_hash = s.account_id_hash",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_link_cross_binding:l.artifact_snapshot_digest = s.snapshot_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_link_cross_binding:l.artifact_digest = s.artifact_digest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_link_cross_binding:l.pdf_digest = s.snapshot->'canonicalArtifact'->>'pdfDigest'",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_filters_visibility_before_limit",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_deterministic_order",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_get_owner_and_snapshot_bound",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_execute_revoked_broadly",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_rpc_execute_granted_authenticated_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_store_row_parser_exported",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_version_and_rpc_names",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_exact_row_shape",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_rejects_preview_owner",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_requires_client",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_uses_rpc_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_list_rpc_sends_only_limit",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_get_rpc_sends_only_snapshot",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_audit_requires_exact_link",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_ts_link_cross_binding:link.accountIdHash !== snapshot.accountIdHash",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_ts_link_cross_binding:link.artifactSnapshotDigest !== snapshot.snapshotDigest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_ts_link_cross_binding:link.artifactDigest !== snapshot.canonicalArtifact.artifactDigest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_ts_link_cross_binding:link.pdfDigest !== snapshot.canonicalArtifact.pdfDigest",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_duplicate_and_order_fail_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_limits_response",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_read_module_empty_get_is_non_disclosing_null",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_imports_owner_visible_read",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_real_list_uses_one_rpc_abstraction",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_real_get_uses_one_rpc_abstraction",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_visibility_failure_is_503_fail_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_legacy_n_plus_one_is_preview_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_real_list_does_not_overfetch_50",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_route_never_uses_service_role_for_owner_read",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_preserves_p84_link_schema",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_preserves_p84_atomic_publisher",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_runtime_has_orphan_cross_account_and_tamper_cases",
+        "status": "PASS"
+      },
+      {
+        "id": "p85_runtime_does_not_claim_postgres_or_final",
+        "status": "PASS"
+      }
+    ]
+  },
+  "truthBoundary": "Static proof establishes the ordered P85 migration, database-level Audit publication policies, SECURITY INVOKER owner RPCs, closed TypeScript parsing and one-RPC customer route. Local runtime validates response integrity against mocked owner-token RPC clients. No PostgreSQL/Supabase server, real JWT/RLS isolation, deployed HTTP, current-chain state or exact Windows execution is credited."
+}

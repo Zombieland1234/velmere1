@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "velmere.p93.risk-history-durable-canonical-compatibility-runtime.v1",
+  "generatedAt": "2026-08-20T14:00:00.000Z",
+  "status": "PASS_BOUNDED_NO_SOCKET_DURABILITY_CANONICAL_COMPATIBILITY",
+  "checks": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "append_readback_first_write_durable",
+        "status": "PASS",
+        "detail": {
+          "mode": "supabase",
+          "stored": 1,
+          "readBackVerified": true
+        }
+      },
+      {
+        "id": "append_readback_three_stage_protocol",
+        "status": "PASS",
+        "detail": [
+          "velmere_get_latest_risk_history_events_v1",
+          "velmere_append_risk_history_events_v1",
+          "velmere_read_risk_history_events_v1"
+        ]
+      },
+      {
+        "id": "material_changes_append_for_two_canonical_assets",
+        "status": "PASS",
+        "detail": {
+          "stored": 2,
+          "conflicts": 0,
+          "events": 3
+        }
+      },
+      {
+        "id": "shared_reader_exact_alpha_only",
+        "status": "PASS",
+        "detail": [
+          "market:alpha",
+          "market:alpha"
+        ]
+      },
+      {
+        "id": "shared_reader_alias_collision_empty",
+        "status": "PASS",
+        "detail": []
+      },
+      {
+        "id": "snapshot_reader_exact_beta_only",
+        "status": "PASS",
+        "detail": [
+          "market:beta"
+        ]
+      },
+      {
+        "id": "legacy_or_reader_never_called",
+        "status": "PASS",
+        "detail": 0
+      },
+      {
+        "id": "internal_analysis_window_uses_v2_720",
+        "status": "PASS",
+        "detail": [
+          720,
+          720,
+          720
+        ]
+      },
+      {
+        "id": "durability_credit_still_comes_from_append_readback",
+        "status": "PASS",
+        "detail": "DURABLE_VERIFIED"
+      },
+      {
+        "id": "read_only_v2_returns_verified_events",
+        "status": "PASS",
+        "detail": 2
+      },
+      {
+        "id": "read_only_v2_never_creates_durability_credit",
+        "status": "PASS",
+        "detail": "CONFIGURED_UNVERIFIED"
+      },
+      {
+        "id": "tampered_v2_event_fails_closed",
+        "status": "PASS",
+        "detail": "risk_history_resolution_unavailable"
+      },
+      {
+        "id": "tampered_v2_marks_degraded_without_private_error",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+          "storageState": "DEGRADED",
+          "historyCompleteness": "UNKNOWN",
+          "blockers": [
+            "durable_history_temporarily_unavailable"
+          ]
+        }
+      },
+      {
+        "id": "configured_v2_outage_never_memory_fallback",
+        "status": "PASS",
+        "detail": "risk_history_resolution_unavailable"
+      }
+    ]
+  },
+  "execution": {
+    "networkSocketsUsed": false,
+    "realPostgreSqlExecuted": false,
+    "p91AppendReadbackProtocolExercised": true,
+    "p93V2CanonicalReaderExercised": true,
+    "legacyV1AssetReaderCalls": 0
+  },
+  "zeroFakeCredit": {
+    "stagingExecuted": false,
+    "rlsExecuted": false,
+    "backupRestoreExecuted": false,
+    "deployedHttp": false,
+    "customerFinal": "0/20",
+    "riskIndicatorFinal": false
+  },
+  "truthBoundary": "This no-socket compatibility proof executes the inherited P91 append plus exact read-back protocol and the P93 v2 canonical shared reader in one bounded flow. It proves that exact canonical reads survive the P93 migration while ambiguous aliases fail closed. It does not execute PostgreSQL, RLS, staging, backup/restore, deployed HTTP, Browser or Customer FINAL."
+}

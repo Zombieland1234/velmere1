@@ -1,0 +1,11 @@
+{
+  "installCommand": "corepack npm ci --engine-strict=true --strict-allow-scripts=true --ignore-scripts=false --no-audit --no-fund --progress=false",
+  "buildCommand": "corepack npm run build:deployment",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/internal/workers/verify-continuous-monitor",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

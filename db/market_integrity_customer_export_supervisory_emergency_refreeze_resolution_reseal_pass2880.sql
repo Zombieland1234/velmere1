@@ -1,0 +1,43 @@
+-- PASS2880 Customer Export Supervisory Emergency Re-Freeze Resolution / Re-Seal Gate
+create table if not exists market_integrity_customer_export_supervisory_emergency_refreeze_resolution_reseals (
+  id uuid primary key default gen_random_uuid(),
+  release_packet_id text not null,
+  previous_post_seal_sentinel_payload_hash text not null,
+  previous_post_seal_sentinel_timeline_hash text not null,
+  emergency_refreeze_resolution_case_id text not null,
+  emergency_refreeze_resolution_owner_id text not null,
+  emergency_refreeze_resolution_sla_receipt_id text not null,
+  root_cause_receipt_id text not null,
+  root_cause_summary text not null,
+  impact_scope_receipt_id text not null,
+  impacted_signals text[] not null default '{}',
+  corrected_channel_baseline_hash text not null,
+  corrected_baseline_verification_receipt_id text not null,
+  reseal_eligibility_receipt_id text not null,
+  reseal_eligibility_window_started_at timestamptz not null,
+  reseal_eligibility_window_ends_at timestamptz not null,
+  resolution_decision text not null check (resolution_decision in ('reseal_after_corrected_baseline','permanent_freeze','reopen_supervisory_investigation','extend_emergency_refreeze')),
+  channel_reseal_receipt_id text,
+  channel_reseal_hash text,
+  permanent_freeze_receipt_id text,
+  reopened_supervisory_investigation_ticket_id text,
+  extended_emergency_refreeze_receipt_id text,
+  customer_resolution_notice_receipt_id text not null,
+  regulator_resolution_notice_receipt_id text not null,
+  auditor_resolution_notice_receipt_id text not null,
+  internal_resolution_notice_receipt_id text not null,
+  legal_signoff_receipt_id text not null,
+  security_signoff_receipt_id text not null,
+  privacy_signoff_receipt_id text not null,
+  emergency_refreeze_resolution_payload_hash text not null,
+  emergency_refreeze_resolution_timeline_hash text not null,
+  created_at timestamptz not null default now(),
+  constraint pass2880_impacted_signals_required check (cardinality(impacted_signals) > 0),
+  constraint pass2880_reseal_requires_receipts check (resolution_decision <> 'reseal_after_corrected_baseline' or (channel_reseal_receipt_id is not null and channel_reseal_hash is not null)),
+  constraint pass2880_permanent_freeze_requires_receipt check (resolution_decision <> 'permanent_freeze' or permanent_freeze_receipt_id is not null),
+  constraint pass2880_reopen_requires_ticket check (resolution_decision <> 'reopen_supervisory_investigation' or reopened_supervisory_investigation_ticket_id is not null),
+  constraint pass2880_extend_requires_receipt check (resolution_decision <> 'extend_emergency_refreeze' or extended_emergency_refreeze_receipt_id is not null)
+);
+
+create index if not exists idx_pass2880_emergency_refreeze_resolution_packet
+  on market_integrity_customer_export_supervisory_emergency_refreeze_resolution_reseals (release_packet_id, emergency_refreeze_resolution_case_id);

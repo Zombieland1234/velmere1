@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";import fs from "node:fs";import path from "node:path";
+export const REV="VELMERE_PASS36_A97R0_STRIPE_TEST_RUNTIME_RECEIPT_REFUND_REPLAY_AND_RECONCILIATION_CONTROL";
+export const PARENT="VELMERE_PASS36_A96R0_RLS_19_CASE_EXECUTABLE_REPLAY_AND_CUSTOMER_ARTIFACT_USER_CLIENT_BOUNDARY";
+export const MANIFEST="config/pass36/a97-current-root-descendant-manifest.json";
+const IMMUTABLE_LOG="fixtures/pass35/a42/windows-global-json-crash.log";
+export const sha256=(v)=>crypto.createHash("sha256").update(v).digest("hex");
+export function canonicalJson(v){if(Array.isArray(v))return`[${v.map(canonicalJson).join(",")}]`;if(v&&typeof v==="object")return`{${Object.keys(v).sort().map(k=>`${JSON.stringify(k)}:${canonicalJson(v[k])}`).join(",")}}`;return JSON.stringify(v);}
+export function readJson(root,rel){return JSON.parse(fs.readFileSync(path.join(root,rel),"utf8"));}
+function excluded(rel){const top=rel.split("/",1)[0];if([".git",".velmere",".next",".turbo","_velmere","artifacts","coverage","node_modules","dist","out",".cache","cache"].includes(top)||top.startsWith(".next-"))return true;const parts=rel.split("/");const base=parts.at(-1);if(parts.includes("__pycache__")||base.endsWith(".pyc"))return true;if(base===".env"||base.startsWith(".env."))return true;if(base===".eslintcache"||base.endsWith(".tsbuildinfo"))return true;if(base.endsWith(".log")&&rel!==IMMUTABLE_LOG)return true;if(/\.(?:db|sqlite|sqlite3)$/iu.test(base))return true;return rel===MANIFEST;}
+export function collect(root){const rows=[];const rejected=[];function walk(abs,rel=""){for(const ent of fs.readdirSync(abs,{withFileTypes:true}).sort((a,b)=>Buffer.from(a.name).compare(Buffer.from(b.name)))){const r=rel?`${rel}/${ent.name}`:ent.name;const p=path.join(abs,ent.name);const st=fs.lstatSync(p);if(st.isSymbolicLink()){rejected.push({path:r,reason:"symlink"});continue;}if(ent.isDirectory()){if(!excluded(`${r}/x`))walk(p,r);continue;}if(!ent.isFile()){rejected.push({path:r,reason:"special"});continue;}if(excluded(r))continue;const b=fs.readFileSync(p);rows.push({path:r,byteLength:b.length,sha256:sha256(b),mode:(st.mode&0o111)?"100755":"100644"});}}walk(path.resolve(root));rows.sort((a,b)=>Buffer.from(a.path).compare(Buffer.from(b.path)));return{rows,rejected};}
+export function payload(rows){return{fileCount:rows.length,byteLength:rows.reduce((s,r)=>s+r.byteLength,0),pathSetSha256:sha256(rows.map(r=>r.path).join("\n")),aggregateSha256:sha256(rows.map(r=>`${r.path}\0${r.byteLength}\0${r.sha256}\0${r.mode}`).join("\n"))};}

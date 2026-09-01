@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "velmere.p76.release-envelope-runtime.v1",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "ready_without_human_review",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": true,
+        "policyValid": true,
+        "valid": true,
+        "deliverable": true,
+        "state": "ready",
+        "integrityBlockers": [],
+        "policyBlockers": [],
+        "blockers": []
+      }
+    },
+    {
+      "name": "automation_binding_present",
+      "status": "PASS"
+    },
+    {
+      "name": "incomplete_automation_blocks",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": true,
+        "policyValid": false,
+        "valid": false,
+        "deliverable": false,
+        "state": "blocked",
+        "integrityBlockers": [],
+        "policyBlockers": [
+          "advanced_automation_not_completed"
+        ],
+        "blockers": [
+          "advanced_automation_not_completed"
+        ]
+      }
+    },
+    {
+      "name": "active_lease_blocks",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": true,
+        "policyValid": false,
+        "valid": false,
+        "deliverable": false,
+        "state": "blocked",
+        "integrityBlockers": [],
+        "policyBlockers": [
+          "advanced_automation_lease_active"
+        ],
+        "blockers": [
+          "advanced_automation_lease_active"
+        ]
+      }
+    },
+    {
+      "name": "missing_immutable_snapshot_blocks",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": true,
+        "policyValid": false,
+        "valid": false,
+        "deliverable": false,
+        "state": "blocked",
+        "integrityBlockers": [],
+        "policyBlockers": [
+          "advanced_immutable_snapshot_not_bound"
+        ],
+        "blockers": [
+          "advanced_immutable_snapshot_not_bound"
+        ]
+      }
+    },
+    {
+      "name": "optional_qa_does_not_change_release_state",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": true,
+        "policyValid": true,
+        "valid": true,
+        "deliverable": true,
+        "state": "ready",
+        "integrityBlockers": [],
+        "policyBlockers": [],
+        "blockers": []
+      }
+    },
+    {
+      "name": "optional_qa_cannot_unblock",
+      "status": "PASS"
+    },
+    {
+      "name": "automation_tamper_detected",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": false,
+        "policyValid": false,
+        "valid": false,
+        "deliverable": false,
+        "state": "ready",
+        "integrityBlockers": [
+          "signature_mismatch"
+        ],
+        "policyBlockers": [
+          "advanced_immutable_snapshot_not_bound"
+        ],
+        "blockers": [
+          "advanced_immutable_snapshot_not_bound",
+          "signature_mismatch"
+        ]
+      }
+    },
+    {
+      "name": "revocation_terminal",
+      "status": "PASS",
+      "detail": {
+        "integrityValid": true,
+        "policyValid": false,
+        "valid": false,
+        "deliverable": false,
+        "state": "revoked",
+        "integrityBlockers": [],
+        "policyBlockers": [
+          "release_revoked"
+        ],
+        "blockers": [
+          "release_revoked"
+        ]
+      }
+    }
+  ],
+  "zeroFakeCredit": {
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "rights": "2/203",
+    "paidValue": "0/10",
+    "saleEligible": "0/20",
+    "live": false
+  }
+}

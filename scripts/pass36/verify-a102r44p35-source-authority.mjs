@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
+const REVISION="VELMERE_PASS36_A102R44P35_ACTION_REQUIRED_STANDALONE_DECISION_SUPPORT_ANGEL_RISK_IMPACT_WHALE_AND_PSYCHOLOGY30_TEST_CYCLE_2_OF_3_NO_LIVE_CREDIT";
+const PARENT="VELMERE_PASS36_A102R44P34_ACTION_REQUIRED_CANONICAL_PRODUCT_TAXONOMY_DYNAMIC_SCORING_PSYCHOLOGY30_AND_TEST_CYCLE_1_OF_3_NO_LIVE_CREDIT";
+const MANIFEST="_velmere/PASS36_A102R44P35_SOURCE_ONLY_MANIFEST.json";
+const PARENT_MANIFEST="_velmere/PASS36_A102R44P34_SOURCE_ONLY_MANIFEST.json";
+const LEDGER="config/pass36/a102r44p35-approved-current-source-changes.json";
+const STATE="config/pass36/a102r44p35-action-required-current-state.json";
+const TOPOLOGY="config/pass36/a102r44p35-canonical-product-topology.json";
+const POINTER="config/pass36/current-release-authority.json";
+const sha256=(bytes)=>crypto.createHash("sha256").update(bytes).digest("hex");
+const forbiddenTopLevel=new Set([".cache",".git",".turbo",".velmere","__pycache__","artifacts","build","cache","coverage","dist","node_modules","out","playwright-report","temp","test-results","tmp"]);
+function rejected(rel){const parts=rel.split("/");const top=parts[0]??"";return forbiddenTopLevel.has(top)||top.startsWith(".next")||top===".env"||top.startsWith(".env.")||parts.includes("__pycache__")||rel.endsWith(".pyc")||rel.endsWith(".tsbuildinfo")||rel.endsWith(".map");}
+function collectSource(){const rows=[];function walk(directory,prefix=""){const entries=fs.readdirSync(directory,{withFileTypes:true}).sort((a,b)=>Buffer.from(a.name).compare(Buffer.from(b.name)));for(const entry of entries){const rel=prefix?`${prefix}/${entry.name}`:entry.name;if(rel===MANIFEST)continue;const full=path.join(directory,entry.name);const stat=fs.lstatSync(full);if(stat.isSymbolicLink())throw new Error(`SYMLINK_FORBIDDEN:${rel}`);if(entry.isDirectory()){if(!rejected(rel))walk(full,rel);continue;}if(!entry.isFile()||rejected(rel))continue;const bytes=fs.readFileSync(full);rows.push({path:rel,byteLength:bytes.length,sha256:sha256(bytes),mode:stat.mode&0o777});}}walk(ROOT);return rows.sort((a,b)=>Buffer.from(a.path).compare(Buffer.from(b.path)));}
+const manifestBytes=fs.readFileSync(path.join(ROOT,MANIFEST));const manifest=JSON.parse(manifestBytes);const rows=collectSource();const byteLength=rows.reduce((sum,row)=>sum+row.byteLength,0);const pathSetSha256=sha256(Buffer.from(`${rows.map((row)=>row.path).join("\n")}\n`));const aggregateSha256=sha256(Buffer.from(`${rows.map((row)=>`${row.path}\0${row.byteLength}\0${row.sha256}\0${row.mode.toString(8)}`).join("\n")}\n`));const state=JSON.parse(fs.readFileSync(path.join(ROOT,STATE),"utf8"));const topology=JSON.parse(fs.readFileSync(path.join(ROOT,TOPOLOGY),"utf8"));const pointer=JSON.parse(fs.readFileSync(path.join(ROOT,POINTER),"utf8"));
+const checks=[];const add=(id,passed,detail=null)=>checks.push({id,passed:Boolean(passed),detail});
+add("schema",manifest.schemaVersion==="velmere.pass36.a102r44p35.source-manifest.v1");
+add("revision",manifest.revisionId===REVISION&&manifest.parentRevisionId===PARENT);
+add("count",manifest.fileCount===rows.length,{expected:manifest.fileCount,actual:rows.length});
+add("bytes",manifest.byteLength===byteLength,{expected:manifest.byteLength,actual:byteLength});
+add("pathset",manifest.pathSetSha256===pathSetSha256);
+add("aggregate",manifest.aggregateSha256===aggregateSha256);
+add("entries",manifest.entries.length===rows.length&&manifest.entries.every((row,index)=>{const actual=rows[index];return row.path===actual.path&&row.byteLength===actual.byteLength&&row.sha256===actual.sha256&&row.mode===actual.mode;}));
+add("active-pass",fs.readFileSync(path.join(ROOT,"VELMERE_ACTIVE_PASS.txt"),"utf8").trim()===REVISION);
+add("global-flags",state.globalDecision==="NO_GO"&&[state.LIVE,state.saleEnabled,state.productionApproved,state.worldClassProven].every((value)=>value===false));
+add("state-credit",state.currentByteCredit.authority===true&&state.currentByteCredit.approvedChanges===true&&state.currentByteCredit.staticPolicy===true);
+add("approved-bound",manifest.approvedChangesPath===LEDGER&&manifest.approvedChangesSha256===sha256(fs.readFileSync(path.join(ROOT,LEDGER))));
+add("parent-bound",manifest.parentManifestPath===PARENT_MANIFEST&&manifest.parentManifestSha256===sha256(fs.readFileSync(path.join(ROOT,PARENT_MANIFEST))));
+add("topology-counts",topology.products.length===17&&topology.products.filter((item)=>item.tier!==null).length===9&&topology.products.filter((item)=>item.tier===null).length===8);
+add("standalone-quality",state.currentByteCredit.standaloneDecisionSupport===true&&state.currentByteCredit.standalonePsychologyMatrix===true);
+add("psychology",state.standalonePsychology.personas===30&&state.standalonePsychology.rows===720&&state.standalonePsychology.realParticipants===0);
+add("test-cycle",state.testCycle.current===2&&state.testCycle.total===3&&state.testCycle.fullRegressionCurrentPassExecuted===false);
+add("no-current-child-full-regression",["fullEslint","fullTypeScript","sourceAudit","webpack","turbopack","browser57","pdf150","exactWindows"].every((key)=>state.currentByteCredit[key]===false));
+add("dynamic-score-contract",state.dynamicScoring.scoreRows===17&&state.dynamicScoring.gateCount===112&&state.dynamicScoring.allRowsRecalculated===true);
+add("pointer",pointer.authorityRevisionId===REVISION&&pointer.sourceRevisionId===REVISION&&pointer.parentRevisionId===PARENT&&pointer.currentSource?.revisionId===REVISION);
+add("roadmap",fs.readFileSync(path.join(ROOT,"VELMERE_WORLD_CLASS_MAX_ROADMAP_PASS35.txt"),"utf8").startsWith("================================================================================\nVELMÈRE WORLD CLASS MAX ROADMAP — PASS36 A102R44P35"));
+add("patch",fs.readFileSync(path.join(ROOT,"VELMERE_A102R44P35_PATCH.txt"),"utf8").startsWith("VELMÈRE PASS36 A102R44P35"));
+const failures=checks.filter((check)=>!check.passed);
+console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p35.source-authority-verification.v1",status:failures.length?"FAIL":"PASS_R44P35_SOURCE_AUTHORITY",revisionId:REVISION,checks:checks.length,passed:checks.length-failures.length,failed:failures.length,manifestSha256:sha256(manifestBytes),aggregateSha256,pathSetSha256,fileCount:rows.length,byteLength,sourceImmutable:true,rows:checks},null,2));if(failures.length)process.exit(1);

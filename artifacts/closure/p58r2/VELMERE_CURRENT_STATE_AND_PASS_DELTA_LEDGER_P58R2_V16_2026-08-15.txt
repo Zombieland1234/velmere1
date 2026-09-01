@@ -1,0 +1,96 @@
+VELMÈRE — CURRENT STATE AND PASS DELTA LEDGER
+REVISION: P58R2 / V16 — POWERSHELL PARSER HOTFIX
+DATE: 2026-08-15
+AUTHORITY: V16 CURRENT BOUND AUTHORITY — unchanged
+PASS DECISION: PASS_BOUNDED_P58R2_LOCAL_PARSER_REPAIR_READY_NOT_APPLIED
+CREDIT CLASS: LOCAL_ADMISSION_BRIDGE_REPAIR_ONLY
+GLOBAL RELEASE DECISION: NO_GO
+LIVE: false
+saleEnabled: false
+productionApproved: false
+worldClassProven: false
+
+======================================================================
+TABLE 0 — FAILURE TRUTH AND REPAIR
+======================================================================
+Axis | P58 R1 observed state | P58R2 current state | Credit
+PowerShell launch | ParserError at APPLY_P58_P49_PAYLOAD.ps1 line 25, column 38 | offending interpolation removed | LOCAL_REPAIR
+Root cause | "$LASTEXITCODE:" parsed as invalid variable reference | format operator uses captured $exitCode | CLOSED_IN_SOURCE
+Parser protection | none outside main script | separate parser preflight before Git operations | ADDED_CONTROL
+Structured failure result | impossible when main script does not parse | preflight writes P58_APPLY_RESULT.json | ADDED_CONTROL
+Git operation | never started | still not executed in this local repair | WITHHELD
+GitHub push | 0/1 | 0/1 | WITHHELD
+Native Windows workflow | not triggered | not triggered | WITHHELD
+
+The R1 failure happened before script execution. It therefore created no Git commit, no push,
+no workflow receipt and no engineering/product credit.
+
+======================================================================
+TABLE 1 — UNCHANGED EXACT PAYLOAD BINDING
+======================================================================
+Metric | P58 R1 | P58R2 | Delta
+P49 target files | 15/15 locally bound | 15/15 locally bound | 0
+P49 payload ZIP bytes | 3,104,954 | 3,104,954 | 0
+P49 payload ZIP SHA-256 | 6d12de41968ee2c59979c5aad5cc311484b75a7ddf119961ecad34a4dba1d9a7 | same | 0
+Projection files | 1597/1597 locally reconstructed | 1597/1597 locally reconstructed | 0
+Projection payload bytes | 20,952,834 | 20,952,834 | 0
+Path-set SHA-256 | b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73 | same | 0
+Content aggregate SHA-256 | 83fd00183e9d8a6c5ec1c27dba81ab99679e204b50e8f45f414a45abd2bd21b7 | same | 0
+
+No customer-facing source, runtime result, Browser result, PDF result, rights state, value state,
+sale state or LIVE state is promoted by this hotfix.
+
+======================================================================
+TABLE 2 — PHYSICAL CHANGES IN P58R2
+======================================================================
+File/control | Physical change | Result
+APPLY_P58_P49_PAYLOAD.ps1 | removed invalid variable-colon interpolation; captured exit code; format-operator errors | REPAIRED
+P58_SCRIPT_PREFLIGHT.ps1 | added Windows PowerShell AST parser preflight | NEW
+URUCHOM_P58.bat | parser preflight first; stale result deletion; fallback structured failure | REPAIRED
+Package verification | every manifest-bound package file verified before Git operations | STRENGTHENED
+README_P58.txt | added exact R1 failure and R2 instructions | UPDATED
+P58 repair receipt | exact failure boundary and unchanged payload identity recorded | NEW
+
+======================================================================
+TABLE 3 — VALIDATION AND HONEST BOUNDARY
+======================================================================
+Check | Result
+Static scan for invalid non-scoped $variable: interpolation hazards | PASS — 0 findings
+Inner P49 payload byte identity | PASS — unchanged SHA-256
+Target-file manifest count | PASS — 15
+Deterministic outer ZIP 2/2 | recorded in outer package verification receipt
+CRC / clean-unpack | recorded in outer package verification receipt
+Actual Windows PowerShell parser run | performed automatically by P58_SCRIPT_PREFLIGHT.ps1 on next user launch
+Git clone/commit/push | NOT_EXECUTED_IN_LOCAL_HOTFIX
+Native Windows build | 0/1 — WITHHELD
+Browser | 0/3 — WITHHELD
+PDF replay | 0/1 — WITHHELD
+Sale eligible | 0/17 — STOP_SELL
+
+======================================================================
+GLOBAL DENOMINATORS
+======================================================================
+Metric | Previous | Current | Delta | Remaining | Credit class
+Deterministic admission package source repair | 0/1 | 1/1 | +1 | 0 local | LOCAL_REPAIR
+Windows parser preflight control | 0/1 | 1/1 included | +1 | execution on user Windows | READY_NOT_APPLIED
+GitHub admission of exact 15 files | 0/15 | 0/15 | 0 | 15 | MANUAL_TRANSPORT_BRIDGE
+Native Windows exact execution | 0/1 | 0/1 | 0 | 1 | OPEN_REQUIRED_FOR_GO_INTERNAL
+Browser distinct executions | 0/3 | 0/3 | 0 | 3 | OPEN_REQUIRED_FOR_GO_INTERNAL
+PDF independent replay | 0/1 | 0/1 | 0 | 1 | OPEN_REQUIRED_FOR_GO_INTERNAL
+Customer-facing rows final-output audited | 0/17 | 0/17 | 0 | 17 | OPEN
+Internal profiles final executed | 0/33 | 0/33 | 0 | 33 | OPEN
+Sale-eligible customer rows | 0/17 | 0/17 | 0 | 17 | STOP_SELL
+
+======================================================================
+NEXT HIGHEST-VALUE TASK
+======================================================================
+Delete or ignore the old extracted P58 folder, extract the P58R2 package, and run
+URUCHOM_P58.bat. The wrapper must first print:
+
+[P58R2] PowerShell parser preflight: PASS.
+
+Only then may clone/update, exact 15-file verification, commit, push and the native Windows
+workflow proceed. After the push, inspect the first physical GitHub Actions result without
+reordering the frozen Windows → Browser → PDF sequence.
+
+END OF P58R2 CURRENT STATE AND PASS DELTA LEDGER

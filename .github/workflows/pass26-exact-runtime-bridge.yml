@@ -1,0 +1,118 @@
+name: PASS26 Exact Runtime Cache Bridge
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_dual_build:
+        description: "Run one Webpack and one Turbopack build after the exact milestone"
+        required: true
+        default: false
+        type: boolean
+      build_profile:
+        description: "Build resource profile"
+        required: true
+        default: balanced
+        type: choice
+        options:
+          - conservative
+          - balanced
+          - throughput
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pass26-exact-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  NODE_ARCHIVE: node-v24.18.0-linux-x64.tar.xz
+  NODE_ARCHIVE_SHA256: 55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742
+
+jobs:
+  exact-milestone:
+    name: Build offline bundle and execute exact milestone once
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up exact Node and npm cache
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          cache: npm
+
+      - name: Verify exact toolchain
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+          npm run verify:runtime-contract
+          npm run runtime:requirements
+
+      - name: Download and verify the official portable runtime archive
+        run: |
+          mkdir -p .velmere/pass26-download
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://nodejs.org/download/release/v24.18.0/${NODE_ARCHIVE}" \
+            --output ".velmere/pass26-download/${NODE_ARCHIVE}"
+          echo "${NODE_ARCHIVE_SHA256}  .velmere/pass26-download/${NODE_ARCHIVE}" | sha256sum --check --strict
+
+      - name: Populate the lockfile-bound npm cache
+        run: npm ci --engine-strict=true --strict-allow-scripts=true --no-audit --no-fund --progress=false
+
+      - name: Verify installed dependency tree and registry advisories
+        run: |
+          npm ls --all
+          npm audit --audit-level=high
+
+      - name: Assemble and verify the portable runtime/cache bundle
+        run: |
+          npm run bundle:runtime-cache -- \
+            --node-archive ".velmere/pass26-download/${NODE_ARCHIVE}" \
+            --npm-cache "$(npm config get cache)" \
+            --output ".velmere/pass26-runtime-bundle"
+          npm run verify:runtime-cache-bundle -- --bundle ".velmere/pass26-runtime-bundle"
+
+      - name: Re-import the bundle and execute one offline milestone
+        run: |
+          rm -rf node_modules .velmere/exact-runtime .velmere/npm-cache
+          node scripts/pass26/import-runtime-cache-bundle.mjs --bundle .velmere/pass26-runtime-bundle
+          node scripts/pass24/run-exact-milestone.mjs --allow-heavy
+
+      - name: Execute one dual build only when requested
+        if: ${{ inputs.run_dual_build }}
+        env:
+          VELMERE_BUILD_PROFILE: ${{ inputs.build_profile }}
+          VELMERE_BUILD_TIMEOUT_SECONDS: "3600"
+          VELMERE_BUILD_STALL_AFTER_SECONDS: "1200"
+        run: |
+          export PATH="$PWD/.velmere/exact-runtime/node-v24.18.0-linux-x64/bin:$PATH"
+          npm run build:webpack
+          npm run build:turbopack
+
+      - name: Package portable bundle
+        if: always()
+        run: |
+          if [ -d .velmere/pass26-runtime-bundle ]; then
+            tar -czf .velmere/PASS26_EXACT_RUNTIME_CACHE_BUNDLE.tar.gz -C .velmere pass26-runtime-bundle
+          fi
+
+      - name: Upload runtime, cache and execution receipts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pass26-exact-runtime-cache-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            .velmere/PASS26_EXACT_RUNTIME_CACHE_BUNDLE.tar.gz
+            .velmere/pass24-diagnostics/**
+            .velmere/pass25-builds/**
+            .velmere/pass26-diagnostics/**

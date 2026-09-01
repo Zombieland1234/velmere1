@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "velmere.p89.current-source-regression-command-execution.v1",
+  "generatedAt": "2026-08-20T20:00:00.000Z",
+  "status": "FAIL",
+  "commandsPassed": 6,
+  "commandsExpected": 30,
+  "aggregateExecutedChecksAcrossOverlappingHarnesses": 173,
+  "results": [
+    {
+      "name": "P89_PROVIDER_DIMENSIONS_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p89/test-p89-audit-provider-evidence-dimensions-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.61,
+      "checks": 36,
+      "status": "PASS",
+      "markers": [
+        {
+          "pattern": "\"total\": 36",
+          "matched": true
+        },
+        {
+          "pattern": "\"failed\": 0",
+          "matched": true
+        }
+      ],
+      "log": "artifacts/p89/logs/regression/current-stack/01_P89_PROVIDER_DIMENSIONS_RUNTIME.log",
+      "logSha256": "ff20fb47124277c825fb501c1553a6516d29d1e4a259c6dc054ef68a1fe932cf"
+    },
+    {
+      "name": "P89_PDF_DIMENSIONS_RUNTIME",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p89/test-p89-audit-pdf-evidence-dimensions-runtime.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 1.461,
+      "checks": 32,
+      "status": "PASS",
+      "markers": [
+        {
+          "pattern": "\"total\": 32",
+          "matched": true
+        },
+        {
+          "pattern": "\"failed\": 0",
+          "matched": true
+        }
+      ],
+      "log": "artifacts/p89/logs/regression/current-stack/02_P89_PDF_DIMENSIONS_RUNTIME.log",
+      "logSha256": "82b4a59a223960092d621eaf5da9b28a024b05698b8778d49261521e8ec212d5"
+    },
+    {
+      "name": "P89_PROVIDER_DIMENSIONS_STATIC",
+      "command": [
+        "python3",
+        "scripts/p89/test-p89-audit-provider-evidence-dimensions-static.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.793,
+      "checks": 81,
+      "status": "PASS",
+      "markers": [
+        {
+          "pattern": "\"passed\": 81",
+          "matched": true
+        },
+        {
+          "pattern": "\"total\": 81",
+          "matched": true
+        }
+      ],
+      "log": "artifacts/p89/logs/regression/current-stack/03_P89_PROVIDER_DIMENSIONS_STATIC.log",
+      "logSha256": "476a0294cfc0c527ea0fd67d29cc40fbac387dc17b6ba58c38adefd727277384"
+    },
+    {
+      "name": "P89_RUNTIME_REPEATABILITY",
+      "command": [
+        "python3",
+        "scripts/p89/verify-p89-runtime-repeatability.py"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 5.684,
+      "checks": 11,
+      "status": "PASS",
+      "markers": [
+        {
+          "pattern": "\"passed\": 11",
+          "matched": true
+        },
+        {
+          "pattern": "\"total\": 11",
+          "matched": true
+        }
+      ],
+      "log": "artifacts/p89/logs/regression/current-stack/04_P89_RUNTIME_REPEATABILITY.log",
+      "logSha256": "40a18a8cf326aa21424008436f88ae584b90c377447b145eaeabe59ac6045033"
+    },
+    {
+      "name": "P89_CHANGED_IMPORTS",
+      "command": [
+        "node",
+        "--import",
+        "./scripts/pass11/register-offline-ts-loader.mjs",
+        "scripts/p89/test-p89-changed-module-imports.mjs"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 2.536,
+      "checks": 12,
+      "status": "PASS",
+      "markers": [
+        {
+          "pattern": "PASS \\(12/12\\)",
+          "matched": true
+        }
+      ],
+      "log": "artifacts/p89/logs/regression/current-stack/05_P89_CHANGED_IMPORTS.log",
+      "logSha256": "efc2aa545c8b4caf25018e886e52cbb6b573b1567916eca99666d3b12698081d"
+    },
+    {
+      "name": "P89_TARGETED_TYPESCRIPT",
+      "command": [
+        "tsc",
+        "--noEmit",
+        "--target",
+        "ES2022",
+        "--lib",
+        "ES2022,DOM",
+        "--module",
+        "ESNext",
+        "--moduleResolution",
+        "Bundler",
+        "--skipLibCheck",
+        "--strict",
+        "--noResolve",
+        "lib/security/audit-provider-evidence-dimensions.ts"
+      ],
+      "returnCode": 0,
+      "elapsedSeconds": 0.701,
+      "checks": 1,
+      "status": "PASS",
+      "markers": [],
+      "log": "artifacts/p89/logs/regression/current-stack/06_P89_TARGETED_TYPESCRIPT.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "P89_P88_COMPATIBILITY",
+      "command": [
+        "python3",
+        "scripts/p89/verify-p89-p88-compatibility-and-history.py"
+      ],
+      "returnCode": 1,
+      "elapsedSeconds": 1.273,
+      "checks": 40,
+      "status": "FAIL",
+      "markers": [
+        {
+          "pattern": "\"passed\": 40",
+          "matched": false
+        },
+        {
+          "pattern": "\"total\": 40",
+          "matched": false
+        }
+      ],
+      "log": "artifacts/p89/logs/regression/current-stack/07_P89_P88_COMPATIBILITY.log",
+      "logSha256": "25aaee7efa29a319b55e6d1980c7f8e5b9197f9cd9e19f9b8d93e23d621b4c6f"
+    }
+  ],
+  "historicalRestore": {
+    "restoredCount": 2,
+    "restoredPaths": [
+      "receipts/p88/P88_AUDIT_EXACT_IMMUTABLE_PDF_STATIC.json",
+      "artifacts/p88/P88_AUDIT_EXACT_IMMUTABLE_PDF_STATIC.json"
+    ],
+    "removedUnexpectedCount": 0,
+    "removedUnexpectedPaths": [],
+    "verifiedHistoricalFiles": 1628,
+    "mismatchCount": 0,
+    "mismatches": []
+  },
+  "supersededNonzeroHarnesses": [
+    {
+      "path": "artifacts/p89/logs/regression/05_P88_RUNTIME_SUPERSEDED.log",
+      "credit": "NONE",
+      "reason": "P88 harness constructs a current-model object without P89 dimension fields."
+    },
+    {
+      "path": "artifacts/p89/logs/regression/06_P88_STATIC_SUPERSEDED.log",
+      "credit": "NONE",
+      "reason": "P88 static harness freezes P88 as the active pass and cannot be current P89 proof."
+    },
+    {
+      "path": "artifacts/p89/logs/regression/07_P88_PROVIDER_CAPACITY_SUPERSEDED.log",
+      "credit": "NONE",
+      "reason": "P88 harness freezes the conflated strict/live capacity model repaired by P89."
+    },
+    {
+      "path": "artifacts/p89/logs/regression/current-stack/10_P87_STATIC.log",
+      "credit": "NONE",
+      "reason": "P87 static harness freezes P87 as active and the failed first stack is retained without credit."
+    },
+    {
+      "path": "artifacts/p89/logs/regression/00A_P89_BASIC_SCHEMA_FIRST_FAIL.log",
+      "credit": "NONE",
+      "reason": "First P89 PDF schema attempt exposed a customer-line filtering mismatch and was repaired before current credit."
+    }
+  ],
+  "environment": {
+    "node": "v22.16.0",
+    "npm": "10.9.2",
+    "typescript": "Version 5.8.3",
+    "platform": "Linux x86_64",
+    "dependencyGraphPresent": false
+  },
+  "zeroFakeCredit": {
+    "overlappingChecks": true,
+    "independentEvidenceCount": null,
+    "realProviderExecutions": false,
+    "providerRightsExpansion": false,
+    "customerFinal": "0/20",
+    "auditFinalPdf": "0/3",
+    "saleEligible": "0/20",
+    "exactWindows": "WITHHELD"
+  },
+  "truthBoundary": "Every counted command returned zero and matched its closed expected marker on current P89 bytes. Counts overlap heavily and are not provider, accuracy, customer, FINAL, rights, staging, deployment or exact-Windows proof. Historical parent receipts/artifacts are restored and reverified byte-for-byte after legacy harness execution."
+}

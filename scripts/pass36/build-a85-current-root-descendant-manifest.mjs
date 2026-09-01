@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { collectPass35Inventory } from "../pass35/source-inventory.mjs";
+import { canonicalJson, digestValid, readJson, sha256 } from "./historical-descendant-chain-lib.mjs";
+const root=process.cwd();
+const REV="VELMERE_PASS36_A85R0_SHIELD_PRO_AND_SHIELD_MAP_FULL_DEPTH_IDENTITY_ENTITLEMENT_MATRIX";
+const policy=readJson(root,"config/pass36/a85-shield-pro-map-full-depth-policy.json");
+const parent=readJson(root,policy.parentDescendantManifestPath);
+if(!digestValid(parent))throw new Error("a85_parent_manifest_invalid");
+if(parent.revisionId!==policy.parentRevisionId)throw new Error(`a85_parent_revision:${parent.revisionId}`);
+const excluded=new Set(policy.descendantManifestExclusions);
+const inv=collectPass35Inventory(root);
+if(inv.unknownCount!==0)throw new Error(`a85_unknown_inventory:${inv.unknownCount}`);
+const rows=inv.entries.filter(r=>r.sourceIncluded&&!excluded.has(r.path)).map(r=>({path:r.path,byteLength:r.byteLength,sha256:r.sha256,mode:r.mode})).sort((a,b)=>a.path.localeCompare(b.path,"en"));
+const payload={fileCount:rows.length,byteLength:rows.reduce((s,r)=>s+r.byteLength,0),pathSetSha256:sha256(rows.map(r=>r.path).join("\n")),aggregateSha256:sha256(rows.map(r=>`${r.path}\0${r.byteLength}\0${r.sha256}\0${r.mode}`).join("\n"))};
+const receipt=readJson(root,"config/pass36/a85-test-receipt.json");
+if(receipt.status!=="PASS_A85_LOCAL_FULL_DEPTH_MATRIX_NO_PROMOTION"||receipt.summary?.failed!==0)throw new Error("a85_receipt_not_pass");
+const d=receipt.fixtureDenominators;
+const core={schemaVersion:"velmere.pass36.a85.current-root-descendant-manifest.v1",revisionId:REV,parentRevisionId:policy.parentRevisionId,parentDescendantManifestDigestSha256:parent.manifestDigestSha256,generatedAt:policy.deterministicEpoch,payload,exclusions:[...excluded].sort(),claims:{shieldProAndShieldMapFullDepthMatrixImplemented:true,activeAssets:d.activeAssets,tierPackets:d.tierPackets,surfaceProjections:d.surfaceProjections,terminalTimeframeRows:d.terminalTimeframeRows,investigatorLaneRows:d.investigatorLaneRows,semanticMutations:d.semanticMutations,mutationKilled:d.mutationKilled,realFullCatalogCasesVerified:0,productionBrowserAssets:0,rightsApprovedAssets:0,serverEntitlementAssets:0,customerValueLabeledAssets:0,paidDeliveredPackets:0,exactA80CandidateBound:false,paidGateEligible:false,liveProven:false,saleEnabled:false}};
+const manifest={...core,manifestDigestSha256:sha256(canonicalJson(core))};
+fs.writeFileSync(policy.descendantManifestPath,`${JSON.stringify(manifest,null,2)}\n`);
+console.log(JSON.stringify({status:"PASS_A85_DESCENDANT_MANIFEST_BUILD",output:policy.descendantManifestPath,payload,manifestDigestSha256:manifest.manifestDigestSha256},null,2));

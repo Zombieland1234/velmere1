@@ -1,0 +1,51 @@
+name: P45 Exact Windows Current Source via Deterministic Git Bundle
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact-windows-current-source:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout transport branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+      - name: Set up exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+      - name: Reassemble, verify and clone exact source
+        shell: pwsh
+        run: |
+          & artifacts/closure/p45/windows-source-transport/VERIFY_AND_CLONE_P45_SOURCE_BUNDLE.ps1
+      - name: Run exact Windows semantic and dual-build closure
+        shell: pwsh
+        run: |
+          Push-Location p45-exact-source
+          try {
+            node scripts/pass42/run-p42-exact-windows-semantic-dual-build.mjs --output "$env:GITHUB_WORKSPACE/p45-win-result/P45_EXACT_WINDOWS_CURRENT_SOURCE_SEMANTIC_DUAL_BUILD_RECEIPT.json"
+          } finally { Pop-Location }
+      - name: Upload exact Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p45-exact-windows-current-source-via-deterministic-bundle
+          path: |
+            p45-win-result
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7

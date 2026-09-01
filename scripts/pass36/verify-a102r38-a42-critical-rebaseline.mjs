@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import { verifyCriticalFiles } from "../../lib/build/dev-runtime-cache-recovery.mjs";
+const REV="VELMERE_PASS36_A102R38_ACTION_REQUIRED_PRODUCTION_SMOKE_UNIQUE_ASSERTION_RESULT_DENOMINATOR_AND_SOURCE_AUTHORITY_RECONCILIATION_NO_LIVE_CREDIT";
+const PARENT="VELMERE_PASS36_A102R36_ACTION_REQUIRED_WINDOWS_ESLINT_RUNNER_PROCESS_EXEC_PATH_PORTABILITY_AND_EXACT_LINT_CLOSURE_NO_REAL_CREDIT";
+const contract=JSON.parse(fs.readFileSync("config/pass35/a42-dev-runtime-cache-recovery.json","utf8"));
+const evidence=JSON.parse(fs.readFileSync("config/pass36/a102r38-a42-critical-rebaseline.json","utf8"));
+const sha=(b)=>crypto.createHash("sha256").update(b).digest("hex");
+let checks=0;const ok=(v,id)=>{checks++;assert.ok(v,id)};
+ok(evidence.revisionId===REV&&evidence.parentRevisionId===PARENT,"identity");
+ok(evidence.criticalFileDenominator===76&&Object.keys(contract.criticalFiles).length===76,"denominator");
+ok(evidence.inheritedStage8Rows===5&&evidence.a102r38AuthorityRows===5&&evidence.testContractRows===1&&evidence.sourceAuditContractRows===1&&evidence.rebaselinedRows.length===10,"classification");
+for(const row of evidence.rebaselinedRows){const bytes=fs.readFileSync(row.path);ok(bytes.length===row.currentByteLength,`bytes:${row.path}`);ok(sha(bytes)===row.currentSha256,`sha:${row.path}`);ok(contract.criticalFiles[row.path]===row.currentSha256,`contract:${row.path}`);if(row.classification==="INHERITED_A102R37R4_STAGE8_DRIFT")ok(row.inputA102R37R4Sha256===row.currentSha256&&row.inputA102R37R4ByteLength===row.currentByteLength,`stage8:${row.path}`);else ok(row.inputA102R37R4Sha256!==row.currentSha256,`authority-change:${row.path}`);}
+const verified=verifyCriticalFiles(process.cwd(),contract.criticalFiles);ok(verified.ok&&verified.checks.length===76&&verified.failures.length===0,"all-critical-files");
+ok(evidence.globalDecision==="NO_GO"&&!evidence.live&&!evidence.saleEnabled&&!evidence.productionApproved&&!evidence.worldClassProven,"promotion");
+console.log(JSON.stringify({status:"PASS_A102R38_A42_CRITICAL_REBASELINE_76_OF_76_NO_RUNTIME_BROWSER_OR_SALE_CREDIT",checksPassed:checks,checksFailed:0,criticalFilesPassed:verified.checks.length},null,2));

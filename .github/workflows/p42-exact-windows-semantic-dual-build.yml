@@ -1,0 +1,49 @@
+name: P42 Exact Windows Current-Root Semantic and Dual Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p42-exact-windows-semantic-dual-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exact-windows-semantic-dual-build:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    steps:
+      - name: Checkout exact current source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Assert exact npm 11.16.0
+        shell: pwsh
+        run: |
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }
+          if ((npm --version).Trim() -ne '11.16.0') { throw 'Exact npm mismatch' }
+
+      - name: Execute fail-closed current-root semantic and dual-build runner
+        shell: pwsh
+        run: node scripts/pass42/run-p42-exact-windows-semantic-dual-build.mjs --output p42-out/P42_EXACT_WINDOWS_SEMANTIC_DUAL_BUILD_RECEIPT.json
+
+      - name: Upload exact P42 evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p42-exact-windows-semantic-dual-build
+          path: p42-out
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7

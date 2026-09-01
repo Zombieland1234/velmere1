@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "velmere.p43.source-repair-receipt.v1",
+  "revision": "P43_V16_FAIL_CLOSED_LIFECYCLE_EXACT_LINUX_SEMANTIC_DUAL_BUILD",
+  "generatedAt": "2026-08-14T12:08:00.000Z",
+  "status": "APPLIED_AND_RETESTED",
+  "repairs": [
+    {
+      "path": "scripts/pass39/build-p39-v16-topology.mjs",
+      "parentPresent": true,
+      "parentSha256": "325b093cd9236d400f769f3b5374a8eb6d6e049e2fab39885666f5442a46e3ca",
+      "currentSha256": "b11b4a379687c549b0841f18b4a34319d5130b1dbda51cd6148011289d088342",
+      "currentByteLength": 11191,
+      "reason": "Removed two unused local assignments while preserving both integrity-writing side effects.",
+      "behaviorBoundary": "No customer-facing or generated topology output change."
+    },
+    {
+      "path": "scripts/pass42/verify-p42-native-platform-availability.mjs",
+      "parentPresent": false,
+      "parentSha256": null,
+      "currentSha256": "0977f96c4ef0d7ab554217a2c504fffb2676789c218f43e8f6df78ab941307b7",
+      "currentByteLength": 4976,
+      "reason": "Resolved installed platform package manifests by exact lock path instead of package subpath export, eliminating false negatives for @img/sharp packages that intentionally do not export package.json.",
+      "behaviorBoundary": "Native package presence/version checking becomes accurate; no product behavior change."
+    }
+  ],
+  "retests": {
+    "topologyBuilder": "PASS_OUTPUT_HASH_STABLE",
+    "nativePlatformProbe": "PASS_6_OF_6_PLATFORM_PACKAGES_AND_5_OF_5_RUNTIME_PROBES",
+    "typecheck": "PASS_18_OF_18_161_OF_161_ROOTS_ZERO_DIAGNOSTICS",
+    "eslint": "PASS_8_OF_8_3971_FILES_ZERO_ERRORS_ZERO_WARNINGS",
+    "webpackProductionBuild": "PASS",
+    "turbopackProductionBuild": "PASS"
+  },
+  "customerFacingFeatureAdded": false,
+  "productTruthChanged": false,
+  "releasePromotion": false,
+  "truthBoundary": "These are closure-tool and source-quality repairs. They do not grant Browser, PDF, product-value, rights, sale or GO credit.",
+  "integritySha256": "672bb63160779fda8f0a7ca808d3b769dcc74919132190baf5b14e7a3f403f84"
+}

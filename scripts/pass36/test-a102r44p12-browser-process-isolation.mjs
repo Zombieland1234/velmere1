@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const contract = JSON.parse(fs.readFileSync(path.join(root, "config/pass35/a45-exact-runtime-browser-acceptance.json"), "utf8"));
+const policy = JSON.parse(fs.readFileSync(path.join(root, "config/pass36/a60-exact-final-byte-build-browser-acceptance.json"), "utf8"));
+const isolation = policy.browser.processIsolation;
+const tasks = [];
+for (const locale of contract.locales) for (const route of contract.routes) tasks.push(`${locale}\0desktop\0${route.id}`);
+for (const route of contract.routes) tasks.push(`pl\0mobile\0${route.id}`);
+const batches = [];
+for (let start = 0; start < tasks.length; start += isolation.batchSize) batches.push(tasks.slice(start, start + isolation.batchSize));
+const checks = [];
+const check = (id, ok, detail = null) => checks.push({ id, ok: Boolean(ok), detail });
+check("route-task-denominator", tasks.length === 56, tasks.length);
+check("route-task-unique", new Set(tasks).size === 56);
+check("batch-count", batches.length === 10, batches.map((row) => row.length));
+check("batch-size-bounded", batches.every((row) => row.length > 0 && row.length <= 6));
+check("batch-flatten-exact", JSON.stringify(batches.flat()) === JSON.stringify(tasks));
+check("no-task-dropped", batches.reduce((sum, row) => sum + row.length, 0) === tasks.length);
+check("expected-launch-count", batches.length + 1 === isolation.expectedBrowserLaunches && isolation.expectedBrowserLaunches === 11);
+check("popup-launch-separate", isolation.expectedPopupLaunches === 1);
+check("scenario-denominator", tasks.length + isolation.expectedPopupLaunches === 57 && isolation.scenarioDenominator === 57);
+check("screenshot-denominator", isolation.screenshotDenominator === 29);
+check("denominator-stable", isolation.denominatorStable === true);
+check("no-score-credit", isolation.scoreCredit === false);
+const failed = checks.filter((row) => !row.ok);
+assert.equal(failed.length, 0, JSON.stringify(failed));
+console.log(JSON.stringify({ schemaVersion: "velmere.pass36.a102r44p12.browser-process-isolation-test.v1", status: "PASS_R44P12_BROWSER_PROCESS_ISOLATION", checks: checks.length, passed: checks.length, failed: 0, routeTasks: tasks.length, routeBatches: batches.length, browserLaunches: batches.length + 1, rows: checks }, null, 2));

@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+import { digestValid, readJson, verifyCurrentAuthority, verifyHistoricalDescendantChain } from "./historical-descendant-chain-lib.mjs";
+const root=process.cwd();
+const REV="VELMERE_PASS36_A88R1_SEMANTIC_GENERALIZATION_ROUTE_EXECUTION_PRIVACY_AND_PDF_EVIDENCE_RETENTION";
+const policy=readJson(root,"config/pass36/a88r1-semantic-route-privacy-pdf-policy.json");
+const parent=readJson(root,policy.parentDescendantManifestPath);
+const manifest=readJson(root,policy.descendantManifestPath);
+const receipt=readJson(root,"config/pass36/a88r1-test-receipt.json");
+const authority=verifyCurrentAuthority(root);
+const currentRevisionId=authority.current.sourceRevisionId;
+const chain=verifyHistoricalDescendantChain(root,policy.descendantManifestPath,currentRevisionId);
+const checks=[]; const add=(id,passed,detail=null)=>checks.push({id,passed:Boolean(passed),detail});
+add("parent:digest",digestValid(parent),parent.manifestDigestSha256);
+add("parent:revision",parent.revisionId===policy.parentRevisionId,parent.revisionId);
+add("manifest:digest",digestValid(manifest),manifest.manifestDigestSha256);
+add("manifest:revision",manifest.revisionId===REV,manifest.revisionId);
+add("manifest:parent",manifest.parentRevisionId===policy.parentRevisionId&&manifest.parentDescendantManifestDigestSha256===parent.manifestDigestSha256,{parentRevisionId:manifest.parentRevisionId,parentDigest:manifest.parentDescendantManifestDigestSha256});
+add("manifest:frozen-payload-present",Number.isInteger(manifest.payload?.fileCount)&&manifest.payload.fileCount>0&&Number.isInteger(manifest.payload?.byteLength)&&manifest.payload.byteLength>0&&/^[a-f0-9]{64}$/u.test(manifest.payload?.pathSetSha256??"")&&/^[a-f0-9]{64}$/u.test(manifest.payload?.aggregateSha256??""),manifest.payload);
+add("receipt:pass",receipt.status==="PASS_A88R1_LOCAL_SEMANTIC_ROUTE_PRIVACY_PDF_NO_PROMOTION"&&receipt.summary?.failed===0,receipt.status);
+add("claims:denominators",manifest.claims?.combinedSyntheticCases===510&&manifest.claims?.focusedSemanticCases===150&&manifest.claims?.channelProjections===2550&&manifest.claims?.semanticMutations===7560&&manifest.claims?.mutationKilled===7560&&manifest.claims?.decisionMismatches===0&&manifest.claims?.routePreflightCases===31&&manifest.claims?.routePreflightChecks===143&&manifest.claims?.providerCallsOnBlockedCases===0&&manifest.claims?.physicalSyntheticPdfsRetained===450&&manifest.claims?.physicalSyntheticPdfPages===2100,manifest.claims);
+add("claims:no-credit",manifest.claims?.realCustomerPdfs===0&&manifest.claims?.realEvalCasesVerified===0&&manifest.claims?.realModelExecutions===0&&manifest.claims?.rightsApprovedCases===0&&manifest.claims?.independentAdjudications===0&&manifest.claims?.customerDecisionUtilityLabels===0&&manifest.claims?.realCalibrationWindowsClosed===0&&manifest.claims?.legalRegulatoryDecisionsSigned===0&&manifest.claims?.exactA80CandidateBound===false&&manifest.claims?.paidGateEligible===false&&manifest.claims?.liveProven===false&&manifest.claims?.saleEnabled===false,manifest.claims);
+for(const row of authority.checks)add(`authority:${row.id}`,row.passed,row.detail);
+for(const row of chain.checks)add(`historical:${row.id}`,row.passed,row.detail);
+add("historical:frozen-plane-not-recomputed",chain.start?.revisionId===REV&&chain.start?.payload?.aggregateSha256===manifest.payload?.aggregateSha256,{historicalRevisionId:chain.start?.revisionId,frozenPayload:chain.start?.payload});
+add("historical:current-authority-reached",chain.current?.revisionId===currentRevisionId&&chain.ok,{expected:currentRevisionId,observed:chain.current?.revisionId,rows:chain.rows.length});
+const failed=checks.filter(r=>!r.passed);
+console.log(JSON.stringify({schemaVersion:"velmere.pass36.a88r1.current-root-descendant-verification.v2",revisionId:REV,currentRevisionId,status:failed.length?"FAIL_A88R1_DESCENDANT":"PASS_A88R1_DESCENDANT_NO_PROMOTION",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,failures:failed,historicalPayload:manifest.payload,descendantRows:chain.rows,claims:manifest.claims,truthBoundary:"The A88R1 payload remains frozen and is never recomputed against later source bytes. This verifier proves the exact manifest chain from A88R1 to the current authority and grants no real model, PDF-customer, legal, LIVE or sale credit.",liveProven:false,saleEnabled:false,productionApproved:false,worldClassProven:false},null,2));
+if(failed.length)process.exit(1);

@@ -1,0 +1,39 @@
+VELMERE A102R44P41 — OFFICIAL FOUNDRY INVARIANTS, REPLAYABLE COUNTEREXAMPLES AND LOCAL RAW RPC BINDING
+
+STATUS: ACTION_REQUIRED / NO_GO
+TEST CYCLE: 0/3 — CORRECTIVE FULL-PASS EXECUTION
+
+IMPLEMENTED
+- Official Foundry v1.7.1 invariant/fuzz lane using exact solc 0.8.24.
+- Eight paired risk/control invariant families: vault solvency, supply cap, owner integrity, bridge replay, pause bypass, blacklist bypass, fee cap and minimum quorum.
+- Two deterministic risk executions per family with fixed seed and shrunk call sequence retention.
+- Two control executions per family with 256 invariant runs x 64 depth.
+- Eight explicit risk reproductions and eight explicit control replay tests.
+- Local Anvil deployment of RiskVault and ControlVault.
+- Raw JSON-RPC retention for chain ID, deployment receipt, transaction, block, code, balance and eth_call.
+- Exact compiler runtime-bytecode to eth_getCode binding.
+- Tamper-resistant evidence verifier and negative mutation suite.
+
+TRUTH BOUNDARY
+- Local official Foundry evidence is not real-chain evidence.
+- Local Anvil is not a public testnet, mainnet or fork replay.
+- Developer-owned risk/control contracts are not independent ground truth.
+- No independent reviewer, customer, sale, LIVE or world-class credit.
+- This corrective pass requires a complete current-byte Linux release: ESLint, TypeScript, source audit, Webpack, Turbopack, both production smoke runs, browser evidence, full PDF corpus, deterministic packaging and clean-unpack.
+- Exact Windows remains a separate fail-closed external gate and is not claimed unless physically executed.
+
+GLOBAL
+LIVE=false
+saleEnabled=false
+productionApproved=false
+worldClassProven=false
+
+R44P41-BROWSER-STABILITY-HARDENING
+- Added bounded headless Chromium flags --disable-dev-shm-usage, --disable-gpu, --use-gl=swiftshader and --use-angle=swiftshader.
+- Reason: two preserved negative current-byte browser attempts closed the page/browser during screenshot capture under constrained shared-memory/GPU conditions.
+- This does not alter the 57-scenario, 29-screenshot, 4-popup-tab or 584-verifier denominator and grants no provider, customer, sale or LIVE credit.
+
+R44P41-BROWSER-SCREENSHOT-MEMORY-BOUNDARY
+- Replaced unbounded full-page browser screenshots with deterministic viewport screenshots (captureBeyondViewport=false).
+- The 29 screenshot path/digest/PNG/dimension denominator is unchanged; route layout, overflow, zoom, focus and DOM checks remain separate.
+- Reason: three preserved negative attempts showed Chromium closing during repeated full-page screenshot capture under constrained GPU/shared-memory conditions.

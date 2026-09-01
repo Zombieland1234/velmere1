@@ -1,0 +1,336 @@
+{
+  "schemaVersion": "velmere.p86.p85-compatibility.v1",
+  "generatedAt": "2026-08-20T04:00:00Z",
+  "status": "PASS",
+  "runtime": {
+    "python": "3.13.5",
+    "node": "v22.16.0"
+  },
+  "frozenFiles": [
+    "lib/reporting/account-customer-artifact-owner-visible-read.ts",
+    "lib/reporting/audit-exact-artifact-owner-readable-publisher.ts",
+    "supabase/migrations/20260820000001_p83_audit_exact_artifact_atomic_publication.sql",
+    "supabase/migrations/20260820000002_p84_audit_customer_artifact_owner_read_path.sql",
+    "supabase/migrations/20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql"
+  ],
+  "checks": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p86_frozen_lib_reporting_account-customer-artifact-owner-visible-read_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "ba918c98a6a4bb003dea11c7aa9c180a12252ed8999af7d5f15cafe1bc3bde6f",
+          "currentSha256": "ba918c98a6a4bb003dea11c7aa9c180a12252ed8999af7d5f15cafe1bc3bde6f"
+        }
+      },
+      {
+        "id": "p86_frozen_lib_reporting_audit-exact-artifact-owner-readable-publisher_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "205b979abca4223389e48dd8023ad1db8a4133c2872b6d774c6ebd37a4beb2fa",
+          "currentSha256": "205b979abca4223389e48dd8023ad1db8a4133c2872b6d774c6ebd37a4beb2fa"
+        }
+      },
+      {
+        "id": "p86_frozen_supabase_migrations_20260820000001_p83_audit_exact_artifact_atomic_publication_sql",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "dfd35636097b834a8deaf72249817b59edbc4a2be38fbfa2fc99837e6c60f87b",
+          "currentSha256": "dfd35636097b834a8deaf72249817b59edbc4a2be38fbfa2fc99837e6c60f87b"
+        }
+      },
+      {
+        "id": "p86_frozen_supabase_migrations_20260820000002_p84_audit_customer_artifact_owner_read_path_sql",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "2a26411401d1143f4d0c94cbb7ab6867290ab340c7ff70470cd2f03ef3ee98f8",
+          "currentSha256": "2a26411401d1143f4d0c94cbb7ab6867290ab340c7ff70470cd2f03ef3ee98f8"
+        }
+      },
+      {
+        "id": "p86_frozen_supabase_migrations_20260820000003_p85_audit_customer_artifact_publication_visibility_rls_sql",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "e0dd448ef289a0468bb21de9dce07915288cc246aadc22a91b95a8420939f207",
+          "currentSha256": "e0dd448ef289a0468bb21de9dce07915288cc246aadc22a91b95a8420939f207"
+        }
+      },
+      {
+        "id": "p86_p85_runtime_executes_on_current_source",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "id": "p86_p85_runtime_45_of_45",
+        "status": "PASS",
+        "detail": {
+          "total": 45,
+          "passed": 45,
+          "failed": 0,
+          "rows": [
+            {
+              "id": "p85_fixture_newest_snapshot_valid",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_fixture_older_snapshot_valid",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_list_schema_closed",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_list_returns_two_visible_artifacts",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_list_order_preserved_and_validated",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_list_requires_exact_publication_links",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_list_single_rpc",
+              "status": "PASS",
+              "detail": [
+                {
+                  "name": "velmere_list_owner_visible_customer_artifacts_v1",
+                  "params": {
+                    "p_limit": 2
+                  }
+                }
+              ]
+            },
+            {
+              "id": "p85_list_expected_rpc",
+              "status": "PASS",
+              "detail": {
+                "name": "velmere_list_owner_visible_customer_artifacts_v1",
+                "params": {
+                  "p_limit": 2
+                }
+              }
+            },
+            {
+              "id": "p85_list_rpc_has_only_limit_no_owner_parameter",
+              "status": "PASS",
+              "detail": {
+                "p_limit": 2
+              }
+            },
+            {
+              "id": "p85_list_no_direct_table_reads",
+              "status": "PASS",
+              "detail": 0
+            },
+            {
+              "id": "p85_list_projection_exposes_no_operator_fields",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_get_returns_exact_artifact",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_get_single_rpc",
+              "status": "PASS",
+              "detail": {
+                "rpcCalls": [
+                  {
+                    "name": "velmere_get_owner_visible_customer_artifact_v1",
+                    "params": {
+                      "p_snapshot_id": "artifact-audit-536a0e826cbef0d0-da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd"
+                    }
+                  }
+                ],
+                "fromCalls": 0
+              }
+            },
+            {
+              "id": "p85_get_rpc_has_only_snapshot_no_owner_parameter",
+              "status": "PASS",
+              "detail": {
+                "p_snapshot_id": "artifact-audit-536a0e826cbef0d0-da42db60c8afba2c288f5a711b2bc66a1e14e694e516fc6dd7899f7c204095dd"
+              }
+            },
+            {
+              "id": "p85_missing_artifact_returns_null_without_disclosure",
+              "status": "PASS"
+            },
+            {
+              "id": "p85_list_requires_owner_client",
+              "status": "PASS",
+              "detail": "VELMERE_P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_BOUNDARY_REQUIRED"
+            },
+            {
+              "id": "p85_get_requires_owner_client",
+              "status": "PASS",
+              "detail": "VELMERE_P85_OWNER_VISIBLE_CUSTOMER_ARTIFACT_BOUNDARY_REQUIRED"
+            },
+            {
+              "id": "p85_invalid_owner_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_account_invalid"
+            },
+            {
+              "id": "p85_preview_owner_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_account_invalid"
+            },
+            {
+              "id": "p85_limit_zero_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_limit_invalid"
+            },
+            {
+              "id": "p85_limit_over_50_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_limit_invalid"
+            },
+            {
+              "id": "p85_invalid_snapshot_id_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_snapshot_id_invalid"
+            },
+            {
+              "id": "p85_list_rpc_error_fails_closed",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_list_failed:RLS denied"
+            },
+            {
+              "id": "p85_get_rpc_error_fails_closed",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_get_failed:RLS denied"
+            },
+            {
+              "id": "p85_list_non_array_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_list_response_invalid"
+            },
+            {
+              "id": "p85_list_over_limit_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_list_response_invalid"
+            },
+            {
+              "id": "p85_duplicate_snapshot_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_duplicate_snapshot"
+            },
+            {
+              "id": "p85_out_of_order_rows_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_order_invalid"
+            },
+            {
+              "id": "p85_get_ambiguous_rows_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_get_response_invalid"
+            },
+            {
+              "id": "p85_get_identity_mismatch_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_get_identity_mismatch"
+            },
+            {
+              "id": "p85_extra_row_field_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_row_shape_invalid"
+            },
+            {
+              "id": "p85_missing_row_field_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_row_shape_invalid"
+            },
+            {
+              "id": "p85_wrong_visibility_schema_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_customer_artifact_schema_invalid"
+            },
+            {
+              "id": "p85_orphan_audit_row_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_audit_artifact_publication_missing"
+            },
+            {
+              "id": "p85_wrong_row_owner_rejected",
+              "status": "PASS",
+              "detail": "account_customer_artifact_owner_immutable_conflict"
+            },
+            {
+              "id": "p85_wrong_row_owner_hash_rejected",
+              "status": "PASS",
+              "detail": "account_customer_artifact_row_account_hash_mismatch"
+            },
+            {
+              "id": "p85_wrong_row_snapshot_digest_rejected",
+              "status": "PASS",
+              "detail": "account_customer_artifact_row_snapshot_digest_mismatch"
+            },
+            {
+              "id": "p85_wrong_row_artifact_digest_rejected",
+              "status": "PASS",
+              "detail": "account_customer_artifact_row_artifact_digest_mismatch"
+            },
+            {
+              "id": "p85_wrong_row_pdf_storage_rejected",
+              "status": "PASS",
+              "detail": "account_customer_artifact_row_pdf_storage_mismatch"
+            },
+            {
+              "id": "p85_link_owner_rejected",
+              "status": "PASS",
+              "detail": "audit_customer_artifact_link_row_integrity_invalid"
+            },
+            {
+              "id": "p85_link_owner_hash_rejected",
+              "status": "PASS",
+              "detail": "audit_customer_artifact_link_row_integrity_invalid"
+            },
+            {
+              "id": "p85_link_snapshot_digest_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_audit_artifact_publication_mismatch"
+            },
+            {
+              "id": "p85_link_artifact_digest_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_audit_artifact_publication_mismatch"
+            },
+            {
+              "id": "p85_link_pdf_digest_rejected",
+              "status": "PASS",
+              "detail": "owner_visible_audit_artifact_publication_mismatch"
+            },
+            {
+              "id": "p85_link_extra_field_rejected",
+              "status": "PASS",
+              "detail": "audit_customer_artifact_link_row_shape_invalid"
+            }
+          ]
+        }
+      },
+      {
+        "id": "p86_p85_historical_receipt_restored",
+        "status": "PASS",
+        "detail": "ef18ebf9cf934b69086cd4f6590266e5cddefcbb91a46ff6628ad83a857a52bc"
+      },
+      {
+        "id": "p86_gate_insert_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_p85_rpc_names_preserved",
+        "status": "PASS"
+      }
+    ]
+  },
+  "historicalReceiptRestored": true,
+  "truthBoundary": "P85 owner-visible/JWT-bound source semantics and P83/P84 publication migrations remain byte-identical. P86 only prevents new legacy PDF obligations and removes rerender delivery. PostgreSQL/deployed runtime remains WITHHELD."
+}

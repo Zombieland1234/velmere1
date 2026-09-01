@@ -1,0 +1,99 @@
+VELMÈRE — CURRENT STATE AND PASS DELTA LEDGER P42 V16
+DATE: 14.08.2026
+PARENT ROOT: R44P46
+CHECKPOINT: P42
+STATUS: NO_GO / CURRENT_SOURCE_ONLY_IN_PROGRESS
+AUTHORITY: V16 byte-for-byte unchanged
+
+TABLE 0 — PRODUCT TOPOLOGY TRUTH
+Family | Customer-facing rows | Internal contexts | Delta required by catalog | Current output/value state
+Audit | 3 | 3 | 2 transitions | 0/3 physical final outputs; 0/2 deltas
+PDF | 3 | 3 | 2 transitions | 0/3 physical final outputs; 0/2 deltas
+Browser | 3 | 3 | 2 transitions | 0/3 physical final outputs; 0/2 deltas
+Shield | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Shield Pro | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Shield Map | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Real Markets | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Market Impact | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Whale Watch | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Angel | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+Risk Indicator | 1 | 3 | N/A unless catalog claims context delta | 0/1 final output
+TOTAL | 17 | 33 | 6 required transitions | 0/17 outputs; 0/6 deltas
+
+TABLE 1 — CUSTOMER-FACING CLOSURE
+Rows | Previous P41 | Current P42 | Delta | Sale eligible | Hard blocker
+17 real customer-facing rows | 0/17 physical outputs | 0/17 | 0 | 0/17 | semantic/build → Browser/PDF → outputs/rights/value
+
+TABLE 2 — INTERNAL EXECUTION / TOOLCHAIN
+Axis | Previous P41 | Current P42 | Delta | Evidence class
+Exact Windows Server 2025 x64 setup | 1/1 preflight | 1/1 executed | 0 | NATIVE_CURRENT_TOOLCHAIN
+Exact Node 24.18.0 / npm 11.16.0 | 1/1 preflight | 1/1 executed | 0 | NATIVE_CURRENT_TOOLCHAIN
+Current package/lock binding | bridge only | 1/1 exact byte match | +1 | CURRENT_LOCK_BINDING
+Dependency lock paths | 0/661 closed | 661/661 | +661 | NATIVE_DEPENDENCY_RECEIPT
+Unique SRI tarballs | 0/618 closed | 618/618 | +618 | PRODUCER_SRI_VERIFIED
+Online npm ci --ignore-scripts | 0/1 | 1/1 PASS | +1 | NATIVE_WINDOWS
+Offline npm ci --ignore-scripts | 0/1 | 1/1 PASS | +1 | NATIVE_WINDOWS
+Lifecycle / trusted native | 0/1 | 0/1 | 0 | OPEN_REQUIRED
+TypeScript / ESLint / Webpack / Turbopack | 0/4 | 0/4 | 0 | OPEN_REQUIRED
+P42 semantic dual-build bridge | 0/1 | 1/1 portable PASS | +1 | BRIDGE_ONLY
+
+TABLE 3 — CURRENT → TARGET → GAP
+Axis | CURRENT | TARGET | GAP | Action completed P42 | Next action
+Dependency closure | exact Windows 661/661 and 618/618; online/offline ignore-scripts PASS | current-root reproducible install | lifecycle/trusted-native current-root execution | ingested and independently rebound native artifact | execute P42 Windows workflow
+Semantic closure | 0/4 | TS + lint + Webpack + Turbopack | all four | fail-closed runner/workflow built and self-tested | native run and ingest first failure/PASS
+Browser | 0/3 | distinct Basic/Pro/Advanced | 3 | none, frozen order respected | after semantic dual-build
+PDF | 0/1 | independent exact-byte replay | 1 | none | after Browser
+Customer outputs | 0/17 | 17/17 | 17 | none | after Browser/PDF
+Rights | 0/176 candidate rows | all promised fields adjudicated | 176 candidate rows | none | after output capture
+
+TABLE 4 — DATA / RIGHTS / FRESHNESS
+Candidate field rows | Previous | Current | Rights passed | Current health
+176 | 176 | 176 | 0/176 | unchanged; no external rights credit in P42
+
+TABLE 5 — GLOBAL DENOMINATORS
+Metric | Previous P41 | Current P42 | Delta | Remaining | Credit class
+Canonical authority | 1/1 V16 | 1/1 V16 | 0 | 0 | CURRENT_AUTHORITY
+Source/package reproducibility | PASS | pending final P42 package receipt | new package | final 2/2+CRC | PACKAGING
+Exact Windows dependency closure | 0/1 | 1/1 | +1 | 0 for ignore-scripts dependency graph | NATIVE_CURRENT
+Exact current-root lifecycle/semantic/dual-build | 0/1 | 0/1 | 0 | 1 | OPEN_REQUIRED
+TypeScript / ESLint / dual build | 0/4 | 0/4 | 0 | 4 | OPEN_REQUIRED
+Browser distinct executions | 0/3 | 0/3 | 0 | 3 | OPEN_REQUIRED
+PDF independent replay | 0/1 | 0/1 | 0 | 1 | OPEN_REQUIRED
+Physical customer outputs | 0/17 | 0/17 | 0 | 17 | OPEN_REQUIRED
+Material deltas | 0/6 | 0/6 | 0 | 6 | OPEN_REQUIRED
+Field rights | 0/176 | 0/176 | 0 | 176 | OPEN_REQUIRED
+Sale eligible | 0/17 | 0/17 | 0 | 17 | STOP_SELL
+Convergence | 0/3 | 0/3 | 0 | 3 | OPEN_REQUIRED
+FINAL_AI_VALIDATION | not started | not started | 0 | after product closure | SEPARATE
+REAL_EXTERNAL_PROOF | 0 | 0 | 0 | real pilot/review | SEPARATE
+GO_INTERNAL / PILOT / GO_PAID / LIVE / WORLD_CLASS | false/false/false/false/false | false/false/false/false/false | 0 | hard gates remain | NO_GO
+
+PHYSICALLY CHANGED
+1. Ingested the successful GitHub Actions artifact from run 31789874601 / job 94734145996 / head e253190985a41584495d19dbec440bd4c7142f10.
+2. Rebound the artifact to the exact current package.json and package-lock.json bytes.
+3. Independently verified all 661 lock paths, 618 unique resolved+integrity rows, 0 failures, manifest topology, online/offline npm ci status and content-addressed manifest naming.
+4. Added a fail-closed exact-Windows current-root semantic/dual-build workflow and runner using read-only checkout, exact toolchain, trusted-native rebuild, npm ls, TypeScript, ESLint, Webpack and Turbopack.
+5. Executed portable bridge verification, positive self-test and negative failure-receipt control.
+6. No customer-facing product code changed.
+
+PASSED
+- Exact Windows Server 2025 x64 / Node v24.18.0 / npm 11.16.0: PASS.
+- Current package/lock byte binding: PASS.
+- Dependency graph: 661/661 lock paths and 618/618 unique tarballs.
+- Online and offline npm ci with --ignore-scripts: PASS/PASS.
+- Producer SRI verification: 618/618 with 0 failures; local second-party tarball replay is not claimed because tarball bytes were not included in the downloaded receipt artifact.
+- P42 ingestion verifier, bridge verifier, positive self-test and failure negative control: PASS.
+
+NOT PASSED / NOT EXECUTED
+- Current-root trusted-native lifecycle, npm ls, TypeScript, ESLint, Webpack and Turbopack remain 0/6 native stages.
+- Browser, PDF, outputs, rights, value, security/accessibility release closure and convergence remain open.
+- Sale remains 0/17.
+
+NEXT HIGHEST-VALUE TASK
+Execute .github/workflows/p42-exact-windows-semantic-dual-build.yml against this exact P42 source. Ingest the always-uploaded receipt, repair the first real failure without skipping stages, and rerun until trusted-native, npm ls, TypeScript, ESLint, Webpack and Turbopack all pass. Then start three physical Browser SKU executions.
+
+CURRENT SOURCE AGGREGATE
+a88fa326e8c23d55bab03e18b8d0cb4b8b6c2dd7912daa66bdc677257919eeea
+
+HANDOFF HASH BOUNDARY
+The final ZIP SHA-256 is appended only to the external ledger after deterministic packaging. Internal ledger remains non-circular.

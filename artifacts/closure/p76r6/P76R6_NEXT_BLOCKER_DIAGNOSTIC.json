@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "velmere.p76r6.next-blocker-diagnostic.v1",
+  "status": "OPEN_REQUIRED_FOLLOWUP",
+  "classification": "PRODUCT_NEUTRAL_AUDIT_DIAGNOSTIC_ZERO_CHECKPOINT_CREDIT",
+  "nextPass": "P77",
+  "finding": "A reachable generic Audit final-delivery path still requires an operator-driven customer_safe_ready/mark_ready transition even though canonical immutable snapshot and route-health/currentness gates already exist.",
+  "currentReachableEvidence": [
+    {
+      "path": "lib/security/final-delivery-gate.ts",
+      "evidence": [
+        "operatorReady = message?.operatorStatus === customer_safe_ready",
+        "canDeliver includes operatorReady",
+        "operator_not_customer_safe_ready blocker",
+        "nextAction instructs mark_ready"
+      ]
+    },
+    {
+      "path": "lib/account/audit-account-messages.ts",
+      "evidence": [
+        "mark_ready remains an active operator action",
+        "mark_ready transitions customer-safe readiness state",
+        "delivery metrics count operatorStatus customer_safe_ready/delivered"
+      ]
+    },
+    {
+      "path": "lib/server/lazy-route-modules/admin--security--audit-messages--operator-actions.ts",
+      "evidence": [
+        "mark_ready is accepted",
+        "mutation path requires primary_reviewer",
+        "deliver_customer_safe_report consults final-delivery gate"
+      ]
+    },
+    {
+      "path": "lib/security/linked-request-drawer-actions.ts",
+      "evidence": [
+        "mark_ready is recommended after PDF attachment",
+        "fallback recommendation can be mark_ready"
+      ]
+    },
+    {
+      "path": "lib/security/delivery-receipt-ledger.ts",
+      "evidence": [
+        "non-deliverable receipts can still be classified manual_review",
+        "delivery state still observes operatorStatus"
+      ]
+    },
+    {
+      "path": "lib/security/audit-case-vault-private-delivery-ledger.ts",
+      "evidence": [
+        "append-only operator timeline still describes mark_ready/deliver events",
+        "broader private-delivery applicability must be adjudicated before repair"
+      ]
+    }
+  ],
+  "existingDeterministicSafetyGatesToPreserve": [
+    "immutable canonical customer snapshot verification",
+    "route-health customerDeliveryAllowed",
+    "fresh route-health endpoint ping",
+    "zero blocked warnings",
+    "zero stale warnings",
+    "redacted customer-safe boundary",
+    "server-side authorization for mutation endpoints"
+  ],
+  "requiredP77Decision": "Determine tier/family applicability and remove any human/operator readiness prerequisite from customer delivery without weakening snapshot, redaction, freshness, route-health, authorization or fail-closed controls. mark_ready may remain only as legacy/optional internal annotation if compatibility requires it, but must not unlock or block delivery.",
+  "credit": {
+    "customerFinal": 0,
+    "auditFinalPdf": 0,
+    "rights": 0,
+    "paidValue": 0,
+    "sale": 0,
+    "live": false
+  }
+}

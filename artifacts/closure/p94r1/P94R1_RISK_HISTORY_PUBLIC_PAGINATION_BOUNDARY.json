@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "velmere.p94r1.risk-history-public-pagination-boundary.v1",
+  "generatedAt": "2026-08-21T00:20:00.000Z",
+  "status": "PASS_BOUNDED_LOCAL_SOURCE_NO_SOCKET",
+  "physicalChanges": {
+    "publicSelection": "Only PUBLIC and customerPublishable events are selected before limit and cursor application; WITHHELD events cannot consume public page capacity.",
+    "pagination": "Pages use an exclusive canonical ISO observedAt cursor, request binding, limit+1 detection and strict older-page progression.",
+    "truthfulWindow": "trackingStartedAt is shown only after the earliest publishable event is reached; otherwise customer wording describes a bounded visible window.",
+    "customerMerge": "Pages are schema-bound, non-overlapping, chronologically merged and capped at 5000 events with an explicit safety-limit disclosure.",
+    "temporalChart": "Chart x positions use actual observedAt time distance rather than event index spacing.",
+    "nonEnumeration": "Unknown, ambiguous, private-only and exhausted windows normalize to the same customer-safe empty projection.",
+    "sharedIntegrity": "P91 event integrity and P93 canonical shared-reader consumers remain green on current bytes."
+  },
+  "privacyAndSecurity": {
+    "rawPrivateEventsCustomerVisible": false,
+    "withheldEventsInfluencePublicLimit": false,
+    "requestBindingCustomerVisible": false,
+    "providerTopologyCustomerVisible": false,
+    "rawEvidenceCustomerVisible": false,
+    "automaticUnboundedHistoryFetch": false
+  },
+  "database": {
+    "migration": "supabase/migrations/20260821000001_p94_risk_history_public_only_pagination_temporal_window.sql",
+    "rpc": "velmere_read_public_risk_history_by_asset_v1",
+    "schemaSourceParity": "PASS_STATIC",
+    "authorizedExecution": "NOT_EXECUTED",
+    "runtimeRlsServiceRoleProof": "WITHHELD"
+  },
+  "finalState": {
+    "riskIndicatorFinal": false,
+    "customerFinal": "0/20",
+    "global": "NO_GO / STOP_SELL"
+  },
+  "truthBoundary": "No-socket local/runtime/static/source proof only. It does not prove deployed PostgreSQL, RLS, HTTP timing, rendered Browser, accessibility, staging, production or real customer data."
+}

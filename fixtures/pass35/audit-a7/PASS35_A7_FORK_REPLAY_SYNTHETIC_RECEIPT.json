@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a7-fork-replay-receipt.v1",
+  "familyId": "fork_replay_exact_state",
+  "toolName": "Fork Replay Runner",
+  "toolVersion": "1.0.0",
+  "caseRef": "AUD-A7-FORK-REPLAY-0001",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "target": {
+    "chainId": "1",
+    "chainName": "Ethereum",
+    "blockNumber": "19400000",
+    "blockHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "contractAddress": "0x1111111111111111111111111111111111111111",
+    "preStateRoot": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "expectedPostStateRoot": "0x3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "upstreamBindings": {
+    "sourceToBytecodeReceiptSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "chainProviderReceiptSha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "replayPlanSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "forkProviderConfigurationSha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "forkProviderCommercialRightsEvidenceSha256": null,
+    "forkProviderEndpointClass": "LOCAL_TEST"
+  },
+  "toolBinding": {
+    "executionMode": "NODE_SCRIPT_FIXTURE_ONLY",
+    "fixtureOnly": true,
+    "binaryOrImageSha256": "sha256:8142d37c6f2f372ef040419e7a111a6baf17df89f8078d02447d6c639ae20c1d",
+    "entrypointSha256": "sha256:1594e3f1f05406ba6534f9ecbad31f09558f2c91559d34070c5e073b03e077a0",
+    "versionOutputSha256": "sha256:e05d19c87d7f0d60f11592d1b321bd1d9623ba7c71fe6d557c66678d87ca51c0",
+    "rawOutputSha256": "sha256:23495d11e283226f977f51bb13d7c13f38eba4789d6fd0f07bb8c1a82555e9b8",
+    "exitCode": 0
+  },
+  "replay": {
+    "transactionCount": 2,
+    "successfulTransactions": 1,
+    "revertedTransactions": 1,
+    "assertionCount": 5,
+    "passedAssertions": 5,
+    "replayTraceSha256": "sha256:28920b3efa91054e70d26a9fc13bd76d69a205d8ad756dc6b58d947afec66bb1",
+    "snapshotReadRootSha256": "sha256:b0955d0c6feacbae58ba4290547672c846cbf50076291f861eed1e9c903ea330",
+    "observedPostStateRoot": "0x3333333333333333333333333333333333333333333333333333333333333333",
+    "transactions": [
+      {
+        "txHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "status": "SUCCESS",
+        "gasUsed": 64690,
+        "stateDiffSha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "logsSha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "returnDataSha256": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      {
+        "txHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "status": "REVERT",
+        "gasUsed": 69059,
+        "stateDiffSha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "logsSha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "returnDataSha256": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+      }
+    ],
+    "assertions": [
+      {
+        "assertionId": "A09_TOTAL_SUPPLY_CONSERVED",
+        "status": "PASS",
+        "observedSha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      {
+        "assertionId": "A09_ADMIN_STORAGE_UNCHANGED",
+        "status": "PASS",
+        "observedSha256": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      {
+        "assertionId": "A09_UNAUTHORIZED_CALL_REVERTS",
+        "status": "PASS",
+        "observedSha256": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      {
+        "assertionId": "A09_EVENT_SEQUENCE_MATCHES",
+        "status": "PASS",
+        "observedSha256": "sha256:abababababababababababababababababababababababababababababababab"
+      },
+      {
+        "assertionId": "A09_TARGET_BALANCE_DELTA",
+        "status": "PASS",
+        "observedSha256": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      }
+    ]
+  },
+  "status": "VERIFIED",
+  "assuranceClass": "LOCAL_CONTRACT",
+  "realCaseExecution": false,
+  "paidGateEligible": false,
+  "fullAuditClaimAllowed": false,
+  "promotionAllowed": false,
+  "blockers": [],
+  "limitations": [
+    "The fixture validates exact chain/block/state binding, replay result normalization and fail-closed mutations only.",
+    "It does not run an official forked EVM, Anvil/Forge replay, a real provider, a customer contract or a historical exploit."
+  ],
+  "truthBoundary": "A7 may prove the local fork/replay adapter contract and exact state-binding checks only. Fixture or relabeled evidence cannot become real, paid, independent, LIVE or full-audit proof.",
+  "receiptSha256": "sha256:051a7a4c19d38c41bc4dfa60d599596c3ecf1e3bd3a0ed38fac124766acc7d88"
+}

@@ -1,0 +1,20 @@
+VELMÈRE PASS36 A102R44P32 PATCH
+
+Revision: VELMERE_PASS36_A102R44P32_ACTION_REQUIRED_LOCAL_DURABLE_STRIPE_PROTOCOL_LIFECYCLE12_REAL_STRIPE_TEST_BLOCKED_NO_LIVE_CREDIT
+Parent: VELMERE_PASS36_A102R44P31_ACTION_REQUIRED_EXTERNAL_CI_LOCALSTACK_STORAGE_KMS_EMAIL10_SIGSTORE_OIDC_AND_PARENT_EXACT_RELEASE_NO_LIVE_CREDIT
+Decision: ACTION_REQUIRED / NO_GO
+
+Implemented:
+- disposable local Stripe-shaped API fixture with no provider or sale credit;
+- real local HTTP webhook ingress with Stripe-style HMAC/timestamp validation;
+- durable SQLite event, entitlement, provider-state and dead-letter ledgers;
+- exact twelve-case lifecycle: checkout, signed webhook, PaymentIntent binding, activation, duplicate idempotency, reorder, replay denial, refund, refund webhook, revocation, reconciliation and bounded dead-letter requeue;
+- immutable SQLite backup snapshots before evidence hashing;
+- independent 45-check verifier and tamper-oriented source verifier;
+- fail-closed admission for optional real sk_test credentials without storing secrets.
+
+Truth boundary:
+LOCAL_DISPOSABLE_STRIPE_API_FIXTURE_AND_WEBHOOK_LEDGER_ONLY.
+This checkpoint does not prove Stripe test mode, Stripe-hosted checkout, Stripe webhook delivery, production payments, customer delivery, paid sale or LIVE operation.
+
+Current-child full release is not inherited from R44P31 and remains NOT_RUN.

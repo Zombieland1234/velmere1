@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { runA24Benchmark, verifyA24Benchmark, verifyA24Policy } from "../../lib/security/pass35-a24-monitoring-lifecycle-runtime.mjs";
+const read=(p)=>JSON.parse(readFileSync(p,"utf8"));let assertions=0;const check=(v,m)=>{assert.ok(v,m);assertions+=1;};
+const policy=read("config/pass35/a24-monitoring-lifecycle-policy.json"),contract=read("config/pass35/a24-monitoring-lifecycle-runtime-contract.json"),receipt=read("artifacts/pass35/PASS35_A24_MONITORING_LIFECYCLE_RECEIPT.json"),status=read("config/pass35/current-status-register.json"),zero=read("config/pass35/zero-budget-functional-roadmap.json"),current=read("config/current-release.json"),audit=read("config/pass35/audit-program.json"),envelope=read("config/pass35/audit-execution-envelope.json"),product=read("config/pass35/product-tier-content-contract.json");
+check(verifyA24Policy(policy),"policy");const runtime=runA24Benchmark(policy);check(verifyA24Benchmark(runtime,policy),"runtime");
+check(runtime.denominators.cases===192&&runtime.denominators.frozen===72&&runtime.denominators.mutations===2304&&runtime.denominators.families===12,"denominators");
+check(runtime.frozen.accuracy===1&&runtime.frozen.triggerAccuracy===1&&runtime.frozen.lifecycleAccuracy===1&&runtime.frozen.dedupeAccuracy===1&&runtime.frozen.orderingAccuracy===1,"metrics");
+check(runtime.frozen.unsafeClosures===0&&runtime.frozen.falseBlocks===0&&runtime.mutation.killRate===1,"safety");
+check(contract.canonicalWeightedPlanningPercent===50&&contract.canonicalStrictDonePercent===20.9&&contract.zeroBudgetWeightedPlanningPercent===88.7,"percentages");
+check(contract.progressDeltaVsA23.canonicalPercentagePoints===1.2&&contract.progressDeltaVsA23.strictPercentagePoints===2.3&&contract.progressDeltaVsA23.zeroBudgetPercentagePoints===0.6,"delta A23");
+check(contract.progressDeltaVsA16.canonicalPercentagePoints===9.3&&contract.progressDeltaVsA16.strictPercentagePoints===11.6&&contract.progressDeltaVsA16.zeroBudgetPercentagePoints===8.7,"delta A16");
+check(receipt.eventEvaluationComplete&&receipt.deduplicationOrderingComplete&&receipt.incidentCorrelationComplete&&receipt.deliverySlaGateComplete&&receipt.acknowledgementSlaGateComplete&&receipt.playbookActionGateComplete&&receipt.customerCommunicationGateComplete&&receipt.postConditionClosureGateComplete,"receipt implementation");
+check(receipt.liveMonitoringActive===false&&receipt.liveAlertDeliveryClaimed===false&&receipt.realIncidentClaimed===false&&receipt.realCaseExecution===false&&receipt.paidGateEligible===false&&receipt.sellEnabled===false,"receipt truth");
+const row=status.rows.find((item)=>item.id==="AUD19_A17_MONITORING");check(row?.status==="DONE"&&row.blocker==="NONE_LOCAL_FOR_DECLARED_BOUNDED_A17_MONITORING_LIFECYCLE_IMPLEMENTATION"&&row.missing.length===0,"status row");
+for(const id of ["ZB62_MONITORING_EVENT_DEDUP_CORRELATION","ZB63_INCIDENT_RESPONSE_LIFECYCLE_GATE","ZB64_MONITORING_LIFECYCLE_FROZEN_BENCHMARK"])check(zero.capabilities.find((item)=>item.id===id)?.status==="DONE",`zero ${id}`);
+check(zero.capabilities.filter((item)=>!new Set(zero.zeroBudgetCoreExclusions).has(item.id) ).length===86,"zero denominator");
+check(audit.controls.find((item)=>item.id==="A17")?.status==="IMPLEMENTED_LOCAL_EVENT_AND_INCIDENT_LIFECYCLE_BENCHMARKED_NOT_LIVE","audit program");
+const family=envelope.capabilityInventory.find((item)=>item.familyId==="post_audit_monitoring_handoff");check(family?.state==="IMPLEMENTED_LOCAL_EVENT_INCIDENT_LIFECYCLE_BENCHMARKED_LIVE_PROVIDER_MISSING"&&family.mayNotClaim.includes("A17 paid gate passed"),"envelope truth");
+const auditSurface=product.surfaces.find((surface)=>surface.surfaceId==="audit_evm");check(product.a24MonitoringLifecycle?.paidGateEligible===false&&product.a24MonitoringLifecycle.requiredProFields.every((field)=>auditSurface.tiers.pro.requiredFields.includes(field)),"product Pro");check(product.a24MonitoringLifecycle.requiredAdvancedFields.every((field)=>auditSurface.tiers.advanced.requiredFields.includes(field)),"product Advanced");
+check(current.sourceRevisionId===policy.sourceRevisionId&&current.a24MonitoringLifecycleContractPath==="config/pass35/a24-monitoring-lifecycle-runtime-contract.json","current pointer");
+check(existsSync("artifacts/release/PASS35_A24_MONITORING_LIFECYCLE.md")&&existsSync("artifacts/release/PASS35_A24_PRODUCT_ROADMAP_SUMMARY.json"),"release artifacts");
+check(JSON.stringify(status.statusPrecedence)===JSON.stringify(["this register","A32 roadmap current-status section","machine-generated readiness dashboard","A31 and earlier addenda as historical implementation notes only","base roadmap as target requirements"]),"status precedence under A32");
+check(status.sellEnabledCount===0&&status.globalDecision==="NO_GO"&&status.visualFreeze.mismatches===0&&status.externalVerifiedEvidence==="0/3074","global truth");
+console.log(JSON.stringify({status:"PASS_A24_CONTROL_PLANE_UNDER_A28",assertions,cases:runtime.denominators.cases,mutations:runtime.denominators.mutations,canonical:contract.canonicalWeightedPlanningPercent,strict:contract.canonicalStrictDonePercent,zeroBudget:contract.zeroBudgetWeightedPlanningPercent,sellEnabled:0},null,2));

@@ -1,0 +1,273 @@
+{
+  "schemaVersion": "velmere.p33.paid-test-campaign.v1",
+  "runner": {
+    "nodePath": "/opt/pyvenv/lib/python3.13/site-packages/playwright/driver/node",
+    "nodeVersion": "v24.11.1",
+    "credit": "CURRENT_SOURCE_DIAGNOSTIC_NOT_EXACT_PROJECT_BUILD"
+  },
+  "denominator": 32,
+  "summary": {
+    "PASS": 24,
+    "FAIL": 8,
+    "TIMEOUT": 0,
+    "MISSING": 0
+  },
+  "results": [
+    {
+      "test": "scripts/pass32/test-paid-surface-truth.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 163,
+      "stdoutTail": "PASS Lens Pro and Advanced PDF choices both use product-bound checkout tokens\nPASS Angel and Shield Map do not relabel an unentitled fallback as paid depth\n",
+      "stderrTail": "(node:1093) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass32/test-payment-auth-hardening.ts",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 261,
+      "stdoutTail": "",
+      "stderrTail": "(node:1105) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nfalse !== true\n\n    at file:///mnt/data/velmere_p33_work/scripts/pass32/test-payment-auth-hardening.ts:85:8 {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.11.1\n"
+    },
+    {
+      "test": "scripts/pass35/test-paid-ui-stop-sell.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 134,
+      "stdoutTail": "PASS35 paid UI: all six legacy IDs map to exact canonical product cells\nPASS35 paid UI: deep links, Lens, Audit, Shield and Real Markets stop-sell fail closed\nPASS35 paid UI: disabled cells create neither a pending intent nor a checkout request\n",
+      "stderrTail": "(node:1117) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass35/test-a49-stripe-fixture.mjs",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 522,
+      "stdoutTail": "{\n  \"checks\": 7,\n  \"passed\": 5,\n  \"failed\": 2\n}\n",
+      "stderrTail": "[\n  {\n    \"id\": \"clean:exit\",\n    \"ok\": false,\n    \"detail\": {\n      \"status\": 1,\n      \"stdout\": \"{\\n  \\\"decision\\\": \\\"FIXTURE_FAIL\\\",\\n  \\\"checks\\\": 24,\\n  \\\"passed\\\": 22,\\n  \\\"failed\\\": 2\\n}\",\n      \"stderr\": \"\"\n    }\n  },\n  {\n    \"id\": \"clean:decision\",\n    \"ok\": false,\n    \"detail\": \"FIXTURE_FAIL\"\n  }\n]\n"
+    },
+    {
+      "test": "scripts/pass35/test-a49-stripe-payment-acceptance.mjs",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 656,
+      "stdoutTail": "{\n  \"checks\": 1120,\n  \"passed\": 857,\n  \"failed\": 263\n}\n",
+      "stderrTail": "/auth/oauth/google/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/auth/oauth/google/route.ts\"\n  },\n  {\n    \"id\": \"hash:app/api/auth/recovery/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/auth/recovery/route.ts\"\n  },\n  {\n    \"id\": \"hash:app/api/auth/session/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/auth/session/route.ts\"\n  },\n  {\n    \"id\": \"hash:app/api/checkout/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/checkout/route.ts\"\n  },\n  {\n    \"id\": \"hash:app/api/checkout/vlm-service/readiness/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/checkout/vlm-service/readiness/route.ts\"\n  },\n  {\n    \"id\": \"hash:app/api/checkout/vlm-service/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/checkout/vlm-service/route.ts\"\n  },\n  {\n    \"id\": \"hash:app/api/checkout/vlm-service/verify/route.ts\",\n    \"ok\": false,\n    \"detail\": \"app/api/checkout/vlm-service/verify/route.ts\"\n  }\n]\n"
+    },
+    {
+      "test": "scripts/pass36/test-a102r41-entitlement-revocation-rls-remediation.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 63,
+      "stdoutTail": "schemaVersion\": \"velmere.pass36.a102r41.entitlement-revocation-rls-remediation-test.v1\",\n  \"status\": \"PASS_A102R41_ENTITLEMENT_REVOCATION_RLS_LOCAL_STATIC_NO_STAGING_CREDIT\",\n  \"checks\": 18,\n  \"passed\": 18,\n  \"failed\": 0,\n  \"failures\": [],\n  \"stagedTenantCasesExecuted\": 0,\n  \"truthBoundary\": \"Static SQL remediation and mutation-kill evidence only. Disposable staging must still prove anon denial, owner access and two-tenant cross-account denial before A96 credit.\",\n  \"globalDecision\": \"NO_GO\",\n  \"live\": false,\n  \"saleEnabled\": false,\n  \"productionApproved\": false,\n  \"worldClassProven\": false\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass36/test-a102r41-paid-checkout-containment-and-browser-storage.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 358,
+      "stdoutTail": " \"id\": \"checkout_intent_writes_no_session_storage\",\n      \"pass\": true,\n      \"detail\": []\n    },\n    {\n      \"id\": \"historical_sensitive_storage_is_purged\",\n      \"pass\": true,\n      \"detail\": {\n        \"local\": [],\n        \"session\": []\n      }\n    },\n    {\n      \"id\": \"memory_intent_remains_non_authoritative\",\n      \"pass\": true\n    },\n    {\n      \"id\": \"memory_intent_can_be_cleared\",\n      \"pass\": true\n    },\n    {\n      \"id\": \"browser_storage_set_and_get_are_absent\",\n      \"pass\": true\n    },\n    {\n      \"id\": \"durable_opaque_flow_remains_explicit_blocker\",\n      \"pass\": true\n    }\n  ]\n}\n",
+      "stderrTail": "(node:1232) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a102r44p18-provider-rights-gate.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 97,
+      "stdoutTail": "      \"id\": \"unknown-provider-fail-closed\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"unsupported-purpose-throws\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"matrix-tamper-blocked\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"provider-row-tamper-blocked\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"source-fact-tamper-blocked\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"source-url-tamper-blocked\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"duplicate-provider-blocked\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"fully-rebound-rights-still-need-approval-and-raw-terms\",\n      \"ok\": true\n    }\n  ]\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass36/test-a102r44p2-paid-informational-claim-boundary.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 809,
+      "stdoutTail": "\": null,\n                  \"versionStderrSha256\": null,\n                  \"executionBoundaryId\": null,\n                  \"versionReceiptSha256\": null\n                }\n              }\n            ],\n            \"creditBoundary\": \"Executable admission proves only exact local tool identity and version. It does not prove a contract execution, detector accuracy, rights, customer value, staging or LIVE status.\"\n          },\n          \"truthBoundary\": \"Tool absence, a planned row, a synthetic fixture or an adapter simulation never counts as an official tool execution.\"\n        }\n      }\n    }\n  ]\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass36/test-a102r44p22-paid-entitlement-current-fail-closed.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 209,
+      "stdoutTail": "{\n  \"schemaVersion\": \"velmere.pass36.a102r44p22.paid-entitlement-current-fail-closed-test.v1\",\n  \"status\": \"PASS\",\n  \"checks\": 3,\n  \"passed\": 3,\n  \"failed\": 0,\n  \"rows\": [\n    {\n      \"id\": \"spoofed-browser-headers-fail-closed\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"advanced-fails-closed-before-entitlement\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"basic-remains-free\",\n      \"passed\": true\n    }\n  ]\n}\n",
+      "stderrTail": "(node:1306) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a102r44p22-secure-paid-preview.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 293,
+      "stdoutTail": "   \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-unknown-locale\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-unknown-format\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-report-id\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-target\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-token\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-duplicate-tier\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"route:reject-oversized-url\",\n      \"ok\": true\n    },\n    {\n      \"id\": \"source:public-shell-is-lazy-and-get-only\",\n      \"ok\": true\n    }\n  ]\n}\n",
+      "stderrTail": "(node:1318) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a102r5-paid-entitlement-browser-secret-boundary.ts",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 199,
+      "stdoutTail": "",
+      "stderrTail": "0ab7e4f407a32f0d85bc860a\",\"contextSha256\":\"690c32920f1fa9afc3014ba9c5a628cb55a8f554c6d814901a586d7e6c8423a5\",\"customerEmailSha256\":\"f1c5f9f57c588e48fa138d07885573c9f33c393203138481b6b81a5b58784664\",\"auditQueueSha256\":\"b1645c9bebceb735aaad44869e6554647dc7f9f0d77cdaad61a41afcb7e6d401\"},\"error\":{\"name\":\"UnknownError\",\"code\":\"unclassified\"},\"rawIdentifiersIncluded\":false,\"rawErrorMessageIncluded\":false,\"stackIncluded\":false}\nAssertionError [ERR_ASSERTION]: browser headers without a signed account session must fail closed\n    at check (file:///mnt/data/velmere_p33_work/scripts/pass36/test-a102r5-paid-entitlement-browser-secret-boundary.ts:11:12)\n    at main (file:///mnt/data/velmere_p33_work/scripts/pass36/test-a102r5-paid-entitlement-browser-secret-boundary.ts:100:9) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n"
+    },
+    {
+      "test": "scripts/pass36/test-a102r8-checkout-customer-browser-privacy-boundary.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 135,
+      "stdoutTail": "-pl\",\n        \"velmere-checkout-draft-en\",\n        \"velmere-checkout-draft-de\",\n        \"velmere:audit-case-refs:v1\",\n        \"velmere:pass469:pdf-download-receipts\"\n      ]\n    }\n  ],\n  \"truth\": {\n    \"checkoutPiiPersistedInBrowserStorage\": false,\n    \"auditCaseRefsPersistedInBrowserStorage\": false,\n    \"pdfActivityMetadataPersistedInBrowserStorage\": false,\n    \"legacyBrowserRowsReadOrMigrated\": false,\n    \"durableServerCheckoutDraftProven\": false,\n    \"durableServerAuditBookmarkProven\": false,\n    \"durableServerPdfReceiptProven\": false,\n    \"liveCredit\": false,\n    \"saleCredit\": false\n  }\n}\n",
+      "stderrTail": "(node:1343) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a89-account-auth-tenant-privacy-red-team.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 232,
+      "stdoutTail": "ed\": \"BLOCK\",\n      \"actual\": \"BLOCK\"\n    },\n    {\n      \"id\": \"secret_separation-12\",\n      \"family\": \"secret_separation\",\n      \"expected\": \"BLOCK\",\n      \"actual\": \"BLOCK\"\n    }\n  ],\n  \"truthBoundary\": \"A89 proves the declared local callback, secret-separation, request-bound trusted-header, single-use recovery-grant, strict request/query, consent and public-trust intake contracts. It does not prove real OAuth provider behavior, production edge headers, two-tenant RLS, account-takeover resistance in staging, cross-device revocation, DSAR execution, legal approval, LIVE or sale readiness.\"\n}\n",
+      "stderrTail": "(node:1355) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a96-rls-tenant-isolation.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 481,
+      "stdoutTail": "    \"id\": \"receipt_accepts_exact_19\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"receipt_rejects_18_of_19\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"receipt_rejects_missing_rollback\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"receipt_rejects_duplicate_marker\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"runner_valid_fixture_zero_secret_arguments\",\n      \"passed\": true\n    },\n    {\n      \"id\": \"psql_symlink_is_rejected\",\n      \"passed\": true\n    }\n  ],\n  \"fixtureOnly\": true,\n  \"realRlsCasesExecuted\": 0,\n  \"a96PassCredit\": false,\n  \"liveProven\": false,\n  \"saleEnabled\": false\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass36/test-a97-stripe-payment-boundaries.mjs",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 106,
+      "stdoutTail": "",
+      "stderrTail": "(node:1387) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: server verify route must verify full Stripe receipt before entitlement upsert\n    at ok (file:///mnt/data/velmere_p33_work/scripts/pass36/test-a97-stripe-payment-boundaries.mjs:13:55)\n    at file:///mnt/data/velmere_p33_work/scripts/pass36/test-a97-stripe-payment-boundaries.mjs:182:1 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.11.1\n"
+    },
+    {
+      "test": "scripts/pass36/test-a97-stripe-webhook-ingress.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 241,
+      "stdoutTail": "{\n  \"ok\": true,\n  \"passId\": \"PASS36_A97_STRIPE_WEBHOOK_INGRESS_PROVIDER_SPY\",\n  \"assertions\": 14,\n  \"providerOrEffectCallsAfterBlockedIngress\": 0,\n  \"durableClaimCallsAfterBlockedIngress\": 0\n}\n",
+      "stderrTail": "(node:1399) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a97-vlm-paid-handler-preflight.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 232,
+      "stdoutTail": "{\n  \"ok\": true,\n  \"passId\": \"PASS36_A97_VLM_PAID_HANDLER_RECEIPT_PREFLIGHT\",\n  \"assertions\": 8,\n  \"effectCallsAfterBlockedReceipt\": 0,\n  \"entitlementWritesAfterBlockedReceipt\": 0\n}\n",
+      "stderrTail": "(node:1411) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass36/test-a97r1-payment-operator-assertions.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 147,
+      "stdoutTail": "{\n  \"ok\": true,\n  \"passId\": \"PASS36_A97R1_PAYMENT_OPERATOR_ASSERTION_DUAL_CONTROL\",\n  \"assertions\": 44,\n  \"reconcileValidActions\": 1,\n  \"requeueValidActions\": 1,\n  \"blockedActionExecutions\": 0,\n  \"bodyBound\": true,\n  \"singleUse\": true,\n  \"independentApprovalRequiredForRequeue\": true,\n  \"realOperatorSessions\": 0,\n  \"realStripeRequeues\": 0,\n  \"truthBoundary\": \"Local cryptographic and provider-spy harness only; no real identity-provider reauthentication, durable Supabase execution or Stripe staging credit.\"\n}\n",
+      "stderrTail": "(node:1423) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass21/audit-provider-rights-registry.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 61,
+      "stdoutTail": "roviders\": 22,\n  \"codePresent\": 21,\n  \"externalRightsVerified\": 0,\n  \"commerciallyEnabledProviders\": 0,\n  \"providerBoundCells\": 0,\n  \"licenseVerifiedCells\": 0,\n  \"sellEligibleCells\": 0,\n  \"errors\": [],\n  \"registrySha256\": \"808cebffe79543f8aa6da86a6f8e218eaa49aa8bff3c488856d8bc6e6dee6c05\",\n  \"status\": \"REGISTRY_COMPLETE_EXTERNAL_RIGHTS_ZERO_NO_GO_PAID\",\n  \"truthBoundary\": \"Code presence and API credentials do not grant redistribution or paid-product rights. Every external provider remains blocked for commercial output until a reviewed agreement/terms snapshot and evidence hash are attached.\"\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass22/test-provider-rights-runtime.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 62,
+      "stdoutTail": "locks\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"expired_blocks\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"canonical_state_verified\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"canonical_mode_rejects_unbound_verified_string\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"canonical_mode_accepts_bound_evidence\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"synthetic_mode_backwards_compatible\",\n      \"ok\": true\n    }\n  ],\n  \"truthBoundary\": \"Synthetic compatibility is retained, while canonical mode rejects self-asserted licenseStatus without reviewed provider-rights evidence binding.\"\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass22/test-provider-rights-rls-boundaries.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 413,
+      "stdoutTail": "_fails\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"approval_without_legal_review_fails\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"rejected_record_cannot_grant_rights\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dpa_cannot_grant_commercial_rights\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"redistribution_requires_commercial_right\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"bad_document_hash_fails\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"duplicate_provider_evidence_fails\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"rls_source_contract_passes\",\n      \"ok\": true\n    }\n  ]\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass22/verify-provider-rights-evidence.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 74,
+      "stdoutTail": "\n  \"approvedEvidenceRecords\": 0,\n  \"commerciallyEnabledProviders\": 0,\n  \"externalRightsVerified\": 0,\n  \"errors\": [],\n  \"registrySha256\": \"808cebffe79543f8aa6da86a6f8e218eaa49aa8bff3c488856d8bc6e6dee6c05\",\n  \"manifestSha256\": \"ee23a5b60fc3d665fd19172d6373465c33ac97859f0d23e9d4c0d73ba7ec7148\",\n  \"status\": \"EVIDENCE_PIPELINE_READY_RIGHTS_ZERO_NO_GO_PAID\",\n  \"truthBoundary\": \"Schema-valid evidence proves only the reviewed rights stated in the record. The clean source does not embed raw agreements, and no provider is enabled without external document-hash verification and staging configuration.\"\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass23/test-merchant-legal-intake-boundaries.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 284,
+      "stdoutTail": "\n      \"name\": \"placeholder_is_not_accepted_as_real_identity\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"invalid_evidence_hash_fails_validator\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"tax_identity_required\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"legal_review_approval_required\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"example_address_is_placeholder\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"current_empty_intake_is_fail_closed_not_crash\",\n      \"ok\": true\n    }\n  ],\n  \"truthBoundary\": \"Synthetic completeness tests do not provide or approve the real merchant identity.\"\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass23/verify-merchant-legal-intake.mjs",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 60,
+      "stdoutTail": "ved\",\n    \"fullServiceAddress\",\n    \"identityDocumentHash\",\n    \"legalForm\",\n    \"legalName\",\n    \"legalReviewApproved\",\n    \"legalReviewReceiptHash\",\n    \"phone\",\n    \"privacyPolicyApproved\",\n    \"processorRegisterApproved\",\n    \"registerExtractHash\",\n    \"registrationNumber\",\n    \"retentionScheduleApproved\",\n    \"returnAddress\",\n    \"returnsProcessApproved\",\n    \"shippingRatesApproved\",\n    \"shippingRegionsApproved\",\n    \"supportEmail\",\n    \"taxEvidenceHash\",\n    \"taxHandlingApproved\",\n    \"termsApproved\",\n    \"vatId_or_taxId\"\n  ],\n  \"placeholderFields\": [],\n  \"status\": \"NO_GO_INCOMPLETE\"\n}\n",
+      "stderrTail": ""
+    },
+    {
+      "test": "scripts/pass4826/test-lens-paid-scope.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 101,
+      "stdoutTail": "PASS Lens paid entitlement scope is bound to the immutable server-frozen report\nPASS client asset/symbol headers can assert equality but cannot override canonical identity\n",
+      "stderrTail": "(node:1627) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass4992/atomic-commerce-paid-outbox.test.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 203,
+      "stdoutTail": "idempotent replay\nPASS 3: contradictory provider action and line count fail before storage mutation\nPASS 4: malformed RPC receipts fail closed and cannot authorize webhook completion\nPASS 5: dead-lettered fulfilment requests are not misreported as actionable paid delivery\nPASS 6: canonical bootstrap and forward migration contain byte-identical PASS4992 SQL\nPASS 7: SQL statically proves row serialization, exact binding, service-role isolation, and one transaction body\nPASS 8: checkout has zero inline provider execution and ACKs only after atomic enqueue\nPASS4992 atomic commerce paid/outbox 8/8\n",
+      "stderrTail": "(node:1639) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass6/test-audit-pdf-paid-completeness.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 249,
+      "stdoutTail": "{\n  \"schemaVersion\": \"pass6-audit-pdf-paid-completeness-v1\",\n  \"status\": \"PASS\",\n  \"assertions\": 19,\n  \"proMinimumIndependentUpstreams\": 3,\n  \"advancedMinimumIndependentUpstreams\": 4,\n  \"blockersCovered\": [\n    \"readiness_false\",\n    \"quorum_shortfall\",\n    \"copied_receipt_count\",\n    \"low_confidence\",\n    \"permission_missing\",\n    \"source_abi_missing\",\n    \"provider_family_shortfall\",\n    \"public_source_identity_mismatch\",\n    \"advanced_public_source_unbound\"\n  ]\n}\n",
+      "stderrTail": "(node:1651) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/pass6/test-paid-full-data-slo.ts",
+      "state": "PASS",
+      "returncode": 0,
+      "durationMs": 130,
+      "stdoutTail": "{\n  \"suite\": \"PASS6_PAID_FULL_DATA_SLO\",\n  \"status\": \"PASS\",\n  \"assertions\": 14,\n  \"targetAvailabilityBps\": 9990,\n  \"paidDeliveryCompletenessRequiredBps\": 10000,\n  \"requiredCohorts\": 18,\n  \"minimumRequestsPerCohort\": 10000,\n  \"minimumWindowDays\": 30,\n  \"liveClaimed\": false\n}\n",
+      "stderrTail": "(node:1663) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "test": "scripts/verify-payment-order-readiness-safety.mjs",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 72,
+      "stdoutTail": "",
+      "stderrTail": "node:fs:440\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open '/mnt/data/velmere_p33_work/components/launch/PaymentOrderReadinessPanel.tsx'\n    at Object.readFileSync (node:fs:440:20)\n    at read (file:///mnt/data/velmere_p33_work/scripts/verify-payment-order-readiness-safety.mjs:6:27)\n    at Array.map (<anonymous>)\n    at file:///mnt/data/velmere_p33_work/scripts/verify-payment-order-readiness-safety.mjs:16:78\n    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:671:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: '/mnt/data/velmere_p33_work/components/launch/PaymentOrderReadinessPanel.tsx'\n}\n\nNode.js v24.11.1\n"
+    },
+    {
+      "test": "tests/security/audit-account-message-tenant-isolation.test.ts",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 243,
+      "stdoutTail": "",
+      "stderrTail": "(node:1683) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(positivePayload.messages?.every((message)=>message.accountId === owner.accountId))\n\n    at main (file:///mnt/data/velmere_p33_work/tests/security/audit-account-message-tenant-isolation.test.ts:134:12)\n    at async file:///mnt/data/velmere_p33_work/tests/security/audit-account-message-tenant-isolation.test.ts:203:1 {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.11.1\n"
+    },
+    {
+      "test": "tests/security/stripe-webhook-proxy-route.test.ts",
+      "state": "FAIL",
+      "returncode": 1,
+      "durationMs": 262,
+      "stdoutTail": "",
+      "stderrTail": "ipTypeScriptTypes is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nfile:///mnt/data/velmere_p33_work/scripts/pass11/shims/stripe.mjs:4\n    throw new Error(\"pass11_offline_stripe_sdk_client_not_available\");\n          ^\n\nError: pass11_offline_stripe_sdk_client_not_available\n    at new Stripe (file:///mnt/data/velmere_p33_work/scripts/pass11/shims/stripe.mjs:4:11)\n    at main (file:///mnt/data/velmere_p33_work/tests/security/stripe-webhook-proxy-route.test.ts:81:20)\n    at file:///mnt/data/velmere_p33_work/tests/security/stripe-webhook-proxy-route.test.ts:155:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:671:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.11.1\n"
+    }
+  ]
+}

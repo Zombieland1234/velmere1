@@ -1,0 +1,19 @@
+VELMERE_PASS36_A95R0_STAGING_SUBJECT_REBIND_ENVIRONMENT_ISOLATION_AND_ZERO_MUTATION_PREFLIGHT
+
+- Added current staging-subject authority and exact source/package binding.
+- Added sanitized environment admission and zero-mutation fail-closed preflight.
+- Demoted PASS35 candidateId to historical compatibility only.
+- Added 44-case adversarial matrix and no-promotion truth.
+
+A95-GAP-10 [P1] — A58/current authority self-generated artifacts
+- A58 source inventory now follows the package source boundary and excludes runtime artifacts/caches.
+- A95 verifier children support VELMERE_A95_NO_WRITE=1; clean-unpack sets it globally.
+- This prevents verification from modifying the source identity it is checking.
+
+A95-GAP-11 [P1] — historical cross-surface current-authority hardcode
+- A94R2 value truth now accepts only an exact immediate no-promotion descendant bound by the A95 descendant manifest.
+- Arbitrary current revisions and parent substitutions remain fail-closed.
+
+Final archive receipt boundary
+- The final clean-unpack receipt is generated outside SOURCE_ONLY after deterministic packaging.
+- SOURCE_ONLY does not self-credit its own future archive hash or clean-unpack result.

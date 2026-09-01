@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import crypto from "node:crypto";import fs from "node:fs";import path from "node:path";import {fileURLToPath} from "node:url";
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");const read=(r)=>fs.readFileSync(path.join(root,r));const json=(r)=>JSON.parse(read(r));const sha=(b)=>crypto.createHash("sha256").update(b).digest("hex");
+const m=json("config/pass36/a102r44p17-lazy-route-denominator-migration.json"),parent=json(m.parentManifestPath),manifestBytes=read(m.manifestPath),profileBytes=read(m.profilePath),manifest=JSON.parse(manifestBytes),profile=JSON.parse(profileBytes),pm=new Map(parent.entries.map((x)=>[x.path,x]));
+const checks=[];const c=(id,ok,detail=null)=>checks.push({id,ok:Boolean(ok),detail});
+c("schema",m.schemaVersion==="velmere.pass36.a102r44p17.lazy-route-denominator-migration.v1");
+c("parent-manifest-binding",pm.get(m.manifestPath)?.sha256===m.parentManifest.sha256&&pm.get(m.profilePath)?.sha256===m.parentProfile.sha256);
+c("current-manifest-binding",sha(manifestBytes)===m.currentManifest.sha256&&manifestBytes.length===m.currentManifest.byteLength);
+c("current-profile-binding",sha(profileBytes)===m.currentProfile.sha256&&profileBytes.length===m.currentProfile.byteLength);
+c("routes-retained",m.parentManifest.routes===16&&m.currentManifest.routes===16&&m.retainedRoutes===16&&manifest.routes.length===16);
+c("checks-retained",m.parentManifest.checks===176&&m.currentManifest.checks===176&&m.retainedChecks===176);
+c("zero-add-remove",m.addedRoutes.length===0&&m.removedRoutes.length===0);
+c("one-current-change",m.changedRoutes.length===1&&m.changedRoutes[0]==="app/api/admin/security/audit-messages/operator-actions/route.ts");
+c("hash-rebound",m.currentRow.handlerSha256==="f7d3720c252a26fd8d4eee77b34696e105ce00b1bceeef466c41b28f096cfdbf"&&m.currentRow.handlerBytes===8423);
+c("methods-retained",JSON.stringify(m.parentRow.methods)===JSON.stringify(["GET","POST"])&&JSON.stringify(m.currentRow.methods)===JSON.stringify(["GET","POST"]));
+c("profile-routes-retained",m.parentProfile.routes===16&&m.currentProfile.routes===16&&profile.wrappedRouteSummary.routes===16);
+c("zero-superseded-removal",profile.wrappedRouteSummary.supersededDirectShellsRemoved===0);
+c("no-collapse",m.denominatorCollapse===false&&m.removedTests===0);
+c("no-promotion",m.truthBoundary.includes("no LIVE")&&m.truthBoundary.includes("sale"));
+const failed=checks.filter((x)=>!x.ok);console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p17.lazy-route-denominator-migration-receipt.v1",status:failed.length?"FAIL":"PASS",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,rows:checks},null,2));process.exit(failed.length?1:0);

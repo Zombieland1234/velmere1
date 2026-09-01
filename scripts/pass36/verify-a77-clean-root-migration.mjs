@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import { readJson, REVISION, validateGenesis } from "./a77-clean-root-migration-lib.mjs";
+
+const root = process.cwd();
+const policy = readJson(root, "config/pass36/a77-clean-root-migration-policy.json");
+const genesis = readJson(root, policy.cleanRoot.genesisPath);
+const authority = readJson(root, "config/pass36/current-release-authority.json");
+const mirror = readJson(root, "config/pass35/current-revision.json");
+const program = readJson(root, "config/pass36/a77-world-class-completion-program.json");
+const currentProgram = readJson(root, mirror.worldClassCompletionProgramPath);
+const state = readJson(root, "config/pass36/a77-current-state.json");
+const active = fs.readFileSync(path.join(root, "VELMERE_ACTIVE_PASS.txt"), "utf8").trim();
+const validation = validateGenesis(root, genesis, policy, { verifyCurrentPayload: false });
+const checks = [...validation.checks];
+const add = (id, passed, detail=null) => checks.push({id,passed:Boolean(passed),detail});
+add("authority:revision", authority.planes?.cleanRootMigration?.revisionId === REVISION, authority.authorityRevisionId);
+add("authority:current-descendant", authority.currentSource?.revisionId === mirror.sourceRevisionId, authority.currentSource?.revisionId);
+add("authority:clean-root", authority.planes?.cleanRootMigration?.constructed === true && authority.planes?.cleanRootMigration?.governanceApproved === false && authority.planes?.cleanRootMigration?.legacyVerifiedExact === 0 && authority.planes?.cleanRootMigration?.legacyRequiredExact === 2, authority.planes?.cleanRootMigration);
+add("mirror:revision-descendant", mirror.sourceRevisionId === mirror.currentReleaseAuthorityRevisionId && mirror.currentRootDescendantManifestRevisionId === mirror.sourceRevisionId && mirror.cleanRootMigrationRevisionId === REVISION, mirror.sourceRevisionId);
+add("mirror:truth", mirror.cleanRootConstructed === true && mirror.cleanRootGovernanceApproved === false && mirror.legacyHistoricalArtifactsVerifiedExact === 0 && mirror.legacyHistoricalArtifactsRequiredExact === 2, null);
+add("program:revision", program.revisionId === REVISION && program.programRange?.remainingAfterA77 === 33, {revisionId:program.revisionId,remaining:program.programRange?.remainingAfterA77});
+add("program:a77-status", program.passes?.find((row)=>row.passNumber===77)?.status === "DONE_LOCAL_GOVERNANCE_PENDING", program.passes?.find((row)=>row.passNumber===77));
+add("state:decision", state.decision === "PASS_LOCAL_CLEAN_ROOT_CONSTRUCTION_NO_GOVERNANCE_PROMOTION", state.decision);
+add("state:legacy", state.legacyLineage?.verifiedExact === 0 && state.legacyLineage?.requiredExact === 2 && state.legacyLineage?.a61Passed === false, state.legacyLineage);
+add("state:governance", state.cleanRoot?.constructed === true && state.cleanRoot?.governanceApproved === false, state.cleanRoot);
+add("active:revision-descendant", active === mirror.sourceRevisionId, active);
+add("current-program:authority", currentProgram.revisionId === mirror.sourceRevisionId, currentProgram.revisionId);
+add("claims:closed", Object.values(state.claims ?? {}).every((value)=>value===false), state.claims);
+const failed=checks.filter((row)=>!row.passed);
+const report={schemaVersion:"velmere.pass36.a77.clean-root-migration-verification.v1",revisionId:REVISION,status:failed.length===0?"PASS_LOCAL_CLEAN_ROOT_CONSTRUCTION_NO_GOVERNANCE_PROMOTION":"FAIL",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,failures:failed,genesisDigestSha256:genesis.genesisDigestSha256,payload:genesis.payload,legacyVerifiedExact:0,legacyRequiredExact:2,governanceApproved:false,liveProven:false,saleEnabled:false};
+console.log(JSON.stringify(report,null,2));
+if(failed.length) process.exit(1);

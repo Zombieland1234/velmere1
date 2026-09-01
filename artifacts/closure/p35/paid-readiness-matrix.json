@@ -1,0 +1,315 @@
+{
+  "schemaVersion": "velmere.p35.paid-readiness-matrix.v1",
+  "parentPath": "artifacts/closure/p33/paid-readiness-matrix.json",
+  "parentSha256": "309bf3b65c93d303d77d2de26b52f8df76d3517a8de67c93a9bd14208c42a329",
+  "axisCount": 12,
+  "counts": {
+    "PASS_INTERNAL": 6,
+    "PARTIAL_INTERNAL": 1,
+    "EXTERNAL_OPEN": 3,
+    "BLOCKED_INTERNAL": 2
+  },
+  "internalInfrastructurePassCount": 6,
+  "releasePassCount": 0,
+  "axes": [
+    {
+      "id": "sku_stop_sell_truth",
+      "label": "SKU / stop-sell truth",
+      "state": "PASS_INTERNAL",
+      "evidence": [
+        {
+          "path": "artifacts/closure/p35/current-evidence-availability-matrix.json",
+          "status": "PASS_INTERNAL",
+          "sha256": "8d0a925ec9e7163acf6d83d76ae4d4a0eea4106e8648cc42fabdce47cbcfca4b",
+          "detail": {
+            "profiles": 33,
+            "analysisEligible": 11,
+            "saleEligible": 0
+          }
+        },
+        {
+          "path": "tests/security/a102-evidence-availability-dynamic-tier.test.ts",
+          "status": "PASS_INTERNAL",
+          "sha256": "d4f4e4c3cf751fd2d5159c1d6edb361334108d0eee9a1b4266015d92aee8f9ea",
+          "detail": null
+        }
+      ],
+      "blockers": [],
+      "creditBoundary": "Current-source deterministic eligibility and stop-sell internal credit only; final tier value, rights, staging and sale remain open."
+    },
+    {
+      "id": "server_entitlement_revocation",
+      "label": "Server entitlement / revocation",
+      "state": "PASS_INTERNAL",
+      "evidence": [
+        {
+          "path": "lib/commerce/vlm-entitlement-ledger.ts",
+          "status": "CURRENT_SOURCE",
+          "sha256": "0ec9315d19cb0106a929a8a9e491364444577b43dc751600d9c61e885fb344ed",
+          "detail": null
+        }
+      ],
+      "blockers": [],
+      "creditBoundary": "Internal server-policy and local ledger credit; disposable staging tenant proof remains open."
+    },
+    {
+      "id": "checkout_public_contract_auth",
+      "label": "Checkout / public contract / auth",
+      "state": "PASS_INTERNAL",
+      "evidence": [
+        {
+          "path": "app/api/checkout/vlm-service/readiness/route.ts",
+          "status": "CURRENT_SOURCE",
+          "sha256": "4854633e7a32c1c046088cbaf73cb2bfb972afaf23c5369ea7da2cd7d0e57623",
+          "detail": null
+        },
+        {
+          "path": "app/api/checkout/vlm-service/route.ts",
+          "status": "CURRENT_SOURCE",
+          "sha256": "590cac5a36a9184089df9c364dc1299f12722dacbef80459a0f52fceba2461db",
+          "detail": null
+        },
+        {
+          "path": "tests/security/a102-public-tier-readiness-contract.test.ts",
+          "status": "PASS_INTERNAL",
+          "sha256": "f2270fcbb91892c5f4edd2712ab22d6dd64592e6ada9e0438fc331c4ef04f372",
+          "detail": null
+        }
+      ],
+      "blockers": [],
+      "creditBoundary": "Current-source public eligibility/checkout fail-closed contract only; no production charge or deployed identity credit."
+    },
+    {
+      "id": "stripe_webhook_replay_idempotency",
+      "label": "Stripe webhook / replay / idempotency",
+      "state": "PASS_INTERNAL",
+      "evidence": [
+        {
+          "path": "artifacts/closure/p33/local-stripe/R44P32_LOCAL_STRIPE_SUITE_RECEIPT.json",
+          "status": "PASS_LOCAL_FIXTURE",
+          "sha256": "1caebdf1a7532130fc74762f90d9797aa2fcb6f846a317b4b6df103058458c31",
+          "detail": {
+            "failed": 0,
+            "passed": 12,
+            "required": 12
+          }
+        }
+      ],
+      "blockers": [],
+      "creditBoundary": "Local Stripe fixture only. Stripe TEST/staging/production credit is not granted."
+    },
+    {
+      "id": "refund_cancel_revoke",
+      "label": "Refund / cancel / revoke lifecycle",
+      "state": "PASS_INTERNAL",
+      "evidence": [
+        {
+          "path": "artifacts/closure/p33/local-stripe/R44P32_LOCAL_STRIPE_SUITE_RECEIPT.json",
+          "status": "PASS_LOCAL_FIXTURE",
+          "sha256": "1caebdf1a7532130fc74762f90d9797aa2fcb6f846a317b4b6df103058458c31",
+          "detail": null
+        }
+      ],
+      "blockers": [],
+      "creditBoundary": "Local refund/revoke/reconciliation fixture credit only; no real refund, chargeback or customer-support outcome."
+    },
+    {
+      "id": "customer_delivery_support_projection",
+      "label": "Customer delivery / support projection",
+      "state": "PASS_INTERNAL",
+      "evidence": [
+        {
+          "path": "lib/server/lazy-route-modules/account--customer-artifact.ts",
+          "status": "CURRENT_SOURCE",
+          "sha256": "23d4ddf32d1612afba634d4f2a7b16fdebe964a2622b37fbb0812db2eae9d6a5",
+          "detail": null
+        },
+        {
+          "path": "lib/reporting/exact-customer-pdf-delivery.ts",
+          "status": "CURRENT_SOURCE",
+          "sha256": "c8b364b1c7fa560e3d843bf0f14ee43b5be4d17362594102b30dc6a368803500",
+          "detail": null
+        },
+        {
+          "path": "tests/security/a102-account-artifact-preview-download-parity.test.ts",
+          "status": "PASS_INTERNAL",
+          "sha256": "1192cd2f730b4906c65a8f39121ac9da3ca3b0500733d2a8881b6d9e7e571f35",
+          "detail": null
+        },
+        {
+          "path": "tests/security/a102-exact-customer-pdf-delivery.test.ts",
+          "status": "PASS_INTERNAL",
+          "sha256": "89dcb39d18eed809e35e7c7161fe87bf8d1565131b9138fd6bc42f696443fbf8",
+          "detail": null
+        }
+      ],
+      "blockers": [],
+      "creditBoundary": "Exact stored PDF parity and customer-safe artifact projection internal credit only; full Vault, production retention/restore and real reuse remain open."
+    },
+    {
+      "id": "tenant_privacy",
+      "label": "Tenant / privacy / retention",
+      "state": "PARTIAL_INTERNAL",
+      "evidence": [
+        {
+          "path": "artifacts/closure/p33/paid-test-campaign-current.json",
+          "status": "LOCAL_STATIC_PASS",
+          "sha256": "889658a48c52a5278a5b6e70503d7b59ffc2608f562133653d175328faf5aa9e",
+          "detail": null
+        }
+      ],
+      "blockers": [
+        "disposable staging two-tenant proof not run",
+        "real deletion/export/retention workflow not proven"
+      ],
+      "creditBoundary": "Local/static red-team credit only; no deployed tenant, DSAR or processor proof."
+    },
+    {
+      "id": "provider_data_rights",
+      "label": "Provider / data rights",
+      "state": "EXTERNAL_OPEN",
+      "evidence": [
+        {
+          "path": "config/pass21/provider-commercial-rights-registry.json",
+          "status": "REGISTRY_PRESENT",
+          "sha256": "808cebffe79543f8aa6da86a6f8e218eaa49aa8bff3c488856d8bc6e6dee6c05",
+          "detail": {
+            "providers": 22,
+            "externalRightsVerified": 0,
+            "commerciallyEnabledProviders": 0,
+            "sellEligibleCells": 0
+          }
+        }
+      ],
+      "blockers": [
+        "0 external commercial-rights decisions",
+        "0 commercially enabled external providers",
+        "0 sell-eligible provider cells"
+      ],
+      "creditBoundary": "Code/API availability is not commercial display, retention, redistribution, PDF, AI/RAG or paid-tier permission."
+    },
+    {
+      "id": "merchant_legal_identity_terms",
+      "label": "Merchant / legal identity / customer terms",
+      "state": "EXTERNAL_OPEN",
+      "evidence": [
+        {
+          "path": "config/pass21/merchant-legal-profile.json",
+          "status": "INCOMPLETE",
+          "sha256": "199e442022b508fd4c7a59faee398d8582cf97d76283885f55a82ed848d7f76f",
+          "detail": {
+            "registryBlockers": 26,
+            "missing": [
+              "commercialRegister",
+              "competentSupervisoryAuthority",
+              "consumerDisputeResolutionStatement",
+              "countryCode",
+              "fulfilmentApproved",
+              "fullServiceAddress",
+              "identityDocumentHash",
+              "legalForm",
+              "legalName",
+              "legalReviewApproved",
+              "legalReviewReceiptHash",
+              "phone",
+              "privacyPolicyApproved",
+              "processorRegisterApproved",
+              "registerExtractHash",
+              "registrationNumber",
+              "retentionScheduleApproved",
+              "returnAddress",
+              "returnsProcessApproved",
+              "shippingRatesApproved",
+              "shippingRegionsApproved",
+              "supportEmail",
+              "taxEvidenceHash",
+              "taxHandlingApproved",
+              "termsApproved",
+              "vatId_or_taxId"
+            ]
+          }
+        }
+      ],
+      "blockers": [
+        "merchant/legal intake has 26 blockers",
+        "professional product-role/data-rights decisions remain open"
+      ],
+      "creditBoundary": "Internal memos prepare the boundary but do not grant professional legal or merchant-registration credit."
+    },
+    {
+      "id": "final_tier_value_holdout",
+      "label": "Final tier-value holdout",
+      "state": "BLOCKED_INTERNAL",
+      "evidence": [
+        {
+          "path": "artifacts/closure/p32/profile-execution-manifest.json",
+          "status": "FIXTURE_ONLY",
+          "sha256": "3786356865f567e21fd2fa477e71103ec58c86290f007f60b88d0b4a17be6824",
+          "detail": {
+            "customerValueProfilesClosed": 0,
+            "finalHoldoutsExecuted": 0
+          }
+        }
+      ],
+      "blockers": [
+        "customer-value profiles closed 0/33",
+        "final holdouts executed 0/33"
+      ],
+      "creditBoundary": "Internal fixture execution does not prove paid delta, WTP, factuality or refund risk."
+    },
+    {
+      "id": "clean_build_staging_operations",
+      "label": "Clean build / staging / operations",
+      "state": "BLOCKED_INTERNAL",
+      "evidence": [
+        {
+          "path": "package-lock.json",
+          "status": "CURRENT_INPUT",
+          "sha256": "e228adec08801e454ef5559a20f302110b4896a307c364195716218a376c48bb",
+          "detail": null
+        },
+        {
+          "path": "artifacts/closure/p33/build/production-build.json",
+          "status": "NOT_RUN",
+          "sha256": "bb9fcfe0fc1eb2c59e79dff3713ab633983b3642ff5b83408f8a064a25b65c10",
+          "detail": null
+        },
+        {
+          "path": "artifacts/closure/p33/staging/deployment-identity.json",
+          "status": "NOT_RUN",
+          "sha256": "c4efa237c262b88f32a9b20eb024f6bef0cba009c24f48b4d8416b70cc3fa608",
+          "detail": null
+        }
+      ],
+      "blockers": [
+        "clean current lockfile install/typecheck/build not closed",
+        "current staging deployment identity not closed",
+        "restore/rollback/observability final receipts open"
+      ],
+      "creditBoundary": "Diagnostic TypeScript and local source tests are not clean build/staging/operations credit."
+    },
+    {
+      "id": "real_customer_wtp_refund",
+      "label": "Real customer value / WTP / refund evidence",
+      "state": "EXTERNAL_OPEN",
+      "evidence": [],
+      "blockers": [
+        "0 real participants",
+        "0 real WTP results",
+        "0 real refund-expectation results"
+      ],
+      "creditBoundary": "AI personas and internal reviewers receive zero real-customer or market-demand credit."
+    }
+  ],
+  "dynamicEvidenceAvailabilityInternalPass": true,
+  "exactCustomerArtifactParityInternalPass": true,
+  "goPaidAllowed": false,
+  "saleEnabled": false,
+  "productionApproved": false,
+  "planningEstimatePercentRange": [
+    24,
+    34
+  ],
+  "truthBoundary": "P35 strengthens existing internal paid-readiness axes with deterministic eligibility and exact stored-artifact parity. Axis count and release PASS remain unchanged: provider rights, merchant/legal, final tier value, clean build/staging and real customer evidence are still open.",
+  "integritySha256": "c2539a253fdd93dfbcdb727bcc880551a8d2769f8a6d5ed90d125dd7cc956715"
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a8-economic-adversarial-receipt.v1",
+  "familyId": "economic_adversarial_scenario_engine",
+  "engineId": "PASS35_A8_ECONOMIC_SCENARIO_ENGINE_V1",
+  "caseRef": "AUD-PASS35-A8-A10-0001",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "caseFileSha256": "sha256:b6ff31ce533dc61c4c959322ecf7fa8eb7037b9d5adfd927156f3a03a88a8cfa",
+  "target": {
+    "chainId": "1",
+    "contractAddress": "0x1111111111111111111111111111111111111111",
+    "blockNumber": "19400000"
+  },
+  "upstreamBindings": {
+    "sourceToBytecodeReceiptSha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "chainProviderReceiptSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "marketDataReceiptSha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "economicMethodologySha256": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "forkReplayReceiptFileSha256": "sha256:1b2568d0a2bb01a6f621ec50a7245f9da1962eefb97b987c42e5d1e862e3746b",
+    "forkReplayEmbeddedReceiptSha256": "sha256:051a7a4c19d38c41bc4dfa60d599596c3ecf1e3bd3a0ed38fac124766acc7d88",
+    "providerCommercialRightsEvidenceSha256": null
+  },
+  "execution": {
+    "status": "VERIFIED",
+    "assuranceClass": "LOCAL_DETERMINISTIC_SCENARIO_MODEL",
+    "realCaseExecution": false,
+    "paidGateEligible": false,
+    "fullAuditClaimAllowed": false,
+    "promotionAllowed": false
+  },
+  "scenarioCount": 5,
+  "materialScenarioCount": 5,
+  "highestSeverity": "CRITICAL",
+  "deterministicEconomicRiskRanking": 100,
+  "probabilityClaimAllowed": false,
+  "scenarios": [
+    {
+      "scenarioId": "A10_ORACLE_MANIPULATION",
+      "type": "ORACLE_MANIPULATION",
+      "material": true,
+      "severity": "CRITICAL",
+      "metrics": {
+        "deviationBps": 2500,
+        "netProfitUsdE6": "200000000000",
+        "attackCostUsdE6": "50000000000",
+        "thresholdBps": 500
+      }
+    },
+    {
+      "scenarioId": "A10_MEV_SANDWICH",
+      "type": "MEV_SANDWICH",
+      "material": true,
+      "severity": "MEDIUM",
+      "metrics": {
+        "lossBps": 250,
+        "estimatedLossUsdE6": "2500000000",
+        "poolLiquidityUsdE6": "3000000000000",
+        "thresholdBps": 100
+      }
+    },
+    {
+      "scenarioId": "A10_LIQUIDITY_DRAIN",
+      "type": "LIQUIDITY_DRAIN",
+      "material": true,
+      "severity": "CRITICAL",
+      "metrics": {
+        "drainBps": 7000,
+        "withdrawalDelaySec": "0",
+        "minimumDelaySec": "86400",
+        "thresholdBps": 1500
+      }
+    },
+    {
+      "scenarioId": "A10_GOVERNANCE_TAKEOVER",
+      "type": "GOVERNANCE_TAKEOVER",
+      "material": true,
+      "severity": "CRITICAL",
+      "metrics": {
+        "attackerVotingPowerBps": 4200,
+        "quorumBps": 4000,
+        "timelockSec": "0",
+        "emergencyPauseAvailable": false
+      }
+    },
+    {
+      "scenarioId": "A10_PRIVILEGED_KEY",
+      "type": "PRIVILEGED_KEY_COMPROMISE",
+      "material": true,
+      "severity": "CRITICAL",
+      "metrics": {
+        "signerCount": "3",
+        "threshold": "1",
+        "minimumThreshold": "2",
+        "timelockSec": "0",
+        "emergencyPauseAvailable": false
+      }
+    }
+  ],
+  "blockers": [],
+  "limitations": [
+    "The engine performs deterministic scenario arithmetic on supplied inputs; it is not a calibrated probability model or exploit proof.",
+    "The local fixture is bound to an A09 fixture receipt and does not use a real provider, live venue state, official forked EVM or customer case.",
+    "A10 paid-gate credit requires rights-approved real inputs, replay evidence, benchmark quality and qualified human adjudication."
+  ],
+  "truthBoundary": "A8 may prove the local A10 scenario contract, quantitative calculations, upstream receipt binding and mutation detection only. It cannot claim real economic exploitability, customer value, LIVE evidence or paid audit readiness.",
+  "receiptSha256": "sha256:0e103ce1717a5cfadba4c7528fd9fcacc1af5cda16c30012c898463971823a20"
+}

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "velmere.r5.customer-owned-market-evidence-boundary.v1",
+  "generatedAt": "2026-08-23T02:16:03.349Z",
+  "status": "PASS_BOUNDED",
+  "files": {
+    "authority": {
+      "path": "lib/market-integrity/customer-owned-market-evidence-authority.ts",
+      "sha256": "dfbe9c09ac3962c8b77daa7381b7d3ecddbce6fe63e68e7890419ac7750e3754"
+    },
+    "validation": {
+      "path": "lib/market-integrity/market-impact-input-validation.ts",
+      "sha256": "e487c5785cf1b8d8316aee6f16975f142ec09eb9e2a952e26e311fd129cf2fd5"
+    },
+    "engine": {
+      "path": "lib/market-integrity/market-impact-engine.ts",
+      "sha256": "149e9f11a281aa168335335bdbc354a3298d9b15b7ab82f5e6eda3b4194a0d0e"
+    },
+    "truth": {
+      "path": "lib/market-integrity/market-impact-customer-truth.ts",
+      "sha256": "af41b082ccbca21d674d7c695ad401906dd65b235748d18586e37e07e1bc4c48"
+    },
+    "attestationRoute": {
+      "path": "lib/server/market-integrity-route-modules/customer-owned-market-evidence.ts",
+      "sha256": "5c24e0b7eabdbe56ee77d3b2bd677291ad016fcff0fe1d77db70da15a16022eb"
+    },
+    "analysisRoute": {
+      "path": "lib/server/market-integrity-route-modules/market-intelligence.ts",
+      "sha256": "37ec62d32992f23694120bed0beadf490151b923049f89a6a874b2c2c913b44b"
+    },
+    "routeRegistry": {
+      "path": "lib/server/route-registries/market-integrity.ts",
+      "sha256": "5c65eed7fae2a8473696e6366cfb6676339aa058a3ba1c459e1d910b5d4aa2ab"
+    },
+    "regression": {
+      "path": "scripts/current-execution/test-customer-owned-market-impact-attested-route.mts",
+      "sha256": "1eaa1688513832da600ddf77aeb7e47df996c361142225bcb45b8f876cdb00e0"
+    },
+    "providerRegression": {
+      "path": "scripts/current-execution/test-market-impact-no-usable-order-book.mts",
+      "sha256": "e031ab9da9af68804c71509b5847c2b648b824e4c2574a9c88c5ab4274ea0f91"
+    }
+  },
+  "checks": [
+    {
+      "id": "hmac_sha256_receipt",
+      "passed": true
+    },
+    {
+      "id": "receipt_account_asset_snapshot_bound",
+      "passed": true
+    },
+    {
+      "id": "receipt_short_lived",
+      "passed": true
+    },
+    {
+      "id": "public_and_redistribution_denied",
+      "passed": true
+    },
+    {
+      "id": "independent_review_not_claimed",
+      "passed": true
+    },
+    {
+      "id": "live_not_claimed",
+      "passed": true
+    },
+    {
+      "id": "attestation_requires_real_account",
+      "passed": true
+    },
+    {
+      "id": "attestation_forces_staging",
+      "passed": true
+    },
+    {
+      "id": "analysis_verifies_authority",
+      "passed": true
+    },
+    {
+      "id": "customer_mode_zero_provider_fetch_path",
+      "passed": true
+    },
+    {
+      "id": "customer_mode_risk_withheld",
+      "passed": true
+    },
+    {
+      "id": "provider_modes_still_preflighted",
+      "passed": true
+    },
+    {
+      "id": "public_projection_not_full_receipt",
+      "passed": true
+    },
+    {
+      "id": "route_registered",
+      "passed": true
+    },
+    {
+      "id": "regression_covers_tamper_and_replay",
+      "passed": true
+    },
+    {
+      "id": "regression_asserts_zero_network",
+      "passed": true
+    },
+    {
+      "id": "regression_asserts_no_final",
+      "passed": true
+    },
+    {
+      "id": "provider_fail_closed_regression_retained",
+      "passed": true
+    },
+    {
+      "id": "user_declared_families_not_independent_quorum",
+      "passed": true
+    },
+    {
+      "id": "storage_not_false_stale",
+      "passed": true
+    },
+    {
+      "id": "additional_blockers_survive_unavailable",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "providerNetworkCredit": false,
+  "liveMarketDataCredit": false,
+  "independentRightsReviewCredit": false,
+  "durableReceiptStorageCredit": false,
+  "customerFinalCredit": false,
+  "truthBoundary": "This proves the current-source separation and adversarial local behavior of a short-lived account/asset/snapshot-bound customer-owned evidence receipt. It does not prove staging deployment, durable receipt/readback/replay storage, independent legal rights, independent market-source quorum, live data, calibrated impact, exact Windows or Customer FINAL."
+}

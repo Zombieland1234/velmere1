@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "velmere.p87.p86-compatibility-and-supersession.v1",
+  "generatedAt": "2026-08-20T12:10:00.000Z",
+  "status": "PASS",
+  "frozenP86Files": [
+    "lib/reporting/account-customer-artifact-snapshot.ts",
+    "lib/reporting/customer-artifact-pdf-availability.ts",
+    "lib/server/lazy-route-modules/account--customer-artifact.ts",
+    "lib/db/schema.sql",
+    "supabase/migrations/20260820000004_p86_customer_artifact_exact_pdf_new_write_gate.sql",
+    "tests/security/a102-p36-exact-customer-pdf-integration.test.ts",
+    "tests/security/a102-account-artifact-preview-download-parity.test.ts"
+  ],
+  "supersededHistoricalAssertion": {
+    "harness": "scripts/p86/test-p86-exact-pdf-fail-closed-static.py",
+    "result": "EXPECTED_NONZERO_ADJUDICATED_NOT_COUNTED_AS_CURRENT_PASS",
+    "reason": "P86 required the direct report route to contain the exact-PDF marker/store call. P87 intentionally moves paid publication into a dedicated render-once/store-first helper and issues authority only after persistence.",
+    "replacementProof": "P87 static/runtime and this compatibility receipt"
+  },
+  "checks": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p87_p86_frozen_lib_reporting_account-customer-artifact-snapshot_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "e8c1a0f89cb1b0a0d2e72828a460a4194aaa068f61bacdfb660e89e90e9323de",
+          "currentSha256": "e8c1a0f89cb1b0a0d2e72828a460a4194aaa068f61bacdfb660e89e90e9323de"
+        }
+      },
+      {
+        "id": "p87_p86_frozen_lib_reporting_customer-artifact-pdf-availability_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "9cf29216c647ce612b09b4e7b61f900fbc7f2ed8db1f145e1473500cd16da9ee",
+          "currentSha256": "9cf29216c647ce612b09b4e7b61f900fbc7f2ed8db1f145e1473500cd16da9ee"
+        }
+      },
+      {
+        "id": "p87_p86_frozen_lib_server_lazy-route-modules_account--customer-artifact_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "f578b7e27589d0045f0278158c0b21db92cee0c42764915a502f701833632914",
+          "currentSha256": "f578b7e27589d0045f0278158c0b21db92cee0c42764915a502f701833632914"
+        }
+      },
+      {
+        "id": "p87_p86_frozen_lib_db_schema_sql",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "f00cb265f1d617549cf292e55a7a08de11921e658a14cb08b6db92523533d00a",
+          "currentSha256": "f00cb265f1d617549cf292e55a7a08de11921e658a14cb08b6db92523533d00a"
+        }
+      },
+      {
+        "id": "p87_p86_frozen_supabase_migrations_20260820000004_p86_customer_artifact_exact_pdf_new_write_gate_sql",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "1a1d32e23a029fde47b93f1ac383490baf5e440c6632c546dcdecdbc6bc4a861",
+          "currentSha256": "1a1d32e23a029fde47b93f1ac383490baf5e440c6632c546dcdecdbc6bc4a861"
+        }
+      },
+      {
+        "id": "p87_p86_frozen_tests_security_a102-p36-exact-customer-pdf-integration_test_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "1ee3b707bd0c25b80c610cb51acae0d2bd92b8fc7713f3efa4469d008178664b",
+          "currentSha256": "1ee3b707bd0c25b80c610cb51acae0d2bd92b8fc7713f3efa4469d008178664b"
+        }
+      },
+      {
+        "id": "p87_p86_frozen_tests_security_a102-account-artifact-preview-download-parity_test_ts",
+        "status": "PASS",
+        "detail": {
+          "parentSha256": "8549a0525962cbae30034e6bd6993d56674eeedc53c253e836d0e834dfdb6b5c",
+          "currentSha256": "8549a0525962cbae30034e6bd6993d56674eeedc53c253e836d0e834dfdb6b5c"
+        }
+      },
+      {
+        "id": "p87_replacement_report_calls_exact_paid_helper",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_report_no_direct_store",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_report_basic_legacy_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_helper_store_precedes_token",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_helper_stores_render_once_bytes",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_paid_download_uses_exact_blob",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_paid_download_no_rerender",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_replacement_legacy_paid_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_p86_static_historical_harness_executed",
+        "status": "PASS",
+        "detail": 1
+      },
+      {
+        "id": "p87_p86_static_failure_exactly_adjudicated",
+        "status": "PASS",
+        "detail": "\n--- STDERR ---\nTraceback (most recent call last):\n  File \"/mnt/data/velmere_p87_work/current/scripts/p86/test-p86-exact-pdf-fail-closed-static.py\", line 124, in <module>\n    check(\"p86_market_writer_marks_exact_pdf\", 'pdfStorage: \"exact_immutable_blob\"' in texts[\"marketWriter\"])\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/data/velmere_p87_work/current/scripts/p86/test-p86-exact-pdf-fail-closed-static.py\", line 45, in check\n    raise AssertionError(f\"{identifier}: {detail!r}\")\nAssertionError: p86_market_writer_marks_exact_pdf: None\n"
+      },
+      {
+        "id": "p87_p86_static_failure_not_unrelated",
+        "status": "PASS"
+      },
+      {
+        "id": "p87_p86_runtime_current_bytes_exit_zero",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "id": "p87_p86_runtime_current_bytes_61_of_61",
+        "status": "PASS",
+        "detail": {
+          "total": 61,
+          "passed": 61,
+          "failed": 0,
+          "sourceReceipt": "receipts/p86/P86_EXACT_PDF_ROUTE_INTEGRATION.json",
+          "sourceReceiptSha256": "d095c3bdac2d004300fe174f2a24be8f2463ce20f8e9a442cf859bbc84df9157"
+        }
+      },
+      {
+        "id": "p87_p86_parent_preserved_and_p87_current_promoted",
+        "status": "PASS",
+        "detail": {
+          "parent": "P86R1",
+          "current": "P87R1"
+        }
+      }
+    ]
+  },
+  "truthBoundary": "P86 exact account-artifact fail-closed behavior remains physically green. The frozen P86 static writer-location assertion is explicitly superseded, not hidden or rewritten. No deployed, database, Customer FINAL, rights, sale or exact-Windows credit is granted."
+}

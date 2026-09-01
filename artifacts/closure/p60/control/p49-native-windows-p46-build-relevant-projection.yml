@@ -1,0 +1,163 @@
+name: P60 Native Windows Exact P46 Build-Relevant Projection Reconciled
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - velmere-p47-p46-build-projection-windows-20260815
+    paths:
+      - "p49-build-projection/**"
+      - "p60-runtime/**"
+      - ".gitattributes"
+      - ".github/workflows/p49-native-windows-p46-build-relevant-projection.yml"
+
+concurrency:
+  group: p60-native-windows-p46-build-relevant-projection-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  native-windows-exact-p46-build-relevant-projection:
+    runs-on: windows-2025
+    timeout-minutes: 150
+    steps:
+      - name: Checkout isolated projection branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Enforce and verify byte-exact P49 transport working tree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config core.autocrlf false
+          git config core.eol lf
+          git checkout --force HEAD -- p49-build-projection p60-runtime
+
+          $checks = @(
+            @{ Path = 'p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json'; Sha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f' },
+            @{ Path = 'p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json'; Sha256 = '2a8a45acf4ab96827f636386edd06b1800c696b937d75eb81434a280c0a26b3b' },
+            @{ Path = 'p49-build-projection/reconstruct-p49-direct-projection.py'; Sha256 = '793e8610630d5efbfdb0d472d103338590ba34a17950a1700f0f41e97c08bef8' },
+            @{ Path = 'p49-build-projection/run-p47-product-windows-projection.mjs'; Sha256 = '687b14858ec05972b97640e3943de1c779f3b7bcfbe819d9367ee9a9e2b3abe4' },
+            @{ Path = 'p60-runtime/build-p60-reconciled-runner.py'; Sha256 = 'b1ebefec74d5c1d50895c01c9092d8e49fde46314eba1f3cdd41e4f570d9e433' }
+          )
+          foreach ($check in $checks) {
+            if (-not (Test-Path -LiteralPath $check.Path -PathType Leaf)) {
+              throw "Required P60 file missing: $($check.Path)"
+            }
+            $actual = (Get-FileHash -LiteralPath $check.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $check.Sha256) {
+              throw "P60 working-tree byte mismatch for $($check.Path): $actual != $($check.Sha256)"
+            }
+          }
+          $attribute = (git check-attr text -- p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "git check-attr failed with exit code ${LASTEXITCODE}" }
+          if ($attribute -notmatch 'text: unset$') { throw "P49 byte-preservation attribute is not active: $attribute" }
+          Write-Host "P60 byte identity preflight: PASS"
+          Write-Host "Attribute: $attribute"
+
+      - name: Set up exact Node 24.18.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          check-latest: false
+
+      - name: Pin exact npm 11.16.0 and locate CLI
+        id: toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false
+          $nodeVersion = (node --version).Trim()
+          $npmVersion = (npm --version).Trim()
+          if ($nodeVersion -ne 'v24.18.0') { throw "Exact Node mismatch: $nodeVersion" }
+          if ($npmVersion -ne '11.16.0') { throw "Exact npm mismatch: $npmVersion" }
+          $npmRoot = (npm root --global).Trim()
+          $npmCli = (Resolve-Path -LiteralPath (Join-Path $npmRoot 'npm/bin/npm-cli.js')).Path
+          if (-not (Test-Path -LiteralPath $npmCli -PathType Leaf)) { throw "npm CLI missing: $npmCli" }
+          "npm_cli=$npmCli" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          node --version
+          npm --version
+          python --version
+
+      - name: Reconstruct self-contained exact 1597-file P46 projection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force p49-out | Out-Null
+          python p49-build-projection/reconstruct-p49-direct-projection.py `
+            --transport-manifest p49-build-projection/P49_DIRECT_PROJECTION_TRANSPORT_MANIFEST.json `
+            --expected-transport-manifest-sha256 b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f `
+            --projection-manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --runner p49-build-projection/run-p47-product-windows-projection.mjs `
+            --parts-root p49-build-projection/parts `
+            --work-root p49-work `
+            --output-root p49-out
+          if ($LASTEXITCODE -ne 0) { throw "Projection reconstruction failed: ${LASTEXITCODE}" }
+
+      - name: Generate and parse-check exact P60 reconciled runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python p60-runtime/build-p60-reconciled-runner.py `
+            --input p49-build-projection/run-p47-product-windows-projection.mjs `
+            --output p49-work/run-p60-reconciled-windows-projection.mjs `
+            --receipt p49-out/P60_RECONCILED_RUNNER_BUILD_RECEIPT.json
+          if ($LASTEXITCODE -ne 0) { throw "P60 runner generation failed: ${LASTEXITCODE}" }
+          node --check p49-work/run-p60-reconciled-windows-projection.mjs
+          if ($LASTEXITCODE -ne 0) { throw "P60 generated runner parse check failed: ${LASTEXITCODE}" }
+          $actual = (Get-FileHash -LiteralPath p49-work/run-p60-reconciled-windows-projection.mjs -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne '805d80391fd2b4def259e896e1aadcd3b4bbe130c6374a5bc28a00f760abb6d2') {
+            throw "P60 generated runner SHA mismatch: $actual"
+          }
+
+      - name: Execute dependency, SWC, semantic, lint and dual-build campaign
+        shell: pwsh
+        env:
+          P47_NPM_CLI_PATH: ${{ steps.toolchain.outputs.npm_cli }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node p49-work/run-p60-reconciled-windows-projection.mjs `
+            --source-root p49-work/source `
+            --manifest p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json `
+            --output-dir p49-out
+          if ($LASTEXITCODE -ne 0) { throw "Native Windows projection campaign failed: ${LASTEXITCODE}" }
+
+      - name: Capture workflow boundary receipt
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force p49-out | Out-Null
+          $boundary = [ordered]@{
+            schemaVersion = 'velmere.p60.github-workflow-boundary.v1'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            workflow = '${{ github.workflow }}'
+            ref = '${{ github.ref }}'
+            sha = '${{ github.sha }}'
+            runnerOs = '${{ runner.os }}'
+            runnerArch = '${{ runner.arch }}'
+            imageOs = $env:ImageOS
+            node = (node --version 2>$null)
+            npm = (npm --version 2>$null)
+            timestampUtc = [DateTime]::UtcNow.ToString('o')
+            exactP49TransportManifestSha256 = 'b0be014f6191437023cb4e598972043025d02cf658b05b29566e4c7920a1ad8f'
+            exactP60GeneratedRunnerSha256 = '805d80391fd2b4def259e896e1aadcd3b4bbe130c6374a5bc28a00f760abb6d2'
+            checkoutBytePolicy = 'p49-build-projection/** -text'
+            controlledGeneratedFilePolicy = 'next-env.d.ts exact deterministic mutation adjudication plus exact P46 source-byte restoration'
+            truthBoundary = 'This workflow may credit only the exact 1597-file P46 build-relevant projection. It does not prove full 6666-file Windows source closure or any Browser/PDF/customer/value/rights/sale gate.'
+          }
+          $boundary | ConvertTo-Json -Depth 6 | Set-Content p49-out/P49_GITHUB_WORKFLOW_BOUNDARY.json -Encoding utf8
+
+      - name: Upload P60 native Windows evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p60-native-windows-exact-p46-build-relevant-projection
+          path: p49-out
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

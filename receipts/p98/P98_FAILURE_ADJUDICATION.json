@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "velmere.p98.failure-adjudication.v1",
+  "generatedAt": "2026-08-21T12:30:00.000Z",
+  "status": "PASS_ALL_FAILURES_PRESERVED_AND_ADJUDICATED",
+  "summary": {
+    "total": 8,
+    "creditedAsPass": 0,
+    "fixedProductDefects": 1,
+    "fixedHarnessOrConfigDefects": 4,
+    "environmentWithheld": 3
+  },
+  "rows": [
+    {
+      "id": "parent_advanced_fallback_defect",
+      "state": "PRODUCT_DEFECT_FIXED",
+      "path": "artifacts/p98/failures/00_P98_PARENT_ADVANCED_FALLBACK_DEFECT.log",
+      "bytes": 324,
+      "sha256": "sha256:de069e9c421a7dce18da5a178726e7e11d295d81c135c36bd8a327ddac824988",
+      "adjudication": "P97 modeled Advanced as Pro and exposed fallback/manual-review semantics. P98 removed the implicit mapping and gates all paid delivery on exact requested-tier readiness.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "runtime_false_positive_artifact_word",
+      "state": "TEST_FALSE_POSITIVE_FIXED",
+      "path": "artifacts/p98/failures/01_P98_RUNTIME_FALSE_POSITIVE_ARTIFACT_WORD.log",
+      "bytes": 1046,
+      "sha256": "sha256:1439fa75b1f4d5de510603607cde80750c244fa94d474e96702d3359efe2d626",
+      "adjudication": "The first negative test matched the customer-safe sentence saying no artifact may be created. The test now checks forbidden fields rather than safe warning text.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "runtime_file_path_directory_defect",
+      "state": "TEST_HARNESS_DEFECT_FIXED",
+      "path": "artifacts/p98/failures/02_P98_RUNTIME_HARNESS_FILE_PATH_DIRECTORY_DEFECT.log",
+      "bytes": 635,
+      "sha256": "sha256:905c4ef034638e9e9ed38e87c469aa3de8c5b1ab8a600ca794de8cbf5601a24f",
+      "adjudication": "The first writer created a directory at the receipt filename. The harness now creates only the parent directory and writes the file atomically.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "broad_typescript_dependency_failure",
+      "state": "ENVIRONMENT_WITHHELD_ZERO_CREDIT",
+      "path": "artifacts/p98/failures/03_P98_TARGETED_TYPESCRIPT_BROAD_DEPENDENCY_ENVIRONMENT_FAIL.log",
+      "bytes": 144,
+      "sha256": "sha256:5d20a82013b43feab0feaafc0d6175f79d5c2fb0989c7968619caf6f290543ae",
+      "adjudication": "The broad targeted attempt traversed into a module requiring unavailable Node type declarations. P98 does not claim whole-project TypeScript.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "first_ambient_config_defect",
+      "state": "TEST_CONFIG_DEFECT_FIXED",
+      "path": "artifacts/p98/failures/04_P98_TARGETED_TYPESCRIPT_FIRST_AMBIENT_CONFIG_DEFECT.log",
+      "bytes": 2221,
+      "sha256": "sha256:e5a068786e2c6175772be5cc0d2a570e4e430082411edbc60700fd2ba99f50a4",
+      "adjudication": "The first noResolve ambient set did not cover alias imports and had incorrect stubs. The final bounded config compiles four exact core modules.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "real_markets_route_import",
+      "state": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "path": "artifacts/p98/failures/REAL_MARKETS_ROUTE_IMPORT_WITHHELD.log",
+      "bytes": 112,
+      "sha256": "sha256:4d67799fa6d886a4695070ba37171084654489fd504f8df6343511a459a9c168",
+      "adjudication": "The route import is blocked by absent zod in the dependency graph. Exact source transpile passes; no route execution credit is granted.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "market_report_route_import",
+      "state": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "path": "artifacts/p98/failures/MARKET_REPORT_ROUTE_IMPORT_WITHHELD.log",
+      "bytes": 112,
+      "sha256": "sha256:4d67799fa6d886a4695070ba37171084654489fd504f8df6343511a459a9c168",
+      "adjudication": "The shared report route import is blocked by absent zod. Exact source transpile passes; no route execution credit is granted.",
+      "creditedAsPass": false
+    },
+    {
+      "id": "package_identity_order_defect",
+      "state": "PACKAGING_ORDER_DEFECT_FIXED",
+      "path": "artifacts/p98/failures/05_P98_PACKAGE_IDENTITY_FROZEN_BEFORE_PACKAGER_ADDED.log",
+      "bytes": 543,
+      "sha256": "sha256:b9e89b7e9e77ec396c538cf1c2ecbd87c78c2932595041d473fe07c97e743368",
+      "adjudication": "The first identity was frozen before the P98 packager script existed, so the package correctly rejected the file-count mismatch. The complete tree is re-frozen before the credited 2/2 build.",
+      "creditedAsPass": false
+    }
+  ],
+  "truthBoundary": "Every first failure or environment block listed here remains preserved with zero PASS credit. Later green runs are credited only after root-cause adjudication."
+}

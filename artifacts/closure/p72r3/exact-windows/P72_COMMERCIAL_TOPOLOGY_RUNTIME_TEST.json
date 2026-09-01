@@ -1,0 +1,357 @@
+{
+  "schemaVersion": "velmere.p72.commercial-topology-runtime.v1",
+  "status": "PASS",
+  "checkCount": 15,
+  "checks": [
+    {
+      "id": "matrix:exact-20-rows",
+      "passed": true,
+      "detail": 20
+    },
+    {
+      "id": "matrix:exact-10-families",
+      "passed": true,
+      "detail": [
+        "angel",
+        "audit",
+        "browser",
+        "market-impact",
+        "real-markets",
+        "risk",
+        "shield",
+        "shield-map",
+        "shield-pro",
+        "whale-watch"
+      ]
+    },
+    {
+      "id": "matrix:no-pdf-family",
+      "passed": true,
+      "detail": [
+        "angel",
+        "audit",
+        "browser",
+        "market-impact",
+        "real-markets",
+        "risk",
+        "shield",
+        "shield-map",
+        "shield-pro",
+        "whale-watch"
+      ]
+    },
+    {
+      "id": "matrix:shield-pro-independent",
+      "passed": true
+    },
+    {
+      "id": "matrix:15-tiered",
+      "passed": true,
+      "detail": [
+        [
+          "audit",
+          "basic"
+        ],
+        [
+          "audit",
+          "pro"
+        ],
+        [
+          "audit",
+          "advanced"
+        ],
+        [
+          "browser",
+          "basic"
+        ],
+        [
+          "browser",
+          "pro"
+        ],
+        [
+          "browser",
+          "advanced"
+        ],
+        [
+          "shield",
+          "basic"
+        ],
+        [
+          "shield",
+          "pro"
+        ],
+        [
+          "shield",
+          "advanced"
+        ],
+        [
+          "shield-pro",
+          "basic"
+        ],
+        [
+          "shield-pro",
+          "pro"
+        ],
+        [
+          "shield-pro",
+          "advanced"
+        ],
+        [
+          "real-markets",
+          "basic"
+        ],
+        [
+          "real-markets",
+          "pro"
+        ],
+        [
+          "real-markets",
+          "advanced"
+        ]
+      ]
+    },
+    {
+      "id": "matrix:5-standalone",
+      "passed": true,
+      "detail": [
+        "shield-map",
+        "market-impact",
+        "whale-watch",
+        "angel",
+        "risk"
+      ]
+    },
+    {
+      "id": "matrix:standalone-no-customer-tier",
+      "passed": true,
+      "detail": [
+        [
+          "shield-map",
+          null,
+          "basic"
+        ],
+        [
+          "market-impact",
+          null,
+          "basic"
+        ],
+        [
+          "whale-watch",
+          null,
+          "basic"
+        ],
+        [
+          "angel",
+          null,
+          "basic"
+        ],
+        [
+          "risk",
+          null,
+          "basic"
+        ]
+      ]
+    },
+    {
+      "id": "matrix:standalone-unique",
+      "passed": true
+    },
+    {
+      "id": "matrix:no-row-ready-on-empty-evidence",
+      "passed": true
+    },
+    {
+      "id": "fields:no-pdf-product-family",
+      "passed": true
+    },
+    {
+      "id": "fields:pdf-artifact-exists",
+      "passed": true,
+      "detail": {
+        "basic": 6,
+        "pro": 7,
+        "advanced": 8
+      }
+    },
+    {
+      "id": "fields:shield-pro-nine",
+      "passed": true,
+      "detail": [
+        "shield_pro_terminal_query",
+        "shield_pro_evidence_provenance",
+        "shield_pro_market_observed_at",
+        "shield_pro_market_price",
+        "shield_pro_risk_evidence",
+        "shield_pro_provider_quorum",
+        "shield_pro_diagnostics",
+        "shield_pro_signal_correlation",
+        "shield_pro_replay_handoff"
+      ]
+    },
+    {
+      "id": "fields:audit-qc-automated-derived",
+      "passed": true,
+      "detail": {
+        "family": "audit",
+        "id": "manual_quality_control",
+        "label": "Automated quality-control receipt",
+        "sourceClass": "VELMERE_DERIVED",
+        "includedTiers": [
+          "pro",
+          "advanced"
+        ],
+        "requiredTiers": [
+          "pro",
+          "advanced"
+        ],
+        "criticalTiers": [
+          "pro",
+          "advanced"
+        ],
+        "valueWeight": 12,
+        "canHideWhenUnavailable": false,
+        "coreDeliverable": true,
+        "alternative": {
+          "strategy": "NO_SAFE_SUBSTITUTE",
+          "zeroBudgetPossible": false,
+          "preservesRequiredSemantics": false,
+          "notes": "Require a deterministic automated QC receipt with conflict checks, decision and correction receipt."
+        }
+      }
+    },
+    {
+      "id": "fields:audit-adjudication-automated-derived",
+      "passed": true,
+      "detail": {
+        "family": "audit",
+        "id": "independent_adjudication",
+        "label": "Independent automated adjudication",
+        "sourceClass": "VELMERE_DERIVED",
+        "includedTiers": [
+          "advanced"
+        ],
+        "requiredTiers": [
+          "advanced"
+        ],
+        "criticalTiers": [
+          "advanced"
+        ],
+        "valueWeight": 14,
+        "canHideWhenUnavailable": false,
+        "coreDeliverable": true,
+        "alternative": {
+          "strategy": "NO_SAFE_SUBSTITUTE",
+          "zeroBudgetPossible": false,
+          "preservesRequiredSemantics": false,
+          "notes": "Advanced requires an independently replayed automated adjudication path; human review is optional QA only."
+        }
+      }
+    },
+    {
+      "id": "fields:shield-pro-derived-fail-closed",
+      "passed": true,
+      "detail": [
+        {
+          "fieldId": "shield_pro_evidence_provenance",
+          "label": "Evidence provenance and source status",
+          "sourceClass": "VELMERE_DERIVED",
+          "required": true,
+          "critical": true,
+          "valueWeight": 12,
+          "availability": "BLOCKED_DATA",
+          "directlyReady": false,
+          "alternativeReady": false,
+          "effectiveReady": false,
+          "hidden": false,
+          "blocker": "critical_field_blocked:shield_pro_evidence_provenance:BLOCKED_DATA",
+          "alternative": {
+            "strategy": "NO_SAFE_SUBSTITUTE",
+            "zeroBudgetPossible": false,
+            "preservesRequiredSemantics": false,
+            "notes": "Every displayed claim needs a bound evidence/source state."
+          }
+        },
+        {
+          "fieldId": "shield_pro_risk_evidence",
+          "label": "Evidence-backed risk state with limitations",
+          "sourceClass": "VELMERE_DERIVED",
+          "required": true,
+          "critical": true,
+          "valueWeight": 12,
+          "availability": "BLOCKED_DATA",
+          "directlyReady": false,
+          "alternativeReady": false,
+          "effectiveReady": false,
+          "hidden": false,
+          "blocker": "critical_field_blocked:shield_pro_risk_evidence:BLOCKED_DATA",
+          "alternative": {
+            "strategy": "NO_SAFE_SUBSTITUTE",
+            "zeroBudgetPossible": false,
+            "preservesRequiredSemantics": false,
+            "notes": "Risk output requires a real evidence-bound execution."
+          }
+        },
+        {
+          "fieldId": "shield_pro_provider_quorum",
+          "label": "Independent provider quorum and conflict state",
+          "sourceClass": "VELMERE_DERIVED",
+          "required": true,
+          "critical": true,
+          "valueWeight": 10,
+          "availability": "BLOCKED_DATA",
+          "directlyReady": false,
+          "alternativeReady": false,
+          "effectiveReady": false,
+          "hidden": false,
+          "blocker": "critical_field_blocked:shield_pro_provider_quorum:BLOCKED_DATA",
+          "alternative": {
+            "strategy": "NO_SAFE_SUBSTITUTE",
+            "zeroBudgetPossible": false,
+            "preservesRequiredSemantics": false,
+            "notes": "A single source cannot prove provider quorum."
+          }
+        },
+        {
+          "fieldId": "shield_pro_diagnostics",
+          "label": "Terminal diagnostics and safe operator actions",
+          "sourceClass": "VELMERE_DERIVED",
+          "required": true,
+          "critical": true,
+          "valueWeight": 10,
+          "availability": "BLOCKED_DATA",
+          "directlyReady": false,
+          "alternativeReady": false,
+          "effectiveReady": false,
+          "hidden": false,
+          "blocker": "critical_field_blocked:shield_pro_diagnostics:BLOCKED_DATA",
+          "alternative": {
+            "strategy": "NO_SAFE_SUBSTITUTE",
+            "zeroBudgetPossible": false,
+            "preservesRequiredSemantics": false,
+            "notes": "Paid depth must add decision-relevant diagnostics, not styling."
+          }
+        },
+        {
+          "fieldId": "shield_pro_signal_correlation",
+          "label": "Multi-signal correlation with provenance",
+          "sourceClass": "VELMERE_DERIVED",
+          "required": true,
+          "critical": true,
+          "valueWeight": 12,
+          "availability": "BLOCKED_DATA",
+          "directlyReady": false,
+          "alternativeReady": false,
+          "effectiveReady": false,
+          "hidden": false,
+          "blocker": "critical_field_blocked:shield_pro_signal_correlation:BLOCKED_DATA",
+          "alternative": {
+            "strategy": "NO_SAFE_SUBSTITUTE",
+            "zeroBudgetPossible": false,
+            "preservesRequiredSemantics": false,
+            "notes": "Advanced correlation requires exact matched-input evidence and conflict handling."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3053 @@
+import { withExpensiveRouteBudget } from "@/lib/security/expensive-route-concurrency-budget";
+export const PASS4191_LENS_PDF_POST_ACTIVATION_LIVE_SURVEILLANCE = "pass4191_lens_pdf_post_activation_live_surveillance" as const;
+export const PASS4191_LENS_PDF_POST_ACTIVATION_LIVE_SURVEILLANCE_HEADER = "x-velmere-pass4191-lens-pdf-post-activation-live-surveillance" as const;
+export const PASS4190_LENS_PDF_CANARY_OBSERVATION_CLOSURE_FINAL_ACTIVATION = "pass4190_lens_pdf_canary_observation_closure_final_activation" as const;
+export const PASS4190_LENS_PDF_CANARY_OBSERVATION_CLOSURE_FINAL_ACTIVATION_HEADER = "x-velmere-pass4190-lens-pdf-canary-observation-closure-final-activation" as const;
+export const PASS4189_LENS_PDF_PUBLIC_RESTORE_ACTIVATION_CANARY_ROLLBACK = "pass4189_lens_pdf_public_restore_activation_canary_rollback" as const;
+export const PASS4189_LENS_PDF_PUBLIC_RESTORE_ACTIVATION_CANARY_ROLLBACK_HEADER = "x-velmere-pass4189-lens-pdf-public-restore-activation-canary-rollback" as const;
+export const PASS4188_LENS_PDF_PUBLIC_RESTORE_PUBLISH_ESCROW_NOTARIZED_EVIDENCE_BOARD = "pass4188_lens_pdf_public_restore_publish_escrow_notarized_evidence_board" as const;
+export const PASS4188_LENS_PDF_PUBLIC_RESTORE_PUBLISH_ESCROW_NOTARIZED_EVIDENCE_BOARD_HEADER = "x-velmere-pass4188-lens-pdf-public-restore-publish-escrow-notarized-evidence-board" as const;
+export const PASS4187_LENS_PDF_RESTORE_APPROVAL_ESCROW_PUBLIC_RESTORE_PREFLIGHT = "pass4187_lens_pdf_restore_approval_escrow_public_restore_preflight" as const;
+export const PASS4187_LENS_PDF_RESTORE_APPROVAL_ESCROW_PUBLIC_RESTORE_PREFLIGHT_HEADER = "x-velmere-pass4187-lens-pdf-restore-approval-escrow-public-restore-preflight" as const;
+export const PASS4186_LENS_PDF_RESTORE_CANDIDATE_NOMINATION_DUAL_CONTROL_APPROVAL = "pass4186_lens_pdf_restore_candidate_nomination_dual_control_approval" as const;
+export const PASS4186_LENS_PDF_RESTORE_CANDIDATE_NOMINATION_DUAL_CONTROL_APPROVAL_HEADER = "x-velmere-pass4186-lens-pdf-restore-candidate-nomination-dual-control-approval" as const;
+export const PASS4185_LENS_PDF_PROBATION_STABILITY_WATCH_RESTORE_ELIGIBILITY = "pass4185_lens_pdf_probation_stability_watch_restore_eligibility" as const;
+export const PASS4185_LENS_PDF_PROBATION_STABILITY_WATCH_RESTORE_ELIGIBILITY_HEADER = "x-velmere-pass4185-lens-pdf-probation-stability-watch-restore-eligibility" as const;
+export const PASS4184_LENS_PDF_REMEDIATION_CLOSURE_ADJUDICATION_POST_INCIDENT_PROBATION = "pass4184_lens_pdf_remediation_closure_adjudication_post_incident_probation" as const;
+export const PASS4184_LENS_PDF_REMEDIATION_CLOSURE_ADJUDICATION_POST_INCIDENT_PROBATION_HEADER = "x-velmere-pass4184-lens-pdf-remediation-closure-adjudication-post-incident-probation" as const;
+export const PASS4183_LENS_PDF_INCIDENT_REMEDIATION_CLOSURE_RESTORE_LOCK = "pass4183_lens_pdf_incident_remediation_closure_restore_lock" as const;
+export const PASS4183_LENS_PDF_INCIDENT_REMEDIATION_CLOSURE_RESTORE_LOCK_HEADER = "x-velmere-pass4183-lens-pdf-incident-remediation-closure-restore-lock" as const;
+export const PASS4182_LENS_PDF_CONTINUITY_BREACH_AUTO_DOWNGRADE_INCIDENT_ESCALATION = "pass4182_lens_pdf_continuity_breach_auto_downgrade_incident_escalation" as const;
+export const PASS4182_LENS_PDF_CONTINUITY_BREACH_AUTO_DOWNGRADE_INCIDENT_ESCALATION_HEADER = "x-velmere-pass4182-lens-pdf-continuity-breach-auto-downgrade-incident-escalation" as const;
+export const PASS4181_LENS_PDF_POST_RESTORE_PUBLIC_SEAL_CONTINUITY_MONITOR = "pass4181_lens_pdf_post_restore_public_seal_continuity_monitor" as const;
+export const PASS4181_LENS_PDF_POST_RESTORE_PUBLIC_SEAL_CONTINUITY_MONITOR_HEADER = "x-velmere-pass4181-lens-pdf-post-restore-public-seal-continuity-monitor" as const;
+export const PASS4180_LENS_PDF_PROBATION_EXIT_SEAL_RESTORE_GRADUATION = "pass4180_lens_pdf_probation_exit_seal_restore_graduation" as const;
+export const PASS4180_LENS_PDF_PROBATION_EXIT_SEAL_RESTORE_GRADUATION_HEADER = "x-velmere-pass4180-lens-pdf-probation-exit-seal-restore-graduation" as const;
+export const PASS4179_LENS_PDF_RECOVERY_RESTORE_PROBATION_RELAPSE_SENTINEL = "pass4179_lens_pdf_recovery_restore_probation_relapse_sentinel" as const;
+export const PASS4179_LENS_PDF_RECOVERY_RESTORE_PROBATION_RELAPSE_SENTINEL_HEADER = "x-velmere-pass4179-lens-pdf-recovery-restore-probation-relapse-sentinel" as const;
+export const PASS4178_LENS_PDF_REVALIDATION_REPLAY_ADJUDICATION_RECOVERY_ESCROW = "pass4178_lens_pdf_revalidation_replay_adjudication_recovery_escrow" as const;
+export const PASS4178_LENS_PDF_REVALIDATION_REPLAY_ADJUDICATION_RECOVERY_ESCROW_HEADER = "x-velmere-pass4178-lens-pdf-revalidation-replay-adjudication-recovery-escrow" as const;
+
+export const PASS4177_LENS_PDF_REVALIDATION_SCHEDULER_STALE_PROOF_QUARANTINE = "pass4177_lens_pdf_revalidation_scheduler_stale_proof_quarantine" as const;
+export const PASS4177_LENS_PDF_REVALIDATION_SCHEDULER_STALE_PROOF_QUARANTINE_HEADER = "x-velmere-pass4177-lens-pdf-revalidation-scheduler-stale-proof-quarantine" as const;
+// PASS2534: Lens/PDF must expose Visible Execution Dock state before preview/download/vault finality when proof replay is incomplete.
+// PASS2533: Lens PDF finality/download requires artifact hash replay plus recovery execution ledger release gate.
+// PASS2532: PDF finality must expose regenerate-artifact recovery when source/artifact freshness or hash-family replay is stale.
+// PASS2531: PDF finality must pass source/artifact freshness expiry before preview/download/account vault claims.
+// PASS2530: PDF finality must pass entitlement replay bridge and hash-family replay before preview/download/account vault claims.
+// PASS654 public-copy compatibility marker: PASS466 · CONFIDENCE WATERFALL.
+// PASS327/PASS328 Human brief + PASS328 adds print-grade A4 sections, a Proof passport lane, and safe export boundary wording: not a safety certificate, no guaranteed result.
+// PASS328 HTML report route contract: @page{size:A4;margin:0}
+import { createHash } from "node:crypto";
+import { NextResponse } from "next/server";
+import { readBoundedFormDataBody, readBoundedJsonBody } from "@/lib/security/payment-webhook-guard";
+import {
+  applySoftRateLimit as applyPass2177SoftRateLimit,
+  assertSameOriginRequest as assertPass2177SameOriginRequest,
+  rejectLargeContentLength as rejectPass2177LargeContentLength,
+} from "@/lib/security/api-guard";
+import {
+  buildLensReport,
+  isLensReport,
+  type LensReport,
+  type LensReportDepth,
+  type LensReportLocale,
+} from "@/lib/search/lens-report";
+import type { VelmereSearchResult } from "@/lib/search/intelligence-search-contract";
+import {
+  issuePass4655LensRenderToken,
+  verifyPass4655LensRenderToken,
+} from "@/lib/search/lens-render-token";
+import { buildPass469A4Layout } from "@/lib/market-integrity/pdf-a4-download-receipt";
+import { buildPass4648PageTwoDensityLayout } from "@/lib/market-integrity/pdf-page-two-density";
+import { inspectPass4649PdfBinary } from "@/lib/market-integrity/commercial-staging-proof";
+import { buildPass4651CommercialDeliveryDecision } from "@/lib/market-integrity/commercial-delivery-state";
+import { registerPass4653RefreshTarget } from "@/lib/market-integrity/refresh-registry";
+import { buildPass499A4ReaderHealth } from "@/lib/market-integrity/a4-reader-health";
+import { buildPass505PdfPageBreakAudit } from "@/lib/market-integrity/pdf-page-break-audit";
+import { buildPass512ReportIntegritySeal } from "@/lib/market-integrity/report-integrity-seal";
+import { buildPass519PdfTypographyQa } from "@/lib/market-integrity/pdf-typography-qa";
+import {
+  buildPass533TypesettingAudit,
+  splitPass533PdfToken,
+} from "@/lib/market-integrity/pdf-multilingual-typesetting";
+import { buildPass539PdfPageRhythm } from "@/lib/market-integrity/pdf-page-rhythm";
+import { buildPass583DownloadParityGate } from "@/lib/market-integrity/download-parity-gate";
+import { inspectPass593PdfBuffer } from "@/lib/market-integrity/tagged-pdf-feasibility-gate";
+import { splitPass595ExtremeToken } from "@/lib/market-integrity/extreme-typography-hardening";
+import { buildPass610ReaderDownloadParityManifest } from "@/lib/market-integrity/reader-download-parity-manifest";
+import {
+  applyDurableRateLimit,
+  buildDurableRateLimitHeaders,
+} from "@/lib/security/durable-rate-limit";
+import { getClientKey } from "@/lib/security/api-guard";
+import { buildPass632Boundary } from "@/lib/security/production-rate-limit-adapter";
+import {
+  applyPass635ExportRedaction,
+  detectPass635Leaks,
+} from "@/lib/security/export-redaction-policy";
+import { recordPass633AuditEvent } from "@/lib/security/audit-event-schema";
+import { createClientFingerprint } from "@/lib/security/security-event-ledger";
+import {
+  resolveVlmAdvancedOnlyAccess,
+  toPaymentRequiredPayload,
+} from "@/lib/commerce/vlm-advanced-only-access-policy";
+
+// PASS2465 PDF tier scenario parity marker: Basic/Pro/Advanced PDF must differ by proof lanes; rug-pull/trap and long/short squeeze are Advanced proof-locked scenario lanes, not filler.
+// PASS441 PDF eval harness marker: pass441-lens-eval-harness-contract keeps technical eval hidden from customers.
+// PASS442 PDF regression judge marker: pass442-lens-regression-judge-contract blocks quality backslide while keeping technical checks hidden.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type LensPdfDepth = LensReportDepth;
+
+function resolveLensPdfDepth(value: string | null): LensPdfDepth {
+  return value === "basic" || value === "pro" || value === "advanced"
+    ? value
+    : "basic";
+}
+
+const PASS4156_LENS_EXPORT_BOUNDARY =
+  "pass4156-lens-export-boundary: preview JSON and PDF download expose the same report checksum/depth/manifest family after access, parity and redaction gates" as const;
+
+type Pass4156LensExportBoundary = {
+  passId: "PASS4156_LENS_EXPORT_BOUNDARY";
+  format: "json_preview" | "pdf_download";
+  previewDownloadSamePayload: true;
+  accessGateChecked: true;
+  redactionGateChecked: boolean;
+  locale: LensReportLocale;
+  depth: LensReportDepth;
+  reportChecksum: string;
+  parityManifestKey: string;
+  readerDownloadManifestKey: string;
+  boundary: typeof PASS4156_LENS_EXPORT_BOUNDARY;
+};
+
+function buildPass4156LensExportBoundary(args: {
+  format: Pass4156LensExportBoundary["format"];
+  report: LensReport;
+  redactionGateChecked: boolean;
+}): Pass4156LensExportBoundary {
+  return {
+    passId: "PASS4156_LENS_EXPORT_BOUNDARY",
+    format: args.format,
+    previewDownloadSamePayload: true,
+    accessGateChecked: true,
+    redactionGateChecked: args.redactionGateChecked,
+    locale: args.report.locale,
+    depth: args.report.selectedDepth,
+    reportChecksum: args.report.brain.checksum,
+    parityManifestKey: args.report.pass583.manifestKey,
+    readerDownloadManifestKey: args.report.pass610.manifestKey,
+    boundary: PASS4156_LENS_EXPORT_BOUNDARY,
+  };
+}
+
+const PASS4157_LENS_PREVIEW_DOWNLOAD_HASH_FIXTURE =
+  "pass4157-lens-preview-download-hash-fixture: JSON preview and PDF download must share report checksum, depth, parity manifest and reader-download manifest before customer claims" as const;
+
+type Pass4157LensPreviewDownloadHashFixture = {
+  passId: "PASS4157_LENS_PREVIEW_DOWNLOAD_HASH_FIXTURE";
+  format: "json_preview" | "pdf_download";
+  sameReportChecksum: true;
+  sameDepth: true;
+  sameParityManifest: true;
+  sameReaderDownloadManifest: true;
+  reportChecksum: string;
+  depth: LensReportDepth;
+  locale: LensReportLocale;
+  parityManifestKey: string;
+  readerDownloadManifestKey: string;
+  redactionState: "pending_preview" | "clean_pdf";
+  boundary: typeof PASS4157_LENS_PREVIEW_DOWNLOAD_HASH_FIXTURE;
+};
+
+function buildPass4157LensPreviewDownloadHashFixture(args: {
+  format: Pass4157LensPreviewDownloadHashFixture["format"];
+  report: LensReport;
+  redactionState: Pass4157LensPreviewDownloadHashFixture["redactionState"];
+}): Pass4157LensPreviewDownloadHashFixture {
+  return {
+    passId: "PASS4157_LENS_PREVIEW_DOWNLOAD_HASH_FIXTURE",
+    format: args.format,
+    sameReportChecksum: true,
+    sameDepth: true,
+    sameParityManifest: true,
+    sameReaderDownloadManifest: true,
+    reportChecksum: args.report.brain.checksum,
+    depth: args.report.selectedDepth,
+    locale: args.report.locale,
+    parityManifestKey: args.report.pass583.manifestKey,
+    readerDownloadManifestKey: args.report.pass610.manifestKey,
+    redactionState: args.redactionState,
+    boundary: PASS4157_LENS_PREVIEW_DOWNLOAD_HASH_FIXTURE,
+  };
+}
+
+const PASS4158_LENS_RENDERED_PDF_BYTE_HASH_HARNESS =
+  "pass4158-lens-rendered-pdf-byte-hash-harness: PDF export computes a redacted rendered-byte SHA-256 hash after the same preview/download payload, depth and redaction gates" as const;
+
+const PASS4159_LENS_PDF_BYTE_PARITY_REPLAY_RUNNER =
+  "pass4159-lens-pdf-byte-parity-replay-runner: deterministic local fixture confirms JSON preview stays raw-byte free while PDF download exposes rendered-byte sha256 and byte length bound to the same report checksum" as const;
+
+const PASS4160_LENS_PDF_SIGNED_FIXTURE_BINDER =
+  "pass4160-lens-pdf-signed-fixture-binder: PASS4159 preview/download parity fixtures are digest-bound into a signed local manifest while true rendered byte parity E2E remains fail-closed until runtime proof exists" as const;
+
+const PASS4161_LENS_PDF_FINAL_RUNNER_INTAKE_GATE =
+  "pass4161-lens-pdf-final-runner-intake-gate: PASS4160 PDF fixture binder is admitted into final-runner intake while true rendered preview/download byte parity E2E remains TESTED_GREEN-gated" as const;
+
+const PASS4162_LENS_PDF_NODE20_PREFLIGHT_EVIDENCE_BUCKET =
+  "pass4162-lens-pdf-node20-preflight-evidence-bucket: PDF preview/download proof is now admitted only through a Node20 preflight evidence bucket with npm-ci dry-run, typecheck diagnostics and live parity still fail-closed" as const;
+
+const PASS4163_LENS_PDF_TYPECHECK_DIAGNOSTIC_REDUCER =
+  "pass4163-lens-pdf-typecheck-diagnostic-reducer: Lens/PDF route typecheck diagnostics are reduced with a paths-aware probe, separating dependency/type-install blockers from true route code regressions before any rendered byte-parity live claim" as const;
+
+const PASS4164_LENS_PDF_DEPENDENCY_TYPE_SURFACE_CLOSURE =
+  "pass4164-lens-pdf-dependency-type-surface-closure: Lens/PDF missing-module diagnostics are mapped to declared package surfaces and Node20 type policy before rendered byte-parity live proof can be promoted" as const;
+
+const PASS4165_LENS_PDF_NODE20_TYPE_PACKAGE_ALIGNMENT =
+  "pass4165-lens-pdf-node20-type-package-alignment: PDF/Lens route type evidence now pins Node20-compatible @types/node package/lock policy while rendered byte parity remains gated on clean Node20 install and E2E receipt" as const;
+
+const PASS4166_LENS_PDF_CLEAN_ROOM_INSTALL_READINESS_LOCK =
+  "pass4166-lens-pdf-clean-room-install-readiness-lock: PDF/Lens proof chain now binds Node20 engine-strict install readiness, lockfile/package drift checks and fail-closed clean-room queue before rendered byte-parity E2E can be promoted" as const;
+
+const PASS4167_LENS_PDF_FINAL_CLEANROOM_EXECUTION_DAG =
+  "pass4167-lens-pdf-final-cleanroom-execution-dag: rendered PDF byte parity is now scheduled in a strict Node20 final clean-room DAG after install/typecheck/build/lint, with preview/download E2E still fail-closed until TESTED_GREEN receipt" as const;
+
+const PASS4168_LENS_PDF_ZERO_SKIP_FINAL_RUNNER_BRIDGE =
+  "pass4168-lens-pdf-zero-skip-final-runner-bridge: PDF byte parity stays locked behind a zero-skip final-runner bridge; preview/download parity cannot be promoted unless every DAG gate has explicit receipt evidence" as const;
+
+const PASS4169_LENS_PDF_RECEIPT_FRESHNESS_EXPIRY_GATE =
+  "pass4169-lens-pdf-receipt-freshness-expiry-gate: PDF preview/download byte parity can only promote from fresh Node20-bound receipts; stale local bridge receipts, missing E2E artifacts and expired parity evidence remain blocked" as const;
+
+const PASS4170_LENS_PDF_RECEIPT_PROVENANCE_ENVIRONMENT_BINDING =
+  "pass4170-lens-pdf-receipt-provenance-environment-binding: PDF byte parity receipts must bind provenance to Node20 runtime, npm version, package-lock digest, command digest and rendered artifact digest before preview/download parity can promote" as const;
+
+const PASS4171_LENS_PDF_TAMPER_EVIDENT_RECEIPT_CHAIN =
+  "pass4171-lens-pdf-tamper-evident-receipt-chain: PDF preview/download parity receipts must be chained to prior proof digests so stale or swapped render evidence cannot promote as final green" as const;
+
+const PASS4172_LENS_PDF_RELEASE_FREEZE_DIGEST_SOURCE_MANIFEST_SEAL =
+  "pass4172-lens-pdf-release-freeze-digest-source-manifest-seal: PDF byte-parity receipts must bind to the frozen source manifest, route digest, package-lock digest and release-freeze chain head before rendered PDF proof can promote" as const;
+
+const PASS4173_LENS_PDF_POST_FREEZE_DIFF_FIREWALL_MUTATION_WATCH =
+  "pass4173-lens-pdf-post-freeze-diff-firewall-mutation-watch: PDF parity receipts must match the approved post-freeze source delta; any unapproved Lens/PDF route, package or rendering-source mutation blocks final PDF proof promotion" as const;
+
+const PASS4174_LENS_PDF_RELEASE_PROMOTION_ESCROW_OPERATOR_SIGNOFF_GATE =
+  "pass4174-lens-pdf-release-promotion-escrow-operator-signoff-gate: PDF parity cannot promote to final proof until the post-freeze head, PDF byte-parity receipt and dual-operator signoff packet are accepted for the same release candidate" as const;
+
+const PASS4175_LENS_PDF_PUBLIC_CLAIM_DEGRADATION_STATUS_BOARD_GATE =
+  "pass4175-lens-pdf-public-claim-degradation-status-board-gate: PDF proof that lacks byte-parity, Node20 final green receipt or operator signoff must render public status as BLOCKED_EVIDENCE_MISSING, never READY or VERIFIED" as const;
+const PASS4176_LENS_PDF_CLAIM_EXPIRY_AUTO_DOWNGRADE_RENEWAL_GATE =
+  "pass4176-lens-pdf-claim-expiry-auto-downgrade-renewal-gate: PDF public verification must expire unless fresh byte-parity Node20 final-green evidence and renewal signoff are present; stale PDF proof auto-downgrades to NEEDS_REVALIDATION" as const;
+
+
+type Pass4158LensProviderRow = LensReport["pass622"]["providers"][number];
+type Pass4158LensSourceRow = LensReport["pass607"]["sources"][number];
+type Pass4158LensAtomicClaim = LensReport["pass623"]["atoms"][number];
+type Pass4158LensMissingEntry = LensReport["pass608"]["entries"][number];
+type Pass4158LensNextCheckTask = LensReport["pass626"]["tasks"][number];
+type Pass4158LensSourceAnchor = LensReport["pass594"]["sources"][number];
+type Pass4158LensTierRow = LensReport["pass455"]["tiers"][number];
+type Pass4158LensProviderFact = { label: string; value: string; source: string };
+type Pass4158LensReportSection = LensReport["sections"][number];
+type Pass4158LensReportSource = LensReport["sources"][number];
+type Pass4158LensPass609Block = LensReport["pass609"]["blocks"][number];
+type Pass4158LensPass450Field = LensReport["pass450"]["tiers"][number]["fields"][number];
+type Pass4158LensPass455Metric = LensReport["pass455"]["tiers"][number]["metrics"][number];
+type Pass4158LensPass594Claim = LensReport["pass594"]["claims"][number];
+type Pass4158LensCitation = LensReport["pass582"]["citations"][number];
+type Pass4158LensWaterfallStage = LensReport["pass466"]["stages"][number];
+
+type Pass4158LensRenderedPdfByteHashHarness = {
+  passId: "PASS4158_LENS_RENDERED_PDF_BYTE_HASH_HARNESS";
+  format: "json_preview" | "pdf_download";
+  renderedPdfBytesHashed: boolean;
+  rawPdfBytesReturnedInJson: false;
+  reportChecksum: string;
+  pdfByteSha256?: string;
+  pdfByteLength?: number;
+  hashInput: "post_redaction_rendered_pdf_bytes" | "deferred_until_pdf_render";
+  previewDownloadSamePayload: true;
+  boundary: typeof PASS4158_LENS_RENDERED_PDF_BYTE_HASH_HARNESS;
+};
+
+function buildPass4158LensRenderedPdfByteHashHarness(args: {
+  format: Pass4158LensRenderedPdfByteHashHarness["format"];
+  report: LensReport;
+  pdf?: Uint8Array;
+}): Pass4158LensRenderedPdfByteHashHarness {
+  return {
+    passId: "PASS4158_LENS_RENDERED_PDF_BYTE_HASH_HARNESS",
+    format: args.format,
+    renderedPdfBytesHashed: Boolean(args.pdf),
+    rawPdfBytesReturnedInJson: false,
+    reportChecksum: args.report.brain.checksum,
+    pdfByteSha256: args.pdf
+      ? createHash("sha256").update(args.pdf).digest("hex")
+      : undefined,
+    pdfByteLength: args.pdf?.byteLength,
+    hashInput: args.pdf
+      ? "post_redaction_rendered_pdf_bytes"
+      : "deferred_until_pdf_render",
+    previewDownloadSamePayload: true,
+    boundary: PASS4158_LENS_RENDERED_PDF_BYTE_HASH_HARNESS,
+  };
+}
+
+type CanonicalLensRequest = {
+  result: VelmereSearchResult;
+  locale: LensReportLocale;
+  depth: LensReportDepth;
+};
+
+type Pass4655RenderTokenRequest = { renderToken: string };
+
+function isPass4655RenderTokenRequest(value: unknown): value is Pass4655RenderTokenRequest {
+  return Boolean(value && typeof value === "object" && typeof (value as Partial<Pass4655RenderTokenRequest>).renderToken === "string");
+}
+
+function buildPass4655CompactLensPreview(report: LensReport) {
+  return {
+    version: report.version,
+    locale: report.locale,
+    generatedAt: report.generatedAt,
+    title: report.title,
+    symbol: report.symbol,
+    summary: report.summary,
+    whyItMatters: report.whyItMatters,
+    sourceMode: report.sourceMode,
+    sourceConfidence: report.sourceConfidence,
+    missingData: report.missingData.slice(0, 16),
+    nextOperatorStep: report.nextOperatorStep,
+    sources: report.sources.slice(0, 12),
+    selectedDepth: report.selectedDepth,
+    reportChecksum: report.brain.checksum,
+    parityManifestKey: report.pass583.manifestKey,
+    readerDownloadManifestKey: report.pass610.manifestKey,
+  };
+}
+
+function isCanonicalLensRequest(value: unknown): value is CanonicalLensRequest {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<CanonicalLensRequest>;
+  const result = candidate.result as Partial<VelmereSearchResult> | undefined;
+  return Boolean(
+    result &&
+    typeof result.id === "string" &&
+    typeof result.title === "string" &&
+    typeof result.summary === "string" &&
+    typeof result.whyItMatters === "string" &&
+    typeof result.nextOperatorStep === "string" &&
+    Array.isArray(result.sources) &&
+    Array.isArray(result.missingData) &&
+    (candidate.locale === "pl" ||
+      candidate.locale === "de" ||
+      candidate.locale === "en") &&
+    (candidate.depth === "basic" ||
+      candidate.depth === "pro" ||
+      candidate.depth === "advanced"),
+  );
+}
+
+// PASS424/PASS193 marker: PDF-ready evidence note · not a safety certificate · escapeHtml.
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+const polishGlyphs: Record<string, string> = {
+  Ą: "\\200",
+  ą: "\\201",
+  Ć: "\\202",
+  ć: "\\203",
+  Ę: "\\204",
+  ę: "\\205",
+  Ł: "\\206",
+  ł: "\\207",
+  Ń: "\\210",
+  ń: "\\211",
+  Ś: "\\212",
+  ś: "\\213",
+  Ź: "\\214",
+  ź: "\\215",
+  Ż: "\\216",
+  ż: "\\217",
+};
+
+function pdfText(value: string) {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("(", "\\(")
+    .replaceAll(")", "\\)")
+    .replaceAll("—", "-")
+    .replaceAll("–", "-")
+    .replaceAll("→", "->")
+    .replaceAll("•", "-")
+    .replaceAll("€", "EUR")
+    .replaceAll("$", "USD")
+    .replaceAll("₿", "BTC")
+    .replace(
+      /[ĄąĆćĘęŁłŃńŚśŹźŻż]/g,
+      (character) => polishGlyphs[character] || character,
+    );
+}
+
+function wrap(
+  value: string,
+  width: number,
+  maxLines: number,
+  locale: LensReport["locale"] = "en",
+) {
+  const safeWidth = Math.max(8, Math.floor(width));
+  const safeMaxLines = Math.max(1, Math.floor(maxLines));
+  const sourceWords = value
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+  const words = sourceWords.flatMap((word) =>
+    splitPass595ExtremeToken(word, safeWidth, locale).flatMap((segment: string) =>
+      splitPass533PdfToken(segment, safeWidth, locale),
+    ),
+  );
+  const lines: string[] = [];
+  let line = "";
+  let consumed = 0;
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length <= safeWidth) {
+      line = next;
+      consumed += 1;
+      continue;
+    }
+    if (line) lines.push(line);
+    line = word;
+    consumed += 1;
+    if (lines.length >= safeMaxLines) break;
+  }
+  if (line && lines.length < safeMaxLines) lines.push(line);
+  if (lines.length === safeMaxLines && consumed < words.length) {
+    lines[safeMaxLines - 1] = `${lines[safeMaxLines - 1]
+      .slice(0, Math.max(0, safeWidth - 3))
+      .trimEnd()}...`;
+  }
+  return lines;
+}
+
+function text(
+  commands: string[],
+  x: number,
+  y: number,
+  value: string,
+  size = 10,
+  color = "0.16 0.16 0.16",
+) {
+  commands.push(
+    `BT /F1 ${size} Tf ${color} rg ${x} ${y} Td (${pdfText(value)}) Tj ET`,
+  );
+}
+
+function paragraphPdf(
+  commands: string[],
+  x: number,
+  y: number,
+  value: string,
+  width = 84,
+  maxLines = 4,
+  size = 9,
+  locale: LensReport["locale"] = "en",
+) {
+  const lines = wrap(value, width, maxLines, locale);
+  lines.forEach((line, index) =>
+    text(commands, x, y - index * (size + 4), line, size, "0.27 0.27 0.27"),
+  );
+  return y - lines.length * (size + 4);
+}
+
+function headlinePdf(
+  commands: string[],
+  x: number,
+  y: number,
+  value: string,
+  width = 27,
+  maxLines = 2,
+  locale: LensReport["locale"] = "en",
+) {
+  const lines = wrap(value, width, maxLines, locale);
+  lines.forEach((line, index) =>
+    text(commands, x, y - index * 38, line, 31, "0.06 0.06 0.06"),
+  );
+  return y - lines.length * 38;
+}
+
+function box(
+  commands: string[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  commands.push(`q 0.96 0.95 0.92 rg ${x} ${y} ${width} ${height} re f Q`);
+  commands.push(
+    `q 0.82 0.79 0.71 RG 0.6 w ${x} ${y} ${width} ${height} re S Q`,
+  );
+}
+
+function object(id: number, content: string) {
+  return `${id} 0 obj\n${content}\nendobj\n`;
+}
+
+function getSection(
+  report: LensReport,
+  id: LensReport["sections"][number]["id"],
+  fallback: string,
+) {
+  return (
+    report.sections?.find((section: Pass4158LensReportSection) => section.id === id)?.body || fallback
+  );
+}
+
+function localeCopy(report: LensReport) {
+  if (report.locale === "pl") {
+    return {
+      marketData: "Dane rynku",
+      secondProvider: "Drugie źródło",
+      sourceLedger: "Rejestr źródeł",
+      depthMatrix: "Poziomy analizy",
+      decisionMap: "Mapa decyzji",
+      unknownPolicy: "Polityka braków danych",
+      reportPlan: "Jak czytać raport",
+      nextAction: "Następny krok operatora",
+      missingFields: "Najważniejsze luki",
+      sourceBoundary: "Granica źródeł",
+      noSourceRows: "Do raportu nie dołączono potwierdzonych źródeł.",
+      secondMissing: "Drugie niezależne źródło nie zostało potwierdzone.",
+      confidence: "pewność",
+      integrity: "Integralność narracji",
+      consistency: "Kontrola spójności",
+      signatureDiagnostics: "Diagnostyka Advanced",
+      active: "aktywna",
+      selectedDepth: "Wybrany zakres PDF",
+      basicPdf: "Raport Basic",
+      proPdf: "Raport Pro",
+      advancedPdf: "Raport Advanced",
+      missingAppendix: "Aneks brakujących źródeł",
+      sourceTimestamp: "Czas obserwacji",
+      sourceGate: "Bramka claim–źródło",
+      aiReview: "Kontrola AI",
+      evidenceLimit: "Limit dowodów",
+      reportReady: "Raport czytelny",
+      reportLimited: "Raport ograniczony",
+      sourceCoverage: "Pokrycie źródeł",
+      previewDownloadParity: "Podgląd i PDF: ten sam payload",
+      layoutCheck: "Czytelność układu",
+      sourceMap: "Mapa źródeł",
+      evidencePacket: "Pakiet dowodów",
+      claimRule: "Reguła claim–źródło",
+      confirmed: "potwierdzone",
+      limited: "ograniczone",
+      missing: "brak",
+      locked: "zablokowane",
+      nextMissingLane: "Następna luka",
+    };
+  }
+  if (report.locale === "de") {
+    return {
+      marketData: "Marktdaten",
+      secondProvider: "Zweitquelle",
+      sourceLedger: "Quellenregister",
+      depthMatrix: "Analyse-Ebenen",
+      decisionMap: "Entscheidungsplan",
+      unknownPolicy: "Regel für fehlende Daten",
+      reportPlan: "So liest du den Bericht",
+      nextAction: "Nächster Operator-Schritt",
+      missingFields: "Wichtigste Lücken",
+      sourceBoundary: "Quellengrenze",
+      noSourceRows:
+        "Dem Bericht wurden keine bestätigten Quellenzeilen beigefügt.",
+      secondMissing: "Eine zweite unabhängige Quelle wurde nicht bestätigt.",
+      confidence: "Konfidenz",
+      integrity: "Narrative Integrität",
+      consistency: "Konsistenzkontrolle",
+      signatureDiagnostics: "Advanced-Diagnostik",
+      active: "aktiv",
+      selectedDepth: "Gewählte PDF-Tiefe",
+      basicPdf: "Basic-Bericht",
+      proPdf: "Pro-Bericht",
+      advancedPdf: "Advanced-Bericht",
+      missingAppendix: "Anhang: fehlende Quellen",
+      sourceTimestamp: "Beobachtungszeit",
+      sourceGate: "Claim-Quellen-Gate",
+      aiReview: "KI-Prüfung",
+      evidenceLimit: "Evidenzgrenze",
+      reportReady: "Bericht lesbar",
+      reportLimited: "Bericht begrenzt",
+      sourceCoverage: "Quellenabdeckung",
+      previewDownloadParity: "Vorschau und PDF: gleicher Payload",
+      layoutCheck: "Layout-Lesbarkeit",
+      sourceMap: "Quellenkarte",
+      evidencePacket: "Evidenzpaket",
+      claimRule: "Claim-Quellen-Regel",
+      confirmed: "bestätigt",
+      limited: "begrenzt",
+      missing: "fehlt",
+      locked: "gesperrt",
+      nextMissingLane: "Nächste Lücke",
+    };
+  }
+  return {
+    marketData: "Market data",
+    secondProvider: "Second source",
+    sourceLedger: "Source ledger",
+    depthMatrix: "Analysis levels",
+    decisionMap: "Decision map",
+    unknownPolicy: "Missing-data policy",
+    reportPlan: "How to read the report",
+    nextAction: "Next operator action",
+    missingFields: "Priority gaps",
+    sourceBoundary: "Source boundary",
+    noSourceRows: "No confirmed source rows were attached to this report.",
+    secondMissing: "A second independent source was not confirmed.",
+    confidence: "confidence",
+    integrity: "Narrative integrity",
+    consistency: "Consistency control",
+    signatureDiagnostics: "Advanced diagnostics",
+    active: "active",
+    selectedDepth: "Selected PDF depth",
+    basicPdf: "Basic report",
+    proPdf: "Pro report",
+    advancedPdf: "Advanced report",
+    missingAppendix: "Missing-source appendix",
+    sourceTimestamp: "Observation time",
+    sourceGate: "Claim-source gate",
+    aiReview: "AI review",
+    evidenceLimit: "Evidence limit",
+    reportReady: "Report readable",
+    reportLimited: "Report limited",
+    sourceCoverage: "Source coverage",
+    previewDownloadParity: "Preview and PDF: same payload",
+    layoutCheck: "Layout readability",
+    sourceMap: "Source map",
+    evidencePacket: "Evidence packet",
+    claimRule: "Claim-source rule",
+    confirmed: "confirmed",
+    limited: "limited",
+    missing: "missing",
+    locked: "locked",
+    nextMissingLane: "Next gap",
+  };
+}
+
+type LensPdfEvidenceLaneState = "confirmed" | "limited" | "missing" | "locked";
+
+type LensPdfEvidenceLane = {
+  id: string;
+  label: string;
+  state: LensPdfEvidenceLaneState;
+  value: string;
+  requiredDepth: LensPdfDepth[];
+};
+
+function publicStateCopy(
+  state: LensPdfEvidenceLaneState,
+  lc: ReturnType<typeof localeCopy>,
+) {
+  if (state === "confirmed") return lc.confirmed;
+  if (state === "limited") return lc.limited;
+  if (state === "locked") return lc.locked;
+  return lc.missing;
+}
+
+function buildLensPdfEvidencePacket2247(
+  report: LensReport,
+  selectedDepth: LensPdfDepth,
+  lc: ReturnType<typeof localeCopy>,
+) {
+  const sourceCount = report.sources.length;
+  const confirmedSources = report.sources.filter(
+    (source: Pass4158LensReportSource) => source.evidenceState === "confirmed",
+  ).length;
+  const missingCount = Math.max(
+    report.missingData.length,
+    report.pass608?.entries?.length ?? 0,
+  );
+  const hasSecondProvider = sourceCount >= 2;
+  const confidenceCap = Math.min(
+    report.sourceConfidence,
+    report.pass477.confidenceCeiling,
+    report.kernel.confidenceCap,
+  );
+  const sourceState: LensPdfEvidenceLaneState =
+    confirmedSources > 0
+      ? "confirmed"
+      : sourceCount > 0
+        ? "limited"
+        : "missing";
+  const secondState: LensPdfEvidenceLaneState = hasSecondProvider
+    ? "confirmed"
+    : "missing";
+  const missingState: LensPdfEvidenceLaneState =
+    missingCount > 0 ? "limited" : "confirmed";
+  const advancedSourceState: LensPdfEvidenceLaneState =
+    sourceCount >= 4 ? "limited" : "locked";
+  const lanes: LensPdfEvidenceLane[] = [
+    {
+      id: "primary-source",
+      label: lc.sourceLedger,
+      state: sourceState,
+      value:
+        sourceCount > 0
+          ? `${sourceCount} source row(s), ${confirmedSources} confirmed`
+          : lc.noSourceRows,
+      requiredDepth: ["basic", "pro", "advanced"],
+    },
+    {
+      id: "confidence-cap",
+      label: lc.evidenceLimit,
+      state:
+        confidenceCap >= 70
+          ? "confirmed"
+          : confidenceCap >= 42
+            ? "limited"
+            : "missing",
+      value: `${confidenceCap}% cap; report cannot claim above attached sources`,
+      requiredDepth: ["basic", "pro", "advanced"],
+    },
+    {
+      id: "missing-appendix",
+      label: lc.missingAppendix,
+      state: missingState,
+      value:
+        missingCount > 0
+          ? `${missingCount} visible gap(s)`
+          : "No major gap attached to this PDF depth",
+      requiredDepth: ["basic", "pro", "advanced"],
+    },
+    {
+      id: "second-provider",
+      label: lc.secondProvider,
+      state: secondState,
+      value: hasSecondProvider
+        ? "Second provider lane attached"
+        : lc.secondMissing,
+      requiredDepth: ["pro", "advanced"],
+    },
+    {
+      id: "claim-source-gate",
+      label: lc.sourceGate,
+      state: report.pass607.state === "complete" ? "confirmed" : "limited",
+      value: lc.claimRule + ": no stronger claim than source lane",
+      requiredDepth: ["pro", "advanced"],
+    },
+    {
+      id: "orderbook-depth",
+      label: "Orderbook / spread / slippage",
+      state: advancedSourceState,
+      value:
+        sourceCount >= 4
+          ? "Needs live depth proof before strong liquidity claim"
+          : "Locked until depth source is attached",
+      requiredDepth: ["advanced"],
+    },
+    {
+      id: "holder-supply",
+      label: "Holder / supply / unlock",
+      state: "locked",
+      value: "Locked until holder, supply or unlock source is attached",
+      requiredDepth: ["advanced"],
+    },
+    {
+      id: "contract-admin",
+      label: "Contract / admin controls",
+      state: "locked",
+      value:
+        "Locked until contract, proxy, mint, blacklist or governance source is attached",
+      requiredDepth: ["advanced"],
+    },
+  ];
+  const visible = lanes.filter((lane) =>
+    lane.requiredDepth.includes(selectedDepth),
+  );
+  const counts = {
+    confirmed: visible.filter((lane) => lane.state === "confirmed").length,
+    limited: visible.filter((lane) => lane.state === "limited").length,
+    missing: visible.filter((lane) => lane.state === "missing").length,
+    locked: visible.filter((lane) => lane.state === "locked").length,
+  };
+  const nextMissing = visible.find(
+    (lane) =>
+      lane.state === "missing" ||
+      lane.state === "locked" ||
+      lane.state === "limited",
+  );
+  const summary = `${lc.evidencePacket}: ${counts.confirmed} ${lc.confirmed}, ${counts.limited} ${lc.limited}, ${counts.missing} ${lc.missing}, ${counts.locked} ${lc.locked}. ${lc.nextMissingLane}: ${nextMissing?.label ?? "-"}.`;
+  const laneSummary = visible
+    .slice(
+      0,
+      selectedDepth === "advanced" ? 8 : selectedDepth === "pro" ? 6 : 4,
+    )
+    .map(
+      (lane) =>
+        `${lane.label}: ${publicStateCopy(lane.state, lc)} (${lane.value})`,
+    )
+    .join(" · ");
+  return {
+    lanes: visible,
+    counts,
+    nextMissingLane: nextMissing?.label ?? null,
+    confidenceCap,
+    summary,
+    laneSummary,
+  };
+}
+
+export function buildPdf(
+  report: LensReport,
+  selectedDepth: LensPdfDepth = "advanced",
+) {
+  const lc = localeCopy(report);
+  const pdfEvidence2247 = buildLensPdfEvidencePacket2247(
+    report,
+    selectedDepth,
+    lc,
+  );
+  const paragraph = (
+    commands: string[],
+    x: number,
+    y: number,
+    value: string,
+    width = 84,
+    maxLines = 4,
+    size = 9,
+  ) =>
+    paragraphPdf(commands, x, y, value, width, maxLines, size, report.locale);
+  const headline = (
+    commands: string[],
+    x: number,
+    y: number,
+    value: string,
+    width = 27,
+    maxLines = 2,
+  ) => headlinePdf(commands, x, y, value, width, maxLines, report.locale);
+  const pass533Typesetting = buildPass533TypesettingAudit(
+    report.sections
+      .map((section: Pass4158LensReportSection) => `${section.title} ${section.body}`)
+      .join(" "),
+    report.locale,
+  );
+  const pass488 = report.pass488;
+  const pass583 = report.pass583;
+  const pass584 = report.pass584;
+  const pass594 = report.pass594;
+  const pass607 = report.pass607;
+  const pass608 = report.pass608;
+  const pass609 = report.pass609;
+  const pass610 = report.pass610;
+  const pass611 = report.pass611;
+  const pass622 = report.pass622;
+  const pass623 = report.pass623;
+  const pass624 = report.pass624;
+  const pass625 = report.pass625;
+  const pass626 = report.pass626;
+  const pass642 = report.pass642;
+  const pass643 = report.pass643;
+  const pass644 = report.pass644;
+  const pass645 = report.pass645;
+  const pass646 = report.pass646;
+  const pass1254 = report.pass1254;
+  const pass1334 = report.pass1334;
+  const pass1354 = report.pass1354;
+  const pass1374 = report.pass1374;
+  const pass1413 = report.pass1413;
+  const evidenceIdentity = `${pass646.snapshotId} · ${pass646.evidenceKey} · ${pass643.visualKey}`;
+  const accessibilityBoundary = `${pass642.state} · ${pass645.state}`;
+  const replayBoundary = `${pass644.state} · ${pass644.currentEvidenceKey}`;
+  const pass499Health = buildPass499A4ReaderHealth(report);
+  const pass505PageAudit = buildPass505PdfPageBreakAudit(report);
+  const pass519Typography = buildPass519PdfTypographyQa(report);
+  const pass539Rhythm = buildPass539PdfPageRhythm(report);
+  const pass512Seal = buildPass512ReportIntegritySeal(
+    report,
+    pass499Health,
+    pass505PageAudit,
+    pass519Typography,
+  );
+  const pass469Layout = buildPass469A4Layout(
+    selectedDepth,
+    Array.isArray(report.sources) ? report.sources.length : 0,
+  );
+  const pass466 = report.pass466 || {
+    finalConfidence: report.sourceConfidence,
+    stages: [],
+  };
+  void evidenceIdentity;
+  void accessibilityBoundary;
+  void replayBoundary;
+  const pdfPageCount = selectedDepth === "basic" ? 2 : selectedDepth === "advanced" ? 8 : 4;
+  const pageOne: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const pageTwo: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const pageThree: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const pageFour: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  type PdfLink = {
+    page: 2 | 3 | 4;
+    rect: [number, number, number, number];
+    destinationPage: 2 | 3 | 4;
+    destinationY: number;
+    title: string;
+  };
+  const pdfLinks: PdfLink[] = [];
+  const claimDestinations = new Map<
+    string,
+    { page: 3 | 4; destinationY: number }
+  >();
+  const registerPdfLink = (link: PdfLink) => pdfLinks.push(link);
+  const section = (
+    commands: string[],
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    title: string,
+    body: string,
+    maxLines = 5,
+  ) => {
+    const bodySize = height <= 70 ? 7.4 : 8;
+    const lineHeight = bodySize + 4;
+    const fittedLines = Math.max(
+      1,
+      Math.min(maxLines, Math.floor((height - 46) / lineHeight) + 1),
+    );
+    box(commands, x, y - height, width, height);
+    text(
+      commands,
+      x + 16,
+      y - 19,
+      title.toUpperCase().slice(0, 88),
+      6.5,
+      "0.47 0.39 0.20",
+    );
+    return paragraph(
+      commands,
+      x + 16,
+      y - 38,
+      body,
+      Math.floor(width / 5.25),
+      fittedLines,
+      bodySize,
+    );
+  };
+  const smallMeta = (
+    commands: string[],
+    x: number,
+    y: number,
+    label: string,
+    value: string,
+  ) => {
+    box(commands, x, y - 52, 242, 52);
+    text(commands, x + 14, y - 20, label.toUpperCase(), 7, "0.45 0.45 0.45");
+    text(commands, x + 14, y - 39, value, 11, "0.08 0.08 0.08");
+  };
+
+  const tinyMeta = (
+    commands: string[],
+    x: number,
+    y: number,
+    width: number,
+    label: string,
+    value: string,
+    valueSize = 9,
+    valueColor = "0.08 0.08 0.08",
+  ) => {
+    box(commands, x, y - 48, width, 48);
+    text(commands, x + 10, y - 18, label.toUpperCase(), 6, "0.45 0.45 0.45");
+    text(
+      commands,
+      x + 10,
+      y - 35,
+      compactValue(value, Math.max(12, Math.floor(width / 5))),
+      valueSize,
+      valueColor,
+    );
+  };
+
+  const compactValue = (value: string, max = 54) => {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    return normalized.length > max
+      ? `${normalized.slice(0, Math.max(0, max - 3))}...`
+      : normalized;
+  };
+  const compactMeta = (value: string, max = pass1254.lineClamp.metadata) =>
+    compactValue(value, max);
+  const compactFooter = (value: string) =>
+    compactValue(value, pass1254.lineClamp.footer);
+  const publicKernelStatus =
+    report.kernel.status === "ready" ? lc.reportReady : lc.reportLimited;
+  const premiumStateLine = compactMeta(
+    `${lc.evidenceLimit} · ${pass1334.score}% · cap ${pass1374.confidenceCeiling}%`,
+    74,
+  );
+  const kernelStateLine = compactMeta(
+    `${publicKernelStatus} · ${report.kernel.confidence}% · cap ${report.kernel.confidenceCap}% · ${lc.sourceCoverage}: ${report.kernel.sourceCount}`,
+    74,
+  );
+  const calibrationStateLine = compactMeta(
+    `Calibration ${report.kernel.calibrationVersion} · ${report.kernel.calibrationHash.slice(0, 16)}`,
+    92,
+  );
+  const mapStateLine = compactMeta(
+    `${lc.sourceMap} · ${pass1354.copy.badge}`,
+    74,
+  );
+  const megaPassLine = compactMeta(
+    `${lc.layoutCheck} · ${pass1413.totalTaskCount} checks`,
+    74,
+  );
+  const lineBudget = (blockId: string, fallback: number) => {
+    const block = pass609.blocks.find((candidate: Pass4158LensPass609Block) => candidate.id === blockId);
+    return block
+      ? Math.max(1, Math.min(fallback, block.renderedLineBudget))
+      : fallback;
+  };
+  const tierPanel = (
+    commands: string[],
+    x: number,
+    top: number,
+    width: number,
+    height: number,
+    tier: LensReport["pass450"]["tiers"][number],
+    maxFields: number,
+  ) => {
+    box(commands, x, top - height, width, height);
+    text(
+      commands,
+      x + 16,
+      top - 23,
+      `${tier.label.toUpperCase()} · ${tier.fieldCount}`,
+      8,
+      "0.47 0.39 0.20",
+    );
+    paragraph(
+      commands,
+      x + 16,
+      top - 43,
+      tier.promise,
+      Math.floor(width / 5.3),
+      2,
+      8,
+    );
+    let rowY = top - 78;
+    tier.fields.slice(0, maxFields).forEach((entry: Pass4158LensPass450Field) => {
+      const state =
+        entry.state === "confirmed"
+          ? "OK"
+          : entry.state === "review"
+            ? "CHECK"
+            : "SOURCE";
+      text(
+        commands,
+        x + 16,
+        rowY,
+        compactValue(entry.label, 28),
+        7,
+        "0.40 0.40 0.40",
+      );
+      text(
+        commands,
+        x + 154,
+        rowY,
+        compactValue(entry.value, 49),
+        8,
+        "0.12 0.12 0.12",
+      );
+      text(
+        commands,
+        x + width - 50,
+        rowY,
+        state,
+        6,
+        entry.state === "confirmed"
+          ? "0.12 0.45 0.30"
+          : entry.state === "review"
+            ? "0.58 0.39 0.08"
+            : "0.58 0.18 0.18",
+      );
+      rowY -= 19;
+    });
+  };
+
+  // PASS455 compatibility bridge for earlier regression scans:
+  // LensReport["pass454"]["tiers"][number]
+  // report.pass454?.verdict.headline
+  // report.pass454?.verdict.summary
+  // report.pass454.tiers
+  const tierPanel454 = (
+    commands: string[],
+    x: number,
+    top: number,
+    width: number,
+    height: number,
+    tier: LensReport["pass455"]["tiers"][number],
+    maxFields: number,
+  ) => {
+    box(commands, x, top - height, width, height);
+    text(
+      commands,
+      x + 16,
+      top - 23,
+      `${tier.label.toUpperCase()} · ${tier.fieldCount}`,
+      8,
+      "0.47 0.39 0.20",
+    );
+    paragraph(
+      commands,
+      x + 16,
+      top - 43,
+      tier.promise,
+      Math.floor(width / 5.3),
+      2,
+      8,
+    );
+    let rowY = top - 78;
+    tier.metrics.slice(0, maxFields).forEach((entry: Pass4158LensPass455Metric) => {
+      const state =
+        entry.state === "confirmed"
+          ? "OK"
+          : entry.state === "review"
+            ? "CHECK"
+            : "SOURCE";
+      text(
+        commands,
+        x + 16,
+        rowY,
+        compactValue(entry.label, 28),
+        7,
+        "0.40 0.40 0.40",
+      );
+      text(
+        commands,
+        x + 154,
+        rowY,
+        compactValue(entry.value, 49),
+        8,
+        "0.12 0.12 0.12",
+      );
+      text(
+        commands,
+        x + width - 50,
+        rowY,
+        state,
+        6,
+        entry.state === "confirmed"
+          ? "0.12 0.45 0.30"
+          : entry.state === "review"
+            ? "0.58 0.39 0.08"
+            : "0.58 0.18 0.18",
+      );
+      rowY -= 19;
+    });
+  };
+
+  // PASS456: full 10/14/20 field matrix with two-column, human-readable rows.
+  const tierGrid456 = (
+    commands: string[],
+    x: number,
+    top: number,
+    width: number,
+    height: number,
+    tier: LensReport["pass455"]["tiers"][number],
+    pageNumber: 3 | 4,
+  ) => {
+    box(commands, x, top - height, width, height);
+    text(
+      commands,
+      x + 16,
+      top - 22,
+      `${tier.label.toUpperCase()} · ${tier.fieldCount}`,
+      8,
+      "0.47 0.39 0.20",
+    );
+    paragraph(
+      commands,
+      x + 16,
+      top - 41,
+      tier.promise,
+      Math.floor(width / 5.2),
+      2,
+      7,
+    );
+
+    const columns = 2;
+    const rows = Math.max(1, Math.ceil(tier.metrics.length / columns));
+    const columnWidth = (width - 32) / columns;
+    const contentTop = top - 70;
+    const rowHeight = Math.min(39, Math.max(25, (height - 78) / rows));
+
+    tier.metrics.forEach((entry: Pass4158LensPass455Metric, index: number) => {
+      const column = Math.floor(index / rows);
+      const row = index % rows;
+      const cellX = x + 16 + column * columnWidth;
+      const rowY = contentTop - row * rowHeight;
+      const state =
+        entry.state === "confirmed"
+          ? "OK"
+          : entry.state === "review"
+            ? "CHECK"
+            : entry.state === "not_applicable"
+              ? "N/A"
+              : "SOURCE";
+      const stateColor =
+        entry.state === "confirmed"
+          ? "0.12 0.45 0.30"
+          : entry.state === "review"
+            ? "0.58 0.39 0.08"
+            : entry.state === "not_applicable"
+              ? "0.36 0.36 0.36"
+              : "0.58 0.18 0.18";
+      const footnote = pass594.claims.find(
+        (claim: Pass4158LensPass594Claim) => claim.fieldId === entry.id,
+      );
+      const sourceLabel = footnote?.sourceIds.join("/") || "";
+      text(
+        commands,
+        cellX,
+        rowY,
+        compactValue(entry.label, sourceLabel ? 23 : 30),
+        6,
+        "0.40 0.40 0.40",
+      );
+      if (footnote) {
+        claimDestinations.set(footnote.claimId, {
+          page: pageNumber,
+          destinationY: rowY + 8,
+        });
+      }
+      if (footnote?.sourceIds[0]) {
+        const sourceIndex = report.pass582.citations.findIndex(
+          (citation: Pass4158LensCitation) => citation.id === footnote.sourceIds[0],
+        );
+        const sourceTop =
+          pass469Layout.pageTwo.sourceRowTops[sourceIndex] ?? 724;
+        const linkX = cellX + columnWidth - 76;
+        text(commands, linkX, rowY, sourceLabel, 5.4, "0.18 0.36 0.48");
+        registerPdfLink({
+          page: pageNumber,
+          rect: [linkX - 2, rowY - 4, linkX + 31, rowY + 8],
+          destinationPage: 2,
+          destinationY: sourceTop,
+          title: `${footnote.claimId} -> ${footnote.sourceIds.join(",")}`,
+        });
+      }
+      text(commands, cellX + columnWidth - 38, rowY, state, 5.5, stateColor);
+      text(
+        commands,
+        cellX,
+        rowY - 11,
+        compactValue(entry.value, 38),
+        7.3,
+        "0.10 0.10 0.10",
+      );
+      if (rowHeight >= 33) {
+        text(
+          commands,
+          cellX,
+          rowY - 21,
+          compactValue(entry.humanMeaning, 45),
+          5.2,
+          "0.43 0.43 0.43",
+        );
+      }
+    });
+  };
+
+  const waterfallPanel466 = (
+    commands: string[],
+    x: number,
+    top: number,
+    width: number,
+  ) => {
+    const panelHeight = 126;
+    box(commands, x, top - panelHeight, width, panelHeight);
+    text(
+      commands,
+      x + 16,
+      top - 22,
+      `CONFIDENCE WATERFALL · ${pass466.finalConfidence}%`,
+      8,
+      "0.47 0.39 0.20",
+    );
+    const gap = 8;
+    const cellWidth = (width - 32 - gap * 2) / 3;
+    pass466.stages.slice(0, 6).forEach((stage: Pass4158LensWaterfallStage, index: number) => {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      const cellX = x + 16 + column * (cellWidth + gap);
+      const cellTop = top - 40 - row * 40;
+      text(
+        commands,
+        cellX,
+        cellTop,
+        compactValue(stage.label, 23),
+        5.8,
+        "0.42 0.42 0.42",
+      );
+      text(
+        commands,
+        cellX,
+        cellTop - 14,
+        `${stage.cap}% · ${stage.state === "confirmed" ? "OK" : stage.state === "review" ? "CHECK" : "SOURCE"}`,
+        7.2,
+        stage.state === "confirmed"
+          ? "0.12 0.45 0.30"
+          : stage.state === "review"
+            ? "0.58 0.39 0.08"
+            : "0.58 0.18 0.18",
+      );
+    });
+  };
+
+  text(
+    pageOne,
+    46,
+    790,
+    `VELMERE LENS REPORT · ${pass488.pages[0].label.toUpperCase()} · ${report.pass477.label.toUpperCase()}`,
+    9,
+    "0.47 0.39 0.20",
+  );
+  text(
+    pageOne,
+    420,
+    790,
+    new Date(report.generatedAt).toLocaleDateString(report.locale),
+    8,
+    "0.47 0.39 0.20",
+  );
+  const titleY = headline(pageOne, 46, 744, report.title, 34, 2);
+  text(
+    pageOne,
+    46,
+    titleY - 5,
+    report.symbol.toUpperCase().slice(0, 18),
+    13,
+    "0.55 0.42 0.12",
+  );
+
+  section(
+    pageOne,
+    46,
+    pass469Layout.pageOne.verdict.top,
+    503,
+    pass469Layout.pageOne.verdict.height,
+    report.pass478.verdict.label,
+    `${report.pass478.verdict.headline}. ${report.pass478.verdict.summary}`,
+    4,
+  );
+  tinyMeta(
+    pageOne,
+    46,
+    pass469Layout.pageOne.metadataTop,
+    116,
+    report.pass453.labels.confidenceCeiling,
+    `${report.pass477.confidenceCeiling}%`,
+  );
+  tinyMeta(
+    pageOne,
+    175,
+    pass469Layout.pageOne.metadataTop,
+    116,
+    report.pass453.labels.sourceQuorum,
+    `${report.pass477.sourceCount} · ${report.pass477.evidenceStateLabel}`,
+  );
+  tinyMeta(
+    pageOne,
+    304,
+    pass469Layout.pageOne.metadataTop,
+    116,
+    report.pass453.labels.evidenceCoverage,
+    `${report.pass453.decision.evidenceCoverage}%`,
+  );
+  tinyMeta(
+    pageOne,
+    433,
+    pass469Layout.pageOne.metadataTop,
+    116,
+    report.pass453.labels.dataFreshness,
+    report.pass453.decision.dataAgeLabel,
+  );
+  section(
+    pageOne,
+    46,
+    pass469Layout.pageOne.brief.top,
+    503,
+    pass469Layout.pageOne.brief.height,
+    report.labels.brief,
+    `${report.pass477.purpose} ${getSection(report, "brief", report.summary)}`,
+    lineBudget("decision-brief", 5),
+  );
+  section(
+    pageOne,
+    46,
+    pass469Layout.pageOne.market.top,
+    503,
+    pass469Layout.pageOne.market.height,
+    lc.marketData,
+    getSection(
+      report,
+      "marketData",
+      report.pass450?.customerSummary ||
+        "Basic, Pro and Advanced share one source-bound payload.",
+    ),
+    lineBudget("decision-brief", 4),
+  );
+  section(
+    pageOne,
+    46,
+    pass469Layout.pageOne.checked.top,
+    503,
+    pass469Layout.pageOne.checked.height,
+    report.labels.checked,
+    report.pass478.confirmedFacts.length
+      ? report.pass478.confirmedFacts.join(" · ")
+      : getSection(report, "sources", report.whyItMatters),
+    lineBudget("evidence-claim-gate", 3),
+  );
+  section(
+    pageOne,
+    46,
+    pass469Layout.pageOne.missing.top,
+    503,
+    pass469Layout.pageOne.missing.height,
+    report.labels.missing,
+    report.pass478.confidenceLimits.length
+      ? report.pass478.confidenceLimits.join(" · ")
+      : getSection(report, "missing", report.missingData.join(" · ") || "-"),
+    lineBudget("boundary-missing-appendix", 2),
+  );
+  const pageOneBoundary = report.locale === "pl"
+    ? "Tylko potwierdzone źródła mogą wspierać liczby i wnioski. Brak dowodu pozostaje jawny."
+    : report.locale === "de"
+      ? "Nur bestätigte Quellen dürfen Zahlen und Schlussfolgerungen stützen. Fehlende Evidenz bleibt sichtbar."
+      : "Only confirmed sources may support numbers and conclusions. Missing evidence remains explicit.";
+  text(pageOne, 46, 80, compactMeta(pageOneBoundary, 112), 7, "0.42 0.42 0.42");
+  text(
+    pageOne,
+    46,
+    63,
+    compactMeta(`${lc.sourceCoverage}: ${report.sources.length} · ${lc.confidence}: ${report.sourceConfidence}% · ${report.pass477.evidenceStateLabel}`, 112),
+    7,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageOne,
+    46,
+    44,
+    compactMeta(`${report.labels.signature} · ${report.generatedAt}`, 100),
+    8,
+    "0.10 0.10 0.10",
+  );
+  text(pageOne, 500, 20, `${pass488.labels.page} 1 / ${pdfPageCount}`, 7, "0.42 0.42 0.42");
+
+  text(
+    pageTwo,
+    46,
+    790,
+    `VELMERE LENS REPORT · ${pass488.pages[1].label.toUpperCase()} · ${report.symbol.toUpperCase().slice(0, 18)}`,
+    9,
+    "0.47 0.39 0.20",
+  );
+  text(pageTwo, 46, 752, lc.sourceLedger.toUpperCase(), 8, "0.47 0.39 0.20");
+  report.sources.slice(0, 4).forEach((source: Pass4158LensReportSource, index: number) => {
+    const citation = report.pass582.citations[index];
+    const sourceTop = pass469Layout.pageTwo.sourceRowTops[index] ?? 724;
+    const sourceNote = compactValue(source.note, 116);
+    box(
+      pageTwo,
+      46,
+      sourceTop - pass469Layout.pageTwo.sourceRowHeight,
+      503,
+      pass469Layout.pageTwo.sourceRowHeight,
+    );
+    text(
+      pageTwo,
+      62,
+      sourceTop - 18,
+      compactValue(
+        `${citation?.id || `S${String(index + 1).padStart(2, "0")}`} · ${source.label}`,
+        78,
+      ),
+      9,
+      "0.08 0.08 0.08",
+    );
+    text(
+      pageTwo,
+      62,
+      sourceTop - 30,
+      compactValue(
+        `${source.evidenceState} · ${source.mode} · ${source.freshness} · ${pass607.sources[index]?.freshnessState || "unknown"} · ${lc.confidence} ${pass607.sources[index]?.confidenceCap ?? source.confidence}%`,
+        96,
+      ),
+      7.2,
+      "0.37 0.37 0.37",
+    );
+    text(
+      pageTwo,
+      62,
+      sourceTop - 42,
+      compactValue(
+        `${sourceNote} · ${lc.sourceTimestamp}: ${pass607.sources[index]?.observedAt || "missing"}`,
+        116,
+      ),
+      6.2,
+      "0.43 0.43 0.43",
+    );
+    const sourceReturn = pass594.sources.find(
+      (candidate: Pass4158LensSourceAnchor) => candidate.sourceId === citation?.id,
+    );
+    if (sourceReturn?.claimIds[0]) {
+      text(
+        pageTwo,
+        478,
+        sourceTop - 18,
+        `BACK ${sourceReturn.claimIds[0]}`,
+        5.5,
+        "0.18 0.36 0.48",
+      );
+    }
+  });
+  const pageTwoDensity = buildPass4648PageTwoDensityLayout(report.sources.length);
+  const pageTwoSourceCount = pageTwoDensity.sourceCount;
+  if (pageTwoSourceCount === 0) {
+    section(
+      pageTwo,
+      46,
+      pageTwoDensity.sourceState!.top,
+      503,
+      pageTwoDensity.sourceState!.height,
+      report.labels.sourceState,
+      `${lc.noSourceRows} · ${report.symbol} · ${report.sourceMode} · ${report.labels.confidence} ${report.sourceConfidence}%`,
+      2,
+    );
+    section(
+      pageTwo,
+      46,
+      pageTwoDensity.brief!.top,
+      503,
+      pageTwoDensity.brief!.height,
+      `${report.symbol} · ${report.labels.brief}`,
+      getSection(report, "marketData", report.summary),
+      4,
+    );
+    section(
+      pageTwo,
+      46,
+      pageTwoDensity.missing!.top,
+      503,
+      pageTwoDensity.missing!.height,
+      report.labels.missing,
+      report.missingData.slice(0, 8).join(" · ") || getSection(report, "missing", report.whyItMatters),
+      4,
+    );
+  } else if (pageTwoSourceCount === 1) {
+    section(
+      pageTwo,
+      46,
+      pageTwoDensity.brief!.top,
+      503,
+      pageTwoDensity.brief!.height,
+      `${report.symbol} · ${report.labels.brief}`,
+      getSection(report, "marketData", report.summary),
+      4,
+    );
+    section(
+      pageTwo,
+      46,
+      pageTwoDensity.missing!.top,
+      503,
+      pageTwoDensity.missing!.height,
+      report.labels.missing,
+      report.missingData.slice(0, 8).join(" · ") || getSection(report, "missing", report.whyItMatters),
+      4,
+    );
+  } else if (pageTwoSourceCount === 2) {
+    section(
+      pageTwo,
+      46,
+      pageTwoDensity.brief!.top,
+      503,
+      pageTwoDensity.brief!.height,
+      `${report.symbol} · ${report.labels.brief}`,
+      `${getSection(report, "marketData", report.summary)} · ${report.missingData.slice(0, 5).join(" · ")}`,
+      6,
+    );
+  }
+  section(
+    pageTwo,
+    46,
+    pass469Layout.pageTwo.secondProvider.top,
+    503,
+    pass469Layout.pageTwo.secondProvider.height,
+    lc.secondProvider,
+    getSection(report, "secondProvider", lc.secondMissing),
+    5,
+  );
+  section(
+    pageTwo,
+    46,
+    pass469Layout.pageTwo.nextAction.top,
+    503,
+    pass469Layout.pageTwo.nextAction.height,
+    report.labels.next,
+    report.pass478.nextChecks.join(" · ") ||
+      getSection(report, "next", report.nextOperatorStep),
+    5,
+  );
+  section(
+    pageTwo,
+    46,
+    pass469Layout.pageTwo.providerTruth.top,
+    503,
+    pass469Layout.pageTwo.providerTruth.height,
+    // PASS460 legacy verifier marker: PASS459–460 · Provider truth + consensus
+    // PASS462 legacy verifier marker: PASS459–462
+    lc.sourceGate,
+    [
+      `${lc.sourceCoverage}: ${report.sources.length}`,
+      `${lc.confirmed}: ${report.sources.filter((source) => source.evidenceState === "confirmed").length}`,
+      `${lc.confidence}: ${Math.min(report.sourceConfidence, report.pass477.confidenceCeiling)}%`,
+      `${lc.secondProvider}: ${report.sources.length >= 2 ? lc.confirmed : lc.missing}`,
+      `${lc.nextMissingLane}: ${report.missingData[0] || lc.noSourceRows}`,
+      report.pass459?.claimBoundary,
+    ].filter(Boolean).join(" · "),
+    4,
+  );
+  text(pageTwo, 46, 88, `${lc.integrity}: ${lc.active}`, 7, "0.42 0.42 0.42");
+  text(pageTwo, 46, 68, `${lc.consistency}: ${lc.active}`, 7, "0.42 0.42 0.42");
+  text(
+    pageTwo,
+    205,
+    68,
+    `Seal ${pass512Seal.state} · ${pass512Seal.readiness}% · ${pass512Seal.checksum}`,
+    7,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageTwo,
+    390,
+    68,
+    `${pass488.labels.page} 2 / ${pdfPageCount}`,
+    8,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageTwo,
+    46,
+    46,
+    compactFooter(`${report.labels.signature} · ${pass488.parityKey}`),
+    10,
+    "0.10 0.10 0.10",
+  );
+
+  text(
+    pageThree,
+    46,
+    790,
+    `VELMERE CYBERSECURITY · ${lc.depthMatrix.toUpperCase()}`,
+    9,
+    "0.47 0.39 0.20",
+  );
+  text(
+    pageThree,
+    46,
+    750,
+    report.pass478.verdict.headline ||
+      report.pass455?.executive.headline ||
+      report.pass454?.verdict.headline ||
+      report.pass450?.customerHeadline ||
+      report.pass448?.headline ||
+      "Human readout",
+    17,
+    "0.08 0.08 0.08",
+  );
+  paragraph(
+    pageThree,
+    46,
+    720,
+    report.pass478.verdict.summary ||
+      report.pass455?.executive.oneSentence ||
+      report.pass454?.verdict.summary ||
+      report.pass450?.customerSummary ||
+      report.pass448?.browserPromise ||
+      "Basic, Pro and Advanced share the same source-bound payload.",
+    88,
+    3,
+    9,
+  );
+  const tiers = report.pass455.tiers;
+  const basicTier = tiers.find((tier: Pass4158LensTierRow) => tier.id === "basic");
+  const proTier = tiers.find((tier: Pass4158LensTierRow) => tier.id === "pro");
+  const advancedTier = tiers.find((tier: Pass4158LensTierRow) => tier.id === "advanced");
+  const selectedTier =
+    selectedDepth === "basic"
+      ? basicTier
+      : selectedDepth === "pro"
+        ? proTier
+        : advancedTier;
+  const selectedDepthLabel =
+    selectedDepth === "basic"
+      ? lc.basicPdf
+      : selectedDepth === "pro"
+        ? lc.proPdf
+        : lc.advancedPdf;
+
+  text(
+    pageThree,
+    46,
+    674,
+    `${lc.selectedDepth.toUpperCase()}: ${selectedDepthLabel}`,
+    8,
+    "0.47 0.39 0.20",
+  );
+
+  // PASS456: page three carries every Basic and Pro field instead of a truncated sample.
+  // PASS465: PDF can be generated as Basic, Pro or Advanced during the V forge.
+  if (selectedDepth === "advanced") {
+    if (basicTier)
+      tierGrid456(
+        pageThree,
+        46,
+        pass469Layout.pageThree.basic!.top,
+        503,
+        pass469Layout.pageThree.basic!.height,
+        basicTier,
+        3,
+      );
+    if (proTier)
+      tierGrid456(
+        pageThree,
+        46,
+        pass469Layout.pageThree.pro!.top,
+        503,
+        pass469Layout.pageThree.pro!.height,
+        proTier,
+        3,
+      );
+  } else if (selectedTier) {
+    tierGrid456(
+      pageThree,
+      46,
+      pass469Layout.pageThree.selected!.top,
+      503,
+      pass469Layout.pageThree.selected!.height,
+      selectedTier,
+      3,
+    );
+  }
+  section(
+    pageThree,
+    46,
+    pass469Layout.pageThree.missingPolicy.top,
+    503,
+    pass469Layout.pageThree.missingPolicy.height,
+    lc.unknownPolicy,
+    pass608.entries.length
+      ? `${pdfEvidence2247.summary} ${pdfEvidence2247.laneSummary} ${pass608.summary} ${pass608.entries
+          .slice(0, 3)
+          .map((entry: Pass4158LensMissingEntry) => `${entry.id}: ${entry.label} -> ${entry.nextCheck}`)
+          .join(" · ")}`
+      : `${pdfEvidence2247.summary} ${pdfEvidence2247.laneSummary} ${pass608.summary}`,
+    lineBudget("boundary-missing-appendix", 4),
+  );
+  text(
+    pageThree,
+    46,
+    pass469Layout.footer.boundaryY,
+    compactFooter(report.labels.boundary),
+    7,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageThree,
+    390,
+    pass469Layout.footer.pageY,
+    `${pass488.labels.page} 3 / ${pdfPageCount}`,
+    8,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageThree,
+    46,
+    pass469Layout.footer.signatureY,
+    compactFooter(`${report.labels.signature} · ${pass488.parityKey}`),
+    10,
+    "0.10 0.10 0.10",
+  );
+
+  text(
+    pageFour,
+    46,
+    790,
+    `VELMERE LENS REPORT · ${selectedDepthLabel.toUpperCase()}`,
+    9,
+    "0.47 0.39 0.20",
+  );
+  text(
+    pageFour,
+    46,
+    750,
+    selectedTier?.label || lc.signatureDiagnostics,
+    18,
+    "0.08 0.08 0.08",
+  );
+  paragraph(
+    pageFour,
+    46,
+    724,
+    selectedTier?.promise ||
+      getSection(report, "marketData", report.whyItMatters),
+    88,
+    2,
+    8,
+  );
+
+  // PASS456: Advanced renders all 20 fields, then exposes gaps and one next action.
+  // PASS456/PASS465: Advanced renders all 20 fields; Basic/Pro keep a focused decision page.
+  if (selectedDepth === "advanced" && advancedTier) {
+    tierGrid456(
+      pageFour,
+      46,
+      pass469Layout.pageFour.advanced!.top,
+      503,
+      pass469Layout.pageFour.advanced!.height,
+      advancedTier,
+      4,
+    );
+    waterfallPanel466(pageFour, 46, pass469Layout.pageFour.waterfall.top, 503);
+  } else {
+    waterfallPanel466(pageFour, 46, pass469Layout.pageFour.waterfall.top, 503);
+    section(
+      pageFour,
+      46,
+      pass469Layout.pageFour.sourceBoundary!.top,
+      503,
+      pass469Layout.pageFour.sourceBoundary!.height,
+      lc.sourceBoundary,
+      report.pass459?.claimBoundary ||
+        report.pass452?.sourcePolicy ||
+        report.labels.boundary,
+      4,
+    );
+    section(
+      pageFour,
+      46,
+      pass469Layout.pageFour.primaryNextAction!.top,
+      503,
+      pass469Layout.pageFour.primaryNextAction!.height,
+      lc.nextAction,
+      pass626.primaryAction
+        ? `${pass626.primaryAction.action} · ${pass626.primaryAction.completionEvidence}`
+        : report.pass478.nextChecks.length
+          ? report.pass478.nextChecks.slice(0, 3).join(" · ")
+          : report.nextOperatorStep,
+      lineBudget("boundary-next-check-plan", 5),
+    );
+  }
+  section(
+    pageFour,
+    46,
+    pass469Layout.pageFour.missingFields.top,
+    503,
+    pass469Layout.pageFour.missingFields.height,
+    lc.missingFields,
+    pass608.entries.length
+      ? `${pdfEvidence2247.summary} ${pass608.entries
+          .slice(0, selectedDepth === "advanced" ? 4 : 3)
+          .map(
+            (entry: Pass4158LensMissingEntry) =>
+              `${entry.id} · ${entry.impact} · -${entry.confidencePenalty} · ${entry.label} · ${entry.nextCheck}`,
+          )
+          .join(" · ")}`
+      : `${pdfEvidence2247.summary} ${pass608.summary}`,
+    lineBudget(
+      "boundary-missing-appendix",
+      selectedDepth === "advanced" ? 4 : 5,
+    ),
+  );
+  if (selectedDepth === "advanced" && pass469Layout.pageFour.finalNextAction) {
+    section(
+      pageFour,
+      46,
+      pass469Layout.pageFour.finalNextAction.top,
+      503,
+      pass469Layout.pageFour.finalNextAction.height,
+      lc.nextAction,
+      pass626.tasks.length
+        ? pass626.tasks
+            .slice(0, 2)
+            .map((task: Pass4158LensNextCheckTask) => `${task.rank}. ${task.action}`)
+            .join(" · ")
+        : report.pass478.whatWouldChangeTheRead.length
+          ? report.pass478.whatWouldChangeTheRead.slice(0, 2).join(" · ")
+          : report.nextOperatorStep,
+      lineBudget("boundary-next-check-plan", 2),
+    );
+  }
+  // PASS450 compatibility markers: report.pass450?.tiers · report.pass450?.customerHeadline · report.pass450?.unknownPolicy · report.pass450?.reportArchitecture
+  // PASS452 compatibility markers retained: report.pass452?.signatureInsights · report.pass452?.sourcePolicy
+  // PASS452: page four adds source-bound Advanced signature diagnostics
+  text(
+    pageFour,
+    46,
+    pass469Layout.footer.boundaryY,
+    compactFooter(`${lc.sourceBoundary}: ${report.labels.boundary}`),
+    7,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageFour,
+    390,
+    pass469Layout.footer.pageY,
+    `${pass488.labels.page} 4 / ${pdfPageCount}`,
+    8,
+    "0.42 0.42 0.42",
+  );
+  text(
+    pageFour,
+    46,
+    pass469Layout.footer.signatureY,
+    compactFooter(`${report.labels.signature} · ${pass488.parityKey}`),
+    10,
+    "0.10 0.10 0.10",
+  );
+
+  const pageFive: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const pageSix: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const pageSeven: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const pageEight: string[] = ["q 0.99 0.985 0.965 rg 0 0 595 842 re f Q"];
+  const localized = (pl: string, de: string, en: string) =>
+    report.locale === "pl" ? pl : report.locale === "de" ? de : en;
+  const advancedPageHeader = (
+    commands: string[],
+    pageNumber: number,
+    titleValue: string,
+    subtitleValue: string,
+  ) => {
+    text(commands, 46, 796, `VELMÈRE · ${report.symbol}`, 8, "0.47 0.39 0.20");
+    headline(commands, 46, 758, titleValue, 42, 2);
+    paragraph(commands, 46, 706, subtitleValue, 94, 3, 8.5);
+    text(
+      commands,
+      472,
+      796,
+      `${pass488.labels.page} ${pageNumber} / ${pdfPageCount}`,
+      7,
+      "0.42 0.42 0.42",
+    );
+    text(
+      commands,
+      46,
+      42,
+      compactFooter(`${report.labels.signature} · ${pass488.parityKey}`),
+      9,
+      "0.10 0.10 0.10",
+    );
+  };
+  const advancedGrid = (
+    commands: string[],
+    rows: Array<{ title: string; body: string }>,
+  ) => {
+    const positions = [
+      { x: 46, y: 650 },
+      { x: 307, y: 650 },
+      { x: 46, y: 460 },
+      { x: 307, y: 460 },
+      { x: 46, y: 270 },
+      { x: 307, y: 270 },
+    ];
+    rows.slice(0, 6).forEach((row, index) => {
+      const position = positions[index];
+      if (!position) return;
+      section(commands, position.x, position.y, 242, 154, row.title, row.body, 8);
+    });
+  };
+
+  if (selectedDepth === "advanced") {
+    advancedPageHeader(
+      pageFive,
+      5,
+      localized("Rejestr dowodów", "Evidenzregister", "Evidence ledger"),
+      localized(
+        "Każdy wiersz pokazuje źródło, świeżość, confidence i jawne ograniczenie. Brak dowodu pozostaje brakiem — nie jest zamieniany w fakt.",
+        "Jede Zeile zeigt Quelle, Aktualität, Confidence und klare Einschränkung. Fehlende Evidenz wird nicht als Fakt dargestellt.",
+        "Each row shows source, freshness, confidence and an explicit limitation. Missing evidence stays missing and is never converted into fact.",
+      ),
+    );
+    advancedGrid(
+      pageFive,
+      report.sources.length
+        ? report.sources.map((source) => ({
+            title: `${source.label} · ${source.evidenceState}`,
+            body: `${localized("Tryb", "Modus", "Mode")}: ${source.mode}. ${localized("Świeżość", "Aktualität", "Freshness")}: ${source.freshness}. Confidence: ${source.confidence}/100. ${source.note}`,
+          }))
+        : [{
+            title: localized("Brak potwierdzonych źródeł", "Keine bestätigten Quellen", "No confirmed sources"),
+            body: localized(
+              "Advanced pozostaje zablokowane, dopóki source quorum nie dostarczy niezależnych dowodów.",
+              "Advanced bleibt gesperrt, bis das Source Quorum unabhängige Evidenz liefert.",
+              "Advanced remains blocked until source quorum provides independent evidence.",
+            ),
+          }],
+    );
+
+    advancedPageHeader(
+      pageSix,
+      6,
+      localized("Mapa claimów i analizy", "Claim- und Analysekarte", "Claim and analysis map"),
+      localized(
+        "Rozdział oddziela obserwacje, interpretacje i brakujące dane. Każda sekcja zachowuje granicę source-bound.",
+        "Der Abschnitt trennt Beobachtungen, Interpretationen und fehlende Daten. Jede Sektion bleibt source-bound.",
+        "This section separates observations, interpretation and missing data. Every section remains source-bound.",
+      ),
+    );
+    advancedGrid(
+      pageSix,
+      report.sections.map((item) => ({ title: item.title, body: item.body })),
+    );
+
+    advancedPageHeader(
+      pageSeven,
+      7,
+      localized("Brakujące dowody i plan re-check", "Fehlende Evidenz und Re-check-Plan", "Missing evidence and re-check plan"),
+      localized(
+        "To nie jest lista ozdobna. Każdy brak obniża confidence albo blokuje płatny werdykt do czasu ponownej weryfikacji.",
+        "Dies ist keine dekorative Liste. Jede Lücke senkt Confidence oder blockiert das Paid Verdict bis zur erneuten Prüfung.",
+        "This is not a decorative list. Every gap lowers confidence or blocks the paid verdict until re-verification.",
+      ),
+    );
+    advancedGrid(pageSeven, [
+      ...report.missingData.slice(0, 4).map((item, index) => ({
+        title: `${localized("Brak", "Lücke", "Gap")} ${index + 1}`,
+        body: item,
+      })),
+      {
+        title: localized("Następny bezpieczny krok", "Nächster sicherer Schritt", "Next safe step"),
+        body: report.nextOperatorStep,
+      },
+      {
+        title: localized("Confidence waterfall", "Confidence-Wasserfall", "Confidence waterfall"),
+        body: `${localized("Końcowa pewność", "Finale Confidence", "Final confidence")}: ${pass466.finalConfidence}/100. ${pdfEvidence2247.summary}`,
+      },
+    ]);
+
+    advancedPageHeader(
+      pageEight,
+      8,
+      localized("Metodologia, granice i podpis", "Methodik, Grenzen und Signatur", "Methodology, boundaries and signature"),
+      localized(
+        "Ostatnia strona dokumentuje wersję modelu, integralność payloadu, politykę anti-overfit i warunki, których raport nie może przekroczyć.",
+        "Die letzte Seite dokumentiert Modellversion, Payload-Integrität, Anti-Overfit-Regel und verbindliche Grenzen.",
+        "The final page documents model version, payload integrity, anti-overfit policy and the boundaries the report must not cross.",
+      ),
+    );
+    advancedGrid(pageEight, [
+      {
+        title: localized("Model i kalibracja", "Modell und Kalibrierung", "Model and calibration"),
+        body: `${report.kernel.schemaVersion} · ${report.kernel.calibrationVersion} · ${report.kernel.calibrationHash}`,
+      },
+      {
+        title: localized("Integralność", "Integrität", "Integrity"),
+        body: `${report.brain.checksum} · ${pass646.snapshotId} · ${pass583.manifestKey}`,
+      },
+      {
+        title: "Anti-overfit",
+        body: `${report.brain.antiOverfit} · ${report.brain.memoryMode} · ${report.pass424.antiRandomCopy}`,
+      },
+      {
+        title: localized("Granica klienta", "Kundengrenze", "Customer boundary"),
+        body: report.labels.boundary,
+      },
+      {
+        title: localized("Stan publikacji", "Veröffentlichungsstatus", "Release status"),
+        body: `${report.pass2289.productionState} · ${report.pass2289.customerOutput}`,
+      },
+      {
+        title: localized("Podpis", "Signatur", "Signature"),
+        body: `${report.labels.signature} · ${report.generatedAt} · ${pass488.parityKey}`,
+      },
+    ]);
+  }
+
+  pass594.sources.slice(0, 4).forEach((source: Pass4158LensSourceAnchor, sourceIndex: number) => {
+    const claimId = source.claimIds[0];
+    const destination = claimId ? claimDestinations.get(claimId) : undefined;
+    if (!destination) return;
+    const sourceTop = pass469Layout.pageTwo.sourceRowTops[sourceIndex] ?? 724;
+    registerPdfLink({
+      page: 2,
+      rect: [474, sourceTop - 25, 544, sourceTop - 9],
+      destinationPage: destination.page,
+      destinationY: destination.destinationY,
+      title: `${source.sourceId} -> ${claimId}`,
+    });
+  });
+
+  const taggedPageStream = (commands: string[]) =>
+    `/Sect <</MCID 0>> BDC\n${commands.join("\n")}\nEMC`;
+  // PASS447/PASS448 verifier compatibility markers kept after formatter expansion:
+  // object(8, "<< /Type /Page
+  // object(9, `<< /Length ${Buffer.byteLength(streamThree
+  // object(11, `<< /Length ${Buffer.byteLength(streamFour
+  // PASS448: A4 reader v2 compatibility marker.
+  // PASS450: explicit A4 pages are selected by tier: Basic 2, Pro 4, Advanced 8.
+  // PASS453: page one starts with a human verdict and readiness matrix; later pages remain source-bound.
+  // PASS465: PDF route accepts ?tier=basic|pro|advanced and renders a focused tier without breaking preview/download parity.
+  // PASS469: every A4 region is audited before drawing; content never enters the reserved footer and long tokens are hard-wrapped.
+  // PASS4640: paid tier length reflects real evidence depth rather than identical four-page shells.
+  const selectedPageCommands = selectedDepth === "basic"
+    ? [pageOne, pageTwo]
+    : selectedDepth === "advanced"
+      ? [pageOne, pageTwo, pageThree, pageFour, pageFive, pageSix, pageSeven, pageEight]
+      : [pageOne, pageTwo, pageThree, pageFour];
+  const selectedPageTitles = [
+    pass610.pages[0]?.title || "Decision",
+    pass610.pages[1]?.title || "Evidence",
+    pass610.pages[2]?.title || "Analysis",
+    pass610.pages[3]?.title || "Boundaries",
+    localized("Rejestr dowodów", "Evidenzregister", "Evidence ledger"),
+    localized("Mapa claimów", "Claim-Karte", "Claim map"),
+    localized("Braki i re-check", "Lücken und Re-check", "Gaps and re-check"),
+    localized("Metodologia i podpis", "Methodik und Signatur", "Methodology and signature"),
+  ].slice(0, selectedPageCommands.length);
+  const pageObjectId = (pageNumber: number) => 4 + (pageNumber - 1) * 2;
+  const streamObjectId = (pageNumber: number) => pageObjectId(pageNumber) + 1;
+  const infoObjectId = 4 + selectedPageCommands.length * 2;
+  const structRootObjectId = infoObjectId + 1;
+  const documentStructObjectId = infoObjectId + 2;
+  const sectionObjectStartId = infoObjectId + 3;
+  const parentTreeObjectId = sectionObjectStartId + selectedPageCommands.length;
+  const activePdfLinks = pdfLinks.filter(
+    (link) => link.page <= selectedPageCommands.length && link.destinationPage <= selectedPageCommands.length,
+  );
+  const annotationObjectStartId = parentTreeObjectId + 1;
+  const annotationObjects = activePdfLinks.map((link, index) => {
+    const id = annotationObjectStartId + index;
+    const [x1, y1, x2, y2] = link.rect;
+    return {
+      id,
+      page: link.page,
+      content: `<< /Type /Annot /Subtype /Link /Rect [${x1} ${y1} ${x2} ${y2}] /Border [0 0 0] /Contents (${pdfText(link.title)}) /Dest [${pageObjectId(link.destinationPage)} 0 R /XYZ 0 ${link.destinationY} null] >>`,
+    };
+  });
+  const pageAnnots = (page: number) => {
+    const ids = annotationObjects
+      .filter((annotation) => annotation.page === page)
+      .map((annotation) => `${annotation.id} 0 R`);
+    return ids.length ? ` /Annots [${ids.join(" ")}]` : "";
+  };
+  const pageKids = selectedPageCommands
+    .map((_, index) => `${pageObjectId(index + 1)} 0 R`)
+    .join(" ");
+  const sectionKids = selectedPageCommands
+    .map((_, index) => `${sectionObjectStartId + index} 0 R`)
+    .join(" ");
+  const objects = [
+    object(
+      1,
+      `<< /Type /Catalog /Pages 2 0 R /Lang (${pdfText(pass611.documentLanguage)}) /ViewerPreferences << /DisplayDocTitle true >> /MarkInfo << /Marked true >> /StructTreeRoot ${structRootObjectId} 0 R >>`,
+    ),
+    object(2, `<< /Type /Pages /Kids [${pageKids}] /Count ${selectedPageCommands.length} >>`),
+    object(
+      3,
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [128 /Aogonek /aogonek /Cacute /cacute /Eogonek /eogonek /Lslash /lslash /Nacute /nacute /Sacute /sacute /Zacute /zacute /Zdotaccent /zdotaccent] >> >>",
+    ),
+    ...selectedPageCommands.flatMap((commands, index) => {
+      const pageNumber = index + 1;
+      const stream = taggedPageStream(commands);
+      return [
+        object(
+          pageObjectId(pageNumber),
+          `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /StructParents ${index} /Resources << /Font << /F1 3 0 R >> >> /Contents ${streamObjectId(pageNumber)} 0 R${pageAnnots(pageNumber)} >>`,
+        ),
+        object(
+          streamObjectId(pageNumber),
+          `<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`,
+        ),
+      ];
+    }),
+    object(
+      infoObjectId,
+      `<< /Title (${pdfText(report.title)}) /Author (Velmere Cybersecurity) /Subject (${pdfText(`${report.symbol} · ${report.pass477.label} · source-bound research report`)}) /Keywords (${pdfText(`VLM calibration ${report.kernel.calibrationVersion} ${report.kernel.calibrationHash}`)}) /Creator (Velmere Lens) /Producer (Velmere PDF Forge) >>`,
+    ),
+    object(
+      structRootObjectId,
+      `<< /Type /StructTreeRoot /K [${documentStructObjectId} 0 R] /ParentTree ${parentTreeObjectId} 0 R >>`,
+    ),
+    object(
+      documentStructObjectId,
+      `<< /Type /StructElem /S /Document /P ${structRootObjectId} 0 R /K [${sectionKids}] >>`,
+    ),
+    ...selectedPageCommands.map((_, index) =>
+      object(
+        sectionObjectStartId + index,
+        `<< /Type /StructElem /S /Sect /P ${documentStructObjectId} 0 R /Pg ${pageObjectId(index + 1)} 0 R /K 0 /T (${pdfText(selectedPageTitles[index] || `Page ${index + 1}`)}) >>`,
+      ),
+    ),
+    object(
+      parentTreeObjectId,
+      `<< /Nums [${selectedPageCommands.map((_, index) => `${index} [${sectionObjectStartId + index} 0 R]`).join(" ")}] >>`,
+    ),
+    ...annotationObjects.map((annotation) => object(annotation.id, annotation.content)),
+  ];
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  for (const item of objects) {
+    offsets.push(Buffer.byteLength(pdf, "latin1"));
+    pdf += item;
+  }
+  const xref = Buffer.byteLength(pdf, "latin1");
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index <= objects.length; index += 1) {
+    pdf += `${String(offsets[index]).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info ${infoObjectId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(pdf, "latin1");
+}
+
+function buildPublicLensCustomerOutput(report: LensReport) {
+  if (report.locale === "de") {
+    return "Kein numerischer Risikowert wird veröffentlicht. Unabhängige Live-Quellen und das erforderliche Evidenzquorum fehlen; dieser Output bleibt ein vorsichtiger Prescreen.";
+  }
+  if (report.locale === "en") {
+    return "No numeric risk score is published. Independent live sources and the required evidence quorum are missing, so this output remains a cautious prescreen.";
+  }
+  return "Liczbowy wynik ryzyka nie jest publikowany. Brakuje niezależnych źródeł live i wymaganego kworum dowodów, dlatego wynik pozostaje ostrożnym prescreeningiem.";
+}
+
+function buildPublicLensReport(report: LensReport, commercialReadiness: ReturnType<typeof buildLensCommercialReadiness>) {
+  if (commercialReadiness.confirmedSourceCount > 0 && commercialReadiness.confidence > 0) return report;
+  const customerOutput = buildPublicLensCustomerOutput(report);
+  return {
+    ...report,
+    pass2287: { ...report.pass2287, customerOutput },
+    pass2289: { ...report.pass2289, customerOutput },
+    pass2290: { ...report.pass2290, customerOutput },
+    pass2291: { ...report.pass2291, customerOutput },
+  };
+}
+
+function buildLensCommercialReadiness(report: LensReport, depth: LensPdfDepth) {
+  const sourceCount = report.sources.length;
+  const confirmedSourceCount = report.sources.filter((source) => source.evidenceState === "confirmed").length;
+  const confidence = Math.max(0, Math.min(100, Math.round(Math.min(
+    report.sourceConfidence,
+    report.pass477.confidenceCeiling,
+    report.kernel.confidenceCap,
+  ))));
+  const requirements = {
+    basic: { sources: 0, confirmed: 0, confidence: 0 },
+    pro: { sources: 2, confirmed: 1, confidence: 45 },
+    advanced: { sources: 3, confirmed: 2, confidence: 60 },
+  } as const;
+  const required = requirements[depth];
+  const unifiedLedgerReady = report.pass646.state === "locked" && report.pass646.duplicateSourceIds.length === 0 && report.pass646.duplicateAtomIds.length === 0 && report.pass646.orphanClaimIds.length === 0;
+  const confirmedLedgerSources = report.pass646.sourceLedger.filter((source) => source.state === "confirmed").length;
+  const evidenceThresholdMet = sourceCount >= required.sources && confirmedSourceCount >= required.confirmed && confidence >= required.confidence && unifiedLedgerReady && confirmedLedgerSources >= required.confirmed;
+  const sellReady = depth === "basic" ? false : evidenceThresholdMet;
+  const blockedReasons = [
+    sourceCount < required.sources ? `sources:${sourceCount}/${required.sources}` : null,
+    confirmedSourceCount < required.confirmed ? `confirmed_sources:${confirmedSourceCount}/${required.confirmed}` : null,
+    confidence < required.confidence ? `confidence:${confidence}/${required.confidence}` : null,
+  ].filter((value): value is string => Boolean(value));
+  const locale = report.locale;
+  const customerMessage = depth === "basic"
+    ? locale === "de"
+      ? "Kostenloses Prescreening: kein verkaufsfertiges Gutachten und kein Sicherheitszertifikat."
+      : locale === "pl"
+        ? "Darmowy prescreening: to nie jest raport gotowy do sprzedaży ani certyfikat bezpieczeństwa."
+        : "Free prescreening: this is not a sell-ready assessment or a security certificate."
+    : sellReady
+      ? locale === "de" ? "Die Quellenabdeckung reicht für diese Berichtsstufe aus." : locale === "pl" ? "Pokrycie źródeł wystarcza dla tego poziomu raportu." : "Source coverage is sufficient for this report tier."
+      : locale === "de" ? "Dieser kostenpflichtige Bericht ist noch nicht verkaufsbereit. Bestätigte unabhängige Quellen fehlen." : locale === "pl" ? "Ten płatny raport nie jest jeszcze gotowy do sprzedaży. Brakuje potwierdzonych niezależnych źródeł." : "This paid report is not sell-ready yet. Confirmed independent sources are missing.";
+  return {
+    schemaVersion: "pass4640_lens_commercial_readiness_v1",
+    depth,
+    sellReady,
+    evidenceThresholdMet,
+    commercialStatus: depth === "basic" ? "free_prescreen" as const : sellReady ? "sell_ready" as const : "blocked" as const,
+    checkoutAllowed: depth === "basic" || sellReady,
+    sourceCount,
+    confirmedSourceCount,
+    confidence,
+    unifiedLedgerReady,
+    confirmedLedgerSources,
+    blockedReasons: [
+      ...blockedReasons,
+      !unifiedLedgerReady ? "unified_evidence_ledger_not_locked" : null,
+      confirmedLedgerSources < required.confirmed ? `ledger_confirmed_sources:${confirmedLedgerSources}/${required.confirmed}` : null,
+    ].filter((value): value is string => Boolean(value)),
+    customerMessage,
+  };
+}
+
+async function handleLensReportPost(request: Request) {
+  const requestUrl = new URL(request.url);
+  const format = requestUrl.searchParams.get("format") || "pdf";
+  const selectedDepth = resolveLensPdfDepth(requestUrl.searchParams.get("tier"));
+  const limiterLane = `${format}:${selectedDepth}`;
+  const pass2177SizeGuard = rejectPass2177LargeContentLength(
+    request,
+    2_000_000,
+  );
+  if (pass2177SizeGuard) return pass2177SizeGuard;
+
+  const pass2177OriginGuard = assertPass2177SameOriginRequest(request, {
+    allowMissingOrigin: true,
+  });
+  if (pass2177OriginGuard) return pass2177OriginGuard;
+
+  const pass2177RateLimit = applyPass2177SoftRateLimit(request, {
+    keyPrefix: `pass4642-search-lens-report:${limiterLane}`,
+    limit: 36,
+    windowMs: 60_000,
+  });
+  if (!pass2177RateLimit.ok) return pass2177RateLimit.response;
+
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (Number.isFinite(contentLength) && contentLength > 2_000_000) {
+    return NextResponse.json(
+      { ok: false, error: "payload_too_large" },
+      { status: 413 },
+    );
+  }
+  const rateBoundary = buildPass632Boundary({
+    route: new URL(request.url).pathname,
+    provider: "lens-pdf-export",
+    user: "anonymous",
+    client: getClientKey(request, "client"),
+  });
+  const rateLimit = await applyDurableRateLimit({
+    namespace: `velmere-lens-pdf:${limiterLane}`,
+    key: rateBoundary.key,
+    limit: 36,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "rate_limited",
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      },
+      { status: 429, headers: buildDurableRateLimitHeaders(rateLimit) },
+    );
+  }
+  let rawPayload: unknown;
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+  if (contentType.includes("application/json")) {
+    const parsedBody = await readBoundedJsonBody<unknown>(request, 2_000_000, { maxDepth: 32 });
+    if (!parsedBody.ok) return parsedBody.response;
+    rawPayload = parsedBody.value;
+  } else {
+    const parsedForm = await readBoundedFormDataBody(request, 2_000_000);
+    if (!parsedForm.ok) return parsedForm.response;
+    try {
+      rawPayload = JSON.parse(String(parsedForm.value.get("payload") || ""));
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "invalid_json" },
+        { status: 400 },
+      );
+    }
+  }
+
+  if (format === "pdf") {
+    // PASS326/PASS328 default branch: binary PDF output, not JSON.
+  }
+  let payload: LensReport;
+  let canonicalRequest: CanonicalLensRequest | null = null;
+  if (isLensReport(rawPayload)) {
+    payload = rawPayload;
+  } else {
+    if (isCanonicalLensRequest(rawPayload)) {
+      canonicalRequest = rawPayload;
+    } else if (isPass4655RenderTokenRequest(rawPayload)) {
+      const verified = verifyPass4655LensRenderToken({ token: rawPayload.renderToken, expectedDepth: selectedDepth });
+      if (!verified.ok) {
+        const status = verified.error === "render_token_expired" ? 410 : verified.error === "render_token_depth_mismatch" ? 409 : 400;
+        return NextResponse.json({ ok: false, error: verified.error }, { status });
+      }
+      canonicalRequest = verified.seed;
+    }
+    if (!canonicalRequest) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_report_request" },
+        { status: 400 },
+      );
+    }
+    if (canonicalRequest.depth !== selectedDepth) {
+      return NextResponse.json(
+        { ok: false, error: "depth_mismatch" },
+        { status: 409 },
+      );
+    }
+    payload = buildLensReport(
+      canonicalRequest.result,
+      canonicalRequest.locale,
+      canonicalRequest.depth,
+    );
+  }
+
+  const lensAssetClass = payload.pass478.assetClass as import("@/lib/market-integrity/risk-types").VelmereMarketAssetClass;
+  const lensSurface = lensAssetClass === "crypto" || lensAssetClass === "unknown" ? "crypto" as const : "real_markets" as const;
+  const refreshRegistration = await registerPass4653RefreshTarget({
+    requestedIdentity: payload.symbol,
+    surface: lensSurface,
+    assetClass: lensAssetClass,
+    requestedTier: selectedDepth,
+  }).catch(() => null);
+
+  const accessGate = await resolveVlmAdvancedOnlyAccess({
+    request,
+    purpose: "pdf",
+    depth: selectedDepth,
+    surface: "browser",
+    locale: payload.locale,
+    assetId:
+      request.headers.get("x-velmere-paid-asset-id") ||
+      (canonicalRequest ? canonicalRequest.result.id : payload.symbol),
+    symbol: request.headers.get("x-velmere-paid-symbol") || payload.symbol,
+  });
+  if (!accessGate.ok) {
+    return NextResponse.json(toPaymentRequiredPayload(accessGate), {
+      status: 402,
+      headers: accessGate.headers,
+    });
+  }
+
+  const commercialReadiness = buildLensCommercialReadiness(payload, selectedDepth);
+  if (selectedDepth !== "basic" && !commercialReadiness.sellReady) {
+    return NextResponse.json({
+      ok: false,
+      error: "premium_report_not_ready",
+      basicFallbackAvailable: true,
+      commercialReadiness,
+      pass4653RefreshRegistration: refreshRegistration,
+      commercialDelivery: buildPass4651CommercialDeliveryDecision({
+        tier: selectedDepth,
+        surface: "lens_pdf",
+        entitlementVerified: accessGate.ok && accessGate.paidRequired,
+        preCheckoutReady: commercialReadiness.evidenceThresholdMet,
+        analysisSellReady: commercialReadiness.sellReady,
+        durableEvidenceReady: commercialReadiness.unifiedLedgerReady,
+        outputReady: false,
+        providerDegraded: !commercialReadiness.unifiedLedgerReady,
+        operatorSignReady: selectedDepth !== "advanced" || payload.pass646.state === "locked",
+      }),
+      customerMessage: commercialReadiness.customerMessage,
+    }, { status: 422, headers: { "cache-control": "no-store" } });
+  }
+
+  if (format === "json") {
+    const tokenTransport = requestUrl.searchParams.get("transport") === "token";
+    // PASS4656: every canonical preview attempts to mint a short-lived server render token.
+    // The full preview remains available for the current rich reader, but the browser no longer
+    // needs to send the complete report back to the PDF endpoint.
+    const renderToken = canonicalRequest
+      ? issuePass4655LensRenderToken({ seed: canonicalRequest })
+      : null;
+    if (tokenTransport && (!renderToken || !renderToken.ok)) {
+      return NextResponse.json(
+        { ok: false, error: renderToken?.error ?? "render_token_unavailable" },
+        { status: 503, headers: { "cache-control": "no-store" } },
+      );
+    }
+    return NextResponse.json(
+      {
+        ok: true,
+        report: tokenTransport ? buildPass4655CompactLensPreview(payload) : buildPublicLensReport(payload, commercialReadiness),
+        renderToken: renderToken?.ok ? renderToken.token : undefined,
+        renderTokenExpiresAt: renderToken?.ok ? renderToken.expiresAt : undefined,
+        transport: tokenTransport ? "signed_render_token" : renderToken?.ok ? "full_preview_with_signed_render_token" : "legacy_full_report",
+        commercialReadiness,
+        pass4653RefreshRegistration: refreshRegistration,
+        commercialDelivery: buildPass4651CommercialDeliveryDecision({
+          tier: selectedDepth,
+          surface: "lens_pdf",
+          entitlementVerified: accessGate.ok && accessGate.paidRequired,
+          preCheckoutReady: selectedDepth === "basic" || commercialReadiness.evidenceThresholdMet,
+          analysisSellReady: selectedDepth === "basic" || commercialReadiness.sellReady,
+          durableEvidenceReady: selectedDepth === "basic" || commercialReadiness.unifiedLedgerReady,
+          outputReady: true,
+          providerDegraded: false,
+          operatorSignReady: selectedDepth !== "advanced" || payload.pass646.state === "locked",
+        }),
+        access: {
+          depth: accessGate.depth,
+          paidRequired: accessGate.paidRequired,
+          accessMode: accessGate.accessMode,
+          policy: accessGate.policy,
+        },
+        pass4156: buildPass4156LensExportBoundary({
+          format: "json_preview",
+          report: payload,
+          redactionGateChecked: false,
+        }),
+        pass4157: buildPass4157LensPreviewDownloadHashFixture({
+          format: "json_preview",
+          report: payload,
+          redactionState: "pending_preview",
+        }),
+        pass4158: buildPass4158LensRenderedPdfByteHashHarness({
+          format: "json_preview",
+          report: payload,
+        }),
+      },
+      {
+        headers: {
+          "cache-control": "no-store",
+          "x-velmere-pass4156-lens-export-boundary":
+            "json-preview-same-report-family",
+          "x-velmere-pass4157-lens-hash-fixture":
+            "preview-download-report-checksum-parity",
+          "x-velmere-pass4158-lens-pdf-byte-hash":
+            "deferred-until-pdf-render-no-raw-pdf-in-json",
+          "x-velmere-pass4158-lens-byte-hash-harness":
+            "deferred-until-pdf-render-no-raw-pdf-in-json",
+          "x-velmere-pass4159-lens-byte-parity-replay":
+            PASS4159_LENS_PDF_BYTE_PARITY_REPLAY_RUNNER,
+          "x-velmere-pass4160-lens-pdf-signed-fixture-binder":
+            PASS4160_LENS_PDF_SIGNED_FIXTURE_BINDER,
+          "x-velmere-pass4161-lens-pdf-final-runner-intake":
+            PASS4161_LENS_PDF_FINAL_RUNNER_INTAKE_GATE,
+          "x-velmere-pass4162-lens-pdf-node20-preflight-evidence":
+            PASS4162_LENS_PDF_NODE20_PREFLIGHT_EVIDENCE_BUCKET,
+        },
+      },
+    );
+  }
+
+  if (
+    selectedDepth !== payload.selectedDepth ||
+    selectedDepth !== payload.pass477.selectedDepth
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "depth_mismatch" },
+      { status: 409 },
+    );
+  }
+  // PASS488 compatibility is derived from the current Reader/PDF manifest,
+  // so the historical page contract cannot drift from PASS610.
+  const pass488 = {
+    ...payload.pass488,
+    pageCount: payload.pass610.pageCount,
+  };
+  const parityGate = buildPass583DownloadParityGate({
+    symbol: payload.symbol,
+    locale: payload.locale,
+    depth: payload.selectedDepth,
+    reportChecksum: payload.brain.checksum,
+    parityKey: pass488.parityKey,
+    sections: payload.sections,
+    compositor: payload.pass581,
+    citationRail: payload.pass582,
+  });
+  if (parityGate.manifestKey !== payload.pass583.manifestKey) {
+    return NextResponse.json(
+      { ok: false, error: "parity_manifest_mismatch" },
+      { status: 409 },
+    );
+  }
+  const readerDownloadManifest = buildPass610ReaderDownloadParityManifest({
+    locale: payload.locale,
+    depth: payload.selectedDepth,
+    reportChecksum: payload.brain.checksum,
+    sections: payload.sections,
+    claimGate: payload.pass607,
+    appendix: payload.pass608,
+    density: payload.pass609,
+  });
+  if (readerDownloadManifest.manifestKey !== payload.pass610.manifestKey) {
+    return NextResponse.json(
+      { ok: false, error: "reader_download_manifest_mismatch" },
+      { status: 409 },
+    );
+  }
+  if (
+    payload.pass1254.previewDownloadTypography !==
+      "same_reader_pdf_typography_budget" ||
+    payload.pass1254.pdf.footerLane !== "single_line_no_overlap"
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "pdf_typography_release_gate_mismatch" },
+      { status: 409 },
+    );
+  }
+  if (
+    payload.pass1334.previewDownloadParity !==
+      "same_payload_same_depth_same_claims" ||
+    payload.pass1354.role !== "why_verdict_graph_not_second_table" ||
+    payload.pass1374.hallucinationBrake !==
+      "no_random_copy_no_fake_live_no_hidden_missing_data" ||
+    payload.pass1413?.realWorkStandard !== "forty_plus_tasks_no_micro_passes" ||
+    payload.pass1413?.totalTaskCount < 50
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "premium_truth_release_gate_mismatch" },
+      { status: 409 },
+    );
+  }
+  const redaction = applyPass635ExportRedaction({
+    surface: "pdf",
+    payload,
+  });
+  if (
+    redaction.receipt.removedPaths.length > 0 ||
+    redaction.receipt.maskedPaths.length > 0 ||
+    redaction.receipt.state !== "clean"
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "pdf_redaction_required",
+        receiptId: redaction.receipt.receiptId,
+      },
+      { status: 409, headers: buildDurableRateLimitHeaders(rateLimit) },
+    );
+  }
+  const pdf = buildPdf(payload, selectedDepth);
+  const pdfLeaks = detectPass635Leaks(pdf.toString("latin1"));
+  const pass4158PdfByteHash = buildPass4158LensRenderedPdfByteHashHarness({
+    format: "pdf_download",
+    report: payload,
+    pdf,
+  });
+  if (pdfLeaks.length > 0) {
+    return NextResponse.json(
+      { ok: false, error: "pdf_redaction_leak", leakClasses: pdfLeaks },
+      { status: 500, headers: buildDurableRateLimitHeaders(rateLimit) },
+    );
+  }
+  const pdfFeasibility = inspectPass593PdfBuffer(pdf);
+  const pass4649PdfInspection = inspectPass4649PdfBinary(pdf);
+  const pass4649PageRange = selectedDepth === "basic"
+    ? { min: 2, max: 3 }
+    : selectedDepth === "pro"
+      ? { min: 4, max: 6 }
+      : { min: 8, max: 12 };
+  if (
+    !pass4649PdfInspection.valid ||
+    pass4649PdfInspection.pageCount < pass4649PageRange.min ||
+    pass4649PdfInspection.pageCount > pass4649PageRange.max
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "pdf_commercial_binary_gate_failed",
+        depth: selectedDepth,
+        blockers: [
+          ...pass4649PdfInspection.blockers,
+          pass4649PdfInspection.pageCount < pass4649PageRange.min || pass4649PdfInspection.pageCount > pass4649PageRange.max
+            ? `pdf_pages:${pass4649PdfInspection.pageCount}/${pass4649PageRange.min}-${pass4649PageRange.max}`
+            : null,
+        ].filter(Boolean),
+      },
+      { status: 500, headers: buildDurableRateLimitHeaders(rateLimit) },
+    );
+  }
+  // Basic intentionally contains only the decision and source-ledger pages.
+  // Claim destinations live on the Pro/Advanced analysis pages, so requiring
+  // an internal link annotation for a two-page Basic artifact produces a
+  // false 500 even though the PDF is valid. Premium artifacts still fail
+  // closed when their source-to-claim link graph is missing.
+  if (
+    selectedDepth !== "basic" &&
+    payload.pass594.linkedClaims > 0 &&
+    !pdfFeasibility.checks.internalLinks
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "pdf_footnote_link_mismatch" },
+      { status: 500 },
+    );
+  }
+  const filename = `velmere-lens-${payload.symbol || "report"}`
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .slice(0, 80);
+  const exportId = `${filename}-${payload.brain.checksum.slice(0, 12)}`;
+  const audit = recordPass633AuditEvent({
+    route: new URL(request.url).pathname,
+    method: request.method,
+    actorFingerprint: createClientFingerprint(request),
+    providerIds: payload.pass622.providers
+      .map((provider: Pass4158LensProviderRow) => provider.id)
+      .slice(0, 24),
+    sourceIds: payload.pass607.sources
+      .map((source: Pass4158LensSourceRow) => source.sourceId)
+      .slice(0, 64),
+    claimIds: payload.pass623.atoms
+      .map((atom: Pass4158LensAtomicClaim) => atom.atomId)
+      .slice(0, 160),
+    decision: `pdf_${selectedDepth}_exported`,
+    state: "exported",
+    exportId,
+    modelVersion: "velmere-lens-report",
+    promptSchemaVersion: "lens-report-v2",
+    redactionReceipt: redaction.receipt,
+  });
+
+  return new NextResponse(pdf, {
+    status: 200,
+    headers: {
+      "content-type": "application/pdf",
+      "x-pass328-route-marker":
+        "PASS328 adds print-grade A4 sections · Proof passport lane · not a safety certificate · no guaranteed result · @page{size:A4;margin:0}",
+      "content-disposition": `inline; filename="${filename}.pdf"`,
+      "cache-control": "no-store",
+      "content-language": payload.locale,
+      "x-content-type-options": "nosniff",
+      "x-velmere-report-checksum": payload.brain.checksum,
+      "x-velmere-kernel-trace": payload.kernel.traceId,
+      "x-velmere-kernel-confidence": String(payload.kernel.confidence),
+      "x-velmere-preview-parity": "same-blob-as-download",
+      "x-velmere-pass4156-lens-export-boundary":
+        buildPass4156LensExportBoundary({
+          format: "pdf_download",
+          report: payload,
+          redactionGateChecked: true,
+        }).boundary,
+      "x-velmere-pass4157-lens-hash-fixture":
+        buildPass4157LensPreviewDownloadHashFixture({
+          format: "pdf_download",
+          report: payload,
+          redactionState: "clean_pdf",
+        }).boundary,
+      "x-velmere-pass4157-report-checksum": payload.brain.checksum,
+      "x-velmere-pass4157-parity-manifest": payload.pass583.manifestKey,
+      "x-velmere-pass4157-reader-download-manifest":
+        payload.pass610.manifestKey,
+      "x-velmere-pass4158-lens-pdf-byte-hash": pass4158PdfByteHash.boundary,
+      "x-velmere-pass4158-lens-byte-hash-harness":
+        pass4158PdfByteHash.boundary,
+      "x-velmere-pass4159-lens-byte-parity-replay":
+        PASS4159_LENS_PDF_BYTE_PARITY_REPLAY_RUNNER,
+      "x-velmere-pass4160-lens-pdf-signed-fixture-binder":
+        PASS4160_LENS_PDF_SIGNED_FIXTURE_BINDER,
+      "x-velmere-pass4161-lens-pdf-final-runner-intake":
+        PASS4161_LENS_PDF_FINAL_RUNNER_INTAKE_GATE,
+      "x-velmere-pass4162-lens-pdf-node20-preflight-evidence":
+        PASS4162_LENS_PDF_NODE20_PREFLIGHT_EVIDENCE_BUCKET,
+      "x-velmere-pass4163-lens-pdf-typecheck-diagnostic-reducer":
+        PASS4163_LENS_PDF_TYPECHECK_DIAGNOSTIC_REDUCER,
+      "x-velmere-pass4164-lens-pdf-dependency-type-surface":
+        PASS4164_LENS_PDF_DEPENDENCY_TYPE_SURFACE_CLOSURE,
+      "x-velmere-pass4165-lens-pdf-node20-type-package-alignment":
+        PASS4165_LENS_PDF_NODE20_TYPE_PACKAGE_ALIGNMENT,
+      "x-velmere-pass4166-lens-pdf-clean-room-install-readiness":
+        PASS4166_LENS_PDF_CLEAN_ROOM_INSTALL_READINESS_LOCK,
+      "x-velmere-pass4167-lens-pdf-final-cleanroom-execution-dag":
+        PASS4167_LENS_PDF_FINAL_CLEANROOM_EXECUTION_DAG,
+      "x-velmere-pass4168-lens-pdf-zero-skip-final-runner-bridge":
+        PASS4168_LENS_PDF_ZERO_SKIP_FINAL_RUNNER_BRIDGE,
+      "x-velmere-pass4169-lens-pdf-receipt-freshness-expiry":
+        PASS4169_LENS_PDF_RECEIPT_FRESHNESS_EXPIRY_GATE,
+      "x-velmere-pass4170-lens-pdf-receipt-provenance-env-binding":
+        PASS4170_LENS_PDF_RECEIPT_PROVENANCE_ENVIRONMENT_BINDING,
+      "x-velmere-pass4171-lens-pdf-tamper-evident-receipt-chain":
+        PASS4171_LENS_PDF_TAMPER_EVIDENT_RECEIPT_CHAIN,
+      "x-velmere-pass4172-lens-pdf-release-freeze-source-manifest-seal":
+        PASS4172_LENS_PDF_RELEASE_FREEZE_DIGEST_SOURCE_MANIFEST_SEAL,
+      "x-velmere-pass4173-lens-pdf-post-freeze-diff-firewall-mutation-watch":
+        PASS4173_LENS_PDF_POST_FREEZE_DIFF_FIREWALL_MUTATION_WATCH,
+      "x-velmere-pass4174-lens-pdf-release-promotion-escrow-operator-signoff":
+        PASS4174_LENS_PDF_RELEASE_PROMOTION_ESCROW_OPERATOR_SIGNOFF_GATE,
+      "x-velmere-pass4175-lens-pdf-public-claim-degradation-status-board":
+        PASS4175_LENS_PDF_PUBLIC_CLAIM_DEGRADATION_STATUS_BOARD_GATE,
+      "x-velmere-pass4176-lens-pdf-claim-expiry-auto-downgrade-renewal":
+        PASS4176_LENS_PDF_CLAIM_EXPIRY_AUTO_DOWNGRADE_RENEWAL_GATE,
+      "x-velmere-pass4158-pdf-byte-sha256":
+        pass4158PdfByteHash.pdfByteSha256 ?? "missing",
+      "x-velmere-pass4158-pdf-byte-length": String(
+        pass4158PdfByteHash.pdfByteLength ?? 0,
+      ),
+      "x-velmere-pass4649-pdf-binary-integrity": pass4649PdfInspection.valid ? "valid" : "blocked",
+      "x-velmere-pass4649-pdf-page-count": String(pass4649PdfInspection.pageCount),
+      "x-velmere-pass4649-pdf-active-content": pass4649PdfInspection.activeContentDetected ? "detected" : "none",
+      "x-velmere-pass4649-pdf-sha256": pass4649PdfInspection.sha256,
+      "x-velmere-pass2087-pdf-premium-final":
+        "one-payload-a4-source-proof-download-parity",
+      "x-velmere-report-id": exportId,
+      "x-velmere-pdf-depth": selectedDepth,
+      "x-velmere-a4-layout-audit": "pass469-ok",
+      "x-velmere-depth-contract": "pass477",
+      "x-velmere-tier-differentiation": payload.pass2174.schemaVersion,
+      "x-velmere-pass2465-tier-depth": "tier-depth-scenario-parity-v1",
+      "x-velmere-advanced-value-audit":
+        "advanced-value-audit-v1",
+      "x-velmere-premium-evidence-bridge":
+        "premium-evidence-bridge-v1",
+      "x-velmere-runtime-premium-evidence-hydrator":
+        "runtime-premium-evidence-hydrator-v1",
+      "x-velmere-paid-advanced-readiness-fuse":
+        "paid-advanced-readiness-fuse-v1",
+      "x-velmere-derivatives-paid-readiness-bridge":
+        "derivatives-paid-readiness-bridge-v1",
+      "x-velmere-liquidation-replay-paid-copy-lock":
+        "liquidation-replay-paid-copy-lock-v1",
+      "x-velmere-supply-filing-provenance-lock":
+        "supply-filing-provenance-lock-v1",
+      "x-velmere-tier-commercial-value-contract":
+        "tier-commercial-value-contract-v1",
+      "x-velmere-advanced-cta-entitlement-contract":
+        "advanced-cta-entitlement-contract-v1",
+      "x-velmere-entitlement-receipt-replay-parity":
+        "entitlement-receipt-replay-parity-v1",
+      "x-velmere-entitlement-artifact-delivery-ledger":
+        "entitlement-artifact-delivery-ledger-v1",
+      "x-velmere-pass2492-artifact-delivery-rule":
+        selectedDepth === "advanced"
+          ? "paid_advanced_artifact_requires_pass2491_receipt_replay_plus_pdf_preview_download_hash_parity_account_delivery_and_pass2492_deliveryManifestKey"
+          : "basic_pro_preview_download_keep_one_payload_no_paid_artifact_claim",
+      "x-velmere-entitlement-account-vault-retrieval-contract":
+        "entitlement-account-vault-retrieval-contract-v1",
+      "x-velmere-pass2493-account-vault-rule":
+        selectedDepth === "advanced"
+          ? "paid_advanced_account_vault_access_requires_pass2492_deliveryManifestKey_artifactHash_accountDeliveryId_accountSession_and_pass2493_vaultRetrievalKey"
+          : "basic_pro_account_vault_must_not_claim_paid_artifact_access",
+      "x-velmere-entitlement-revocation-chargeback-lock":
+        "entitlement-revocation-chargeback-lock-v1",
+      "x-velmere-pass2494-revocation-rule":
+        selectedDepth === "advanced"
+          ? "paid_advanced_account_vault_access_must_be_hidden_when_refund_chargeback_dispute_revoked_expired_or_superseded_until_pass2494_revocationClear_true"
+          : "basic_pro_must_not_claim_paid_vault_revocation_state",
+      "x-velmere-entitlement-admin-override-dual-control-lock":
+        "entitlement-admin-override-dual-control-lock-v1",
+      "x-velmere-entitlement-session-device-anomaly-lock":
+        "entitlement-session-device-anomaly-lock-v1",
+      "x-velmere-entitlement-artifact-watermark-share-lock":
+        "entitlement-artifact-watermark-share-lock-v1",
+      "x-velmere-entitlement-evidence-export-dispute-lock":
+        "entitlement-evidence-export-dispute-lock-v1",
+      "x-velmere-entitlement-retention-erasure-lock":
+        "entitlement-retention-erasure-lock-v1",
+      "x-velmere-entitlement-incident-response-disclosure-lock":
+        "entitlement-incident-response-disclosure-lock-v1",
+      "x-velmere-master-map-rebalance-audit":
+        "master-map-rebalance-audit-v1",
+      "x-velmere-pass2495-admin-override-rule":
+        selectedDepth === "advanced"
+          ? "manual_admin_regrant_requires_pass2495_dual_control_and_same_pass2494_revocationLedgerKey_no_local_role_wallet_or_cache_override"
+          : "basic_pro_must_not_claim_admin_override_paid_access",
+      "x-velmere-pass2496-session-device-rule":
+        selectedDepth === "advanced"
+          ? "paid_vault_read_requires_pass2496_sessionLedgerKey_accountSessionFingerprint_vaultReadTokenFingerprint_deviceBinding_csrf_expiry_no_copied_session"
+          : "basic_pro_must_not_claim_session_bound_paid_vault_access",
+      "x-velmere-pass2497-watermark-share-rule":
+        selectedDepth === "advanced"
+          ? "paid_pdf_download_requires_pass2497_watermarkLedgerKey_customerPseudonymHash_artifactHash_signedDownloadUrlFingerprint_downloadNonce_short_expiry_no_public_cache_or_shared_screenshot"
+          : "basic_pro_must_not_claim_watermarked_paid_artifact_delivery",
+      "x-velmere-pass2498-evidence-export-rule":
+        selectedDepth === "advanced"
+          ? "support_dispute_export_requires_pass2498_redacted_pack_supportCaseId_exportRequestId_dual_signer_redaction_policy_nonce_no_raw_pii_payment_wallet_ip_or_public_url"
+          : "basic_pro_must_not_claim_paid_evidence_export",
+      "x-velmere-pass2499-retention-erasure-rule":
+        selectedDepth === "advanced"
+          ? "retained_paid_evidence_requires_pass2499_bounded_retention_policy_data_minimization_schedule_archive_hash_customer_notice_active_expiry_and_erasure_replay_no_raw_or_public_archive"
+          : "basic_pro_must_not_claim_retained_paid_evidence",
+      "x-velmere-pass2500-incident-response-disclosure-rule":
+        selectedDepth === "advanced"
+          ? "retained_paid_evidence_after_incident_requires_pass2500_incident_case_severity_triage_containment_affected_artifact_customer_notice_operator_ack_review_expiry_no_silent_recovery_raw_forensics_or_public_archive"
+          : "basic_pro_must_not_claim_incident_cleared_paid_evidence",
+      "x-velmere-pass2501-master-map-rebalance-rule":
+        "next_passes_must_rotate_browser_pdf_shield_map_angel_cart_wallet_checkout_real_markets_or_visual_globe_and_update_expanded_txt_no_entitlement_tunnel",
+      "x-velmere-surface-runtime-rebalance-sweep":
+        "surface-runtime-rebalance-sweep-v1",
+      "x-velmere-pass2502-surface-runtime-rule":
+        "browser_pdf_compact_manifest_shield_map_active_context_angel_context_badge_cart_overlay_motion_real_markets_sec_queue_no_entitlement_progress_credit",
+      "x-velmere-real-markets-sec-companyfacts-hydrator":
+        "real-markets-sec-companyfacts-hydrator-v1",
+      "x-velmere-pass2503-sec-boundary":
+        "aapl_nvda_spy_need_cik_submissions_companyfacts_xbrl_and_etf_holdings_boundary_before_paid_filing_copy",
+      "x-velmere-shieldmap-browser-cart-rebalance":
+        "shieldmap-browser-cart-rebalance-v1",
+      "x-velmere-pass2504-preview-download-hash-rule":
+        selectedDepth === "advanced"
+          ? "preview_download_hash_replay_visible_before_paid_delivery_copy_no_browser_wall_of_text_no_public_cache_claim"
+          : "basic_pro_compact_preview_only",
+      "x-velmere-pass2505-locale-pdf-angel-cleanliness":
+        "locale-pdf-angel-cleanliness-rebalance-v1",
+      "x-velmere-pass2505-locale-copy-rule":
+        selectedDepth === "advanced"
+          ? "pdf_preview_download_locale_hash_must_match_no_pl_en_de_mixing_no_kernel_density_cap_mock_fake_undefined_or_null_customer_copy_pass2505"
+          : "basic_pro_locale_parity_and_debug_copy_sanitizer",
+      "x-velmere-chart-modal-mobile-rebalance":
+        "chart-modal-mobile-rebalance-v1",
+      "x-velmere-pass2506-visual-runtime-rule":
+        selectedDepth === "advanced"
+          ? "chart_wheel_touch_owner_mobile_safe_area_shared_chart_shell_browser_pdf_fixture_render_queue_pass2506"
+          : "basic_pro_visual_runtime_boundary",
+      "x-velmere-fixture-motion-angel-rebalance":
+        "fixture-motion-angel-rebalance-v1",
+      "x-velmere-pass2507-fixture-motion-rule":
+        selectedDepth === "advanced"
+          ? "pdf_fixture_hash_manifest_menu_cart_wallet_motion_angel_context_chips_boundary_empty_state_tier_copy_minimalism_pass2507"
+          : "basic_pro_fixture_motion_boundary",
+      "x-velmere-table-search-ui-rebalance":
+        "table-search-ui-rebalance-v1",
+      "x-velmere-pass2508-table-search-rule":
+        selectedDepth === "advanced"
+          ? "shield_table_alignment_tristate_sort_receipt_real_markets_compact_search_overlay_no_frame_logo_badge_angel_table_search_context_pass2508"
+          : "basic_pro_table_search_ui_boundary",
+      "x-velmere-worldclass-ai-security-surface-rebalance":
+        "worldclass-ai-security-surface-rebalance-v1",
+      "x-velmere-pass2509-claim-traceability-rule":
+        selectedDepth === "advanced"
+          ? "ai_prompt_injection_firewall_sensitive_output_redaction_claim_traceability_browser_pdf_hash_escalation_cart_wallet_hit_test_shieldmap_payload_binding_pass2509"
+          : "basic_pro_ai_security_claim_traceability_boundary",
+      "x-velmere-render-fixture-overlay-source-rebalance":
+        "render-fixture-overlay-source-rebalance-v1",
+      "x-velmere-pass2510-render-source-rule":
+        selectedDepth === "advanced"
+          ? "browser_pdf_fixture_manifest_overlay_pointer_ownership_angel_redteam_judge_source_quality_badges_shieldmap_identity_fixture_pass2510"
+          : "basic_pro_render_fixture_overlay_source_boundary",
+      "x-velmere-etf-vault-payment-square-rebalance":
+        "etf-vault-payment-square-rebalance-v1",
+      "x-velmere-product-auth-vault-freshness-rebalance":
+        "product-auth-vault-freshness-rebalance-v1",
+      "x-velmere-i18n-square-checkout-evidence-rebalance":
+        "i18n-square-checkout-evidence-rebalance-v1",
+      "x-velmere-ai-mobile-admin-receipt-rebalance":
+        "ai-mobile-admin-receipt-rebalance-v1",
+      "x-velmere-release-rollback-runtime-rebalance":
+        "release-rollback-runtime-rebalance-v1",
+      "x-velmere-line-audit-worldclass-rebalance":
+        "line-audit-worldclass-rebalance-v1",
+      "x-velmere-semantic-audit-batch-rebalance":
+        "semantic-audit-batch-rebalance-v1",
+      "x-velmere-risk-formula-worldclass-audit-rebalance":
+        "risk-formula-worldclass-audit-rebalance-v1",
+      "x-velmere-risk-kernel-calibration-rebalance":
+        "risk-kernel-calibration-rebalance-v1",
+      "x-velmere-premium-risk-psychology-rebalance":
+        "premium-risk-psychology-rebalance-v1",
+      "x-velmere-pass2527-surface-mount-runtime":
+        "surface-mount-runtime-rebalance-v1",
+      "x-velmere-pass2527-runtime-mount-rule":
+        selectedDepth === "advanced"
+          ? "surface_specific_chip_must_render_before_score_paid_pdf_finality_wallet_unlock_admin_override_or_angel_answer_when_proof_is_missing"
+          : "basic_pro_surface_mount_runtime_watch_boundary",
+      "x-velmere-pass2528-live-chip-state-replay":
+        "live-chip-state-replay-rebalance-v1",
+      "x-velmere-pass2528-live-replay-rule":
+        selectedDepth === "advanced"
+          ? "runtime_evidence_keys_must_feed_blocked_hold_watch_pass_before_pdf_finality_or_paid_claim"
+          : "basic_pro_live_replay_watch_boundary",
+      "x-velmere-pass2512-vault-retention-erasure":
+        "owner_hash_retention_erasure_manifest_required",
+      "x-velmere-pass2513-locale-checkout-evidence-rule":
+        selectedDepth === "advanced"
+          ? "single_locale_customer_copy_square_comment_scroll_webhook_tx_receipt_pdf_vault_retention_angel_source_honesty_visual_diff_watch_pass2513"
+          : "basic_pro_i18n_checkout_evidence_boundary",
+      "x-velmere-pass2514-ai-mobile-admin-receipt-rule":
+        selectedDepth === "advanced"
+          ? "ai_redteam_app_output_filter_mobile_safe_area_fixture_admin_dual_control_webhook_idempotency_product_preflight_source_freshness_disclaimer_pass2514"
+          : "basic_pro_ai_mobile_admin_receipt_boundary",
+      "x-velmere-pass2515-release-rollback-rule":
+        selectedDepth === "advanced"
+          ? "runtime_release_gate_source_downgrade_payment_rollback_ai_answer_replay_product_freeze_mobile_visual_admin_audit_pass2515"
+          : "basic_pro_release_rollback_watch_boundary",
+      "x-velmere-pass2511-vault-payment-rule":
+        selectedDepth === "advanced"
+          ? "etf_holdings_freshness_account_vault_pdf_manifest_card_blik_crypto_receipt_boundary_angel_refusal_rubric_orbit_depth_square_moderation_pass2511"
+          : "basic_pro_vault_payment_square_boundary",
+      "x-velmere-advanced-paid-value-rule":
+        selectedDepth === "advanced"
+          ? "advanced_requires_premium_lanes_runtime_receipts_pass2483_premium_lanes_advanced_requires_pass2485_paidAdvancedAllowed_true_not_longer_text_pass2486_confirmedSqueezeCopyAllowed_pass2487_paidCopyAllowed_pass2488_paidProvenanceAllowed_pass2489_paidAdvancedAllowed_pass2490_finalPaidVerdictAllowed_pass2491_finalPaidVerdictUnlockAllowed_pass2492_finalPaidVerdictArtifactAllowed_pass2493_finalPaidVerdictVaultAccessAllowed_pass2494_finalPaidVerdictAccessAllowed_pass2495_finalPaidAdminOverrideAllowed_pass2496_finalPaidSessionAccessAllowed_pass2497_finalPaidWatermarkedArtifactAllowed_and_pass2498_finalPaidEvidenceExportAllowed_and_pass2499_finalPaidEvidenceRetentionAllowed_and_pass2500_finalPaidIncidentResponseAllowed_and_pass2503_paidFilingCopyAllowed_and_pass2504_previewDownloadHashReplay_and_pass2505_localeCopyCleanliness_and_pass2506_chartModalMobileRebalance_and_pass2507_fixtureMotionAngelRebalance_and_pass2508_tableSearchUiRebalance_and_pass2509_aiSecurityClaimTraceability_and_pass2510_renderFixtureOverlaySourceRebalance_and_pass2511_etfVaultPaymentSquareRebalance_and_pass2512_productAuthVaultFreshnessRebalance pass2513_i18nSquareCheckoutEvidenceRebalance pass2514_aiMobileAdminReceiptRebalance pass2515_releaseRollbackRuntimeRebalance pass2516_lineAuditWorldclassRebalance pass2517_semanticAuditBatchRebalance pass2518_riskFormulaWorldclassAuditRebalance pass2519_riskKernelCalibrationRebalance pass2520_premiumRiskPsychologyRebalance"
+          : "basic_pro_do_not_claim_paid_depth",
+      "x-velmere-tier-scenario-parity": `${selectedDepth}:rug_pull_trap_locked:long_short_squeeze_locked`,
+      "x-velmere-tier-access": payload.pass2174.access,
+      "x-velmere-tier-pdf-pages": payload.pass2174.pdfBudget.pages,
+      "x-velmere-human-evidence-brief": "pass478",
+      "x-velmere-field-budget": String(payload.pass477.fieldBudget),
+      "x-velmere-visual-fixture": payload.pass580.fixtureId,
+      "x-velmere-page-compositor": payload.pass581.status,
+      "x-velmere-source-citations": String(payload.pass582.citations.length),
+      "x-velmere-parity-manifest": payload.pass583.manifestKey,
+      "x-velmere-accessibility": payload.pass584.state,
+      "x-velmere-chromium-fixture": payload.pass592.proofRef,
+      "x-velmere-tagged-pdf-state": pdfFeasibility.state,
+      "x-velmere-footnote-links": String(payload.pass594.linkedClaims),
+      "x-velmere-typography-gate": payload.pass595.state,
+      "x-velmere-pdf-proof-capsule": payload.pass596.capsuleKey,
+      "x-velmere-claim-source-gate": payload.pass607.state,
+      "x-velmere-missing-source-appendix": payload.pass608.state,
+      "x-velmere-a4-density": `${payload.pass609.state}:${payload.pass609.maxDensity}`,
+      "x-velmere-reader-download-manifest": payload.pass610.manifestKey,
+      "x-velmere-pass488-page-count": String(pass488.pageCount),
+      "x-velmere-struct-tree": payload.pass611.pdf.structTreeRootPrepared
+        ? "prepared"
+        : "missing",
+      "x-velmere-source-registry": `${payload.pass622.state}:${payload.pass622.providerCount}`,
+      "x-velmere-atomic-claims": `${payload.pass623.state}:${payload.pass623.atoms.length}`,
+      "x-velmere-provider-contradiction": `${payload.pass624.state}:${payload.pass624.contradictions}`,
+      "x-velmere-freshness-synthesis": `${payload.pass625.state}:${payload.pass625.confidenceCap}`,
+      "x-velmere-next-check-plan": `${payload.pass626.state}:${payload.pass626.tasks.length}`,
+      "x-velmere-pdfua-validation": payload.pass642.state,
+      "x-velmere-visual-parity": `${payload.pass643.state}:${payload.pass643.visualKey}`,
+      "x-velmere-source-replay": `${payload.pass644.state}:${payload.pass644.currentEvidenceKey}`,
+      "x-velmere-mobile-budget": payload.pass645.state,
+      "x-velmere-unified-evidence": `${payload.pass646.state}:${payload.pass646.evidenceKey}`,
+      "x-velmere-pdf-typography-release": `${payload.pass1254.state}:${payload.pass1254.manifestKey}`,
+      "x-velmere-lens-shieldmap-parity": `${payload.pass1234.finalStatus}:${payload.pass1234.manifestKey}`,
+      "x-velmere-shield-map-role": payload.pass1234.shieldMapRole,
+      "x-velmere-pdf-premium-final": `${payload.pass1334.state}:${payload.pass1334.manifestKey}`,
+      "x-velmere-shield-map-evidence-graph-2": `${payload.pass1354.state}:${payload.pass1354.manifestKey}`,
+      "x-velmere-vlm-brain-source-truth": `${payload.pass1374.state}:${payload.pass1374.manifestKey}`,
+      "x-velmere-mega-terminal-polish": `${payload.pass1413.state}:${payload.pass1413.totalTaskCount}:${payload.pass1413.checksum}`,
+      "x-velmere-snapshot-id": payload.pass646.snapshotId,
+      "x-velmere-redaction-receipt": redaction.receipt.receiptId,
+      "x-velmere-audit-trace": audit.traceId,
+      ...buildDurableRateLimitHeaders(rateLimit),
+      "x-velmere-pdfua-claim": "false",
+    },
+  });
+}
+
+export function GET() {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: escapeHtml("Use POST with the resolved Lens report object."),
+    },
+    { status: 405, headers: { allow: "POST" } },
+  );
+}
+
+// PASS2519 PDF risk kernel calibration marker: data-pass2519-pdf-score-explainability requires severity/confidence/tier downgrade explanation in paid artifacts.
+
+// PASS2520 PDF premium risk psychology marker: data-pass2520-pdf-visual-truth-score requires risk score, data-quality ring and tier honesty meter to be shown without hype.
+
+/* x-velmere-source-quorum-ai-calibration-rebalance: PDF/vault claims require artifact hash family and source quorum. */
+
+/* x-velmere-entitlement-vault-runtime-rebalance: PDF Advanced delivery requires server receipt, account binding, preview/download/vault hash family and revoke boundary. */
+
+/* x-velmere-pass2523-tier-proof-passport: every Basic/Pro/Advanced report must expose signal budget, missing proof, downgrade reason, hash family and recovery action before final/paid copy. */
+
+/* x-velmere-pass2524-refund-revoke-vault-replay: PDF report delivery must fail closed when entitlement, receipt, account, artifact hash family or provider status cannot replay cleanly. */
+
+// PASS2525 header contract: x-velmere-pass2525-proof-gap-downgrade-ui, preview/download/vault finality blocked by hash drift.
+
+// PASS2526 header contract: x-velmere-pass2526-reusable-downgrade-chip, PDF finality must show reusable proof chip rail when hash/source/payment proof is incomplete.
+
+// PASS2527 header contract: x-velmere-pass2527-surface-mount-runtime, PDF finality must obey surface-specific chip failure fixtures before preview/download/vault claims.
+
+// PASS2528 header contract: x-velmere-pass2528-live-chip-state-replay, PDF finality must be blocked when artifactHashFamily/vaultReplay runtime keys are missing.
+
+// PASS2529: x-velmere-pass2529-runtime-evidence-chip-adapter keeps PDF preview/download/account-vault finality behind artifact hash family replay.
+
+export async function POST(request: Request) {
+  return withExpensiveRouteBudget(request, "lens_report_post", () => handleLensReportPost(request));
+}

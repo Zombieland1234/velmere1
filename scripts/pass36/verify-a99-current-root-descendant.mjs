@@ -1,0 +1,27 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { canonicalJson, sha256 } from "./a99-source-boundary.mjs";
+import { verifyHistoricalDescendantChain, verifyCurrentAuthority } from "./historical-descendant-chain-lib.mjs";
+const root = process.cwd();
+const REV = "VELMERE_PASS36_A99R0_BACKUP_RESTORE_ROLLBACK_PROVIDER_LOSS_AND_RESTORED_RLS_TRUTH_BOUNDARY";
+const PARENT = "VELMERE_PASS36_A98R0_EMAIL_STORAGE_KMS_ORIGIN_CONTEXT_CLEANUP_AND_DELIVERY_TRUTH_BOUNDARY";
+const manifest = JSON.parse(fs.readFileSync("config/pass36/a99-current-root-descendant-manifest.json", "utf8"));
+const parent = JSON.parse(fs.readFileSync("config/pass36/a98-current-root-descendant-manifest.json", "utf8"));
+const state = JSON.parse(fs.readFileSync("config/pass36/a99-action-required-current-state.json", "utf8"));
+const current = JSON.parse(fs.readFileSync("config/pass35/current-revision.json", "utf8"));
+const chain = verifyHistoricalDescendantChain(root, "config/pass36/a99-current-root-descendant-manifest.json", current.sourceRevisionId);
+const authority = verifyCurrentAuthority(root);
+const checks = [];
+const add = (id, passed, detail = null) => checks.push({ id, passed: Boolean(passed), detail });
+add("manifest:revision", manifest.revisionId === REV, manifest.revisionId);
+add("manifest:parent", manifest.parentRevisionId === PARENT, manifest.parentRevisionId);
+add("manifest:parent-digest", manifest.parentDescendantManifestDigestSha256 === parent.manifestDigestSha256);
+const core = { ...manifest }; delete core.manifestDigestSha256;
+add("manifest:self-digest", manifest.manifestDigestSha256 === sha256(canonicalJson(core)));
+add("manifest:frozen-claims", manifest.claims?.a99PassCredit === false && manifest.claims?.backupRestoreRollbackProviderLossBoundaryImplemented === true && manifest.claims?.boundaryAssertions === 78 && manifest.claims?.fixtureScenarios === 8 && manifest.claims?.realBackups === 0 && manifest.claims?.realRestores === 0 && manifest.claims?.stagingCredit === false && manifest.claims?.saleEnabled === false && manifest.claims?.liveProven === false, manifest.claims);
+add("state:frozen", state.revisionId === REV && state.parentRevisionId === PARENT && state.passCredit?.A99 === false);
+for (const row of chain.checks) add(`descendant:${row.id}`, row.passed, row.detail);
+for (const row of authority.checks) add(`current:${row.id}`, row.passed, row.detail);
+const failed = checks.filter((row) => !row.passed);
+console.log(JSON.stringify({ decision: failed.length ? "FAIL" : "PASS_A99_HISTORICAL_DESCENDANT_BOUND_TO_CURRENT_NO_PROMOTION", checks: checks.length, passed: checks.length - failed.length, failed: failed.length, results: checks, currentRevisionId: current.sourceRevisionId }, null, 2));
+process.exit(failed.length ? 1 : 0);

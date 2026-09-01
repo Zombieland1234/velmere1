@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "velmere.p97r1.environment-truth.v1",
+  "generatedAt": "2026-08-21T08:30:00.000Z",
+  "status": "EXTERNAL_BLOCKER_CONFIRMED_AND_LOCAL_BOUNDED_ONLY",
+  "current": {
+    "currentNode": "v22.16.0",
+    "currentNpm": "10.9.2",
+    "requiredByPackageDevEngines": {
+      "packageManager": {
+        "name": "npm",
+        "onFail": "error",
+        "version": "11.16.0"
+      },
+      "runtime": {
+        "name": "node",
+        "onFail": "error",
+        "version": "24.18.0"
+      }
+    },
+    "packageLockPresent": true,
+    "nodeModulesPresent": false,
+    "registryDns": {
+      "exitCode": 2,
+      "resolved": false,
+      "outputPresent": false
+    },
+    "classification": "EXTERNAL_BLOCKER_CONFIRMED"
+  },
+  "authorizedStaging": {
+    "availableInCurrentExecutionEnvironment": false,
+    "configuredCredentialVariableNames": [],
+    "missingCredentialVariableNames": [
+      "SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "DATABASE_URL",
+      "POSTGRES_URL",
+      "POSTGRES_PRISMA_URL",
+      "POSTGRES_URL_NON_POOLING"
+    ],
+    "toolAvailability": {
+      "psql": false,
+      "pg_isready": false,
+      "supabase": false,
+      "docker": false,
+      "podman": false
+    },
+    "rawCredentialValuesRecorded": false,
+    "classification": "EXTERNAL_BLOCKER_CONFIRMED",
+    "scope": "Risk Indicator migrations P91/P93/P94, RLS/JWT, rollback/concurrency and deployed HTTP cannot be executed from this environment without authorized staging credentials and an execution client."
+  },
+  "proof": {
+    "targetedStrictTypeScript": "PASS 1/1 new policy module",
+    "wholeProjectSemanticTypeScript": "WITHHELD_DEPENDENCY_GRAPH_AND_EXACT_RUNTIME_MISSING",
+    "eslint": "WITHHELD_DEPENDENCY_GRAPH_MISSING",
+    "webpack": "WITHHELD",
+    "turbopack": "WITHHELD",
+    "renderedBrowser": "WITHHELD_EXTERNAL_FONT_AND_DEPENDENCIES",
+    "exactWindows": "WITHHELD",
+    "stagingDatabase": "EXTERNAL_BLOCKER_CONFIRMED"
+  },
+  "truthBoundary": "Confirms only that authorized staging credentials/tools and the exact dependency graph are unavailable in this execution environment. It does not prove that the owner's external staging does not exist, is unhealthy, or cannot be used elsewhere."
+}

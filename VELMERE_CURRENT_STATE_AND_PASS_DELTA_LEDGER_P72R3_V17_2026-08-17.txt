@@ -1,0 +1,147 @@
+VELMÈRE — CURRENT STATE AND PASS DELTA LEDGER
+REVISION: P72R3 / V17
+DATE: 2026-08-17
+AUTHORITY: CANONICAL OWNER DIRECTIVE V17 — unchanged byte-for-byte from P71R5
+PARENT COMPLETE HANDOFF: P71R5 / V17
+PASS DECISION: PASS_BOUNDED_P72R3_OWNER_BOUND_COMMERCIAL_TOPOLOGY_EXACT_WINDOWS
+P72R3 CREDIT CLASS: REAL_PRODUCT_SOURCE_REPAIR + EXACT_WINDOWS_ENGINEERING + RUNTIME_TOPOLOGY_NEGATIVE_CONTROLS + SUPPORT_MEASUREMENT_REPAIR + FAIL_CLOSED_NO_RELEASE_NUMERATOR_PROMOTION
+GLOBAL RELEASE DECISION: NO_GO
+STOP_SELL: true
+LIVE: false
+saleEnabled: false
+productionApproved: false
+worldClassProven: false
+
+======================================================================
+EXECUTIVE DELTA — P71R5 → P72R3
+======================================================================
+Axis | P71R5 | P72R3 | Honest credit
+Canonical product families | 10 owner-bound, but commercial helpers still drifted | exactly 10 in active commercial/readiness measurement | PASS_PRODUCT_MEASUREMENT
+Customer-facing rows | owner denominator 20, helper drift remained | exactly 20 active commercial rows | PASS_PRODUCT_MEASUREMENT
+Execution profiles | 20 | 20 | unchanged
+Paid transitions | 10 | 10 | unchanged
+PDF model | owner truth says artifact, helper still carried legacy product-family semantics | PDF is artifact scope only; never current family/SKU | PASS_PRODUCT_MEASUREMENT
+Shield Pro | owner topology independent, helper could collapse into Shield | independent family in current commercial/readiness measurement | PASS_PRODUCT_MEASUREMENT
+Standalone products | owner truth = one customer row each | one current row each; customerFacingTier=null | PASS_PRODUCT_MEASUREMENT
+Ambiguous legacy PDF/Shield IDs | risk of inference/guessing | fail closed unless explicit current surface disambiguates | PASS_NEGATIVE_CONTROL
+Advanced manual-review assumption | owner truth automated | evidence/readiness derived gates no longer manufacture mandatory human review | PASS_PRODUCT_TRUTH
+Exact Windows engineering | P71R5 exact bytes PASS | P72R3 exact final bytes PASS | PASS
+Runtime topology | P71R5 owner truth PASS | P72R3 commercial topology runtime PASS | PASS_BOUNDED
+Rights | 2/203 | 2/203 | unchanged
+Customer FINAL outputs | 0/20 | 0/20 | unchanged
+Audit FINAL PDFs | 0/3 | 0/3 | unchanged
+Paid value transitions | 0/10 | 0/10 | unchanged
+Sale eligible | 0/20 | 0/20 | STOP_SELL
+Global | NO_GO | NO_GO | correct
+
+P72R3 closes measurement drift. It does NOT claim that any customer product is final, saleable, rights-cleared, LIVE, or world-class proven.
+
+======================================================================
+TABLE 0 — CURRENT OWNER-BOUND PRODUCT TOPOLOGY
+======================================================================
+Family | Shape | Customer rows | Paid transitions | PDF obligation | State
+Audit | TIERED | Basic / Pro / Advanced | 2 | final tier-appropriate Audit PDF | CURRENT
+Browser | TIERED | Basic / Pro / Advanced | 2 | Browser PDF where promised | CURRENT
+Shield | TIERED | Basic / Pro / Advanced | 2 | none as separate family | CURRENT
+Shield Pro | TIERED | Basic / Pro / Advanced | 2 | none as separate family | CURRENT
+Real Markets | TIERED | Basic / Pro / Advanced | 2 | none | CURRENT
+Shield Map | STANDALONE | Shield Map | N/A | none | CURRENT
+Market Impact | STANDALONE FREE | Market Impact | N/A | none | CURRENT
+Whale Watch | STANDALONE FREE | Whale Watch | N/A | none | CURRENT
+Angel | STANDALONE AI | Angel | N/A | none | CURRENT
+Risk Indicator | STANDALONE | Risk Indicator | N/A | none | CURRENT
+Denominators: 10 families / 20 customer rows / 20 execution profiles / 10 material paid transitions. PDF separate family=false.
+
+======================================================================
+TABLE 1 — EXACT P72R3 PRODUCT DELTA
+======================================================================
+Final build-relevant source delta vs P71R5: 5 files
+- lib/commerce/vlm-commercial-readiness.ts — 19,004 B — 6e64d34bc6475f524d99edd59927f009ab46a6bbcef137a52467d943fa89e416
+- lib/commerce/vlm-field-level-readiness.ts — 34,196 B — 0106ebfca1018494a8930fe6400b99dd1354b5e4c2506498972f48a0765a1159
+- lib/commerce/vlm-evidence-availability.ts — 27,384 B — fbde7f9a94bfb034600fa590e261320d1416f5a8f1a4fc990029fe9b1f78f6d2
+- app/api/checkout/vlm-service/route.ts — 27,839 B — 1f79d0ec1cafcb654d0493fdd52c3bddbe088f4cb503a81fb530acb91611618c
+- app/api/checkout/vlm-service/readiness/route.ts — 5,200 B — 647e63900a14f23af12f56c8e54aec5c4caac669023957164fb4bfd4525ad929
+
+Additional non-build-projection support correction:
+- lib/commerce/vlm-current-evidence-availability-matrix.ts
+- actual P71R5 preimage: 12770 B / 5e74d4eb203819c2f9e9b5f697a09c4d31c61bf77b0dcba01d351ae891b0b736
+- current P72R3 package output: 12774 B / bb96400560eb229ced1e99573b7cd192d419c184b2dd14b05eeda77516775f92
+- purpose: Shield Pro closure measurement uses independent shield-pro adapter; zero engineering/release numerator credit.
+
+Two TypeScript defects found by exact Windows and repaired before credit:
+- readiness route: commercial binding restored before use;
+- field-level readiness: five NO_SAE_SUBSTITUTE typos corrected to NO_SAFE_SUBSTITUTE.
+Failed prior P72 runs remain zero credit.
+
+======================================================================
+TABLE 2 — EXACT WINDOWS ENGINEERING ON FINAL P72R3 BYTES
+======================================================================
+Exact proof run: 32028133381
+Head: 516bd5a051b143cae192833cb36ce4e573800928
+Runner: Windows Server 2025 Datacenter / x64
+Node: v24.18.0
+npm: 11.16.0
+Final build projection: 1597 files / 20,988,569 B
+Path-set SHA-256: b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73
+Aggregate SHA-256: 4db46e951d3f7f2cc04f61418279b9347bc21b4300b7152aa3e2c77395216252
+Controlled Next.js generated projection: 20,988,554 B / 9eda1cb4d61b81887f8ab5fe623305647ec20e90493ed5dc059adc0979f9d25c
+Exact engineering: PASS
+- native Windows PASS
+- exact Node PASS
+- exact npm PASS
+- exact projection pre-install PASS
+- dependency closure PASS
+- native Next SWC PASS
+- semantic TypeScript PASS
+- zero-warning ESLint PASS
+- Webpack production build PASS
+- Turbopack production build PASS
+- controlled next-env mutation PASS
+- exact projection post-build PASS
+Commercial topology runtime: PASS
+Static fail-closed controls: PASS
+
+======================================================================
+FAILED / SUPERSEDED P72 ATTEMPTS — ZERO CHECKPOINT CREDIT
+======================================================================
+32024197810 — guarded spec SHA mismatch — 0 credit.
+32026094320 — malformed concatenated patch transport — 0 credit.
+32026719658 — deterministic output metadata mismatch — 0 credit.
+32027345245 — reconciled-runner current-product anchor model incorrect — 0 credit.
+32027667575 — exact TypeScript found real product defects — 0 credit.
+32028133381 — SUCCESS — current P72R3 engineering/runtime proof.
+
+======================================================================
+GLOBAL CURRENT DENOMINATORS
+======================================================================
+Canonical product families: 10
+Customer-facing rows: 20
+Current execution profiles: 20
+Material paid transitions passed: 0/10
+Customer FINAL outputs: 0/20
+Audit final customer PDF artifacts: 0/3
+Real Markets final customer rows: 0/3
+Current real deployed Audit reference targets: 1 retained from P70
+Vulnerability/deployment ground-truth cases promoted: 0
+Rights: 2/203
+Rights withheld: 201/203
+Sale eligible: 0/20
+Security/privacy final closure: OPEN
+Accessibility/i18n final closure: OPEN
+Convergence rounds: 0/3
+FINAL_AI_VALIDATION: NOT_READY
+REAL_EXTERNAL_PROOF: NOT_STARTED
+GLOBAL: NO_GO / STOP_SELL / LIVE=false
+
+======================================================================
+NEXT FROZEN WORK — P73
+======================================================================
+Return directly to Audit final customer execution. Highest-value next target:
+1. bind a real deployed target to authoritative current source/deployment identity;
+2. add independent positive ground truth or fail closed — source equality alone never means safe;
+3. execute actual Audit request -> evidence -> assessment -> customer snapshot -> tier-appropriate PDF;
+4. prove route/API/account snapshot/PDF semantic parity and deterministic bytes;
+5. promote customer FINAL or vulnerability/deployment ground truth only when the exact evidence physically supports it;
+6. keep rights, paid value, sale, LIVE and WORLD_CLASS numerators unchanged unless their own proofs close.
+
+END OF P72R3 LEDGER

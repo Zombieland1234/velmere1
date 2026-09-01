@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+import { validateGenesis } from "./a77-clean-root-migration-lib.mjs";
+import { A78_REVISION, readJson } from "./a78-exact-runtime-bootstrap-lib.mjs";
+import { digestValid, verifyCurrentAuthority, verifyHistoricalDescendantChain } from "./historical-descendant-chain-lib.mjs";
+const root=process.cwd(), policy=readJson(root,"config/pass36/a78-exact-runtime-lockfile-browser-bootstrap.json"), a77Policy=readJson(root,"config/pass36/a77-clean-root-migration-policy.json"), genesis=readJson(root,policy.parentCleanRootGenesisPath), manifest=readJson(root,policy.descendantManifestPath), auth=verifyCurrentAuthority(root), chain=verifyHistoricalDescendantChain(root,policy.descendantManifestPath,auth.current.sourceRevisionId);
+const checks=[]; const add=(id,p,d=null)=>checks.push({id,passed:Boolean(p),detail:d});
+const genesisValidation=validateGenesis(root,genesis,a77Policy,{verifyCurrentPayload:false}); for(const row of genesisValidation.checks)add(`parent-${row.id}`,row.passed,row.detail);
+add("manifest:digest",digestValid(manifest),manifest.manifestDigestSha256); add("manifest:revision",manifest.revisionId===A78_REVISION,manifest.revisionId); add("manifest:genesis",manifest.parentCleanRootGenesisDigestSha256===genesis.genesisDigestSha256,manifest.parentCleanRootGenesisDigestSha256); add("claims:closed",Object.values(manifest.claims??{}).every(v=>v===false),manifest.claims);
+for(const row of chain.checks)add(row.id,row.passed,row.detail); for(const row of auth.checks)add(row.id,row.passed,row.detail);
+const failed=checks.filter(r=>!r.passed); const report={schemaVersion:"velmere.pass36.a78.current-root-descendant-verification.v3",revisionId:A78_REVISION,status:failed.length?"FAIL_A78_HISTORICAL_DESCENDANT":"PASS_A78_HISTORICAL_DESCENDANT_CHAIN_TO_CURRENT",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,failures:failed,parentGenesisDigestSha256:genesis.genesisDigestSha256,payload:manifest.payload,currentPayload:chain.current.payload,liveProven:false,saleEnabled:false}; console.log(JSON.stringify(report,null,2)); if(failed.length)process.exit(1);

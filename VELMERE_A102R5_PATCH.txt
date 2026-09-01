@@ -1,0 +1,28 @@
+VELMERE A102R5 PATCH
+Revision: VELMERE_PASS36_A102R5_ACTION_REQUIRED_SERVER_ACCOUNT_ENTITLEMENT_BROWSER_BEARER_AND_PERSISTENT_PAID_ACCESS_FAIL_CLOSED_NO_REAL_CREDIT
+Parent: VELMERE_PASS36_A102R4_ACTION_REQUIRED_CLIENT_AUTH_PREVIEW_HEADER_LOCAL_STORAGE_AND_ACCOUNT_DATA_FAIL_CLOSED_NO_REAL_CREDIT
+Decision: NO_GO
+LIVE=false; saleEnabled=false; productionApproved=false; worldClassProven=false
+completedThrough=89
+
+LOCAL SECURITY CLOSURE
+- Removed paid bearer token persistence from browser localStorage.
+- Browser paid-access and Authorization headers no longer act as entitlement authority.
+- Paid depth requires a signed account session plus exact account/context-bound server entitlement.
+- Checkout verification returns a ledger entitlement record, never a browser bearer token.
+- Legacy persistent paid-access keys are purged; only a non-secret tab-scoped UX marker remains.
+- Paid clients no longer transmit the marker as a request header.
+- Audit customer pipeline binds the entitlement record instead of a removed token nonce.
+- Route AST and dispatch hashes are rebound; diagnostic TypeScript 5.8.3 grants no exact toolchain credit.
+
+LOCAL TESTS
+- A102R5 paid entitlement/browser secret boundary: 26/26.
+- VLM verify preflight: 1 positive + 5 zero-provider/zero-write negatives.
+- API body: 37/37; malformed JSON: 112/112; PASS4800: 61/61.
+- A73: 57/57; verifier 73/73.
+- A89: 54/54; verifier 156/156.
+- Route dispatch: 1480/1480; tamper 7/7; lazy routes 176/176.
+- A59: 77/77; tiers 186/186; zero-budget 439/439.
+
+TRUTH BOUNDARY
+No fresh exact Node/npm build, Chromium/browser, durable Supabase entitlement, Stripe TEST lifecycle, staging, real-data, rights, legal, customer, assurance, LIVE or sale credit is granted.

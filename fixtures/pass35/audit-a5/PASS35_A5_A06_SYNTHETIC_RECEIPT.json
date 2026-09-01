@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a5-a06-receipt.v1",
+  "engineId": "pass35-a5-bounded-cfg-path-analysis",
+  "familyId": "symbolic_path_analysis",
+  "caseRef": "AUD-PASS35-A5-A06-FIXTURE",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "target": {
+    "chainId": "1",
+    "contractAddress": "0x1111111111111111111111111111111111111111",
+    "runtimeBytecodeSha256": "sha256:aca94126bac3d9e562a4d07561c9b07f754d21a6d7471287a93bb0bc00b4344a",
+    "runtimeByteLength": 10,
+    "chainProviderReceiptSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "execution": {
+    "status": "VERIFIED_LOCAL_BOUNDED_CFG",
+    "assuranceClass": "LOCAL_BOUNDED_CFG_NOT_SYMBOLIC",
+    "realCaseExecution": false,
+    "paidGateEligible": false,
+    "fullAuditClaimAllowed": false,
+    "promotionAllowed": false
+  },
+  "decoder": {
+    "instructionCount": 7,
+    "pushInstructionCount": 3,
+    "unknownOpcodeCount": 0,
+    "truncatedPushCount": 0
+  },
+  "cfg": {
+    "blockCount": 3,
+    "edgeCount": 2,
+    "reachableBlockCount": 3,
+    "reachableCoveragePercent": 100,
+    "unresolvedDynamicJumpCount": 0,
+    "staticJumpCount": 0,
+    "conditionalJumpCount": 1,
+    "blocks": [
+      {
+        "id": "B0001",
+        "startPc": 0,
+        "endPc": 2,
+        "instructionPcs": [
+          0,
+          2
+        ],
+        "terminalOpcode": "JUMPI",
+        "edges": [
+          {
+            "kind": "STATIC_CONDITIONAL_JUMP",
+            "targetPc": 4
+          },
+          {
+            "kind": "FALLTHROUGH",
+            "targetPc": 3
+          }
+        ],
+        "unresolvedDynamicJump": false
+      },
+      {
+        "id": "B0002",
+        "startPc": 3,
+        "endPc": 3,
+        "instructionPcs": [
+          3
+        ],
+        "terminalOpcode": "STOP",
+        "edges": [],
+        "unresolvedDynamicJump": false
+      },
+      {
+        "id": "B0003",
+        "startPc": 4,
+        "endPc": 9,
+        "instructionPcs": [
+          4,
+          5,
+          7,
+          9
+        ],
+        "terminalOpcode": "REVERT",
+        "edges": [],
+        "unresolvedDynamicJump": false
+      }
+    ]
+  },
+  "paths": {
+    "completedPathCount": 2,
+    "uniqueTerminalKinds": [
+      "REVERT",
+      "STOP"
+    ],
+    "maxObservedDepth": 2,
+    "truncatedByMaxPaths": false,
+    "truncatedByMaxDepth": false,
+    "truncatedByVisitLimit": false,
+    "maxPaths": 32,
+    "maxDepth": 16,
+    "maxVisitsPerBlock": 2
+  },
+  "riskSignals": [],
+  "blockers": [],
+  "limitations": [
+    "This engine builds a bounded control-flow graph and explores structural paths only.",
+    "It does not solve symbolic constraints, model storage, memory, calldata, balances, gas or environment state.",
+    "Dynamic jump targets that are not an immediately preceding PUSH are unresolved.",
+    "Opcode presence is a review signal, not proof of exploitability or vulnerability.",
+    "No paid-gate, full-audit, independent-assurance or benchmark credit is granted."
+  ],
+  "rawAnalysisSha256": "sha256:878b9da3fd23618f23220d5b1156dd08b5d62bd301a63673f02521be97ace43d",
+  "truthBoundary": "A5 A06 proves deterministic bounded EVM decoding, CFG construction and structural path exploration for the supplied bytecode only. It is not full symbolic execution, exploit proof, fork replay, human review or customer-grade audit evidence.",
+  "receiptSha256": "sha256:06852cf5fb78c99b3a166d2a012586942548f362f2bfb399d8add261d996c33b"
+}

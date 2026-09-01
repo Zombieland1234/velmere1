@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "velmere.r7.staging-security-hardening-source-receipt.v1",
+  "candidate": "R7_MERGED_CURRENT_SOURCE",
+  "projectRef": "yljjyowcvjgjcamffnvd",
+  "status": "PASS_SOURCE_PREPARED_RUNTIME_APPLY_REQUIRED",
+  "migration": {
+    "path": "supabase/migrations/20260824000005_r7_live_schema_reconciliation_and_security_hardening.sql",
+    "bytes": 10689,
+    "sha256": "d22b1b23ccaaf1697f16ec573d034db93b78fd3332197c05064d561477c00948",
+    "controls": [
+      "8_PRIVATE_CONTROL_TABLES_RLS_ENABLED_WITH_NO_CLIENT_POLICIES",
+      "ACCOUNT_BINDING_HELPERS_SECURITY_INVOKER",
+      "B64URL_FIXED_SEARCH_PATH",
+      "PDF_SNAPSHOT_FOREIGN_KEY_INDEX",
+      "SOURCE_AUTHORITY_REQUIRES_PHYSICAL_EXACT_WINDOWS_PASS",
+      "REDACTED_COMMON_STAGING_SUMMARY"
+    ]
+  },
+  "liveAdvisorFindingsBeforeApply": {
+    "privateTablesWithoutRls": 8,
+    "authenticatedSecurityDefinerAccountHelpers": 2,
+    "mutableSearchPathFunctions": 1,
+    "unindexedForeignKeys": 1,
+    "leakedPasswordProtection": "NOT_AVAILABLE_ON_FREE_PLAN"
+  },
+  "verification": {
+    "pgliteOrderedMigrationChainCount": 127,
+    "targetedAssertionsPassed": 120,
+    "targetedAssertionsFailed": 0,
+    "campaignDenominator": 52,
+    "run1Summary": {
+      "PASS": 51,
+      "WITHHELD_EXACT_WINDOWS_SERVER_2025_REQUIRED": 1
+    },
+    "run2Summary": {
+      "PASS": 51,
+      "WITHHELD_EXACT_WINDOWS_SERVER_2025_REQUIRED": 1
+    },
+    "classificationStable": 52,
+    "exitCodeStable": 52,
+    "stderrStable": 52
+  },
+  "runtimeApplied": false,
+  "exactWindowsBound": false,
+  "customerFinalCredit": false,
+  "truthBoundary": "The migration is present and executes in disposable PGlite as part of the exact ordered chain. Supabase runtime hardening must be owner-applied and reverified; exact Windows and Browser Basic FINAL remain separate physical gates."
+}

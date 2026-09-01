@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a8-monitoring-handoff-receipt.v1",
+  "familyId": "post_audit_monitoring_handoff",
+  "caseRef": "AUD-PASS35-A8-A17-0001",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "caseFileSha256": "sha256:b3994f9c462eb6920adb8ff1f4dfd7a8c94a26094881e46c8b4f9d805fdbba95",
+  "target": {
+    "chainId": "1",
+    "contractAddress": "0x1111111111111111111111111111111111111111",
+    "runtimeBytecodeSha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "auditReportSha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "handoffBindings": {
+    "monitoringProviderConfigurationSha256": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "incidentPlaybookRootSha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "customerHandoffSha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "providerCommercialRightsEvidenceSha256": null
+  },
+  "ruleCount": 6,
+  "criticalRuleCount": 3,
+  "customerCommunicationRuleCount": 6,
+  "rules": [
+    {
+      "ruleId": "A17_ADMIN_CHANGE",
+      "type": "ADMIN_CHANGE",
+      "severity": "CRITICAL",
+      "maxDetectionDelaySec": 60,
+      "signalSha256": "sha256:bca8ccec7df790858dda726bd2fc40e6357b731a51e7f76ab5ff156c68be17ea",
+      "conditionSha256": "sha256:21896d6f6183d29528408467d6b3cd31a8a6c03792faa4e8ec6344ab9c14bb18",
+      "responsePlaybookId": "PB-ADMIN-CHANGE",
+      "ownerRole": "SECURITY_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_LIQUIDITY_DROP",
+      "type": "LIQUIDITY_DROP",
+      "severity": "HIGH",
+      "maxDetectionDelaySec": 300,
+      "signalSha256": "sha256:3c4bf16e6ff3113e5e14abaed2cbb095e820c85e3d9fe79465a9119733a68269",
+      "conditionSha256": "sha256:8f821cb506e2b562826786a4c5a4146ca57e8eea37bc6d4ed709e3ac18848c2e",
+      "responsePlaybookId": "PB-LIQUIDITY-DROP",
+      "ownerRole": "MARKET_RISK_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_ORACLE_DEVIATION",
+      "type": "ORACLE_DEVIATION",
+      "severity": "CRITICAL",
+      "maxDetectionDelaySec": 60,
+      "signalSha256": "sha256:11162b84bfa16b5c53d13666d48deb2fcd4a5be295fcee6740279ea9752f86a1",
+      "conditionSha256": "sha256:2f9d860c282c507b89f864016b95689695d9e87cb53a616cb75b90378dffe3ce",
+      "responsePlaybookId": "PB-ORACLE-DEVIATION",
+      "ownerRole": "SECURITY_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_PAUSE_STATE",
+      "type": "PAUSE_STATE",
+      "severity": "HIGH",
+      "maxDetectionDelaySec": 120,
+      "signalSha256": "sha256:868ddf6d871722cb78babc5d12790749fa5643d1df2149926ceb3f140b39a851",
+      "conditionSha256": "sha256:6225f3209b8867081cdb37c8680fadc4f7375f2b7ff4db88bdb4973290ef9048",
+      "responsePlaybookId": "PB-PAUSE-STATE",
+      "ownerRole": "PROTOCOL_OPERATIONS",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_PROXY_UPGRADE",
+      "type": "PROXY_UPGRADE",
+      "severity": "CRITICAL",
+      "maxDetectionDelaySec": 60,
+      "signalSha256": "sha256:5f1748291cd944f970533577cd71863eea5721b2cfb809c22bfc1e8c4fa97553",
+      "conditionSha256": "sha256:f2e0f5184ed50cc3341247145e5e8eec8a04bae6b9a061c818297d68701739fc",
+      "responsePlaybookId": "PB-PROXY-UPGRADE",
+      "ownerRole": "SECURITY_ON_CALL",
+      "customerCommunicationRequired": true
+    },
+    {
+      "ruleId": "A17_SUPPLY_CHANGE",
+      "type": "SUPPLY_CHANGE",
+      "severity": "HIGH",
+      "maxDetectionDelaySec": 300,
+      "signalSha256": "sha256:33d0d695ac5d1c343db275a226bc74ad123a27bdf203bd2c59e25268d87c16de",
+      "conditionSha256": "sha256:334734382a2b06fb611afa7486365f758ab199d8b95732e526c941d597520463",
+      "responsePlaybookId": "PB-SUPPLY-CHANGE",
+      "ownerRole": "RISK_ON_CALL",
+      "customerCommunicationRequired": true
+    }
+  ],
+  "status": "VERIFIED_LOCAL_MONITORING_HANDOFF",
+  "assuranceClass": "LOCAL_CONTRACT",
+  "liveMonitoringActive": false,
+  "alertDeliveryVerified": false,
+  "realCaseExecution": false,
+  "paidGateEligible": false,
+  "fullAuditClaimAllowed": false,
+  "promotionAllowed": false,
+  "blockers": [],
+  "limitations": [
+    "The fixture proves rule completeness, target binding and incident/customer handoff structure only.",
+    "No live provider, delivered alert, on-call acknowledgement, pause/upgrade action or customer communication was executed."
+  ],
+  "truthBoundary": "A8 may prove the local A17 monitoring handoff contract only. It cannot claim live monitoring, incident response effectiveness, SLA compliance or paid lifecycle coverage.",
+  "receiptSha256": "sha256:270b7d1974bc7809ba7e90113d67b510f54877f97288525558b431d09b6e234f"
+}

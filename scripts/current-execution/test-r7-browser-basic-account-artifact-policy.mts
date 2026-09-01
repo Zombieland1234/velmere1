@@ -1,0 +1,40 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { decideR7BrowserAccountArtifact, R7_BROWSER_ACCOUNT_ARTIFACT_POLICY_ID } from "../../lib/search/browser-account-artifact-policy.ts";
+
+const anonymousBasic = decideR7BrowserAccountArtifact({ depth: "basic", accountId: null });
+assert.equal(anonymousBasic.schemaVersion, R7_BROWSER_ACCOUNT_ARTIFACT_POLICY_ID);
+assert.equal(anonymousBasic.requestAllowed, true);
+assert.equal(anonymousBasic.persistExactAccountArtifact, false);
+assert.equal(anonymousBasic.anonymousBasicAllowed, true);
+assert.equal(anonymousBasic.customerFinalPromoted, false);
+const accountBasic = decideR7BrowserAccountArtifact({ depth: "basic", accountId: "supabase:11111111-1111-4111-8111-111111111111" });
+assert.equal(accountBasic.requestAllowed, true);
+assert.equal(accountBasic.persistExactAccountArtifact, true);
+assert.equal(accountBasic.accountBound, true);
+for (const depth of ["pro", "advanced"] as const) {
+  const denied = decideR7BrowserAccountArtifact({ depth, accountId: null });
+  assert.equal(denied.requestAllowed, false);
+  assert.equal(denied.persistExactAccountArtifact, false);
+  assert.equal(denied.failureCode, "account_session_required_for_paid_artifact");
+  const allowed = decideR7BrowserAccountArtifact({ depth, accountId: "supabase:22222222-2222-4222-8222-222222222222" });
+  assert.equal(allowed.requestAllowed, true);
+  assert.equal(allowed.persistExactAccountArtifact, true);
+}
+const route = await readFile(new URL("../../lib/server/search-route-modules/lens-report.ts", import.meta.url), "utf8");
+const client = await readFile(new URL("../../components/search/VelmereIntelligenceSearchClient.tsx", import.meta.url), "utf8");
+const authFetch = await readFile(new URL("../../lib/auth/customer-auth-fetch.ts", import.meta.url), "utf8");
+assert.match(route, /decideR7BrowserAccountArtifact/u);
+assert.match(route, /accountArtifactDecision\.persistExactAccountArtifact/u);
+assert.doesNotMatch(route, /if \(selectedDepth !== "basic"\) \{[\s\S]{0,120}account_session_required_for_paid_artifact/u);
+assert.match(route, /customerAuthenticationAttempted[\s\S]{0,520}CUSTOMER_WRITE_AUTH_REQUIRED[\s\S]{0,220}status: 401/u);
+assert.match(route, /resolveCustomerOwnedWriteBoundary\([\s\S]{0,1600}storePass4824AccountCustomerArtifactPdfBundle/u);
+assert.match(route, /account_artifact_durable_store_unavailable[\s\S]{0,180}status: 503/u);
+assert.match(route, /stored\.source !== "supabase"/u);
+assert.match(client, /parseLensPdfAccountArtifactBinding/u);
+assert.match(client, /verifyLensPdfAccountArtifactReadback/u);
+assert.match(client, /fetchWithCustomerAuth\([\s\S]{0,420}lens_account_artifact_readback/u);
+assert.match(client, /pdfPreview\.accountArtifact \?/u);
+assert.match(authFetch, /createCustomerAuthRefreshBudget/u);
+assert.match(authFetch, /options\.refreshBudget\.remaining = 0/u);
+process.stdout.write(`${JSON.stringify({status:"PASS_R7_BROWSER_BASIC_ACCOUNT_ARTIFACT_POLICY",assertions:30,authenticatedBasicPersistence:true,activeJwtWriteBoundary:true,atomicHeaderPair:true,strictV3Readback:true,anonymousBasicPersistenceClaimed:false,paidNoAccountFailsClosed:true,customerFinalPromoted:false},null,2)}\n`);

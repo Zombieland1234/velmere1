@@ -1,0 +1,13 @@
+import fs from "node:fs";
+import assert from "node:assert/strict";
+const contract = JSON.parse(fs.readFileSync("config/r7/r7-browser-basic-e2e-contract.json", "utf8"));
+assert.equal(contract.rowId, "browser-basic");
+assert.equal(contract.ordinal, 4);
+assert.equal(contract.tier, "basic");
+assert.equal(contract.authenticatedBasicPersistsExactAccountArtifact, true);
+assert.equal(contract.anonymousBasicMayRenderWithoutAccountPersistence, true);
+assert.equal(contract.paidTierWithoutAccountFailsClosed, true);
+assert.equal(contract.externalPilotRequiredForInternalFinal, false);
+assert.equal(contract.customerFinal, false);
+for (const gate of ["authorized_current_input","field_use_rights_decision","rights_before_network","safe_fetch","customer_safe_output","durable_exact_artifact_store","user_a_readback","user_b_cross_account_denial","reconnect_readback","backup_restore","post_restore_owner_rls","deployed_http_customer_route","exact_current_byte_engineering","no_open_critical_blocker"]) assert.ok(contract.chain.includes(gate), `missing ${gate}`);
+process.stdout.write(`${JSON.stringify({status:"PASS_R7_BROWSER_BASIC_E2E_CONTRACT",assertions:22,customerFinalPromoted:false,nextPhysicalGate:"OWNER_AUTHORIZED_STAGING_RUNTIME"},null,2)}\n`);

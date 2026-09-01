@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "velmere.p91.changed-module-imports.v1",
+  "generatedAt": "2026-08-20T18:55:00.000Z",
+  "status": "PASS_BOUNDED_CHANGED_IMPORTS",
+  "executableImports": {
+    "total": 5,
+    "passed": 5
+  },
+  "staticDependencyBoundaryChecks": 1,
+  "checks": [
+    {
+      "module": "./lib/market-integrity/risk-history-contract.ts",
+      "status": "PASS"
+    },
+    {
+      "module": "./lib/market-integrity/market-memory.ts",
+      "status": "PASS"
+    },
+    {
+      "module": "./lib/market-integrity/risk-ledger.ts",
+      "status": "PASS"
+    },
+    {
+      "module": "./lib/market-integrity/long-term-memory-spine.ts",
+      "status": "PASS"
+    },
+    {
+      "module": "./lib/server/market-integrity-route-modules/history.ts",
+      "status": "PASS"
+    },
+    {
+      "module": "./lib/server/market-integrity-route-modules/markets.ts",
+      "status": "PASS_STATIC_DEPENDENCY_BOUNDARY",
+      "executableImport": "WITHHELD_DEPENDENCY_ENVIRONMENT_MISSING",
+      "missingTransitiveDependencyObserved": "zod"
+    }
+  ],
+  "truthBoundary": "Five P91 production modules were imported through the offline TypeScript loader. The full markets route import is withheld because the SOURCE_ONLY environment lacks the installed transitive dependency graph (observed missing zod); its P91 binding is checked statically and receives no executable-import credit."
+}

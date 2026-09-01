@@ -1,0 +1,2439 @@
+{
+  "schemaVersion": "velmere.r2.execution-evidence-summary.v1",
+  "generatedAt": "2026-08-22T00:00:00Z",
+  "environment": "PWD=/mnt/data/velmere_r2_work\nNODE=v22.16.0\nNPM=10.9.2\nFILES=9721\nBYTES=496411926\n",
+  "gates": {
+    "npm_ci": "FAIL_EXIT_1",
+    "typecheck_initial": "WITHHELD_NOT_EXECUTED",
+    "tsc_noemit_initial": "WITHHELD_NOT_EXECUTED",
+    "eslint_initial": "WITHHELD_NOT_EXECUTED",
+    "i18n_initial": "WITHHELD_NOT_EXECUTED",
+    "webpack_initial": "WITHHELD_NOT_EXECUTED",
+    "turbopack_initial": "WITHHELD_NOT_EXECUTED",
+    "public_safety_sweep": "WITHHELD_NOT_EXECUTED",
+    "typecheck_r2": "WITHHELD_NOT_EXECUTED",
+    "tsc_noemit_r2": "WITHHELD_NOT_EXECUTED",
+    "eslint_r2": "WITHHELD_NOT_EXECUTED",
+    "i18n_r2": "WITHHELD_NOT_EXECUTED",
+    "full_npm_test": "WITHHELD_NOT_EXECUTED",
+    "deployment_preflight": "WITHHELD_NOT_EXECUTED",
+    "production_smoke": "WITHHELD_NOT_EXECUTED",
+    "reference_semantics": "PASS",
+    "account_export_boundary": "FAIL_EXIT_1",
+    "tiered_table_contract": "FAIL_EXIT_2",
+    "ai_campaign_evidence": "PASS",
+    "public_safety_v2": "WITHHELD_NOT_EXECUTED",
+    "account_export_v2": "WITHHELD_NOT_EXECUTED",
+    "reference_semantics_final": "WITHHELD_NOT_EXECUTED",
+    "tiered_table_contract_final": "WITHHELD_NOT_EXECUTED",
+    "ai_campaign_evidence_final": "WITHHELD_NOT_EXECUTED",
+    "typecheck_final": "WITHHELD_NOT_EXECUTED",
+    "tsc_noemit_final": "WITHHELD_NOT_EXECUTED",
+    "eslint_final": "WITHHELD_NOT_EXECUTED",
+    "i18n_final": "WITHHELD_NOT_EXECUTED"
+  },
+  "targetedSummary": {
+    "total": 20,
+    "pass": 9,
+    "fail": 11,
+    "timeout": 0,
+    "withheld": 0
+  },
+  "hardening": {
+    "changes": [
+      {
+        "path": "scripts/current-execution/test-v4-customer-public-safety-sweep.mjs",
+        "reason": "add customer-public payload security regression sweep",
+        "before_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_sha256": "4782b3f58f209839ea9c338ca1c6c7a9bb5a40fa51cdb4a0f42da88b050e478a"
+      }
+    ],
+    "static_findings": [
+      {
+        "path": "app/api/admin/payments/stripe-webhook-reconcile/route.ts",
+        "kind": "potential_public_sensitive_field",
+        "token": "authorization:"
+      },
+      {
+        "path": "app/api/admin/payments/stripe-webhook-dead-letter/route.ts",
+        "kind": "potential_public_sensitive_field",
+        "token": "authorization:"
+      },
+      {
+        "path": "lib/market-integrity/risk-ledger.ts",
+        "kind": "potential_public_sensitive_field",
+        "token": "authorization:"
+      },
+      {
+        "path": "lib/market-integrity/provider-health-store.ts",
+        "kind": "potential_public_sensitive_field",
+        "token": "authorization:"
+      },
+      {
+        "path": "lib/security/audit-a06-bounded-path-analysis.ts",
+        "kind": "potential_public_sensitive_field",
+        "token": "stack:"
+      },
+      {
+        "path": "lib/security/pass35-a21-abstract-path-runtime.mjs",
+        "kind": "potential_public_sensitive_field",
+        "token": "stack:"
+      },
+      {
+        "path": "lib/server/lazy-route-modules/security--audit-watch--pro-pdf--token.ts",
+        "kind": "potential_public_sensitive_field",
+        "token": "authorization:"
+      }
+    ],
+    "change_count": 1,
+    "finding_count": 7
+  },
+  "referenceSemantics": {
+    "changes": [
+      {
+        "path": "scripts/current-execution/test-zero-euro-reference-lane-semantics.mjs",
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "9ca23dad91da9a9a66bf3c179397f0d02dd1f471fff6e34bc41e398cc751ed80",
+        "reason": "add zero-euro reference lane semantic regression"
+      }
+    ],
+    "count": 1
+  },
+  "jsonParseFailures": [
+    {
+      "path": "artifacts/p82/logs/official_bsc_readonly_connectivity_response.json",
+      "error": "Expecting value: line 1 column 1 (char 0)"
+    }
+  ],
+  "caseCollisions": [],
+  "symlinks": [],
+  "secretFindings": [
+    {
+      "path": "CURRENT_CANDIDATE_CONTENT_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "PACKAGE_CONTENT_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tsconfig.p96-risk-history-server-targeted.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "VELMERE_WORLD_CLASS_MAX_ROADMAP_PASS35.txt",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "VELMERE_WORLD_CLASS_MAX_ROADMAP_PASS35.txt",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tsconfig.audit-evidence-p0.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "VELMERE_R2_CURRENT_SOURCE_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tsconfig.a44-active.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tsconfig.p94-risk-history-server-targeted.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "ENV_PRODUCTION_READY.example",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tsconfig.p96-risk-history-alignment-targeted.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tsconfig.p96-risk-history-ui-targeted.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P32_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P33_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P44_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P46_P47_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P41_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P39_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P7_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P29_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P2_PATCH_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P17_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P12_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P45_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P4_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P10_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P35_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P21_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P38_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P30_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P27_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P23_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P13_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P18_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P6_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P9_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P34_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P19_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P31_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P14_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P37_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P16_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P8_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P25_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P11_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P24_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P20_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P3_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P46_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P14_RETAINED_WORKING_ROOT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P15_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P36_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P26_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P28_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P1_PATCH_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P43_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P22_SOURCE_ONLY_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "_velmere/PASS36_A102R44P5_SOURCE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "app/globals.css",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/test-audit-evidence-fail-closed.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "p73-runtime/test-p73r4-adjudicated-authority-runtime.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/preflight-critical-guard-ids.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/preflight-authored-assertion-ids.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/release-input-merkle.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/preflight-assertion-policy.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass21/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass26/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass23/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a56-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a54-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a50-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a51-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a49-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a52-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a57-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a46-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a46-customer-data-plane-acceptance.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a53-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a45-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a47-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a57r1-hardening-integrity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a48-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a44-visual-master-engine-binding.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a34-deep-visual-reconciliation.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass35/a55-source-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass47/P47_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass15/route-dispatch-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass15/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass15/handler-body-equivalence.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass15/route-export-ast-registry.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass15/route-dispatch-verification.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass15/pass15-diff-from-pass14.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass20/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass4782/risk-engine-decomposition-baseline.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass22/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass24/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass17/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass16/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass14/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass14/build-graph-baseline.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r39-parent-source-package-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a88-brain-angel-risk-eval-policy.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/r44p46-pdf-dependency-closure.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a59-css-compaction-receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a64-a44-control-metadata-anchor.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p35-score-gate-ledger.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p34-score-gate-ledger.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p19-approved-current-source-changes.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a94r1-change-set-summary.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r42-parent-source-package-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p17-approved-current-source-changes.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r41-parent-source-package-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r40-parent-source-package-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p16-current-sku-truth-policy.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a88-test-receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p35-approved-current-source-changes.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/r44p36-parent-baseline.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass36/a102r44p16-approved-current-source-changes.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass19/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass25/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "config/pass18/package-payload-manifest.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_RISK_HISTORY_CURRENT_ALIGNMENT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_RISK_HISTORY_REQUEST_STORAGE_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_RISK_HISTORY_SIBLING_MERGE_INTEGRATION_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_RISK_HISTORY_SIBLING_MERGE_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_P95_SIBLING_BRANCH_RECONCILIATION.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_RISK_HISTORY_CURRENT_ALIGNMENT_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_RISK_HISTORY_REQUEST_STORAGE_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/P96_TARGETED_STRICT_TYPESCRIPT.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/r2/VELMERE_R2_EXECUTION_EVIDENCE_SUMMARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/P94_COMPAT_P93_CROSS_PRODUCT_CURRENT_BYTES.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/P94_COMPAT_P91_EVENT_CONTRACT_CURRENT_BYTES.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/P94_COMPAT_P93_DURABLE_CANONICAL_CURRENT_BYTES.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/P91_RISK_HISTORY_CONTRACT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/P91_RISK_HISTORY_LEDGER_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/pass13/PASS13_PARTITIONED_ESLINT.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/P92_RISK_HISTORY_CUSTOMER_CLIENT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/P93_RISK_HISTORY_CANONICAL_RESOLUTION_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/P93_CROSS_PRODUCT_RISK_HISTORY_PROPAGATION_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/P93_RISK_HISTORY_DURABLE_CANONICAL_COMPATIBILITY_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/P93_CURRENT_BYTE_REGRESSION.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/P93_PARENT_HISTORY_IMMUTABILITY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/P93_RISK_HISTORY_CANONICAL_RESOLUTION_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/logs/failures/03_p93_static_first_assertion_defect.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/logs/failures/04_p93_static_stale_max_assumption.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/logs/repeatability/canonical_resolution_runtime_1.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/logs/repeatability/canonical_resolution_runtime_2.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/logs/regression/current-byte/08_P91_CONTRACT_COMPAT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p93/logs/regression/current-byte/01_P93_CANONICAL_RUNTIME.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/logs/regression/p91-core/01_CONTRACT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/logs/regression/p91-core/02_LEDGER.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/logs/regression/current-byte/02_P91_LEDGER.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/logs/regression/current-byte/01_P91_CONTRACT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/snapshots/current-regression/P91_RISK_HISTORY_CONTRACT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p92/snapshots/current-regression/P91_RISK_HISTORY_LEDGER_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/04_P91_RISK_HISTORY_LEDGER_RUNTIME_AFTER_SAFE_STATUS_REPAIR.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/00A_P91_CUSTOMER_PROJECTION_TEST_FALSE_POSITIVE.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/03_P91_RISK_HISTORY_CONTRACT_RUNTIME_AFTER_SAFE_REASON_REPAIR.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/09_P91_RISK_HISTORY_CONTRACT_CURRENT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/02_P91_RISK_HISTORY_LEDGER_RUNTIME.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/10_P91_RISK_HISTORY_LEDGER_CURRENT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p91/logs/01_P91_RISK_HISTORY_CONTRACT_RUNTIME.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/frozen-sibling-checkpoints/p95-a/P95R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/frozen-sibling-checkpoints/p95-a/P95R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/frozen-sibling-checkpoints/p95-a/P95R1_RISK_HISTORY_CURRENT_ALIGNMENT_BOUNDARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/frozen-sibling-checkpoints/p95-b/P95R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/frozen-sibling-checkpoints/p95-b/P95R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/frozen-sibling-checkpoints/p95-b/P95R1_RISK_HISTORY_REQUEST_PAGE_PROVENANCE_BOUNDARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/regression/P91_CONTRACT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/failures/P94_RUNTIME_001_TEST_FIXTURE_SNAPSHOT_INSTEAD_OF_EVENT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/failures/P94_STATIC_002_SCHEMA_PARITY_EXPECTATION_TOO_STRICT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/failures/P94_STATIC_001_FALSE_POSITIVE_REQUEST_BINDING_CALL_VS_RESPONSE.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/repeatability/runtime_run1.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/repeatability/runtime_run2.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p94/logs/runtime/P94_RUNTIME_SECOND_RUN.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p49/P49_OVERLAY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p36/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p83r1/P83R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p34/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p91r1/P91R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p91r1/P91R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p101r1/P101R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p101r1/P101R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p96r1/P96R1_RISK_HISTORY_SIBLING_INTEGRATION_BOUNDARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p96r1/P96R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p96r1/P96R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p32/p31-vs-p32-current-diff.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p32/test-ledger.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p32/final-selected-test-ledger.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p33/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p38/P38_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p38/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p45/P45_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p65/P65_PACKAGE_CONTENT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p37/P37_ANGEL_RISK_SAME_INPUT_EXECUTION.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p37/P37_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p37/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p97r1/P97R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p71r5/P71R5_WORLD_CLASS_2026_RESEARCH_BINDING.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p39/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p39/P39_CURRENT_OUTPUT_AND_SOURCE_RIGHTS_BASELINE.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p39/P39_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p92r1/P92R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p92r1/P92R1_RISK_HISTORY_CUSTOMER_UI_BOUNDARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p92r1/P92R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p64/P64_PACKAGE_CONTENT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p64/P64_REACHABILITY_BASELINE.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p99r1/P99R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p87r1/P87R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p42/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p42/P42_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p31/test-ledger.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p48/P48_OVERLAY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p82r1/P82R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p94r1/P94R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p94r1/P94R1_RISK_HISTORY_PUBLIC_PAGINATION_BOUNDARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p94r1/P94R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p84r1/P84R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p85r1/P85R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p90r1/P90R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p44/P44_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p35/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p35/p34-vs-p35-current-diff.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p81r1/P81R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p98r1/P98R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p80r1/P80R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/P46_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p89r1/P89R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p63/P63_PACKAGE_CONTENT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p70/P70_PARENT_P69R2_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p93r1/P93R1_SOURCE_CHANGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p93r1/P93R1_RISK_HISTORY_CANONICAL_PUBLIC_BOUNDARY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p93r1/P93R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p40/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p40/P40_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p75/P75_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p86r1/P86R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p88r1/P88R1_CURRENT_PRODUCT_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p66/P66_PACKAGE_CONTENT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p41/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p41/P41_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p43/P43_SOURCE_ONLY_PACKAGE_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p43/source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p66/native-windows/P66_NATIVE_WINDOWS_ARTIFACT.zip",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p66/native-windows/artifact-extracted/P66_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p75r4/exact-windows/P75_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p77r3/exact-windows/P77_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p76r6/exact-windows/P76R2_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p61/package/P61R1_PACKAGE_CONTENT_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p72r3/exact-windows/P72R3_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/external-diagnostics/p46-pr-refs-reconstruction-evidence.zip",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/windows-source-transport/P46_CLEAN_CLONE_A_CANONICAL_SOURCE_IDENTITY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/windows-source-transport/P46_CLEAN_CLONE_B_CANONICAL_SOURCE_IDENTITY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/windows-source-transport/p46-source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/serialized-a60-artifacts/PASS4659_API_SURFACE_INVENTORY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/current-source/P46_CURRENT_SOURCE_IDENTITY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/serialized-a60-artifacts/pass13/PASS13_PARTITIONED_ESLINT.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p46/serialized-a60-artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p68/native-windows/P68_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p68/receipts/P68_PACKAGE_CONTENT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p52/parent/P51_PACKAGE_CONTENT_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p67/receipts/P67_PACKAGE_CONTENT_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p73r7/exact-windows/P73R7_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p73r7/package-source-capture/P73R7_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p44/windows-bridge/p43-identity.bin",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p31/execution-profiles/risk--basic.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p31/execution-profiles/risk--pro.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p31/execution-profiles/risk--advanced.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p64/local/A88_TEST.stdout",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p71r5/exact-windows/P71R3_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p71r5/runtime/P71R5_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p45/windows-source-transport/p43-source-identity.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p60/package/P60_PACKAGE_CONTENT_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p32/runtime/a88-test.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p62/package/P62_PACKAGE_CONTENT_MANIFEST.tsv",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p49/branch-payload/p49-build-projection/P47_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/closure/p69r2/native-windows/P69R2_BUILD_PROJECTION_MANIFEST.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/alignment_runtime_first.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/request_runtime_first.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/compatibility/p91_event_contract.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/compatibility/p93_durable_canonical_compatibility.generated-receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/compatibility/p93_cross_product_propagation.generated-receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/compatibility/p91_event_contract.generated-receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/final/09_branch_reconciliation.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/final/01_alignment_runtime.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/final/08_targeted_typescript.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/final/02_request_runtime.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/final/03_merge_integration_runtime.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/failures/P96_INTEGRATION_001_FUTURE_FIXTURE_TIMESTAMP_ZERO_CREDIT.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_merge_integration_runtime.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_sibling_merge_static.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_merge_integration_runtime.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_targeted_typescript.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_request_storage_static.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_request_storage_runtime.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_targeted_typescript.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_alignment_runtime.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_alignment_runtime.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_alignment_static.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_request_storage_runtime.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_targeted_typescript.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_alignment_static.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_sibling_branch_reconciliation.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_alignment_runtime.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_request_storage_runtime.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_request_storage_static.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_sibling_branch_reconciliation.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_sibling_merge_static.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_targeted_typescript.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_request_storage_runtime.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_merge_integration_runtime.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_sibling_branch_reconciliation.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round2_alignment_runtime.stdout.log",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_sibling_branch_reconciliation.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "artifacts/p96/logs/repeatability/round1_merge_integration_runtime.receipt.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_RISK_HISTORY_CURRENT_ALIGNMENT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_RISK_HISTORY_REQUEST_STORAGE_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_RISK_HISTORY_SIBLING_MERGE_INTEGRATION_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_RISK_HISTORY_SIBLING_MERGE_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_P95_SIBLING_BRANCH_RECONCILIATION.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_RISK_HISTORY_CURRENT_ALIGNMENT_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_RISK_HISTORY_REQUEST_STORAGE_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p96/P96_TARGETED_STRICT_TYPESCRIPT.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p94/P94_COMPAT_P93_CROSS_PRODUCT_CURRENT_BYTES.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p94/P94_COMPAT_P91_EVENT_CONTRACT_CURRENT_BYTES.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p94/P94_RISK_HISTORY_PUBLIC_PAGINATION_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p94/P94_COMPAT_P93_DURABLE_CANONICAL_CURRENT_BYTES.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p91/P91_RISK_HISTORY_CONTRACT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p91/P91_RISK_HISTORY_LEDGER_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p92/P92_RISK_HISTORY_CUSTOMER_CLIENT_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p93/P93_RISK_HISTORY_CANONICAL_RESOLUTION_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p93/P93_CROSS_PRODUCT_RISK_HISTORY_PROPAGATION_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p93/P93_RISK_HISTORY_DURABLE_CANONICAL_COMPATIBILITY_RUNTIME.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p93/P93_CURRENT_BYTE_REGRESSION.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p93/P93_PARENT_HISTORY_IMMUTABILITY.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "receipts/p93/P93_RISK_HISTORY_CANONICAL_RESOLUTION_STATIC.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "evaluation/pass19/brain-angel-evidence-fixtures.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "tests/security/a102-risk-indicator-confidence-truth.test.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "docs/progress/archive-root-pass4402-local-diagnostics/PASS4402_CHECK_RESULTS.json",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-compatibility-regression.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/verify-p96-final-handoff.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-current-alignment-static.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/p96-risk-history-server-targeted-types.d.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-repeatability.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-sibling-merge-static.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-merge-integration-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/build-p96r1-closure.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-changed-module-reachability.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-request-storage-static.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/build-p96-sibling-branch-reconciliation.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-request-storage-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-request-storage-runtime.mjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-targeted-typescript.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p96/test-p96-risk-history-current-alignment-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass11/test-supabase-service-rest.ts",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/current-execution/test-angel-durable-memory-delete-fail-closed.mts",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/current-execution/test-market-snapshot-250-roundtrip.mts",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/current-execution/test-operational-log-string-metric-redaction.mts",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass39/build-p39-current-output-rights-baseline.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/package-p37-current-source.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/package-p39-current-source.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/build-p40-source-identity.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/build-p41-source-identity.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/package-p42-current-source.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/build-p38-source-identity.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/build-p42-source-identity.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/build-p37-source-identity.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/package-p40-current-source.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/package-p41-current-source.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/package-p38-current-source.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/verify-p37-p36-package-completeness.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/closure/build-p39-source-identity.py",
+      "pattern": "private_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p94/p94-risk-history-server-targeted-types.d.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p94/test-p94-risk-history-public-pagination-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p94/test-p94-risk-history-public-pagination-runtime.mjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p94/build-p94r1-closure.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p94/test-p94-risk-history-public-pagination-static.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p94/verify-p94-runtime-repeatability.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass6/test-shield-klines-p0.ts",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass6/test-market-risk-delivery-gate.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/security-hardening/test-production-security-db-hardening.ts",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass35/build-a17-evidence-decision-roadmap.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass35/test-a17-control-plane.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass35/test-a17-risk-calibration-evaluation.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass35/verify-control-plane.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass64/build_p64_reachability_baseline.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p91/test-p91-risk-history-contract-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p91/verify-p91-runtime-repeatability.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p91/test-p91-risk-history-ledger-runtime.mjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/preflight/phase-security-operations-01a.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/preflight/phase-runtime-release-01b.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/preflight/phase-runtime-release-02.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/test-a102r44p35-standalone-customer-truth-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/test-a102r44p16-current-sku-truth.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/test-a102r44p35-standalone-decision-support.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/test-a67-network-egress-trust-boundary.mjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/test-a102r44p38-pass16-compiler-ast-rebaseline.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/test-a102r44p22-risk-basic-calibration-split.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass36/verify-a102r44p35-static-policy.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/contracts/pro-audit-pdf-runtime-proof-plane-pass4692.txt",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/contracts/lens-report-http-proof-plane-pass4692.txt",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/contracts/angel-runtime-proof-plane-pass4692.txt",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/contracts/audit-watch-full-proof-runtime-pass4691.txt",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass4826/test-risk-calibration-invariants.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass4826/test-durable-market-snapshot.cjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/pass4826/test-durable-market-snapshot-broker-boundary.ts",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p92/verify-p92-runtime-repeatability.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p92/build-p92r1-closure.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p92/test-p92-risk-history-customer-client-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p92/run-p92-current-regressions.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/run-p93-current-regressions.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/test-p93-risk-history-durable-canonical-compatibility-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/test-p93-risk-history-durable-canonical-compatibility-runtime.mjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/test-p93-risk-history-canonical-resolution-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/test-p93-risk-history-canonical-resolution-runtime.mjs",
+      "pattern": "supabase_service_key_assignment",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/test-p93-risk-history-canonical-resolution-static.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/verify-p93-runtime-repeatability.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/test-p93-cross-product-risk-history-propagation-static.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/p93-ledger-targeted-types.d.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "scripts/p93/build-p93r1-closure.py",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "components/market-integrity/UnifiedAssetAnalysisControls.tsx",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "components/market-integrity/RiskHistoryControl.tsx",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "components/market-integrity/ShieldRealMarketsParityClient.tsx",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "components/wallet/WalletConnectDrawer.tsx",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "components/wallet/WalletConnectOptions.tsx",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "components/security/CustomerSupportHandoffPacketPage.tsx",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "supabase/migrations/20260820000007_p93_risk_history_canonical_identity_public_resolution.sql",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "supabase/migrations/20260821000001_p94_risk_history_public_only_pagination_temporal_window.sql",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "app/api/security/audit-watch/registry/route.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-engine.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-history-current-alignment.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/premium-risk-psychology-rebalance.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-types.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-history-contract.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/pass35-a17-risk-calibration-evaluation-runtime.mjs",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-kernel-calibration-rebalance.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-history-customer-client.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-ledger.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-formula-worldclass-audit-rebalance.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/risk-history-customer-request-binding.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/local-development-market-reference.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/analysis-readiness.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/market-integrity/source-synchronizer.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/db/schema.sql",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/provider-conflict-arbitration-matrix.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/risk-formula-evidence-weighting-contract.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/evidence-narrative-claim-ledger-explainability.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/audit-evidence-qa-release-gate-matrix.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/audit-watch-post-handler.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/runtime-build-readiness-type-safety-sweep.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/control-plane-runtime-manifest.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/risk-calibration-golden-fixture-harness.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/security/audit-provider-public-get-control.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/route-registries/security.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/market-integrity-route-modules/risk-calibration.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/market-integrity-route-modules/history.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/market-integrity-route-modules/market-intelligence.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/market-integrity-route-modules/probe.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/security-route-modules/audit-risk-formula-evidence-weighting-contract.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    },
+    {
+      "path": "lib/server/security-route-modules/audit-provider-conflict-arbitration-matrix.ts",
+      "pattern": "openai_key",
+      "classification": "REVIEW_CONTROLLED_FIXTURE_OR_REAL_SECRET"
+    }
+  ],
+  "canonicalPromotion": false,
+  "customerFinal": "0/20"
+}

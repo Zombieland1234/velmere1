@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import { REV, PARENT, STATE, RECEIPT } from "./a102r13-source-boundary.mjs";
+const read=(f)=>JSON.parse(fs.readFileSync(f,"utf8"));
+const receipt=read(RECEIPT); const state=read(STATE); const checks=[]; const add=(id,p,d=null)=>checks.push({id,passed:Boolean(p),detail:d});
+add("identity",receipt.revisionId===REV&&receipt.parentRevisionId===PARENT);
+add("status",receipt.status==="PASS_A102R13_LOCAL_REGRESSION_ACTION_REQUIRED_NO_PROMOTION");
+add("stages",receipt.requiredStages===22&&receipt.executedStages===22&&receipt.passedStages===22&&receipt.failedStages===0,receipt.stages);
+add("r13",receipt.keyDenominators?.a102r13Checks===38&&receipt.keyDenominators?.activeConsoleSinks===3);
+add("prior",receipt.keyDenominators?.a102r5Checks===26&&receipt.keyDenominators?.a102r6Checks===30&&receipt.keyDenominators?.a102r7Checks===43&&receipt.keyDenominators?.a102r8Checks===41&&receipt.keyDenominators?.a102r9Checks===38&&receipt.keyDenominators?.a102r10Checks===59&&receipt.keyDenominators?.a102r11Checks===43&&receipt.keyDenominators?.a102r12Checks===29);
+add("session",receipt.keyDenominators?.a73Checks===57);
+add("api",receipt.keyDenominators?.apiBodyChecks===37&&receipt.keyDenominators?.malformedJsonChecks===112&&receipt.keyDenominators?.mega4800Checks===61);
+add("routes",receipt.keyDenominators?.routeDispatchChecks===1480&&receipt.keyDenominators?.routeRoutes===160&&receipt.keyDenominators?.routeDispatchTamperChecks===7&&receipt.keyDenominators?.lazyRouteChecks===176);
+add("core",receipt.keyDenominators?.a59Checks===77&&receipt.keyDenominators?.productTierChecks===186&&receipt.keyDenominators?.zeroBudgetChecks===439);
+add("source",receipt.sourceAudit?.filesRead>=5008&&receipt.sourceAudit?.codeFiles>=3087&&receipt.sourceAudit?.syntaxErrors===0&&receipt.sourceAudit?.missingLocalImports===0&&receipt.sourceAudit?.missingCssModuleClasses===0,receipt.sourceAudit);
+add("logs",receipt.stages.every((row)=>/^[a-f0-9]{64}$/u.test(row.stdoutSha256)&&row.exitCode===0&&row.passed===true));
+add("blocked",receipt.environmentBlockers?.length>=4&&receipt.environmentBlockers.every((row)=>row.credit===false));
+add("real",Object.values(receipt.realEvidence??{}).every((value)=>value===0));
+add("promotion",receipt.promotion?.globalDecision==="NO_GO"&&receipt.promotion?.live===false&&receipt.promotion?.saleEnabled===false&&receipt.promotion?.productionApproved===false&&receipt.promotion?.worldClassProven===false);
+add("state",state.revisionId===REV&&state.parentRevisionId===PARENT&&state.localImplementation?.centralOperationalLogBoundaryImplemented===true&&state.localImplementation?.rawBrowserErrorMessagesAndStacksRemovedFromPublicBoundaries===true&&state.localImplementation?.activeConsoleSinksCentralized===3&&state.localImplementation?.productionLogPipelineVerified===false);
+const failed=checks.filter((row)=>!row.passed);
+console.log(JSON.stringify({status:failed.length?"FAIL_A102R13_LOCAL_REGRESSION_RECEIPT":"PASS_A102R13_LOCAL_REGRESSION_RECEIPT_ACTION_REQUIRED_NO_PROMOTION",revisionId:REV,checks:checks.length,passed:checks.length-failed.length,failed:failed.length,results:checks,live:false,saleEnabled:false},null,2));
+process.exit(failed.length?1:0);

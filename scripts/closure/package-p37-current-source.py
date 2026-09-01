@@ -1,0 +1,670 @@
+#!/usr/bin/env python3
+"""Create and verify two byte-identical P37 CURRENT_SOURCE_ONLY archives.
+
+P37 repairs the P36 packaging defect that excluded public `.pem` verification
+keys merely because of their suffix. Public keys/certificates are allowed;
+private or ambiguous PEM material fails closed.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shutil
+import stat
+import tempfile
+from typing import Iterable
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_ROOT = ROOT / "artifacts/closure/p37"
+MANIFEST = ARTIFACT_ROOT / "P37_SOURCE_ONLY_PACKAGE_MANIFEST.json"
+EXCLUSIONS = ARTIFACT_ROOT / "P37_PACKAGE_EXCLUSIONS.json"
+FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
+
+V15 = "docs/authority/VELMERE_CANONICAL_OWNER_DIRECTIVE_V15_FREE_LEGAL_TOP_WORLD_2026-08-13.txt"
+SOURCE_IDENTITY = "artifacts/closure/p37/source-identity.json"
+STATUS = "artifacts/closure/p37/P37_STATUS.json"
+AUTHORITY = "artifacts/closure/p37/CURRENT_AUTHORITY_P37.json"
+LEDGER = "artifacts/closure/p37/VELMERE_CURRENT_STATE_AND_PASS_DELTA_LEDGER_P37_V15_2026-08-13.txt"
+A85_POLICY = "config/p37/a85-shield-pro-map-current-source-binding.json"
+A85_RECEIPT = "artifacts/closure/p37/P37_A85_CURRENT_SOURCE_BINDING_RECEIPT.json"
+PACKAGE_REPAIR = "artifacts/closure/p37/P37_P36_PACKAGE_COMPLETENESS_REPAIR.json"
+ANGEL_RISK = "artifacts/closure/p37/P37_ANGEL_RISK_SAME_INPUT_EXECUTION.json"
+HANDOFF = "artifacts/closure/p37/P37_HANDOFF_MANIFEST.json"
+REQUIRED_FILES = {
+    V15,
+    SOURCE_IDENTITY,
+    STATUS,
+    AUTHORITY,
+    LEDGER,
+    A85_POLICY,
+    A85_RECEIPT,
+    PACKAGE_REPAIR,
+    ANGEL_RISK,
+    HANDOFF,
+}
+EXPECTED_V15_SHA256 = "5cfbbfcbcef7242e30466f18bab3ad29cad859e485a909a4ee8658fb65e2f2c0"
+EXPECTED_PROJECT_NODE = "v24.18.0"
+EXPECTED_PUBLIC_PEMS = tuple(
+    f"config/release-verification/pass{number}-offline-candidate-public.pem"
+    for number in range(4734, 4742)
+)
+
+EXCLUDED_COMPONENTS = {
+    ".git", ".cache", ".mypy_cache", ".npm", ".parcel-cache", ".pnpm-store",
+    ".pytest_cache", ".ruff_cache", ".turbo", ".velmere", "__pycache__", "node_modules",
+}
+EXCLUDED_ROOT_DIRECTORIES = {"coverage", "temp", "tmp"}
+EXCLUDED_PREFIXES = (
+    "artifacts/pass36/a83/browser-lens-pdf-corpus",
+    "artifacts/pass36/a83/renders",
+    "artifacts/pass35/a45/screenshots",
+    "artifacts/closure/p33/paid-tests",
+    "artifacts/closure/p33/paid-tests-rerun",
+    "artifacts/closure/p33/paid-tests-current",
+    "artifacts/closure/p32/final-selected-test-logs",
+)
+EXCLUDED_EXACT_PATHS = {
+    MANIFEST.relative_to(ROOT).as_posix(),
+    "artifacts/pass35/a45/A45_DETERMINISTIC_LOCAL_REFERENCE_QA_FIXTURE.json",
+    "artifacts/closure/p34/internal-ai-assessments.jsonl",
+    "artifacts/closure/p35/internal-ai-assessments.jsonl",
+}
+EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
+EXTERNAL_FONT_NAMES = {"manrope-pdf-latin-plus-ext.ttf"}
+FORBIDDEN_SECRET_SUFFIXES = {".key", ".p12", ".pfx"}
+FORBIDDEN_SECRET_NAMES = {
+    "credentials.json", "service-account.json", "service_account.json",
+    "client-secret.json", "client_secret.json",
+}
+PRIVATE_PEM_MARKERS = (
+    b"-----BEGIN PRIVATE KEY-----",
+    b"-----BEGIN RSA PRIVATE KEY-----",
+    b"-----BEGIN EC PRIVATE KEY-----",
+    b"-----BEGIN OPENSSH PRIVATE KEY-----",
+    b"-----BEGIN ENCRYPTED PRIVATE KEY-----",
+)
+PUBLIC_PEM_MARKERS = (
+    b"-----BEGIN PUBLIC KEY-----",
+    b"-----BEGIN CERTIFICATE-----",
+)
+ACTIVE_CREDENTIAL_PATTERN = re.compile(
+    rb"(?:sk|pk)_(?:live|test)_[A-Za-z0-9_-]{24,}|"
+    rb"whsec_[A-Za-z0-9_-]{24,}|"
+    rb"Bearer\s+[A-Za-z0-9._~+/=-]{24,}|"
+    rb"-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----",
+    re.IGNORECASE,
+)
+ACTIVE_SOURCE_ROOTS = {"app", "components", "lib"}
+ACTIVE_SOURCE_SUFFIXES = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".json", ".py", ".sh", ".ps1"}
+SHA256_PATTERN = re.compile(r"^[a-f0-9]{64}$")
+
+
+def sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def files_equal(left: Path, right: Path) -> bool:
+    if left.stat().st_size != right.stat().st_size:
+        return False
+    with left.open("rb") as a, right.open("rb") as b:
+        while True:
+            ca = a.read(1024 * 1024)
+            cb = b.read(1024 * 1024)
+            if ca != cb:
+                return False
+            if not ca:
+                return True
+
+
+def canonical_json(value: object) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def normalized_mode(mode: int) -> int:
+    return 0o755 if mode & 0o111 else 0o644
+
+
+def within_root(path: Path) -> str | None:
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return None
+
+
+def reject_unsafe_output(path: Path, label: str) -> None:
+    if path.is_symlink():
+        raise RuntimeError(f"{label}_symlink_forbidden:{path}")
+    if path.exists() and not path.is_file():
+        raise RuntimeError(f"{label}_non_regular_forbidden:{path}")
+    absolute = path.absolute()
+    for parent in [absolute.parent, *absolute.parents]:
+        if parent.exists() and parent.is_symlink():
+            raise RuntimeError(f"{label}_parent_symlink_forbidden:{parent}")
+
+
+def classify_pem_bytes(data: bytes) -> str:
+    head = data[:4096]
+    if any(marker in head for marker in PRIVATE_PEM_MARKERS):
+        return "PRIVATE_FORBIDDEN"
+    if any(marker in head for marker in PUBLIC_PEM_MARKERS):
+        return "PUBLIC_ALLOWED"
+    return "AMBIGUOUS_FORBIDDEN"
+
+
+def is_artifact_noise(rel: str, pure: PurePosixPath) -> bool:
+    if not rel.startswith("artifacts/"):
+        return False
+    lower = pure.name.lower()
+    if pure.suffix.lower() in {".log", ".sqlite", ".sqlite3"}:
+        return True
+    if lower.endswith((".exitcode", ".stdout", ".stderr")) or ".stdout." in lower or ".stderr." in lower:
+        return True
+    if any(part.lower() in {"logs", "test-logs", "temporary-receipts"} for part in pure.parts):
+        return True
+    if pure.suffix.lower() == ".zip":
+        return True
+    if re.fullmatch(r"P\d+_SOURCE(?:_ONLY)?_PACKAGE_MANIFEST\.json", pure.name, flags=re.IGNORECASE):
+        return True
+    if re.fullmatch(r"P\d+_SOURCE_MANIFEST\.json", pure.name, flags=re.IGNORECASE):
+        return True
+    if pure.name != EXCLUSIONS.name and re.fullmatch(r"P\d+_PACKAGE_EXCLUSIONS\.json", pure.name, flags=re.IGNORECASE):
+        return True
+    return False
+
+
+def excluded(rel: str, dynamic_exact: set[str]) -> bool:
+    pure = PurePosixPath(rel)
+    parts = pure.parts
+    if not parts:
+        return True
+    if rel in dynamic_exact or rel in EXCLUDED_EXACT_PATHS:
+        return True
+    if any(part in EXCLUDED_COMPONENTS or part.startswith(".next") for part in parts):
+        return True
+    if parts[0] in EXCLUDED_ROOT_DIRECTORIES:
+        return True
+    if len(parts) >= 2 and parts[0] == ".yarn" and parts[1] == "cache":
+        return True
+    if any(rel == prefix or rel.startswith(f"{prefix}/") for prefix in EXCLUDED_PREFIXES):
+        return True
+    if pure.suffix.lower() in EXCLUDED_SUFFIXES:
+        return True
+    if pure.name == ".env" or pure.name.startswith(".env."):
+        return True
+    if pure.suffix.lower() in FORBIDDEN_SECRET_SUFFIXES or pure.name.lower() in FORBIDDEN_SECRET_NAMES:
+        return True
+    if pure.name.lower() in EXTERNAL_FONT_NAMES:
+        return True
+    if any(part.upper() == "MATERIALS" for part in parts):
+        return True
+    return is_artifact_noise(rel, pure)
+
+
+def iter_regular_files(dynamic_exact: set[str]) -> Iterable[tuple[Path, str, os.stat_result, str | None]]:
+    def walk(directory: Path, rel_directory: PurePosixPath):
+        with os.scandir(directory) as scan:
+            entries = sorted(scan, key=lambda item: item.name.encode("utf-8"))
+        for entry in entries:
+            rel_path = rel_directory / entry.name
+            rel = rel_path.as_posix()
+            if excluded(rel, dynamic_exact):
+                continue
+            if entry.is_symlink():
+                raise RuntimeError(f"included_symlink_forbidden:{rel}")
+            path = Path(entry.path)
+            st = entry.stat(follow_symlinks=False)
+            if stat.S_ISDIR(st.st_mode):
+                yield from walk(path, rel_path)
+            elif stat.S_ISREG(st.st_mode):
+                pem_class = None
+                if PurePosixPath(rel).suffix.lower() == ".pem":
+                    pem_class = classify_pem_bytes(path.read_bytes())
+                    if pem_class != "PUBLIC_ALLOWED":
+                        raise RuntimeError(f"forbidden_or_ambiguous_pem:{rel}:{pem_class}")
+                yield path, rel, st, pem_class
+            else:
+                raise RuntimeError(f"included_special_file_forbidden:{rel}:{st.st_mode:o}")
+    yield from walk(ROOT, PurePosixPath())
+
+
+def inventory(dynamic_exact: set[str]) -> tuple[list[dict[str, object]], list[str]]:
+    rows: list[dict[str, object]] = []
+    public_pems: list[str] = []
+    casefold: dict[str, str] = {}
+    for path, rel, st, pem_class in iter_regular_files(dynamic_exact):
+        folded = rel.casefold()
+        previous = casefold.get(folded)
+        if previous is not None and previous != rel:
+            raise RuntimeError(f"casefold_path_collision:{previous}:{rel}")
+        casefold[folded] = rel
+        rows.append({
+            "path": rel,
+            "byteLength": st.st_size,
+            "mode": normalized_mode(st.st_mode),
+            "sha256": sha256_file(path),
+        })
+        if pem_class == "PUBLIC_ALLOWED":
+            public_pems.append(rel)
+    rows.sort(key=lambda row: str(row["path"]).encode("utf-8"))
+    return rows, sorted(public_pems, key=lambda value: value.encode("utf-8"))
+
+
+def validate_secret_boundaries(rows: list[dict[str, object]]) -> None:
+    for row in rows:
+        rel = str(row["path"])
+        pure = PurePosixPath(rel)
+        path = ROOT / rel
+        if pure.name == ".npmrc":
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if re.search(r"(?im)(?:_authToken|_password|username|always-auth)\s*=", text):
+                raise RuntimeError(f"npmrc_auth_material_in_package:{rel}")
+        if pure.parts and pure.parts[0] in ACTIVE_SOURCE_ROOTS and pure.suffix.lower() in ACTIVE_SOURCE_SUFFIXES:
+            data = path.read_bytes()
+            if ACTIVE_CREDENTIAL_PATTERN.search(data):
+                raise RuntimeError(f"active_credential_literal_in_package:{rel}")
+
+
+def load_json(path: str) -> dict[str, object]:
+    value = json.loads((ROOT / path).read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise RuntimeError(f"json_object_required:{path}")
+    return value
+
+
+def recompute_source_identity() -> dict[str, object]:
+    builder = ROOT / "scripts/closure/build-p37-source-identity.py"
+    spec = importlib.util.spec_from_file_location("velmere_p37_source_identity", builder)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("p37_source_identity_builder_import_failed")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    rows = []
+    dynamic_exact = {SOURCE_IDENTITY}
+    for path, rel, st, _classification in module.iter_regular_files(dynamic_exact):
+        rows.append({
+            "path": rel,
+            "byteLength": st.st_size,
+            "mode": module.normalized_mode(st.st_mode),
+            "sha256": module.sha256_file(path),
+        })
+    rows.sort(key=lambda row: str(row["path"]).encode("utf-8"))
+    return {
+        "fileCount": len(rows),
+        "payloadBytes": sum(int(row["byteLength"]) for row in rows),
+        "pathSetSha256": sha256_bytes("\n".join(str(row["path"]) for row in rows).encode("utf-8")),
+        "sourceAggregateSha256": sha256_bytes(b"".join(
+            f'{row["path"]}\0{row["byteLength"]}\0{row["mode"]}\0{row["sha256"]}\n'.encode("utf-8")
+            for row in rows
+        )),
+    }
+
+
+def validate_source_identity() -> dict[str, object]:
+    stored = load_json(SOURCE_IDENTITY)
+    current = recompute_source_identity()
+    for field in ("fileCount", "payloadBytes", "pathSetSha256", "sourceAggregateSha256"):
+        if stored.get(field) != current[field]:
+            raise RuntimeError(f"p37_source_identity_stale:{field}:{stored.get(field)}:{current[field]}")
+    authority = stored.get("requiredAuthorityBinding")
+    if not isinstance(authority, dict) or authority.get("path") != V15 or authority.get("sha256") != EXPECTED_V15_SHA256:
+        raise RuntimeError("p37_v15_authority_binding_invalid")
+    return stored
+
+
+def validate_required_files(rows: list[dict[str, object]]) -> None:
+    by_path = {str(row["path"]): row for row in rows}
+    missing = sorted(REQUIRED_FILES - set(by_path))
+    if missing:
+        raise RuntimeError(f"required_p37_files_missing:{missing}")
+    if by_path[V15]["sha256"] != EXPECTED_V15_SHA256:
+        raise RuntimeError("v15_sha256_mismatch_in_package")
+    status = load_json(STATUS)
+    if status.get("state") != "CURRENT_SOURCE_ONLY_IN_PROGRESS" or status.get("releaseState") != "NO_GO":
+        raise RuntimeError("p37_status_must_be_no_go_in_progress")
+    if status.get("goInternal") or status.get("goPaid") or status.get("live") or status.get("worldClassProven"):
+        raise RuntimeError("p37_false_release_promotion")
+    a85 = load_json(A85_RECEIPT)
+    if a85.get("staleBindingsDetected") != 3 or a85.get("staleBindingsRebound") != 3:
+        raise RuntimeError("a85_rebind_receipt_invalid")
+    if a85.get("typescriptRuntimeExecuted") is not False or a85.get("exactProjectNodeMatched") is not False:
+        raise RuntimeError("a85_runtime_boundary_overpromoted")
+
+
+def build_manifest(rows: list[dict[str, object]], public_pems: list[str], source_identity: dict[str, object]) -> dict[str, object]:
+    path_set = sha256_bytes("\n".join(str(row["path"]) for row in rows).encode("utf-8"))
+    aggregate = sha256_bytes(b"".join(
+        f'{row["path"]}\0{row["byteLength"]}\0{row["mode"]}\0{row["sha256"]}\n'.encode("utf-8")
+        for row in rows
+    ))
+    manifest: dict[str, object] = {
+        "schemaVersion": "velmere.p37.source-only-package-manifest.v1",
+        "revision": "P37_V15_PACKAGE_REPRODUCIBILITY_AND_A85_BINDING",
+        "state": "CURRENT_SOURCE_ONLY_IN_PROGRESS",
+        "releaseState": "NO_GO",
+        "generatedAt": "2026-08-13T21:35:00.000Z",
+        "manifestSelfExcluded": True,
+        "fileCountExcludingManifestSelf": len(rows),
+        "payloadBytesExcludingManifestSelf": sum(int(row["byteLength"]) for row in rows),
+        "pathSetSha256": path_set,
+        "sourceAggregateSha256": aggregate,
+        "currentSourceIdentity": {
+            "fileCount": source_identity["fileCount"],
+            "payloadBytes": source_identity["payloadBytes"],
+            "pathSetSha256": source_identity["pathSetSha256"],
+            "sourceAggregateSha256": source_identity["sourceAggregateSha256"],
+        },
+        "authority": {"path": V15, "sha256": EXPECTED_V15_SHA256, "unmodified": True},
+        "publicPemPolicy": {
+            "classification": "CONTENT_AWARE_NOT_SUFFIX_ONLY",
+            "includedPublicPemCount": len(public_pems),
+            "includedPublicPemPaths": public_pems,
+            "expectedPublicPemPaths": list(EXPECTED_PUBLIC_PEMS),
+            "expectedPublicPemSetPass": set(public_pems) == set(EXPECTED_PUBLIC_PEMS),
+            "privatePemIncluded": 0,
+            "ambiguousPemIncluded": 0,
+        },
+        "p36PackagingRepair": {
+            "p36SourceIdentityFiles": 6568,
+            "p36ArchiveSourceIdentityFilesPresent": 6560,
+            "p36PublicVerificationKeysMissing": 8,
+            "p37ExpectedPublicVerificationKeysIncluded": len(set(public_pems) & set(EXPECTED_PUBLIC_PEMS)),
+        },
+        "entries": rows,
+        "creditBoundary": {
+            "cleanPackageCredit": True,
+            "sourceIdentityCredit": True,
+            "publicKeyPackagingRepairCredit": True,
+            "exactRuntimeCredit": False,
+            "buildCredit": False,
+            "browserCredit": False,
+            "customerValueCredit": False,
+            "providerRightsCredit": False,
+            "saleOrGoPaidCredit": False,
+            "worldClassCredit": False,
+        },
+        "truthBoundary": (
+            "This manifest binds the deterministic P37 SOURCE_ONLY package and repairs the public-PEM omission. "
+            "It excludes dependencies, build/cache trees, physical PDF/Browser corpora, external fonts/materials "
+            "and noisy logs. It grants no exact Node/Windows, production build, Browser, customer, rights, paid, "
+            "GO_INTERNAL, GO_PAID, LIVE or WORLD_CLASS_PROVEN credit."
+        ),
+    }
+    manifest["integritySha256"] = sha256_bytes(canonical_json(manifest))
+    return manifest
+
+
+def write_zip(output: Path, rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    manifest_row = {
+        "path": MANIFEST.relative_to(ROOT).as_posix(),
+        "byteLength": MANIFEST.stat().st_size,
+        "mode": normalized_mode(MANIFEST.stat().st_mode),
+        "sha256": sha256_file(MANIFEST),
+    }
+    package_rows = sorted(rows + [manifest_row], key=lambda row: str(row["path"]).encode("utf-8"))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9, strict_timestamps=False) as archive:
+        for row in package_rows:
+            rel = str(row["path"])
+            data = (ROOT / rel).read_bytes()
+            if len(data) != int(row["byteLength"]) or sha256_bytes(data) != str(row["sha256"]):
+                raise RuntimeError(f"source_changed_during_packaging:{rel}")
+            info = zipfile.ZipInfo(rel, FIXED_ZIP_TIME)
+            mode = int(row["mode"])
+            info.create_system = 3
+            info.external_attr = ((stat.S_IFREG | mode) & 0xFFFF) << 16
+            info.compress_type = zipfile.ZIP_DEFLATED
+            archive.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+    return package_rows
+
+
+def verify_archive(path: Path, expected_rows: list[dict[str, object]]) -> dict[str, object]:
+    expected_by_path = {str(row["path"]): row for row in expected_rows}
+    expected_names = sorted(expected_by_path, key=lambda value: value.encode("utf-8"))
+    with zipfile.ZipFile(path, "r") as archive:
+        infos = archive.infolist()
+        names = [info.filename for info in infos]
+        if names != expected_names:
+            raise RuntimeError(f"archive_inventory_mismatch:{path}")
+        if len(names) != len(set(names)):
+            raise RuntimeError(f"archive_duplicate_path:{path}")
+        private_hits = []
+        for info in infos:
+            pure = PurePosixPath(info.filename)
+            if info.is_dir() or pure.is_absolute() or ".." in pure.parts or "\\" in info.filename:
+                raise RuntimeError(f"archive_unsafe_path:{path}:{info.filename}")
+            if ((info.external_attr >> 16) & 0o170000) != stat.S_IFREG:
+                raise RuntimeError(f"archive_non_regular_entry:{path}:{info.filename}")
+            data = archive.read(info)
+            expected = expected_by_path[info.filename]
+            if len(data) != int(expected["byteLength"]) or sha256_bytes(data) != str(expected["sha256"]):
+                raise RuntimeError(f"archive_entry_content_mismatch:{path}:{info.filename}")
+            if ((info.external_attr >> 16) & 0o777) != int(expected["mode"]):
+                raise RuntimeError(f"archive_entry_mode_mismatch:{path}:{info.filename}")
+            if pure.suffix.lower() == ".pem" and any(marker in data[:4096] for marker in PRIVATE_PEM_MARKERS):
+                private_hits.append(info.filename)
+        bad = archive.testzip()
+    if private_hits:
+        raise RuntimeError(f"private_key_material_in_archive:{private_hits}")
+    return {
+        "crcPass": bad is None,
+        "badEntry": bad,
+        "entries": len(expected_names),
+        "uncompressedBytes": sum(int(row["byteLength"]) for row in expected_rows),
+        "privateKeyHits": 0,
+    }
+
+
+def verify_clean_unpack(path: Path, expected_rows: list[dict[str, object]]) -> dict[str, object]:
+    expected_by_path = {str(row["path"]): row for row in expected_rows}
+    with tempfile.TemporaryDirectory(prefix="velmere-p37-clean-unpack-") as tmp:
+        target = Path(tmp)
+        with zipfile.ZipFile(path, "r") as archive:
+            archive.extractall(target)
+        actual_paths = sorted(
+            p.relative_to(target).as_posix() for p in target.rglob("*") if p.is_file()
+        )
+        expected_paths = sorted(expected_by_path)
+        if actual_paths != expected_paths:
+            raise RuntimeError("clean_unpack_path_set_mismatch")
+        for rel, row in expected_by_path.items():
+            file_path = target / rel
+            if file_path.is_symlink() or not file_path.is_file():
+                raise RuntimeError(f"clean_unpack_non_regular:{rel}")
+            data = file_path.read_bytes()
+            if len(data) != int(row["byteLength"]) or sha256_bytes(data) != str(row["sha256"]):
+                raise RuntimeError(f"clean_unpack_content_mismatch:{rel}")
+        identity = json.loads((target / SOURCE_IDENTITY).read_text(encoding="utf-8"))
+        identity_rows = identity["files"]
+        missing = []
+        mismatch = []
+        for row in identity_rows:
+            file_path = target / row["path"]
+            if not file_path.is_file():
+                missing.append(row["path"])
+                continue
+            data = file_path.read_bytes()
+            if len(data) != row["byteLength"] or sha256_bytes(data) != row["sha256"]:
+                mismatch.append(row["path"])
+        if missing or mismatch:
+            raise RuntimeError(f"clean_unpack_source_identity_failure:missing={missing}:mismatch={mismatch}")
+        path_set = sha256_bytes("\n".join(str(row["path"]) for row in identity_rows).encode("utf-8"))
+        aggregate = sha256_bytes(b"".join(
+            f'{row["path"]}\0{row["byteLength"]}\0{row["mode"]}\0{row["sha256"]}\n'.encode("utf-8")
+            for row in identity_rows
+        ))
+        if path_set != identity["pathSetSha256"] or aggregate != identity["sourceAggregateSha256"]:
+            raise RuntimeError("clean_unpack_source_identity_aggregate_mismatch")
+        public_present = [rel for rel in EXPECTED_PUBLIC_PEMS if (target / rel).is_file()]
+        return {
+            "pathSetPass": True,
+            "contentPass": True,
+            "sourceIdentityFiles": len(identity_rows),
+            "sourceIdentityMissing": 0,
+            "sourceIdentityMismatch": 0,
+            "sourceIdentityAggregatePass": True,
+            "expectedPublicPemsPresent": len(public_present),
+            "expectedPublicPemDenominator": len(EXPECTED_PUBLIC_PEMS),
+        }
+
+
+def validate_classifier_self_test() -> dict[str, object]:
+    public = b"-----BEGIN PUBLIC KEY-----\nAAA=\n-----END PUBLIC KEY-----\n"
+    private = b"-----BEGIN PRIVATE KEY-----\nAAA=\n-----END PRIVATE KEY-----\n"
+    ambiguous = b"not a recognized PEM\n"
+    results = {
+        "public": classify_pem_bytes(public),
+        "private": classify_pem_bytes(private),
+        "ambiguous": classify_pem_bytes(ambiguous),
+    }
+    if results != {
+        "public": "PUBLIC_ALLOWED",
+        "private": "PRIVATE_FORBIDDEN",
+        "ambiguous": "AMBIGUOUS_FORBIDDEN",
+    }:
+        raise RuntimeError(f"pem_classifier_self_test_failed:{results}")
+    return {"cases": 3, "passed": 3, "results": results}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--copy-b", required=True)
+    parser.add_argument("--receipt", required=True)
+    args = parser.parse_args()
+
+    output = Path(args.output).resolve()
+    copy_b = Path(args.copy_b).resolve()
+    receipt_path = Path(args.receipt).resolve()
+    for path, label in ((output, "output"), (copy_b, "copy_b"), (receipt_path, "receipt"), (MANIFEST, "manifest"), (EXCLUSIONS, "exclusions")):
+        reject_unsafe_output(path, label)
+    if output == copy_b or len({output, copy_b, receipt_path}) != 3:
+        raise RuntimeError("output_copy_b_receipt_must_be_distinct")
+    if output.suffix.lower() != ".zip" or copy_b.suffix.lower() != ".zip" or receipt_path.suffix.lower() != ".json":
+        raise RuntimeError("output_extension_invalid")
+
+    dynamic_exact = {rel for rel in (within_root(output), within_root(copy_b), within_root(receipt_path)) if rel}
+    ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
+
+    classifier_test = validate_classifier_self_test()
+    exclusions: dict[str, object] = {
+        "schemaVersion": "velmere.p37.source-only-package-exclusions.v1",
+        "revision": "P37_V15_PACKAGE_REPRODUCIBILITY_AND_A85_BINDING",
+        "state": "CURRENT_SOURCE_ONLY_IN_PROGRESS",
+        "generatedAt": "2026-08-13T21:34:00.000Z",
+        "excludedComponents": sorted(EXCLUDED_COMPONENTS),
+        "excludedRootDirectories": sorted(EXCLUDED_ROOT_DIRECTORIES),
+        "excludedPrefixes": list(EXCLUDED_PREFIXES),
+        "excludedExactPaths": sorted(EXCLUDED_EXACT_PATHS),
+        "dynamicOutputSelfExclusions": sorted(dynamic_exact),
+        "publicPemPolicy": "INCLUDE_RECOGNIZED_PUBLIC_KEY_OR_CERTIFICATE; FAIL_PRIVATE_OR_AMBIGUOUS",
+        "forbiddenSecretSuffixes": sorted(FORBIDDEN_SECRET_SUFFIXES),
+        "classifierSelfTest": classifier_test,
+        "physicalPdfBrowserCorporaIncluded": False,
+        "externalFontMaterialsIncluded": False,
+        "manifestSelfExcluded": True,
+        "releaseState": "NO_GO",
+    }
+    exclusions["integritySha256"] = sha256_bytes(canonical_json(exclusions))
+    EXCLUSIONS.write_text(json.dumps(exclusions, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    rows, public_pems = inventory(dynamic_exact)
+    validate_secret_boundaries(rows)
+    source_identity = validate_source_identity()
+    validate_required_files(rows)
+    if set(public_pems) != set(EXPECTED_PUBLIC_PEMS):
+        raise RuntimeError(f"public_pem_set_mismatch:{public_pems}")
+
+    manifest = build_manifest(rows, public_pems, source_identity)
+    MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    expected_rows = write_zip(output, rows)
+    expected_rows_b = write_zip(copy_b, rows)
+    if expected_rows != expected_rows_b:
+        raise RuntimeError("package_row_drift_between_writes")
+    sha_a = sha256_file(output)
+    sha_b = sha256_file(copy_b)
+    byte_identical = sha_a == sha_b and files_equal(output, copy_b)
+    verify_a = verify_archive(output, expected_rows)
+    verify_b = verify_archive(copy_b, expected_rows)
+    unpack_a = verify_clean_unpack(output, expected_rows)
+    unpack_b = verify_clean_unpack(copy_b, expected_rows)
+
+    receipt: dict[str, object] = {
+        "schemaVersion": "velmere.p37.deterministic-source-only-package-receipt.v1",
+        "revision": "P37_V15_PACKAGE_REPRODUCIBILITY_AND_A85_BINDING",
+        "state": "CURRENT_SOURCE_ONLY_IN_PROGRESS",
+        "releaseState": "NO_GO",
+        "generatedAt": "2026-08-13T21:36:00.000Z",
+        "archive": str(output),
+        "copyB": str(copy_b),
+        "sha256": sha_a,
+        "copyBSha256": sha_b,
+        "byteIdentical": byte_identical,
+        "crcPass": bool(verify_a["crcPass"] and verify_b["crcPass"]),
+        "badEntry": verify_a["badEntry"] or verify_b["badEntry"],
+        "entries": verify_a["entries"],
+        "uncompressedBytes": verify_a["uncompressedBytes"],
+        "zipBytes": output.stat().st_size,
+        "embeddedManifestSha256": sha256_file(MANIFEST),
+        "embeddedManifestSourceAggregateSha256": manifest["sourceAggregateSha256"],
+        "sourceIdentitySha256": sha256_file(ROOT / SOURCE_IDENTITY),
+        "sourceAggregateSha256": source_identity["sourceAggregateSha256"],
+        "cleanUnpackA": unpack_a,
+        "cleanUnpackB": unpack_b,
+        "publicPemClassifierSelfTest": classifier_test,
+        "publicPemsIncluded": len(public_pems),
+        "publicPemDenominator": len(EXPECTED_PUBLIC_PEMS),
+        "privateOrAmbiguousPemsIncluded": 0,
+        "activeCredentialLiteralHits": 0,
+        "symlinkOrSpecialEntries": 0,
+        "p36PackagingDefectRepaired": True,
+        "p36MissingPublicPemCount": 8,
+        "exactProjectNodeRequired": EXPECTED_PROJECT_NODE,
+        "exactProjectNodeExecutedInThisPass": False,
+        "goInternal": False,
+        "goPaid": False,
+        "live": False,
+        "worldClassProven": False,
+        "truthBoundary": (
+            "Two byte-identical ZIPs, CRC, exact inventory, clean unpack, source-identity replay and content-aware "
+            "public/private PEM tests prove deterministic package completeness. They do not prove exact Node/Windows, "
+            "dependencies, build, Browser, customer value, provider rights, paid sale or world-class status."
+        ),
+    }
+    receipt["integritySha256"] = sha256_bytes(canonical_json(receipt))
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(json.dumps(receipt, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    print(json.dumps({
+        "status": "PASS_P37_DETERMINISTIC_CURRENT_SOURCE_ONLY_PACKAGE",
+        "sha256": sha_a,
+        "byteIdentical": byte_identical,
+        "crcPass": receipt["crcPass"],
+        "entries": receipt["entries"],
+        "zipBytes": receipt["zipBytes"],
+        "sourceAggregateSha256": receipt["sourceAggregateSha256"],
+        "cleanUnpackSourceIdentity": unpack_a["sourceIdentityAggregatePass"],
+        "publicPems": f'{len(public_pems)}/{len(EXPECTED_PUBLIC_PEMS)}',
+        "p36PackagingDefectRepaired": True,
+        "releaseState": "NO_GO",
+    }, ensure_ascii=False))
+    return 0 if byte_identical and receipt["crcPass"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

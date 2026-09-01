@@ -1,0 +1,852 @@
+{
+  "schemaVersion": "velmere.p93.risk-history-canonical-resolution-runtime.v1",
+  "generatedAt": "2026-08-20T12:00:00.000Z",
+  "status": "PASS_BOUNDED_NO_SOCKET_CANONICAL_PUBLIC_ROUTE",
+  "checks": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "valid_event_integrity",
+        "status": "PASS"
+      },
+      {
+        "id": "recomputed_digest_cannot_forge_event_id",
+        "status": "PASS"
+      },
+      {
+        "id": "recomputed_digest_cannot_break_snapshot_identity_binding",
+        "status": "PASS"
+      },
+      {
+        "id": "recomputed_digest_cannot_break_symbol_binding",
+        "status": "PASS"
+      },
+      {
+        "id": "recomputed_digest_cannot_break_signal_count_binding",
+        "status": "PASS"
+      },
+      {
+        "id": "recorded_before_observed_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "duplicate_event_type_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "unknown_event_field_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "memory_fixtures_stored",
+        "status": "PASS",
+        "detail": {
+          "mode": "memory",
+          "durabilityState": "RUNTIME_MEMORY_ONLY",
+          "attempted": 4,
+          "candidateEvents": 4,
+          "stored": 4,
+          "skipped": 0,
+          "conflicts": 0,
+          "readBackVerified": false,
+          "eventIds": [
+            "risk-history-279e6285bc24223e3b125bd8aaf327ffd03c6062",
+            "risk-history-ddc338763d4228cb0904a8d7090479cb7d31f2ee",
+            "risk-history-b2b050fd8c163ca8389978dd6dbb247149fbc406",
+            "risk-history-01e417cb8fec262f3dfe586d88b74aa85147d6f1"
+          ]
+        }
+      },
+      {
+        "id": "ambiguous_alias_returns_no_events",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-asset-resolution.v2",
+          "resolution": "AMBIGUOUS",
+          "canonicalAssetId": null,
+          "events": [],
+          "source": "MEMORY"
+        }
+      },
+      {
+        "id": "exact_canonical_precedes_alias_collision",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-asset-resolution.v2",
+          "resolution": "RESOLVED",
+          "canonicalAssetId": "market:alpha",
+          "events": [
+            {
+              "schemaVersion": "velmere.risk-history-event.v1",
+              "eventId": "risk-history-279e6285bc24223e3b125bd8aaf327ffd03c6062",
+              "canonicalAssetId": "market:alpha",
+              "assetId": "shared-alias",
+              "identityClass": "MARKET_ID",
+              "symbol": "ALPHA",
+              "name": "Asset ALPHA",
+              "observedAt": "2026-08-20T12:00:00.000Z",
+              "recordedAt": "2026-08-20T12:00:00.000Z",
+              "score": 42,
+              "level": "medium",
+              "signalCount": 1,
+              "confidence": 76,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+              "sourceAsOf": "2026-08-20T12:00:00.000Z",
+              "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+              "comparableToPrevious": false,
+              "eventTypes": [
+                "TRACKING_STARTED"
+              ],
+              "changeReasons": [
+                "Velmère began tracking this asset at this observation."
+              ],
+              "snapshot": {
+                "schemaVersion": "velmere.risk-history-snapshot.v1",
+                "id": "shared-alias",
+                "canonicalAssetId": "market:alpha",
+                "identityClass": "MARKET_ID",
+                "symbol": "ALPHA",
+                "name": "Asset ALPHA",
+                "timestamp": "2026-08-20T12:00:00.000Z",
+                "price": 100,
+                "score": 42,
+                "level": "medium",
+                "signalCount": 1,
+                "confidence": 76,
+                "publicationState": "PUBLIC",
+                "customerPublishable": true,
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+                "sourceAsOf": "2026-08-20T12:00:00.000Z",
+                "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+                "snapshotDigest": "sha256:2fd6c8c9a7cef54abbc8b8688016777922268086bf679c1f9d404d21494f0675"
+              },
+              "eventDigest": "sha256:fbe0674df5aec8b988ed6cc2fce501ba5d3d0b2355a81522511d64d27cf36ca6"
+            }
+          ],
+          "source": "MEMORY"
+        }
+      },
+      {
+        "id": "unique_alias_resolves_one_canonical_history",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-asset-resolution.v2",
+          "resolution": "RESOLVED",
+          "canonicalAssetId": "market:unique",
+          "events": [
+            {
+              "schemaVersion": "velmere.risk-history-event.v1",
+              "eventId": "risk-history-01e417cb8fec262f3dfe586d88b74aa85147d6f1",
+              "canonicalAssetId": "market:unique",
+              "assetId": "unique-alias",
+              "identityClass": "MARKET_ID",
+              "symbol": "UNIQUE",
+              "name": "Asset UNIQUE",
+              "observedAt": "2026-08-20T12:03:00.000Z",
+              "recordedAt": "2026-08-20T12:03:00.000Z",
+              "score": 42,
+              "level": "medium",
+              "signalCount": 1,
+              "confidence": 76,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:dcbc76603086db92b058cada280d217990fd84de454b059f4e60db8ac5027adf",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:cdf34bd6193358158770d29d11df932982861fd908290c7582c5b4c0e184601c",
+              "sourceAsOf": "2026-08-20T12:03:00.000Z",
+              "comparabilityKey": "sha256:fd31691c0fc427c8e0226a52ae17c73b4df39307c2315320d8ce1379170358ab",
+              "comparableToPrevious": false,
+              "eventTypes": [
+                "TRACKING_STARTED"
+              ],
+              "changeReasons": [
+                "Velmère began tracking this asset at this observation."
+              ],
+              "snapshot": {
+                "schemaVersion": "velmere.risk-history-snapshot.v1",
+                "id": "unique-alias",
+                "canonicalAssetId": "market:unique",
+                "identityClass": "MARKET_ID",
+                "symbol": "UNIQUE",
+                "name": "Asset UNIQUE",
+                "timestamp": "2026-08-20T12:03:00.000Z",
+                "price": 100,
+                "score": 42,
+                "level": "medium",
+                "signalCount": 1,
+                "confidence": 76,
+                "publicationState": "PUBLIC",
+                "customerPublishable": true,
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:dcbc76603086db92b058cada280d217990fd84de454b059f4e60db8ac5027adf",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "evidenceDigest": "sha256:cdf34bd6193358158770d29d11df932982861fd908290c7582c5b4c0e184601c",
+                "sourceAsOf": "2026-08-20T12:03:00.000Z",
+                "comparabilityKey": "sha256:fd31691c0fc427c8e0226a52ae17c73b4df39307c2315320d8ce1379170358ab",
+                "snapshotDigest": "sha256:2e296bcd3e927b2ca7c14aa65a87c230997ba2b819e9efaeed76812e6e2c021a"
+              },
+              "eventDigest": "sha256:f86a7838cc8be4432f00195ccd3e4fe7007512c3bbb7452b99ba22940658b332"
+            }
+          ],
+          "source": "MEMORY"
+        }
+      },
+      {
+        "id": "unknown_identity_returns_empty_resolution",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-asset-resolution.v2",
+          "resolution": "EMPTY",
+          "canonicalAssetId": null,
+          "events": [],
+          "source": "MEMORY"
+        }
+      },
+      {
+        "id": "shared_cross_product_reader_rejects_ambiguous_alias",
+        "status": "PASS",
+        "detail": []
+      },
+      {
+        "id": "shared_cross_product_reader_uses_exact_canonical_identity",
+        "status": "PASS",
+        "detail": [
+          {
+            "schemaVersion": "velmere.risk-history-event.v1",
+            "eventId": "risk-history-279e6285bc24223e3b125bd8aaf327ffd03c6062",
+            "canonicalAssetId": "market:alpha",
+            "assetId": "shared-alias",
+            "identityClass": "MARKET_ID",
+            "symbol": "ALPHA",
+            "name": "Asset ALPHA",
+            "observedAt": "2026-08-20T12:00:00.000Z",
+            "recordedAt": "2026-08-20T12:00:00.000Z",
+            "score": 42,
+            "level": "medium",
+            "signalCount": 1,
+            "confidence": 76,
+            "publicationState": "PUBLIC",
+            "customerPublishable": true,
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+            "sourceAsOf": "2026-08-20T12:00:00.000Z",
+            "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+            "comparableToPrevious": false,
+            "eventTypes": [
+              "TRACKING_STARTED"
+            ],
+            "changeReasons": [
+              "Velmère began tracking this asset at this observation."
+            ],
+            "snapshot": {
+              "schemaVersion": "velmere.risk-history-snapshot.v1",
+              "id": "shared-alias",
+              "canonicalAssetId": "market:alpha",
+              "identityClass": "MARKET_ID",
+              "symbol": "ALPHA",
+              "name": "Asset ALPHA",
+              "timestamp": "2026-08-20T12:00:00.000Z",
+              "price": 100,
+              "score": 42,
+              "level": "medium",
+              "signalCount": 1,
+              "confidence": 76,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+              "sourceAsOf": "2026-08-20T12:00:00.000Z",
+              "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+              "snapshotDigest": "sha256:2fd6c8c9a7cef54abbc8b8688016777922268086bf679c1f9d404d21494f0675"
+            },
+            "eventDigest": "sha256:fbe0674df5aec8b988ed6cc2fce501ba5d3d0b2355a81522511d64d27cf36ca6"
+          }
+        ]
+      },
+      {
+        "id": "shared_snapshot_reader_never_mixes_alias_collision",
+        "status": "PASS",
+        "detail": []
+      },
+      {
+        "id": "unknown_ambiguous_withheld_publicly_indistinguishable",
+        "status": "PASS",
+        "detail": {
+          "unknown": "EMPTY",
+          "ambiguous": "EMPTY",
+          "withheld": "EMPTY"
+        }
+      },
+      {
+        "id": "public_empty_never_discloses_private_existence",
+        "status": "PASS"
+      },
+      {
+        "id": "public_exact_history_available",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history.customer.v1",
+          "productId": "risk-indicator",
+          "capability": "risk-history",
+          "status": "AVAILABLE",
+          "asset": {
+            "canonicalAssetId": "market:alpha",
+            "symbol": "ALPHA",
+            "name": "Asset ALPHA"
+          },
+          "trackingStartedAt": "2026-08-20T12:00:00.000Z",
+          "observations": 1,
+          "segments": [
+            {
+              "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparableWithPreviousSegment": false,
+              "startedAt": "2026-08-20T12:00:00.000Z",
+              "endedAt": "2026-08-20T12:00:00.000Z"
+            }
+          ],
+          "history": [
+            {
+              "eventReference": "sha256:fbe0674df5aec8b988ed6cc2fce501ba5d3d0b2355a81522511d64d27cf36ca6",
+              "observedAt": "2026-08-20T12:00:00.000Z",
+              "score": 42,
+              "level": "medium",
+              "confidence": 76,
+              "eventTypes": [
+                "TRACKING_STARTED"
+              ],
+              "changeReasons": [
+                "Velmère began verified tracking for this asset."
+              ],
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+              "comparableToPrevious": false,
+              "isProbability": false,
+              "probabilityPercent": null
+            }
+          ],
+          "storage": {
+            "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+            "storageState": "RUNTIME_ONLY",
+            "historyCompleteness": "RUNTIME_BOUNDED",
+            "blockers": [
+              "durable_history_not_configured"
+            ]
+          },
+          "limitations": [
+            "Customer-visible history begins with the first publishable observation; no earlier internal tracking is implied.",
+            "The score is a descriptive review-priority signal, not a probability, price forecast or trade instruction.",
+            "A methodology or provider-configuration change starts a new segment when old and new scores are not directly comparable.",
+            "Multi-year durable history is not yet verified by an exact database read-back proof."
+          ]
+        }
+      },
+      {
+        "id": "public_builder_rejects_mixed_canonical_events",
+        "status": "PASS",
+        "detail": "risk_history_public_identity_mix"
+      },
+      {
+        "id": "public_builder_rejects_unbound_request_alias",
+        "status": "PASS",
+        "detail": "risk_history_public_request_identity_unbound"
+      },
+      {
+        "id": "public_builder_rejects_limit_above_144",
+        "status": "PASS",
+        "detail": "risk_history_public_limit_invalid"
+      },
+      {
+        "id": "database_v2_exact_resolution",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-asset-resolution.v2",
+          "resolution": "RESOLVED",
+          "canonicalAssetId": "market:alpha",
+          "events": [
+            {
+              "schemaVersion": "velmere.risk-history-event.v1",
+              "eventId": "risk-history-279e6285bc24223e3b125bd8aaf327ffd03c6062",
+              "canonicalAssetId": "market:alpha",
+              "assetId": "shared-alias",
+              "identityClass": "MARKET_ID",
+              "symbol": "ALPHA",
+              "name": "Asset ALPHA",
+              "observedAt": "2026-08-20T12:00:00.000Z",
+              "recordedAt": "2026-08-20T12:00:00.000Z",
+              "score": 42,
+              "level": "medium",
+              "signalCount": 1,
+              "confidence": 76,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+              "sourceAsOf": "2026-08-20T12:00:00.000Z",
+              "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+              "comparableToPrevious": false,
+              "eventTypes": [
+                "TRACKING_STARTED"
+              ],
+              "changeReasons": [
+                "Velmère began tracking this asset at this observation."
+              ],
+              "snapshot": {
+                "schemaVersion": "velmere.risk-history-snapshot.v1",
+                "id": "shared-alias",
+                "canonicalAssetId": "market:alpha",
+                "identityClass": "MARKET_ID",
+                "symbol": "ALPHA",
+                "name": "Asset ALPHA",
+                "timestamp": "2026-08-20T12:00:00.000Z",
+                "price": 100,
+                "score": 42,
+                "level": "medium",
+                "signalCount": 1,
+                "confidence": 76,
+                "publicationState": "PUBLIC",
+                "customerPublishable": true,
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+                "sourceAsOf": "2026-08-20T12:00:00.000Z",
+                "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+                "snapshotDigest": "sha256:2fd6c8c9a7cef54abbc8b8688016777922268086bf679c1f9d404d21494f0675"
+              },
+              "eventDigest": "sha256:fbe0674df5aec8b988ed6cc2fce501ba5d3d0b2355a81522511d64d27cf36ca6"
+            }
+          ],
+          "source": "DATABASE"
+        }
+      },
+      {
+        "id": "read_only_resolution_never_promotes_durable_storage",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+          "storageState": "CONFIGURED_UNVERIFIED",
+          "historyCompleteness": "UNKNOWN",
+          "blockers": [
+            "durable_history_readback_not_verified"
+          ]
+        }
+      },
+      {
+        "id": "database_v2_ambiguous_resolution",
+        "status": "PASS",
+        "detail": {
+          "schemaVersion": "velmere.risk-history-asset-resolution.v2",
+          "resolution": "AMBIGUOUS",
+          "canonicalAssetId": null,
+          "events": [],
+          "source": "DATABASE"
+        }
+      },
+      {
+        "id": "database_shared_cross_product_reader_uses_v2",
+        "status": "PASS",
+        "detail": [
+          {
+            "schemaVersion": "velmere.risk-history-event.v1",
+            "eventId": "risk-history-279e6285bc24223e3b125bd8aaf327ffd03c6062",
+            "canonicalAssetId": "market:alpha",
+            "assetId": "shared-alias",
+            "identityClass": "MARKET_ID",
+            "symbol": "ALPHA",
+            "name": "Asset ALPHA",
+            "observedAt": "2026-08-20T12:00:00.000Z",
+            "recordedAt": "2026-08-20T12:00:00.000Z",
+            "score": 42,
+            "level": "medium",
+            "signalCount": 1,
+            "confidence": 76,
+            "publicationState": "PUBLIC",
+            "customerPublishable": true,
+            "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+            "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+            "evidenceVersion": "pass6_provider_risk_delivery_v1",
+            "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+            "sourceAsOf": "2026-08-20T12:00:00.000Z",
+            "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+            "comparableToPrevious": false,
+            "eventTypes": [
+              "TRACKING_STARTED"
+            ],
+            "changeReasons": [
+              "Velmère began tracking this asset at this observation."
+            ],
+            "snapshot": {
+              "schemaVersion": "velmere.risk-history-snapshot.v1",
+              "id": "shared-alias",
+              "canonicalAssetId": "market:alpha",
+              "identityClass": "MARKET_ID",
+              "symbol": "ALPHA",
+              "name": "Asset ALPHA",
+              "timestamp": "2026-08-20T12:00:00.000Z",
+              "price": 100,
+              "score": 42,
+              "level": "medium",
+              "signalCount": 1,
+              "confidence": 76,
+              "publicationState": "PUBLIC",
+              "customerPublishable": true,
+              "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+              "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+              "evidenceVersion": "pass6_provider_risk_delivery_v1",
+              "evidenceDigest": "sha256:5fe699dc50f96334f82904e85fc5d22f13d9b0e83203a513c32808b4f5e09f74",
+              "sourceAsOf": "2026-08-20T12:00:00.000Z",
+              "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+              "snapshotDigest": "sha256:2fd6c8c9a7cef54abbc8b8688016777922268086bf679c1f9d404d21494f0675"
+            },
+            "eventDigest": "sha256:fbe0674df5aec8b988ed6cc2fce501ba5d3d0b2355a81522511d64d27cf36ca6"
+          }
+        ]
+      },
+      {
+        "id": "database_v2_bounded_request",
+        "status": "PASS",
+        "detail": [
+          {
+            "path": "/rest/v1/rpc/velmere_read_risk_history_by_asset_v2",
+            "body": {
+              "p_asset_id": "market:alpha",
+              "p_limit": 12
+            }
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_read_risk_history_by_asset_v2",
+            "body": {
+              "p_asset_id": "shared-alias",
+              "p_limit": 12
+            }
+          },
+          {
+            "path": "/rest/v1/rpc/velmere_read_risk_history_by_asset_v2",
+            "body": {
+              "p_asset_id": "market:alpha",
+              "p_limit": 720
+            }
+          }
+        ]
+      },
+      {
+        "id": "database_direct_resolution_rejects_above_internal_cap",
+        "status": "PASS",
+        "detail": "risk_history_resolution_limit_invalid"
+      },
+      {
+        "id": "database_envelope_extra_field_fails_closed",
+        "status": "PASS",
+        "detail": "risk_history_resolution_unavailable"
+      },
+      {
+        "id": "database_mixed_identity_fails_closed",
+        "status": "PASS",
+        "detail": "risk_history_resolution_unavailable"
+      },
+      {
+        "id": "configured_database_outage_never_falls_back_to_memory_publication",
+        "status": "PASS",
+        "detail": "risk_history_resolution_unavailable"
+      },
+      {
+        "id": "configured_database_outage_never_falls_back_in_shared_reader",
+        "status": "PASS",
+        "detail": "risk_history_resolution_unavailable"
+      },
+      {
+        "id": "route_exact_canonical_available",
+        "status": "PASS",
+        "detail": {
+          "mode": "stored",
+          "publication": {
+            "evidenceState": "verified",
+            "liveClaimed": false,
+            "currentness": "event_observation_time_bound"
+          },
+          "riskHistory": {
+            "schemaVersion": "velmere.risk-history.customer.v1",
+            "productId": "risk-indicator",
+            "capability": "risk-history",
+            "status": "AVAILABLE",
+            "asset": {
+              "canonicalAssetId": "market:alpha",
+              "symbol": "ALPHA",
+              "name": "Asset ALPHA"
+            },
+            "trackingStartedAt": "2026-08-20T12:00:00.000Z",
+            "observations": 1,
+            "segments": [
+              {
+                "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "comparableWithPreviousSegment": false,
+                "startedAt": "2026-08-20T12:00:00.000Z",
+                "endedAt": "2026-08-20T12:00:00.000Z"
+              }
+            ],
+            "history": [
+              {
+                "eventReference": "sha256:fbe0674df5aec8b988ed6cc2fce501ba5d3d0b2355a81522511d64d27cf36ca6",
+                "observedAt": "2026-08-20T12:00:00.000Z",
+                "score": 42,
+                "level": "medium",
+                "confidence": 76,
+                "eventTypes": [
+                  "TRACKING_STARTED"
+                ],
+                "changeReasons": [
+                  "Velmère began verified tracking for this asset."
+                ],
+                "methodologyVersion": "deterministic_continuous_evidence_fusion_v10",
+                "scoreVersion": "sha256:49d80a0c96593289ee45672eb2ed22e5fdafd116dc7a6f1d065486c5480f5c4f",
+                "evidenceVersion": "pass6_provider_risk_delivery_v1",
+                "comparabilityKey": "sha256:ae7b12103742655f85d9d6a927e95a72aa24cb594ac414e21e5e404b52ef54b0",
+                "comparableToPrevious": false,
+                "isProbability": false,
+                "probabilityPercent": null
+              }
+            ],
+            "storage": {
+              "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+              "storageState": "RUNTIME_ONLY",
+              "historyCompleteness": "RUNTIME_BOUNDED",
+              "blockers": [
+                "durable_history_not_configured"
+              ]
+            },
+            "limitations": [
+              "Customer-visible history begins with the first publishable observation; no earlier internal tracking is implied.",
+              "The score is a descriptive review-priority signal, not a probability, price forecast or trade instruction.",
+              "A methodology or provider-configuration change starts a new segment when old and new scores are not directly comparable.",
+              "Multi-year durable history is not yet verified by an exact database read-back proof."
+            ]
+          },
+          "generatedAt": "<runtime-timestamp>"
+        }
+      },
+      {
+        "id": "route_non_enumerating_payload_semantics",
+        "status": "PASS",
+        "detail": {
+          "unknown": {
+            "mode": "stored",
+            "publication": {
+              "evidenceState": "withheld",
+              "liveClaimed": false,
+              "currentness": "unavailable"
+            },
+            "riskHistory": {
+              "schemaVersion": "velmere.risk-history.customer.v1",
+              "productId": "risk-indicator",
+              "capability": "risk-history",
+              "status": "EMPTY",
+              "asset": {
+                "canonicalAssetId": null,
+                "symbol": null,
+                "name": null
+              },
+              "trackingStartedAt": null,
+              "observations": 0,
+              "segments": [],
+              "history": [],
+              "storage": {
+                "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+                "storageState": "RUNTIME_ONLY",
+                "historyCompleteness": "RUNTIME_BOUNDED",
+                "blockers": [
+                  "durable_history_not_configured"
+                ]
+              },
+              "limitations": [
+                "No customer-publishable risk history is available for this request.",
+                "The score is a descriptive review-priority signal, not a probability, price forecast or trade instruction.",
+                "Multi-year durable history is not yet verified by an exact database read-back proof."
+              ]
+            }
+          },
+          "ambiguous": {
+            "mode": "stored",
+            "publication": {
+              "evidenceState": "withheld",
+              "liveClaimed": false,
+              "currentness": "unavailable"
+            },
+            "riskHistory": {
+              "schemaVersion": "velmere.risk-history.customer.v1",
+              "productId": "risk-indicator",
+              "capability": "risk-history",
+              "status": "EMPTY",
+              "asset": {
+                "canonicalAssetId": null,
+                "symbol": null,
+                "name": null
+              },
+              "trackingStartedAt": null,
+              "observations": 0,
+              "segments": [],
+              "history": [],
+              "storage": {
+                "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+                "storageState": "RUNTIME_ONLY",
+                "historyCompleteness": "RUNTIME_BOUNDED",
+                "blockers": [
+                  "durable_history_not_configured"
+                ]
+              },
+              "limitations": [
+                "No customer-publishable risk history is available for this request.",
+                "The score is a descriptive review-priority signal, not a probability, price forecast or trade instruction.",
+                "Multi-year durable history is not yet verified by an exact database read-back proof."
+              ]
+            }
+          },
+          "hidden": {
+            "mode": "stored",
+            "publication": {
+              "evidenceState": "withheld",
+              "liveClaimed": false,
+              "currentness": "unavailable"
+            },
+            "riskHistory": {
+              "schemaVersion": "velmere.risk-history.customer.v1",
+              "productId": "risk-indicator",
+              "capability": "risk-history",
+              "status": "EMPTY",
+              "asset": {
+                "canonicalAssetId": null,
+                "symbol": null,
+                "name": null
+              },
+              "trackingStartedAt": null,
+              "observations": 0,
+              "segments": [],
+              "history": [],
+              "storage": {
+                "schemaVersion": "velmere.risk-history-ledger.customer-status.v1",
+                "storageState": "RUNTIME_ONLY",
+                "historyCompleteness": "RUNTIME_BOUNDED",
+                "blockers": [
+                  "durable_history_not_configured"
+                ]
+              },
+              "limitations": [
+                "No customer-publishable risk history is available for this request.",
+                "The score is a descriptive review-priority signal, not a probability, price forecast or trade instruction.",
+                "Multi-year durable history is not yet verified by an exact database read-back proof."
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "route_non_enumerating_status_is_empty",
+        "status": "PASS"
+      },
+      {
+        "id": "route_limit_145_rejected_not_clamped",
+        "status": "PASS"
+      },
+      {
+        "id": "route_limit_144_accepted",
+        "status": "PASS"
+      },
+      {
+        "id": "route_full_security_headers",
+        "status": "PASS",
+        "detail": {
+          "cache-control": "no-store",
+          "content-type": "application/json; charset=utf-8",
+          "cross-origin-resource-policy": "same-origin",
+          "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          "referrer-policy": "strict-origin-when-cross-origin",
+          "retry-after": "<runtime-window>",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "DENY",
+          "x-ratelimit-limit": "36",
+          "x-ratelimit-remaining": "35",
+          "x-ratelimit-reset": "<runtime-window>",
+          "x-robots-tag": "noindex, nofollow, noarchive",
+          "x-velmere-degraded": "0",
+          "x-velmere-rate-limit-mode": "memory"
+        }
+      },
+      {
+        "id": "route_rate_limit_headers",
+        "status": "PASS",
+        "detail": {
+          "cache-control": "no-store",
+          "content-type": "application/json; charset=utf-8",
+          "cross-origin-resource-policy": "same-origin",
+          "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          "referrer-policy": "strict-origin-when-cross-origin",
+          "retry-after": "<runtime-window>",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "DENY",
+          "x-ratelimit-limit": "36",
+          "x-ratelimit-remaining": "35",
+          "x-ratelimit-reset": "<runtime-window>",
+          "x-robots-tag": "noindex, nofollow, noarchive",
+          "x-velmere-degraded": "0",
+          "x-velmere-rate-limit-mode": "memory"
+        }
+      },
+      {
+        "id": "route_excludes_resolution_and_raw_evidence",
+        "status": "PASS"
+      },
+      {
+        "id": "route_37th_request_rate_limited",
+        "status": "PASS",
+        "detail": 429
+      },
+      {
+        "id": "production_missing_durable_limiter_fails_closed",
+        "status": "PASS",
+        "detail": 503
+      }
+    ]
+  },
+  "execution": {
+    "networkSocketsUsed": false,
+    "realPostgreSqlExecuted": false,
+    "publicPayloadTimingIndistinguishabilityProven": false,
+    "canonicalIdentityIsolationExercised": true,
+    "sharedCrossProductReaderCanonicalized": true,
+    "payloadEnumerationOracleRemoved": true,
+    "productionDurableRateLimitMissingFailsClosed": true
+  },
+  "zeroFakeCredit": {
+    "browserRendered": false,
+    "stagingExecuted": false,
+    "productionExecuted": false,
+    "riskIndicatorFinal": false,
+    "customerFinal": "0/20",
+    "live": false
+  },
+  "truthBoundary": "This proves exact application-level event integrity, canonical identity isolation across the shared Shield/Angel/report reader, non-enumerating response semantics, bounded public reads and fail-closed limiter behavior using memory and no-socket transports. It does not prove timing indistinguishability, PostgreSQL execution, staging RLS, deployed HTTP behavior, Browser journeys or Customer FINAL."
+}

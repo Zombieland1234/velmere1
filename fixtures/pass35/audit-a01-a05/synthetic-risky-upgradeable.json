@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "velmere.pass35.audit-a01-a05-input.v1",
+  "inputClass": "SYNTHETIC_OFFLINE",
+  "caseRef": "AUD-PASS35-A3-SYNTH-0001",
+  "observedAt": "2026-07-22T17:00:00.000Z",
+  "chainId": "1",
+  "chainName": "ethereum",
+  "contractAddress": "0x1111111111111111111111111111111111111111",
+  "projectName": "Synthetic Risky Upgradeable Vault",
+  "sourceFiles": [
+    {
+      "path": "contracts/RiskyUpgradeableVault.sol",
+      "content": "// Synthetic offline fixture. Not a deployed customer contract.\npragma solidity 0.8.24;\ncontract RiskyUpgradeableVault {\n    address public owner;\n    address public implementation;\n    mapping(address => uint256) public balances;\n    modifier onlyOwner() { require(msg.sender == owner, 'owner'); _; }\n    function upgradeTo(address next) external onlyOwner { implementation = next; }\n    function grantRole(bytes32, address) external onlyOwner { }\n    function mint(address user, uint256 amount) external onlyOwner { balances[user] += amount; }\n    function pause() external onlyOwner { }\n    function setFee(uint256 fee) external onlyOwner { require(fee < 1000); }\n    function authorizeViaOrigin() external view returns (bool) { return tx.origin == owner; }\n    function execute(address target, bytes calldata data) external onlyOwner returns (bytes memory) {\n        (bool ok, bytes memory result) = target.delegatecall(data);\n        require(ok);\n        return result;\n    }\n    function externalPay(address payable target, uint256 value) external onlyOwner {\n        (bool ok,) = target.call{value: value}('');\n        require(ok);\n    }\n    function batchWithdraw(address[] calldata users) external onlyOwner {\n        for (uint256 i = 0; i < users.length; i++) { balances[users[i]] = 0; }\n    }\n    function emergencyDestroy(address payable receiver) external onlyOwner { selfdestruct(receiver); }\n}\n"
+    }
+  ],
+  "abi": [
+    { "type": "function", "name": "upgradeTo", "stateMutability": "nonpayable", "inputs": [{ "name": "next", "type": "address" }], "outputs": [] },
+    { "type": "function", "name": "grantRole", "stateMutability": "nonpayable", "inputs": [{ "name": "role", "type": "bytes32" }, { "name": "account", "type": "address" }], "outputs": [] },
+    { "type": "function", "name": "mint", "stateMutability": "nonpayable", "inputs": [{ "name": "user", "type": "address" }, { "name": "amount", "type": "uint256" }], "outputs": [] },
+    { "type": "function", "name": "pause", "stateMutability": "nonpayable", "inputs": [], "outputs": [] },
+    { "type": "function", "name": "setFee", "stateMutability": "nonpayable", "inputs": [{ "name": "fee", "type": "uint256" }], "outputs": [] },
+    { "type": "function", "name": "execute", "stateMutability": "nonpayable", "inputs": [{ "name": "target", "type": "address" }, { "name": "data", "type": "bytes" }], "outputs": [{ "name": "result", "type": "bytes" }] }
+  ],
+  "sourceProvenance": {
+    "provider": "synthetic-fixture",
+    "sourceReference": "fixtures/pass35/audit-a01-a05/synthetic-risky-upgradeable.json",
+    "verifiedSource": false,
+    "observedAt": "2026-07-22T17:00:00.000Z",
+    "responseSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "compiler": {
+    "family": "solc",
+    "version": "0.8.24+commit.e11b9ed9",
+    "optimizerEnabled": true,
+    "optimizerRuns": 200,
+    "evmVersion": "shanghai",
+    "viaIR": false,
+    "settings": {
+      "optimizer": { "enabled": true, "runs": 200 },
+      "evmVersion": "shanghai",
+      "metadata": { "bytecodeHash": "ipfs" }
+    }
+  },
+  "compiledRuntimeBytecode": "0x60003560e01c80633659cfe6146016575b60006000f4600055ffa1647465737441000008",
+  "deployedRuntimeBytecode": "0x60003560e01c80633659cfe6146016575b60006000f4600055ffa1647465737441010008"
+}

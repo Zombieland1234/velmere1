@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "velmere.p69r2.node24-pinned-egress-root-cause-repair.v1",
+  "status": "PASS_REPAIRED_AND_EXACT_WINDOWS_PROVEN",
+  "initialSymptom": "Brokered ECB route returned 503 temporarily_unavailable with blocker Invalid IP address: undefined while independent direct ECB HTTPS data and policy requests both returned HTTP 200.",
+  "rootCause": "Node24 automatic address-family selection interacted with Velmère single-address DNS-pinned custom lookup. The old callback contract was intentionally single-address; automatic multi-address selection caused the undefined-IP dial path.",
+  "p69r1FailedRepair": {
+    "state": "WITHHELD_TYPESCRIPT_SEMANTIC_FAILURE",
+    "description": "First repair added autoSelectFamily:false directly in the https.request object literal. Runtime intent was correct but the repository-pinned Node type declaration did not expose that property, so semantic TypeScript failed and the attempt received zero credit."
+  },
+  "finalRepair": {
+    "schemaVersion": "velmere.p69r2.node24-pinned-egress-repair.v1",
+    "status": "PASS_CONTROLLED_PRODUCT_SOURCE_REPAIR_NO_PROMOTION",
+    "changedFile": {
+      "path": "lib/network/safe-egress.ts",
+      "beforeBytes": 21591,
+      "beforeSha256": "032123359552bac43fae900ca719f19cce4301790ba5aef8a79fe5b4424fe93b",
+      "afterBytes": 21775,
+      "afterSha256": "e51547802dfcdb1724ce0f63e355808204337eeb8dd5235865af6eda91ee5752"
+    },
+    "inputProjection": {
+      "fileCount": 1597,
+      "payloadBytes": 20972925,
+      "pathSetSha256": "b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73",
+      "sourceContentAggregateSha256": "5454819675a912e9791e143d48d61385622e1ab3f494253ea28c6a9a10895d71"
+    },
+    "outputProjection": {
+      "fileCount": 1597,
+      "payloadBytes": 20973109,
+      "pathSetSha256": "b8d9b3c2753e3f7f0c0b3a6054cf8c254d2a91b9c9c5d8f37310add478ac3f73",
+      "sourceContentAggregateSha256": "e0b5f045c7c20f87c0704b6c8fff8be70655ec98e69c5cf2f4f588207b0bab6f"
+    },
+    "rootCause": "Node24 automatic address-family selection is incompatible with the intentionally single-address custom pinned lookup path and produced Invalid IP address: undefined, while direct ECB HTTPS was reachable.",
+    "repair": "typed HttpsRequestOptions intersection variable + autoSelectFamily:false",
+    "p69r1FailedAttempt": "WITHHELD_TYPESCRIPT_SEMANTIC_FAILURE",
+    "securityBoundary": "No DNS pinning, public-IP validation, redirect, TLS, allow-list or host-policy control was removed or weakened.",
+    "customerFinalOutputCredit": 0,
+    "rightsCredit": 0,
+    "saleCredit": 0,
+    "live": false
+  },
+  "finalSourceSha256": "e51547802dfcdb1724ce0f63e355808204337eeb8dd5235865af6eda91ee5752",
+  "securityPreserved": [
+    "host allow-list",
+    "DNS resolution",
+    "public/private IP rejection",
+    "DNS socket pinning",
+    "TLS hostname verification",
+    "redirect validation",
+    "response/request bounds"
+  ],
+  "exactWindowsHardGates": "12/12 PASS",
+  "routeAfterRepair": "HTTP 200 / ECB reference envelope PASS",
+  "truthBoundary": "This is a compatibility/security transport repair. It does not broaden allowed hosts or relax SSRF protections and grants no full product/release credit."
+}

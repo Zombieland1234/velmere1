@@ -1,0 +1,4630 @@
+{
+  "schemaVersion": "velmere.p101r1.v4.patched-pglite-migration-regression.v1",
+  "generatedAt": "2026-09-01T11:32:43.344Z",
+  "status": "FAIL_LOCAL_SEMANTICS_PRESERVED",
+  "sourceRoot": "C:\\Users\\marci\\Desktop\\Nowy folder",
+  "runtime": {
+    "version": "PostgreSQL 18.3 (PGlite 0.5.4) on wasm32-unknown-linux-gnu, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit",
+    "current_user": "postgres",
+    "current_database": "postgres"
+  },
+  "denominator": 135,
+  "checked": 123,
+  "passed": 122,
+  "failed": 1,
+  "firstFailure": {
+    "ordinal": 123,
+    "name": "20260824000001_r7_browser_basic_staging_foundation.sql",
+    "sourceSha256": "9b7ad224f43b9b817d9270da6dd8b50257328564f912c4e5ed3d982139581cf7",
+    "executionSha256": "9b7ad224f43b9b817d9270da6dd8b50257328564f912c4e5ed3d982139581cf7",
+    "pgcryptoCompatibilityStatementCount": 0,
+    "status": "FAIL_PRESERVED",
+    "error": {
+      "name": "error",
+      "message": "extension \"pgcrypto\" is not available",
+      "code": "0A000",
+      "severity": "ERROR",
+      "detail": null,
+      "hint": "The extension must first be installed on the system where PostgreSQL is running.",
+      "position": null,
+      "file": "extension.c",
+      "line": "673",
+      "routine": "parse_extension_control_file"
+    },
+    "durationMs": 2.203
+  },
+  "staticChecks": [
+    {
+      "id": "4763_status_signature_matches_definition",
+      "ordinal": 62,
+      "name": "20260713000018_4763_provider_recovery_release_certificate.sql",
+      "passed": true,
+      "expectedCount": 2,
+      "requiredExpectedCount": 2,
+      "forbiddenCount": 0
+    },
+    {
+      "id": "4764_verify_signature_matches_definition",
+      "ordinal": 63,
+      "name": "20260713000019_4764_provider_recovery_release_bundle.sql",
+      "passed": true,
+      "expectedCount": 2,
+      "requiredExpectedCount": 2,
+      "forbiddenCount": 0
+    },
+    {
+      "id": "4769_trust_epoch_case_parenthesized",
+      "ordinal": 68,
+      "name": "20260713000024_4769_release_trust_checkpoint_revocation_supersession.sql",
+      "passed": true,
+      "expectedCount": 1,
+      "requiredExpectedCount": 1,
+      "forbiddenCount": 0
+    },
+    {
+      "id": "4994_is_distinct_from_case_parenthesized",
+      "ordinal": 92,
+      "name": "20260718000004_4994_commerce_fulfilment_outbox_worker.sql",
+      "passed": true,
+      "expectedCount": 1,
+      "requiredExpectedCount": 1,
+      "forbiddenCount": 0
+    },
+    {
+      "id": "audit_basic_boolean_case_parenthesized",
+      "ordinal": 117,
+      "name": "20260821000002_current_audit_basic_worker_exact_artifact.sql",
+      "passed": true,
+      "expectedCount": 1,
+      "requiredExpectedCount": 1,
+      "forbiddenCount": 0
+    },
+    {
+      "id": "4994_schema_mirror_matches_migration",
+      "ordinal": 92,
+      "name": "20260718000004_4994_commerce_fulfilment_outbox_worker.sql",
+      "passed": true,
+      "expectedCount": 1,
+      "requiredExpectedCount": 1,
+      "forbiddenCount": 0
+    }
+  ],
+  "pgcryptoCompatibility": {
+    "extensionStatementsElided": 21,
+    "digestImplementation": "NON_CRYPTOGRAPHIC_PGLITE_TEST_STUB",
+    "sourceSqlRepairsAppliedAtRuntime": false
+  },
+  "sourceStable": true,
+  "migrationOrderSha256": "25fd7abd46cf4ff599908524368127e1416e5c060a18227b23384261942fed3c",
+  "migrationContentAggregateSha256": "d1c9497ae41521c0187e0f8160742204c800b39fae3a2880099774f73a087e07",
+  "inventory": {
+    "relations": [
+      {
+        "schema_name": "auth",
+        "relname": "users",
+        "relkind": "r",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "audit_entitlement_revocation_ledger",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "audit_safe_pdf_download_token_consumption_ledger",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "audit_safe_pdf_download_token_public_receipts",
+        "relkind": "v",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "audit_watch_receipt_manifest_chain",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "audit_watch_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "instrument_identity_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "provider_evidence_ledgers",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "provider_evidence_refresh_targets",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "provider_evidence_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "provider_health_observations",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "provider_health_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_account_data_exports",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_account_erasure_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_account_erasure_requests",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_account_resource_bindings",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_account_supabase_subject_bindings",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_admin_roles",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_admin_sessions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_admin_supabase_subject_bindings",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_advanced_audit_releases",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_angel_memories",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_account_messages",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_basic_report_artifacts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_case_payment_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_case_status_history",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_customer_artifact_links",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_delivery_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_intake_cases",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_logs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_pdf_token_consumptions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_release_evidence_board_public_receipts",
+        "relkind": "v",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_release_evidence_boards",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_release_evidence_private_refs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_report_access_tokens",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_report_pdf_blobs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_report_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_review_orchestration",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_verify_publication_bridges",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_audit_verify_visibility_consent_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_auth_security_alerts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_auth_security_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_auth_session_families",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_commerce_fulfilment_outbox",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_customer_artifact_pdf_blobs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_customer_artifact_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_durable_computation_alert_outbox",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_durable_computation_cycle_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_durable_computation_deployment_ledger",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_durable_computation_jobs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_durable_computation_maintenance_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_durable_computation_operator_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_incident_outbox",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_incidents",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_outbox_recovery_actions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_outbox_worker_lease",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_outbox_worker_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_provider_sync_queue",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_provider_sync_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_provider_sync_worker_lock",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_fulfilment_retry_queue",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_idempotency_keys",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_market_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_mutation_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_order_drafts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_order_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_order_items",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_order_state_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_orders",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_overlay_qa_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_paid_audit_access_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_pass21_merchant_legal_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_pass21_provider_rights_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_pass21_rls_classification_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_password_recovery_grants",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_payment_event_watermarks",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_payment_operator_action_assertions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_payment_runtime_evidence",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_product_brain_reviews",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_product_publication_state",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_product_variants",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_products",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_profiles",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_contracts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_observation_quarantine",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_observations",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_order_fulfilment_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_quality_incidents",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_quality_recovery_proofs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_quality_rollback_executions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_recovery_release_bundles",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_recovery_release_certificates",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_recovery_smoke_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_reliability_leases",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_reliability_state",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_rights_evidence_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_sandbox_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_provider_snapshots",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_public_product_truth",
+        "relkind": "v",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_candidate_attestations",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_proof_packages",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_provenance_indexes",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_checkpoints",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_entries",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_witness_health_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_witness_health_policies",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_witness_health_recoveries",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_witness_quorums",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_transparency_witness_rollback_resolutions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_trust_checkpoints",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_release_trust_consistency_proofs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_risk_history_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_rls_staging_replay_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_route_health_ping_ledger",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_runtime_bridge_evidence_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_runtime_bridge_gate_results",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_runtime_bridge_latest_status",
+        "relkind": "v",
+        "relrowsecurity": false,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_runtime_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_source_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_square_comments",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_square_posts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_stripe_webhook_dead_letter_actions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_stripe_webhook_effects",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_stripe_webhook_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_stripe_webhook_reconciliation_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_support_handoff_event_ledger",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_verify_deployment_identity_bindings",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_verify_monitor_jobs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_verify_publication_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_verify_publication_identities",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_vlm_audit_human_queue",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_vlm_paid_entitlement_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_vlm_paid_entitlement_release_holds",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_vlm_paid_entitlements",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_audit_lens_adapter_versions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_audit_lens_evidence_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_data_license_cell_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_data_license_matrix_versions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_evaluation_results",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_evaluation_runs",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_i18n_release_audit_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_market_adapter_versions",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_worldclass_market_evidence_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "velmere_write_rate_limit_events",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false
+      },
+      {
+        "schema_name": "public",
+        "relname": "worldclass_brain_angel_adapter_receipts",
+        "relkind": "r",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      }
+    ],
+    "policies": [
+      {
+        "schemaname": "public",
+        "tablename": "audit_entitlement_revocation_ledger",
+        "policyname": "audit_entitlement_revocation_deny_anon_delete",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon"
+        ],
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_entitlement_revocation_ledger",
+        "policyname": "audit_entitlement_revocation_deny_anon_update",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon"
+        ],
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_entitlement_revocation_ledger",
+        "policyname": "audit_entitlement_revocation_deny_anon_write",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_entitlement_revocation_ledger",
+        "policyname": "audit_entitlement_revocation_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_safe_pdf_download_token_consumption_ledger",
+        "policyname": "audit_safe_pdf_download_token_anon_delete_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_safe_pdf_download_token_consumption_ledger",
+        "policyname": "audit_safe_pdf_download_token_anon_insert_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_safe_pdf_download_token_consumption_ledger",
+        "policyname": "audit_safe_pdf_download_token_anon_select_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_safe_pdf_download_token_consumption_ledger",
+        "policyname": "audit_safe_pdf_download_token_anon_update_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_watch_receipt_manifest_chain",
+        "policyname": "audit_watch_receipt_manifest_chain_select_own_account",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "audit_watch_receipts",
+        "policyname": "audit_watch_receipts_select_own_account",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_account_data_exports",
+        "policyname": "v4_account_data_export_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_account_erasure_events",
+        "policyname": "v4_account_erasure_event_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_account_erasure_requests",
+        "policyname": "v4_account_erasure_request_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_account_supabase_subject_bindings",
+        "policyname": "pass22_account_subject_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_admin_roles",
+        "policyname": "pass22_admin_role_self_or_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_admin_sessions",
+        "policyname": "pass22_admin_session_self_or_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_angel_memories",
+        "policyname": "pass22_angel_memory_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_account_messages",
+        "policyname": "velmere_audit_account_messages_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_basic_report_artifacts",
+        "policyname": "velmere_audit_basic_report_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_customer_artifact_links",
+        "policyname": "p84_audit_customer_artifact_link_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_delivery_receipts",
+        "policyname": "velmere_audit_delivery_receipts_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_intake_cases",
+        "policyname": "pass22_audit_intake_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_logs",
+        "policyname": "pass22_audit_log_operator_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_pdf_token_consumptions",
+        "policyname": "a102r2_audit_pdf_consumption_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_boards",
+        "policyname": "velmere_audit_release_evidence_boards_delete_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_boards",
+        "policyname": "velmere_audit_release_evidence_boards_operator_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_boards",
+        "policyname": "velmere_audit_release_evidence_boards_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_boards",
+        "policyname": "velmere_audit_release_evidence_boards_service_role_insert",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_boards",
+        "policyname": "velmere_audit_release_evidence_boards_update_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_private_refs",
+        "policyname": "velmere_audit_release_evidence_private_refs_delete_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_private_refs",
+        "policyname": "velmere_audit_release_evidence_private_refs_operator_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_private_refs",
+        "policyname": "velmere_audit_release_evidence_private_refs_service_role_insert",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_release_evidence_private_refs",
+        "policyname": "velmere_audit_release_evidence_private_refs_update_deny",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_report_access_tokens",
+        "policyname": "velmere_audit_report_access_tokens_owner_select_redacted",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_report_access_tokens",
+        "policyname": "velmere_audit_report_access_tokens_service_role_all",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_audit_report_snapshots",
+        "policyname": "a102r2_audit_report_snapshot_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_commerce_fulfilment_outbox",
+        "policyname": "velmere_commerce_fulfilment_outbox_service_role_all",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_customer_artifact_pdf_blobs",
+        "policyname": "p85_customer_artifact_pdf_owner_published_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_customer_artifact_snapshots",
+        "policyname": "p85_customer_artifact_snapshot_owner_published_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_fulfilment_outbox_recovery_actions",
+        "policyname": "pass22_fulfilment_recovery_operator_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_idempotency_keys",
+        "policyname": "velmere_idempotency_keys_service_role_all",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "service_role"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_market_snapshots",
+        "policyname": "velmere_market_snapshots_service_role_all",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_order_drafts",
+        "policyname": "pass22_order_draft_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_order_events",
+        "policyname": "pass22_order_event_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_order_items",
+        "policyname": "pass22_order_item_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_order_state_events",
+        "policyname": "pass22_order_state_event_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_orders",
+        "policyname": "pass22_order_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_product_publication_state",
+        "policyname": "Public can read customer-safe publication state",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_products",
+        "policyname": "Public can read customer-safe Velmere products",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_profiles",
+        "policyname": "velmere_profiles_owner_insert",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_profiles",
+        "policyname": "velmere_profiles_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_profiles",
+        "policyname": "velmere_profiles_owner_update",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_provider_order_fulfilment_receipts",
+        "policyname": "service role manages provider order fulfilment receipts",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_route_health_ping_ledger",
+        "policyname": "velmere_route_health_ping_service_role_all",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_runtime_receipts",
+        "policyname": "service role can manage runtime receipts",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "public"
+        ],
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_square_comments",
+        "policyname": "Public can read approved Velmere Square comments",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_square_comments",
+        "policyname": "velmere_square_comments_owner_insert",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_square_comments",
+        "policyname": "velmere_square_comments_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_square_posts",
+        "policyname": "Public can read approved Velmere Square posts",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_square_posts",
+        "policyname": "velmere_square_posts_owner_insert",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_square_posts",
+        "policyname": "velmere_square_posts_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_support_handoff_event_ledger",
+        "policyname": "pass22_support_handoff_operator_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_vlm_audit_human_queue",
+        "policyname": "pass22_human_audit_queue_operator_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "velmere_vlm_paid_entitlements",
+        "policyname": "pass22_entitlement_owner_select",
+        "permissive": "PERMISSIVE",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT"
+      }
+    ],
+    "functions": [
+      {
+        "schema_name": "auth",
+        "proname": "email",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "auth",
+        "proname": "jwt",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "auth",
+        "proname": "role",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "auth",
+        "proname": "uid",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "extensions",
+        "proname": "digest",
+        "prosecdef": false,
+        "arguments": "text, text"
+      },
+      {
+        "schema_name": "extensions",
+        "proname": "digest",
+        "prosecdef": false,
+        "arguments": "bytea, text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "claim_provider_evidence_refresh_targets",
+        "prosecdef": true,
+        "arguments": "p_now timestamp with time zone, p_limit integer, p_lease_owner text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "digest",
+        "prosecdef": false,
+        "arguments": "data bytea, algorithm text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "digest",
+        "prosecdef": false,
+        "arguments": "data text, algorithm text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_account_data_export_immutable_guard",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_account_erasure_event_immutable_guard",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_acquire_provider_reliability_lease",
+        "prosecdef": true,
+        "arguments": "p_provider_id text, p_endpoint_id text, p_request_id_hash text, p_quota_limit integer, p_quota_window_seconds integer, p_cooldown_seconds integer, p_lease_seconds integer, p_now timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_activate_bound_verify_monitor_job_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_angel_memory_touch",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_append_audit_case_status_history",
+        "prosecdef": true,
+        "arguments": "p_case_id text, p_case_ref text, p_event_type text, p_previous_status text, p_next_status text, p_tier text, p_entitlement_required boolean, p_entitlement_verified boolean, p_analysis_started boolean, p_reason_code text, p_occurred_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_append_risk_history_events_v1",
+        "prosecdef": true,
+        "arguments": "p_events jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_append_verify_publication_event_v1",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_public_proof_id text, p_chain_id text, p_contract_address text, p_event_kind text, p_visibility text, p_project_name text, p_report_title text, p_public_summary text, p_risk_status text, p_report_digest text, p_deployment_digest text, p_verification_receipt_digest text, p_actor_digest text, p_checked_block_number text, p_checked_block_hash text, p_checked_at timestamp with time zone, p_monitoring_ttl_seconds integer, p_expected_previous_event_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_audit_payment_terminal_event",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_product_id text, p_context_hash text, p_event_id text, p_event_type text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_paid_audit_terminal_transition",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_product_id text, p_context_hash text, p_event_hash text, p_event_type text, p_event_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_payment_event_watermark",
+        "prosecdef": true,
+        "arguments": "p_subject_key text, p_event_id text, p_event_created_at bigint, p_event_kind text, p_event_priority integer, p_terminal boolean"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_provider_observation_quarantine_action",
+        "prosecdef": true,
+        "arguments": "p_action text, p_max_assets integer, p_operator_hash text, p_reason_hash text, p_approval_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_provider_quality_incident_action",
+        "prosecdef": true,
+        "arguments": "p_action text, p_expected_incident_digest text, p_expected_quality_digest text, p_operator_hash text, p_reason_hash text, p_approval_digest text, p_quality_ready boolean"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_release_transparency_witness_health_policy",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_policy_digest text, p_environment text, p_audience_hash text, p_revoked_witness_fingerprints text[], p_max_degraded_seconds integer, p_operator_hash text, p_reason_hash text, p_approval_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_release_transparency_witness_health_recovery",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_recovery_digest text, p_environment text, p_audience_hash text, p_health_digest text, p_quorum_digest text, p_checkpoint_digest text, p_min_stable_seconds integer, p_operator_hash text, p_reason_hash text, p_approval_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_apply_vlm_paid_entitlement_lifecycle_event",
+        "prosecdef": true,
+        "arguments": "p_entitlement_id text, p_event_id_hash text, p_event_type text, p_source_event_hash text, p_operator_hash text, p_reason_hash text, p_event_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_assign_advanced_audit_reviewer",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_reviewer_principal text, p_assignment_request_id text, p_sla_minutes integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_audit_customer_artifact_link_guard",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_audit_history_payment_state",
+        "prosecdef": false,
+        "arguments": "p_status text, p_entitlement_required boolean, p_entitlement_verified boolean, p_blocked_reason text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_audit_history_queue_lane",
+        "prosecdef": false,
+        "arguments": "p_tier text, p_status text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_auth_rls_contract_snapshot",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_basic_worker_lease_token_valid_v1",
+        "prosecdef": false,
+        "arguments": "p_token text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_bind_account_resource",
+        "prosecdef": true,
+        "arguments": "p_resource_type text, p_resource_id text, p_account_id text, p_request_id text, p_operator_fingerprint text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_bind_account_to_supabase_subject",
+        "prosecdef": true,
+        "arguments": "p_account_id text, p_supabase_subject uuid, p_request_id text, p_operator_fingerprint text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_bind_admin_subject",
+        "prosecdef": true,
+        "arguments": "p_supabase_subject uuid, p_actor_id text, p_request_id text, p_operator_fingerprint text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_bind_paid_audit_checkout",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_account_id text, p_tier text, p_product_id text, p_stripe_session_id text, p_context_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_build_verify_public_projection_v1",
+        "prosecdef": true,
+        "arguments": "p_public_proof_id text, p_now timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_cancel_account_erasure_v1",
+        "prosecdef": true,
+        "arguments": "p_request_id uuid"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_capture_audit_case_status_history",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_advanced_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_claim_request_id text, p_lease_token text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_audit_pdf_token",
+        "prosecdef": true,
+        "arguments": "p_token_hash text, p_nonce_hash text, p_account_id_hash text, p_entitlement_id_hash text, p_report_id text, p_report_version_hash text, p_token_expires_at timestamp with time zone, p_reservation_id text, p_reservation_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_auth_security_alerts",
+        "prosecdef": true,
+        "arguments": "p_limit integer, p_lease_seconds integer, p_worker_token uuid"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_basic_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_claim_request_id text, p_lease_token text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_commerce_fulfilment_outbox",
+        "prosecdef": true,
+        "arguments": "p_worker_id text, p_lease_token text, p_limit integer, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_durable_computation",
+        "prosecdef": true,
+        "arguments": "p_job_id text, p_kind text, p_input_hash text, p_subject_hash text, p_lease_token text, p_lease_seconds integer, p_max_attempts integer, p_sealed_payload jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_durable_computation_alerts",
+        "prosecdef": true,
+        "arguments": "p_worker_id text, p_lease_token text, p_limit integer, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_durable_computation_maintenance",
+        "prosecdef": true,
+        "arguments": "p_run_id uuid, p_lease_token text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_durable_computation_worker_batch",
+        "prosecdef": true,
+        "arguments": "p_worker_id_hash text, p_lease_token text, p_lease_seconds integer, p_limit integer, p_kinds text[]"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_durable_computation_worker_batch_budgeted",
+        "prosecdef": true,
+        "arguments": "p_worker_id_hash text, p_lease_token text, p_lease_seconds integer, p_limit integer, p_per_subject_limit integer, p_global_cost_limit integer, p_subject_cost_limit integer, p_max_claimed_payload_bytes integer, p_kinds text[]"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_durable_computation_worker_batch_fair",
+        "prosecdef": true,
+        "arguments": "p_worker_id_hash text, p_lease_token text, p_lease_seconds integer, p_limit integer, p_per_subject_limit integer, p_kinds text[]"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_fulfilment_incident_outbox_worker",
+        "prosecdef": true,
+        "arguments": "p_run_id text, p_lease_token text, p_limit integer, p_stale_after_seconds integer, p_retry_threshold integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_fulfilment_provider_sync_worker",
+        "prosecdef": true,
+        "arguments": "p_run_id text, p_lease_token text, p_limit integer, p_worker_lease_seconds integer, p_stale_after_seconds integer, p_retry_threshold integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_pro_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_claim_request_id text, p_lease_token text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_stripe_webhook_effect",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_event_type text, p_effect_key text, p_requested_lease_token text, p_stale_after_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_stripe_webhook_event",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_event_type text, p_event_created_at bigint, p_stale_after_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_claim_verify_monitor_jobs_v1",
+        "prosecdef": true,
+        "arguments": "p_worker_token text, p_limit integer, p_lease_seconds integer, p_lookahead_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_cleanup_durable_computations",
+        "prosecdef": true,
+        "arguments": "p_run_id uuid, p_lease_token text, p_completed_retention_days integer, p_dead_letter_retention_days integer, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_commit_commerce_paid_and_enqueue_fulfilment",
+        "prosecdef": true,
+        "arguments": "p_order_draft_id text, p_stripe_session_id text, p_stripe_event_id text, p_stripe_payment_intent_id text, p_cart_hash text, p_amount_total bigint, p_currency text, p_livemode boolean, p_fulfilment_action text, p_automatic_printful_line_count integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_compact_provider_observations",
+        "prosecdef": true,
+        "arguments": "p_retention_limit integer, p_max_assets integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_advanced_audit_with_exact_pdf_v2",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_reason_code text, p_report_id text, p_request_id text, p_account_id_hash text, p_entitlement_id text, p_target_hash text, p_report_version_hash text, p_snapshot_digest text, p_source_receipt_root text, p_pdf_digest text, p_pdf_byte_length integer, p_render_contract_id text, p_pdf_record_digest text, p_pdf_base64 text, p_snapshot_json jsonb, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_advanced_audit_with_snapshot",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_reason_code text, p_report_id text, p_request_id text, p_account_id_hash text, p_entitlement_id text, p_target_hash text, p_report_version_hash text, p_snapshot_digest text, p_source_receipt_root text, p_pdf_digest text, p_snapshot_json jsonb, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_basic_audit_with_exact_pdf_v1",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_reason_code text, p_report_id text, p_request_id text, p_account_id_hash text, p_target_hash text, p_report_version_hash text, p_snapshot_digest text, p_source_receipt_root text, p_pdf_digest text, p_pdf_byte_length integer, p_render_contract_id text, p_record_digest text, p_pdf_base64 text, p_snapshot_json jsonb, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_commerce_fulfilment_outbox",
+        "prosecdef": true,
+        "arguments": "p_request_id text, p_lease_token text, p_provider_order_id text, p_execution_receipt jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_durable_computation",
+        "prosecdef": true,
+        "arguments": "p_job_id text, p_lease_token text, p_result_payload jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_fulfilment_incident_outbox_event",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_lease_token text, p_delivery_receipt jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_fulfilment_provider_sync",
+        "prosecdef": true,
+        "arguments": "p_sync_id text, p_lease_token text, p_provider_status text, p_result_state text, p_action text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_paid_audit_with_exact_pdf_v2",
+        "prosecdef": true,
+        "arguments": "p_tier text, p_case_ref text, p_worker_principal text, p_lease_token text, p_reason_code text, p_report_id text, p_request_id text, p_account_id_hash text, p_entitlement_id text, p_target_hash text, p_report_version_hash text, p_snapshot_digest text, p_source_receipt_root text, p_pdf_digest text, p_pdf_byte_length integer, p_render_contract_id text, p_pdf_record_digest text, p_pdf_base64 text, p_snapshot_json jsonb, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_pro_audit_with_exact_pdf_v2",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_reason_code text, p_report_id text, p_request_id text, p_account_id_hash text, p_entitlement_id text, p_target_hash text, p_report_version_hash text, p_snapshot_digest text, p_source_receipt_root text, p_pdf_digest text, p_pdf_byte_length integer, p_render_contract_id text, p_pdf_record_digest text, p_pdf_base64 text, p_snapshot_json jsonb, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_pro_audit_with_snapshot",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_reason_code text, p_report_id text, p_request_id text, p_account_id_hash text, p_entitlement_id text, p_target_hash text, p_report_version_hash text, p_snapshot_digest text, p_source_receipt_root text, p_pdf_digest text, p_snapshot_json jsonb, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_complete_stripe_webhook_effect",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_effect_key text, p_expected_attempt integer, p_lease_token text, p_result_json jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_confirm_account_erasure_session_revocation_v1",
+        "prosecdef": true,
+        "arguments": "p_request_id uuid, p_account_id_hash text, p_revocation_receipt_sha256 text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_consume_password_recovery_grant",
+        "prosecdef": true,
+        "arguments": "p_nonce_hash text, p_subject_fingerprint text, p_family_id uuid"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_consume_payment_operator_action_assertion",
+        "prosecdef": true,
+        "arguments": "p_primary_assertion_id_hash text, p_scope text, p_action_digest text, p_body_sha256 text, p_actor_id_hash text, p_session_id_hash text, p_independent_approval_id_hash text, p_approver_actor_id_hash text, p_expires_at_ms bigint"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_create_account_data_export_v1",
+        "prosecdef": true,
+        "arguments": "p_export_id uuid, p_idempotency_key_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_create_or_read_vlm_paid_entitlement",
+        "prosecdef": true,
+        "arguments": "p_id text, p_stripe_session_id text, p_stripe_customer_id text, p_product_id text, p_access_scope text, p_context_hash text, p_context jsonb, p_locale text, p_amount_total integer, p_currency text, p_customer_email text, p_customer_name text, p_payment_status text, p_source text, p_audit_queue_id text, p_expires_at timestamp with time zone, p_created_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_current_account_binding_hash",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_current_account_hash",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_current_account_id",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_current_actor_id",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_current_operator_role",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_customer_artifact_exact_pdf_pair_guard",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_customer_artifact_immutable_guard",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_customer_artifact_pdf_blob_immutable_guard",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_dead_letter_fulfilment_provider_sync",
+        "prosecdef": true,
+        "arguments": "p_sync_id text, p_lease_token text, p_error_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_dead_letter_stripe_webhook_effect",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_effect_key text, p_expected_attempt integer, p_lease_token text, p_error_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_enforce_audit_customer_snapshot_immutability",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_enqueue_fulfilment_provider_sync",
+        "prosecdef": true,
+        "arguments": "p_order_draft_id text, p_external_id text, p_expected_provider_order_id text, p_previous_status text, p_pending_since timestamp with time zone, p_stale_after_hours integer, p_refund_expected boolean"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_execute_provider_quality_auto_rollback",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_expected_incident_digest text, p_expected_quality_digest text, p_target_deployment_id uuid, p_authorization_digest text, p_signature_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fail_audit_pdf_token_reservation",
+        "prosecdef": true,
+        "arguments": "p_token_hash text, p_reservation_id text, p_failure_code text, p_failed_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fail_commerce_fulfilment_outbox",
+        "prosecdef": true,
+        "arguments": "p_request_id text, p_lease_token text, p_retryable boolean, p_error_code text, p_retry_threshold integer, p_execution_receipt jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fail_durable_computation",
+        "prosecdef": true,
+        "arguments": "p_job_id text, p_lease_token text, p_error_code text, p_retry_after_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fail_fulfilment_incident_outbox_event",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_lease_token text, p_error_code text, p_retry_threshold integer, p_retry_after_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fail_fulfilment_provider_sync",
+        "prosecdef": true,
+        "arguments": "p_sync_id text, p_lease_token text, p_error_code text, p_retry_threshold integer, p_retry_after_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fail_stripe_webhook_effect",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_effect_key text, p_expected_attempt integer, p_lease_token text, p_error_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_finalize_audit_pdf_token",
+        "prosecdef": true,
+        "arguments": "p_token_hash text, p_reservation_id text, p_consumed_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_finish_durable_computation_maintenance",
+        "prosecdef": true,
+        "arguments": "p_run_id uuid, p_lease_token text, p_summary jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_finish_fulfilment_incident_outbox_worker",
+        "prosecdef": true,
+        "arguments": "p_run_id text, p_lease_token text, p_summary jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_finish_fulfilment_provider_sync_worker",
+        "prosecdef": true,
+        "arguments": "p_run_id text, p_lease_token text, p_summary jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_fulfilment_outbox_dead_letter_summary",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_audit_case_customer_history",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_account_id text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_durable_computation_metrics",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_latest_risk_history_events_v1",
+        "prosecdef": true,
+        "arguments": "p_asset_ids text[]"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_owner_visible_customer_artifact_v1",
+        "prosecdef": false,
+        "arguments": "p_snapshot_id text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_quality_auto_rollback_context",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_quality_auto_rollback_status",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_quality_incident_snapshot",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_quality_recovery_proof_status",
+        "prosecdef": true,
+        "arguments": "p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_exact_checkpoint integer, p_customer_smoke_digest text, p_provider_smoke_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_recovery_release_bundle_status",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_audience_hash text, p_deployment_fingerprint text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_release_certificate_digest text, p_evidence_root text, p_now timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_recovery_release_certificate_status",
+        "prosecdef": true,
+        "arguments": "p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_now timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_provider_recovery_smoke_receipt_status",
+        "prosecdef": true,
+        "arguments": "p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_exact_checkpoint integer, p_now timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_proof_packages",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_provenance_feed",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_transparency_checkpoints",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_transparency_entries",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_transparency_witness_health",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_transparency_witness_health_recoveri",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_transparency_witness_quorums",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_transparency_witness_rollback_resolu",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_trust_checkpoints",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_public_release_trust_consistency_proofs",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_candidate_attestation_status",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_audience_hash text, p_deployment_fingerprint text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_release_certificate_digest text, p_release_bundle_digest text, p_key_id_hash text, p_public_key_fingerprint text, p_now timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_proof_package_status",
+        "prosecdef": true,
+        "arguments": "p_index_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_provenance_index_status",
+        "prosecdef": true,
+        "arguments": "p_candidate_attestation_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_transparency_checkpoint_status",
+        "prosecdef": true,
+        "arguments": "p_checkpoint_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_transparency_entry_status",
+        "prosecdef": true,
+        "arguments": "p_entry_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_transparency_witness_health_recovery_status",
+        "prosecdef": true,
+        "arguments": "p_environment text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_transparency_witness_health_status",
+        "prosecdef": true,
+        "arguments": "p_environment text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_transparency_witness_quorum_status",
+        "prosecdef": true,
+        "arguments": "p_quorum_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_transparency_witness_rollback_resolution_st",
+        "prosecdef": true,
+        "arguments": "p_environment text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_trust_checkpoint_status",
+        "prosecdef": true,
+        "arguments": "p_checkpoint_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_release_trust_consistency_status",
+        "prosecdef": true,
+        "arguments": "p_proof_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_verify_monitor_health_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_get_verify_publication_history_v1",
+        "prosecdef": true,
+        "arguments": "p_public_proof_id text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_guard_paid_commerce_order_binding_immutable",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_has_operator_role",
+        "prosecdef": true,
+        "arguments": "p_roles text[]"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_heartbeat_durable_computation_worker",
+        "prosecdef": true,
+        "arguments": "p_job_ids text[], p_lease_token text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_heartbeat_durable_computation_worker_owned",
+        "prosecdef": true,
+        "arguments": "p_job_ids text[], p_lease_token text, p_lease_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_is_commerce_fulfilment_receipt_redacted",
+        "prosecdef": false,
+        "arguments": "p_receipt jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_is_resource_owner",
+        "prosecdef": true,
+        "arguments": "p_resource_type text, p_resource_id text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_issue_auth_session_family",
+        "prosecdef": true,
+        "arguments": "p_family_id uuid, p_subject_fingerprint text, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_issue_password_recovery_grant",
+        "prosecdef": true,
+        "arguments": "p_nonce_hash text, p_subject_fingerprint text, p_family_id uuid, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_list_owner_visible_customer_artifacts_v1",
+        "prosecdef": false,
+        "arguments": "p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_normalize_audit_analysis_queue_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_pdf_classic_xref_limited_boundary_v1",
+        "prosecdef": false,
+        "arguments": "p_pdf bytea"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_preflight_basic_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_probe_durable_computation_capabilities",
+        "prosecdef": true,
+        "arguments": "p_expected_schema text, p_deployment_fingerprint text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_promote_durable_computation_deployment",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_deployment_fingerprint text, p_capability_digest text, p_provider_quality_digest text, p_recovery_proof_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_operator_hash text, p_reason_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_promote_durable_computation_deployment",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_deployment_fingerprint text, p_capability_digest text, p_provider_quality_digest text, p_recovery_proof_digest text, p_release_certificate_digest text, p_release_bundle_digest text, p_release_candidate_attestation_digest text, p_release_provenance_index_digest text, p_release_transparency_witness_quorum_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_operator_hash text, p_reason_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_promote_paid_audit_case",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_stripe_session_id text, p_product_id text, p_context_hash text, p_entitlement_id text, p_payment_event_id text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_publish_audit_exact_artifact_v1",
+        "prosecdef": true,
+        "arguments": "p_account_id text, p_snapshot jsonb, p_payload_canonical text, p_blob jsonb, p_pdf_base64 text, p_audit_snapshot jsonb, p_message jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_publish_audit_exact_artifact_v2",
+        "prosecdef": true,
+        "arguments": "p_account_id text, p_snapshot jsonb, p_payload_canonical text, p_blob jsonb, p_pdf_base64 text, p_audit_snapshot jsonb, p_message jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_publish_completed_audit_to_verify_v1",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_requested_visibility text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_purge_expired_account_data_exports_v1",
+        "prosecdef": true,
+        "arguments": "p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_read_public_risk_history_by_asset_v1",
+        "prosecdef": true,
+        "arguments": "p_asset_id text, p_limit integer, p_before timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_read_risk_history_by_asset_v1",
+        "prosecdef": true,
+        "arguments": "p_asset_id text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_read_risk_history_by_asset_v2",
+        "prosecdef": true,
+        "arguments": "p_asset_id text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_read_risk_history_events_v1",
+        "prosecdef": true,
+        "arguments": "p_event_ids text[]"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reconcile_durable_computation_alert_outbox",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reconcile_provider_observation_quarantine",
+        "prosecdef": true,
+        "arguments": "p_min_stable_samples integer, p_max_assets integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reconcile_provider_observations",
+        "prosecdef": true,
+        "arguments": "p_stale_after_seconds integer, p_retention_limit integer, p_min_stable_samples integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reconcile_provider_quality_incident",
+        "prosecdef": true,
+        "arguments": "p_quality_digest text, p_quality_ready boolean, p_requested_severity text, p_warning_after_seconds integer, p_critical_after_seconds integer, p_rollback_after_seconds integer, p_recovery_stable_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reconcile_release_transparency_witness_health",
+        "prosecdef": true,
+        "arguments": "p_environment text, p_audience_hash text, p_max_degraded_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reconcile_stripe_webhook_effects",
+        "prosecdef": true,
+        "arguments": "p_stale_after_seconds integer, p_retry_threshold integer, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_advanced_audit_release_transition",
+        "prosecdef": true,
+        "arguments": "p_transition text, p_release_id text, p_case_ref text, p_entitlement_id text, p_entitlement_ref_hash text, p_payload_hash text, p_envelope_digest text, p_release_state text, p_event_hash text, p_review_operator_hash text, p_approval_operator_hash text, p_approval_receipt_hash text, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone, p_transition_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_advanced_audit_release_transition_v2",
+        "prosecdef": true,
+        "arguments": "p_transition text, p_release_id text, p_case_ref text, p_entitlement_id text, p_entitlement_ref_hash text, p_payload_hash text, p_source_receipt_root text, p_pdf_digest text, p_envelope_digest text, p_release_state text, p_event_hash text, p_review_operator_hash text, p_approval_operator_hash text, p_approval_receipt_hash text, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone, p_transition_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_audit_verify_visibility_consent_v1",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_visibility text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_auth_security_event",
+        "prosecdef": true,
+        "arguments": "p_event_family text, p_outcome text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_durable_computation_alert",
+        "prosecdef": true,
+        "arguments": "p_run_id uuid, p_lease_token text, p_code text, p_severity text, p_value integer, p_threshold integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_durable_computation_cycle_receipt",
+        "prosecdef": true,
+        "arguments": "p_cycle_id uuid, p_started_at timestamp with time zone, p_finished_at timestamp with time zone, p_ok boolean, p_severity text, p_drain_skipped boolean, p_skip_reason text, p_claimed integer, p_completed integer, p_retry_wait integer, p_dead_letter integer, p_conflicts integer, p_lost_ownership integer, p_store_failed integer, p_budget_rejected integer, p_cleaned_completed integer, p_cleaned_dead_letter integer, p_deployment_fingerprint text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_provider_observation",
+        "prosecdef": true,
+        "arguments": "p_asset_key_hash text, p_observation_digest text, p_observed_at timestamp with time zone, p_state text, p_comparability text, p_selected_price numeric, p_divergence_bps numeric, p_confidence_cap integer, p_source_count integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_provider_observation_alert",
+        "prosecdef": true,
+        "arguments": "p_code text, p_severity text, p_value integer, p_threshold integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_provider_quality_recovery_proof",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_exact_checkpoint integer, p_customer_smoke_digest text, p_provider_smoke_digest text, p_operator_hash text, p_reason_hash text, p_approval_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_provider_recovery_release_bundle",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_environment text, p_audience_hash text, p_deployment_fingerprint text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_release_certificate_digest text, p_evidence_root text, p_operator_hash text, p_reason_hash text, p_approval_digest text, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_provider_recovery_release_certificate",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_operator_hash text, p_reason_hash text, p_approval_digest text, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_provider_recovery_smoke_receipt",
+        "prosecdef": true,
+        "arguments": "p_kind text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_exact_checkpoint integer, p_result_digest text, p_checks_passed integer, p_checks_total integer, p_executed_at timestamp with time zone, p_expires_at timestamp with time zone, p_approval_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_candidate_attestation",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_candidate_id_hash text, p_environment text, p_audience_hash text, p_deployment_fingerprint text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_release_certificate_digest text, p_release_bundle_digest text, p_manifest_root text, p_key_id_hash text, p_public_key_fingerprint text, p_signature_digest text, p_attestation_digest text, p_operator_hash text, p_reason_hash text, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_proof_package",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_package_id_hash text, p_environment text, p_audience_hash text, p_sequence integer, p_previous_package_digest text, p_index_digest text, p_key_registry_digest text, p_signature_count integer, p_signature_threshold integer, p_package_digest text, p_package_json jsonb, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_provenance_index",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_index_id_hash text, p_environment text, p_audience_hash text, p_candidate_attestation_digest text, p_release_bundle_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_sequence integer, p_previous_index_digest text, p_artifacts_root text, p_chain_root text, p_signer_set_digest text, p_signature_count integer, p_signature_threshold integer, p_index_digest text, p_operator_hash text, p_reason_hash text, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_transparency_checkpoint",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_checkpoint_digest text, p_environment text, p_audience_hash text, p_sequence integer, p_previous_checkpoint_digest text, p_previous_tree_size integer, p_previous_entries_root text, p_tree_size integer, p_first_entry_digest text, p_last_entry_digest text, p_latest_log_root text, p_entries_root text, p_consistency_digest text, p_trust_checkpoint_digest text, p_signature_count integer, p_signature_threshold integer, p_checkpoint_json jsonb, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_transparency_entry",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_entry_digest text, p_environment text, p_audience_hash text, p_sequence integer, p_previous_entry_digest text, p_previous_log_root text, p_trust_checkpoint_digest text, p_consistency_proof_digest text, p_provenance_index_digest text, p_proof_package_digest text, p_candidate_attestation_digest text, p_source_sha256 text, p_build_sha256 text, p_exact_checkpoint integer, p_entry_leaf_digest text, p_log_root text, p_signature_count integer, p_signature_threshold integer, p_entry_json jsonb, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_transparency_witness_quorum",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_quorum_digest text, p_environment text, p_audience_hash text, p_checkpoint_digest text, p_checkpoint_sequence integer, p_tree_size integer, p_entries_root text, p_latest_log_root text, p_consistency_digest text, p_witness_set_digest text, p_witness_count integer, p_organization_count integer, p_signature_threshold integer, p_quorum_json jsonb, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_transparency_witness_rollback_resolution",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_resolution_digest text, p_environment text, p_audience_hash text, p_health_digest text, p_quorum_digest text, p_checkpoint_digest text, p_rollback_ledger_digest text, p_min_stable_seconds integer, p_operator_hash text, p_reason_hash text, p_approval_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_trust_checkpoint",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_checkpoint_id_hash text, p_environment text, p_audience_hash text, p_sequence integer, p_previous_checkpoint_digest text, p_latest_package_digest text, p_latest_package_sequence integer, p_trust_epoch integer, p_key_registry_digest text, p_revoked_key_fingerprints text[], p_superseded_package_digests text[], p_signature_count integer, p_signature_threshold integer, p_checkpoint_digest text, p_checkpoint_json jsonb, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_record_release_trust_consistency_proof",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_proof_digest text, p_environment text, p_audience_hash text, p_mode text, p_from_checkpoint_digest text, p_to_checkpoint_digest text, p_from_sequence integer, p_to_sequence integer, p_consistency_root text, p_trust_epoch_start integer, p_trust_epoch_end integer, p_signature_count integer, p_signature_threshold integer, p_proof_json jsonb, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_recover_fulfilment_outbox_dead_letter",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_action text, p_request_id text, p_reason_code text, p_evidence_reference text, p_operator_fingerprint text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_audit_basic_report_mutation_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_audit_history_mutation",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_audit_report_pdf_blob_mutation_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_audit_verify_bridge_mutation_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_new_legacy_customer_artifact_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_non_current_audit_target_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_risk_history_event_mutation_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_verify_deployment_identity_binding_mutation_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reject_verify_publication_mutation_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_release_commerce_fulfilment_outbox",
+        "prosecdef": true,
+        "arguments": "p_request_id text, p_lease_token text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_release_durable_computation_worker_claims_budget",
+        "prosecdef": true,
+        "arguments": "p_job_ids text[], p_lease_token text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_release_fulfilment_incident_outbox_event",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_lease_token text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_release_fulfilment_provider_sync",
+        "prosecdef": true,
+        "arguments": "p_sync_id text, p_lease_token text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_request_account_erasure_v1",
+        "prosecdef": true,
+        "arguments": "p_request_id uuid, p_idempotency_key_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_requeue_durable_computation_dead_letter",
+        "prosecdef": true,
+        "arguments": "p_job_id text, p_operator_hash text, p_reason_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_requeue_stripe_webhook_dead_letter",
+        "prosecdef": true,
+        "arguments": "p_event_id text, p_effect_key text, p_request_id text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_reschedule_fulfilment_provider_sync",
+        "prosecdef": true,
+        "arguments": "p_sync_id text, p_lease_token text, p_provider_status text, p_result_state text, p_action text, p_delay_seconds integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_resolve_completed_audit_verify_binding_v1",
+        "prosecdef": true,
+        "arguments": "p_case_ref text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_resolve_fulfilment_incident",
+        "prosecdef": true,
+        "arguments": "p_case_id text, p_resolution text, p_request_id text, p_operator_fingerprint text, p_evidence jsonb"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_resolve_verify_publication_exact_v1",
+        "prosecdef": true,
+        "arguments": "p_public_proof_id text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_revoke_auth_session_family",
+        "prosecdef": true,
+        "arguments": "p_family_id uuid, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_revoke_auth_session_subject",
+        "prosecdef": true,
+        "arguments": "p_subject_fingerprint text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_rollback_durable_computation_deployment",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_target_deployment_id uuid, p_deployment_fingerprint text, p_capability_digest text, p_provider_quality_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_operator_hash text, p_reason_hash text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_rotate_auth_session_family",
+        "prosecdef": true,
+        "arguments": "p_family_id uuid, p_expected_generation integer, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_run_stripe_webhook_reconciliation_worker",
+        "prosecdef": true,
+        "arguments": "p_stale_after_seconds integer, p_retry_threshold integer, p_limit integer, p_run_id text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_schedule_verify_monitor_job_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_search_verify_publications_v1",
+        "prosecdef": true,
+        "arguments": "p_chain_id text, p_contract_address text, p_project_name text, p_limit integer"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_advanced_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_outcome text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_auth_security_alert",
+        "prosecdef": true,
+        "arguments": "p_id bigint, p_worker_token uuid, p_delivered boolean, p_error_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_basic_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_outcome text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_durable_computation_alert",
+        "prosecdef": true,
+        "arguments": "p_alert_id uuid, p_lease_token text, p_outcome text, p_http_status integer, p_destination_hash text, p_error_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_pro_audit_worker_lease",
+        "prosecdef": true,
+        "arguments": "p_case_ref text, p_worker_principal text, p_lease_token text, p_outcome text, p_reason_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_provider_reliability_lease",
+        "prosecdef": true,
+        "arguments": "p_lease_id uuid, p_success boolean, p_provider_failure boolean, p_failure_threshold integer, p_completed_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_settle_verify_monitor_job_v1",
+        "prosecdef": true,
+        "arguments": "p_job_id uuid, p_worker_token text, p_expected_event_digest text, p_observation_outcome text, p_observed_deployment_digest text, p_verification_receipt_digest text, p_checked_block_number text, p_checked_block_hash text, p_checked_at timestamp with time zone, p_monitoring_ttl_seconds integer, p_failure_code text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_store_customer_artifact_pdf_bundle_v1",
+        "prosecdef": true,
+        "arguments": "p_account_id text, p_snapshot jsonb, p_payload_canonical text, p_blob jsonb, p_pdf_base64 text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_sync_audit_review_revocation",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_validate_audit_report_pdf_blob_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_validate_risk_history_event_v1",
+        "prosecdef": false,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_validate_verify_deployment_identity_binding_v1",
+        "prosecdef": true,
+        "arguments": ""
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_auth_session_family",
+        "prosecdef": true,
+        "arguments": "p_family_id uuid, p_subject_fingerprint text, p_expected_generation integer, p_expected_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_canonical_deployment_identity_digest_v1",
+        "prosecdef": false,
+        "arguments": "p_chain_id text, p_contract_address text, p_runtime_bytecode_sha256 text, p_proxy_kind text, p_implementation_address text, p_implementation_bytecode_sha256 text, p_trusted_forwarder_address text, p_trusted_forwarder_state text, p_negative_control_state text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_next_daily_monitor_window_end_v1",
+        "prosecdef": false,
+        "arguments": "p_observed_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_provider_quality_auto_rollback",
+        "prosecdef": true,
+        "arguments": "p_execution_id uuid, p_expected_incident_digest text, p_expected_quality_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_provider_quality_recovery_proof",
+        "prosecdef": true,
+        "arguments": "p_proof_digest text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_exact_checkpoint integer, p_customer_smoke_digest text, p_provider_smoke_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_provider_recovery_release_bundle",
+        "prosecdef": true,
+        "arguments": "p_bundle_digest text, p_idempotency_key text, p_environment text, p_audience_hash text, p_deployment_fingerprint text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_release_certificate_digest text, p_evidence_root text, p_operator_hash text, p_reason_hash text, p_approval_digest text, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_provider_recovery_release_certificate",
+        "prosecdef": true,
+        "arguments": "p_certificate_digest text, p_idempotency_key text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_operator_hash text, p_reason_hash text, p_approval_digest text, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_candidate_attestation",
+        "prosecdef": true,
+        "arguments": "p_idempotency_key text, p_candidate_id_hash text, p_environment text, p_audience_hash text, p_deployment_fingerprint text, p_rollback_execution_digest text, p_incident_digest text, p_quality_digest text, p_capability_digest text, p_source_sha256 text, p_build_sha256 text, p_build_id_hash text, p_exact_checkpoint integer, p_recovery_proof_digest text, p_customer_smoke_digest text, p_provider_smoke_digest text, p_release_certificate_digest text, p_release_bundle_digest text, p_manifest_root text, p_key_id_hash text, p_public_key_fingerprint text, p_signature_digest text, p_attestation_digest text, p_operator_hash text, p_reason_hash text, p_issued_at timestamp with time zone, p_expires_at timestamp with time zone"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_proof_package",
+        "prosecdef": true,
+        "arguments": "p_package_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_provenance_index",
+        "prosecdef": true,
+        "arguments": "p_index_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_transparency_checkpoint",
+        "prosecdef": true,
+        "arguments": "p_checkpoint_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_transparency_entry",
+        "prosecdef": true,
+        "arguments": "p_entry_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_transparency_witness_health",
+        "prosecdef": true,
+        "arguments": "p_health_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_transparency_witness_health_recovery",
+        "prosecdef": true,
+        "arguments": "p_recovery_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_transparency_witness_quorum",
+        "prosecdef": true,
+        "arguments": "p_quorum_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_transparency_witness_rollback_resolution",
+        "prosecdef": true,
+        "arguments": "p_resolution_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_trust_checkpoint",
+        "prosecdef": true,
+        "arguments": "p_checkpoint_digest text"
+      },
+      {
+        "schema_name": "public",
+        "proname": "velmere_verify_release_trust_consistency_proof",
+        "prosecdef": true,
+        "arguments": "p_proof_digest text"
+      }
+    ],
+    "triggers": [
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_account_data_exports",
+        "trigger_name": "velmere_account_data_export_immutable",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_account_erasure_events",
+        "trigger_name": "velmere_account_erasure_event_immutable",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_account_erasure_events",
+        "trigger_name": "velmere_account_erasure_event_immutable",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_angel_memories",
+        "trigger_name": "velmere_angel_memory_touch_trigger",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_angel_memories",
+        "trigger_name": "velmere_angel_memory_touch_trigger",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_account_messages",
+        "trigger_name": "velmere_audit_customer_snapshot_immutability",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_account_messages",
+        "trigger_name": "velmere_audit_customer_snapshot_immutability",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_account_messages",
+        "trigger_name": "velmere_normalize_audit_analysis_queue_v1",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_account_messages",
+        "trigger_name": "velmere_normalize_audit_analysis_queue_v1",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_basic_report_artifacts",
+        "trigger_name": "reject_audit_basic_report_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_basic_report_artifacts",
+        "trigger_name": "reject_audit_basic_report_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_case_status_history",
+        "trigger_name": "velmere_reject_audit_history_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_case_status_history",
+        "trigger_name": "velmere_reject_audit_history_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_customer_artifact_links",
+        "trigger_name": "velmere_audit_customer_artifact_link_immutable",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_customer_artifact_links",
+        "trigger_name": "velmere_audit_customer_artifact_link_immutable",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_customer_artifact_links",
+        "trigger_name": "velmere_audit_customer_artifact_link_immutable",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_intake_cases",
+        "trigger_name": "reject_non_current_audit_target",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_intake_cases",
+        "trigger_name": "velmere_capture_audit_case_status_history",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_intake_cases",
+        "trigger_name": "velmere_capture_audit_case_status_history",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_intake_cases",
+        "trigger_name": "velmere_sync_audit_review_revocation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_report_pdf_blobs",
+        "trigger_name": "p88_reject_audit_report_pdf_blob_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_report_pdf_blobs",
+        "trigger_name": "p88_reject_audit_report_pdf_blob_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_report_pdf_blobs",
+        "trigger_name": "p88_validate_audit_report_pdf_blob",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_verify_publication_bridges",
+        "trigger_name": "reject_audit_verify_publication_bridge_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_verify_publication_bridges",
+        "trigger_name": "reject_audit_verify_publication_bridge_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_verify_visibility_consent_events",
+        "trigger_name": "reject_audit_verify_consent_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_audit_verify_visibility_consent_events",
+        "trigger_name": "reject_audit_verify_consent_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_pdf_blobs",
+        "trigger_name": "velmere_customer_artifact_blob_exact_pdf_pair",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_pdf_blobs",
+        "trigger_name": "velmere_customer_artifact_pdf_blob_immutable",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_pdf_blobs",
+        "trigger_name": "velmere_customer_artifact_pdf_blob_immutable",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_snapshots",
+        "trigger_name": "p86_customer_artifact_exact_pdf_new_write_gate",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_snapshots",
+        "trigger_name": "velmere_customer_artifact_immutable",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_snapshots",
+        "trigger_name": "velmere_customer_artifact_immutable",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_customer_artifact_snapshots",
+        "trigger_name": "velmere_customer_artifact_snapshot_exact_pdf_pair",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_order_drafts",
+        "trigger_name": "velmere_guard_paid_commerce_order_binding_immutable_trigger",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_risk_history_events",
+        "trigger_name": "p91_reject_risk_history_event_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_risk_history_events",
+        "trigger_name": "p91_reject_risk_history_event_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_risk_history_events",
+        "trigger_name": "p91_validate_risk_history_event",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_deployment_identity_bindings",
+        "trigger_name": "activate_bound_verify_monitor_job",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_deployment_identity_bindings",
+        "trigger_name": "reject_verify_deployment_identity_binding_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_deployment_identity_bindings",
+        "trigger_name": "reject_verify_deployment_identity_binding_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_deployment_identity_bindings",
+        "trigger_name": "validate_verify_deployment_identity_binding",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_publication_events",
+        "trigger_name": "reject_verify_publication_event_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_publication_events",
+        "trigger_name": "reject_verify_publication_event_mutation",
+        "event_manipulation": "UPDATE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_publication_events",
+        "trigger_name": "schedule_verify_monitor_job_after_event",
+        "event_manipulation": "INSERT"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_publication_identities",
+        "trigger_name": "reject_verify_publication_identity_mutation",
+        "event_manipulation": "DELETE"
+      },
+      {
+        "event_object_schema": "public",
+        "event_object_table": "velmere_verify_publication_identities",
+        "trigger_name": "reject_verify_publication_identity_mutation",
+        "event_manipulation": "UPDATE"
+      }
+    ]
+  },
+  "results": [
+    {
+      "ordinal": 1,
+      "name": "20260616000001_2097_velmere_core_truth.sql",
+      "sourceSha256": "3efa517fc12e979d78b13ee35d1c08911a581af7b5d048f537f1f902cdfeace1",
+      "executionSha256": "3efa517fc12e979d78b13ee35d1c08911a581af7b5d048f537f1f902cdfeace1",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 68.267
+    },
+    {
+      "ordinal": 2,
+      "name": "20260616000002_2121_runtime_bridge_checks.sql",
+      "sourceSha256": "dcb6b4cf1dc7f08be0fc8d2212c21b064303ef7285fa8c490456b56cfda8f039",
+      "executionSha256": "dcb6b4cf1dc7f08be0fc8d2212c21b064303ef7285fa8c490456b56cfda8f039",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.384
+    },
+    {
+      "ordinal": 3,
+      "name": "20260617000001_2178_mutation_receipt_vault.sql",
+      "sourceSha256": "f7adf2033c737882ba681fc5f98b76dd829590891e395d2430724dc8463238c0",
+      "executionSha256": "f7adf2033c737882ba681fc5f98b76dd829590891e395d2430724dc8463238c0",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.806
+    },
+    {
+      "ordinal": 4,
+      "name": "20260617000002_2179_mutation_receipt_runtime_truth.sql",
+      "sourceSha256": "5e7f0bb6fa7a7fbf2d84e81bfd0766de90cd23eec7e7d8c4874fdf8a4a4b3483",
+      "executionSha256": "5e7f0bb6fa7a7fbf2d84e81bfd0766de90cd23eec7e7d8c4874fdf8a4a4b3483",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.343
+    },
+    {
+      "ordinal": 5,
+      "name": "20260617000003_2182_runtime_receipt_capture.sql",
+      "sourceSha256": "ccb37a4c3cff1f14fbe25ebedb39c4edc1a5051e106ae3c3ecae28ecdd32295c",
+      "executionSha256": "ccb37a4c3cff1f14fbe25ebedb39c4edc1a5051e106ae3c3ecae28ecdd32295c",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.26
+    },
+    {
+      "ordinal": 6,
+      "name": "20260617000004_2189_provider_order_fulfilment_receipts.sql",
+      "sourceSha256": "a57a96b62de4369230d1f9eae220826c2743536498b083ca138644e62b7f4003",
+      "executionSha256": "a57a96b62de4369230d1f9eae220826c2743536498b083ca138644e62b7f4003",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.287
+    },
+    {
+      "ordinal": 7,
+      "name": "20260618000001_2223_advanced_entitlement_fail_closed.sql",
+      "sourceSha256": "094e3cafee3b0cf7c39c0d19e909b81d7a9eaaadec266ff37df98337c160ac47",
+      "executionSha256": "094e3cafee3b0cf7c39c0d19e909b81d7a9eaaadec266ff37df98337c160ac47",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.394
+    },
+    {
+      "ordinal": 8,
+      "name": "20260618000002_2227_angel_durable_memory.sql",
+      "sourceSha256": "3abd321a6b42cb99327c8ffd470dc8400d0bde65b2e0d847d93cb60107b24a5b",
+      "executionSha256": "3abd321a6b42cb99327c8ffd470dc8400d0bde65b2e0d847d93cb60107b24a5b",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.768
+    },
+    {
+      "ordinal": 9,
+      "name": "20260621000001_2360_audit_account_messages.sql",
+      "sourceSha256": "9c0a9a8e8fc59b096dbc7c637fdf03a5f962675b0f787eeebd9f4f2f9110fd1c",
+      "executionSha256": "9c0a9a8e8fc59b096dbc7c637fdf03a5f962675b0f787eeebd9f4f2f9110fd1c",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.245
+    },
+    {
+      "ordinal": 10,
+      "name": "20260621000002_2366_durable_payment_evidence_store.sql",
+      "sourceSha256": "b90949c221c59f8674752035f2be631262319e1b3bf881c2a6e99ba26316ffa9",
+      "executionSha256": "b90949c221c59f8674752035f2be631262319e1b3bf881c2a6e99ba26316ffa9",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.67
+    },
+    {
+      "ordinal": 11,
+      "name": "20260621000003_2375_route_health_ping_ledger.sql",
+      "sourceSha256": "3565ae62e96fed30517880acd926484a56840ae06f563884f7bf061d32b40331",
+      "executionSha256": "3565ae62e96fed30517880acd926484a56840ae06f563884f7bf061d32b40331",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.217
+    },
+    {
+      "ordinal": 12,
+      "name": "20260621000004_2377_delivery_receipt_ledger.sql",
+      "sourceSha256": "3b32c87eab1ccc01626964876e0b21a88b480e8119df22fa24d48699ea3cb04b",
+      "executionSha256": "3b32c87eab1ccc01626964876e0b21a88b480e8119df22fa24d48699ea3cb04b",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.774
+    },
+    {
+      "ordinal": 13,
+      "name": "20260621000005_2381_support_handoff_event_ledger.sql",
+      "sourceSha256": "6939eddb1346c1197a95451026cd625c36039719755a9dd71dafef30f9a80fa6",
+      "executionSha256": "6939eddb1346c1197a95451026cd625c36039719755a9dd71dafef30f9a80fa6",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.985
+    },
+    {
+      "ordinal": 14,
+      "name": "20260624000001_2624_audit_account_delivery_production_lock.sql",
+      "sourceSha256": "b18b36ec353383ee650f59f55c5d78fdaab5cfbd51870ba2bc350b36720b06b4",
+      "executionSha256": "b18b36ec353383ee650f59f55c5d78fdaab5cfbd51870ba2bc350b36720b06b4",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.69
+    },
+    {
+      "ordinal": 15,
+      "name": "20260624000002_2628_release_evidence_board_rls_insert_only.sql",
+      "sourceSha256": "2aae08e40cdb8912ef245eb5240c9aaf5e45adedd502c86869bc89abbff9125d",
+      "executionSha256": "2aae08e40cdb8912ef245eb5240c9aaf5e45adedd502c86869bc89abbff9125d",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 10.019
+    },
+    {
+      "ordinal": 16,
+      "name": "20260624000003_2637_release_board_public_receipt_view_live_rls.sql",
+      "sourceSha256": "76443334d220df960ffa11681f51ee950af93b85562545f51d065633e31c0498",
+      "executionSha256": "76443334d220df960ffa11681f51ee950af93b85562545f51d065633e31c0498",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.745
+    },
+    {
+      "ordinal": 17,
+      "name": "20260624000004_2645_safe_pdf_download_token_consumption_ledger_rls.sql",
+      "sourceSha256": "d9232e9e02bdb9065e9ac80e2146d51fc35809f2682a16178f3f8983f4e40757",
+      "executionSha256": "d9232e9e02bdb9065e9ac80e2146d51fc35809f2682a16178f3f8983f4e40757",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.861
+    },
+    {
+      "ordinal": 18,
+      "name": "20260625000001_2649_entitlement_revocation_ledger_adapter_rls.sql",
+      "sourceSha256": "671b05c4b6754d96bc7b751e3f082f2bacb647839a961b439411e0e0fe6a265a",
+      "executionSha256": "671b05c4b6754d96bc7b751e3f082f2bacb647839a961b439411e0e0fe6a265a",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.647
+    },
+    {
+      "ordinal": 19,
+      "name": "20260704000001_4435_audit_watch_receipts_rls_write_executor_contract.sql",
+      "sourceSha256": "601c08be7be0a148dd5fa598adce96edcc0d891bcec8447c6bf96687ef41ff79",
+      "executionSha256": "601c08be7be0a148dd5fa598adce96edcc0d891bcec8447c6bf96687ef41ff79",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.769
+    },
+    {
+      "ordinal": 20,
+      "name": "20260707000001_4611_audit_intake_case_vault.sql",
+      "sourceSha256": "7fe503061e2dba7769ba2e707aa1513e2afd7ad97305a67b533085d24176bbb2",
+      "executionSha256": "7fe503061e2dba7769ba2e707aa1513e2afd7ad97305a67b533085d24176bbb2",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.732
+    },
+    {
+      "ordinal": 21,
+      "name": "20260707000002_4612_audit_checkout_case_entitlement_binding.sql",
+      "sourceSha256": "336aef2f43f6ac2a0df2ef984ad5a14a4689e93aa95f067d2ddcf70cab3eebbf",
+      "executionSha256": "336aef2f43f6ac2a0df2ef984ad5a14a4689e93aa95f067d2ddcf70cab3eebbf",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.417
+    },
+    {
+      "ordinal": 22,
+      "name": "20260707000003_4613_audit_status_payment_terminal_events.sql",
+      "sourceSha256": "bbf2244b43c06fa572004aa5c569fb6e09f4c354a41fed3f8d00eefe0825b4b8",
+      "executionSha256": "bbf2244b43c06fa572004aa5c569fb6e09f4c354a41fed3f8d00eefe0825b4b8",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.529
+    },
+    {
+      "ordinal": 23,
+      "name": "20260707000004_4615_audit_customer_safe_status_history.sql",
+      "sourceSha256": "cc8e1aea64e72c0d0096490b16ad8422843c069eb368ee9e1b6d280b2fc41210",
+      "executionSha256": "cc8e1aea64e72c0d0096490b16ad8422843c069eb368ee9e1b6d280b2fc41210",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.57
+    },
+    {
+      "ordinal": 24,
+      "name": "20260707000005_4616_audit_review_assignment_sla_worker_lease.sql",
+      "sourceSha256": "6705b5d377255d2f48bb9b1b548249387495ca4d00694a85ba8a32e93e00047e",
+      "executionSha256": "6705b5d377255d2f48bb9b1b548249387495ca4d00694a85ba8a32e93e00047e",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.466
+    },
+    {
+      "ordinal": 25,
+      "name": "20260708000001_pass4645_provider_evidence_ledgers.sql",
+      "sourceSha256": "aaf844a4a82d6c6f6664178c67f8fa3a2ed38a0585db2dae60ba621af89a97ab",
+      "executionSha256": "aaf844a4a82d6c6f6664178c67f8fa3a2ed38a0585db2dae60ba621af89a97ab",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.66
+    },
+    {
+      "ordinal": 26,
+      "name": "20260708000002_pass4653_provider_evidence_snapshots.sql",
+      "sourceSha256": "bdacd160337162edd87045798ddc7d47542ee18c0fdae7b96e3dc760b74bcdc4",
+      "executionSha256": "bdacd160337162edd87045798ddc7d47542ee18c0fdae7b96e3dc760b74bcdc4",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.076
+    },
+    {
+      "ordinal": 27,
+      "name": "20260708000003_pass4654_atomic_refresh_leases.sql",
+      "sourceSha256": "0ed53b641b1a180d0c94fddc8290ea8493a295dbca311a3d29e3e9cd0e2431db",
+      "executionSha256": "0ed53b641b1a180d0c94fddc8290ea8493a295dbca311a3d29e3e9cd0e2431db",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.042
+    },
+    {
+      "ordinal": 28,
+      "name": "20260708000004_pass4656_provider_health_snapshots.sql",
+      "sourceSha256": "d456514fe31a85b9a6968398b4b838dc5e012dd30b227c63b03b84deb7bd9de8",
+      "executionSha256": "d456514fe31a85b9a6968398b4b838dc5e012dd30b227c63b03b84deb7bd9de8",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.56
+    },
+    {
+      "ordinal": 29,
+      "name": "20260709000001_4657_audit_pdf_token_consumption.sql",
+      "sourceSha256": "ed66f023ed0119d3466cdf45c60cb021050c707d5f3511d288c3487bf371134a",
+      "executionSha256": "ed66f023ed0119d3466cdf45c60cb021050c707d5f3511d288c3487bf371134a",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.039
+    },
+    {
+      "ordinal": 30,
+      "name": "20260709000002_4657_stripe_webhook_atomic_ordering.sql",
+      "sourceSha256": "c7d95ab448904fe7295fe5106e95935255d1646b75b07a200c2d21620ce19fc7",
+      "executionSha256": "c7d95ab448904fe7295fe5106e95935255d1646b75b07a200c2d21620ce19fc7",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.574
+    },
+    {
+      "ordinal": 31,
+      "name": "20260709000003_4658_audit_pdf_token_lifecycle.sql",
+      "sourceSha256": "362198fbc8f6ff60775d6ea9581680e0c6f2b9de0d77b9ba8579550209eac711",
+      "executionSha256": "362198fbc8f6ff60775d6ea9581680e0c6f2b9de0d77b9ba8579550209eac711",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.357
+    },
+    {
+      "ordinal": 32,
+      "name": "20260709000004_pass4656_provider_health_observations.sql",
+      "sourceSha256": "c77fe997e7824e982b11ed48f84e782c45cd0d7417727bdefb8fc26fb927016d",
+      "executionSha256": "c77fe997e7824e982b11ed48f84e782c45cd0d7417727bdefb8fc26fb927016d",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.426
+    },
+    {
+      "ordinal": 33,
+      "name": "20260711000001_4699_stripe_webhook_effect_ledger.sql",
+      "sourceSha256": "5301ae51cf5745ffbaceb214fc6ddf020af3e1855a2b9119c0b0e03ef2f549de",
+      "executionSha256": "5301ae51cf5745ffbaceb214fc6ddf020af3e1855a2b9119c0b0e03ef2f549de",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.634
+    },
+    {
+      "ordinal": 34,
+      "name": "20260711000002_4700_stripe_webhook_effect_reconciler.sql",
+      "sourceSha256": "5cf778a6de4731342150192678f0ddc3ac35905b7ee7993841f8d12adf017adc",
+      "executionSha256": "5cf778a6de4731342150192678f0ddc3ac35905b7ee7993841f8d12adf017adc",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 0.6
+    },
+    {
+      "ordinal": 35,
+      "name": "20260711000003_4703_stripe_webhook_worker_dead_letter.sql",
+      "sourceSha256": "f9c0dcd955cc4195e6c9ad9209957adf8e4b3f63ab50c8dc28ebf79cb62584d3",
+      "executionSha256": "f9c0dcd955cc4195e6c9ad9209957adf8e4b3f63ab50c8dc28ebf79cb62584d3",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.798
+    },
+    {
+      "ordinal": 36,
+      "name": "20260711000004_4704_printful_fulfilment_incident_hardening.sql",
+      "sourceSha256": "9e0c4ca4b785e5d12e55f3a0a430e41ab98a62063624ab99cac2f7e8328c46f6",
+      "executionSha256": "9e0c4ca4b785e5d12e55f3a0a430e41ab98a62063624ab99cac2f7e8328c46f6",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 0.903
+    },
+    {
+      "ordinal": 37,
+      "name": "20260711000005_4707_fulfilment_incident_resolution_outbox.sql",
+      "sourceSha256": "7d6733f4c15cace85127db0a4be01dc466c0fcf0b8c63bc8df1b71c55ff8a8cc",
+      "executionSha256": "7d6733f4c15cace85127db0a4be01dc466c0fcf0b8c63bc8df1b71c55ff8a8cc",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.301
+    },
+    {
+      "ordinal": 38,
+      "name": "20260712000001_4708_fulfilment_outbox_worker_rls_evidence.sql",
+      "sourceSha256": "fed7e0e00673b04cabbb8811c9730691af3efc8f5e24343c887570933c520ba9",
+      "executionSha256": "fed7e0e00673b04cabbb8811c9730691af3efc8f5e24343c887570933c520ba9",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.475
+    },
+    {
+      "ordinal": 39,
+      "name": "20260712000002_4709_fulfilment_recovery_subject_binding.sql",
+      "sourceSha256": "f9533b0cc6bbb79d24698874fa76cbd69de7326b33befad2aeac17ebfee55549",
+      "executionSha256": "f9533b0cc6bbb79d24698874fa76cbd69de7326b33befad2aeac17ebfee55549",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.13
+    },
+    {
+      "ordinal": 40,
+      "name": "20260712000003_4711_continuous_fulfilment_provider_sync.sql",
+      "sourceSha256": "cc3f2743f5aef71e69b41b83e2cdd57f3552200ab451ae57c656b30c7e20a2d4",
+      "executionSha256": "cc3f2743f5aef71e69b41b83e2cdd57f3552200ab451ae57c656b30c7e20a2d4",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.822
+    },
+    {
+      "ordinal": 41,
+      "name": "20260712000004_4716_profile_square_user_rls.sql",
+      "sourceSha256": "27f1fc3a2bd0f58f26ec2aa0030e5c5349da0de0874548afaa262f7ca5788dcb",
+      "executionSha256": "27f1fc3a2bd0f58f26ec2aa0030e5c5349da0de0874548afaa262f7ca5788dcb",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.34
+    },
+    {
+      "ordinal": 42,
+      "name": "20260712000005_4717_auth_cookie_owner_read_policy.sql",
+      "sourceSha256": "7b5329b1c3a570b8212f6222243b9331b54986d0c72fbbe10c38ceabd53215f7",
+      "executionSha256": "7b5329b1c3a570b8212f6222243b9331b54986d0c72fbbe10c38ceabd53215f7",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 0.899
+    },
+    {
+      "ordinal": 43,
+      "name": "20260712000006_4718_auth_flow_staging_contract.sql",
+      "sourceSha256": "bad80aa3dfbce88fcae7940b6287b5bc94c77f916cb7c59b02b8bb3c316d1668",
+      "executionSha256": "bad80aa3dfbce88fcae7940b6287b5bc94c77f916cb7c59b02b8bb3c316d1668",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.211
+    },
+    {
+      "ordinal": 44,
+      "name": "20260712000007_4719_auth_session_family_alert_pipeline.sql",
+      "sourceSha256": "04680263718fe087d696799ed072791ea32ad69a6d791eb68ac22e112d92a1e0",
+      "executionSha256": "04680263718fe087d696799ed072791ea32ad69a6d791eb68ac22e112d92a1e0",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.799
+    },
+    {
+      "ordinal": 45,
+      "name": "20260713000001_4741_durable_computation_replay.sql",
+      "sourceSha256": "ae36c530fce5a595e0aabff2863bab3bfc58c52e361f42ad24d5aee9d14f5309",
+      "executionSha256": "ae36c530fce5a595e0aabff2863bab3bfc58c52e361f42ad24d5aee9d14f5309",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.876
+    },
+    {
+      "ordinal": 46,
+      "name": "20260713000002_4743_durable_computation_operations.sql",
+      "sourceSha256": "f3a61096a3f9e708fe13612fee77758fb0892a285971a20daad8a363b9f2c38f",
+      "executionSha256": "14eb4c94412fbdecf9abdd5d6ca6a1a81a91324ec92cc0b17ef1096059e1babd",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.472
+    },
+    {
+      "ordinal": 47,
+      "name": "20260713000003_4745_durable_computation_sealed_worker.sql",
+      "sourceSha256": "170c8703303d5d891844e449b90fcb3110ab497d7e9d40558bdf99e1cd8751ba",
+      "executionSha256": "170c8703303d5d891844e449b90fcb3110ab497d7e9d40558bdf99e1cd8751ba",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.254
+    },
+    {
+      "ordinal": 48,
+      "name": "20260713000004_4746_durable_computation_all_kind_worker.sql",
+      "sourceSha256": "25558019210c484ea339c9b8eb4af8fe6aac328bd6c6f728faee7c0cdb635899",
+      "executionSha256": "25558019210c484ea339c9b8eb4af8fe6aac328bd6c6f728faee7c0cdb635899",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.136
+    },
+    {
+      "ordinal": 49,
+      "name": "20260713000005_4747_durable_computation_strict_ownership.sql",
+      "sourceSha256": "452895bf5eb89e08244a9246d2f1297afb7cfc260c3653960218dc99e7c8436b",
+      "executionSha256": "452895bf5eb89e08244a9246d2f1297afb7cfc260c3653960218dc99e7c8436b",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.534
+    },
+    {
+      "ordinal": 50,
+      "name": "20260713000006_4748_durable_computation_budgeted_admission.sql",
+      "sourceSha256": "64a5b417d4b7af7a7c2ecde32aa4ddc3dbadbf21a09714afb89cb7aa34212937",
+      "executionSha256": "64a5b417d4b7af7a7c2ecde32aa4ddc3dbadbf21a09714afb89cb7aa34212937",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.142
+    },
+    {
+      "ordinal": 51,
+      "name": "20260713000007_4749_durable_computation_cycle_receipts.sql",
+      "sourceSha256": "9f96ed1f824e235d1d184a676f343329f2cfb03391caca68ea35232e6721206b",
+      "executionSha256": "9f96ed1f824e235d1d184a676f343329f2cfb03391caca68ea35232e6721206b",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.523
+    },
+    {
+      "ordinal": 52,
+      "name": "20260713000008_4750_durable_computation_staging_probe_alert_outbox.sql",
+      "sourceSha256": "518045e797251788392894e36656314a464c4ea445ce41b74eda944f4e3d95a9",
+      "executionSha256": "9f8ac554bd493ff3da3ea93139a02cb906ddb1100f515c0aaeed94443bc7ef06",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.006
+    },
+    {
+      "ordinal": 53,
+      "name": "20260713000009_4751_durable_computation_promotion_ledger_reconciliation.sql",
+      "sourceSha256": "c8955ebe43ad7760ecd666b7983c13a3b8c07404e126c96def06a69e538d20ef",
+      "executionSha256": "3713d59f4c7643f8d0ae55e3ac357a83c280c7abc95df3be1ce37302919b22f2",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.719
+    },
+    {
+      "ordinal": 54,
+      "name": "20260713000010_4752_vlm_paid_entitlement_lifecycle.sql",
+      "sourceSha256": "8f3cce0bbc369b657546da36b3fca8de029dbd2d76071b06600bfe6ada77ee6e",
+      "executionSha256": "8f3cce0bbc369b657546da36b3fca8de029dbd2d76071b06600bfe6ada77ee6e",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.837
+    },
+    {
+      "ordinal": 55,
+      "name": "20260713000011_4756_provider_observation_ledger.sql",
+      "sourceSha256": "0d4394a0343c522fdc1dbf6a71d9aad59bc5b0d5d6fb608d7c7b20f22f8a8265",
+      "executionSha256": "0d4394a0343c522fdc1dbf6a71d9aad59bc5b0d5d6fb608d7c7b20f22f8a8265",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.71
+    },
+    {
+      "ordinal": 56,
+      "name": "20260713000012_4757_provider_observation_operations_alert_reconciliation.sql",
+      "sourceSha256": "a4cbbf1e0fb21193c94651aa7803dc22b83e04d79c6031c12a271c1379d659ae",
+      "executionSha256": "a4cbbf1e0fb21193c94651aa7803dc22b83e04d79c6031c12a271c1379d659ae",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.079
+    },
+    {
+      "ordinal": 57,
+      "name": "20260713000013_4758_provider_quality_promotion_quarantine.sql",
+      "sourceSha256": "a1355ee1ba8364462fa4373369c25c016b64e390c0a5c547586d77a7c3528397",
+      "executionSha256": "c4a329f8e55d131ec582af4ca21e31d14e555f624abb7e048b0751ea361fcf0b",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.884
+    },
+    {
+      "ordinal": 58,
+      "name": "20260713000014_4759_provider_quality_incident_release_hold.sql",
+      "sourceSha256": "79513e0cefd4e7e6a7020c82f07a49eb3ff0af548e737f7f8557f4ced8c59f81",
+      "executionSha256": "79513e0cefd4e7e6a7020c82f07a49eb3ff0af548e737f7f8557f4ced8c59f81",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.134
+    },
+    {
+      "ordinal": 59,
+      "name": "20260713000015_4760_provider_quality_signed_auto_rollback_verification.sql",
+      "sourceSha256": "f9db9933ec8e2be06788eb85f68efccc599da67109a7da3bc14cf9e83ae3cfb9",
+      "executionSha256": "d9ae7dc94bdaee4b79d11a6484e5f5b97182e8e68f904b9d4b32715ad4f63d39",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.935
+    },
+    {
+      "ordinal": 60,
+      "name": "20260713000016_4761_provider_quality_recovery_proof_repromotion.sql",
+      "sourceSha256": "c03729d40db6ade8a859eb2dbaaf0e3bc1f17ad55d61b6d8886a3347136c1229",
+      "executionSha256": "8bb90686ca0a1861f88d91461d4740fd05649918a669b0d43f2a4c7c466ebdc7",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.481
+    },
+    {
+      "ordinal": 61,
+      "name": "20260713000017_4762_provider_recovery_smoke_receipt_ledger.sql",
+      "sourceSha256": "611b376dc5fa2baec702f96a6a756b7c1c00c037ff6aceac04141db9b596b801",
+      "executionSha256": "611b376dc5fa2baec702f96a6a756b7c1c00c037ff6aceac04141db9b596b801",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.389
+    },
+    {
+      "ordinal": 62,
+      "name": "20260713000018_4763_provider_recovery_release_certificate.sql",
+      "sourceSha256": "b3da8558b58b579fcf5a09bd456a7ca690e5dff668a10d79b62fdc67fe99b55f",
+      "executionSha256": "c7dad958b46faeddc50244ae52e70230cf18320b51c352f1456f8763203892d1",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.035
+    },
+    {
+      "ordinal": 63,
+      "name": "20260713000019_4764_provider_recovery_release_bundle.sql",
+      "sourceSha256": "e7d237244773b645c55eecf80dd725415be391bde149164914b5750f28e5c496",
+      "executionSha256": "c30b55c7ed0163af905c7ebbd4b431d90e7a47a3cc7236e6ade2571aec2f6f1b",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.873
+    },
+    {
+      "ordinal": 64,
+      "name": "20260713000020_4765_release_candidate_attestation.sql",
+      "sourceSha256": "8d9f18142b2cb0e8b1c02bcc4683016f1f24b4ec5cb02675a8c6e43bc5be5666",
+      "executionSha256": "7d868a5a7af56ef67d48c0ada7cd1657411eb858b2a4d6a9940e9b9a47849ae9",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.48
+    },
+    {
+      "ordinal": 65,
+      "name": "20260713000021_4766_release_provenance_index_multisigner.sql",
+      "sourceSha256": "aa7f43e08e0570fe056ea0e7af29736bda984fee62ff4fa975d52b2f1557d910",
+      "executionSha256": "8b884e7a0d5f30c0aaa964d3a110943c8dc2e9e6cd3e5bbacc22c2822fb7da58",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.055
+    },
+    {
+      "ordinal": 66,
+      "name": "20260713000022_4767_release_provenance_promotion_gate_public_feed.sql",
+      "sourceSha256": "4def41dd709ab173b037c64964c7d065d2745d1eecab9e851a7125612fbfc547",
+      "executionSha256": "8b5af7ff88ebc7393cc19181b233a568dc5de2ccac575155086a853567b06c99",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.053
+    },
+    {
+      "ordinal": 67,
+      "name": "20260713000023_4768_public_release_proof_packages.sql",
+      "sourceSha256": "8b2ec8e095ac81de6e6e36f19eca7ae6aa02bbeb6787abcb83403fc69ad14373",
+      "executionSha256": "fcf9e48f9653ee83dbaabdcd72836b1a105cd9c4b44441eb6b1695c3127a20a2",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.337
+    },
+    {
+      "ordinal": 68,
+      "name": "20260713000024_4769_release_trust_checkpoint_revocation_supersession.sql",
+      "sourceSha256": "80fc1dfd2b02ebcc27749fce537bd814a79899db34e7f3f020884f88720a0bff",
+      "executionSha256": "3793e7ca82d5502990747d1ae34842c36b9518eecb841d3fd24a3efa33628f51",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.786
+    },
+    {
+      "ordinal": 69,
+      "name": "20260713000025_4770_release_trust_consistency_emergency_rebootstrap.sql",
+      "sourceSha256": "a334dfe486cfc4ab7302d9067eb16c9c9ba27490a39d9ede1cbf01c71723bd71",
+      "executionSha256": "a334dfe486cfc4ab7302d9067eb16c9c9ba27490a39d9ede1cbf01c71723bd71",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 10.221
+    },
+    {
+      "ordinal": 70,
+      "name": "20260713000026_4771_release_transparency_log.sql",
+      "sourceSha256": "38f2dc3daeed1263f82e21106e1c60fbc5cdc6d86da00c1e76e4ba4a465385e0",
+      "executionSha256": "38f2dc3daeed1263f82e21106e1c60fbc5cdc6d86da00c1e76e4ba4a465385e0",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.197
+    },
+    {
+      "ordinal": 71,
+      "name": "20260713000027_4772_release_transparency_audit_checkpoints.sql",
+      "sourceSha256": "8073093e2323b0334f8a95624509b358f52abc2f180ec927498be90116f4eb81",
+      "executionSha256": "8073093e2323b0334f8a95624509b358f52abc2f180ec927498be90116f4eb81",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.804
+    },
+    {
+      "ordinal": 72,
+      "name": "20260713000028_4773_release_transparency_witness_quorum_split_view.sql",
+      "sourceSha256": "89c1c83c04d9f9c395ddc429713672f4c8f48636be8e12d218efb5fa1949041a",
+      "executionSha256": "89c1c83c04d9f9c395ddc429713672f4c8f48636be8e12d218efb5fa1949041a",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.607
+    },
+    {
+      "ordinal": 73,
+      "name": "20260713000029_4774_witness_bound_promotion_atomic_consume.sql",
+      "sourceSha256": "8cbcbf03f78c42cc52da28dde24c155941800a335911f7a73a0e0dd97dbdd543",
+      "executionSha256": "6456554a2e76dc3270c5e677a43685bc31c269f8a2b2480c40c565d22f1586ef",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.779
+    },
+    {
+      "ordinal": 74,
+      "name": "20260713000030_4775_witness_health_suspension_rollback.sql",
+      "sourceSha256": "93e1203e699253209ef5fb0e7ccd8ffbe9aee2e43ad4e810625715e136bc97eb",
+      "executionSha256": "93e1203e699253209ef5fb0e7ccd8ffbe9aee2e43ad4e810625715e136bc97eb",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 11.722
+    },
+    {
+      "ordinal": 75,
+      "name": "20260713000031_4776_witness_health_signed_recovery_unsuspend.sql",
+      "sourceSha256": "e91cdaea76b257f5fe9402d83287a2749406e90c33a5df2b7bd3b245207012a7",
+      "executionSha256": "26c611e13172b79f92b2c1685c77730469247ef54bc9f9a024f52c7f1d2a23af",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 7.932
+    },
+    {
+      "ordinal": 76,
+      "name": "20260713000032_4777_witness_rollback_resolution_reactivation.sql",
+      "sourceSha256": "7951fc7e54f4537167f520999a10ae63dfeeed445101ab78640f56b424119cef",
+      "executionSha256": "68b209b56ab41b47103a809f935a11c45e41b7d5ecc1cfd0cceec4ad6637e66a",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.626
+    },
+    {
+      "ordinal": 77,
+      "name": "20260715000001_4802_provider_reliability_shared_state.sql",
+      "sourceSha256": "5d61f16dec576bcf23d34eb32973237787ce18a653c196e978b571ca48fb20f4",
+      "executionSha256": "5d61f16dec576bcf23d34eb32973237787ce18a653c196e978b571ca48fb20f4",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.691
+    },
+    {
+      "ordinal": 78,
+      "name": "20260715000002_4803_paid_audit_release_orchestration.sql",
+      "sourceSha256": "2f65de1d117ebd84e8739688c35afb67e5b712163e9f4d2702c4c7dc4211380e",
+      "executionSha256": "2f65de1d117ebd84e8739688c35afb67e5b712163e9f4d2702c4c7dc4211380e",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.306
+    },
+    {
+      "ordinal": 79,
+      "name": "20260715000003_4803_stripe_entitlement_revocation_race_safety.sql",
+      "sourceSha256": "fcd30beb1d481a86280eda4b1c4dfc943e0e4addde2c0c343239e5b9f5dabb77",
+      "executionSha256": "fcd30beb1d481a86280eda4b1c4dfc943e0e4addde2c0c343239e5b9f5dabb77",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.477
+    },
+    {
+      "ordinal": 80,
+      "name": "20260716000001_4806_audit_report_snapshot_delivery_gate.sql",
+      "sourceSha256": "0aa8eaf748a3c2dbf5b3d892be9ded58d16ba472b31748626fb02ca0b086bb0e",
+      "executionSha256": "0aa8eaf748a3c2dbf5b3d892be9ded58d16ba472b31748626fb02ca0b086bb0e",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.233
+    },
+    {
+      "ordinal": 81,
+      "name": "20260716000002_4807_audit_source_candidates_and_evidence_roots.sql",
+      "sourceSha256": "553fd0ec9af24348a39668449bd1aab32668b7b9bfc76c394c5fcd9ae6e82b35",
+      "executionSha256": "553fd0ec9af24348a39668449bd1aab32668b7b9bfc76c394c5fcd9ae6e82b35",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.693
+    },
+    {
+      "ordinal": 82,
+      "name": "20260716000003_4821_audit_account_canonical_customer_snapshot.sql",
+      "sourceSha256": "2ae051f8f3446c01a7ac4a427aa9ab72099bdd2f4446e5b175bde5bdd8afcae6",
+      "executionSha256": "2ae051f8f3446c01a7ac4a427aa9ab72099bdd2f4446e5b175bde5bdd8afcae6",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.764
+    },
+    {
+      "ordinal": 83,
+      "name": "20260716000004_4822_customer_artifact_snapshots.sql",
+      "sourceSha256": "7dd2041b57eceac53c308b9139b487a4b27e3832e1199561af2aa29fb06f9c98",
+      "executionSha256": "7dd2041b57eceac53c308b9139b487a4b27e3832e1199561af2aa29fb06f9c98",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.698
+    },
+    {
+      "ordinal": 84,
+      "name": "20260717000001_4823_customer_artifact_store_hardening.sql",
+      "sourceSha256": "b816d1dd33797846c118d8cd115ee254d3e838624610cc7cd0f390ae6dce5e65",
+      "executionSha256": "b816d1dd33797846c118d8cd115ee254d3e838624610cc7cd0f390ae6dce5e65",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.347
+    },
+    {
+      "ordinal": 85,
+      "name": "20260717000002_4823_payment_state_monotonicity.sql",
+      "sourceSha256": "88308f58d3cac2559a722ab84326c7b3f37de2b00a863a1857da2b05a69427c0",
+      "executionSha256": "88308f58d3cac2559a722ab84326c7b3f37de2b00a863a1857da2b05a69427c0",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.27
+    },
+    {
+      "ordinal": 86,
+      "name": "20260717000003_4824_account_session_central_revocation.sql",
+      "sourceSha256": "127cba23afab1d1a88ee1bfd6bd29ba9024e72763fe4be8ac2a08118228e26ec",
+      "executionSha256": "127cba23afab1d1a88ee1bfd6bd29ba9024e72763fe4be8ac2a08118228e26ec",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.105
+    },
+    {
+      "ordinal": 87,
+      "name": "20260717000004_4824_customer_artifact_exact_pdf_blobs.sql",
+      "sourceSha256": "40e73ce695deacd684a99cde67bd6915711ee38492678e1f8b3046acbb885716",
+      "executionSha256": "89a1bb3d62034571fd2614fe1409dd366ef731c6d84519381eae063e3f426864",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.9
+    },
+    {
+      "ordinal": 88,
+      "name": "20260717000005_4826_durable_market_lkg_snapshots.sql",
+      "sourceSha256": "68b371abb33d9266c828e5d9c5b8c23a4349afe38598e92b13f8e2686e02f5ad",
+      "executionSha256": "68b371abb33d9266c828e5d9c5b8c23a4349afe38598e92b13f8e2686e02f5ad",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.109
+    },
+    {
+      "ordinal": 89,
+      "name": "20260718000001_4990_commerce_payment_integrity.sql",
+      "sourceSha256": "cb12dd946dc0462d2f204d9daf56fe9d70596b31a6f7b33b692751b319221a66",
+      "executionSha256": "cb12dd946dc0462d2f204d9daf56fe9d70596b31a6f7b33b692751b319221a66",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.54
+    },
+    {
+      "ordinal": 90,
+      "name": "20260718000002_4991_operator_nonce_and_square_rls.sql",
+      "sourceSha256": "d8cc7da79ae2719944b88f90e4073aefcc58eb0c76f61c794b0421985baf3f2a",
+      "executionSha256": "d8cc7da79ae2719944b88f90e4073aefcc58eb0c76f61c794b0421985baf3f2a",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 3.395
+    },
+    {
+      "ordinal": 91,
+      "name": "20260718000003_4992_atomic_commerce_paid_fulfilment_outbox.sql",
+      "sourceSha256": "0ffbbb6e923e4c7df7fe935f410e80a8097d711424e69d32db215a8d82d9d1f4",
+      "executionSha256": "0ffbbb6e923e4c7df7fe935f410e80a8097d711424e69d32db215a8d82d9d1f4",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.899
+    },
+    {
+      "ordinal": 92,
+      "name": "20260718000004_4994_commerce_fulfilment_outbox_worker.sql",
+      "sourceSha256": "3f3b4a64a156bf6cdf73b86cea31d2ccdf674e900e86c262f45d0e7a044b32f1",
+      "executionSha256": "3f3b4a64a156bf6cdf73b86cea31d2ccdf674e900e86c262f45d0e7a044b32f1",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.254
+    },
+    {
+      "ordinal": 93,
+      "name": "20260720000001_5000_pass14_security_definer_trigger_acl.sql",
+      "sourceSha256": "f570f355851f2cf785b6f91af2ad65f137f08bb4113ce18349e88e89efb9a7da",
+      "executionSha256": "f570f355851f2cf785b6f91af2ad65f137f08bb4113ce18349e88e89efb9a7da",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.505
+    },
+    {
+      "ordinal": 94,
+      "name": "20260720000002_5001_worldclass_evaluation_registry.sql",
+      "sourceSha256": "9ac5fcbf0adeb489f42df67f9e22c0a9efacba0acdfaf680ee1e72c3afbfb162",
+      "executionSha256": "9ac5fcbf0adeb489f42df67f9e22c0a9efacba0acdfaf680ee1e72c3afbfb162",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.892
+    },
+    {
+      "ordinal": 95,
+      "name": "20260720000003_5002_worldclass_market_adapter_evidence.sql",
+      "sourceSha256": "88e0117c08dde6c85c4c5d2815fc0288a2da137d400caed2c6a32536a901bfc2",
+      "executionSha256": "88e0117c08dde6c85c4c5d2815fc0288a2da137d400caed2c6a32536a901bfc2",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.829
+    },
+    {
+      "ordinal": 96,
+      "name": "20260720000004_5003_worldclass_audit_lens_adapter_evidence.sql",
+      "sourceSha256": "01e1913b350ea973f498b5cb6a058825787ba7379d8bbbfcce92fd490f14c72f",
+      "executionSha256": "01e1913b350ea973f498b5cb6a058825787ba7379d8bbbfcce92fd490f14c72f",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.9
+    },
+    {
+      "ordinal": 97,
+      "name": "20260720000005_5004_worldclass_brain_angel_adapter_evidence.sql",
+      "sourceSha256": "f056c8413c7038415d60375f54e8deb8b1ea18a9e8764c2e4c10309277bc4722",
+      "executionSha256": "f056c8413c7038415d60375f54e8deb8b1ea18a9e8764c2e4c10309277bc4722",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.985
+    },
+    {
+      "ordinal": 98,
+      "name": "20260720000006_5005_worldclass_data_license_i18n_receipts.sql",
+      "sourceSha256": "a0993d30e70c5cb981c072039cd43be980969c503be0e94302f6ae3dd3fe256f",
+      "executionSha256": "a0993d30e70c5cb981c072039cd43be980969c503be0e94302f6ae3dd3fe256f",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.59
+    },
+    {
+      "ordinal": 99,
+      "name": "20260720000007_5006_pass21_provider_legal_rls_receipts.sql",
+      "sourceSha256": "5c544436098d33903e067fc8940800cca0fba616f0a0597f59827837de52b845",
+      "executionSha256": "5c544436098d33903e067fc8940800cca0fba616f0a0597f59827837de52b845",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 5.469
+    },
+    {
+      "ordinal": 100,
+      "name": "20260720000008_5007_pass22_owner_operator_rls_and_provider_evidence.sql",
+      "sourceSha256": "5cb51cdcf96a1e5277f4ca6a274d40c2cfd54fa124457d1ac0a04a1d947adb54",
+      "executionSha256": "117b499e5f68ee821a85312dd3bc84b61b0d8c836dc4da2c766046adf69bb4d7",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 13.556
+    },
+    {
+      "ordinal": 101,
+      "name": "20260720000009_5008_pass23_explicit_service_role_boundaries.sql",
+      "sourceSha256": "f1476177cf52189b5e6cae6cfdbc053d2f39f55c5c39509f5fc9fe4e9bcd0c87",
+      "executionSha256": "f1476177cf52189b5e6cae6cfdbc053d2f39f55c5c39509f5fc9fe4e9bcd0c87",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.272
+    },
+    {
+      "ordinal": 102,
+      "name": "20260728000001_a89_password_recovery_grant_ledger.sql",
+      "sourceSha256": "5b6063296da2acc8b8c7414e7859912ffd2f7587fa05dafc25b5f510e405f1f8",
+      "executionSha256": "5b6063296da2acc8b8c7414e7859912ffd2f7587fa05dafc25b5f510e405f1f8",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.659
+    },
+    {
+      "ordinal": 103,
+      "name": "20260729000001_a97r1_payment_operator_assertions.sql",
+      "sourceSha256": "aa08cf90ea65a4000f4f5894b0d73ae49c521fde7ad7c7b46599d50315a2dfb3",
+      "executionSha256": "aa08cf90ea65a4000f4f5894b0d73ae49c521fde7ad7c7b46599d50315a2dfb3",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.682
+    },
+    {
+      "ordinal": 104,
+      "name": "20260729000003_a102r2_salted_account_binding_rls.sql",
+      "sourceSha256": "3bbd7c905ff3f3dfe6dc8d618982931b6015c480f34fcc7013258e46d28d9acd",
+      "executionSha256": "3bbd7c905ff3f3dfe6dc8d618982931b6015c480f34fcc7013258e46d28d9acd",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.648
+    },
+    {
+      "ordinal": 105,
+      "name": "20260801000001_a102r41_entitlement_revocation_ledger_rls_fail_closed.sql",
+      "sourceSha256": "9418ff46c4f296465a8a157e04c0c29ec40c85fd07bffb3b0e2a28f169c015e6",
+      "executionSha256": "9418ff46c4f296465a8a157e04c0c29ec40c85fd07bffb3b0e2a28f169c015e6",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.596
+    },
+    {
+      "ordinal": 106,
+      "name": "20260804000002_a102r44p16_analysis_queue_sku_truth.sql",
+      "sourceSha256": "9279594bc7efa8e043634f87fb5fd230769eb660b4792c0c1c5f805f2892bcca",
+      "executionSha256": "9279594bc7efa8e043634f87fb5fd230769eb660b4792c0c1c5f805f2892bcca",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.402
+    },
+    {
+      "ordinal": 107,
+      "name": "20260813000001_p36_customer_artifact_pdf_limited_classic_xref_boundary.sql",
+      "sourceSha256": "10b2f3c5cb1c35d41523e41f6c77f7c1ed72bc700cc75f31cc59f895e8654504",
+      "executionSha256": "10b2f3c5cb1c35d41523e41f6c77f7c1ed72bc700cc75f31cc59f895e8654504",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 0.968
+    },
+    {
+      "ordinal": 108,
+      "name": "20260817000001_p75_advanced_audit_automation_runtime.sql",
+      "sourceSha256": "fa56abf0a1dc4d72794ea916e7569f06fe5b601865fee1cd23198737a1773cc2",
+      "executionSha256": "fa56abf0a1dc4d72794ea916e7569f06fe5b601865fee1cd23198737a1773cc2",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 4.63
+    },
+    {
+      "ordinal": 109,
+      "name": "20260820000001_p83_audit_exact_artifact_atomic_publication.sql",
+      "sourceSha256": "dfd35636097b834a8deaf72249817b59edbc4a2be38fbfa2fc99837e6c60f87b",
+      "executionSha256": "dfd35636097b834a8deaf72249817b59edbc4a2be38fbfa2fc99837e6c60f87b",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 16.299
+    },
+    {
+      "ordinal": 110,
+      "name": "20260820000002_p84_audit_customer_artifact_owner_read_path.sql",
+      "sourceSha256": "2a26411401d1143f4d0c94cbb7ab6867290ab340c7ff70470cd2f03ef3ee98f8",
+      "executionSha256": "2a26411401d1143f4d0c94cbb7ab6867290ab340c7ff70470cd2f03ef3ee98f8",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 9.529
+    },
+    {
+      "ordinal": 111,
+      "name": "20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql",
+      "sourceSha256": "e0dd448ef289a0468bb21de9dce07915288cc246aadc22a91b95a8420939f207",
+      "executionSha256": "e0dd448ef289a0468bb21de9dce07915288cc246aadc22a91b95a8420939f207",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.615
+    },
+    {
+      "ordinal": 112,
+      "name": "20260820000004_p86_customer_artifact_exact_pdf_new_write_gate.sql",
+      "sourceSha256": "1a1d32e23a029fde47b93f1ac383490baf5e440c6632c546dcdecdbc6bc4a861",
+      "executionSha256": "1a1d32e23a029fde47b93f1ac383490baf5e440c6632c546dcdecdbc6bc4a861",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 0.595
+    },
+    {
+      "ordinal": 113,
+      "name": "20260820000005_p88_audit_paid_exact_immutable_pdf_blob.sql",
+      "sourceSha256": "9a454fc0b9ff087ede557a467b4a40dd3aca16d588792f60ef0382c4da218d37",
+      "executionSha256": "9a454fc0b9ff087ede557a467b4a40dd3aca16d588792f60ef0382c4da218d37",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.12
+    },
+    {
+      "ordinal": 114,
+      "name": "20260820000006_p91_risk_history_event_driven_versioned_durable_truth.sql",
+      "sourceSha256": "9a056868f8d9cbc3b20ff55cfcc2e44e808698447a121a3ee3e1e0449a57ed06",
+      "executionSha256": "9a056868f8d9cbc3b20ff55cfcc2e44e808698447a121a3ee3e1e0449a57ed06",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 45.311
+    },
+    {
+      "ordinal": 115,
+      "name": "20260820000007_p93_risk_history_canonical_identity_public_resolution.sql",
+      "sourceSha256": "91ef43ebb78f4fcfce54da359e4201175c2d783f5f294f9b4ca032de262262eb",
+      "executionSha256": "91ef43ebb78f4fcfce54da359e4201175c2d783f5f294f9b4ca032de262262eb",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 2.092
+    },
+    {
+      "ordinal": 116,
+      "name": "20260821000001_p94_risk_history_public_only_pagination_temporal_window.sql",
+      "sourceSha256": "3228958a93dd5752a7bbbe9e2435b5c0564f41a31f121d284503f6145476c8d3",
+      "executionSha256": "3228958a93dd5752a7bbbe9e2435b5c0564f41a31f121d284503f6145476c8d3",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 1.272
+    },
+    {
+      "ordinal": 117,
+      "name": "20260821000002_current_audit_basic_worker_exact_artifact.sql",
+      "sourceSha256": "dbb49a53cf5c35f4e8bdfc4ab220b54bdda0b934883958c599c4058828fd8cff",
+      "executionSha256": "dbb49a53cf5c35f4e8bdfc4ab220b54bdda0b934883958c599c4058828fd8cff",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 10.65
+    },
+    {
+      "ordinal": 118,
+      "name": "20260821000003_v4_verify_continuous_publication_registry.sql",
+      "sourceSha256": "0e92da836e711dcebb189d9d9df0369d6abdfd2d5d0402016387af4e931c33e5",
+      "executionSha256": "476fc49ae2ce3aa139f9ca1e1c6af60d5f43d8128ff40d79658e68365928cbca",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 16.542
+    },
+    {
+      "ordinal": 119,
+      "name": "20260821000004_v4_account_data_export_same_blob_rls.sql",
+      "sourceSha256": "ff4cf5f79651598501e799ce5de2e340d2773594d6b847802e3c83474b6d88f8",
+      "executionSha256": "541e2b769e9fed6fa7d18ce6acc307be598bb6a34187a0a82eedc48fb0cab7b4",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 6.661
+    },
+    {
+      "ordinal": 120,
+      "name": "20260821000005_v4_audit_verify_initial_producer_bridge.sql",
+      "sourceSha256": "f55db85c003d45c4a8c218ffb18df204ee5954cfcea4ea96d50dca4e7dfbfe1d",
+      "executionSha256": "f55db85c003d45c4a8c218ffb18df204ee5954cfcea4ea96d50dca4e7dfbfe1d",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 9.217
+    },
+    {
+      "ordinal": 121,
+      "name": "20260821000006_v4_account_erasure_request_policy_gate.sql",
+      "sourceSha256": "196a7e7faaa9e1cd17450fb47e42729d49c76af19abddf26e95e08cd844c0277",
+      "executionSha256": "171eee8133200bb3b0f009e5301b10ca0bc3ef6d3b30e3cb136be30b516fc9b4",
+      "pgcryptoCompatibilityStatementCount": 1,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 8.568
+    },
+    {
+      "ordinal": 122,
+      "name": "20260821000007_v4_verify_continuous_monitor_worker.sql",
+      "sourceSha256": "a08b2cfc682c549bdcfc56344098ede2f8b22cb9fab1b44857d97374eedae81c",
+      "executionSha256": "a08b2cfc682c549bdcfc56344098ede2f8b22cb9fab1b44857d97374eedae81c",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "durationMs": 10.226
+    },
+    {
+      "ordinal": 123,
+      "name": "20260824000001_r7_browser_basic_staging_foundation.sql",
+      "sourceSha256": "9b7ad224f43b9b817d9270da6dd8b50257328564f912c4e5ed3d982139581cf7",
+      "executionSha256": "9b7ad224f43b9b817d9270da6dd8b50257328564f912c4e5ed3d982139581cf7",
+      "pgcryptoCompatibilityStatementCount": 0,
+      "status": "FAIL_PRESERVED",
+      "error": {
+        "name": "error",
+        "message": "extension \"pgcrypto\" is not available",
+        "code": "0A000",
+        "severity": "ERROR",
+        "detail": null,
+        "hint": "The extension must first be installed on the system where PostgreSQL is running.",
+        "position": null,
+        "file": "extension.c",
+        "line": "673",
+        "routine": "parse_extension_control_file"
+      },
+      "durationMs": 2.203
+    }
+  ],
+  "credits": {
+    "localSemanticsOnly": true,
+    "nativePostgreSQL": false,
+    "supabaseStaging": false,
+    "auth": false,
+    "storage": false,
+    "rlsMultiAccount": false,
+    "customerFinal": 0
+  },
+  "truthBoundary": "Fresh disposable PGlite PostgreSQL semantics with Supabase name/role and pgcrypto compatibility only. No in-memory source SQL repairs. This earns no native PostgreSQL, Supabase/Auth/Storage, RLS multi-account, staging or Customer FINAL credit."
+}

@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true,
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@supabase/supabase-js": [
+        "../VELMERE_PASS4825_CODE_ONLY_WORLDCLASS/node_modules/@supabase/supabase-js"
+      ],
+      "next/*": [
+        "../VELMERE_PASS4825_CODE_ONLY_WORLDCLASS/node_modules/next/*"
+      ]
+    }
+  },
+  "include": [
+    "lib/security/api-guard.ts",
+    "lib/security/client-request-idempotency.ts",
+    "lib/security/durable-idempotency-store.ts",
+    "lib/security/idempotency-replay-response.ts",
+    "lib/security/production-env-contract.ts",
+    "lib/security/write-api-rate-limit.ts",
+    "lib/market-integrity/liquidation-replay-store.ts",
+    "scripts/security-hardening/test-idempotency-outcome-replay.ts",
+    "scripts/security-hardening/test-production-security-db-hardening.ts"
+  ],
+  "exclude": ["node_modules"]
+}

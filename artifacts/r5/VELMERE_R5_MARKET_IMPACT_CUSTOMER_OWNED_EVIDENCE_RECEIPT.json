@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "velmere.r5.market-impact-customer-owned-evidence-execution-receipt.v1",
+  "generatedAt": "2026-08-23T02:18:24Z",
+  "status": "PASS_BOUNDED",
+  "test": {
+    "file": "scripts/current-execution/test-customer-owned-market-impact-attested-route.mts",
+    "command": [
+      "/opt/nvm/versions/node/v22.16.0/bin/node",
+      "--import",
+      "./scripts/pass11/register-offline-ts-loader.mjs",
+      "scripts/current-execution/test-customer-owned-market-impact-attested-route.mts"
+    ],
+    "exitCode": 0,
+    "classification": "PASS",
+    "stdoutSha256": "a941bf3ea045e4b1cac0a3cc30d10cb0278ea32c84575d88a9d6642849365f9d",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdoutTail": "{\n  \"status\": \"PASS_CUSTOMER_OWNED_MARKET_IMPACT_ATTESTED_ROUTE\",\n  \"successfulCustomerFlow\": true,\n  \"accountBound\": true,\n  \"snapshotBound\": true,\n  \"signatureBound\": true,\n  \"forcedStagingStatus\": true,\n  \"riskScoreWithheld\": true,\n  \"publicRedistributionDenied\": true,\n  \"crossAccountReplayDenied\": true,\n  \"snapshotTamperDenied\": true,\n  \"signatureTamperDenied\": true,\n  \"expiredReceiptDenied\": true,\n  \"liveClaimed\": false,\n  \"networkCalls\": 0,\n  \"customerFinalPromoted\": false\n}\n",
+    "stderrTail": ""
+  },
+  "staticBoundary": {
+    "status": "PASS_BOUNDED",
+    "checkCount": 21,
+    "failureCount": 0,
+    "receipt": "artifacts/r5/VELMERE_R5_CUSTOMER_OWNED_MARKET_EVIDENCE_BOUNDARY.json"
+  },
+  "proved": [
+    "real account/session required for attestation and analysis",
+    "HMAC-SHA256 receipt is account-bound, asset-bound, snapshot-bound and short-lived",
+    "customer snapshots are forced to verified_staging and cannot claim live",
+    "public display and redistribution rights remain false",
+    "cross-account replay, snapshot tampering, signature tampering, wrong asset and expiration are rejected",
+    "provider network calls remain zero in the customer-owned path",
+    "risk score and Customer FINAL remain withheld",
+    "provider-owned paths retain their existing fail-closed preflights",
+    "customer-declared source families do not become independently verified quorum"
+  ],
+  "notProved": [
+    "authorized deployed staging",
+    "durable receipt persistence/readback/restore",
+    "independent legal rights review",
+    "independent market-source quorum",
+    "live/current market data",
+    "impact-model calibration or real customer outcome quality",
+    "exact Windows/final-byte engineering",
+    "row-level Customer FINAL"
+  ],
+  "customerFinalCredit": false,
+  "truthBoundary": "This proves the current-source separation and adversarial local behavior of a short-lived account/asset/snapshot-bound customer-owned evidence receipt. It does not prove staging deployment, durable receipt/readback/replay storage, independent legal rights, independent market-source quorum, live data, calibrated impact, exact Windows or Customer FINAL."
+}

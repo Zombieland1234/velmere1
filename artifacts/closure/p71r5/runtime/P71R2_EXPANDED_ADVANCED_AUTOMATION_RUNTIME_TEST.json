@@ -1,0 +1,337 @@
+{
+  "schemaVersion": "velmere.p71r4.expanded-advanced-automation-runtime.v1",
+  "status": "PASS",
+  "checkCount": 22,
+  "checks": [
+    {
+      "id": "quorum:optional-human-lane-present-for-legacy-schema",
+      "passed": true
+    },
+    {
+      "id": "quorum:optional-human-lane-not-run-zero-confidence",
+      "passed": true,
+      "detail": {
+        "id": "manual-human-review",
+        "label": "Optional internal QA — not a product requirement",
+        "family": "Optional internal QA only; zero customer feature credit",
+        "tier": [
+          "advanced"
+        ],
+        "state": "not_run",
+        "confidence": 0,
+        "basicValue": "not part of Basic",
+        "proValue": "not part of Pro",
+        "advancedValue": "not required in Advanced; absence of QA never blocks automated analysis",
+        "evidence": [
+          "Optional internal QA is outside the product contract and has zero customer feature credit."
+        ],
+        "missing": [],
+        "claimRule": "No current SKU may claim manual QA, human review or operator sign-off; optional internal QA has zero customer feature credit."
+      }
+    },
+    {
+      "id": "quorum:manual-lane-absence-not-missing",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "id": "quorum:optional-human-excluded-from-denominator",
+      "passed": true,
+      "detail": {
+        "overall": {
+          "riskLabel": "Unknown",
+          "riskScore": null,
+          "reviewPriorityScore": 25,
+          "confidenceCap": 37,
+          "confirmedSources": 0,
+          "partialSources": 5,
+          "missingSources": 2,
+          "notRunSources": 1,
+          "blockedSources": 0
+        },
+        "counted": {
+          "confirmed": 0,
+          "partial": 5,
+          "missing": 2,
+          "notRun": 1,
+          "blocked": 0
+        }
+      }
+    },
+    {
+      "id": "quorum:advanced-product-rule-automated",
+      "passed": true,
+      "detail": "Basic provides a bounded automated result; Pro deepens automated evidence and PDF; Advanced remains NOT_FOR_SALE with the deepest automated evidence/cross-check/retest and no mandatory human."
+    },
+    {
+      "id": "spine:human-is-optional-internal-qa",
+      "passed": true,
+      "detail": {
+        "id": "manual-human-review",
+        "label": "Optional internal QA — not a product requirement",
+        "tier": [
+          "advanced"
+        ],
+        "status": "optional_internal_qa",
+        "sourceFamily": "Optional internal QA only; zero customer feature credit",
+        "adapterTarget": "non-blocking internal quality observation only; never a customer entitlement, release gate or delivery prerequisite",
+        "basicOutput": "No human review included",
+        "proOutput": "No human review included",
+        "advancedOutput": "NOT_FOR_SALE — Advanced remains automated; optional QA never blocks the result",
+        "claimRule": "No current SKU may claim manual QA, human review or operator sign-off; optional internal QA has zero customer feature credit.",
+        "missingRule": "Do not treat absence of optional human QA as missing product evidence or reduce product confidence because of it.",
+        "noGo": [
+          "no fake analyst note",
+          "no human-review claim",
+          "no operator-signoff claim",
+          "no private data leak"
+        ]
+      }
+    },
+    {
+      "id": "spine:human-never-product-gate",
+      "passed": true,
+      "detail": {
+        "id": "manual-human-review",
+        "label": "Optional internal QA — not a product requirement",
+        "tier": [
+          "advanced"
+        ],
+        "status": "optional_internal_qa",
+        "sourceFamily": "Optional internal QA only; zero customer feature credit",
+        "adapterTarget": "non-blocking internal quality observation only; never a customer entitlement, release gate or delivery prerequisite",
+        "basicOutput": "No human review included",
+        "proOutput": "No human review included",
+        "advancedOutput": "NOT_FOR_SALE — Advanced remains automated; optional QA never blocks the result",
+        "claimRule": "No current SKU may claim manual QA, human review or operator sign-off; optional internal QA has zero customer feature credit.",
+        "missingRule": "Do not treat absence of optional human QA as missing product evidence or reduce product confidence because of it.",
+        "noGo": [
+          "no fake analyst note",
+          "no human-review claim",
+          "no operator-signoff claim",
+          "no private data leak"
+        ]
+      }
+    },
+    {
+      "id": "queue:legacy-id-current-semantics-automated",
+      "passed": true,
+      "detail": "advanced-automated-evidence-queue"
+    },
+    {
+      "id": "queue:stop-sold-boundary",
+      "passed": true,
+      "detail": "Advanced is currently NOT_FOR_SALE. Payment or entitlement cannot unlock execution or customer delivery until a later owner-bound sale decision and full release gates exist."
+    },
+    {
+      "id": "queue:legacy-ready-alias-only",
+      "passed": true,
+      "detail": {
+        "totalItems": 3,
+        "readyForOperator": 2,
+        "readyForAutomation": 2,
+        "blockedByPayment": 0,
+        "blockedByEvidence": 1,
+        "blockedByScope": 0,
+        "urgent": 0,
+        "high": 1,
+        "customerVisible": 1
+      }
+    },
+    {
+      "id": "queue:no-human-requirement",
+      "passed": true,
+      "detail": "LEGACY NAME ONLY: this Pass2579 payload is the current automated Advanced evidence/adjudication/retest queue. Human/operator review is optional internal QA only, has zero customer feature credit and never gates customer delivery. Advanced remains NOT_FOR_SALE."
+    },
+    {
+      "id": "delivery:advanced-stop-sold",
+      "passed": true,
+      "detail": {
+        "deliveryStatus": "not_deliverable",
+        "deliveryReadiness": 10,
+        "blockedGates": 2,
+        "reviewGates": 2,
+        "redactionGates": 1,
+        "readyGates": 2,
+        "customerVisibleRows": 7,
+        "proPdfReady": false,
+        "advancedReady": false
+      }
+    },
+    {
+      "id": "delivery:advanced-ready-false",
+      "passed": true,
+      "detail": {
+        "deliveryStatus": "not_deliverable",
+        "deliveryReadiness": 10,
+        "blockedGates": 2,
+        "reviewGates": 2,
+        "redactionGates": 1,
+        "readyGates": 2,
+        "customerVisibleRows": 7,
+        "proPdfReady": false,
+        "advancedReady": false
+      }
+    },
+    {
+      "id": "delivery:owner-bound-availability-hard-gate",
+      "passed": true,
+      "detail": {
+        "id": "product-availability",
+        "label": "Current product availability",
+        "status": "blocked",
+        "priority": "critical",
+        "customerLine": "Advanced is currently NOT_FOR_SALE; no payment, entitlement or human QA can unlock it.",
+        "operatorLine": "Keep Advanced customer delivery blocked until a later owner-bound sale decision plus final truth/rights/value/security/operations gates; optional QA cannot override this.",
+        "evidenceNeeded": [
+          "current SKU truth",
+          "owner-bound release decision",
+          "final gate receipts"
+        ],
+        "canShowCustomer": true
+      }
+    },
+    {
+      "id": "delivery:payment-not-unlock-path",
+      "passed": true,
+      "detail": "Current Advanced is NOT_FOR_SALE and cannot become customer-ready through payment or human review. Any future customer delivery requires explicit product availability plus automated evidence, currentness, rights, redaction, version and entitlement gates."
+    },
+    {
+      "id": "console:internal-analysis-can-run-stop-sold",
+      "passed": true,
+      "detail": {
+        "totalControls": 9,
+        "ready": 3,
+        "review": 1,
+        "redact": 1,
+        "blocked": 4,
+        "locked": 0,
+        "critical": 4,
+        "customerVisibleRows": 7,
+        "operatorConsoleReadiness": 0,
+        "finalSignReadiness": 0,
+        "canOpenAdvancedCase": true,
+        "canCustomerDeliverAdvanced": false,
+        "canFinalSignAdvanced": false,
+        "nextCriticalStep": "Keep customer delivery disabled until a later owner-bound sale decision and all final truth/rights/value/security/operations receipts exist."
+      }
+    },
+    {
+      "id": "console:payment-cannot-deliver",
+      "passed": true,
+      "detail": {
+        "totalControls": 9,
+        "ready": 3,
+        "review": 1,
+        "redact": 1,
+        "blocked": 4,
+        "locked": 0,
+        "critical": 4,
+        "customerVisibleRows": 7,
+        "operatorConsoleReadiness": 0,
+        "finalSignReadiness": 0,
+        "canOpenAdvancedCase": true,
+        "canCustomerDeliverAdvanced": false,
+        "canFinalSignAdvanced": false,
+        "nextCriticalStep": "Keep customer delivery disabled until a later owner-bound sale decision and all final truth/rights/value/security/operations receipts exist."
+      }
+    },
+    {
+      "id": "console:manual-signoff-cannot-unlock",
+      "passed": true,
+      "detail": {
+        "totalControls": 9,
+        "ready": 3,
+        "review": 1,
+        "redact": 1,
+        "blocked": 4,
+        "locked": 0,
+        "critical": 4,
+        "customerVisibleRows": 7,
+        "operatorConsoleReadiness": 0,
+        "finalSignReadiness": 0,
+        "canOpenAdvancedCase": true,
+        "canCustomerDeliverAdvanced": false,
+        "canFinalSignAdvanced": false,
+        "nextCriticalStep": "Keep customer delivery disabled until a later owner-bound sale decision and all final truth/rights/value/security/operations receipts exist."
+      }
+    },
+    {
+      "id": "console:availability-control-blocked",
+      "passed": true,
+      "detail": {
+        "id": "adv-current-product-availability",
+        "family": "final_signoff",
+        "label": "Current product availability",
+        "status": "blocked",
+        "priority": "critical",
+        "customerLine": "Advanced is NOT_FOR_SALE; payment or human QA cannot unlock delivery.",
+        "proPdfLine": "Current availability gate: NOT_FOR_SALE. This internal console cannot override the owner-bound catalog/release decision.",
+        "operatorAction": "Keep customer delivery disabled until a later owner-bound sale decision and all final truth/rights/value/security/operations receipts exist.",
+        "requiredEvidence": [
+          "current SKU truth",
+          "owner-bound sale decision",
+          "final release receipts"
+        ],
+        "privateFields": [],
+        "blocksFinalSign": true,
+        "blocksCustomerDelivery": true
+      }
+    },
+    {
+      "id": "console:payment-control-never-current-unlock-gate",
+      "passed": true,
+      "detail": {
+        "id": "adv-operator-payment-receipt",
+        "family": "payment_receipt",
+        "label": "Server payment receipt",
+        "status": "ready",
+        "priority": "normal",
+        "customerLine": "Advanced control is ready. Payment receipt is only a future paid-delivery condition; it does not unlock current Advanced.",
+        "proPdfLine": "Payment gate: ready; wallet connection is identity/context only, not payment proof.",
+        "operatorAction": "Record the receipt for future paid-lifecycle testing; do not unlock current Advanced.",
+        "requiredEvidence": [
+          "server-side receipt",
+          "entitlement id",
+          "audit queue id"
+        ],
+        "privateFields": [
+          "payment session id",
+          "customer account id",
+          "billing email"
+        ],
+        "blocksFinalSign": false,
+        "blocksCustomerDelivery": false
+      }
+    },
+    {
+      "id": "console:optional-qa-nonblocking",
+      "passed": true,
+      "detail": {
+        "id": "adv-operator-manual-notes",
+        "family": "manual_notes",
+        "label": "Optional internal QA notes",
+        "status": "ready",
+        "priority": "normal",
+        "customerLine": "Advanced control is ready. Optional internal QA is not part of the customer deliverable and never blocks automated output.",
+        "proPdfLine": "Optional QA state: ready; QA notes are private and carry zero customer feature credit.",
+        "operatorAction": "Optional QA may record disagreements or limitations, but cannot unlock, block or certify the product.",
+        "requiredEvidence": [
+          "optional QA disagreement/limitation receipt"
+        ],
+        "privateFields": [
+          "raw notes",
+          "internal Slack/Gmail/context",
+          "unredacted investigation detail"
+        ],
+        "blocksFinalSign": false,
+        "blocksCustomerDelivery": false
+      }
+    },
+    {
+      "id": "console:rule-denies-human-override",
+      "passed": true,
+      "detail": "This legacy-named operator console is optional internal QA/observability only. Current Advanced is an automated evidence/retest product and remains NOT_FOR_SALE; no human/operator action may unlock, block or certify it."
+    }
+  ]
+}

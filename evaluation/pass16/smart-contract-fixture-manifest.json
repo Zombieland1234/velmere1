@@ -1,0 +1,557 @@
+{
+  "schemaVersion": "velmere.pass16.contract-fixtures.v1",
+  "count": 50,
+  "fixtures": [
+    {
+      "id": "contract-001-reentrant-vault",
+      "file": "fixtures/pass16/contracts/01_reentrant-vault.sol",
+      "sha256": "0484ef368326f3c25e9adbe0443f9075dd2119af709d9f0fcfc357c884ba7591",
+      "title": "Reentrant vault",
+      "category": "reentrancy",
+      "expectedFindings": [
+        "external_call_before_state_update"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-002-guarded-vault",
+      "file": "fixtures/pass16/contracts/02_guarded-vault.sol",
+      "sha256": "7980768749e85779a2ce49b0f7c337e2075f4046b1f0b57e2334d3a4f0ed7217",
+      "title": "Guarded vault",
+      "category": "reentrancy",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-003-tx-origin-admin",
+      "file": "fixtures/pass16/contracts/03_tx-origin-admin.sol",
+      "sha256": "1ab04ec09e5cab1059c014880391553ff49c472983cc88acea90cf3e9d99e734",
+      "title": "tx.origin authorization",
+      "category": "authorization",
+      "expectedFindings": [
+        "tx_origin_authorization"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-004-sender-admin",
+      "file": "fixtures/pass16/contracts/04_sender-admin.sol",
+      "sha256": "c065adc7a22906eb4dfd5d9695537a07da3e3ca52f937dd2508efaa85b805afa",
+      "title": "msg.sender authorization",
+      "category": "authorization",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-005-uninitialized-owner",
+      "file": "fixtures/pass16/contracts/05_uninitialized-owner.sol",
+      "sha256": "2141dfd5751fd3f4f7ea7e16c977dba0df54387f33075923713f46519fc6e820",
+      "title": "Uninitialized owner",
+      "category": "initialization",
+      "expectedFindings": [
+        "initializer_replay_or_takeover"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-006-one-time-initializer",
+      "file": "fixtures/pass16/contracts/06_one-time-initializer.sol",
+      "sha256": "d80e3f2939f12a52c2ebb28894b06532b364b9935121e292a25b67fb7b9aca4f",
+      "title": "One-time initializer",
+      "category": "initialization",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-007-unchecked-call",
+      "file": "fixtures/pass16/contracts/07_unchecked-call.sol",
+      "sha256": "7f69b3cc05fc6621b99ab6fae9e79a4ebc096a82eea4df3478c51a19c0303b90",
+      "title": "Unchecked low-level call",
+      "category": "external_call",
+      "expectedFindings": [
+        "unchecked_low_level_call"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-008-checked-call",
+      "file": "fixtures/pass16/contracts/08_checked-call.sol",
+      "sha256": "3a779635a0ba7c641aad48acaf102ef0757c71bffbf48eee7910117eaeabd770",
+      "title": "Checked low-level call",
+      "category": "external_call",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-009-delegate-user-target",
+      "file": "fixtures/pass16/contracts/09_delegate-user-target.sol",
+      "sha256": "7a11f748ed367260f44106680f7a9a32e966504d0f55b358b4889a5af2976445",
+      "title": "User-controlled delegatecall",
+      "category": "delegatecall",
+      "expectedFindings": [
+        "user_controlled_delegatecall"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-010-delegate-allowlist",
+      "file": "fixtures/pass16/contracts/10_delegate-allowlist.sol",
+      "sha256": "db74bad95f719b39092d2d0b48cd07e90465f9c43c23484ed95609f6ef3b9951",
+      "title": "Allowlisted delegatecall",
+      "category": "delegatecall",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-011-spot-oracle",
+      "file": "fixtures/pass16/contracts/11_spot-oracle.sol",
+      "sha256": "a8127ff7d0ab85e2611a50dddb7132320b52213d40c2256f07d983da8a9acf75",
+      "title": "Spot price oracle",
+      "category": "oracle",
+      "expectedFindings": [
+        "manipulable_spot_oracle"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-012-twap-oracle",
+      "file": "fixtures/pass16/contracts/12_twap-oracle.sol",
+      "sha256": "7d046886634052a04069e72b871c57dd46032e14547050db7dbf6e4c60f7e73d",
+      "title": "TWAP oracle control",
+      "category": "oracle",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-013-donation-share-price",
+      "file": "fixtures/pass16/contracts/13_donation-share-price.sol",
+      "sha256": "74824ac7ea97d75e2dfdf240d0d176515bc0a4ab8753662b8cfe6fa136667eaf",
+      "title": "Donation-inflated shares",
+      "category": "accounting",
+      "expectedFindings": [
+        "donation_share_price_manipulation"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-014-prebalance-shares",
+      "file": "fixtures/pass16/contracts/14_prebalance-shares.sol",
+      "sha256": "9f5835a40841425456f6c441d78dda4f1728191c968d29e1d1d05a6fd5df0c10",
+      "title": "Pre-balance share accounting",
+      "category": "accounting",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-015-rounding-loss",
+      "file": "fixtures/pass16/contracts/15_rounding-loss.sol",
+      "sha256": "2d38b994722dea3d850e62cc0814a5f4dd1d542b6ab69bf60f625c890821fbaa",
+      "title": "Rounding-to-zero deposit",
+      "category": "rounding",
+      "expectedFindings": [
+        "rounding_to_zero_value_loss"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-016-rounding-guard",
+      "file": "fixtures/pass16/contracts/16_rounding-guard.sol",
+      "sha256": "8f21b9540eed4c4f7a4a211f38515563ae7dc181a2c838e165b34b70cadd3b40",
+      "title": "Rounding guarded deposit",
+      "category": "rounding",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-017-open-mint",
+      "file": "fixtures/pass16/contracts/17_open-mint.sol",
+      "sha256": "30e065541eb4daa8e67fc2c01f5e7a56682984f0ea57ee87910ec55a3216f8e3",
+      "title": "Unrestricted mint",
+      "category": "access_control",
+      "expectedFindings": [
+        "unrestricted_mint"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-018-role-mint",
+      "file": "fixtures/pass16/contracts/18_role-mint.sol",
+      "sha256": "4068672d779dbbddd3fda08b834b54a9f47f37841fa2d1b09f3a8f81b02ed37d",
+      "title": "Role restricted mint",
+      "category": "access_control",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-019-unbounded-loop",
+      "file": "fixtures/pass16/contracts/19_unbounded-loop.sol",
+      "sha256": "404cd93ec6c7f0c1bc769253f9208890c7f5f3d0ffced3304fc05b220acb9859",
+      "title": "Unbounded payout loop",
+      "category": "dos",
+      "expectedFindings": [
+        "unbounded_loop_dos"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-020-paged-loop",
+      "file": "fixtures/pass16/contracts/20_paged-loop.sol",
+      "sha256": "1b9debc77b8a57623a7bfc8d52636891a3d16c170c0ed77b161c12058e7a20eb",
+      "title": "Paginated processing",
+      "category": "dos",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-021-timestamp-lottery",
+      "file": "fixtures/pass16/contracts/21_timestamp-lottery.sol",
+      "sha256": "e08425f1925df22b2e30545679fb346beacdaae5a0c951c38e9870a064c32070",
+      "title": "Timestamp lottery",
+      "category": "time_dependency",
+      "expectedFindings": [
+        "timestamp_as_randomness"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-022-deadline-window",
+      "file": "fixtures/pass16/contracts/22_deadline-window.sol",
+      "sha256": "04f69afc096e8c909a2ade42c2ce19d4a2d1f5c2cf5a1d46efec0663c8b49446",
+      "title": "Bounded deadline",
+      "category": "time_dependency",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-023-signature-replay",
+      "file": "fixtures/pass16/contracts/23_signature-replay.sol",
+      "sha256": "ea298c57ecddc5bca42405bc6ac53a27acd0062d6cac112d8282d1ff8a9ba26b",
+      "title": "Replayable signature",
+      "category": "signature",
+      "expectedFindings": [
+        "signature_replay_no_nonce_domain"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-024-signature-domain",
+      "file": "fixtures/pass16/contracts/24_signature-domain.sol",
+      "sha256": "c430f9990dc254b8dc1e3534c85a3a7fc82a51ee00827511923949b5bced1415",
+      "title": "Domain-separated signature",
+      "category": "signature",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-025-permit-no-deadline",
+      "file": "fixtures/pass16/contracts/25_permit-no-deadline.sol",
+      "sha256": "1c60e5eacc156d5dd257b85336660144815ce19b8cd0a11b9f27c6a7bcb4e896",
+      "title": "Permit without deadline",
+      "category": "signature",
+      "expectedFindings": [
+        "permit_without_deadline_or_domain"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-026-permit-deadline",
+      "file": "fixtures/pass16/contracts/26_permit-deadline.sol",
+      "sha256": "d27a6920be87bae61692d34454ee4b55ef89f716a541383ded4e16d78ae65694",
+      "title": "Permit deadline control",
+      "category": "signature",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-027-storage-collision",
+      "file": "fixtures/pass16/contracts/27_storage-collision.sol",
+      "sha256": "29684968c336af7b38910f1325251a0258a50c6e43ae7e3f986e37a35d208639",
+      "title": "Upgrade storage collision",
+      "category": "upgradeability",
+      "expectedFindings": [
+        "upgrade_storage_layout_collision"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-028-namespaced-storage",
+      "file": "fixtures/pass16/contracts/28_namespaced-storage.sol",
+      "sha256": "456cbbb68d21a8e419f30d0c0857dae1cedf3eb7629797aa8c3766c4caee2bdf",
+      "title": "Namespaced storage",
+      "category": "upgradeability",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-029-selfdestruct-admin",
+      "file": "fixtures/pass16/contracts/29_selfdestruct-admin.sol",
+      "sha256": "312097e23d5dd84934adb360416e264086585a683def7f1f383974b998ef2f08",
+      "title": "Admin selfdestruct",
+      "category": "destruction",
+      "expectedFindings": [
+        "destructive_admin_capability"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-030-immutable-vault",
+      "file": "fixtures/pass16/contracts/30_immutable-vault.sol",
+      "sha256": "bb5eadf733e82a960d2cdba05dcb97f4a809903195d578c94b4e69f043ddd38e",
+      "title": "No destructive path",
+      "category": "destruction",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-031-hook-reentrancy",
+      "file": "fixtures/pass16/contracts/31_hook-reentrancy.sol",
+      "sha256": "83397fe68eb16d28eab7574fbcf988623521e21210aa8ea791509627fc4853c3",
+      "title": "Token hook reentrancy",
+      "category": "token_hook",
+      "expectedFindings": [
+        "external_hook_before_accounting"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-032-cei-token",
+      "file": "fixtures/pass16/contracts/32_cei-token.sol",
+      "sha256": "bc8fa1a01415e4b1d03ea658f965a3a9ef152075ca8163b31a4e70e7c758ed74",
+      "title": "Checks effects interactions",
+      "category": "token_hook",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-033-fee-token-mismatch",
+      "file": "fixtures/pass16/contracts/33_fee-token-mismatch.sol",
+      "sha256": "ef785ef4984d0aa15b0a3f545c8bd6a9b50f04cceb36aed9edaf58afefcbbfe8",
+      "title": "Fee-on-transfer mismatch",
+      "category": "token_accounting",
+      "expectedFindings": [
+        "fee_on_transfer_accounting_mismatch"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-034-balance-delta",
+      "file": "fixtures/pass16/contracts/34_balance-delta.sol",
+      "sha256": "8c135ab09e03b799958aacec5beb2a5a129ad6378d6e4e9558e7566c57420c4c",
+      "title": "Balance delta accounting",
+      "category": "token_accounting",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-035-blacklist-bypass",
+      "file": "fixtures/pass16/contracts/35_blacklist-bypass.sol",
+      "sha256": "f53c766fba1c99d579f7b18cb0a741325668860ab002fee0ffb2a21ea7503c68",
+      "title": "Blacklist bypass path",
+      "category": "transfer_policy",
+      "expectedFindings": [
+        "privileged_transfer_bypasses_policy"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-036-policy-consistent",
+      "file": "fixtures/pass16/contracts/36_policy-consistent.sol",
+      "sha256": "304fae63d9bbd2192fba24ae634d4df82e7c208a729d399277c25c6c956024bf",
+      "title": "Consistent transfer policy",
+      "category": "transfer_policy",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-037-no-pause",
+      "file": "fixtures/pass16/contracts/37_no-pause.sol",
+      "sha256": "17146a218e7ce58f328fc9240a9bb666db77b325020d6590f74e4ec6ab2f6f96",
+      "title": "Critical system without pause",
+      "category": "operational_control",
+      "expectedFindings": [
+        "missing_emergency_stop"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-038-pausable",
+      "file": "fixtures/pass16/contracts/38_pausable.sol",
+      "sha256": "605e2171a4a277bcc8f952c12550ac9acdaeda450eaf59fca79e070629a5c050",
+      "title": "Pausable critical system",
+      "category": "operational_control",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-039-insolvent-withdraw",
+      "file": "fixtures/pass16/contracts/39_insolvent-withdraw.sol",
+      "sha256": "a7f930f6d95aefdc663798019ed81b5ddb63da0cd63dab2b46374e08b33836fe",
+      "title": "Unchecked solvency",
+      "category": "solvency",
+      "expectedFindings": [
+        "withdrawal_without_solvency_check"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-040-solvency-guard",
+      "file": "fixtures/pass16/contracts/40_solvency-guard.sol",
+      "sha256": "26242ccc339431f9e468ba3fd949544cb832c7925d2815cc01a9a66f0f0a5993",
+      "title": "Solvency guarded withdraw",
+      "category": "solvency",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-041-low-quorum",
+      "file": "fixtures/pass16/contracts/41_low-quorum.sol",
+      "sha256": "b29de810fd4d367e4df0d4f8e64c0d64b028fefecb94e7f33fe3d75165f2ebfa",
+      "title": "Low governance quorum",
+      "category": "governance",
+      "expectedFindings": [
+        "unsafe_governance_quorum"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-042-snapshot-quorum",
+      "file": "fixtures/pass16/contracts/42_snapshot-quorum.sol",
+      "sha256": "8c7eae2dd3ddf5281d22ca4fbd269fa80693f60d439efa05f35eafadbf238752",
+      "title": "Snapshot quorum",
+      "category": "governance",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-043-front-run-reveal",
+      "file": "fixtures/pass16/contracts/43_front-run-reveal.sol",
+      "sha256": "43fcb7e65cbe89c32ffb58dfc0895332f1242b73ced1dec3c7bbfb6f8a58c0ae",
+      "title": "Public secret reveal",
+      "category": "frontrun",
+      "expectedFindings": [
+        "mempool_front_run_exposure"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-044-commit-reveal",
+      "file": "fixtures/pass16/contracts/44_commit-reveal.sol",
+      "sha256": "c608be5818d9101ce33311e91744dab6c1f9201efedfa8d804ecedead4b4e5d5",
+      "title": "Commit reveal",
+      "category": "frontrun",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-045-blockhash-random",
+      "file": "fixtures/pass16/contracts/45_blockhash-random.sol",
+      "sha256": "c2a8d66a76da24d8e08b770ae095da0da41d9f90bbd5546d3ba21b1da961c025",
+      "title": "Blockhash randomness",
+      "category": "randomness",
+      "expectedFindings": [
+        "predictable_block_randomness"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-046-vrf-consumer",
+      "file": "fixtures/pass16/contracts/46_vrf-consumer.sol",
+      "sha256": "398b4a73c5fd5a18b30da42b99a04983667883e72287ddc0b6e288a914dda415",
+      "title": "External VRF consumer",
+      "category": "randomness",
+      "expectedFindings": [],
+      "cleanControl": false,
+      "ambiguousControl": true
+    },
+    {
+      "id": "contract-047-cross-chain-replay",
+      "file": "fixtures/pass16/contracts/47_cross-chain-replay.sol",
+      "sha256": "70a7e9f1a2d91b6b18daab2b6f642ddbdade9e1d43d75fe8caf5b2a7202f6509",
+      "title": "Cross-chain message replay",
+      "category": "cross_chain",
+      "expectedFindings": [
+        "message_domain_not_bound_to_chain_or_sender"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-048-cross-chain-domain",
+      "file": "fixtures/pass16/contracts/48_cross-chain-domain.sol",
+      "sha256": "758f42cd079b1cdff656940a6661d475f81de76c3502a37ab880db566d89ad62",
+      "title": "Cross-chain domain guard",
+      "category": "cross_chain",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-049-minimal-vault-clean",
+      "file": "fixtures/pass16/contracts/49_minimal-vault-clean.sol",
+      "sha256": "e0b5ed640b8e1841b8bec53c0ff5e2ed36f8245d619715c1adfc08f60987f1a6",
+      "title": "Minimal clean vault",
+      "category": "clean_control",
+      "expectedFindings": [],
+      "cleanControl": true,
+      "ambiguousControl": false
+    },
+    {
+      "id": "contract-050-external-dependency-ambiguous",
+      "file": "fixtures/pass16/contracts/50_external-dependency-ambiguous.sol",
+      "sha256": "2d20cb7e2b0e15c4e4aae8732cb3e51a80e4ecaab2ca2066bee1083da9bbd87b",
+      "title": "Ambiguous external dependency",
+      "category": "ambiguous_control",
+      "expectedFindings": [
+        "external_dependency_trust_requires_context"
+      ],
+      "cleanControl": false,
+      "ambiguousControl": true
+    }
+  ],
+  "manifestSha256": "65bf7d8ec42af82d10a0c4a33984f65fb43a51bcbd0477bb4233a189b851415a"
+}

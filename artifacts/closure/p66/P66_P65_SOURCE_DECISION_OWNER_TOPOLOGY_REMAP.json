@@ -1,0 +1,156 @@
+{
+  "checks": [
+    {
+      "detail": [
+        "Audit Basic",
+        "Audit Pro",
+        "Audit Advanced"
+      ],
+      "id": "audit-customer-rows-3",
+      "passed": true
+    },
+    {
+      "detail": [
+        "BASIC_CONTEXT",
+        "PRO_CONTEXT",
+        "ADVANCED_CONTEXT"
+      ],
+      "id": "audit-profiles-3",
+      "passed": true
+    },
+    {
+      "detail": [
+        "BASIC_CONTEXT",
+        "PRO_CONTEXT",
+        "ADVANCED_CONTEXT"
+      ],
+      "id": "real-markets-profiles-3",
+      "passed": true
+    },
+    {
+      "detail": [
+        "NO_USABLE_ORDER_BOOK",
+        "NO_USABLE_ORDER_BOOK",
+        "NO_USABLE_ORDER_BOOK"
+      ],
+      "id": "market-impact-legacy-contexts-identical",
+      "passed": true
+    },
+    {
+      "detail": [
+        "UNCLASSIFIED_CURRENT_CHAIN_EVIDENCE",
+        "UNCLASSIFIED_CURRENT_CHAIN_EVIDENCE",
+        "UNCLASSIFIED_CURRENT_CHAIN_EVIDENCE"
+      ],
+      "id": "whale-watch-legacy-contexts-identical",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "id": "all-remapped-rows-zero-final-credit",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "id": "all-remapped-rows-zero-rights-credit",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "id": "all-remapped-rows-zero-sale",
+      "passed": true
+    }
+  ],
+  "creditBoundary": {
+    "customerFinalOutputs": "0/20",
+    "live": false,
+    "paidValueTransitions": "0/10",
+    "rightsPassed": "0/PENDING_CORRECTED_FIELD_RECOUNT",
+    "saleEligibleRows": "0/20",
+    "worldClassProven": false
+  },
+  "generatedAt": "2026-08-16T18:22:16.073825+00:00",
+  "integritySha256": "e8c91334b5d8079e548466327941d4c43f18a67d272bd2dedec9c1d3d120136e",
+  "ownerCorrectedDenominators": {
+    "currentExecutionProfiles": 20,
+    "customerFacingRows": 20,
+    "paidValueTransitions": 10,
+    "productFamilies": 10
+  },
+  "remappedCurrentExecutionProfilesWithCurrentSourceDecisionReceipt": {
+    "calculation": "Audit 3 + Real Markets 3 + Market Impact standalone 1 + Whale Watch standalone 1",
+    "count": 8,
+    "denominator": 20
+  },
+  "remappedCustomerRowsWithCurrentSourceDecisionReceipt": {
+    "count": 8,
+    "denominator": 20,
+    "rows": [
+      {
+        "decision": "UNAVAILABLE_CURRENT_REAL_CONTRACT_EVIDENCE",
+        "row": "Audit Basic",
+        "sourceEvidence": "P65 Audit Basic customer row"
+      },
+      {
+        "decision": "UNAVAILABLE_CURRENT_REAL_CONTRACT_EVIDENCE",
+        "row": "Audit Pro",
+        "sourceEvidence": "P65 Audit Pro customer row"
+      },
+      {
+        "decision": "UNAVAILABLE_CURRENT_REAL_CONTRACT_EVIDENCE_AND_HUMAN_REVIEW",
+        "row": "Audit Advanced",
+        "sourceEvidence": "P65 Audit Advanced customer row"
+      },
+      {
+        "decision": "PARTIAL_CURRENT_SOURCE_CAPABILITY_FX_ECB_REFERENCE_ONLY",
+        "row": "Real Markets Basic",
+        "sourceEvidence": "P65 real-markets/BASIC_CONTEXT internal source-decision receipt"
+      },
+      {
+        "decision": "PARTIAL_CURRENT_SOURCE_CAPABILITY_FX_ECB_REFERENCE_ONLY",
+        "row": "Real Markets Pro",
+        "sourceEvidence": "P65 real-markets/PRO_CONTEXT internal source-decision receipt"
+      },
+      {
+        "decision": "PARTIAL_CURRENT_SOURCE_CAPABILITY_FX_ECB_REFERENCE_ONLY",
+        "row": "Real Markets Advanced",
+        "sourceEvidence": "P65 real-markets/ADVANCED_CONTEXT internal source-decision receipt"
+      },
+      {
+        "decision": "NO_USABLE_ORDER_BOOK",
+        "row": "Market Impact",
+        "sourceEvidence": "P65 three legacy tier-shaped internal source-decision contexts collapsed to one standalone product because all three decisions are identical"
+      },
+      {
+        "decision": "UNCLASSIFIED_CURRENT_CHAIN_EVIDENCE",
+        "row": "Whale Watch",
+        "sourceEvidence": "P65 three legacy tier-shaped internal source-decision contexts collapsed to one standalone product because all three decisions are identical"
+      }
+    ]
+  },
+  "retiredClaims": [
+    "P65 6/17 is historical old-topology only",
+    "P65 12/33 is historical tier-shaped internal-context only",
+    "Market Impact and Whale Watch no longer receive three customer/internal completion tiers"
+  ],
+  "schemaVersion": "velmere.p66.p65-source-decision-owner-topology-remap.v1",
+  "sourceReceipt": {
+    "bytes": 32596,
+    "legacyDenominators": {
+      "customerFacingRows": 17,
+      "customerRowsCurrentSourceDecisionReceipt": 6,
+      "customerRowsFinalCustomerOutput": 0,
+      "internalProfiles": 33,
+      "legalSourceFieldsPassed": 0,
+      "paidDeltaTransitionsPassed": 0,
+      "profilesCurrentSourceDecisionReceipt": 12,
+      "profilesFinalCustomerOutput": 0,
+      "saleEligibleRows": 0,
+      "targetFieldsAdjudicated": 74
+    },
+    "path": "artifacts/closure/p65/P65_CURRENT_SOURCE_DECISION_RECEIPTS.json",
+    "sha256": "229f9858141bfad28f1e55b60b4c40a4cf528523137e98e5a69f54c211fe973c"
+  },
+  "status": "PASS_BOUNDED_REMAP_NO_PROMOTION",
+  "truthBoundary": "This receipt remaps already-proven P65 current-source/fallback decisions onto the owner-corrected P66 product topology. It does not manufacture new provider data, customer outputs, rights, value or sale credit."
+}

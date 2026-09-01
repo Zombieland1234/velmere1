@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const REV = "VELMERE_PASS36_A102R44P20_ACTION_REQUIRED_CURRENT_BYTE_DUAL_BUILD_BROWSER_PDF_AND_BASIC_FREE_PRO_ADVANCED_RELEASE_CLOSURE_NO_LIVE_CREDIT";
+const policy = JSON.parse(fs.readFileSync(path.join(ROOT, "config/pass36/a102r44p20-release-closure-policy.json"), "utf8"));
+const state = JSON.parse(fs.readFileSync(path.join(ROOT, "config/pass36/a102r44p20-action-required-current-state.json"), "utf8"));
+const checks = [];
+const add = (id, ok) => checks.push({ id, ok: Boolean(ok) });
+add("revision", policy.revisionId === REV && state.revisionId === REV);
+add("no-go", state.globalDecision === "NO_GO");
+add("flags", [state.LIVE, state.saleEnabled, state.productionApproved, state.worldClassProven].every((x) => x === false));
+add("basic-free", policy.basic.alwaysFree && policy.basic.paymentRequired === false && policy.basic.publicPrice === null && policy.basic.checkoutAllowed === false);
+add("pro-target", policy.pro.target === "GO_PAID_AFTER_EVIDENCE" && policy.pro.checkoutAllowed === false && policy.pro.manualQaRequired === true);
+add("advanced-target", policy.advanced.target === "GO_PAID_AFTER_EVIDENCE" && policy.advanced.checkoutAllowed === false && policy.advanced.independentAdjudicationRequired === true);
+add("gates", policy.requiredCurrentByteGates.length === 18 && new Set(policy.requiredCurrentByteGates).size === 18);
+add("no-credit", Object.values(state.currentByteCredit).every((x) => x === false));
+const p4 = fs.readFileSync(path.join(ROOT, "scripts/pass36/generate-a102r44p4-official-tool-tier-packets.py"), "utf8");
+const p7 = fs.readFileSync(path.join(ROOT, "scripts/pass36/generate-a102r44p7-advanced-evidence-packets.py"), "utf8");
+add("retained-generators-no-tier-confidence", !p4.includes("confidence':78 if tier") && !p7.includes('"confidence": 78 if tier'));
+add("retained-generators-localized-signal-count", p4.includes("signal_label(locale,len(selected))") && p7.includes("signal_label(locale, len(selected))"));
+add("retained-generators-analysis-completed", p4.includes("'status':'analysis_completed'") && p7.includes('"status": "analysis_completed"'));
+const pdfRenderer = fs.readFileSync(path.join(ROOT, "scripts/pass36/render-a102r44p11-audit-pdf-corpus.py"), "utf8");
+add("pdf-renderer-localizes-analysis-completed", pdfRenderer.includes('"analysis_completed": "Analiza zakończona"') && pdfRenderer.includes('"analysis_completed": "Analysis completed"') && pdfRenderer.includes('"analysis_completed": "Analyse abgeschlossen"'));
+const failed = checks.filter((x) => !x.ok);
+console.log(JSON.stringify({ schemaVersion: "velmere.pass36.a102r44p20.static-policy.v1", status: failed.length ? "FAIL" : "PASS_R44P20_STATIC_POLICY", checks: checks.length, passed: checks.length - failed.length, failed: failed.length, rows: checks }, null, 2));
+if (failed.length) process.exit(1);

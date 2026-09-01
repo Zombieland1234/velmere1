@@ -1,0 +1,24 @@
+import { collectCurrentSource, sourcePayload, sha256, canonicalJson } from "./current-source-authority-lib.mjs";
+
+export const REV = "VELMERE_PASS36_A102R42_ACTION_REQUIRED_A60_TOTAL_FAIL_CLOSED_RECEIPT_AND_LOG_CLASSIFIER_BOUNDARY_EXACT_WINDOWS_NO_LIVE_CREDIT";
+export const PARENT = "VELMERE_PASS36_A102R41_ACTION_REQUIRED_SECURITY_EVIDENCE_AUTHORITY_EXACT_WINDOWS_AND_FAIL_CLOSED_RELEASE_PACKAGING_NO_LIVE_CREDIT";
+export const MANIFEST = "config/pass36/a102r42-current-root-descendant-manifest.json";
+export const PARENT_MANIFEST = "config/pass36/a102r41-current-root-descendant-manifest.json";
+export const PARENT_PACKAGE_MANIFEST = "config/pass36/a102r42-parent-source-package-manifest.json";
+export const STATE = "config/pass36/a102r42-action-required-current-state.json";
+export const PROGRAM = "config/pass36/a102r42-world-class-completion-program.json";
+export const MODE_POLICY = "config/pass36/a102r42-cross-platform-source-mode-policy.json";
+export const MODE_MIGRATION = "config/pass36/a102r42-source-mode-denominator-migration.json";
+export const APPROVED_LEDGER = "config/pass36/a102r42-approved-current-source-changes.json";
+export const SPARSE_LEDGER = "config/pass36/a102r41-historical-descendant-sparse-edge-ledger.json";
+export const FAILURE_FINALIZATION_MIGRATION = "config/pass36/a102r42-a60-failure-finalization-denominator-migration.json";
+export const AUTHORITY_MIGRATION = "config/pass36/a102r42-current-source-authority-denominator-migration.json";
+export const FROZEN_REGRESSION_MIGRATION = "config/pass36/a102r42-frozen-regression-denominator-migration.json";
+export const A80_RECEIPT_MIGRATION = "config/pass36/a102r42-a80r1-receipt-denominator-migration.json";
+export const PACKAGE_BOUNDARY_MIGRATION = "config/pass36/a102r42-package-boundary-denominator-migration.json";
+export const A78_MIGRATION = "config/pass36/a102r41-a78-lockfile-denominator-migration.json";
+export const DESCENDANT_VERIFIER_MIGRATION = "config/pass36/a102r42-descendant-verifier-denominator-migration.json";
+export const A42_REBASELINE = "config/pass36/a102r42-a42-critical-rebaseline.json";
+export const collect = (root, options = {}) => collectCurrentSource(root, options);
+export const payload = sourcePayload;
+export { sha256, canonicalJson };

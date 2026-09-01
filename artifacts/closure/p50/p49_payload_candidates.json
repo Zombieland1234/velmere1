@@ -1,0 +1,58 @@
+{
+  "candidates": [
+    [
+      43,
+      "/mnt/data/p49_extract",
+      [
+        [
+          "p41-exact-windows-node24-current-root-closure.yml",
+          "name: P41 Superseded \u2014 Do Not Execute\n\non:\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\njobs:\n  superseded-contract:\n    runs-on: windows-2025\n    steps:\n      - name: P41 is superseded by the P42 lifecycle-quarantine gate\n        shell: pwsh\n        run: |\n          Write-Output 'P41 exact-current-root workflow is intentionally superseded.'\n          Write-Output 'Use p42-exact-windows-node24-lifecycle-quarantine.yml.'\n          exit 1\n"
+        ],
+        [
+          "pass4992-supply-chain-security.yml",
+          "name: PASS4992 Supply Chain Security\n\non:\n  pull_request:\n  push:\n    branches:\n      - main\n  schedule:\n    - cron: \"17 3 * * 1\"\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: pass4992-supply-chain-${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  dependency-review:\n    name: Dependency diff policy\n    if: github.event_name == 'pull_request'\n    runs-on: ubuntu-24.04\n    timeout-minutes: 15\n    permissions:\n      contents: read\n    steps:\n      - name: Checkout source without persisted credentials\n        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n\n      - name: Reject newly introduced high or critical dependency risk\n        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0\n        with:\n          fail-on-severity: high\n          fail-on-scopes: runtime, development, unknown\n          sh"
+        ],
+        [
+          "p47-windows-build-relevant-projection.yml",
+          "name: P47 Native Windows Exact P46 Build-Relevant Projection\n\non:\n  workflow_dispatch:\n  push:\n    branches:\n      - velmere-p47-p46-build-projection-windows-20260815\n    paths:\n      - \"scripts/pass47/**\"\n      - \"config/pass47/**\"\n      - \".github/workflows/p47-windows-build-relevant-projection.yml\"\n\nconcurrency:\n  group: p47-windows-build-relevant-projection-${{ github.ref }}\n  cancel-in-progress: true\n\npermissions:\n  contents: read\n  actions: read\n\njobs:\n  native-windows-build-relevant-projection:\n    runs-on: windows-2025\n    timeout-minutes: 150\n    steps:\n      - name: Checkout isolated P47 projection branch\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n\n      - name: Set up exact Node 24.18.0\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version: 24.18.0\n          check-latest: false\n\n      - name: Pin exact npm 11.16.0 a"
+        ],
+        [
+          "pass26-exact-runtime-bridge.yml",
+          "name: PASS26 Exact Runtime Cache Bridge\n\non:\n  workflow_dispatch:\n    inputs:\n      run_dual_build:\n        description: \"Run one Webpack and one Turbopack build after the exact milestone\"\n        required: true\n        default: false\n        type: boolean\n      build_profile:\n        description: \"Build resource profile\"\n        required: true\n        default: balanced\n        type: choice\n        options:\n          - conservative\n          - balanced\n          - throughput\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: pass26-exact-runtime-${{ github.ref }}\n  cancel-in-progress: false\n\nenv:\n  CI: \"true\"\n  NEXT_TELEMETRY_DISABLED: \"1\"\n  NODE_ARCHIVE: node-v24.18.0-linux-x64.tar.xz\n  NODE_ARCHIVE_SHA256: 55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742\n\njobs:\n  exact-milestone:\n    name: Build offline bundle and execute exact milestone once\n    runs-on: ubuntu-24.04\n    timeout-minutes: 180\n    steps:\n      - name: Checkout source without persisted credentials\n  "
+        ],
+        [
+          "p42-exact-windows-semantic-dual-build.yml",
+          "name: P42 Exact Windows Current-Root Semantic and Dual Build\n\non:\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: p42-exact-windows-semantic-dual-build-${{ github.ref }}\n  cancel-in-progress: false\n\njobs:\n  exact-windows-semantic-dual-build:\n    runs-on: windows-2025\n    timeout-minutes: 180\n    steps:\n      - name: Checkout exact current source\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          persist-credentials: false\n          fetch-depth: 1\n\n      - name: Set up exact Node 24.18.0\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version: 24.18.0\n          check-latest: false\n\n      - name: Assert exact npm 11.16.0\n        shell: pwsh\n        run: |\n          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false\n          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }\n          if ((npm --version).Trim() -"
+        ],
+        [
+          "p42-exact-windows-node24-lifecycle-quarantine.yml",
+          "name: P42 Exact Windows Node24 Lifecycle Quarantine\n\non:\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: p42-exact-windows-lifecycle-quarantine-${{ github.ref }}\n  cancel-in-progress: false\n\njobs:\n  exact-windows-lifecycle-quarantine:\n    runs-on: windows-2025\n    timeout-minutes: 60\n\n    steps:\n      - name: Checkout exact current source\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          persist-credentials: false\n          fetch-depth: 1\n\n      - name: Set up exact Node 24.18.0\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version: 24.18.0\n          check-latest: false\n\n      - name: Assert exact npm 11.16.0\n        shell: pwsh\n        run: |\n          npm install --global npm@11.16.0 --ignore-scripts --audit=false --fund=false\n          if ((node --version).Trim() -ne 'v24.18.0') { throw 'Exact Node mismatch' }\n          if ((npm --version).Trim() -ne '11."
+        ],
+        [
+          "quality-and-fresh-builds.yml",
+          "name: PASS26 Lightweight Quality Gate\n\non:\n  pull_request:\n  push:\n    branches:\n      - main\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\nconcurrency:\n  group: pass26-lightweight-${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\n\nenv:\n  CI: \"true\"\n  NEXT_TELEMETRY_DISABLED: \"1\"\n\njobs:\n  static-contracts:\n    name: Source, CI and product contracts\n    runs-on: ubuntu-24.04\n    timeout-minutes: 30\n    steps:\n      - name: Checkout source without persisted credentials\n        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n\n      - name: Set up exact Node without dependency cache\n        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0\n        with:\n          node-version: 24.18.0\n          package-manager-cache: false\n\n      - name: Verify exact bundled toolchain\n        run: |\n          test \"$(node --version)\" = \"v24.18.0\"\n          t"
+        ]
+      ]
+    ],
+    [
+      17,
+      "/mnt/data/p49_payload_scan/P49_GITHUB_BRANCH_PAYLOAD",
+      [
+        [
+          "p49-native-windows-p46-build-relevant-projection.yml",
+          "name: P49 Native Windows Exact P46 Build-Relevant Projection Self-Contained\n\non:\n  workflow_dispatch:\n  push:\n    branches:\n      - velmere-p47-p46-build-projection-windows-20260815\n    paths:\n      - \"p49-build-projection/**\"\n      - \".github/workflows/p49-native-windows-p46-build-relevant-projection.yml\"\n\nconcurrency:\n  group: p49-native-windows-p46-build-relevant-projection-${{ github.ref }}\n  cancel-in-progress: true\n\npermissions:\n  contents: read\n\njobs:\n  native-windows-exact-p46-build-relevant-projection:\n    runs-on: windows-2025\n    timeout-minutes: 150\n    steps:\n      - name: Checkout isolated projection branch\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n\n      - name: Set up exact Node 24.18.0\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version: 24.18.0\n          check-latest: false\n\n      - name: Pin exact npm 11."
+        ]
+      ]
+    ],
+    [
+      17,
+      "/mnt/data/p49_extract/artifacts/closure/p49/branch-payload",
+      [
+        [
+          "p49-native-windows-p46-build-relevant-projection.yml",
+          "name: P49 Native Windows Exact P46 Build-Relevant Projection Self-Contained\n\non:\n  workflow_dispatch:\n  push:\n    branches:\n      - velmere-p47-p46-build-projection-windows-20260815\n    paths:\n      - \"p49-build-projection/**\"\n      - \".github/workflows/p49-native-windows-p46-build-relevant-projection.yml\"\n\nconcurrency:\n  group: p49-native-windows-p46-build-relevant-projection-${{ github.ref }}\n  cancel-in-progress: true\n\npermissions:\n  contents: read\n\njobs:\n  native-windows-exact-p46-build-relevant-projection:\n    runs-on: windows-2025\n    timeout-minutes: 150\n    steps:\n      - name: Checkout isolated projection branch\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n\n      - name: Set up exact Node 24.18.0\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version: 24.18.0\n          check-latest: false\n\n      - name: Pin exact npm 11."
+        ]
+      ]
+    ]
+  ]
+}

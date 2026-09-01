@@ -1,0 +1,106 @@
+{
+  "schema": "velmere-source-only-methodology-working-child-v1",
+  "status": "NONCANONICAL_ACTION_REQUIRED_NO_GO",
+  "authority": {
+    "parentSourceOnlySha256": "314b8789f315767c3b28f8441d3688b62de00e18eb95eccc7b0775d3d672e9b3",
+    "methodologySha256": "85d9be6c0dc250d4bcedd3a566ef4444a96ffb7b07ba6beb0e9b41caf9107639",
+    "usedInputs": [
+      "SOURCE_ONLY",
+      "VELMERE_METODOLOGIA_FINISHOWANIA_BASIC_PRO_ADVANCED.txt"
+    ],
+    "materialsUsed": false,
+    "roadmapUsed": false,
+    "externalCreditAdded": false
+  },
+  "scope": {
+    "productSurface": "Market Integrity / active Analysis tab",
+    "goal": "Replace pseudo/seeded Basic information with input-bound DERIVED/UNAVAILABLE truth and preserve paid-tier execution boundary."
+  },
+  "currentRuntimeTruth": {
+    "basicClientExecution": "REACHABLE_LOCAL_SNAPSHOT",
+    "proClientExecution": "NOT_REACHABLE_SERVER_ENTITLEMENT_REQUIRED",
+    "advancedClientExecution": "NOT_REACHABLE_SERVER_ENTITLEMENT_REQUIRED",
+    "richMethodFixture": {
+      "signalSlots": 10,
+      "derived": 7,
+      "unavailable": 3
+    },
+    "thinMethodFixture": {
+      "signalSlots": 10,
+      "derived": 2,
+      "unavailable": 8
+    },
+    "unavailableWithoutRequiredInputs": [
+      "liquidity",
+      "buy-sell-pressure",
+      "relative-strength"
+    ]
+  },
+  "removedFalseValuePatterns": [
+    "symbol/name/tier hash seeded signal scores",
+    "deterministic pseudo-series unrelated to candles",
+    "invented fallback source label VLM market data spine",
+    "invented liquidity/buy-sell/relative-strength readings without required inputs",
+    "implicit confidence fallback relabeled from data availability"
+  ],
+  "changedFiles": [
+    {
+      "path": "lib/market-integrity/vlm-analysis.ts",
+      "sha256": "c39165bd98abc9687010563c13f8090cbe65d708809b0faf541f613a5163aeff",
+      "bytes": 36150
+    },
+    {
+      "path": "components/market-integrity/analysis/AnalysisTab.tsx",
+      "sha256": "223e225e6caa2989eb57fb4756bd6cfab6be800b0aaf937ce096cde83042293e",
+      "bytes": 31086
+    },
+    {
+      "path": "app/styles/vlm-analysis-tab.css",
+      "sha256": "84308f4f36e5e656d892a01fcf9d1fc7eba663d6f9c2c62d0825f815964c4333",
+      "bytes": 22750
+    },
+    {
+      "path": "tests/security/a102-analysis-information-value-truth.test.ts",
+      "sha256": "b0e4d270c38a5aa79daba2c63cfe97571b65110313490abeab33ce0b1a8f693e",
+      "bytes": 5417
+    },
+    {
+      "path": "tests/security/a102-analysis-active-surface-reachability.test.mjs",
+      "sha256": "ffb23fab9a847bece82541ee80497b76273d3e01d82104cf5599037fab6721ce",
+      "bytes": 1848
+    }
+  ],
+  "tests": [
+    {
+      "name": "A94 client analysis entitlement and PL/EN/DE behavior",
+      "result": "PASS",
+      "execution": "Node 22 offline TS loader"
+    },
+    {
+      "name": "A102 analysis information-value derivation truth",
+      "result": "PASS",
+      "execution": "Node 22 offline TS loader"
+    },
+    {
+      "name": "A102 active Analysis surface reachability and scaffold exclusion",
+      "result": "PASS",
+      "execution": "Node 22 direct MJS"
+    }
+  ],
+  "notRun": [
+    "exact Node 24.18.0 / npm 11.16.0 TypeScript/build validation",
+    "Webpack/Turbopack production build",
+    "browser acceptance",
+    "full PDF QA"
+  ],
+  "environment": {
+    "availableNode": "v22.16.0",
+    "availableNpm": "10.9.2",
+    "requiredNode": "24.18.0",
+    "requiredNpm": "11.16.0"
+  },
+  "methodologyAdditionCandidatesNotApplied": [
+    "DERIVATION_VALIDITY_INPUT_SUFFICIENCY_GATE",
+    "SHADOW_SCAFFOLD_DRIFT_GATE"
+  ]
+}

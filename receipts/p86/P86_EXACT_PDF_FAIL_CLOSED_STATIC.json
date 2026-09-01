@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "velmere.p86.exact-pdf-fail-closed-static.v1",
+  "generatedAt": "2026-08-20T03:45:00Z",
+  "status": "PASS",
+  "runtime": {
+    "python": "3.13.5",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.41"
+  },
+  "files": {
+    "route": {
+      "path": "lib/server/lazy-route-modules/account--customer-artifact.ts",
+      "bytes": 16201,
+      "sha256": "f578b7e27589d0045f0278158c0b21db92cee0c42764915a502f701833632914"
+    },
+    "availability": {
+      "path": "lib/reporting/customer-artifact-pdf-availability.ts",
+      "bytes": 1740,
+      "sha256": "9cf29216c647ce612b09b4e7b61f900fbc7f2ed8db1f145e1473500cd16da9ee"
+    },
+    "snapshot": {
+      "path": "lib/reporting/account-customer-artifact-snapshot.ts",
+      "bytes": 13434,
+      "sha256": "e8c1a0f89cb1b0a0d2e72828a460a4194aaa068f61bacdfb660e89e90e9323de"
+    },
+    "store": {
+      "path": "lib/reporting/account-customer-artifact-store.ts",
+      "bytes": 23203,
+      "sha256": "6d851c7ea1c59fe70b6922bc812994c8f32d88f561a89a93b8c69425be6bd975"
+    },
+    "migration": {
+      "path": "supabase/migrations/20260820000004_p86_customer_artifact_exact_pdf_new_write_gate.sql",
+      "bytes": 1846,
+      "sha256": "1a1d32e23a029fde47b93f1ac383490baf5e440c6632c546dcdecdbc6bc4a861"
+    },
+    "schema": {
+      "path": "lib/db/schema.sql",
+      "bytes": 220755,
+      "sha256": "f00cb265f1d617549cf292e55a7a08de11921e658a14cb08b6db92523533d00a"
+    },
+    "lensWriter": {
+      "path": "lib/server/search-route-modules/lens-report.ts",
+      "bytes": 33862,
+      "sha256": "3a30497ceec3b5e20f6075aa1a447472edab7c4b3101d62f4dafc3765390b71b"
+    },
+    "marketWriter": {
+      "path": "lib/server/market-integrity-route-modules/report.ts",
+      "bytes": 40164,
+      "sha256": "51712c4eb9fa26718ec194fa3a3f03da350168a29a51eef6bf101cb6da53774f"
+    },
+    "marketToken": {
+      "path": "lib/market-integrity/customer-report-render-token.ts",
+      "bytes": 23596,
+      "sha256": "8cdfa73bf4140f7b0509a7ee2da9bac624391fe2bc09365014dde1bb81fb0d64"
+    },
+    "realMarketsWriter": {
+      "path": "lib/market-integrity/real-markets-paid-account-artifact.ts",
+      "bytes": 4032,
+      "sha256": "483ffd699d87c07c76260be45f5c88092e358b8514b73ffd88126eb4d70308b4"
+    },
+    "auditWriter": {
+      "path": "lib/security/audit-watch-post-handler.ts",
+      "bytes": 44794,
+      "sha256": "9c9c482664b038456d6227f125d15070c15d84805fef3d8bde46e2adfe77896a"
+    },
+    "integration": {
+      "path": "tests/security/a102-p36-exact-customer-pdf-integration.test.ts",
+      "bytes": 29843,
+      "sha256": "1ee3b707bd0c25b80c610cb51acae0d2bd92b8fc7713f3efa4469d008178664b"
+    },
+    "parity": {
+      "path": "tests/security/a102-account-artifact-preview-download-parity.test.ts",
+      "bytes": 4154,
+      "sha256": "8549a0525962cbae30034e6bd6993d56674eeedc53c253e836d0e834dfdb6b5c"
+    }
+  },
+  "checks": {
+    "total": 73,
+    "passed": 73,
+    "failed": 0,
+    "rows": [
+      {
+        "id": "p86_migration_is_latest_ordered_migration",
+        "status": "PASS",
+        "detail": [
+          "20260820000002_p84_audit_customer_artifact_owner_read_path.sql",
+          "20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql",
+          "20260820000004_p86_customer_artifact_exact_pdf_new_write_gate.sql"
+        ]
+      },
+      {
+        "id": "p86_parent_p85_migration_precedes_p86",
+        "status": "PASS",
+        "detail": [
+          "20260820000002_p84_audit_customer_artifact_owner_read_path.sql",
+          "20260820000003_p85_audit_customer_artifact_publication_visibility_rls.sql",
+          "20260820000004_p86_customer_artifact_exact_pdf_new_write_gate.sql"
+        ]
+      },
+      {
+        "id": "p86_migration_transaction_bounded",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_migration_creates_insert_gate_function",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_trigger_is_before_insert_only",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_trigger_does_not_rewrite_history",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_requires_exact_pdf_column",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_requires_digest_bound_snapshot_marker",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_rejects_missing_exact_bytes",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_allows_known_pdf_kind_market_customer_report_v1",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_allows_known_pdf_kind_lens_report_v1",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_allows_known_pdf_kind_audit_customer_report_v1",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_database_rejects_unknown_payload_kind",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_trigger_helper_not_directly_callable",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_schema_mirror_contains_gate_once",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_schema_mirror_omits_migration_transaction_wrapper",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_schema_mirror_contains_velmere_reject_new_legacy_customer_artifact_v1",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_schema_mirror_contains_p86_customer_artifact_exact_pdf_new_write_gate",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_schema_mirror_contains_customer_artifact_new_write_exact_pdf_required",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_builder_requires_exact_pdf_for_new_non_audit_artifacts",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_builder_preserves_audit_specific_failure_contract",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_builder_requirement_precedes_payload_processing",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_key_shape_remains_read_compatible",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_audit_legacy_rows_remain_rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_exact_marker_is_digest_bound",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_store_has_no_production_caller",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_public_detail_schema_v3_pinned",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_public_list_schema_v3_pinned",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_public_error_schema_v3_pinned",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_exact_availability_state_pinned",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_unavailable_state_pinned",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_availability_derived_from_snapshot_marker",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_preview_route_is_null",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_download_route_is_null",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_exact_preview_route_is_explicit",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_exact_download_route_is_explicit",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_forbids_rendercustomertierpdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_forbids_buildpdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_forbids_artifact_market_rerender_failed",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_forbids_artifact_rerender_digest_mismatch",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_forbids_legacy_deterministic_rerender",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_forbids_full_preview_requires_exact_stored_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_route_uses_shared_availability_authority",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_list_exposes_availability",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_list_exposes_nullable_preview_route",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_list_exposes_nullable_download_route",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_detail_exposes_verified_byte_parity",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_exact_marker_without_blob_fails_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_marker_with_blob_fails_closed",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_pdf_request_returns_explicit_unavailable",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_pdf_unavailable_is_non_retryable",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_legacy_pdf_error_uses_v3_contract",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_served_blob_reverified_against_snapshot",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_served_blob_uses_exact_delivery_authority",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_served_preview_download_declares_byte_identity",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_served_blob_declares_exact_storage",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_public_route_does_not_expose_storage_source",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_public_route_does_not_expose_raw_canonical_artifact",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_lens_writer_marks_exact_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_lens_writer_stores_atomic_bundle",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_market_writer_marks_exact_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_market_writer_stores_atomic_bundle",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_market_shared_snapshot_builder_marks_exact_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_real_markets_writer_stores_atomic_bundle",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_audit_writer_marks_exact_pdf",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_audit_writer_uses_atomic_owner_readable_publication",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_integration_rejects_new_legacy_snapshot",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_integration_preserves_historical_read_only_fixture",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_integration_tests_legacy_preview_and_download",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_integration_tests_v3_exact_detail",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_integration_tests_v3_list_routes",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_parity_test_forbids_market_rerender",
+        "status": "PASS"
+      },
+      {
+        "id": "p86_parity_test_forbids_lens_rerender",
+        "status": "PASS"
+      }
+    ]
+  },
+  "discoveredDefect": {
+    "id": "P86-ACCOUNT-ARTIFACT-LEGACY-PDF-RERENDER",
+    "severity": "HIGH_EVIDENCE_INTEGRITY",
+    "before": "The shared account route could recreate historical Lens/Shield/Real Markets PDFs during download from retained payloads.",
+    "after": "Only a digest-bound exact immutable blob can be previewed or downloaded. Legacy metadata remains readable with both PDF routes null and every PDF request returns a closed non-retryable 409."
+  },
+  "truthBoundary": "Source/static proof plus production-writer inventory. PostgreSQL trigger execution, deployed HTTP, real owner JWT/RLS, exact Windows and any Customer FINAL remain WITHHELD."
+}

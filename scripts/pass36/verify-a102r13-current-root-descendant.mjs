@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+import fs from "node:fs"; import path from "node:path";
+import {REV,PARENT,MANIFEST,PARENT_MANIFEST,STATE,PROGRAM,RECEIPT,sha256,canonicalJson,readJson,collect,payload} from "./a102r13-source-boundary.mjs";
+const root=process.cwd(); const manifest=readJson(root,MANIFEST); const parent=readJson(root,PARENT_MANIFEST); const authority=readJson(root,"config/pass36/current-release-authority.json"); const state=readJson(root,STATE); const program=readJson(root,PROGRAM); const receiptBytes=fs.readFileSync(path.join(root,RECEIPT)); const inventory=collect(root); const checks=[]; const add=(id,p,d=null)=>checks.push({id,passed:Boolean(p),detail:d});
+add("revision",manifest.revisionId===REV); add("parent",manifest.parentRevisionId===PARENT); add("parent-digest",parent.revisionId===PARENT&&manifest.parentDescendantManifestDigestSha256===parent.manifestDigestSha256);
+const core={...manifest}; delete core.manifestDigestSha256; add("self-digest",manifest.manifestDigestSha256===sha256(canonicalJson(core)));
+add("inventory-safe",inventory.rejected.length===0,inventory.rejected); add("payload",JSON.stringify(manifest.payload)===JSON.stringify(payload(inventory.rows))); add("receipt",manifest.localRegressionReceiptSha256===sha256(receiptBytes));
+add("authority",authority.authorityRevisionId===REV&&authority.currentSource?.revisionId===REV&&authority.currentRootDescendantManifestPath===MANIFEST&&authority.worldClassCompletionProgramPath===PROGRAM);
+add("state",state.revisionId===REV&&state.parentRevisionId===PARENT&&state.passCredit?.A102===false&&state.passCredit?.A103ToA116===false);
+add("program",program.revisionId===REV&&program.parentRevisionId===PARENT&&program.formalRemainingEntries===31);
+const c=manifest.claims??{}; add("claims",c.a102PassCredit===false&&c.a103PassCredit===false&&c.a116PassCredit===false&&c.operationalLogClientErrorBoundaryChecks===38&&c.activeConsoleSinkCount===3&&c.rawBrowserErrorMessagesLogged===false&&c.rawPaymentProviderIdentifiersLogged===false&&c.operationalIdentifiersLabelBoundSha256Only===true&&c.realBrowserConsoleRows===0&&c.productionLogPipelineVerified===false&&c.liveProven===false&&c.saleEnabled===false&&c.productionApproved===false&&c.worldClassProven===false,c);
+const failed=checks.filter((row)=>!row.passed); console.log(JSON.stringify({status:failed.length?"FAIL_A102R13_DESCENDANT":"PASS_A102R13_DESCENDANT_ACTION_REQUIRED_NO_PROMOTION",checks:checks.length,passed:checks.length-failed.length,failed:failed.length,results:checks},null,2)); process.exit(failed.length?1:0);

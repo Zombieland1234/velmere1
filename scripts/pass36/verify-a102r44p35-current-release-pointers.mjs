@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+const REV="VELMERE_PASS36_A102R44P35_ACTION_REQUIRED_STANDALONE_DECISION_SUPPORT_ANGEL_RISK_IMPACT_WHALE_AND_PSYCHOLOGY30_TEST_CYCLE_2_OF_3_NO_LIVE_CREDIT";
+const PARENT="VELMERE_PASS36_A102R44P34_ACTION_REQUIRED_CANONICAL_PRODUCT_TAXONOMY_DYNAMIC_SCORING_PSYCHOLOGY30_AND_TEST_CYCLE_1_OF_3_NO_LIVE_CREDIT";
+const read=(p)=>JSON.parse(fs.readFileSync(p,"utf8"));
+const a=read("config/pass36/current-release-authority.json"),r=read("config/current-release.json"),v=read("config/pass35/current-revision.json"),active=fs.readFileSync("VELMERE_ACTIVE_PASS.txt","utf8").trim();
+const checks=[];const add=(id,p,d=null)=>checks.push({id,passed:Boolean(p),detail:d});
+add("active",active===REV,active);
+add("authority-revision",a.authorityRevisionId===REV&&a.sourceRevisionId===REV);
+add("authority-parent",a.parentRevisionId===PARENT&&a.sourceParentRevisionId===PARENT);
+add("authority-current-source",a.currentSource?.revisionId===REV&&a.currentSource?.parentRevisionId===PARENT);
+add("release-revision",r.sourceRevisionId===REV&&r.parentRevisionId===PARENT&&r.sourceParentRevisionId===PARENT);
+add("revision-revision",v.sourceRevisionId===REV&&v.parentRevisionId===PARENT&&v.sourceParentRevisionId===PARENT&&v.currentRevisionId===REV);
+add("program-pointers",[a,r,v].every((x)=>x.worldClassCompletionProgramRevisionId===REV));
+add("product-counts",[a,r,v].every((x)=>x.a102r44p35CanonicalProductRows===17&&x.a102r44p35TieredProductRows===9&&x.a102r44p35StandaloneProductRows===8));
+add("psychology-counts",[a,r,v].every((x)=>x.a102r44p35PsychologyPersonas===30&&x.a102r44p35StandalonePsychologyRows===720));
+add("cycle",[a,r,v].every((x)=>x.a102r44p35TestCycleCurrent===2&&x.a102r44p35TestCycleTotal===3));
+add("targeted-checks",[a,r,v].every((x)=>x.a102r44p35StandaloneDecisionSupportChecks===209&&x.a102r44p35ActiveStandaloneContractChecks===17&&x.a102r44p35ActiveRouteContractChecks===27&&x.a102r44p35StandaloneProductTruthChecks===31&&x.a102r44p35StandaloneCustomerTruthRuntimeChecks===45&&x.a102r44p35TargetedTypeScriptFiles===23));
+add("dynamic-scoring",[a,r,v].every((x)=>x.a102r44p35DynamicScoreGateCount===112&&x.a102r44p35DynamicScoreMovedRows===14));
+add("no-credit",[a,r,v].every((x)=>x.a102r44p35FullRegressionCredit===false&&x.a102r44p35CustomerProofRows===0&&x.a102r44p35PassCredit===false));
+add("no-promotion",a.claims?.decision==="NO_GO"&&a.claims?.saleEnabled===false&&a.claims?.productionApproved===false&&a.claims?.liveProven===false&&a.claims?.worldClassProven===false);
+const f=checks.filter((x)=>!x.passed);
+console.log(JSON.stringify({schemaVersion:"velmere.pass36.a102r44p35.current-release-pointers-verification.v1",status:f.length?"FAIL":"PASS_R44P35_CURRENT_RELEASE_POINTERS",checks:checks.length,passed:checks.length-f.length,failed:f.length,rows:checks},null,2));
+if(f.length)process.exit(1);
