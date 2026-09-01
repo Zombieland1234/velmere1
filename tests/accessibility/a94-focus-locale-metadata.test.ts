@@ -4,7 +4,6 @@ import type { ReactElement, ReactNode } from "react";
 import type { Pass2371LinkedRequestDrawerSnapshot } from "../../lib/security/linked-request-drawer";
 
 import React from "react";
-import type { ReactElement, ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import LoginSecurityVisual from "../../components/auth/LoginSecurityVisual.tsx";
