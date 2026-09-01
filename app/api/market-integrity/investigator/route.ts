@@ -56,16 +56,16 @@ export async function GET(request: Request) {
       engine: {
         marketData: "live",
         riskEngine: "connected",
-        generativeNarrative: "available",
+        generativeNarrative: process.env.VELMERE_ANGEL_PROVIDER ? "configured" : "not_configured",
         webOsint: "not_connected",
         locale,
       },
       note: "This endpoint prepares the VLM Shield Investigator protocol and current market-data context. Full OSINT verdict still requires current web search against the provided queries.",
       guardrails: { remaining: rateLimit.remaining, resetAt: rateLimit.resetAt },
     }, { headers });
-  } catch (error) {
+  } catch {
     return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: error instanceof Error ? error.message : "VLM Shield Investigator request failed" },
+      { mode: "error", error: "VLM Shield Investigator request failed" },
       { status: 502, headers },
     );
   }
