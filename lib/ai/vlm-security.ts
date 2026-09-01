@@ -113,7 +113,6 @@ const EVIDENCE_QUORUM_MANIPULATION_PATTERNS = [
   /(?:zignoruj|wymus).{0,100}(?:brak providerow|evidence quorum).{0,50}(?:verified|zweryfikowan)/i,
 ];
 
-
 const TEMPORAL_CONSISTENCY_MANIPULATION_PATTERNS = [
   /\b(?:ignore|bypass|disable|force|override|fake)\b.{0,110}\b(?:temporal consistency|evidence half[- ]life|freshness gate|timestamp decay|stale evidence|time decay)\b/i,
   /\b(?:zignoruj|omin|omij|wylacz|wyłącz|wymus|wymuś|nadpisz|sfalszuj|sfałszuj)\b.{0,110}\b(?:spojnosc czasowa|spójność czasowa|polowiczny czas dowodu|half life|swiezosc|świeżość|stare dowody|zanik czasowy)\b/i,
@@ -132,7 +131,6 @@ const NARRATIVE_DRIFT_MANIPULATION_PATTERNS = [
   /\b(?:zignoruj|omin|omij|wylacz|wyłącz|wymus|wymuś|nadpisz|sfalszuj|sfałszuj)\b.{0,110}\b(?:dryf narracji|blokade dryfu|blokadę dryfu|poprzednia analiza|historia werdyktu|zmiana tonu)\b/i,
   /\b(?:ignoriere|ueberspringe|überspringe|deaktiviere|erzwinge|ueberschreibe|uberschreibe|überschreibe|faelsche|fälsche)\b.{0,110}\b(?:narrative drift|drift lock|vorherige analyse|urteilsverlauf|tonwechsel)\b/i,
 ];
-
 
 const PAYMENT_ENTITLEMENT_MANIPULATION_PATTERNS = [
   /\b(?:ignore|bypass|disable|force|override|fake|mark)\b.{0,120}\b(?:payment|paid access|entitlement|stripe session|checkout|402|webhook|audit queue)\b/i,
@@ -307,6 +305,7 @@ export function sanitizeVlmText(value: unknown, max = 1000) {
   for (const pattern of TEMPORAL_CONSISTENCY_MANIPULATION_PATTERNS) text = text.replace(pattern, "[filtered temporal consistency manipulation]");
   for (const pattern of NARRATIVE_DRIFT_MANIPULATION_PATTERNS) text = text.replace(pattern, "[filtered narrative drift manipulation]");
   for (const pattern of DECISION_REVERSIBILITY_MANIPULATION_PATTERNS) text = text.replace(pattern, "[filtered decision reversibility manipulation]");
+  for (const pattern of PAYMENT_ENTITLEMENT_MANIPULATION_PATTERNS) text = text.replace(pattern, "[filtered payment entitlement manipulation]");
   return text.slice(0, max);
 }
 
