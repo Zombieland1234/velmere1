@@ -181,6 +181,34 @@ With different inputs:
 
 ---
 
+## 8. Fresh Retest Results (§109.21)
+
+After fixes recommendation, performed fresh retest with **different inputs**:
+different contracts (BSC-USD, WBNB, malicious placeholder), different assets
+(ALGO, DOT, SPY, ETH), different locales (PL, DE), mobile viewport.
+
+| Cust | Persona | Product | Tier | Input | UI Status | UI Bytes | API Status |
+|---|---|---|---|---|---|---|---|
+| FR01 | Expert trader (fresh) | Audit | Basic | BSC-USD | 200 | 185384 | 503 |
+| FR02 | Defi auditor (fresh) | Audit | Pro | WBNB | 200 | 183442 | 503 |
+| FR03 | Risk analyst (fresh) | Shield | Basic | ALGO | 200 | 200020 | n/a |
+| FR04 | Mobile trader (fresh) | Shield | Basic | DOT | 200 | 200020 | n/a |
+| FR05 | Search tester (fresh) | Browser | Basic | ETH | 200 | 169972 | n/a |
+| FR06 | Angel skeptic (fresh) | Angel | Basic | "Rug pull patterns?" | 200 | 306588 | 503 |
+| FR07 | Audit skeptic (fresh) | Audit | Basic | 0xMalicious | 200 | 185741 | 503 |
+| FR08 | EU customer (fresh) | Real Markets | Basic | SPY | 200 | 830367 | n/a |
+
+**Findings**:
+- All 8 UI: HTTP 200 (consistent with §109 run)
+- Audit + Angel API: 503 (consistent fail-closed)
+- FR02 Pro tier UI: **183442 bytes IDENTICAL to FR01 Basic** — tier delta NOT visible in HTML
+- FR07 DE locale: 185741 vs FR01 PL 185384 vs C01 EN 183442 — locale differences small
+- FR03 ALGO search returns same Shield page — no asset-specific UI
+
+Receipt: `reports/109-fresh-retest.json`
+
+---
+
 ## 9. Provider Verification (§22)
 
 For market-related customers:
