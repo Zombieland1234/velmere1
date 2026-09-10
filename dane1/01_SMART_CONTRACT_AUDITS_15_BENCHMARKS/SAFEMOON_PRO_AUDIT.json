@@ -1,0 +1,30 @@
+{
+  "contractName": "SafeMoon (SAFEMOON)",
+  "symbol": "SAFEMOON",
+  "address": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+  "tier": "PRO",
+  "network": "BNB Smart Chain",
+  "compilerVersion": "solc 0.6.12",
+  "proxyPattern": "Immutable (Centralized Owner)",
+  "riskScore": 94,
+  "riskLabel": "CRITICAL RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for SafeMoon (SAFEMOON).",
+  "findings": [
+    {
+      "title": "Arbitrary Burn Parameter Permitting Liquidity Pool Depletion",
+      "severity": "CRITICAL",
+      "swcId": "SWC-105",
+      "cweId": "CWE-284",
+      "description": "Publicly accessible or privileged burn mechanism allowing removal of LP tokens from Uniswap/PancakeSwap pair without timelock."
+    }
+  ],
+  "verificationDigest": "482e62f7a7e56e9984f329363cf06e9f84689a87232bcf207892698f75a160f6",
+  "attackSurface": {
+    "category": "Centralized Liquidity Drain & Arbitrary Burn",
+    "attackVector": "Owner private key compromise or malicious insider drains $8.9M by invoking burn on liquidity pair."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/SafeMoon.sol\n+++ b/contracts/SafeMoon.sol\n@@ -389,3 +389,3 @@\n- function burn(address account, uint256 amount) public onlyOwner {\n+ function burn(address account, uint256 amount) public {\n+   require(account == msg.sender, 'Only self burn');"
+  }
+}

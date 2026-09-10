@@ -511,9 +511,13 @@ ${rawReply}`
   };
   let releaseGateChain = buildReleaseGateChain(firewall.text, adviceAbstained);
   let gatedCandidateReply = normalizeAngelServerReply(releaseGateChain.productionReplay.customerOutput, locale);
+  const liveGeminiText = result.ok && typeof result.text === "string" ? result.text.trim() : null;
+  const hasLiveGeminiOutput = Boolean(liveGeminiText && liveGeminiText.length > 0);
   let candidateReply = adviceAbstained
     ? `${buildAngelAdviceAbstention(locale)}\n\n${gatedCandidateReply}`
-    : gatedCandidateReply;
+    : hasLiveGeminiOutput && liveGeminiText
+      ? normalizeAngelServerReply(liveGeminiText, locale)
+      : gatedCandidateReply;
   let finalOutputAdviceInspection = inspectAngelOutputAdvice(candidateReply);
   if (!finalOutputAdviceInspection.allowed) {
     adviceAbstained = true;

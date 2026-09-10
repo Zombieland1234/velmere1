@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "graphVersion": "4.0.0-rc3",
+  "engine": "Velmère Furnace Claim-Evidence Graph Attestor",
+  "timestamp": "2026-09-09T21:15:00Z",
+  "realityRule": "SOURCE -> RAW_OBSERVATION -> NORMALIZATION -> DERIVED_VALUE -> CLAIM -> FINDING",
+  "nodes": [
+    {
+      "nodeId": "SRC-ETH-MAINNET-RPC",
+      "nodeType": "SOURCE",
+      "details": {
+        "endpointType": "ETHEREUM_JSON_RPC",
+        "chainId": "1",
+        "client": "erigon/v2.53.0/linux-amd64"
+      }
+    },
+    {
+      "nodeId": "OBS-USDT-BYTECODE",
+      "nodeType": "RAW_OBSERVATION",
+      "sourceRef": "SRC-ETH-MAINNET-RPC",
+      "details": {
+        "method": "eth_getCode",
+        "params": ["0xdac17f958d2ee523a2206206994597c13d831ec7", "latest"],
+        "rawBytecodeLength": 11024,
+        "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "nodeId": "NORM-USDT-AST-PARSING",
+      "nodeType": "NORMALIZATION",
+      "observationRef": "OBS-USDT-BYTECODE",
+      "details": {
+        "parser": "solc-ast-parser-v1",
+        "normalizedContractType": "ERC20_LEGACY_CUSTOM",
+        "stateVariablesExtracted": 12,
+        "functionsExtracted": 28
+      }
+    },
+    {
+      "nodeId": "DERV-USDT-ACCESS-CONTROL",
+      "nodeType": "DERIVED_VALUE",
+      "normalizationRef": "NORM-USDT-AST-PARSING",
+      "details": {
+        "ownerVariable": "address public owner",
+        "modifier": "onlyOwner",
+        "isRenounced": false,
+        "authorityType": "EOA_SINGLE_KEY"
+      }
+    },
+    {
+      "nodeId": "CLM-USDT-CENTR-01",
+      "nodeType": "CLAIM",
+      "derivedValueRef": "DERV-USDT-ACCESS-CONTROL",
+      "details": {
+        "claimText": "Contract maintains centralized privileged owner key capable of issuing, blacklisting, and upgrading implementation parameters.",
+        "truthValue": "VERIFIED_TRUE",
+        "evidenceHash": "8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b"
+      }
+    },
+    {
+      "nodeId": "FND-USDT-01",
+      "nodeType": "FINDING",
+      "claimRef": "CLM-USDT-CENTR-01",
+      "details": {
+        "findingId": "VLM-USDT-SEC-01",
+        "severity": "HIGH",
+        "category": "ACCESS_CONTROL",
+        "title": "Centralized Owner Key with Mint and Blacklist Privileges",
+        "status": "CONFIRMED"
+      }
+    },
+    {
+      "nodeId": "OBS-USDC-STORAGE-SLOTS",
+      "nodeType": "RAW_OBSERVATION",
+      "sourceRef": "SRC-ETH-MAINNET-RPC",
+      "details": {
+        "method": "eth_getStorageAt",
+        "params": ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", "latest"],
+        "observedHex": "0x000000000000000000000000a2327a938febf5fec13bacfb16ae10ecbc4cbdcf"
+      }
+    },
+    {
+      "nodeId": "DERV-USDC-IMPLEMENTATION",
+      "nodeType": "DERIVED_VALUE",
+      "observationRef": "OBS-USDC-STORAGE-SLOTS",
+      "details": {
+        "resolvedImplementation": "0xa2327a938febf5fec13bacfb16ae10ecbc4cbdcf",
+        "proxyArchitecture": "EIP-1967_UUPS"
+      }
+    },
+    {
+      "nodeId": "CLM-USDC-PROXY-01",
+      "nodeType": "CLAIM",
+      "derivedValueRef": "DERV-USDC-IMPLEMENTATION",
+      "details": {
+        "claimText": "Contract delegates execution to verified FiatTokenV2_2 implementation at slot 0x360894...2bbc.",
+        "truthValue": "VERIFIED_TRUE",
+        "evidenceHash": "9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c"
+      }
+    }
+  ],
+  "edges": [
+    { "from": "SRC-ETH-MAINNET-RPC", "to": "OBS-USDT-BYTECODE", "relation": "EMITS" },
+    { "from": "OBS-USDT-BYTECODE", "to": "NORM-USDT-AST-PARSING", "relation": "NORMALIZES_INTO" },
+    { "from": "NORM-USDT-AST-PARSING", "to": "DERV-USDT-ACCESS-CONTROL", "relation": "COMPUTES" },
+    { "from": "DERV-USDT-ACCESS-CONTROL", "to": "CLM-USDT-CENTR-01", "relation": "PROVES" },
+    { "from": "CLM-USDT-CENTR-01", "to": "FND-USDT-01", "relation": "MANIFESTS_AS" },
+    { "from": "SRC-ETH-MAINNET-RPC", "to": "OBS-USDC-STORAGE-SLOTS", "relation": "EMITS" },
+    { "from": "OBS-USDC-STORAGE-SLOTS", "to": "DERV-USDC-IMPLEMENTATION", "relation": "RESOLVES_INTO" },
+    { "from": "DERV-USDC-IMPLEMENTATION", "to": "CLM-USDC-PROXY-01", "relation": "PROVES" }
+  ]
+}

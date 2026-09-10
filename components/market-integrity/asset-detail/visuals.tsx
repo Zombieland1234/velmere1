@@ -47,6 +47,7 @@ export function tokenVisualLabel(symbol: string) {
 
 const ANALYSIS_LOCAL_LOGOS: Record<string, string> = {
   AAPL: "/market-logos/aapl.svg", MSFT: "/market-logos/msft.svg", NVDA: "/market-logos/nvda.svg", GOOGL: "/market-logos/googl.svg", GOOG: "/market-logos/googl.svg", AMZN: "/market-logos/amzn.svg", META: "/market-logos/meta.svg", TSLA: "/market-logos/tsla.svg", AMD: "/market-logos/amd.svg", ASML: "/market-logos/asml.svg", TSM: "/market-logos/tsm.svg", AVGO: "/market-logos/avgo.svg", JPM: "/market-logos/jpm.svg", BAC: "/market-logos/bac.svg", V: "/market-logos/visa.svg", MA: "/market-logos/mastercard.svg", NVO: "/market-logos/nvo.svg", BMW: "/market-logos/bmw.svg", MBG: "/market-logos/mercedes.svg", VOW3: "/market-logos/vw.svg", ADS: "/market-logos/adidas.svg", AIR: "/market-logos/air.svg", MC: "/market-logos/lvmh.svg", OR: "/market-logos/or.svg", P911: "/market-logos/porsche.svg", BTC: "/market-logos/btc.svg", ETH: "/market-logos/eth.svg", BNB: "/market-logos/bnb.svg", SOL: "/market-logos/sol.svg", USDT: "/market-logos/usdt.svg", USDC: "/market-logos/usdc.svg", DOGE: "/market-logos/doge.svg", XRP: "/market-logos/xrp.svg",
+  BRK: "/market-logos/brk.svg", "BRK.B": "/market-logos/brk.svg", WMT: "/market-logos/wmt.svg", LLY: "/market-logos/lly.svg", SPY: "/market-logos/spy.svg", QQQ: "/market-logos/qqq.svg", GLD: "/market-logos/gld.svg", USO: "/market-logos/uso.svg", TLT: "/market-logos/tlt.svg", EURUSD: "/market-logos/eurusd.svg", "EUR/USD": "/market-logos/eurusd.svg", DXY: "/market-logos/dxy.svg",
 };
 
 function localAnalysisLogo(symbol: string) {

@@ -97,4 +97,5 @@ export const MARKET_INTEGRITY_ROUTES = {
   "vlm": { methods: ["GET", "POST"] as const, load: () => import("@/lib/server/market-integrity-route-modules/vlm") },
   "window-reconciliation": { methods: ["GET"] as const, load: () => import("@/lib/server/market-integrity-route-modules/window-reconciliation") },
   "workspace": { methods: ["GET"] as const, load: () => import("@/lib/server/market-integrity-route-modules/workspace") },
+  "worldclass-integrity": { methods: ["GET"] as const, load: () => import("@/lib/server/market-integrity-route-modules/worldclass-integrity") },
 } as const satisfies LazyRouteRegistry;

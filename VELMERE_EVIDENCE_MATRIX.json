@@ -1,0 +1,210 @@
+{
+  "$schema": "https://velmere.com/schemas/evidence-matrix.v1.json",
+  "auditRunId": "velmere-adv-evidence-2026-09-07-final",
+  "generatedAt": "2026-09-07T16:05:00Z",
+  "auditor": "Hostile External Release Reviewer & Adversarial QA Lead",
+  "releaseStatus": "NO-GO FOR PUBLIC LIVE CHECKOUT; APPROVED FOR CONTROLLED ENGINE BETA",
+  "matrix": [
+    {
+      "feature": "Asset-Class Execution Firewall",
+      "assetClass": "all (evm_contract, native_crypto, equity, commodity, fx)",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-FIREWALL-001",
+        "EVID-FIREWALL-002"
+      ],
+      "testIds": [
+        "tests/adversarial/asset-class-firewall.test.ts",
+        "tests/adversarial/discovered-failures-regression.test.ts"
+      ],
+      "sourceIds": [
+        "lib/security/asset-class-firewall.ts",
+        "lib/security/audit-canonical-report.ts"
+      ],
+      "limitations": "Restricted to pre-defined analyzer domain classifications. Unknown asset classes fail-closed to UNKNOWN.",
+      "lastVerified": "2026-09-07T15:59:04Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "First-Class 8-State Status Contract & Partition Aggregation",
+      "assetClass": "all",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-STATUS-001",
+        "EVID-STATUS-002"
+      ],
+      "testIds": [
+        "tests/adversarial/check-status-invariants.test.ts",
+        "tests/adversarial/property-based-invariants.test.ts"
+      ],
+      "sourceIds": [
+        "lib/security/status-contract.ts"
+      ],
+      "limitations": "Mathematical partition requires explicit assignment of risk weights; unweighted checks default to weight 1.",
+      "lastVerified": "2026-09-07T15:55:00Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Golden Security Corpus (14 Known-Answer Fixtures)",
+      "assetClass": "evm_contract",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-GSC-001-SAFE",
+        "EVID-GSC-002-REENTRANCY",
+        "EVID-GSC-003-DRAIN",
+        "EVID-GSC-004-MINT",
+        "EVID-GSC-005-FEE",
+        "EVID-GSC-006-BLACKLIST",
+        "EVID-GSC-007-PAUSE",
+        "EVID-GSC-008-PROXY",
+        "EVID-GSC-009-ACCESS",
+        "EVID-GSC-010-ORACLE",
+        "EVID-GSC-011-FLASHLOAN",
+        "EVID-GSC-012-TIMELOCK",
+        "EVID-GSC-013-HONEYPOT",
+        "EVID-GSC-014-FALSEPOS"
+      ],
+      "testIds": [
+        "tests/adversarial/golden-security-corpus.test.ts"
+      ],
+      "sourceIds": [
+        "tests/fixtures/golden-security-corpus/*"
+      ],
+      "limitations": "Synthesized and on-chain reference bytecode fixtures. Does not cover arbitrary proprietary zero-day EVM bytecode extensions.",
+      "lastVerified": "2026-09-07T15:50:00Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Discovered Failures 10-Regression Suite",
+      "assetClass": "all",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-REGR-001-NVDA",
+        "EVID-REGR-002-SPY",
+        "EVID-REGR-003-GOLD",
+        "EVID-REGR-004-ADA",
+        "EVID-REGR-005-BNB",
+        "EVID-REGR-006-ADDR",
+        "EVID-REGR-007-SCALE",
+        "EVID-REGR-008-CONTRADICT",
+        "EVID-REGR-009-TIERLEAK",
+        "EVID-REGR-010-PERSONA"
+      ],
+      "testIds": [
+        "tests/adversarial/discovered-failures-regression.test.ts"
+      ],
+      "sourceIds": [
+        "tests/adversarial/discovered-failures-regression.test.ts",
+        "lib/security/asset-class-firewall.ts",
+        "lib/security/audit-canonical-report.ts"
+      ],
+      "limitations": "Guarantees no re-emergence of 10 historically discovered architectural and presentation bugs.",
+      "lastVerified": "2026-09-07T15:59:04Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Pre-Flight Report Semantic Linter (9 Invariants)",
+      "assetClass": "all",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-LINT-001",
+        "EVID-LINT-002"
+      ],
+      "testIds": [
+        "tests/adversarial/report-semantic-linter.test.ts"
+      ],
+      "sourceIds": [
+        "lib/security/report-semantic-linter.ts",
+        "lib/security/audit-canonical-report.ts"
+      ],
+      "limitations": "Validates report semantic structures prior to rendering; does not execute dynamic symbolic execution on unreferenced bytecodes.",
+      "lastVerified": "2026-09-07T15:58:00Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "50 Canonical Production PDFs Pipeline (Deterministic PDF-1.4)",
+      "assetClass": "evm_contract (30), native_crypto (12), equity (4), commodity (2), fx (1), etf (1)",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-PDF50-DIGESTS-TXT",
+        "EVID-PDF50-DIR"
+      ],
+      "testIds": [
+        "scripts/generate_50_production_pdfs.ts"
+      ],
+      "sourceIds": [
+        "scripts/generate_50_production_pdfs.ts",
+        "lib/security/audit-canonical-report.ts",
+        "lib/security/pro-audit-pdf/customer-safe-renderer.ts"
+      ],
+      "limitations": "Client must use approved PDF reader supporting PDF-1.4 standard.",
+      "lastVerified": "2026-09-07T13:37:19Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Server-Side SKU Authority & Checkout Stop-Sell Containment",
+      "assetClass": "commerce / billing",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-PAY-001",
+        "EVID-PAY-CONTAINMENT"
+      ],
+      "testIds": [
+        "tests/adversarial/payment-red-team.test.ts"
+      ],
+      "sourceIds": [
+        "app/api/checkout/vlm-service/route.ts",
+        "lib/commerce/vlm-paid-checkout-containment.ts",
+        "lib/commerce/vlm-paid-access.ts"
+      ],
+      "limitations": "Public checkout returns HTTP 503 Service Unavailable by design; live credit card processing is intentionally halted.",
+      "lastVerified": "2026-09-07T15:55:00Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Adversarial Extended Mutation Testing Harness (24 Mutants Killed)",
+      "assetClass": "test_engineering",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-MUTATION-24-KILLED"
+      ],
+      "testIds": [
+        "tests/adversarial/extended-mutation-testing.test.ts"
+      ],
+      "sourceIds": [
+        "tests/adversarial/extended-mutation-testing.test.ts"
+      ],
+      "limitations": "Covers all 13 mandated domains: Stop-Sell, scoring, evidence gates, asset resolver, tier entitlement, payment amount, payment tier, webhook verification, authorization, report rendering, PDF data binding, live-data freshness, and N/A handling.",
+      "lastVerified": "2026-09-07T16:01:28Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Traceable Evidence Ledger & Lineage",
+      "assetClass": "audit_evidence",
+      "status": "VERIFIED",
+      "evidenceIds": [
+        "EVID-TRACE-001"
+      ],
+      "testIds": [
+        "tests/adversarial/report-semantic-linter.test.ts"
+      ],
+      "sourceIds": [
+        "lib/security/traceable-evidence-engine.ts"
+      ],
+      "limitations": "Lineage relies on SHA-256 digests generated at intake time.",
+      "lastVerified": "2026-09-07T15:55:00Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    },
+    {
+      "feature": "Automated Real-Time Mempool Exploit Prevention",
+      "assetClass": "mempool_execution",
+      "status": "UNVERIFIED",
+      "evidenceIds": [],
+      "testIds": [],
+      "sourceIds": [],
+      "limitations": "Velmère does NOT operate autonomous mempool front-running or transaction-canceling bots.",
+      "lastVerified": "2026-09-07T16:05:00Z",
+      "codeRevision": "git-rev-2026-09-07-hardening"
+    }
+  ]
+}

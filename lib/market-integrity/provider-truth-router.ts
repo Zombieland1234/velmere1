@@ -67,6 +67,13 @@ export type Pass458LegacyQuote = {
   currentPrice: number | null;
   changePercent: number | null;
   candles: Pass458Candle[];
+  marketCap?: number | null;
+  volume24h?: number | null;
+  high24h?: number | null;
+  low24h?: number | null;
+  priceChange1h?: number | null;
+  priceChange24h?: number | null;
+  priceChange7d?: number | null;
 };
 
 export type Pass458TruthQuote = Pass458LegacyQuote & {
@@ -671,14 +678,14 @@ function upgradeCompatibilityQuote(
         : (reason ??
           "Primary truth provider is not configured or unavailable."),
     secondSourceRequired: route.secondSourceRequired,
-    marketCap: null,
+    marketCap: quote.marketCap ?? null,
     fdv: null,
-    volume24h: null,
-    high24h: null,
-    low24h: null,
-    priceChange1h: null,
-    priceChange24h: null,
-    priceChange7d: null,
+    volume24h: quote.volume24h ?? null,
+    high24h: quote.high24h ?? null,
+    low24h: quote.low24h ?? null,
+    priceChange1h: quote.priceChange1h ?? null,
+    priceChange24h: quote.priceChange24h ?? quote.changePercent ?? null,
+    priceChange7d: quote.priceChange7d ?? null,
     circulatingSupply: null,
     totalSupply: null,
     maxSupply: null,

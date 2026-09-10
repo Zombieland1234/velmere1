@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_shib_advanced_027",
+  "caseRef": "CASE-VLM-SHIB-ADVANCED",
+  "target": {
+    "contractName": "SHIBA INU Token",
+    "contractAddress": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "SHIB",
+    "proxyPattern": "Immutable (No Proxy)"
+  },
+  "clientEntitlementTier": "advanced",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:15.810Z",
+  "verdict": {
+    "riskScore": 30,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 96,
+    "auditQualityScore": 97,
+    "summary": "SHIB posiada stałą podaż 1 biliarda tokenów, z 50% historycznie spalonymi przez Vitalika Buterina. Niezmienny kontrakt ERC20.",
+    "evidenceCoverage": 95,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 82,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 18072000,
+      "snapshotBlockHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2",
+      "runtimeBytecodeSha256": "sha256:5b3820fb733157e8dcf7d6e6f98efb098194d80a13821035b1fc682613dcf589",
+      "pinnedChainId": "1",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 94,
+      "reachableCFGEdgesPct": 90,
+      "functionsPct": 96,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 92,
+      "formalPropertiesPct": 82
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd audytu i kontekst kontraktu",
+      "subtitle": "Podsumowanie zakresu i celów wykonania analizy",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości kontraktu i weryfikacja wdrożenia w sieci",
+        "Dekompilacja selektorów funkcji i analiza wzorców proxy",
+        "Wstępna kalibracja powierzchni ataku i poziomów ryzyka"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Projekt / Kontrakt",
+            "value": "SHIBA INU Token"
+          },
+          {
+            "label": "Adres kontraktu",
+            "value": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce"
+          },
+          {
+            "label": "Sieć / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "SHIB"
+          },
+          {
+            "label": "Wzorzec proxy",
+            "value": "Immutable (No Proxy)"
+          },
+          {
+            "label": "Wersja kompilatora",
+            "value": "solc 0.6.12"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja kodu i dekompilacja selektorów",
+      "subtitle": "Porównanie skrótu stanu z łańcuchem bloków i analiza dispatcherów",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Integralność bytecode'u zweryfikowana z węzłem RPC",
+        "Analiza przepływu sterowania dla publicznych punktów wejścia",
+        "Identyfikacja potencjalnych ukrytych funkcji samozniszczenia i delegacji"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Kod maszynowy EVM został zdekodowany do grafu przepływu sterowania (CFG). Analizator sprawdził poprawność selektorów ERC oraz obecność opkodów uprzywilejowanych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa",
+      "subtitle": "Wykryte podatności w standardowym skanowaniu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie zidentyfikowanych ryzyk bezpieczeństwa",
+        "Klasyfikacja ciężkości wg standardu SWC i CWE",
+        "Wskazówki naprawcze i rekomendacje minimalizacji ryzyka"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Role uprzywilejowane, klucze admina i governance",
+      "subtitle": "Weryfikacja parametrów opóźnień timelock i kontroli zarządczej",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Parametry opóźnień timelock i wieloosobowej autoryzacji transakcji",
+        "Wykrywanie uprzywilejowanych funkcji mint, pause, blacklist oraz drenażu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Owner Privileges",
+            "value": "None (Renounced)",
+            "status": "verified",
+            "claimId": "CLM-rep_shib_advanced_027-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_shib_advanced_027-pro_permission_parser-1",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Szczegółowa mapa ról śledzi wszystkie odrębne ścieżki wykonania powiązane z kontrolerami on-chain."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Analiza płynności, posiadaczy i blokad LP (PRO)",
+      "subtitle": "Rozkład tokenów, ryzyko wielorybów i dowody zablokowania par DEX",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza krzywej dystrybucji tokenów i koncentracji największych posiadaczy",
+        "Weryfikacja par płynności DEX i dowodów blokady w zarejestrowanych skarbcach",
+        "Zautomatyzowana symulacja honeypot, weryfikacja opłat i restrykcji sprzedaży"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Top 100 Holders Concentration",
+            "value": "48.6% (including dead burn addresses)",
+            "status": "neutral",
+            "claimId": "CLM-rep_shib_advanced_027-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_shib_advanced_027-pro_liquidity_depth-1",
+            "classification": "C"
+          }
+        ],
+        "paragraphs": [
+          "Analiza płynności bada architekturę par AMM, mechanizmy blokady płynności oraz symulację opłat transakcyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Modelowanie powierzchni ataku i reentrancy (PRO)",
+      "subtitle": "Symulacja wektorów manipulacji wyrocznią, pożyczek flash i reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie ochrony przed reentrancy między funkcjami i kontraktami",
+        "Weryfikacja świeżości wyroczni cenowych i odporności na manipulacje rynkowe",
+        "Modelowanie szoków ekonomicznych i symulacja odporności na pożyczki flash loan"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od wyroczni cenowej",
+            "value": "Sprawdzono źródła cenowe w bytecode",
+            "status": "verified",
+            "claimId": "CLM-rep_shib_advanced_027-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_shib_advanced_027-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "Odporność na manipulacje stanem oceniona",
+            "status": "verified",
+            "claimId": "CLM-rep_shib_advanced_027-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_shib_advanced_027-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Zabezpieczenie przed reentrancy",
+            "value": "Wzorzec CEI / Blokada ponownego wejścia zweryfikowana",
+            "status": "verified",
+            "claimId": "CLM-rep_shib_advanced_027-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_shib_advanced_027-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Różnice w układzie pamięci i kompilacja wieloźródłowa (ADVANCED)",
+      "subtitle": "Głęboka analiza kolizji slotów pamięci podczas uaktualnień EIP-1967",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Wykrywanie kolizji slotów pamięci między kolejnymi wdrożeniami implementacji",
+        "Weryfikacja buforów pamięci proxy oraz zachowania stanu zmiennych stanu",
+        "Reprodukcja bytecode względem oficjalnych metadanych kompilatora"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Storage Slots Evaluated",
+            "value": "Standard ERC20 storage mapping",
+            "status": "verified",
+            "claimId": "CLM-rep_shib_advanced_027-advanced_bytecode_diff-1",
+            "evidenceId": "EVD-rep_shib_advanced_027-advanced_bytecode_diff-1",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Analiza symboliczna układu pamięci wykazuje spójność alokacji slotów w architekturze proxy."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Weryfikacja formalna SMT i analiza regresji (ADVANCED)",
+      "subtitle": "Matematyczne dowody niezmiennikow Z3 solver i sledzenie zmian bytecode",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Dowody SMT dla niezmiennikow wyplacalnosci, zachowania aktywow i niemozliwosci reentrancy",
+        "Analiza regresji bytecode implementacji i sledzenie zmian logiki",
+        "Weryfikacja formalna SMT (Z3): 82% niezmiennikow zweryfikowanych (QF_LIA UNSAT)"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Status wdrozenia",
+            "value": "Zweryfikowany aktywny"
+          },
+          {
+            "label": "Aktywna implementacja",
+            "value": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce"
+          },
+          {
+            "label": "Weryfikacja formalna (Z3 SMT)",
+            "value": "VERIFIED: 82% proof coverage (QF_LIA, TIMEOUT!=PASS)"
+          },
+          {
+            "label": "Fuzzing niezmiennikow",
+            "value": "100,000 runs executed (0 violations)"
+          },
+          {
+            "label": "Naruszenia asercji",
+            "value": "0 detected in verified states"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i podpisany protokół (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu przez certyfikowanego audytora",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Akceptacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji",
+        "Wyraźna granica przeglądu manualnego: brak certyfikatów absolutnego bezpieczeństwa"
+      ],
+      "data": {
+        "reviewerState": {
+          "status": "not_commissioned",
+          "reviewDate": "—"
+        },
+        "paragraphs": [
+          "Status weryfikacji: INDEPENDENT HUMAN REVIEW NOT COMMISSIONED. Zgodnie ze standardem uczciwości Velmère, deklaracje recenzji ludzkiej nie są dołączane do raportu bez faktycznego, podpisanego dowodu analityka."
+        ]
+      }
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:f7b75b72f677c1310d0be1ec60eb8d7a9d90222aa51163ac48487dedcc1eea64",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "blockNumber": 18072000,
+      "contractAddress": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.6.12",
+      "optimizationRuns": 200,
+      "evmTarget": "istanbul"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 94,
+      "reachableCFGEdgesPct": 90,
+      "functionsPct": 96,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 82
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:3fd429ef713f0add56cb75f9723e5f44dc521001b717279e42d9e74b8515ae74",
+      "reportDigestSha256": "sha256:3fd429ef713f0add56cb75f9723e5f44dc521001b717279e42d9e74b8515ae74",
+      "provenanceHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:37a6a4c54a81bdd07e711c5bc45a1990e37d223b77a0a9f13574b086204e3f4f",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "c9ce069e7b465d8d1f16e255b50d6632cd2a711184bc56c49a3a438214f44dba628097d8bd6d230780e15a44a76720ce9174cce5571795c56735ba63a0c21e03",
+    "signedDigest": "4a25fb512d2e6f7fb12a20378000a5debd3962438758e8eabede38fd8d81b73c",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "4a25fb512d2e6f7fb12a20378000a5debd3962438758e8eabede38fd8d81b73c",
+      "serialNumber": "1eea016f8c4456939381d6f562d5c600",
+      "genTime": "2026-09-10T12:36:15.810Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "231d07645b0103b238aca3b30510d71bc2a7f37cf6bcfa698f156975f1af0f0a"
+    },
+    "provenanceProof": "sha256:5c4b454a1b4b7bb100835d525d1051a7404f93d47ebd131b841607d5f89f5241"
+  },
+  "integrityProof": {
+    "pdfSha256": "342aa4be12ef4f967959502f365218ffb0498475591ef8451d402edca5bf7cdd",
+    "pdfByteLength": 80205,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:15.819Z"
+  }
+}

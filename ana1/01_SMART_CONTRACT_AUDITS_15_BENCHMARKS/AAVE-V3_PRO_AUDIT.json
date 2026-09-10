@@ -1,0 +1,19 @@
+{
+  "targetContract": "Aave V3 Lending Pool",
+  "symbol": "AAVE-V3",
+  "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 16,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "EMode Isolation Mode Cascading Health Factor Miscalculation",
+    "category": "Cross-Asset Liquidation & Flash Loan Health Factor",
+    "swcId": "SWC-107",
+    "cweId": "CWE-682",
+    "rootCause": "Disparity between oracle price deviation tolerance and E-Mode LTV parameters under high-frequency liquidation cascades.",
+    "attackVector": "Attacker flash loans large balance, triggers localized price disparity on Uniswap v3 oracle feed, exploiting liquidation bonus."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/LiquidationLogic.sol\n+++ b/contracts/LiquidationLogic.sol\n@@ -210,3 +210,4 @@\n+ require(healthFactorAfter > healthFactorBefore, 'Health factor did not improve');",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

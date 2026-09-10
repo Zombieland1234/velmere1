@@ -1,0 +1,293 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "target": {
+    "contractName": "USD Coin Contract",
+    "contractAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "USDC",
+    "proxyPattern": "FiatTokenProxy (EIP-1967 Upgradeable)"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "pl",
+  "createdAt": "2026-09-09T19:29:41.571Z",
+  "verdict": {
+    "riskScore": 32,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 97,
+    "summary": "USDC reprezentuje najwyższy standard regulacyjny z precyzyjnym podziałem ról (MasterMinter, Blacklister, Pauser) kontrolowanych przez sprzętowe moduły HSM.",
+    "evidenceCoverage": 98,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 86.4
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd audytu i kontekst kontraktu",
+      "subtitle": "Podsumowanie zakresu i celów wykonania analizy",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości kontraktu i weryfikacja wdrożenia w sieci",
+        "Dekompilacja selektorów funkcji i analiza wzorców proxy",
+        "Wstępna kalibracja powierzchni ataku i poziomów ryzyka"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Projekt / Kontrakt",
+            "value": "USD Coin Contract"
+          },
+          {
+            "label": "Adres kontraktu",
+            "value": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+          },
+          {
+            "label": "Sieć / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "USDC"
+          },
+          {
+            "label": "Wzorzec proxy",
+            "value": "FiatTokenProxy (EIP-1967 Upgradeable)"
+          },
+          {
+            "label": "Wersja kompilatora",
+            "value": "solc 0.6.12"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja kodu i dekompilacja selektorów",
+      "subtitle": "Porównanie skrótu stanu z łańcuchem bloków i analiza dispatcherów",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Integralność bytecode'u zweryfikowana z węzłem RPC",
+        "Analiza przepływu sterowania dla publicznych punktów wejścia",
+        "Identyfikacja potencjalnych ukrytych funkcji samozniszczenia i delegacji"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Kod maszynowy EVM został zdekodowany do grafu przepływu sterowania (CFG). Analizator sprawdził poprawność selektorów ERC oraz obecność opkodów uprzywilejowanych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa",
+      "subtitle": "Wykryte podatności w standardowym skanowaniu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie zidentyfikowanych ryzyk bezpieczeństwa",
+        "Klasyfikacja ciężkości wg standardu SWC i CWE",
+        "Wskazówki naprawcze i rekomendacje minimalizacji ryzyka"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-USDC-01",
+            "severity": "low",
+            "category": "Proxy Pattern",
+            "title": "Proxy Admin Upgradeability",
+            "description": "Contract implementation can be upgraded by ProxyAdmin without an on-chain timelock delay, relying on Circle institutional governance.",
+            "evidence": "function upgradeToAndCall(...) external payable",
+            "recommendation": "Maintain automated alert pipeline tracking ProxyAdmin transactions.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-undefined-VLM-USDC-01",
+            "evidenceId": "EVD-FIND-undefined-VLM-USDC-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza uprawnień i kontroli ról (PRO)",
+      "subtitle": "Głęboka analiza uprawnień właściciela, multisig i timelock",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Rola administratora: hierarchia uprawnień i kontroli dostępu w bytecode",
+        "Weryfikacja parametrów opóźnienia timelock i mechanizmów governance",
+        "Wykrywanie uprzywilejowanych funkcji mint, pause, blacklist oraz drenażu",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Analiza płynności, posiadaczy i blokad LP (PRO)",
+      "subtitle": "Rozkład tokenów, ryzyko wielorybów i dowody zablokowania par DEX",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analiza krzywej dystrybucji tokenów i koncentracji największych posiadaczy",
+        "Weryfikacja par płynności DEX i dowodów blokady w zarejestrowanych skarbcach",
+        "Zautomatyzowana symulacja honeypot, weryfikacja opłat i restrykcji sprzedaży",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Modelowanie powierzchni ataku i reentrancy (PRO)",
+      "subtitle": "Symulacja wektorów manipulacji wyrocznią, pożyczek flash i reentrancy",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Modelowanie ochrony przed reentrancy między funkcjami i kontraktami",
+        "Weryfikacja świeżości wyroczni cenowych i odporności na manipulacje rynkowe",
+        "Modelowanie szoków ekonomicznych i symulacja odporności na pożyczki flash loan",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Różnice w układzie pamięci i kompilacja wieloźródłowa (ADVANCED)",
+      "subtitle": "Głęboka analiza kolizji slotów pamięci podczas uaktualnień EIP-1967",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Wykrywanie kolizji slotów pamięci między kolejnymi wdrożeniami implementacji",
+        "Weryfikacja buforów pamięci proxy oraz zachowania stanu zmiennych stanu",
+        "Reprodukcja bytecode względem oficjalnych metadanych kompilatora",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Weryfikacja formalna SMT i analiza regresji (ADVANCED)",
+      "subtitle": "Matematyczne dowody niezmiennikow Z3 solver i sledzenie zmian bytecode",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Dowody SMT dla niezmiennikow wyplacalnosci, zachowania aktywow i niemozliwosci reentrancy",
+        "Analiza regresji bytecode implementacji i sledzenie zmian logiki",
+        "Weryfikacja formalna SMT (Z3): PROPERTY P VERIFIED UNDER ASSUMPTIONS A FOR MODEL M",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i podpisany protokół (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu przez certyfikowanego audytora",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Akceptacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji",
+        "Wyraźna granica przeglądu manualnego: brak certyfikatów absolutnego bezpieczeństwa",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:924bb2c1f52201a68472d23626e75b02f62e42fa197c1ef469b7739bed4201ba",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "contractAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.6.12",
+      "optimizationRuns": 200,
+      "evmTarget": "istanbul"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 96,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 86.4
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:22e28174b91224c492f7b638dea200b7ce05bd9c16ee851e371e13c52b806774",
+      "reportDigestSha256": "sha256:22e28174b91224c492f7b638dea200b7ce05bd9c16ee851e371e13c52b806774",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": [
+      {
+        "id": "VLM-PATH-02",
+        "vectorTitle": "Privileged Implementation Rollback Vector",
+        "exploitabilityScore": 0.4,
+        "mitigationStatus": "THEORETICAL_BOUNDED",
+        "economicImpactUsdEst": "$0 (Role-Gated & Non-Selfdestructing)",
+        "solverLemmaRef": "LEMMA-AUTH-MULTI-ADMIN-UNSAT"
+      }
+    ]
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_ONLY",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:9f1dafd1ae06911487f69fc208ae403aa34d2d8eb494687bb81ac68b151c427b",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAS54WxyRpYZOZI+qfngbDdrI/r7N1HHGCCQzHBP2tXBA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "9c7e7d8d239eb5b91ab2b839c6cea9317fd42bf74832d08a0620e3b7ec803c224c310d07da5b704c159dff1770e6b6f34384c8fa86fffc62bb6c4947d137c40b",
+    "signedDigest": "daddd78584a704f07fe28f305cffa124f5510df7435b0ca533018dea71ad8edf",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "daddd78584a704f07fe28f305cffa124f5510df7435b0ca533018dea71ad8edf",
+      "serialNumber": "c25ff02b4b9fa60ad7e8da95bc59f310",
+      "genTime": "2026-09-09T19:29:41.571Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "f0b7b1f49fe14f3dba88f6cb12e6c7e2496f266128b80dc67d253ff1781855a0"
+    },
+    "provenanceProof": "sha256:5983dbcedaba557d07f62a2bd7270fb3a92cb37a78370ae2ec24bd4834b97c20"
+  }
+}

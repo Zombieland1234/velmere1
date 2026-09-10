@@ -56,16 +56,16 @@ function analyzePlane(plane) {
       if (!prefixes.has(prefix)) prefixes.set(prefix, []);
       prefixes.get(prefix).push(rel(file));
     }
-    for (const table of names(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)/giu, normalized)) {
+    for (const table of names(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)/giu, normalized)) {
       tables.set(table, rel(file));
       droppedTables.delete(table);
     }
-    for (const table of names(/drop\s+table\s+(?:if\s+exists\s+)?(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)/giu, normalized)) droppedTables.add(table);
-    for (const table of names(/alter\s+table\s+(?:if\s+exists\s+)?(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)\s+enable\s+row\s+level\s+security\s*;/giu, normalized)) rlsEnabled.add(table);
-    for (const table of names(/alter\s+table\s+(?:if\s+exists\s+)?(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)\s+force\s+row\s+level\s+security\s*;/giu, normalized)) rlsForced.add(table);
-    for (const table of names(/create\s+policy\s+[\s\S]{1,300}?\s+on\s+(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)/giu, normalized)) policyTables.add(table);
-    for (const table of names(/revoke\s+all\s+on\s+(?:table\s+)?(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)\s+from\s+public\s*,\s*anon\s*,\s*authenticated\s*;/giu, normalized)) revokedPublicTables.add(table);
-    for (const table of names(/grant\s+(?:all|select(?:\s*,\s*insert|\s*,\s*update|\s*,\s*delete)*|insert|update|delete)[\s\S]{0,180}?\s+on\s+(?:table\s+)?(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)\s+to\s+service_role\s*;/giu, normalized)) serviceRoleGrantedTables.add(table);
+    for (const table of names(/drop\s+table\s+(?:if\s+exists\s+)?(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)/giu, normalized)) droppedTables.add(table);
+    for (const table of names(/alter\s+table\s+(?:if\s+exists\s+)?(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)\s+enable\s+row\s+level\s+security\s*;/giu, normalized)) rlsEnabled.add(table);
+    for (const table of names(/alter\s+table\s+(?:if\s+exists\s+)?(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)\s+force\s+row\s+level\s+security\s*;/giu, normalized)) rlsForced.add(table);
+    for (const table of names(/create\s+policy\s+[\s\S]{1,300}?\s+on\s+(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)/giu, normalized)) policyTables.add(table);
+    for (const table of names(/revoke\s+all\s+on\s+(?:table\s+)?(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)\s+from\s+public\s*,\s*anon\s*,\s*authenticated\s*;/giu, normalized)) revokedPublicTables.add(table);
+    for (const table of names(/grant\s+(?:all|select(?:\s*,\s*insert|\s*,\s*update|\s*,\s*delete)*|insert|update|delete)[\s\S]{0,180}?\s+on\s+(?:table\s+)?(?:(?:[a-zA-Z_]\w*)\.)?(["a-zA-Z_][\w"]*)\s+to\s+service_role\s*;/giu, normalized)) serviceRoleGrantedTables.add(table);
     for (const match of normalized.matchAll(/create\s+(?:or\s+replace\s+)?function\s+(?:(?:public|auth)\.)?(["a-zA-Z_][\w"]*)\s*\(([^;]*?)\)[\s\S]{0,2500}?security\s+definer([\s\S]{0,500}?)as\s+\$/giu)) {
       const functionName = match[1].replaceAll('"', "").toLowerCase();
       const header = match[0];

@@ -1,0 +1,19 @@
+{
+  "targetContract": "ERC4626 Tokenized Vault (Standard)",
+  "symbol": "ERC4626",
+  "address": "0x1111111254fb6c44bac0bed2854e76f90643097d",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 28,
+  "riskLabel": "LOW RISK",
+  "vulnerability": {
+    "title": "First Depositor Donation Share Price Inflation Exploit",
+    "category": "Standard Vault Inflation & Rounding",
+    "swcId": "SWC-136",
+    "cweId": "CWE-682",
+    "rootCause": "Standard deposit calculation rounds down shares while convertToShares rounds up, permitting empty vault inflation attack.",
+    "attackVector": "Attacker deposits 1 wei, transfers $100k asset directly, causing subsequent user depositing $50k to receive 0 shares."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/ERC4626.sol\n+++ b/contracts/ERC4626.sol\n@@ -55,3 +55,4 @@\n  function _decimalsOffset() internal view virtual returns (uint8) {\n-   return 0;\n+   return 3; // Virtual offset defense against inflation\n  }",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

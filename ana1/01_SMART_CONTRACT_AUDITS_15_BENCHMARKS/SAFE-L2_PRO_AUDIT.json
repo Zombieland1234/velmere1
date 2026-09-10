@@ -1,0 +1,19 @@
+{
+  "targetContract": "Gnosis Safe L2 Multi-Sig Core",
+  "symbol": "SAFE-L2",
+  "address": "0x3e5c63644e683549055b9be8653de26e0b4cd36e",
+  "network": "Ethereum / L2s",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 10,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Cross-Chain Replay of EIP-712 Signature Bundles on Unspecified ChainID",
+    "category": "Multi-Signature Threshold & EIP-712 Signatures",
+    "swcId": "SWC-117",
+    "cweId": "CWE-347",
+    "rootCause": "Omitting explicit DOMAIN_SEPARATOR chainId re-computation on hardfork or bridge replay attacks.",
+    "attackVector": "Signatures authorized on Ethereum Mainnet submitted to Optimism / Arbitrum cloned Safe deployments."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/GnosisSafe.sol\n+++ b/contracts/GnosisSafe.sol\n@@ -240,3 +240,3 @@\n- bytes32 public domainSeparator;\n+ function domainSeparator() public view returns (bytes32) { return _buildDomainSeparator(block.chainid); }",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

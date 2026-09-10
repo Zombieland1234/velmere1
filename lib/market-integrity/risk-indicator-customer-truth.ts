@@ -110,54 +110,57 @@ export function buildRiskIndicatorCustomerTruth(args: {
   reportContextDepth?: VlmReportContextDepth | null;
 }): RiskIndicatorCustomerTruth {
   const locale = args.locale ?? "en";
-  const technicalSignals = args.result.signals.filter((signal) => TECHNICAL_SIGNAL_IDS.has(signal.id));
-  const dataSignals = args.result.signals.filter((signal) => DATA_SIGNAL_IDS.has(signal.id));
-  const marketSignals = args.result.signals.filter((signal) => !TECHNICAL_SIGNAL_IDS.has(signal.id) && !DATA_SIGNAL_IDS.has(signal.id));
-  const refusalRequired = args.result.metaModel?.verdict === "insufficient_data"
+  const signals = Array.isArray(args.result?.signals) ? args.result.signals : [];
+  const metrics = args.result?.metrics ?? {};
+  const dataSources = Array.isArray(args.result?.dataSources) ? args.result.dataSources : [];
+  const technicalSignals = signals.filter((signal) => TECHNICAL_SIGNAL_IDS.has(signal.id));
+  const dataSignals = signals.filter((signal) => DATA_SIGNAL_IDS.has(signal.id));
+  const marketSignals = signals.filter((signal) => !TECHNICAL_SIGNAL_IDS.has(signal.id) && !DATA_SIGNAL_IDS.has(signal.id));
+  const refusalRequired = args.result?.metaModel?.verdict === "insufficient_data"
     || dataSignals.some((signal) => signal.id === "insufficient_data")
-    || args.result.dataQuality === "demo";
+    || args.result?.dataQuality === "demo";
 
   const reasonCodes: VlmTruthReasonCode[] = ["CALIBRATION_MISSING", "PROBABILITY_NOT_ALLOWED", "REAL_CUSTOMER_PROOF_MISSING"];
-  if (args.result.dataQuality !== "live") reasonCodes.push("MISSING_DATA");
-  if (args.input.freshnessState === "stale" || args.input.freshnessState === "missing") reasonCodes.push("STALE_DATA");
-  if (args.input.consensusState === "divergent") reasonCodes.push("SOURCE_CONFLICT");
-  if ((args.input.dataSources?.length ?? 0) <= 1) reasonCodes.push("SINGLE_SOURCE_ONLY");
-  if ((technicalSignals.length > 0 || args.input.suspiciousContractPrivileges) && (!args.input.chainId || !args.input.tokenAddress)) reasonCodes.push("CONTRACT_SCOPE_MISSING");
+  if (args.result?.dataQuality !== "live") reasonCodes.push("MISSING_DATA");
+  if (args.input?.freshnessState === "stale" || args.input?.freshnessState === "missing") reasonCodes.push("STALE_DATA");
+  if (args.input?.consensusState === "divergent") reasonCodes.push("SOURCE_CONFLICT");
+  if ((args.input?.dataSources?.length ?? 0) <= 1) reasonCodes.push("SINGLE_SOURCE_ONLY");
+  if ((technicalSignals.length > 0 || args.input?.suspiciousContractPrivileges) && (!args.input?.chainId || !args.input?.tokenAddress)) reasonCodes.push("CONTRACT_SCOPE_MISSING");
 
   const reasonCards = buildVlmCustomerTruthReasons(reasonCodes, locale, 8);
   const evidenceOrigins: VlmEvidenceOrigin[] = uniqueVlmTruthStrings([
-    args.input.chainId && args.input.tokenAddress ? "BLOCKCHAIN_DIRECT" : null,
-    (args.input.dataSources?.length ?? 0) > 0 ? "PROVIDER" : null,
+    args.input?.chainId && args.input?.tokenAddress ? "BLOCKCHAIN_DIRECT" : null,
+    (args.input?.dataSources?.length ?? 0) > 0 ? "PROVIDER" : null,
     "VELMERE_DERIVED",
-    args.result.dataQuality === "demo" ? "FIXTURE" : null,
+    args.result?.dataQuality === "demo" ? "FIXTURE" : null,
   ], 8) as VlmEvidenceOrigin[];
 
-  const riskIncreasingFactors = uniqueVlmTruthStrings(args.result.signals.map((signal) =>
+  const riskIncreasingFactors = uniqueVlmTruthStrings(signals.map((signal) =>
     `${signal.id}:${signal.severity}${Number.isFinite(signal.points) ? `:${signal.points}` : ""}`,
   ), 16);
-  const reducingEvidence = riskReducingEvidence(args.input);
+  const reducingEvidence = riskReducingEvidence(args.input ?? { symbol: "" });
   const missingProof = uniqueVlmTruthStrings([
-    ...(args.result.limitations ?? []),
+    ...(args.result?.limitations ?? []),
     "prospective calibration outcome window",
     "independent severity adjudication",
     "real-customer comprehension and decision-outcome evidence",
-    (args.input.dataSources?.length ?? 0) < 2 ? "second independent source family" : null,
+    (args.input?.dataSources?.length ?? 0) < 2 ? "second independent source family" : null,
   ], 12);
 
   const fingerprintPayload = {
     schemaVersion: "velmere.risk-indicator-fingerprint.v1",
     token: {
-      marketId: args.input.marketId ?? null,
-      symbol: args.input.symbol.trim().toUpperCase(),
-      chainId: args.input.chainId ?? null,
-      tokenAddress: args.input.tokenAddress?.trim().toLowerCase() ?? null,
+      marketId: args.input?.marketId ?? null,
+      symbol: (args.input?.symbol ?? "").trim().toUpperCase(),
+      chainId: args.input?.chainId ?? null,
+      tokenAddress: args.input?.tokenAddress?.trim().toLowerCase() ?? null,
     },
-    score: args.result.score,
-    level: args.result.level,
-    signals: args.result.signals.map((signal) => ({ id: signal.id, severity: signal.severity, points: signal.points })),
-    metrics: args.result.metrics,
-    dataQuality: args.result.dataQuality,
-    dataSources: [...args.result.dataSources].sort(),
+    score: args.result?.score ?? 0,
+    level: args.result?.level ?? "low",
+    signals: signals.map((signal) => ({ id: signal.id, severity: signal.severity, points: signal.points })),
+    metrics,
+    dataQuality: args.result?.dataQuality ?? "partial",
+    dataSources: [...dataSources].sort(),
   };
 
   const indicatorFingerprint = sha256Hex(canonicalJson(fingerprintPayload));

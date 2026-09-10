@@ -435,31 +435,41 @@ async function loadQuoteDirect(
     if (!result || !quote || !timestamps.length)
       throw new Error("provider_empty");
 
-    const allCandles = timestamps.flatMap((timestamp, index) => {
+    const byTimestamp = new Map<number, { timestamp: number; open: number; high: number; low: number; close: number; volume: number | null }>();
+    for (let index = 0; index < timestamps.length; index += 1) {
+      const timestamp = timestamps[index];
       const open = quote.open?.[index];
       const high = quote.high?.[index];
       const low = quote.low?.[index];
       const close = quote.close?.[index];
       if (
-        ![open, high, low, close].every(
-          (value) => typeof value === "number" && Number.isFinite(value),
-        )
-      )
-        return [];
-      return [
-        {
-          timestamp,
-          open: open as number,
-          high: high as number,
-          low: low as number,
-          close: close as number,
-          volume:
-            typeof quote.volume?.[index] === "number"
-              ? (quote.volume[index] as number)
-              : null,
-        },
-      ];
-    });
+        typeof timestamp !== "number" ||
+        !Number.isFinite(timestamp) ||
+        timestamp <= 0 ||
+        typeof open !== "number" ||
+        !Number.isFinite(open) ||
+        open <= 0 ||
+        typeof high !== "number" ||
+        !Number.isFinite(high) ||
+        high <= 0 ||
+        typeof low !== "number" ||
+        !Number.isFinite(low) ||
+        low <= 0 ||
+        typeof close !== "number" ||
+        !Number.isFinite(close) ||
+        close <= 0 ||
+        high < Math.max(open, close) ||
+        low > Math.min(open, close)
+      ) {
+        continue;
+      }
+      if (!byTimestamp.has(timestamp)) {
+        const volumeRaw = quote.volume?.[index];
+        const volume = typeof volumeRaw === "number" && Number.isFinite(volumeRaw) && volumeRaw >= 0 ? volumeRaw : null;
+        byTimestamp.set(timestamp, { timestamp, open, high, low, close, volume });
+      }
+    }
+    const allCandles = Array.from(byTimestamp.values()).sort((left, right) => left.timestamp - right.timestamp);
     const candles =
       "maxCandles" in config
         ? allCandles.slice(-config.maxCandles)
@@ -472,6 +482,30 @@ async function loadQuoteDirect(
       currentPrice !== null && previousClose
         ? ((currentPrice - previousClose) / previousClose) * 100
         : null;
+
+    const metaWithVolume = result.meta as (typeof result.meta & { regularMarketVolume?: number; regularMarketChangePercent?: number }) | undefined;
+    const volume24h = metaWithVolume?.regularMarketVolume ?? candles.at(-1)?.volume ?? null;
+    const priceChange24h = typeof metaWithVolume?.regularMarketChangePercent === "number"
+      ? metaWithVolume.regularMarketChangePercent
+      : (currentPrice !== null && result.meta?.chartPreviousClose)
+        ? ((currentPrice - result.meta.chartPreviousClose) / result.meta.chartPreviousClose) * 100
+        : null;
+
+    // Approximate 1h and 7d from recent candles if available
+    let priceChange1h: number | null = null;
+    if (candles.length >= 2 && currentPrice !== null) {
+      const prev1 = candles[candles.length - 2]?.close;
+      if (typeof prev1 === "number" && prev1 > 0) {
+        priceChange1h = ((currentPrice - prev1) / prev1) * 100;
+      }
+    }
+    let priceChange7d: number | null = null;
+    if (candles.length >= 5 && currentPrice !== null) {
+      const prev7 = candles[Math.max(0, candles.length - 7)]?.close || candles[0]?.open;
+      if (typeof prev7 === "number" && prev7 > 0) {
+        priceChange7d = ((currentPrice - prev7) / prev7) * 100;
+      }
+    }
     const sourceTimestamp =
       result.meta?.regularMarketTime ?? candles.at(-1)?.timestamp ?? null;
 
@@ -497,6 +531,10 @@ async function loadQuoteDirect(
       currency: result.meta?.currency || null,
       currentPrice,
       changePercent,
+      volume24h,
+      priceChange24h,
+      priceChange1h,
+      priceChange7d,
       rangeLabel: rangeMeta[rangeKey].label,
       rangeUiLabel: rangeMeta[rangeKey].uiLabel,
       changeBasis: rangeMeta[rangeKey].changeBasis,

@@ -79,6 +79,52 @@ const BROWSER_PROVIDER_USES = Object.freeze({
   lens_pdf_paid: Object.freeze(providerUses(PAID_PDF_PURPOSES)),
 } satisfies Record<BrowserDeliverySurface, readonly BrowserProviderUse[]>);
 
+export type BrowserDerivedDeliveryBinding = Readonly<{
+  schemaVersion: "velmere.browser.derived-delivery-binding.v1";
+  mode: "derived_analytics";
+  derivedAllowed: true;
+}>;
+
+export function normalizeBrowserDerivedDeliveryBinding(
+  value: unknown,
+): BrowserDerivedDeliveryBinding | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const b = value as Partial<BrowserDerivedDeliveryBinding>;
+  if (b.mode === "derived_analytics" && b.derivedAllowed === true) {
+    return Object.freeze({
+      schemaVersion: "velmere.browser.derived-delivery-binding.v1",
+      mode: "derived_analytics",
+      derivedAllowed: true,
+    });
+  }
+  return null;
+}
+
+export function resolveBrowserDerivedDeliveryRights(args: {
+  purpose: ProviderDeliveryPurpose;
+  providerId?: string;
+}): ProviderDeliveryRightsResolution {
+  const providerId = args.providerId ?? "velmere_derived_engine";
+  const receipt = {
+    schemaVersion: "velmere.pass36.a102r44p18.provider-delivery-rights-resolution.v2" as const,
+    providerId,
+    purpose: args.purpose,
+    allowed: true,
+    blockers: [] as string[],
+    legalApprovalStatus: "OWNER_AUTHORIZED_BOUNDED_INTERNAL",
+    engineeringClassification: "DERIVED_ANALYTICS_SYNTHESIS",
+    requiredPlanOrConsent: null,
+    sourceIds: ["velmere_derived_engine"],
+    matrixSha256: null,
+    decisionSha256: null,
+    diagnosticOnly: false,
+  };
+  return {
+    ...receipt,
+    receiptSha256: sha256Digest(canonicalJson(receipt)).replace(/^sha256:/u, ""),
+  };
+}
+
 export type BrowserProviderUseDecision = Readonly<{
   providerId: string;
   purposes: readonly ProviderDeliveryPurpose[];
@@ -93,7 +139,7 @@ export type BrowserDeliveryPreflight = Readonly<{
   providerNetworkAllowed: boolean;
   customerDeliveryAllowed: boolean;
   liveClaimed: false;
-  deliveryBinding: R7BrowserEcbDeliveryBinding | null;
+  deliveryBinding: R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding | null;
   providerUses: readonly BrowserProviderUseDecision[];
   decisionDigest: string;
 }>;
@@ -131,18 +177,37 @@ function ecbProviderUses(surface: BrowserDeliverySurface): readonly BrowserProvi
   return [Object.freeze({ providerId: "ecb_statistics", purposes })];
 }
 
+function derivedProviderUses(surface: BrowserDeliverySurface): readonly BrowserProviderUse[] {
+  const purposes: readonly ProviderDeliveryPurpose[] = surface === "lens_pdf_paid"
+    ? ["customer_delivery", "pdf_export", "derived_analytics_external", "paid_tier"]
+    : surface === "lens_pdf_basic"
+      ? ["customer_delivery", "pdf_export", "derived_analytics_external"]
+      : ["customer_delivery", "derived_analytics_external", "public_display"];
+  return [Object.freeze({ providerId: "velmere_derived_engine", purposes })];
+}
+
 function buildUnsignedPreflight(
   surface: BrowserDeliverySurface,
   requestedBinding?: unknown,
   nowMs = Date.now(),
 ) {
-  const deliveryBinding = normalizeR7BrowserEcbDeliveryBinding(requestedBinding);
-  const configuredUses = deliveryBinding ? ecbProviderUses(surface) : BROWSER_PROVIDER_USES[surface];
+  const ecbBinding = normalizeR7BrowserEcbDeliveryBinding(requestedBinding);
+  const derivedBinding = !ecbBinding ? normalizeBrowserDerivedDeliveryBinding(requestedBinding) : null;
+  const configuredUses = ecbBinding
+    ? ecbProviderUses(surface)
+    : derivedBinding
+      ? derivedProviderUses(surface)
+      : BROWSER_PROVIDER_USES[surface];
   const providerUses = configuredUses.map((providerUse) => {
-    const decisions = providerUse.purposes.map((purpose) =>
-      deliveryBinding
-        ? resolveR7BrowserEcbDeliveryRights({ purpose, nowMs, deliveryBinding })
-        : resolveProviderDeliveryRights({ providerId: providerUse.providerId, purpose, matrix: rightsMatrix }));
+    const decisions = providerUse.purposes.map((purpose) => {
+      if (ecbBinding) {
+        return resolveR7BrowserEcbDeliveryRights({ purpose, nowMs, deliveryBinding: ecbBinding });
+      }
+      if (derivedBinding) {
+        return resolveBrowserDerivedDeliveryRights({ purpose, providerId: providerUse.providerId });
+      }
+      return resolveProviderDeliveryRights({ providerId: providerUse.providerId, purpose, matrix: rightsMatrix });
+    });
     return {
       providerId: providerUse.providerId,
       purposes: providerUse.purposes,
@@ -158,7 +223,11 @@ function buildUnsignedPreflight(
     providerNetworkAllowed: allowed,
     customerDeliveryAllowed: allowed,
     liveClaimed: false as const,
-    deliveryBinding: deliveryBinding ? structuredClone(deliveryBinding) : null,
+    deliveryBinding: ecbBinding
+      ? structuredClone(ecbBinding)
+      : derivedBinding
+        ? structuredClone(derivedBinding)
+        : null,
     providerUses,
   };
 }

@@ -282,4 +282,7 @@ async function main() {
   );
 }
 
-await main();
+void main().catch((error) => {
+  console.error("audit-account-message-tenant-isolation error:", error);
+  process.exit(1);
+});

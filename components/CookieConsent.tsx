@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/navigation";
+import { Link, usePathname } from "@/navigation";
 import { readBrowserConsent, writeBrowserConsent } from "@/lib/privacy/consent";
 import { pass628LayerStyle } from "@/lib/ui/overlay-constitution";
 
 export default function CookieConsent() {
+  const pathname = usePathname();
   const t = useTranslations("CookieConsent");
   const [isVisible, setIsVisible] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -32,9 +33,11 @@ export default function CookieConsent() {
     setIsVisible(!saved);
   };
 
+  const isAssetPage = Boolean(pathname?.includes("/assets/"));
+
   return (
     <AnimatePresence>
-      {isVisible ? (
+      {isVisible && !isAssetPage ? (
         <motion.aside
           initial={{ y: 28, opacity: 0, scale: 0.985 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}

@@ -2,6 +2,7 @@ import {
   buildPass419MarketCoverageUniverse,
   pass419AssetVisualPatch,
 } from "@/lib/market-integrity/terminal-payload-stabilizer";
+import { PASS481_ASSET_IDENTITIES } from "@/lib/market-integrity/asset-identity-registry";
 import type { UniversalAssetRow } from "@/lib/market-integrity/universal-asset-market-matrix";
 
 export type Pass466LensMarketClass = "stock" | "etf" | "real_estate";
@@ -61,13 +62,40 @@ let catalogCache: Pass466LensMarketRow[] | null = null;
 export function buildPass466LensMarketCatalog(): Pass466LensMarketRow[] {
   if (catalogCache) return catalogCache;
   const seen = new Set<string>();
-  catalogCache = buildPass419MarketCoverageUniverse()
+  const baseRows = buildPass419MarketCoverageUniverse()
     .filter(
       (row): row is UniversalAssetRow & { assetClass: Pass466LensMarketClass } =>
         row.assetClass === "stock" ||
         row.assetClass === "etf" ||
         row.assetClass === "real_estate",
+    );
+  const registryRows: Array<UniversalAssetRow & { assetClass: Pass466LensMarketClass }> = PASS481_ASSET_IDENTITIES
+    .filter(
+      (row): row is typeof row & { assetClass: Pass466LensMarketClass } =>
+        row.assetClass === "stock" ||
+        row.assetClass === "etf" ||
+        row.assetClass === "real_estate",
     )
+    .map((row, index) => ({
+      id: row.symbol.toLowerCase(),
+      rank: 200 + index,
+      symbol: row.symbol,
+      name: row.label,
+      assetClass: row.assetClass,
+      riskPressure: 25,
+      confidenceFloor: 80,
+      adapterState: "daily_reference" as const,
+      sourceRhythm: "daily" as const,
+      sparkTone: "up" as const,
+      humanCopy: `${row.label} (${row.symbol})`,
+      priceLane: "real-markets",
+      volumeLane: "real-markets",
+      proofOrDisclosureLane: "Real Markets official catalog",
+      secondSourceLane: "SEC EDGAR / Official market feed",
+      nextAdapterStep: "Inspect quote and risk in Real Markets",
+    }));
+
+  catalogCache = [...baseRows, ...registryRows]
     .filter((row) => {
       const symbol = normalizeMarketSymbol(row.symbol);
       const key = `${row.assetClass}:${symbol}`;

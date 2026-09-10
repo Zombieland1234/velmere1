@@ -102,9 +102,7 @@ export default function AngelPanel({
             "You are interacting with a Velmère AI system. Angel provides evidence-bound informational decision support, may make mistakes, and does not provide personalized investment or legal advice.",
         };
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: t("welcome") },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState("");
@@ -226,6 +224,8 @@ export default function AngelPanel({
     }
   };
 
+  const hasUserSentMessage = messages.some((m) => m.role === "user");
+
   return (
     <DrawerRoot
       open={open}
@@ -245,9 +245,6 @@ export default function AngelPanel({
           <h2 className="mt-1 font-serif text-2xl leading-tight">
             {t("title")}
           </h2>
-          <p className="mt-2 max-w-sm text-xs leading-6 text-white/[0.42]">
-            {t("sidePanelHint")}
-          </p>
         </div>
         <button
           type="button"
@@ -263,14 +260,23 @@ export default function AngelPanel({
         data-modal-scroll-region="true"
         className="flex-1 space-y-4 overflow-y-auto overscroll-contain bg-[#080b0d] p-5 touch-pan-y luxury-scrollbar"
       >
-        <section
-          className="rounded-[1.2rem] border border-cyan-200/[0.12] bg-cyan-200/[0.035] px-4 py-3"
-          data-ai-interaction-disclosure="visible"
-          data-angel-product-boundary="informational-decision-support"
-          aria-label={truthCopy.boundary}
-        >
-          <p className="text-xs leading-5 text-white/[0.62]">{truthCopy.aiDisclosure}</p>
-        </section>
+        {messages.length === 0 ? (
+          <div
+            className="my-auto transition-all duration-500 ease-out"
+            data-ai-interaction-disclosure="visible"
+            data-angel-product-boundary="informational-decision-support"
+            aria-label={truthCopy.boundary}
+          >
+            <div className="rounded-[1.4rem] border border-cyan-200/[0.18] bg-gradient-to-b from-[#0c1417] to-[#070b0d] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
+              <p className="text-center font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-[#d4af37]">
+                Velmère Angel AI
+              </p>
+              <p className="mt-3 text-center text-sm leading-relaxed text-white/[0.85]">
+                {truthCopy.aiDisclosure}
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <div className="space-y-3">
           {messages.map((message, index) => (
@@ -284,66 +290,6 @@ export default function AngelPanel({
               >
                 {message.content}
               </p>
-              {message.role === "assistant" && message.truth ? (
-                <section
-                  className="mr-6 rounded-2xl border border-white/[0.08] bg-black/[0.28] px-4 py-3"
-                  data-angel-customer-truth="r44p35"
-                  aria-label={truthCopy.boundary}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-white/[0.12] px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/[0.56]">
-                      {message.truth.mustAbstain ? truthCopy.withheld : truthCopy.bound}
-                    </span>
-                    <span className="text-[9px] uppercase tracking-[0.14em] text-white/[0.38]">
-                      {truthCopy.context}: {message.truth.reportContextDepth}
-                    </span>
-                  </div>
-                  {message.truth.abstentionReason ? (
-                    <p className="mt-2 text-xs leading-5 text-amber-100/[0.72]">
-                      {message.truth.abstentionReason}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-xs leading-5 text-white/[0.54]">
-                    {message.truth.truthBoundary}
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-white/[0.74]">
-                    <span className="font-semibold text-white/[0.84]">{truthCopy.next}:</span>{" "}
-                    {message.truth.nextSafeCheck}
-                  </p>
-                </section>
-              ) : null}
-              {message.role === "assistant" && message.structured ? (
-                <details
-                  className="mr-6 rounded-2xl border border-white/[0.08] bg-black/[0.22] px-4 py-3"
-                  data-angel-structured-evidence="r44p35"
-                >
-                  <summary className="cursor-pointer list-none text-[10px] font-black uppercase tracking-[0.16em] text-white/[0.62] marker:hidden">
-                    {truthCopy.evidenceMap}
-                  </summary>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-white/[0.12] px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-white/[0.55]">
-                      {truthCopy.severity}: {message.structured.severity}
-                    </span>
-                    <span className="rounded-full border border-white/[0.12] px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-white/[0.55]">
-                      {truthCopy.confidence}: {message.structured.confidence.state.replaceAll("_", " ")}
-                    </span>
-                  </div>
-                  {[
-                    { label: truthCopy.confirmed, values: message.structured.evidence.confirmedLanes },
-                    { label: truthCopy.conflicts, values: message.structured.contradictions },
-                    { label: truthCopy.missing, values: message.structured.missingProof },
-                    { label: truthCopy.limits, values: message.structured.limitations },
-                    { label: truthCopy.checks, values: [message.structured.nextSafeCheck] },
-                  ].map(({ label, values }) => values.length ? (
-                    <div key={label} className="mt-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-white/[0.42]">{label}</p>
-                      <ul className="mt-1 space-y-1 text-xs leading-5 text-white/[0.68]">
-                        {values.slice(0, 6).map((value) => <li key={`${label}-${value}`}>• {value}</li>)}
-                      </ul>
-                    </div>
-                  ) : null)}
-                </details>
-              ) : null}
             </div>
           ))}
           {loading ? (
@@ -366,36 +312,6 @@ export default function AngelPanel({
             {error}
           </div>
         ) : null}
-
-        <div
-          className="rounded-[1.2rem] border border-white/[0.10] bg-white/[0.035] p-3"
-          data-angel-evidence-mode="true"
-        >
-          <p className="font-sans text-[10px] font-black uppercase tracking-[0.18em] text-white/[0.56]">
-            {t("evidenceKicker")}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-white/[0.50]">
-            {t("evidenceHint")}
-          </p>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          {[
-            [t("fitAction"), t("fitPrompt")],
-            [t("tokenAction"), t("tokenPrompt")],
-            [t("marketAction"), t("marketPrompt")],
-            [t("pdfAction"), t("pdfPrompt")],
-          ].map(([label, prompt]) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => sendMessage(prompt)}
-              className="min-h-[44px] rounded-full border border-white/[0.10] px-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-white/[0.58] transition-colors hover:border-white/[0.22] hover:text-white"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <form

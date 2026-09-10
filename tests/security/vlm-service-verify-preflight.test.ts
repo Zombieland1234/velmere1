@@ -485,5 +485,8 @@ async function main() {
     restoreEnv();
   }
 }
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
 
-await main();

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "inventoryVersion": "4.0.0-rc3",
+  "engine": "Velmère Furnace Dependency & Call Graph Resolver",
+  "timestamp": "2026-09-09T21:14:00Z",
+  "targetDependencies": [
+    {
+      "contractAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "contractName": "Tether USD (USDT)",
+      "externalCallType": "MONOLITHIC_STANDALONE",
+      "dependencies": [],
+      "untrustedExternalCalls": [],
+      "failurePropagation": "SELF_CONTAINED",
+      "libraries": []
+    },
+    {
+      "contractAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "contractName": "USD Coin (USDC)",
+      "externalCallType": "EIP1967_PROXY_TO_IMPLEMENTATION",
+      "dependencies": [
+        {
+          "address": "0xa2327a938febf5fec13bacfb16ae10ecbc4cbdcf",
+          "name": "FiatTokenV2_2 (Implementation)",
+          "trustLevel": "PROTOCOL_INTERNAL",
+          "isUpgradeTarget": true
+        }
+      ],
+      "untrustedExternalCalls": [],
+      "failurePropagation": "DELEGATECALL_REVERT_PROPAGATED",
+      "libraries": []
+    },
+    {
+      "contractAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "contractName": "Wrapped BNB (WBNB)",
+      "externalCallType": "NATIVE_VALUE_WRAPPER",
+      "dependencies": [],
+      "untrustedExternalCalls": [
+        {
+          "callPattern": "msg.sender.transfer(wad)",
+          "targetClassification": "UNTRUSTED_EOA_OR_CONTRACT",
+          "reentrancyGuarded": false,
+          "riskNote": "Transfer opcode forwards 2300 gas; safe against standard reentrancy unless post-Berlin gas repricing allows view state access."
+        }
+      ],
+      "failurePropagation": "REVERT_ON_TRANSFER_FAIL",
+      "libraries": []
+    },
+    {
+      "contractAddress": "0x10ed43c718714eb63d5aa57b78b54704e256024e",
+      "contractName": "PancakeSwap Router v2 (CAKE-RTR)",
+      "externalCallType": "MULTI_POOL_ROUTER",
+      "dependencies": [
+        {
+          "address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+          "name": "PancakeFactory",
+          "trustLevel": "PROTOCOL_CORE",
+          "isUpgradeTarget": false
+        },
+        {
+          "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          "name": "WBNB",
+          "trustLevel": "INFRASTRUCTURE",
+          "isUpgradeTarget": false
+        }
+      ],
+      "untrustedExternalCalls": [
+        {
+          "callPattern": "IPancakePair(pair).swap(...)",
+          "targetClassification": "PAIR_CONTRACT",
+          "reentrancyGuarded": false,
+          "riskNote": "Router invokes pair callback; pair enforces internal mutex lock."
+        }
+      ],
+      "failurePropagation": "PAIR_REVERT_PROPAGATED",
+      "libraries": ["PancakeLibrary"]
+    },
+    {
+      "contractAddress": "0xe592427a0aece92de3edee1f18e0157c05861564",
+      "contractName": "Uniswap v3 SwapRouter",
+      "externalCallType": "CONCENTRATED_LIQUIDITY_ROUTER",
+      "dependencies": [
+        {
+          "address": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+          "name": "UniswapV3Factory",
+          "trustLevel": "PROTOCOL_CORE",
+          "isUpgradeTarget": false
+        }
+      ],
+      "untrustedExternalCalls": [
+        {
+          "callPattern": "IUniswapV3Pool(pool).swap(...)",
+          "targetClassification": "DETERMINISTIC_CREATE2_POOL",
+          "reentrancyGuarded": true,
+          "riskNote": "Callback verification validates msg.sender matches CREATE2 computation from factory bytecode."
+        }
+      ],
+      "failurePropagation": "POOL_REVERT_PROPAGATED",
+      "libraries": ["Path", "PoolAddress", "CallbackValidation"]
+    }
+  ]
+}

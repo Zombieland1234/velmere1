@@ -1,0 +1,339 @@
+[
+  {
+    "provider_id": "etherscan_pro_v2",
+    "provider_name": "Etherscan Developer API v2",
+    "endpoint": "https://api.etherscan.io/v2/api",
+    "asset_classes_served": [
+      "evm_contract"
+    ],
+    "quorum_weight": 0.35,
+    "overall_health": "HEALTHY",
+    "test_scenarios": [
+      {
+        "scenario": "nominal",
+        "request_url": "https://api.etherscan.io/v2/api?module=contract&action=getabi",
+        "response_code": 200,
+        "latency_ms": 48,
+        "fallback_activated": false,
+        "data_integrity": "INTACT",
+        "status": "PASS"
+      },
+      {
+        "scenario": "timeout_sim",
+        "request_url": "https://api.etherscan.io/v2/api?timeout=1",
+        "response_code": 408,
+        "latency_ms": 1200,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_429",
+        "request_url": "https://api.etherscan.io/v2/api?rate_limit=1",
+        "response_code": 429,
+        "latency_ms": 22,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_500",
+        "request_url": "https://api.etherscan.io/v2/api?fault=500",
+        "response_code": 500,
+        "latency_ms": 35,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "empty_payload",
+        "request_url": "https://api.etherscan.io/v2/api?empty=true",
+        "response_code": 200,
+        "latency_ms": 40,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "malformed_json",
+        "request_url": "https://api.etherscan.io/v2/api?corrupt=1",
+        "response_code": 200,
+        "latency_ms": 38,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "stale_timestamp",
+        "request_url": "https://api.etherscan.io/v2/api?stale=1",
+        "response_code": 200,
+        "latency_ms": 45,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "divergent_quote",
+        "request_url": "https://api.etherscan.io/v2/api?diverge=1",
+        "response_code": 200,
+        "latency_ms": 50,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "provider_id": "alchemy_evm_rpc",
+    "provider_name": "Alchemy Direct EVM Archive RPC",
+    "endpoint": "https://eth-mainnet.g.alchemy.com/v2/rpc",
+    "asset_classes_served": [
+      "evm_contract",
+      "native_chain"
+    ],
+    "quorum_weight": 0.35,
+    "overall_health": "HEALTHY",
+    "test_scenarios": [
+      {
+        "scenario": "nominal",
+        "request_url": "eth_getCode",
+        "response_code": 200,
+        "latency_ms": 28,
+        "fallback_activated": false,
+        "data_integrity": "INTACT",
+        "status": "PASS"
+      },
+      {
+        "scenario": "timeout_sim",
+        "request_url": "eth_getCode_slow",
+        "response_code": 408,
+        "latency_ms": 1500,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_429",
+        "request_url": "eth_getStorageAt_spam",
+        "response_code": 429,
+        "latency_ms": 18,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_500",
+        "request_url": "eth_call_crash",
+        "response_code": 500,
+        "latency_ms": 30,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "empty_payload",
+        "request_url": "eth_getBlock_empty",
+        "response_code": 200,
+        "latency_ms": 25,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "malformed_json",
+        "request_url": "eth_call_garbage",
+        "response_code": 200,
+        "latency_ms": 22,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "stale_timestamp",
+        "request_url": "eth_getBlock_old",
+        "response_code": 200,
+        "latency_ms": 29,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "divergent_quote",
+        "request_url": "eth_call_forked",
+        "response_code": 200,
+        "latency_ms": 32,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "provider_id": "sec_edgar_direct",
+    "provider_name": "U.S. SEC EDGAR API",
+    "endpoint": "https://data.sec.gov/api/xbrl/companyfacts",
+    "asset_classes_served": [
+      "market_asset"
+    ],
+    "quorum_weight": 0.3,
+    "overall_health": "HEALTHY",
+    "test_scenarios": [
+      {
+        "scenario": "nominal",
+        "request_url": "https://data.sec.gov/submissions/CIK0000320193.json",
+        "response_code": 200,
+        "latency_ms": 85,
+        "fallback_activated": false,
+        "data_integrity": "INTACT",
+        "status": "PASS"
+      },
+      {
+        "scenario": "timeout_sim",
+        "request_url": "https://data.sec.gov/slow",
+        "response_code": 408,
+        "latency_ms": 2000,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_429",
+        "request_url": "https://data.sec.gov/spam",
+        "response_code": 429,
+        "latency_ms": 45,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_500",
+        "request_url": "https://data.sec.gov/err",
+        "response_code": 500,
+        "latency_ms": 60,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "empty_payload",
+        "request_url": "https://data.sec.gov/none",
+        "response_code": 200,
+        "latency_ms": 70,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "malformed_json",
+        "request_url": "https://data.sec.gov/corrupt",
+        "response_code": 200,
+        "latency_ms": 65,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "stale_timestamp",
+        "request_url": "https://data.sec.gov/old",
+        "response_code": 200,
+        "latency_ms": 72,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "divergent_quote",
+        "request_url": "https://data.sec.gov/diverge",
+        "response_code": 200,
+        "latency_ms": 80,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "provider_id": "cboe_consolidated_market_tape",
+    "provider_name": "Cboe Consolidated Market Tape / BBO",
+    "endpoint": "https://marketdata.cboe.com/v1/quotes",
+    "asset_classes_served": [
+      "market_asset"
+    ],
+    "quorum_weight": 0.35,
+    "overall_health": "HEALTHY",
+    "test_scenarios": [
+      {
+        "scenario": "nominal",
+        "request_url": "https://marketdata.cboe.com/v1/quote?sym=AAPL",
+        "response_code": 200,
+        "latency_ms": 14,
+        "fallback_activated": false,
+        "data_integrity": "INTACT",
+        "status": "PASS"
+      },
+      {
+        "scenario": "timeout_sim",
+        "request_url": "https://marketdata.cboe.com/v1/slow",
+        "response_code": 408,
+        "latency_ms": 800,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_429",
+        "request_url": "https://marketdata.cboe.com/v1/limit",
+        "response_code": 429,
+        "latency_ms": 12,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "http_500",
+        "request_url": "https://marketdata.cboe.com/v1/fail",
+        "response_code": 500,
+        "latency_ms": 15,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "empty_payload",
+        "request_url": "https://marketdata.cboe.com/v1/empty",
+        "response_code": 200,
+        "latency_ms": 16,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "malformed_json",
+        "request_url": "https://marketdata.cboe.com/v1/broken",
+        "response_code": 200,
+        "latency_ms": 15,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "stale_timestamp",
+        "request_url": "https://marketdata.cboe.com/v1/frozen",
+        "response_code": 200,
+        "latency_ms": 18,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      },
+      {
+        "scenario": "divergent_quote",
+        "request_url": "https://marketdata.cboe.com/v1/badbid",
+        "response_code": 200,
+        "latency_ms": 17,
+        "fallback_activated": true,
+        "data_integrity": "ABSTAINED_SAFELY",
+        "status": "PASS"
+      }
+    ]
+  }
+]

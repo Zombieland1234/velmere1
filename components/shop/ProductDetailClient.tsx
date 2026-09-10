@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ExternalLink,
+  Lock,
   RotateCcw,
   ShieldCheck,
   ShoppingBag,
@@ -45,10 +46,10 @@ const MEASUREMENTS: ProductSizeMeasurement[] = [
 
 function proofStatusLine(score: number, purchasable: boolean, locale: string) {
   if (locale === "pl")
-    return `${purchasable ? "Gotowe do checkoutu" : "Podgląd Coming Soon"} · ${score}% proof complete`;
+    return `${purchasable ? "Gotowe do checkoutu" : "Weryfikacja partii (audyt w toku)"} · ${score}% dowodów`;
   if (locale === "de")
-    return `${purchasable ? "Checkout bereit" : "Coming-Soon Vorschau"} · ${score}% Proof vollständig`;
-  return `${purchasable ? "Checkout-ready" : "Coming Soon preview"} · ${score}% proof complete`;
+    return `${purchasable ? "Checkout bereit" : "Chargen-Audit im Gange"} · ${score}% Nachweise`;
+  return `${purchasable ? "Checkout-ready" : "Batch audit in progress"} · ${score}% proof complete`;
 }
 
 function missingProofLine(missing: string[], locale: string) {
@@ -840,13 +841,7 @@ export default function ProductDetailPage({
                   <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/[0.72]">
                     {t("selectSize")}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsSizeGuideOpen(true)}
-                    className="velmere-command-pill velmere-interaction-pulse min-h-11 px-4 text-[10px] text-white/[0.50]"
-                  >
-                    {t("sizeGuide")}
-                  </button>
+                  
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {selectedProduct.variants.map((variant) => (
@@ -887,31 +882,17 @@ export default function ProductDetailPage({
                 <div className="mt-8 grid gap-3">
                   <button
                     type="button"
-                    disabled={
-                      !cartAddAllowed || !selectedVariant || ctaState !== "idle"
-                    }
-                    onClick={() => void handleAddToCart()}
-                    className="velmere-command-pill velmere-interaction-pulse velmere-product-cta inline-flex min-h-14 w-full items-center justify-center gap-3 bg-velmere-gold px-6 text-[12px] text-black hover:bg-white disabled:cursor-not-allowed disabled:bg-white/[0.10] disabled:text-white/[0.32]"
-                    data-pass2274-product-action="add-to-cart-horizontal-native"
+                    disabled={true}
+                    className="velmere-command-pill inline-flex min-h-14 w-full items-center justify-center gap-3 border border-white/[0.14] bg-white/[0.04] px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-white/[0.45] cursor-not-allowed"
                   >
-                    <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-                    {ctaLabel}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={
-                      !cartAddAllowed || !selectedVariant || ctaState !== "idle"
-                    }
-                    onClick={() => void handleAddToCart({ goToCheckout: true })}
-                    className="velmere-command-pill velmere-interaction-pulse velmere-product-cta inline-flex min-h-14 w-full items-center justify-center gap-3 border border-cyan-200/[0.24] bg-cyan-300/[0.045] px-6 text-[12px] text-white hover:border-cyan-100/[0.5] disabled:cursor-not-allowed disabled:opacity-40"
-                    data-pass2274-product-action="buy-now-quiet-checkout"
-                    data-pass2275-product-action="close-all-overlays-before-route"
-                  >
-                    {buyCopy.buyNow}
-                    <ArrowLeft
-                      className="h-4 w-4 rotate-180"
-                      aria-hidden="true"
-                    />
+                    <Lock className="h-4 w-4 text-velmere-gold/70" aria-hidden="true" />
+                    <span>
+                      {locale === "pl"
+                        ? "SPRZEDAŻ WSTRZYMANA · AUDYT LABORATORYJNY W TOKU"
+                        : locale === "de"
+                          ? "VERKAUF ANGEHALTEN · LABORPRÜFUNG LÄUFT"
+                          : "SALE PAUSED · LABORATORY AUDIT PENDING"}
+                    </span>
                   </button>
                 </div>
               )}

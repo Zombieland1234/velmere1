@@ -1,0 +1,19 @@
+{
+  "targetContract": "Uniswap V3 Pool / Router",
+  "symbol": "UNI-V3",
+  "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 12,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Q64.96 Fixed-Point Rounding & Tick Crossing Edge Cases",
+    "category": "Concentrated Liquidity & Precision Math",
+    "swcId": "SWC-114",
+    "cweId": "CWE-682",
+    "rootCause": "Sub-wei rounding disparity in high-precision tick crossing calculations during extreme volatility flashes.",
+    "attackVector": "Attacker executes flash swap traversing 150 ticks in single block, exploiting 1-wei rounding direction."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/UniswapV3Pool.sol\n+++ b/contracts/UniswapV3Pool.sol\n@@ -245,3 +245,3 @@\n- uint256 fee = FullMath.mulDiv(amountIn, feePips, 1e6);\n+ uint256 fee = FullMath.mulDivRoundingUp(amountIn, feePips, 1e6);",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

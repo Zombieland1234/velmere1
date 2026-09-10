@@ -1,0 +1,25 @@
+{
+  "id": "GSC-012",
+  "name": "timelock-bypass",
+  "description": "Timelock governance contract with delay set to 0 or bypassable by urgent execution role.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x1a9c8182c09f50c8318d769245bea52c32be35bc",
+  "expectedFindings": [
+    "ZERO_DELAY_TIMELOCK_RISK",
+    "BYPASSABLE_QUEUE_MECHANISM"
+  ],
+  "expectedNonFindings": [
+    "MINIMUM_24H_TIMELOCK_DELAY"
+  ],
+  "expectedEvidenceStates": {
+    "governanceDelayAudit": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 65,
+    "maxRisk": 90
+  }
+}

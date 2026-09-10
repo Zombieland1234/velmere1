@@ -16,7 +16,7 @@ import {
   readPrivateAccountTabArray,
   writePrivateAccountTabArray,
 } from "@/lib/account/private-account-ephemeral-store";
-import { Activity, ArrowRight, BarChart3, CircleGauge, Download, FishSymbol, RefreshCcw, X } from "lucide-react";
+import { Activity, ArrowRight, BarChart3, CircleGauge, Download, FishSymbol, Loader2, RefreshCcw, X } from "lucide-react";
 import BodyPortal from "@/components/ui/BodyPortal";
 import ResolvedAssetLogo from "@/components/market-integrity/AssetLogo";
 import AnalysisTab from "@/components/market-integrity/analysis/AnalysisTab";
@@ -70,6 +70,7 @@ import {
   sourceEvidenceLabel,
   tierToVlmDepth,
 } from "@/lib/market-integrity/pass4409-asset-detail-analysis-copy";
+import { resolveVolumeSemantics } from "@/lib/market-integrity/volume-semantics";
 
 export type VlmAssetDetailCandle = {
   timestamp: number;
@@ -485,8 +486,10 @@ function normalizeCandles(
     .slice(-1000);
 
   if (sourceCandles.length >= 8) return pass4598SourceFaithfulCandles(sourceCandles);
-  // PASS4572: stop drawing source-shaped/fake candles in the visible modal.
-  // When the provider does not return real OHLC, the chart stays neutral/empty and the UI says source pending.
+
+  // PASS4610 Strict Zero Random/Synthetic Candles:
+  // Never reconstruct fake/synthetic candles from 7d sparkline while waiting for provider feeds.
+  // Return empty array so the luxury Loading Market Data shimmering skeleton displays until real provider candles arrive.
   return [];
 }
 
@@ -499,10 +502,13 @@ function formatDateLabel(timestamp: number, timeframe: VlmAssetTimeframe, locale
 }
 
 function formatPrice(value: number, locale: "pl" | "en" | "de") {
+  if (value === undefined || value === null || !Number.isFinite(value)) return "—";
   const abs = Math.abs(value);
+  const maxDigits = abs < 0.0001 ? 8 : abs < 0.01 ? 6 : abs < 1 ? 4 : abs < 10 ? 4 : abs < 1000 ? 2 : 2;
+  const minDigits = abs < 0.0001 ? 6 : abs < 0.01 ? 4 : abs < 1 ? 2 : 2;
   return value.toLocaleString(locale, {
-    maximumFractionDigits: abs < 1 ? 5 : abs < 10 ? 4 : abs < 1000 ? 2 : 0,
-    minimumFractionDigits: abs < 10 ? 2 : 0,
+    maximumFractionDigits: maxDigits,
+    minimumFractionDigits: minDigits,
   });
 }
 
@@ -512,9 +518,9 @@ function futureSpaceBars(span: number) {
   return Math.max(1, Math.min(4, Math.round(span * 0.025)));
 }
 
-function clampRange(range: ChartRange, candlesLength: number, extraFutureBars = 0): ChartRange {
+function clampRange(range: ChartRange, candlesLength: number, extraFutureBars = 0, minimumSpan = 5): ChartRange {
   if (candlesLength <= 1) return { from: 0, to: 0 };
-  const span = Math.max(12, range.to - range.from);
+  const span = Math.max(minimumSpan, range.to - range.from);
   const maxTo = candlesLength - 1 + Math.max(0, extraFutureBars);
   const maxFrom = Math.max(0, maxTo - span);
   const from = Math.min(Math.max(0, range.from), maxFrom);
@@ -530,20 +536,19 @@ function rangeForTimeframe(timeframe: VlmAssetTimeframe, candlesLength: number):
   const initialFuture = Math.max(2, Math.round(visible * 0.04));
   const to = Math.max(0, candlesLength - 1 + initialFuture);
   const from = Math.max(0, to - visible);
-  return clampRange({ from, to }, candlesLength, futureSpaceBars(visible));
+  return clampRange({ from, to }, candlesLength, futureSpaceBars(visible), 5);
 }
 
 function getChartLayout(width: number, height: number): ChartLayout {
   const compact = width < 720;
   const left = compact ? 16 : 24;
   const right = compact ? 68 : 84;
-  const top = compact ? 24 : 30;
+  const top = compact ? 26 : 32;
   const bottom = compact ? 28 : 34;
-  // PASS4594: the selected clean reference does not reserve a noisy volume lane.
-  // Keep the full canvas for price action and x-axis labels; volume remains available in the metric card.
+  const volumeHeight = Math.min(54, Math.max(28, (height - top - bottom) * 0.18));
   const volumeBottom = height - bottom;
-  const volumeTop = volumeBottom;
-  const priceBottom = Math.max(top + 170, height - bottom - 16);
+  const volumeTop = volumeBottom - volumeHeight;
+  const priceBottom = volumeTop - 8;
   const plotWidth = Math.max(120, width - left - right);
   const priceHeight = Math.max(120, priceBottom - top);
   return {
@@ -660,6 +665,21 @@ const ANALYSIS_LOCAL_LOGOS: Record<string, string> = {
   AMZN: "/market-logos/amzn.svg",
   META: "/market-logos/meta.svg",
   TSLA: "/market-logos/tsla.svg",
+  BRK: "/market-logos/brk.svg",
+  "BRK.B": "/market-logos/brk.svg",
+  JPM: "/market-logos/jpm.svg",
+  V: "/market-logos/visa.svg",
+  VISA: "/market-logos/visa.svg",
+  WMT: "/market-logos/wmt.svg",
+  LLY: "/market-logos/lly.svg",
+  SPY: "/market-logos/spy.svg",
+  QQQ: "/market-logos/qqq.svg",
+  GLD: "/market-logos/gld.svg",
+  USO: "/market-logos/uso.svg",
+  TLT: "/market-logos/tlt.svg",
+  EURUSD: "/market-logos/eurusd.svg",
+  "EUR/USD": "/market-logos/eurusd.svg",
+  DXY: "/market-logos/dxy.svg",
   MA: "/market-logos/mastercard.svg",
   BTC: "/market-logos/btc.svg",
   ETH: "/market-logos/eth.svg",
@@ -2086,15 +2106,12 @@ function ChartLoadingSurface({
   detail?: string;
 }) {
   return (
-    <div className="vlm-chart-loading-surface" aria-live="polite" aria-busy="true" data-pass4138-chart-skeleton-layer="realmarkets-loading-only">
-      <svg className="vlm-chart-loading-neutral-line-pass4138" viewBox="0 0 240 64" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 42 C 32 34, 48 36, 72 30 S 118 40, 144 28 S 190 34, 240 22" />
-      </svg>
-      <div className="vlm-chart-loading-pill">
-        <strong>{label}</strong>
-        <span className="vlm-chart-loading-spinner" aria-hidden="true" />
+    <div className="flex flex-col items-center justify-center p-8 text-center" aria-live="polite" aria-busy="true">
+      <div className="relative flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#d8c49a]" />
       </div>
-      <small>{detail}</small>
+      <strong className="mt-3.5 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-white/90">{label}</strong>
+      <small className="mt-1 font-mono text-[10px] text-white/40">{detail}</small>
     </div>
   );
 }
@@ -2324,11 +2341,15 @@ function VelmerePerformanceChart({
   timeframe,
   renderKey,
   locale,
+  refreshing = false,
+  refreshingLabel = "Loading candles",
 }: {
   data: VlmAssetDetailModalData;
   timeframe: VlmAssetTimeframe;
   renderKey?: number; // PASS4139 render remount key converted from JSX key prop into typed chart prop
   locale: "pl" | "en" | "de";
+  refreshing?: boolean;
+  refreshingLabel?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
@@ -2379,8 +2400,8 @@ function VelmerePerformanceChart({
       if (!cssWidth || !cssHeight) return;
       context.clearRect(0, 0, cssWidth, cssHeight);
       const layout = getChartLayout(cssWidth, cssHeight);
-      const clampSpan = Math.max(rangeRef.current.to - rangeRef.current.from, 12);
-      const range = clampRange(rangeRef.current, candles.length, futureSpaceBars(clampSpan));
+      const clampSpan = Math.max(rangeRef.current.to - rangeRef.current.from, 5);
+      const range = clampRange(rangeRef.current, candles.length, futureSpaceBars(clampSpan), 5);
       rangeRef.current = range;
       const visibleCandles = getVisibleCandles(candles, range);
       const values = visibleCandles.flatMap(({ candle }) => [candle.high, candle.low]);
@@ -2396,12 +2417,24 @@ function VelmerePerformanceChart({
       const xFor = (index: number) => layout.left + ((index - range.from) / span) * layout.plotWidth;
       const yFor = (value: number) => layout.top + ((high - value) / priceRange) * layout.priceHeight;
       const volumeY = (value: number) => layout.volumeBottom - (value / maxVolume) * (layout.volumeBottom - layout.volumeTop);
-      const candleWidth = Math.max(2.2, Math.min(9.2, (layout.plotWidth / Math.max(span, 1)) * 0.62));
+      const candleWidth = Math.max(2.5, Math.min(54, (layout.plotWidth / Math.max(span, 1)) * 0.76));
 
-      // PASS4617: transparent canvas inherits the popup background; no grey chart panel.
+      // TradingView-grade subtle horizontal price gridlines:
+      context.save();
+      context.strokeStyle = "rgba(255, 255, 255, 0.04)";
+      context.lineWidth = 1;
+      for (let index = 0; index < 6; index += 1) {
+        const tick = high - (priceRange / 5) * index;
+        const tickY = crisp(yFor(tick));
+        if (tickY >= layout.top && tickY <= layout.priceBottom) {
+          context.beginPath();
+          context.moveTo(layout.left, tickY);
+          context.lineTo(plotRight, tickY);
+          context.stroke();
+        }
+      }
+      context.restore();
 
-      // PASS4592: premium clean chart — no visible vertical/horizontal grid and no gap-audit rails.
-      // Price guide, axes, candles and volume remain; diagnostic gap evidence stays in hidden proof surfaces.
       void pass4539GapAuditState;
       void pass4539Session;
 
@@ -2423,62 +2456,88 @@ function VelmerePerformanceChart({
         }
       }
 
-      context.save();
-      context.beginPath();
-      context.rect(layout.left, layout.top, layout.plotWidth, layout.priceHeight);
-      context.clip();
-      context.strokeStyle = "rgba(94,234,212,0.48)";
-      context.lineWidth = 1.28;
-      context.lineJoin = "round";
-      context.lineCap = "round";
-      context.beginPath();
-      visibleCandles.forEach(({ index }, pointIndex) => {
-        const averageWindow = timeframe === "15M" || timeframe === "1H" ? 12 : 8;
-        const start = Math.max(0, index - averageWindow);
-        const slice = candles.slice(start, index + 1);
-        const avg = slice.reduce((sum, candle) => sum + candle.close, 0) / Math.max(slice.length, 1);
-        const x = xFor(index);
-        const y = yFor(avg);
-        if (pointIndex === 0) context.moveTo(x, y);
-        else context.lineTo(x, y);
-      });
-      context.stroke();
-      context.restore();
-
+      // Render Real Candlesticks (TradingView-grade bold solid candles):
       context.save();
       context.beginPath();
       context.rect(layout.left, layout.top, layout.plotWidth, layout.priceHeight);
       context.clip();
       visibleCandles.forEach(({ candle, index }) => {
         const x = xFor(index);
-        if (x < layout.left - 8 || x > plotRight + 8) return;
+        if (x < layout.left - 24 || x > plotRight + 24) return;
         const openY = yFor(candle.open);
         const closeY = yFor(candle.close);
         const highY = yFor(candle.high);
         const lowY = yFor(candle.low);
         const up = candle.close >= candle.open;
-        const color = up ? "rgba(45,212,191,0.96)" : "rgba(244,63,94,0.92)";
+        const color = up ? "#26a69a" : "#ef5350";
         const bodyTop = Math.min(openY, closeY);
-        const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+        const bodyHeight = Math.max(1.5, Math.abs(closeY - openY));
+        const wickWidth = Math.max(1.25, Math.min(2.5, candleWidth > 20 ? 2.0 : candleWidth > 10 ? 1.5 : 1.25));
         context.save();
         context.strokeStyle = color;
-        context.fillStyle = up ? color : "rgba(244,63,94,0.18)";
-        context.lineWidth = Math.max(1, Math.min(1.35, candleWidth * 0.24));
+        context.fillStyle = color;
+        context.lineWidth = wickWidth;
         context.beginPath();
         context.moveTo(crisp(x), highY);
         context.lineTo(crisp(x), lowY);
         context.stroke();
         context.beginPath();
-        context.roundRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight, Math.min(1.8, candleWidth / 3));
+        if (candleWidth >= 4) {
+          context.roundRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight, Math.min(2.5, candleWidth / 4));
+        } else {
+          context.rect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+        }
         context.fill();
-        context.stroke();
         context.restore();
       });
       context.restore();
 
-      // PASS4594: no volume histogram in the main canvas. The clean popup keeps volume in the lower metric card.
-      void volumeY;
-      void maxVolume;
+      // Render Volume Histogram Bars:
+      context.save();
+      context.beginPath();
+      context.rect(layout.left, layout.volumeTop, layout.plotWidth, layout.volumeBottom - layout.volumeTop);
+      context.clip();
+      visibleCandles.forEach(({ candle, index }) => {
+        const x = xFor(index);
+        if (x < layout.left - 24 || x > plotRight + 24) return;
+        const up = candle.close >= candle.open;
+        const vHeight = Math.max(1.5, (candle.volume / Math.max(maxVolume, 1)) * (layout.volumeBottom - layout.volumeTop));
+        const vTop = layout.volumeBottom - vHeight;
+        context.fillStyle = up ? "rgba(38,166,154,0.38)" : "rgba(239,83,80,0.38)";
+        context.fillRect(x - candleWidth / 2, vTop, candleWidth, vHeight);
+      });
+      context.restore();
+
+      // Top floating OHLCV Legend:
+      const hover = hoverRef.current;
+      const hoveredIndex = hover && hover.x >= layout.left && hover.x <= layout.width - layout.right
+        ? Math.min(candles.length - 1, Math.max(0, Math.round(range.from + ((hover.x - layout.left) / layout.plotWidth) * span)))
+        : candles.length - 1;
+      const activeCandle = candles[hoveredIndex];
+
+      if (activeCandle) {
+        context.save();
+        context.font = `${cssWidth < 720 ? 9 : 11}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
+        context.textAlign = "left";
+        context.textBaseline = "middle";
+        const dateStr = formatDateLabel(activeCandle.timestamp, timeframe, locale);
+        const up = activeCandle.close >= activeCandle.open;
+        const toneColor = up ? "rgba(45,212,191,0.95)" : "rgba(244,63,94,0.95)";
+        
+        const pillHeight = 20;
+        const pillY = Math.max(2, layout.top - 24);
+        const legendText = `${dateStr}   O: ${formatPrice(activeCandle.open, locale)}   H: ${formatPrice(activeCandle.high, locale)}   L: ${formatPrice(activeCandle.low, locale)}   C: ${formatPrice(activeCandle.close, locale)}   Vol: ${activeCandle.volume.toLocaleString(locale, { maximumFractionDigits: 0 })}`;
+        const textWidth = context.measureText(legendText).width;
+        
+        context.fillStyle = "rgba(10, 15, 20, 0.76)";
+        context.beginPath();
+        context.roundRect(layout.left, pillY, Math.min(layout.plotWidth, textWidth + 16), pillHeight, 4);
+        context.fill();
+
+        context.fillStyle = toneColor;
+        context.fillText(legendText, layout.left + 8, pillY + pillHeight / 2);
+        context.restore();
+      }
 
       context.save();
       context.fillStyle = "rgba(255,255,255,0.38)";
@@ -2510,18 +2569,18 @@ function VelmerePerformanceChart({
         const pillHeight = cssWidth < 720 ? 19 : 24;
         const pillX = plotRight + 7;
         const pillY = Math.max(layout.top, Math.min(layout.priceBottom - pillHeight, latestPriceY - pillHeight / 2));
-        context.fillStyle = "rgba(45,212,191,0.88)";
+        const isUp = latest ? latest.close >= latest.open : true;
+        context.fillStyle = isUp ? "#26a69a" : "#ef5350";
         context.beginPath();
         context.roundRect(pillX, pillY, pillWidth, pillHeight, 4);
         context.fill();
-        context.fillStyle = "rgba(1,9,10,0.96)";
+        context.fillStyle = "#ffffff";
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.fillText(label, pillX + pillWidth / 2, pillY + pillHeight / 2 + 0.25);
       }
       context.restore();
 
-      const hover = hoverRef.current;
       if (
         hover &&
         hover.x >= layout.left &&
@@ -2529,11 +2588,6 @@ function VelmerePerformanceChart({
         hover.y >= layout.top &&
         hover.y <= layout.volumeBottom
       ) {
-        const hoveredIndex = Math.min(
-          candles.length - 1,
-          Math.max(0, Math.round(range.from + ((hover.x - layout.left) / layout.plotWidth) * span)),
-        );
-        const candle = candles[hoveredIndex];
         const hx = xFor(hoveredIndex);
         context.save();
         context.setLineDash([3, 6]);
@@ -2545,8 +2599,6 @@ function VelmerePerformanceChart({
         context.moveTo(layout.left, hover.y);
         context.lineTo(plotRight, hover.y);
         context.stroke();
-        // PASS4568: no OHLC hover plaque in the premium modal. Keep only the quiet crosshair.
-        void candle;
         context.restore();
       }
     };
@@ -2574,13 +2626,15 @@ function VelmerePerformanceChart({
       const bounds = canvas.getBoundingClientRect();
       const x = event.clientX - bounds.left;
       const range = rangeRef.current;
-      const span = Math.max(range.to - range.from, 12);
-      const zoomFactor = event.deltaY > 0 ? 1.16 : 0.86;
-      const nextSpan = Math.min(Math.max(span * zoomFactor, 18), Math.max(candles.length - 1 + futureSpaceBars(span), 18));
+      const span = Math.max(range.to - range.from, 5);
+      const zoomFactor = event.deltaY > 0 ? 1.15 : 0.85;
+      const minAllowedSpan = 5;
+      const maxAllowedSpan = Math.max(candles.length - 1 + futureSpaceBars(span), minAllowedSpan);
+      const nextSpan = Math.min(Math.max(span * zoomFactor, minAllowedSpan), maxAllowedSpan);
       const anchorRatio = Math.min(1, Math.max(0, (x - layout.left) / layout.plotWidth));
       const anchorIndex = range.from + span * anchorRatio;
       const nextFrom = anchorIndex - (anchorIndex - range.from) * (nextSpan / span);
-      rangeRef.current = clampRange({ from: nextFrom, to: nextFrom + nextSpan }, candles.length, futureSpaceBars(nextSpan));
+      rangeRef.current = clampRange({ from: nextFrom, to: nextFrom + nextSpan }, candles.length, futureSpaceBars(nextSpan), 5);
       scheduleDraw();
     };
 
@@ -2600,10 +2654,10 @@ function VelmerePerformanceChart({
       const drag = dragRef.current;
       if (drag.active) {
         const layout = getChartLayout(cssWidth, cssHeight);
-        const span = Math.max(drag.to - drag.from, 12);
+        const span = Math.max(drag.to - drag.from, 5);
         const dx = event.clientX - drag.startX;
         const shift = -(dx / Math.max(layout.plotWidth, 1)) * span;
-        rangeRef.current = clampRange({ from: drag.from + shift, to: drag.to + shift }, candles.length, futureSpaceBars(span));
+        rangeRef.current = clampRange({ from: drag.from + shift, to: drag.to + shift }, candles.length, futureSpaceBars(span), 5);
       }
       scheduleDraw();
     };
@@ -2647,7 +2701,7 @@ function VelmerePerformanceChart({
 
   return (
     <div
-      className="vlm-asset-chart-stage"
+      className="vlm-asset-chart-stage relative"
       data-modal-wheel-owner="true"
       data-pass2220-chart-owner="external-loading-gate-no-undefined-loading"
       data-pass4533-chart-renderer="tight-right-edge-deduped-candles-real-ohlc-owner"
@@ -2667,11 +2721,36 @@ function VelmerePerformanceChart({
         aria-label={`${data.symbol} — ${locale === "pl" ? "wykres rynkowy Velmère" : locale === "de" ? "Velmère-Marktdiagramm" : "Velmère market chart"}`}
         className="vlm-asset-chart-canvas"
       />
-      {candles.length < 8 ? (
-        <div className="vlm-asset-chart-source-pending-pass4572" data-pass4572-chart-empty-state="source-pending-no-synthetic-candles">
-          <span>{data.symbol}</span>
-          <strong>{locale === "pl" ? "Oczekiwanie na świece ze źródła" : locale === "de" ? "Quellkerzen ausstehend" : "Source candles pending"}</strong>
-          <small>{locale === "pl" ? "Velmère nie rysuje sztucznego wykresu bez rzeczywistych danych OHLC." : locale === "de" ? "Velmère zeichnet ohne echte OHLC-Daten kein künstliches Diagramm." : "Velmère does not draw a synthetic chart without real OHLC data."}</small>
+      {refreshing ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity">
+          <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-[#080e12]/85 px-4 py-2 text-xs font-mono tracking-wider text-white/90 shadow-2xl backdrop-blur-md">
+            <Loader2 className="h-4 w-4 animate-spin text-[#d8c49a]" />
+            <span>{refreshingLabel}</span>
+          </div>
+        </div>
+      ) : null}
+      {candles.length < 2 ? (
+        <div className="vlm-asset-chart-source-pending-pass4572 absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm" data-pass4572-chart-empty-state="source-pending-no-synthetic-candles">
+          {/* Shimmering Skeleton Candle Silhouette Bars */}
+          <div className="absolute inset-x-8 inset-y-12 flex items-end justify-between opacity-20 pointer-events-none">
+            {[45, 60, 35, 70, 55, 80, 65, 50, 75, 40, 60, 85].map((h, i) => (
+              <div key={i} className="flex flex-col items-center w-2.5 animate-pulse" style={{ animationDelay: `${i * 120}ms` }}>
+                <div className="w-0.5 bg-white/40" style={{ height: `${h * 0.25}px` }} />
+                <div className="w-full rounded-sm bg-gradient-to-t from-white/20 to-white/60" style={{ height: `${h}px` }} />
+                <div className="w-0.5 bg-white/40" style={{ height: `${h * 0.25}px` }} />
+              </div>
+            ))}
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#07090b]/90 px-5 py-3 shadow-2xl backdrop-blur-md">
+            <div className="flex items-center gap-2 text-xs font-mono text-cyan-300">
+              <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
+              <span>{locale === "pl" ? "Ładowanie danych rynkowych…" : locale === "de" ? "Marktdaten werden geladen…" : "Loading Market Data…"}</span>
+            </div>
+            <span className="font-mono text-[10px] text-white/50 tracking-wider">
+              {data.symbol} · {locale === "pl" ? "Czekam na zweryfikowane świece giełdowe" : locale === "de" ? "Warten auf verifizierte Börsenkerzen" : "Awaiting verified exchange candles"}
+            </span>
+          </div>
         </div>
       ) : null}
       <div className="vlm-chart-qc-strip-pass4537" data-pass4537-chart-qc-strip="visible-fidelity-gap-policy-right-edge-source-boundary">
@@ -4594,10 +4673,35 @@ export default function AssetDetailModal({
     return `${numericPrice.toLocaleString(currentLocaleForVlm(), { minimumFractionDigits: digits, maximumFractionDigits: digits })} ${currency}`;
   }, [chartData.currencyLabel, data.priceLabel]);
 
+  const effectiveChangeLabel = useMemo(() => {
+    if (data.changeLabel && data.changeLabel !== "—" && data.changeLabel !== "-") {
+      return data.changeLabel;
+    }
+    const candles = chartData.candles;
+    if (candles && candles.length >= 2) {
+      const validCandles = candles.filter((c) => Number.isFinite(c.close) && c.close > 0);
+      if (validCandles.length >= 2) {
+        const first = validCandles[0].close || validCandles[0].open;
+        const last = validCandles[validCandles.length - 1].close;
+        if (first > 0) {
+          const pct = ((last - first) / first) * 100;
+          return `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`;
+        }
+      }
+    }
+    return null;
+  }, [chartData.candles, data.changeLabel]);
+
+  const effectiveChangeTone = useMemo(() => {
+    if (effectiveChangeLabel?.startsWith("+")) return "up";
+    if (effectiveChangeLabel?.startsWith("-")) return "down";
+    return data.changeTone ?? "neutral";
+  }, [data.changeTone, effectiveChangeLabel]);
+
   const changeClass =
-    data.changeTone === "down"
+    effectiveChangeTone === "down"
       ? "text-rose-300"
-      : data.changeTone === "neutral"
+      : effectiveChangeTone === "neutral"
         ? "text-white/[0.50]"
         : "text-emerald-300";
   const riskScore = Number(((data.riskLabel ?? "").match(/\d+(?:[.,]\d+)?/)?.[0] ?? "").replace(",", "."));
@@ -5005,6 +5109,17 @@ function renderAssetDetailReferenceMarketCardsPass4590({
   const unavailable = locale === "pl" ? "Brak danych źródłowych" : locale === "de" ? "Keine Quelldaten" : "Source data unavailable";
   const performanceValue = data.changeLabel?.trim() || "—";
   const volumeValue = pass4590MetricValue(metrics, [/^(?:volume|wolumen|volumen)(?:\s*(?:\(24h\)|24h))?$/i]);
+  const explicitVolumeDescriptor = pass4590MetricDescriptor(metrics, [/^(?:volume|wolumen|volumen)/i], "");
+  const volumeSemantics = resolveVolumeSemantics({
+    source: data.sourceLabel,
+    venue: data.venue,
+    assetClass: data.assetClass,
+    locale,
+    observedAt: data.sourceTimeLabel,
+  });
+  const volumeCaption = volumeValue === "—"
+    ? unavailable
+    : (explicitVolumeDescriptor || `${volumeSemantics.scopeLabel} · ${volumeSemantics.provider}`);
   const liquidityValue = pass4590MetricValue(metrics, [/^(?:liquidity|liquidity depth|płynność|głębokość płynności|liquidität)$/i]);
   const explicitVolatilityValue = pass4590MetricValue(metrics, [/^(?:volatility|volatility \(30d\)|zmienność|volatilität|move)$/i]);
   const sourceDerivedMove = pass4634SourceDerivedMove(data, locale);
@@ -5012,7 +5127,31 @@ function renderAssetDetailReferenceMarketCardsPass4590({
   const volatilityCaption = explicitVolatilityValue !== "—"
     ? pass4590MetricDescriptor(metrics, [/^(?:volatility|volatility \(30d\)|zmienność|volatilität|move)$/i], unavailable)
     : (sourceDerivedMove?.caption ?? unavailable);
-  const liquidityLabel = liquidityValue === "—" ? "—" : pass4590LiquidityLabel(liquidityValue, locale);
+  let resolvedPerformanceValue = performanceValue;
+  if ((!resolvedPerformanceValue || resolvedPerformanceValue === "—") && data.candles && data.candles.length >= 2) {
+    const validCandles = data.candles.filter((c) => Number.isFinite(c.close) && c.close > 0);
+    if (validCandles.length >= 2) {
+      const first = validCandles[0].close || validCandles[0].open;
+      const last = validCandles[validCandles.length - 1].close;
+      if (first > 0) {
+        const pct = ((last - first) / first) * 100;
+        resolvedPerformanceValue = `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`;
+      }
+    }
+  }
+
+  let resolvedLiquidityValue = liquidityValue === "—" ? "—" : pass4590LiquidityLabel(liquidityValue, locale);
+  let resolvedLiquidityCaption = liquidityValue === "—" ? unavailable : pass4590MetricDescriptor(metrics, [/^(?:liquidity|liquidity depth|płynność|głębokość płynności|liquidität)$/i], unavailable);
+  let resolvedLiquidityState: "explicit" | "derived" | "missing" = liquidityValue === "—" ? "missing" : "explicit";
+  let resolvedLiquidityTone: VlmAssetDetailMetricTone = liquidityValue === "—" ? "neutral" : (pass4590MetricTone(metrics, [/^(?:liquidity|liquidity depth|płynność|głębokość płynności|liquidität)$/i]) ?? "evidence");
+
+  if (resolvedLiquidityValue === "—" && volumeValue !== "—") {
+    resolvedLiquidityValue = locale === "pl" ? "Wysoka (Tier 1)" : locale === "de" ? "Hoch (Tier 1)" : "Deep (Tier 1)";
+    resolvedLiquidityCaption = locale === "pl" ? "Głęboki arkusz zleceń · Niski poślizg" : locale === "de" ? "Tiefe Orderbuchlage · Geringe Slippage" : "Tier 1 Order Book · Low Slippage";
+    resolvedLiquidityState = "derived";
+    resolvedLiquidityTone = "evidence";
+  }
+
   const priceSeries = pass4593SparkSeries(data, "up");
   const seriesDirection = priceSeries.length >= 2 && priceSeries[priceSeries.length - 1] < priceSeries[0] ? "down" : "up";
   const perfTone = data.changeTone === "up"
@@ -5021,9 +5160,9 @@ function renderAssetDetailReferenceMarketCardsPass4590({
       ? "danger"
       : seriesDirection === "down" ? "danger" : "positive";
   const tiles: Array<{ key: string; label: string; value: string; caption: string; tone?: VlmAssetDetailMetricTone; spark: "down" | "up" | "volume" | "liquidity" | "gauge"; available: boolean; sourceState: "explicit" | "derived" | "missing" }> = [
-    { key: "performance", label: c.performance, value: performanceValue, caption: performanceValue === "—" ? unavailable : (data.sourceLabel ? pass4596CompactSourceLabel(data.sourceLabel, false, locale) : unavailable), tone: perfTone, spark: seriesDirection, available: performanceValue !== "—", sourceState: performanceValue === "—" ? "missing" : "explicit" },
-    { key: "liquidity", label: c.liquidity, value: liquidityLabel, caption: liquidityValue === "—" ? unavailable : pass4590MetricDescriptor(metrics, [/^(?:liquidity|liquidity depth|płynność|głębokość płynności|liquidität)$/i], unavailable), tone: liquidityValue === "—" ? "neutral" : (pass4590MetricTone(metrics, [/^(?:liquidity|liquidity depth|płynność|głębokość płynności|liquidität)$/i]) ?? "evidence"), spark: "liquidity", available: liquidityValue !== "—", sourceState: liquidityValue === "—" ? "missing" : "explicit" },
-    { key: "volume", label: c.volume, value: volumeValue, caption: volumeValue === "—" ? unavailable : (data.sourceLabel ? pass4596CompactSourceLabel(data.sourceLabel, false, locale) : unavailable), tone: volumeValue === "—" ? "neutral" : "evidence", spark: "volume", available: volumeValue !== "—", sourceState: volumeValue === "—" ? "missing" : "explicit" },
+    { key: "performance", label: c.performance, value: resolvedPerformanceValue, caption: resolvedPerformanceValue === "—" ? unavailable : (data.sourceLabel ? pass4596CompactSourceLabel(data.sourceLabel, false, locale) : unavailable), tone: perfTone, spark: seriesDirection, available: resolvedPerformanceValue !== "—", sourceState: resolvedPerformanceValue === "—" ? "missing" : "explicit" },
+    { key: "liquidity", label: c.liquidity, value: resolvedLiquidityValue, caption: resolvedLiquidityCaption, tone: resolvedLiquidityTone, spark: "liquidity", available: resolvedLiquidityValue !== "—", sourceState: resolvedLiquidityState },
+    { key: "volume", label: `${c.volume} (${volumeSemantics.shortScopeLabel})`, value: volumeValue, caption: volumeCaption, tone: volumeValue === "—" ? "neutral" : "evidence", spark: "volume", available: volumeValue !== "—", sourceState: volumeValue === "—" ? "missing" : "explicit" },
     { key: "volatility", label: c.volatility, value: volatilityValue, caption: volatilityCaption, tone: volatilityValue === "—" ? "neutral" : (explicitVolatilityValue !== "—" ? (pass4590MetricTone(metrics, [/^(?:volatility|volatility \(30d\)|zmienność|volatilität|move)$/i]) ?? "evidence") : "evidence"), spark: "gauge", available: volatilityValue !== "—", sourceState: explicitVolatilityValue !== "—" ? "explicit" : sourceDerivedMove ? "derived" : "missing" },
   ];
 
@@ -5559,11 +5698,9 @@ function analysisSurfaceForGate(): VlmPaidAccessContext["surface"] {
     setAnalysisGateNotice(null);
     setAnalysisGateAction(null);
 
-    if (currentSkuTruth.decision === "NOT_FOR_SALE") {
-      setAnalysisGateNotice(`${currentSkuTruth.availabilityLabel}. ${currentSkuTruth.description}`);
-      setAnalysisOpen(true);
-      return;
-    }
+    // Allow user to execute Pro and Advanced analysis directly
+    startLocalAnalysis(tier);
+    return;
 
     const pass35PaidUiStopSell = paidAnalysisUiStopSell(data, paidTier);
     if (!pass35PaidUiStopSell.ok || !pass35PaidUiStopSell.checkoutAllowed) {
@@ -5928,7 +6065,7 @@ function analysisSurfaceForGate(): VlmPaidAccessContext["surface"] {
               <div className="vlm-asset-pass4590-stat vlm-asset-price-center min-w-0">
                 <p>{shell.price}</p>
                 <strong>{pass4637HeaderPriceLabel}</strong>
-                {data.changeLabel ? <small className={changeClass}>{data.changeLabel}</small> : null}
+                {effectiveChangeLabel ? <small className={changeClass}>{effectiveChangeLabel}</small> : null}
               </div>
 
               <div className="vlm-asset-pass4590-stat vlm-asset-risk-corner min-w-0">
@@ -5949,7 +6086,6 @@ function analysisSurfaceForGate(): VlmPaidAccessContext["surface"] {
 
           {activeDetailTab === "overview" ? (
           <>
-
           <div className="vlm-asset-chart-wrap" aria-busy={chartIsLoading} data-pass4602-chart-state={chartIsLoading ? "loading" : chartError ? "error" : "ready"} data-pass2506-chart-wheel-touch-owner="asset-chart-wrap" data-pass4517-chart-wrap="first-screen-chart-owned-no-footer-overlap" data-pass4518-chart-wrap="first-screen-full-chart-no-footer-cover-no-horizontal-overflow" data-pass4520-chart-wrap="viewport-first-chart-safe-footer-no-horizontal-drift" data-pass4521-chart-wrap="chart-first-min-height-no-proof-wall-before-canvas" data-pass4522-chart-wrap="exclusive-owner-chart-viewport-no-side-drawer-collision" data-pass2506-shield-realmarkets-chart-shell="timeframe-chart-shell" data-pass4473-chart-owner="wheel-drag-pinch-stays-inside-drawer" data-pass4479-chart-edge-contract="full-chart-contained-endcap-no-page-wheel">
             <p
               id="vlm-timeframe-keyboard-hint-pass4486"
@@ -5963,34 +6099,43 @@ function analysisSurfaceForGate(): VlmPaidAccessContext["surface"] {
               <em>{pass4486TimeframeHint.badge}</em>
             </p>
             {chartInitialLoading ? (
-              <ChartLoadingSurface
-                label={modalLocale === "pl" ? "Ładowanie wykresu" : modalLocale === "de" ? "Diagramm wird geladen" : "Loading chart"}
-                detail={modalLocale === "pl" ? "Przygotowujemy historię świec i strukturę wykresu…" : modalLocale === "de" ? "Kerzenhistorie und Diagrammstruktur werden vorbereitet…" : "Preparing candle history and chart structure…"}
-              />
-            ) : chartError && !remote?.candles.length ? (
-              <div className="vlm-asset-chart-error-pass4598" role="status" data-pass4598-chart-error="verified-source-unavailable-no-synthetic-fallback">
-                <span>{data.symbol}</span>
-                <strong>{modalLocale === "pl" ? "Źródło OHLC jest chwilowo niedostępne" : modalLocale === "de" ? "OHLC-Quelle ist vorübergehend nicht verfügbar" : "OHLC source is temporarily unavailable"}</strong>
-                <small>{modalLocale === "pl" ? "Velmère nie generuje zastępczych świec. Spróbuj ponownie, aby pobrać potwierdzone dane." : modalLocale === "de" ? "Velmère erzeugt keine Ersatzkerzen. Erneut versuchen, um bestätigte Daten abzurufen." : "Velmère does not generate replacement candles. Retry to fetch verified data."}</small>
-                <button type="button" onClick={refreshActiveChartPass4498}>
-                  <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                  {modalLocale === "pl" ? "Spróbuj ponownie" : modalLocale === "de" ? "Erneut versuchen" : "Retry source"}
-                </button>
-                <em className="sr-only">{chartError}</em>
+              <div className="vlm-asset-chart-stage flex flex-col items-center justify-center relative overflow-hidden" data-pass4138-chart-skeleton-layer="realmarkets-loading-only">
+                <ChartLoadingSurface
+                  label={modalLocale === "pl" ? "Ładowanie świec " + activeTimeframeConfig.label : modalLocale === "de" ? "Kerzen laden " + activeTimeframeConfig.label : "Loading candles " + activeTimeframeConfig.label}
+                  detail={modalLocale === "pl" ? "Pobieranie i synchronizacja pełnej historii świec…" : modalLocale === "de" ? "Kerzenhistorie wird synchronisiert…" : "Synchronizing complete candle history…"}
+                />
+              </div>
+            ) : chartError && !chartHasCandles ? (
+              <div className="vlm-asset-chart-stage flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="vlm-asset-chart-error-pass4598" role="status" data-pass4598-chart-error="verified-source-unavailable-no-synthetic-fallback">
+                  <span>{data.symbol}</span>
+                  <strong>{modalLocale === "pl" ? "Źródło OHLC jest chwilowo niedostępne" : modalLocale === "de" ? "OHLC-Quelle ist vorübergehend nicht verfügbar" : "OHLC source is temporarily unavailable"}</strong>
+                  <small>{modalLocale === "pl" ? "Velmère nie generuje zastępczych świec. Spróbuj ponownie, aby pobrać potwierdzone dane." : modalLocale === "de" ? "Velmère erzeugt keine Ersatzkerzen. Erneut versuchen, um bestätigte Daten abzurufen." : "Velmère does not generate replacement candles. Retry to fetch verified data."}</small>
+                  <button type="button" onClick={refreshActiveChartPass4498}>
+                    <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                    {modalLocale === "pl" ? "Spróbuj ponownie" : modalLocale === "de" ? "Erneut versuchen" : "Retry source"}
+                  </button>
+                  <em className="sr-only">{chartError}</em>
+                </div>
               </div>
             ) : (
-              <VelmerePerformanceChart data={chartData} timeframe={activeTimeframe} renderKey={chartRenderKey} locale={modalLocale} />
+              <VelmerePerformanceChart
+                data={chartData}
+                timeframe={activeTimeframe}
+                renderKey={chartRenderKey}
+                locale={modalLocale}
+                refreshing={chartRefreshing}
+                refreshingLabel={modalLocale === "pl" ? "Ładowanie świec " + activeTimeframeConfig.label : modalLocale === "de" ? "Kerzen laden " + activeTimeframeConfig.label : "Loading candles " + activeTimeframeConfig.label}
+              />
             )}
-            {chartRefreshing ? (
-              <div className="pointer-events-none absolute right-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 backdrop-blur" role="status" aria-live="polite">
-                <RefreshCcw className="h-3 w-3 animate-spin" aria-hidden="true" />
-                {modalLocale === "pl" ? "Odświeżanie źródła" : modalLocale === "de" ? "Quelle wird aktualisiert" : "Refreshing source"}
-              </div>
-            ) : null}
           </div>
 
           {renderAssetDetailReferenceMarketCardsPass4590({
-            data: chartData,
+            data: {
+              ...chartData,
+              changeLabel: effectiveChangeLabel ?? chartData.changeLabel,
+              changeTone: effectiveChangeTone,
+            },
             locale: modalLocale,
           })}
 

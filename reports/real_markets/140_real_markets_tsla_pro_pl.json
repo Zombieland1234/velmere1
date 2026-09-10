@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_tsla_pro_140",
+  "caseRef": "CASE-VLM-TSLA-PRO",
+  "target": {
+    "contractName": "Tesla, Inc.",
+    "contractAddress": "nasdaq:tsla",
+    "network": "NASDAQ Stock Market",
+    "chainId": "MIC:XNAS",
+    "tokenSymbol": "TSLA",
+    "proxyPattern": "N/A (Regulated Central Depository / DTCC-NSCC)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:17.736Z",
+  "verdict": {
+    "riskScore": 22,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 96,
+    "auditQualityScore": 80,
+    "summary": "Akcje producenta pojazdów EV i technologii autonomicznych. Wysoka płynność detaliczna i opcyjna, podwyższona implikowana zmienność, audyt PwC.",
+    "evidenceCoverage": 96,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "regulatoryFilingHash": "0x361cd2baea791b9531469175da920c61868450e3640af0721c2f265d3c58c320",
+      "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+      "pinnedChainId": "9904",
+      "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+      "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości instrumentu i rejestracji u emitenta",
+        "Identyfikacja giełdy macierzystej i standardów rozliczeniowych",
+        "Klasyfikacja profilu ryzyka rynkowego i płynnościowego"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Instrument / Nazwa",
+            "value": "Tesla, Inc."
+          },
+          {
+            "label": "Klasa aktywów",
+            "value": "Rynek Tradycyjny / Regulowany (Akcje / Towary / FX / ETF)"
+          },
+          {
+            "label": "Ticker rynkowy",
+            "value": "TSLA"
+          },
+          {
+            "label": "Rynek notowań",
+            "value": "NASDAQ Stock Market"
+          },
+          {
+            "label": "Ramy prawne i nadzór",
+            "value": "Regulacje papierów wartościowych i rynków finansowych (SEC / ESMA / KNF)"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+      "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja integralności sprawozdań z rejestrami organów nadzoru",
+        "Audyt spójności danych fundamentalnych i struktury kapitałowej",
+        "Ocena ciągłości notowań i statusu dopuszczenia do obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Logika smart kontraktu EVM",
+            "value": "NOT_APPLICABLE (Traditional Market Instrument)",
+            "status": "neutral",
+            "claimId": "CLM-rep_tsla_pro_140-contract_identity-1",
+            "evidenceId": "EVD-rep_tsla_pro_140-contract_identity-1",
+            "classification": "C"
+          }
+        ],
+        "paragraphs": [
+          "Instrument Tesla, Inc. podlega nadzorowi rynków regulowanych i izb rozliczeniowych. Dekompilacja bytecode EVM oraz skanowanie smart kontraktów mają status NOT_APPLICABLE dla instrumentów tradycyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+      "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie stabilności notowań i płynności rynkowej",
+        "Ocena zmienności historycznej i ekspozycji na szoki rynkowe",
+        "Zgodność ze standardami rozliczeń depozytowych T+1"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+      "subtitle": "Struktura akcjonariatu, prawa głosu i nadzór rady dyrektorów",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Struktura ładu korporacyjnego, nadzór rady dyrektorów i klasy akcji z prawem głosu",
+        "Ujawnienia w raportach regulacyjnych (SEC/KNF) i zgodność sprawozdawcza",
+        "Uprawnienia zarządu, mandaty do rozwodnienia kapitału i prawa akcjonariuszy"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Nadzór korporacyjny i zarządczy",
+            "value": "Zarząd i Rada Dyrektorów",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Statutowe uprawnienia zarządcze",
+            "value": "Zdefiniowane w statucie spółki",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Wyłączniki bezpieczeństwa obrotu (Circuit Breakers)",
+            "value": "Aktywne (Zasady LULD / SEC)",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Emisja dodatkowych akcji / jednostek",
+            "value": "Zgodnie ze statutem / Uchwałą WZA",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Ład korporacyjny Tesla, Inc. opiera się na przepisach prawa handlowego, statucie spółki oraz regulacjach rynków kapitałowych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+      "subtitle": "Rozkład spreadów NBBO, płynność animatorów rynku i handel blokowy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Głębokość ciągłych notowań giełdowych i spready NBBO (National Best Bid/Offer)",
+        "Wolumen transakcji blokowych, routing dark pool i udział animatorów rynku",
+        "Widełki wyłączników rynkowych (reguły LULD) oraz historia zawieszeń obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Model płynności rynkowej",
+            "value": "Regulowany arkusz zleceń (CLOB)",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pary płynności DEX AMM",
+            "value": "NOT_APPLICABLE (Traditional Exchange Venue)",
+            "status": "neutral",
+            "claimId": "CLM-rep_tsla_pro_140-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_liquidity_depth-2",
+            "classification": "C"
+          },
+          {
+            "label": "Prowizje transakcyjne protokołu / sell tax",
+            "value": "0.0% (Standard Regulated Trading)",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Płynność dla Tesla, Inc. jest zapewniana przez licencjonowanych animatorów rynku i zlecenia inwestorów na giełdach publicznych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+      "subtitle": "Modelowanie spoofingu, layeringu, ryzyka rozliczeniowego i margin call",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Wektory manipulacji mikrostrukturą rynku (spoofing, layering, wash trading)",
+        "Ryzyko kontrahenta rozliczeniowego i wymogi depozytowe izb rozliczeniowych",
+        "Ryzyko krótkiego ścisku płynności (squeeze) oraz systemowe zależności kredytowe"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od zewnętrznych wyroczni cenowych",
+            "value": "NOT_APPLICABLE (Direct Exchange Pricing)",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "NOT_APPLICABLE (Traditional Clearing)",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Ryzyko awarii silnika dopasowywania zleceń",
+            "value": "Zabezpieczone redundancją giełdową",
+            "status": "verified",
+            "claimId": "CLM-rep_tsla_pro_140-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_tsla_pro_140-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+      "subtitle": "Weryfikacja uzgodnień centralnych depozytów papierów wartościowych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Architektura uzgodnień rozliczeniowo-depozytowych (DTC/KDPW/Euroclear)",
+        "Weryfikacja skrótu kryptograficznego sprawozdań z rejestrami publicznymi",
+        "Deterministyczna realizacja operacji korporacyjnych (splity, dywidendy)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+      "subtitle": "Śledzenie podziałów akcji, wypłat dywidend i emisji dodatkowych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia operacji na kapitale i podziałów akcji (stock splits)",
+        "Weryfikacja spójności praw akcjonariuszy między emisjami",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie dotyczy aktywów tradycyjnych)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu sprawozdawczości przez analityka finansowego",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Atestacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót weryfikacji sprawozdań",
+        "Wyraźna granica przeglądu manualnego: brak rekomendacji inwestycyjnej",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:bf59704595007b81dc8c979cf260d71f2f27d4c448aa2a65ac90acc5d72625ab",
+  "applicationSurface": "real-markets",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "MIC:XNAS",
+      "contractAddress": "nasdaq:tsla",
+      "network": "NASDAQ Stock Market",
+      "proxyType": "N/A (Traditional Financial Instrument)"
+    },
+    "marketSpec": {
+      "identifierType": "TICKER",
+      "identifierValue": "TSLA",
+      "source": "Consolidated Tape / Primary Exchange",
+      "exchangeMic": "XNAS",
+      "figi": "BBGNASDAQTSL",
+      "isin": "USNASDAQTSL0",
+      "tickerSymbol": "TSLA",
+      "assetClass": "SEC-Regulated Equity Security (NASDAQ Tier-1)",
+      "pricingSource": "Consolidated Tape / Primary Exchange",
+      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
+      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 96,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:723ec9e06db74a575901753404635075060a61e33a14b0b52bf8dd1b6b18d1a3",
+      "reportDigestSha256": "sha256:723ec9e06db74a575901753404635075060a61e33a14b0b52bf8dd1b6b18d1a3",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:e70421b364be15fb6dc130881f1f5a567d5c23593c5ddbb98f9003362affc9c2",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "f420b3956459e84945b5cb0ae8ddecf5e0a3e039baa330f5c2d1cf3be59f9fdbc142862e2c21ecc02002a2b15e92c069814bd7a37ea3056c131d2bc0d5135d03",
+    "signedDigest": "3ae6bbfae6fb91aa7cd3067089f76d1cf28144468e0e2d6cb48a50519da36494",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "3ae6bbfae6fb91aa7cd3067089f76d1cf28144468e0e2d6cb48a50519da36494",
+      "serialNumber": "92cf9fa7ff69d7b4432385e4e5745726",
+      "genTime": "2026-09-10T12:36:17.736Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "6952fd9dd243278591a13e29bed9680dda6b70fb127fffb72a6dab2765aa3906"
+    },
+    "provenanceProof": "sha256:7883c20203ab315334c566d5730e6cbc5d6c399a8df632ab20e289493f9fbbc0"
+  },
+  "integrityProof": {
+    "pdfSha256": "f82fad432ceeebe499e9e6a4ecaefab7834f939d1e56ec4ffea46d00a3d4ddca",
+    "pdfByteLength": 87893,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:17.749Z"
+  }
+}

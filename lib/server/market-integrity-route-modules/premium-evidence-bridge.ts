@@ -9,6 +9,7 @@ import { fetchPass2467LiquidationLongShortProof } from "@/lib/market-integrity/l
 import { buildSourceSynchronizationPacket } from "@/lib/market-integrity/source-synchronizer";
 import { hydratePass2484RuntimePremiumEvidence } from "@/lib/market-integrity/runtime-premium-evidence-hydrator";
 import { applyApiRateLimit, rejectOversizedUrl, sanitizeBoundedParam, securityJson } from "@/lib/security/api-guard";
+import { resolveVlmPaidSurfaceAccess, toVlmPaidSurfacePaymentRequiredPayload } from "@/lib/commerce/vlm-paid-surface-guard";
 
 type ErrorPayload = { mode: "error"; error: string };
 
@@ -21,6 +22,21 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = sanitizeBoundedParam(searchParams.get("query"), { maxLength: 120, fallback: "" });
   if (!query) return securityJson({ mode: "error", error: "Missing query" } satisfies ErrorPayload, { status: 400 });
+
+  const paidAccessGate = await resolveVlmPaidSurfaceAccess({
+    policyId: "vlm_analysis",
+    request,
+    depth: "pro",
+    locale: "en",
+    assetId: query,
+    symbol: query,
+  });
+  if (!paidAccessGate.ok) {
+    return securityJson(toVlmPaidSurfacePaymentRequiredPayload(paidAccessGate), {
+      status: 402,
+      headers: paidAccessGate.headers,
+    });
+  }
 
   try {
     const realMarketResult = shouldForceNonCryptoRealMarket(query) ? await resolveRealMarketVlmRiskResult(query) : null;

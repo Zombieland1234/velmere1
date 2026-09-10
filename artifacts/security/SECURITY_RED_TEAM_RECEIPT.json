@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "velmere.security.negative-paths.receipt.v1",
+  "executedAt": "2026-09-02T00:46:56.353Z",
+  "totalProbes": 7,
+  "passedProbes": 7,
+  "failedProbes": 0,
+  "status": "PASS",
+  "probes": [
+    {
+      "name": "IDOR_UNAUTHENTICATED_ARTIFACT_LOOKUP",
+      "url": "http://localhost:3000/api/account/customer-artifact?caseRef=AUD-FORGED-9999-IDOR",
+      "method": "GET",
+      "status": 401,
+      "durationMs": 46,
+      "passed": true,
+      "evidenceSnippet": "{\"ok\":false,\"error\":\"account_session_required\"}"
+    },
+    {
+      "name": "IDOR_CROSS_TENANT_CASE_LOOKUP",
+      "url": "http://localhost:3000/api/account/customer-artifact?caseRef=AUD-0000-FORGED-SEC",
+      "method": "GET",
+      "status": 401,
+      "durationMs": 6,
+      "passed": true,
+      "evidenceSnippet": "{\"ok\":false,\"error\":\"account_session_required\"}"
+    },
+    {
+      "name": "PATH_TRAVERSAL_ARBITRARY_FILE_READ",
+      "url": "http://localhost:3000/api/account/customer-artifact?caseRef=../../../../etc/passwd",
+      "method": "GET",
+      "status": 401,
+      "durationMs": 4,
+      "passed": true,
+      "evidenceSnippet": "{\"ok\":false,\"error\":\"account_session_required\"}"
+    },
+    {
+      "name": "SSRF_INTRANET_METADATA_PROBE",
+      "url": "http://localhost:3000/api/audit/basic/case",
+      "method": "POST",
+      "status": 502,
+      "durationMs": 6,
+      "passed": true,
+      "evidenceSnippet": "{\"ok\":false,\"error\":\"AUDIT_CUSTOMER_BRIDGE_URL_REQUIRED\"}"
+    },
+    {
+      "name": "OVERSIZE_REQUEST_PAYLOAD_BODY",
+      "url": "http://localhost:3000/api/contact/message",
+      "method": "POST",
+      "status": 503,
+      "durationMs": 13,
+      "passed": true,
+      "evidenceSnippet": "{\n  \"ok\": false,\n  \"error\": \"contact_intake_blocked_legal\",\n  \"retryable\": false,\n  \"blockers\": [\n    \"legal_controller_identity_missing\",\n    \"approved_support"
+    },
+    {
+      "name": "ORIGIN_FORGERY_UNTRUSTED_DOMAIN",
+      "url": "http://localhost:3000/api/shield/analysis/composite",
+      "method": "POST",
+      "status": 403,
+      "durationMs": 15,
+      "passed": true,
+      "evidenceSnippet": "{\"ok\":false,\"mode\":\"api_cross_origin_blocked\"}"
+    },
+    {
+      "name": "MARKET_INTEGRITY_FAIL_CLOSED_WITHHELD",
+      "url": "http://localhost:3000/api/market-integrity/markets",
+      "method": "GET",
+      "status": 503,
+      "durationMs": 14,
+      "passed": true,
+      "evidenceSnippet": "{\"schemaVersion\":\"velmere.current-execution.shield-basic-customer-safe-withheld.v1\",\"mode\":\"withheld\",\"availability\":\"WITHHELD\",\"error\":\"shield_customer_data_de"
+    }
+  ]
+}

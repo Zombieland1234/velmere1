@@ -1,0 +1,25 @@
+{
+  "id": "GSC-013",
+  "name": "malicious-honeypot",
+  "description": "Token transfer() method containing conditional revert if recipient is not the contract deployer (honeypot trap).",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x000000000000000000000000000000000000dead",
+  "expectedFindings": [
+    "HONEYPOT_TRANSFER_REVERT",
+    "UNSELLABLE_TOKEN_PATTERN"
+  ],
+  "expectedNonFindings": [
+    "UNRESTRICTED_ERC20_TRANSFER"
+  ],
+  "expectedEvidenceStates": {
+    "honeypotSimulation": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 95,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 95,
+    "maxRisk": 100
+  }
+}

@@ -42,12 +42,12 @@ export default function LegalDraftPage({
       data-pass2007-legal="single-document-no-card-stack"
     >
       <LuxurySection className="pt-28 pb-24 md:pt-36 md:pb-32">
-        <article className="pass2007-legal-document mx-auto max-w-4xl rounded-[1.5rem] border border-white/[0.09] bg-[#090b0e] px-6 py-8 shadow-velmere-card md:px-10 md:py-12">
+        <article className="pass2007-legal-document mx-auto max-w-4xl rounded-[1.5rem] border border-white/[0.09] bg-[#090b0e]/95 backdrop-blur-2xl px-6 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.65)] border-white/[0.12] md:px-12 md:py-16 rounded-[2rem]">
           <header>
             <p className="velmere-label text-cyan-100/[0.72]">{kicker}</p>
             <h1 className="mt-6 font-serif text-[clamp(3rem,7vw,6rem)] leading-[0.86] tracking-[-0.06em] text-white">{title}</h1>
             <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/[0.42]">{updated}</p>
-            <div className="mt-8 border-l-2 border-cyan-200/[0.30] bg-cyan-300/[0.035] px-5 py-4 text-sm leading-7 text-white/[0.68]">
+            <div className="mt-8 border border-velmere-gold/[0.25] bg-velmere-gold/[0.04] rounded-2xl px-6 py-5 text-sm leading-7 text-white/[0.80] shadow-[0_0_30px_rgba(212,175,55,0.06)]">
               {draftNotice}
             </div>
             <p className="mt-8 max-w-3xl text-base leading-8 text-white/[0.62]">{intro}</p>

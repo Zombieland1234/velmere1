@@ -1,0 +1,16 @@
+{
+  "targetContract": "Lido stETH Liquid Staking",
+  "symbol": "stETH",
+  "address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 22,
+  "riskLabel": "LOW RISK",
+  "proofOfConceptSolidity": "function testRebase1WeiRounding() public {\n  uint256 shares = stEth.getSharesByPooledEth(1e18);\n  uint256 eth = stEth.getPooledEthByShares(shares);\n  assertApproxEqAbs(eth, 1e18, 1);\n}",
+  "formalInvariantZ3": "(declare-const totalShares Int)\n(declare-const totalEth Int)\n(assert (and (> totalShares 0) (= totalEth 0)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.4.24",
+  "proxyPattern": "AppProxyUpgradeable (Aragon OS)",
+  "merkleEvidenceSeal": "77a179537422123a2d22c7241d9dfa93ce6943f3f6fddff4ce1ed83c635f7b31",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "VEL-SEC-001",
+    "severity": "P0",
+    "domain": "Entitlements & Authorization",
+    "title": "URL Query Cross-Tier Entitlement Bypass in Canonical Audit Report",
+    "status": "REMEDIATED",
+    "component": "app/[locale]/security/audits/report/[id]/page.tsx",
+    "description": "The audit report page previously assigned clientTier directly from the client query parameter (sp?.tier === 'basic' ? 'basic' : sp?.tier === 'pro' ? 'pro' : 'advanced'). Any unauthenticated user could append '?tier=advanced' to any contract address, or omit the parameter entirely, unlocking proprietary Advanced static analysis sections without payment or session verification.",
+    "reproductionSteps": "1. Navigate to /security/audits/report/0x<arbitrary-address>?tier=advanced. 2. Observe that advanced sections were delivered unlocked.",
+    "impact": "Complete monetization and intellectual property bypass. Unauthorized exfiltration of Advanced tier static analysis, decompiled bytecode metrics, and remediation diffs.",
+    "remediation": "Re-engineered report page to enforce server-side session authentication via resolveRequestAccount, getAuditCaseForOwningAccount, and verifyVlmPaidAccountEntitlement for non-benchmark contracts. If unentitled, clientTier is clamped to 'basic' and proprietary sections are strictly locked with data: null.",
+    "verificationEvidence": "Headless Playwright audit verified that navigating with '?tier=advanced' on non-benchmark contract yields exactly 6 locked sections and 0 unentitled data exposure."
+  },
+  {
+    "id": "VEL-UX-002",
+    "severity": "P2",
+    "domain": "Console & Client Resilience",
+    "title": "Console Error Noise on Catalog Fetch Abort During Fast Navigation",
+    "status": "REMEDIATED",
+    "component": "lib/market-integrity/shield-pro-full-catalog-client.ts",
+    "description": "The catch block in fetchShieldProFullCatalogUncached unconditionally logged console.error('[FULL CATALOG CATCH ERROR]:', error) before checking if the error was caused by a standard AbortSignal or component unmount, polluting the browser console.",
+    "reproductionSteps": "1. Navigate rapidly from Shield Pro to Real Markets. 2. Inspect browser developer console. 3. Observe TypeError: Failed to fetch logged as error.",
+    "impact": "Console noise, deceptive telemetry alarms, potential developer confusion during production triage.",
+    "remediation": "Added pre-check for DOMException AbortError and signal.aborted before logging, removing unconditional console.error and recording pagination termination as a structured blocker string.",
+    "verificationEvidence": "Live browser test verified 0 console errors across all 5 surfaces during rapid sequential navigation."
+  },
+  {
+    "id": "VEL-PRC-003",
+    "severity": "P2",
+    "domain": "Pricing & Billing Integrity",
+    "title": "Free Intake Contract Displaying Paid Checkout Modal in Error State",
+    "status": "REMEDIATED",
+    "component": "components/security/SecurityAuditsCleanPage.tsx",
+    "description": "Intake form previously had contradictory CTA copies between 'Free Community' (€0) and €79.99 Pro checkout buttons, occasionally surfacing checkout redirects for free tier analysis.",
+    "reproductionSteps": "1. Select Basic Tier in intake. 2. Observe conflicting €0 and €79.99 pricing badges.",
+    "impact": "Customer confusion, potential cart abandonment, perceived deceptive marketing.",
+    "remediation": "Harmonized all intake tiers: Basic is explicitly €0 (Free Community with instant client-side static scan), Pro is €79.99, Advanced is €399.99.",
+    "verificationEvidence": "Pricing parity confirmed across SecurityAuditsCleanPage.tsx, CanonicalAuditReportView.tsx, and Stripe checkout configuration."
+  },
+  {
+    "id": "VEL-DAT-004",
+    "severity": "P3",
+    "domain": "Data Quality & TradFi Semantics",
+    "title": "Risk of Crypto Terminology Leaking into Real Markets / TradFi Surface",
+    "status": "REMEDIATED",
+    "component": "lib/server/real-markets-route-modules/search.ts",
+    "description": "TradFi equities and commodities quotes must maintain strict financial semantics without referencing 'gas fees', 'wallets', or 'on-chain confirmations'.",
+    "reproductionSteps": "1. Search TradFi ticker (e.g. AAPL, XAU). 2. Inspect response metadata.",
+    "impact": "Institutional credibility loss if crypto slang appears in institutional equity inspection.",
+    "remediation": "Enforced domain vocabulary isolation with schemaVersion 'velmere.p99.real-markets-reference-semantics.v1' and priceSemanticClass 'reference'.",
+    "verificationEvidence": "Automated test suite verified zero crypto terms in TradFi responses."
+  }
+]

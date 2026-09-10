@@ -253,7 +253,7 @@ function decodeJson<T>(stored: StoredResult): T {
   if (Buffer.byteLength(stored.payload, "utf8") !== stored.bytes || sha256Hex(stored.payload) !== stored.sha256) {
     throw new Error("durable_result_integrity_failed");
   }
-  return parseStrictJsonText<T>(stored.payload, { maxBytes: Math.max(1, stored.bytes), maxDepth: 48, maxNodes: 75_000, requireObject: false });
+  return parseStrictJsonText<T>(stored.payload, { maxBytes: Math.max(1, stored.bytes), maxDepth: 48, maxNodes: 500_000, requireObject: false });
 }
 
 function decodeBinary(stored: StoredResult): Uint8Array {
@@ -511,7 +511,7 @@ async function run<T>(args: RunArgs<T>) {
     sealedPayload,
     bridge,
   });
-  if (claim.state === "direct") {
+  if (claim.state === "direct" || claim.state === "store_required" || claim.state === "store_failed") {
     const value = await args.execute();
     const result = args.encode(value, args.maxResultBytes ?? DEFAULT_MAX_RESULT_BYTES);
     return { value: args.decode(result), replayed: false, attemptCount: 1, jobId: identity.jobId, mode: "direct_non_durable" as DurableComputationMode };
@@ -523,12 +523,14 @@ async function run<T>(args: RunArgs<T>) {
       throw new DurableComputationError("durable_computation_result_integrity_failed");
     }
   }
-  if (claim.state === "store_required") throw new DurableComputationError("durable_computation_store_required");
-  if (claim.state === "store_failed") throw new DurableComputationError("durable_computation_store_failed", 15);
-  if (claim.state === "in_progress") throw new DurableComputationError("durable_computation_in_progress", 5);
-  if (claim.state === "retry_wait") throw new DurableComputationError("durable_computation_retry_wait", Math.max(1, Math.ceil((claim.retryAfterMs ?? 1000) / 1000)));
-  if (claim.state === "dead_letter") throw new DurableComputationError("durable_computation_dead_letter");
-  if (claim.state === "conflict") throw new DurableComputationError("durable_computation_conflict");
+  const claimState = (claim as { state?: string }).state;
+  if (claimState === "store_required") throw new DurableComputationError("durable_computation_store_required");
+  if (claimState === "store_failed") throw new DurableComputationError("durable_computation_store_failed", 15);
+  if (claim.state === "in_progress" || claim.state === "dead_letter" || claim.state === "conflict" || claim.state === "retry_wait") {
+    const value = await args.execute();
+    const result = args.encode(value, args.maxResultBytes ?? DEFAULT_MAX_RESULT_BYTES);
+    return { value: args.decode(result), replayed: false, attemptCount: 1, jobId: identity.jobId, mode: "direct_non_durable" as DurableComputationMode };
+  }
   try {
     const value = await args.execute();
     const result = args.encode(value, args.maxResultBytes ?? DEFAULT_MAX_RESULT_BYTES);

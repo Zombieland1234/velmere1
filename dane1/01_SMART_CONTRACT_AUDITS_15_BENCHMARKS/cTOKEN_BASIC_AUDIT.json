@@ -1,0 +1,22 @@
+{
+  "contractName": "Compound cToken (cUSDC / cETH)",
+  "symbol": "cTOKEN",
+  "address": "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",
+  "tier": "BASIC",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.5.16",
+  "proxyPattern": "CErc20Delegator Proxy Pattern",
+  "riskScore": 24,
+  "riskLabel": "LOW RISK",
+  "summary": "Basic tier static opcode disassembly and entry-point access control audit for Compound cToken (cUSDC / cETH).",
+  "findings": [
+    {
+      "title": "AccrueInterest Reentrancy & ExchangeRate Stale State",
+      "severity": "MEDIUM",
+      "swcId": "SWC-107",
+      "cweId": "CWE-841",
+      "description": "Exchange rate calculation depends on cash, borrows, and reserves which must be accrued prior to any mint/redeem/borrow operation."
+    }
+  ],
+  "verificationDigest": "77256f9b1d914b6e8e0daa99e085a96df0a5f36d8d5f158e0bcb9303a961446f"
+}

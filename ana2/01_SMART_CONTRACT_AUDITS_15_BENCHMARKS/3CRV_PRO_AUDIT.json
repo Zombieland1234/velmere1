@@ -1,0 +1,19 @@
+{
+  "targetContract": "Curve 3Pool (DAI/USDC/USDT)",
+  "symbol": "3CRV",
+  "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 15,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Read-Only Reentrancy on get_virtual_price() During Liquidity Removal",
+    "category": "Stableswap Invariant & Read-Only Reentrancy",
+    "swcId": "SWC-107",
+    "cweId": "CWE-841",
+    "rootCause": "Virtual price calculation depends on pool balances updated prior to burning LP tokens, temporarily depressing reported virtual price.",
+    "attackVector": "Attacker removes liquidity with one-sided coin, invokes external raw_call callback on fallback-enabled coin, borrowing on lending market with depressed collateral price."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/3Pool.vy\n+++ b/contracts/3Pool.vy\n@@ -120,3 +120,4 @@\n @view\n def get_virtual_price() -> uint256:\n+    assert not self.unlocked, 'Reentrant virtual price query'\n     return 10**18 * self.D / self.token.totalSupply()",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

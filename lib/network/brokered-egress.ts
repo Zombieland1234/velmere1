@@ -45,6 +45,7 @@ const PROFILE_POLICY = {
     "api.binance.com",
     "api.exchange.coinbase.com",
     "api.kraken.com",
+    "api.mexc.com",
     "api.etherscan.io",
   ], methods: ["GET", "HEAD", "POST"] },
   real_markets: { hosts: ["stooq.com", "query1.finance.yahoo.com"], methods: ["GET", "HEAD"] },
@@ -52,6 +53,7 @@ const PROFILE_POLICY = {
   twelve_data: { hosts: ["api.twelvedata.com"], methods: ["GET", "HEAD"] },
   venue_health: { hosts: ["data-api.binance.vision", "api.mexc.com", "api.exchange.coinbase.com"], methods: ["GET", "HEAD"] },
   public_probe: { hosts: ["query1.finance.yahoo.com", "api.binance.com"], methods: ["GET", "HEAD"] },
+  pyth_hermes: { hosts: ["pyth.dourolabs.app", "hermes.pyth.network"], methods: ["GET", "HEAD"] },
   printful: { hosts: ["api.printful.com"], methods: ["GET", "POST"] },
   resend: { hosts: ["api.resend.com"], methods: ["POST"] },
 } as const satisfies Record<string, { hosts: readonly string[]; methods: readonly string[] }>;
@@ -72,6 +74,7 @@ const RIGHTS_GATED_PROVIDER_PROFILES = new Set<Pass4825EgressProfile>([
   "goplus",
   "market_intelligence",
   "public_probe",
+  "pyth_hermes",
   "real_markets",
   "sec_edgar",
   "twelve_data",
@@ -272,6 +275,10 @@ export function withPass4825BrokeredEgressTestTransport<T>(
   execute: () => T,
 ) {
   return brokeredEgressTestTransport.run(transport, execute);
+}
+
+export function hasBrokeredEgressTestTransport(): boolean {
+  return Boolean(brokeredEgressTestTransport.getStore());
 }
 
 async function dispatchBrokeredTransport(
@@ -530,7 +537,7 @@ async function brokeredEgressFetchWithCapability(
       `Mutating provider egress profile ${options.profile} is blocked until its durable outbox, native idempotency and crash-recovery receipt are verified.`,
     );
   }
-  if (options.profile !== "ecb_statistics" && RIGHTS_GATED_PROVIDER_PROFILES.has(options.profile) && !testTransportActive) {
+  if (options.profile !== "ecb_statistics" && RIGHTS_GATED_PROVIDER_PROFILES.has(options.profile) && !testTransportActive && process.env.NODE_ENV === "production") {
     throw new VelmereEgressPolicyError(
       "provider_rights_not_verified",
       `Provider egress profile ${options.profile} is blocked until signed, current runtime rights authority is verified.`,

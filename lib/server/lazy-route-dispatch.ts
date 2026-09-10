@@ -46,7 +46,12 @@ export async function dispatchLazyRoute(options: {
   if (typeof handler !== "function") {
     return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
   }
-  return handler(request);
+  try {
+    return await handler(request);
+  } catch (err) {
+    console.error('[lazy-route-dispatch ERROR]', key, err);
+    return response({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+  }
 }
 
 export function optionsLazyRoute(options: {

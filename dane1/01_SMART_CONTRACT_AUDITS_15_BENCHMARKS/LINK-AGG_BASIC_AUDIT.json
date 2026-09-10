@@ -1,0 +1,22 @@
+{
+  "contractName": "Chainlink Aggregator V3",
+  "symbol": "LINK-AGG",
+  "address": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
+  "tier": "BASIC",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.8.16",
+  "proxyPattern": "EACAggregatorProxy",
+  "riskScore": 14,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Basic tier static opcode disassembly and entry-point access control audit for Chainlink Aggregator V3.",
+  "findings": [
+    {
+      "title": "Stale Price Feed & Negative Price Validation Trap",
+      "severity": "MEDIUM",
+      "swcId": "SWC-114",
+      "cweId": "CWE-682",
+      "description": "Consuming latestRoundData() without verifying answer > 0, updatedAt > 0, and answeredInRound >= roundId."
+    }
+  ],
+  "verificationDigest": "69e5ec0f058409dce428f75481c2e095d272926e0cfa0d00dd08bf0597a7dc78"
+}

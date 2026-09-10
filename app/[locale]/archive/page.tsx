@@ -40,7 +40,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ locale
           </div>
           <div className="pass2008-archive-intro rounded-[1.5rem] border border-white/[0.08] bg-[#090b0e] p-6 text-sm leading-7 text-white/[0.56] shadow-2xl shadow-black/[0.40]">
             <p>{t("intro")}</p>
-            <Link href="/vlm-token" className="velmere-command-pill velmere-interaction-pulse mt-7 inline-flex min-h-12 items-center gap-2 px-5 text-[10px] text-[#c8a96a]" data-tone="gold">
+            <Link href="/shop" className="velmere-command-pill velmere-interaction-pulse mt-7 inline-flex min-h-12 items-center gap-2 px-5 text-[10px] text-[#c8a96a]" data-tone="gold">
               {t("vlmCta")}
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>

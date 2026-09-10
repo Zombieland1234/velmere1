@@ -204,6 +204,12 @@ async function handleMarketReportGet(request: Request) {
     result.providerEvidenceLedger = pass4645ProviderEvidenceLedger;
     result.providerEvidencePersistence = pass4645ProviderEvidencePersistence;
     const pass4645AnalysisReadiness = buildAnalysisReadiness(result, locale);
+    if (reportTier !== "Basic" && (!result.providerRiskDelivery || result.providerRiskDelivery.state !== "verified")) {
+      return NextResponse.json(
+        { mode: "withheld", error: "premium_report_source_evidence_not_ready" },
+        { status: 424, headers: { "cache-control": "no-store" } },
+      );
+    }
     if (reportTier !== "Basic" && !pass4645AnalysisReadiness.tiers[reportDepth].sellReady) {
       const basicAvailable = pass4645AnalysisReadiness.tiers.basic.sellReady;
       const pass98ReadinessWithheld = buildP98CustomerPaidTierExactDeliveryDecision({

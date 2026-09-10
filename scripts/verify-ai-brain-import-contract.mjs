@@ -1,7 +1,8 @@
+import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-const root = path.resolve(decodeURIComponent(new URL("..", import.meta.url).pathname));
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
 
 function read(relativePath) {
@@ -10,7 +11,7 @@ function read(relativePath) {
 
 const riskPath = "lib/market-integrity/risk-engine.ts";
 const typesPath = "lib/market-integrity/risk-types.ts";
-const risk = read(riskPath);
+const risk = read(riskPath) + "\n" + read("lib/market-integrity/risk-engine-profile.ts") + "\n" + read("lib/market-integrity/risk-engine-model.ts");
 const types = read(typesPath);
 
 const forbiddenRisk = [

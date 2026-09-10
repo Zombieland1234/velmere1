@@ -338,7 +338,7 @@ export function buildRiskHistorySnapshot(args: {
     ...(typeof args.volume24h === "number" && Number.isFinite(args.volume24h) ? { volume24h: args.volume24h } : {}),
     score: Number.isFinite(result.score) ? Math.min(100, Math.max(0, Math.round(result.score))) : 0,
     level: result.level,
-    signalCount: result.signals.length,
+    signalCount: result.signals?.length ?? 0,
     ...(result.metaModel?.dominantAgent ? { dominantAgent: result.metaModel.dominantAgent } : {}),
     ...(typeof result.confidence === "number" && Number.isFinite(result.confidence)
       ? { confidence: Math.min(100, Math.max(0, result.confidence)) }

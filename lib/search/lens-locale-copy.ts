@@ -22,7 +22,7 @@ export const PASS4416_LENS_SEARCH_MODES = [
 
 export const PASS4416_LENS_LOCALE_COPY = {
   pl: {
-    placeholder: "Szukaj: SOL, BTC, kontrakt, VLM, Shield...",
+    placeholder: "Szukaj instrumentu, tokena lub kontraktu...",
     scan: "Skanuj",
     modes: {
       all: "Wszystko",
@@ -90,7 +90,7 @@ export const PASS4416_LENS_LOCALE_COPY = {
     ],
   },
   de: {
-    placeholder: "Suche: SOL, BTC, Contract, VLM, Shield...",
+    placeholder: "Instrument, Token oder Contract suchen...",
     scan: "Scannen",
     modes: {
       all: "Alles",
@@ -158,7 +158,7 @@ export const PASS4416_LENS_LOCALE_COPY = {
     ],
   },
   en: {
-    placeholder: "Search: SOL, BTC, contract, VLM, Shield...",
+    placeholder: "Search instrument, token or contract...",
     scan: "Scan",
     modes: {
       all: "All",

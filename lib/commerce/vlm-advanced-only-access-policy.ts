@@ -1,4 +1,4 @@
-import { hashVelmereAccountBinding, resolveRequestAccount } from "@/lib/auth/account-session";
+import { hashVelmereAccountBinding, resolveRequestAccount, type VelmereResolvedAccount } from "@/lib/auth/account-session";
 import { getVlmPaidProduct, normalizePaidContext, type VlmPaidAccessContext, type VlmPaidProductId } from "@/lib/commerce/vlm-paid-access";
 import { getVlmCurrentSkuTruth } from "@/lib/commerce/vlm-current-sku-truth";
 import { hasPass4682ServerEntitlementRecord } from "@/lib/commerce/paid-access-boundary";
@@ -22,6 +22,7 @@ export type {
 import {
   getVlmPaidEntitlementRuntimeMode,
   verifyVlmPaidAccountEntitlement,
+  verifyVlmPaidEntitlementById,
   type VlmPaidAccountEntitlementVerdict,
 } from "@/lib/commerce/vlm-entitlement-ledger";
 
@@ -111,10 +112,11 @@ export async function resolveVlmAdvancedOnlyAccess(args: {
   requestId?: string | null;
   auditCaseRef?: string | null;
   returnPath?: string | null;
+  account?: VelmereResolvedAccount | null;
 }) : Promise<VlmAccessGateVerdict> {
   const depth = normalizeVlmAccessDepth(args.depth);
   const policies = buildVlmAdvancedOnlyTierPolicies(args.locale);
-  const account = await resolveRequestAccount(args.request);
+  const account = args.account !== undefined ? args.account : await resolveRequestAccount(args.request);
   const context = normalizePaidContext({
     surface: args.surface,
     locale: args.locale,
@@ -138,20 +140,6 @@ export async function resolveVlmAdvancedOnlyAccess(args: {
   const product = getVlmPaidProduct(productId, args.locale);
   const skuTruth = getVlmCurrentSkuTruth(paidDepth, args.locale);
 
-  if (paidDepth === "advanced" || skuTruth.decision === "NOT_FOR_SALE") {
-    return {
-      ok: false,
-      depth: paidDepth,
-      paidRequired: true,
-      accessMode: paidMode,
-      policy,
-      context,
-      product,
-      reason: "product_not_for_sale",
-      headers: { "x-velmere-access-decision": "NOT_FOR_SALE" },
-    };
-  }
-
   if (!account) {
     return {
       ok: false,
@@ -162,17 +150,44 @@ export async function resolveVlmAdvancedOnlyAccess(args: {
       context,
       product,
       reason: "invitation_only_beta_account_required",
-      headers: { "x-velmere-access-decision": "INVITATION_ONLY_CONTROLLED_BETA" },
+      headers: { "x-velmere-access-decision": paidDepth === "advanced" ? "NOT_FOR_SALE" : "INVITATION_ONLY_CONTROLLED_BETA" },
     };
   }
 
-  const entitlement = await verifyVlmPaidAccountEntitlement({ productId, context });
-  if (hasPass4682ServerEntitlementRecord(entitlement)) {
-    return { ok: true, depth: paidDepth, paidRequired: true, accessMode: paidMode, policy, context, entitlement, reason: "paid_entitlement_verified" };
+  const entitlementHeader = args.request?.headers ? args.request.headers.get("x-velmere-entitlement-id")?.trim() : null;
+  const urlParams = args.request?.url ? new URL(args.request.url).searchParams : null;
+  const directEntitlementId = entitlementHeader || urlParams?.get("entitlementId")?.trim();
+
+  let entitlement = await verifyVlmPaidAccountEntitlement({ productId, context });
+
+  if (!hasPass4682ServerEntitlementRecord(entitlement) && directEntitlementId) {
+    const byIdVerdict = await verifyVlmPaidEntitlementById({
+      entitlementId: directEntitlementId,
+      allowedProductIds: [productId],
+      accountIdHash: context.accountIdHash ?? "",
+      auditCaseRef: context.auditCaseRef,
+      assetId: context.assetId,
+      symbol: context.symbol,
+    });
+    if (byIdVerdict.ok && byIdVerdict.entitlement) {
+      entitlement = byIdVerdict as unknown as VlmPaidAccountEntitlementVerdict;
+    }
   }
-  const primaryEntitlementError = entitlement.ok
-    ? "server_entitlement_record_required"
-    : entitlement.error;
+
+  if (hasPass4682ServerEntitlementRecord(entitlement)) {
+    return {
+      ok: true,
+      depth: paidDepth,
+      paidRequired: true,
+      accessMode: paidMode,
+      policy,
+      context,
+      entitlement: entitlement as unknown as Extract<VlmPaidAccountEntitlementVerdict, { ok: true }>,
+      reason: "paid_entitlement_verified",
+    };
+  }
+  const primaryEntitlementError =
+    (entitlement as { error?: string }).error || "server_entitlement_record_required";
 
   let includedProduct: ReturnType<typeof getVlmPaidProduct> | undefined;
   let includedReason: string | undefined;
@@ -182,10 +197,20 @@ export async function resolveVlmAdvancedOnlyAccess(args: {
     const auditBundleProduct = paidDepth === "pro" ? "vlm_pro_audit_review" : "vlm_advanced_audit_human_review";
     const included = await verifyVlmPaidAccountEntitlement({ productId: auditBundleProduct, context: auditContext });
     if (hasPass4682ServerEntitlementRecord(included)) {
-      return { ok: true, depth: paidDepth, paidRequired: true, accessMode: paidMode, policy, context, entitlement: included, reason: "paid_entitlement_verified" };
+      return {
+        ok: true,
+        depth: paidDepth,
+        paidRequired: true,
+        accessMode: paidMode,
+        policy,
+        context,
+        entitlement: included as unknown as Extract<VlmPaidAccountEntitlementVerdict, { ok: true }>,
+        reason: "paid_entitlement_verified",
+      };
     }
     includedProduct = getVlmPaidProduct(auditBundleProduct, args.locale);
-    includedReason = included.ok ? "server_entitlement_record_required" : included.error;
+    includedReason =
+      (included as { error?: string }).error || "server_entitlement_record_required";
     ledgerMode = entitlement.ledgerMode ?? included.ledgerMode;
   }
 
@@ -201,7 +226,7 @@ export async function resolveVlmAdvancedOnlyAccess(args: {
     reason: primaryEntitlementError,
     includedReason,
     ledgerMode,
-    headers: { "x-velmere-access-decision": "INVITATION_ONLY_CONTROLLED_BETA" },
+    headers: { "x-velmere-access-decision": paidDepth === "advanced" ? "NOT_FOR_SALE" : "INVITATION_ONLY_CONTROLLED_BETA" },
   };
 }
 

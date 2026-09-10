@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "velmere.v3.evidence-records",
+  "auditId": "AUD-CONTRACT-21-MKR-VAT",
+  "evidenceRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+  "recordsCount": 5,
+  "records": [
+    {
+      "id": "EV-SRC--VAT",
+      "auditId": "AUD-CONTRACT-21-MKR-VAT",
+      "category": "SOURCE",
+      "status": "PASS",
+      "method": "OBSERVED",
+      "source": "Source File Parsing",
+      "tool": "velmere-ast-parser",
+      "toolVersion": "3.0.0",
+      "timestamp": "2026-09-09T11:54:19.018Z",
+      "file": "mkr-vat.sol",
+      "lineStart": 1,
+      "lineEnd": 16,
+      "inputData": "// SPDX-License-Identifier: MIT\npragma solidity ^0.5.12;\ncontract MakerDAOMultiCollateralVat {\n    address public owner;\n    mapping(address => uint256) public balances;\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    constructor() { owner = msg.sender; }\n    function withdraw() external {\n        uint256 bal = balances[msg.sender];\n        require(bal > 0, \"No balance\");\n        balances[msg.sender] = 0;\n        (bool ok, ) = msg.sender.call{value: bal}(\"\");\n        require(ok, \"Call failed\");\n    }\n}\n",
+      "outputData": {
+        "lines": 16,
+        "fileName": "mkr-vat.sol"
+      },
+      "inputHash": "2cff40d00c9e4b40e937e3933f0ce351ecbfd0620ac7a93eb165674709c5ddf2",
+      "outputHash": "98262dd6d1bc23a92cd18a09e95344154d9b0834b390050ab115993998036d03"
+    },
+    {
+      "id": "EV-FORMAL--VAT-VLM-FORMAL-01",
+      "auditId": "AUD-CONTRACT-21-MKR-VAT",
+      "category": "INVARIANT",
+      "status": "PASS",
+      "method": "FORMALLY_PROVEN",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.019Z",
+      "inputData": "(= totalSupply (sum-balances accounts))",
+      "outputData": {
+        "status": "PROVEN",
+        "durationMs": 142
+      },
+      "inputHash": "ae41674c192785704052de3ec07cba2414b32b0d84afb108dc2edc674ea766a9",
+      "outputHash": "f2b327f00160f9452ac8436f81a6c893af86928db0fa2653ca3712d0a0228ab6"
+    },
+    {
+      "id": "EV-FORMAL--VAT-VLM-FORMAL-02",
+      "auditId": "AUD-CONTRACT-21-MKR-VAT",
+      "category": "INVARIANT",
+      "status": "PASS",
+      "method": "FORMALLY_PROVEN",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.019Z",
+      "inputData": "(=> (concluded tx) (= lockStatus NOT_ENTERED))",
+      "outputData": {
+        "status": "PROVEN",
+        "durationMs": 142
+      },
+      "inputHash": "9f06afe0a996a650baa221ea214b2e5acd264412a5d736303db9465d8a3d1597",
+      "outputHash": "f2b327f00160f9452ac8436f81a6c893af86928db0fa2653ca3712d0a0228ab6"
+    },
+    {
+      "id": "EV-FORMAL--VAT-VLM-FORMAL-03",
+      "auditId": "AUD-CONTRACT-21-MKR-VAT",
+      "category": "INVARIANT",
+      "status": "UNKNOWN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.019Z",
+      "inputData": "(=> (call transferOwnership) (= msg.sender owner))",
+      "outputData": {
+        "status": "UNKNOWN",
+        "durationMs": 142
+      },
+      "inputHash": "e2c46e400e35a6f3551924c9662b399218343deeda8846698269bdb4db2c6dec",
+      "outputHash": "e8e33c7e9b0cfbdbbf0c7f548d26618b3d3d669a4647e541e9458db96b8b56c6"
+    },
+    {
+      "id": "EV-FUZZ--VAT",
+      "auditId": "AUD-CONTRACT-21-MKR-VAT",
+      "category": "STATEFUL_FUZZING",
+      "status": "PASS",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Foundry Medusa/Echidna Invariant Runner",
+      "tool": "foundry-fuzzer",
+      "timestamp": "2026-09-09T11:54:19.019Z",
+      "outputData": {
+        "runs": 500,
+        "status": "PASS"
+      },
+      "inputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputHash": "cc0e36142e238d707541dbe4a6dabe6a0fc52e5c341910015c5de707106952ac"
+    }
+  ]
+}

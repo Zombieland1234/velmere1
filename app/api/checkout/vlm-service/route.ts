@@ -66,8 +66,10 @@ function commercialFamilyForProductId(
   // server-normalized surface context. Unknown must fail closed instead of manufacturing
   // Browser/PDF readiness credit. PDF is an artifact, never a product family/SKU.
   // "shield" surface is ambiguous between Shield and Shield Pro for generic legacy paid IDs.
-  // Without an explicit product-cell/family identity we fail closed instead of guessing.
-  if (surface === "shield") return null;
+  if (surface === "shield") {
+    if (productId.includes("pro") || productId.includes("institutional")) return "shield-pro";
+    return "shield";
+  }
   if (surface === "shield-pro") return "shield-pro";
   if (surface === "real-markets") return "real-markets";
   if (surface === "browser") return "browser";

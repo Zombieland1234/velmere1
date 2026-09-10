@@ -490,11 +490,11 @@ function mutationKilled(packet: A84TierPacket, policy: A84Policy, family: string
   else if (family === "required_field_drop") mutated.fields.pop();
   else if (family === "tier_label_substitution") mutated.tier = mutated.tier === "basic" ? "advanced" : "basic";
   else if (family === "decision_promotion") { mutated.decision = mutated.decision === "FUNCTIONAL_READY_OFFLINE" ? "UNAVAILABLE_NOT_FOR_SALE" : "FUNCTIONAL_READY_OFFLINE"; mutated.blockers = []; }
-  else if (family === "popup_fact_addition") mutated.popupSections[0].addsFacts = true;
+  else if (family === "popup_fact_addition") (mutated.popupSections[0] as any).addsFacts = true;
   else if (family === "popup_section_promotion") mutated.popupSections[0].sectionId = mutated.popupSections[1].sectionId;
-  else if (family === "sale_flag_promotion") mutated.saleEnabled = true;
-  else if (family === "live_flag_promotion") mutated.liveProven = true;
-  else if (family === "rights_flag_promotion") mutated.providerRightsApproved = true;
+  else if (family === "sale_flag_promotion") (mutated as any).saleEnabled = true;
+  else if (family === "live_flag_promotion") (mutated as any).liveProven = true;
+  else if (family === "rights_flag_promotion") (mutated as any).providerRightsApproved = true;
   else if (family === "packet_identity_substitution") mutated.canonicalAssetId = `crypto:Z${String(variant).padStart(4, "0")}`;
   const { packetDigestSha256: _old, ...core } = mutated;
   mutated.packetDigestSha256 = sha256(core);

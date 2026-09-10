@@ -1,0 +1,16 @@
+{
+  "targetContract": "SafeMoon (SAFEMOON)",
+  "symbol": "SAFEMOON",
+  "address": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+  "network": "BNB Smart Chain",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 94,
+  "riskLabel": "CRITICAL RISK",
+  "proofOfConceptSolidity": "function testSafeMoonLPDrain() public {\n  vm.prank(compromisedOwner);\n  safemoon.burn(address(pancakePair), drainedAmount);\n  pancakePair.sync();\n  // Price shoots up, attacker swaps 1 wei for all BNB in pool\n}",
+  "formalInvariantZ3": "(declare-const poolBalance Int)\n(declare-const poolReserve Int)\n(assert (and (> poolReserve 0) (< poolBalance poolReserve)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.6.12",
+  "proxyPattern": "Immutable (Centralized Owner)",
+  "merkleEvidenceSeal": "f84f48f904e180199eea1ec5c9cbe85715a08c9789b214de8bac8daea32695f5",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

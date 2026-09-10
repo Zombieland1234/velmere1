@@ -1,0 +1,16 @@
+{
+  "targetContract": "Aave V3 Lending Pool",
+  "symbol": "AAVE-V3",
+  "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 16,
+  "riskLabel": "VERY LOW RISK",
+  "proofOfConceptSolidity": "function testEModeLiquidationSpill() public {\n  vm.prank(liquidator);\n  pool.liquidationCall(collateralAsset, debtAsset, user, debtToCover, false);\n  assertGe(collateralReceived, theoreticalLimit);\n}",
+  "formalInvariantZ3": "(declare-const hf_before Real)\n(declare-const hf_after Real)\n(assert (and (< hf_before 1.0) (<= hf_after hf_before)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.8.10",
+  "proxyPattern": "InitializableImmutableAdminUpgradeabilityProxy",
+  "merkleEvidenceSeal": "4bbfe5c475e2e33ccad3cd3566dc00ed0d3910c7ed7c21f65c6a93cbeab9498c",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

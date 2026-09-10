@@ -47,6 +47,8 @@ const PUBLIC_ASSET_EXTENSION = /\.(?:avif|gif|ico|jpeg|jpg|json|png|svg|webp|wof
 const ROOT_METADATA_PATHS = new Set([
   "/icon.svg",
   "/manifest.webmanifest",
+  "/shield.jpg",
+  "/shield.png",
 ]);
 
 const PUBLIC_MARKET_INTEGRITY_PROOF_PREFIX = "/proof/market-integrity/";
@@ -271,6 +273,13 @@ export default function proxy(request: NextRequest) {
   }
 
   if (normalizedPath.startsWith("/api/")) {
+    console.log('[DEBUG PROXY EDGE]', {
+      url: request.url,
+      host: request.headers.get('host'),
+      origin: request.headers.get('origin'),
+      xfh: request.headers.get('x-forwarded-host'),
+      edge: inspectApiEdgeRequest(request)
+    });
     const edge = inspectApiEdgeRequest(request);
     if (!edge.ok) {
       return new NextResponse(JSON.stringify({

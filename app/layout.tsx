@@ -4,6 +4,7 @@ import "./globals.css";
 import "./styles/vlm-analysis-tab.css";
 import "./styles/premium-ui.css";
 import "./styles/final-ui-polish.css";
+import "./styles/vlm-luxury-shield.css";
 import HtmlLangSync from "@/components/i18n/HtmlLangSync";
 import LocalizedSkipLink from "@/components/i18n/LocalizedSkipLink";
 import VelmereRouteTransition from "@/components/ui/VelmereRouteTransition";
@@ -32,3 +33,4 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     </html>
   );
 }
+

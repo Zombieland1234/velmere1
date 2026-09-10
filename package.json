@@ -53,6 +53,7 @@
     "playwright": "1.60.0",
     "postcss": "8.5.26",
     "postcss-selector-parser": "6.1.2",
+    "solc": "0.8.36",
     "tailwindcss": "3.4.19",
     "tsx": "4.22.4",
     "typescript": "5.9.3",
@@ -108,6 +109,11 @@
     "zustand": "4.5.7"
   },
   "scripts": {
+    "security:audit": "tsx scripts/qa/test-security-v2-full.ts",
+    "security:benchmark": "tsx scripts/qa/benchmark-security-engine-v2.ts",
+    "security:regression": "tsx scripts/qa/test-security-v2-full.ts",
+    "security:golden": "tsx scripts/qa/benchmark-security-engine-v2.ts",
+    "security:full": "tsx scripts/qa/benchmark-security-engine-v2.ts && tsx scripts/qa/test-famous-exploits.ts && tsx scripts/qa/test-security-v2-full.ts",
     "accept:browser:a45": "node scripts/a45-browser-acceptance.mjs",
     "accept:data:a46": "node scripts/a46-exact-data-acceptance.mjs",
     "accept:runtime:a45": "node scripts/a45-exact-runtime-acceptance.mjs",
@@ -1506,4 +1512,3 @@
   "velmereLegacyRoadmapStatus": "ARCHIVED_IN_MATERIALS_ONLY",
   "a102r44p45PassCredit": false
 }
-

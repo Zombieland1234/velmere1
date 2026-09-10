@@ -149,11 +149,11 @@ function buildDefiLlamaUrl(path: string) {
 async function fetchDefiLlamaJson<T>(path: string, revalidate = 120): Promise<T> {
   const response = await brokeredEgressFetch(buildDefiLlamaUrl(path), {
     headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(4_000),
+    signal: AbortSignal.timeout(6_000),
     next: { revalidate },
-  } as RequestInit & { next: { revalidate: number } }, { profile: "defi_llama", operation: "defillama_json", timeoutMs: 4_000, maxResponseBytes: 8_388_608 });
+  } as RequestInit & { next: { revalidate: number } }, { profile: "defi_llama", operation: "defillama_json", timeoutMs: 6_000, maxResponseBytes: 16_777_216 });
   if (!response.ok) throw new Error(`DefiLlama request failed with status ${response.status}`);
-  return readJsonResponseBounded<T>(response, 8_388_608);
+  return readJsonResponseBounded<T>(response, 16_777_216, { jsonMaxNodes: 500_000 });
 }
 
 function normalizeProtocol(row: DefiLlamaProtocolRow): DefiLlamaProtocolMatch | null {

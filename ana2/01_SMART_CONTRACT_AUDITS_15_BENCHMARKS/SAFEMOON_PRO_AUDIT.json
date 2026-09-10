@@ -1,0 +1,19 @@
+{
+  "targetContract": "SafeMoon (SAFEMOON)",
+  "symbol": "SAFEMOON",
+  "address": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+  "network": "BNB Smart Chain",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 94,
+  "riskLabel": "CRITICAL RISK",
+  "vulnerability": {
+    "title": "Arbitrary Burn Parameter Permitting Liquidity Pool Depletion",
+    "category": "Centralized Liquidity Drain & Arbitrary Burn",
+    "swcId": "SWC-105",
+    "cweId": "CWE-284",
+    "rootCause": "Publicly accessible or privileged burn mechanism allowing removal of LP tokens from Uniswap/PancakeSwap pair without timelock.",
+    "attackVector": "Owner private key compromise or malicious insider drains $8.9M by invoking burn on liquidity pair."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/SafeMoon.sol\n+++ b/contracts/SafeMoon.sol\n@@ -890,3 +890,4 @@\n- function burn(address account, uint256 amount) public onlyOwner {\n+ function burn(uint256 amount) public {\n+   _burn(msg.sender, amount);\n }",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

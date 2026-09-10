@@ -218,7 +218,11 @@ export function isRealMarketLike(input: TokenRiskInput) {
 
 export function isLargeNativeCrypto(input: TokenRiskInput) {
   const symbol = normalizedSymbol(input);
-  return ["BTC", "BITCOIN", "ETH", "ETHEREUM", "SOL", "SOLANA", "BNB", "XRP"].includes(symbol);
+  return [
+    "BTC", "BITCOIN", "ETH", "ETHEREUM", "SOL", "SOLANA", "BNB", "XRP",
+    "DOGE", "DOGECOIN", "ADA", "CARDANO", "LTC", "LITECOIN", "TRX", "TRON",
+    "TON", "TONCOIN", "DOT", "POLKADOT", "NEAR", "ATOM", "COSMOS", "AVAX", "AVALANCHE"
+  ].includes(symbol);
 }
 
 export function requiresTokenContractLane(input: TokenRiskInput) {

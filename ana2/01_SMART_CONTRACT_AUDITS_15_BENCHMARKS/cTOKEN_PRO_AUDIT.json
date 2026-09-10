@@ -1,0 +1,19 @@
+{
+  "targetContract": "Compound cToken (cUSDC / cDAI)",
+  "symbol": "cTOKEN",
+  "address": "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 24,
+  "riskLabel": "LOW RISK",
+  "vulnerability": {
+    "title": "First Depositor Exchange Rate Inflation Bug (ERC4626 Antecedent)",
+    "category": "Lending Market Exchange Rate Rounding",
+    "swcId": "SWC-114",
+    "cweId": "CWE-841",
+    "rootCause": "Division rounding down to zero when totalSupply == 0, allowing an attacker to donate underlying assets and inflate exchangeRateCurrent.",
+    "attackVector": "Attacker mints 1 wei cToken, donates $50k USDC directly to contract, inflating exchange rate so subsequent victim deposits round to 0 shares."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/CToken.sol\n+++ b/contracts/CToken.sol\n@@ -180,3 +180,4 @@\n+ if (totalSupply == 0) {\n+   _mint(address(0xdead), 1000); // Dead shares lock\n+ }",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

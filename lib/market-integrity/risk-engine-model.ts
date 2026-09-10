@@ -309,6 +309,9 @@ export function computeFusedRiskScore(
     hasSignal(signals, "blacklist_risk")
   )
     score = Math.max(score, 84);
+  if (hasSignal(signals, "mint_risk")) score = Math.max(score, 45);
+  if (hasSignal(signals, "blacklist_risk")) score = Math.max(score, 42);
+
   if (
     hasSignal(signals, "blacklist_risk") &&
     hasSignal(signals, "mint_risk")

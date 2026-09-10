@@ -267,10 +267,6 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
               <CartGuardStatusPanel guard={cartGuard} locale={locale} />
             </div>
 
-            <div className="mt-5">
-              <CustomerSafeStatusSurface surface={cartCustomerStatusSurface} compact />
-            </div>
-
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={openCart} className="velmere-button-primary">{copy.edit}</button>
               <Link href="/shop" className="velmere-button-secondary">{copy.browse}</Link>
@@ -291,14 +287,8 @@ export default function CartPage({ params }: { params: Promise<{ locale: string 
                   {copy.browse}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                 </Link>
-                <button type="button" onClick={openCart} className="velmere-button-secondary">
-                  {copy.review || t("openCart")}
-                </button>
               </div>
               <p className="mt-5 text-xs leading-6 text-white/[0.38]">{copy.calm}</p>
-              <div className="mt-6">
-                <CustomerSafeStatusSurface surface={cartCustomerStatusSurface} compact />
-              </div>
             </div>
 
             <aside className="velmere-empty-state-rail rounded-[1.6rem] border border-white/[0.08] bg-white/[0.025] p-5">

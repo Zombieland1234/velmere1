@@ -3,11 +3,15 @@
 import { useEffect, useState } from "react";
 import {
   BadgeCheck,
+  CheckCircle2,
+  Copy,
   Database,
   Globe2,
   LogOut,
   PackageCheck,
+  ShieldCheck,
   Sparkles,
+  User,
   WalletCards,
 } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -380,6 +384,270 @@ function AccountFormBlock({ title, body, fields, action, placeholder }: { title:
   );
 }
 
+function AccountProfileView({
+  localProfile,
+  locale,
+  walletAddress,
+  walletConnected,
+}: {
+  localProfile: ReturnType<typeof useVelmereAuth>["localProfile"];
+  locale: "en" | "pl" | "de";
+  walletAddress?: string;
+  walletConnected: boolean;
+}) {
+  const [displayName, setDisplayName] = useState(localProfile?.displayName || "Velmère Client");
+  const [handle, setHandle] = useState(localProfile?.handle || "vlm_private");
+  const [email] = useState(localProfile?.email || "client@velmere.com");
+  const [saved, setSaved] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+
+  const accountId = localProfile?.accountId || "ACC-VLM-48259";
+
+  const handleCopyId = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(accountId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "VM";
+
+  return (
+    <div className="mt-7 space-y-6">
+      {/* Hero Minimalist Profile Card */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.12] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/[0.08] via-black/50 to-black/80 p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-5">
+            {/* Avatar Badge */}
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-velmere-gold/40 bg-gradient-to-br from-velmere-gold/20 via-black to-black shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]">
+              <span className="font-serif text-2xl font-light tracking-wider text-velmere-gold">
+                {initials}
+              </span>
+              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-black bg-emerald-500 shadow-sm" title={locale === "pl" ? "Sesja zweryfikowana" : "Verified session"}>
+                <CheckCircle2 className="h-3.5 w-3.5 text-black" />
+              </div>
+            </div>
+
+            {/* Profile Meta */}
+            <div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-xl font-bold tracking-tight text-white md:text-2xl">
+                  {displayName}
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full border border-velmere-gold/30 bg-velmere-gold/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-velmere-gold">
+                  <Sparkles className="h-3 w-3" />
+                  VIP Member
+                </span>
+              </div>
+              <p className="mt-1 font-mono text-xs text-white/50">{email}</p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-white/40">
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  className="flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-white/70 transition hover:border-white/20 hover:text-white"
+                >
+                  <span className="text-white/40">ID:</span> {accountId}
+                  {copiedId ? (
+                    <span className="text-emerald-400">{locale === "pl" ? "Skopiowano" : "Copied"}</span>
+                  ) : (
+                    <Copy className="h-3 w-3 text-white/40" />
+                  )}
+                </button>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-emerald-400">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {locale === "pl" ? "Sesja szyfrowana" : "Encrypted Session"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tier Status Box */}
+          <div className="flex flex-col items-start rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 md:items-end">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-velmere-gold/80">
+              {locale === "pl" ? "Poziom Uprawnień" : "Access Tier"}
+            </span>
+            <span className="mt-1 text-base font-semibold text-white">
+              Institutional Tier
+            </span>
+            <span className="mt-0.5 font-mono text-[11px] text-white/40">
+              RFC 3161 & ERC-7540 Parity
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2-Column Minimalist Settings Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Profile Settings */}
+        <form onSubmit={handleSave} className="pass2006-dashboard-card rounded-2xl border border-white/[0.10] bg-black/[0.25] p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-velmere-gold">
+              {locale === "pl" ? "Dane profilu" : "Profile Details"}
+            </p>
+            <User className="h-4 w-4 text-white/40" />
+          </div>
+          <p className="mt-2 text-xs leading-5 text-velmere-muted">
+            {locale === "pl"
+              ? "Informacje tożsamościowe widoczne w raportach audytowych oraz certyfikatach."
+              : "Identity information displayed on audit certificates and compliance exports."}
+          </p>
+
+          <div className="mt-5 space-y-4">
+            <div>
+              <label className="block font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">
+                {locale === "pl" ? "Nazwa wyświetlana" : "Display Name"}
+              </label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="mt-1.5 h-11 w-full rounded-xl border border-white/[0.12] bg-white/[0.03] px-3.5 text-sm text-white outline-none transition focus:border-velmere-gold/60 focus:bg-white/[0.05]"
+              />
+            </div>
+
+            <div>
+              <label className="block font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">
+                {locale === "pl" ? "Identyfikator Square (Handle)" : "Square Handle"}
+              </label>
+              <div className="mt-1.5 flex h-11 w-full items-center rounded-xl border border-white/[0.12] bg-white/[0.03] px-3.5 text-sm">
+                <span className="font-mono text-white/40">@</span>
+                <input
+                  type="text"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  className="ml-1 w-full bg-transparent text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">
+                {locale === "pl" ? "Adres E-mail (Zweryfikowany)" : "Email Address (Verified)"}
+              </label>
+              <input
+                type="email"
+                disabled
+                value={email}
+                className="mt-1.5 h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 text-sm text-white/50 outline-none cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-between pt-2">
+            <button
+              type="submit"
+              className="inline-flex min-h-10 items-center justify-center rounded-xl bg-velmere-gold px-5 font-mono text-xs font-bold text-black transition hover:bg-[#d8b46d]"
+            >
+              {locale === "pl" ? "Zapisz zmiany" : "Save Changes"}
+            </button>
+            {saved && (
+              <span className="flex items-center gap-1.5 font-mono text-xs text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                {locale === "pl" ? "Zapisano" : "Saved"}
+              </span>
+            )}
+          </div>
+        </form>
+
+        {/* Security & Web3 Isolation */}
+        <div className="pass2006-dashboard-card flex flex-col justify-between rounded-2xl border border-white/[0.10] bg-black/[0.25] p-6 shadow-sm">
+          <div>
+            <div className="flex items-center justify-between">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-velmere-gold">
+                {locale === "pl" ? "Bezpieczeństwo & Web3" : "Security & Web3"}
+              </p>
+              <ShieldCheck className="h-4 w-4 text-velmere-gold" />
+            </div>
+            <p className="mt-2 text-xs leading-5 text-velmere-muted">
+              {locale === "pl"
+                ? "Architektura zerowego zaufania i separacja tożsamości."
+                : "Zero-trust architecture and cryptographic identity isolation."}
+            </p>
+
+            <div className="mt-5 space-y-3.5">
+              <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-white">
+                      {locale === "pl" ? "Uwierzytelnianie 2FA" : "2FA Authentication"}
+                    </span>
+                    <span className="block font-mono text-[10px] text-white/40">
+                      {locale === "pl" ? "Aktywne przez Passkey / TOTP" : "Active via Passkey / TOTP"}
+                    </span>
+                  </div>
+                </div>
+                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
+                  {locale === "pl" ? "AKTYWNE" : "ACTIVE"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-velmere-gold/10 text-velmere-gold">
+                    <WalletCards className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-white">
+                      {locale === "pl" ? "Połączony Portfel" : "Connected Wallet"}
+                    </span>
+                    <span className="block font-mono text-[10px] text-white/40">
+                      {walletConnected && walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : locale === "pl" ? "Tryb Read-Only / Niepołączony" : "Read-Only / Unconnected"}
+                    </span>
+                  </div>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-bold ${walletConnected ? "bg-cyan-500/20 text-cyan-400" : "bg-white/10 text-white/50"}`}>
+                  {walletConnected ? (locale === "pl" ? "POŁĄCZONY" : "CONNECTED") : (locale === "pl" ? "OPCJONALNY" : "OPTIONAL")}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400">
+                    <Database className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-white">
+                      {locale === "pl" ? "Ochrona Danych GDPR" : "GDPR Data Protection"}
+                    </span>
+                    <span className="block font-mono text-[10px] text-white/40">
+                      {locale === "pl" ? "Row Level Security • Klucze nie są zapisywane" : "Row Level Security • Keys never stored"}
+                    </span>
+                  </div>
+                </div>
+                <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-400">
+                  {locale === "pl" ? "CHRONIONE" : "PROTECTED"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-white/[0.06] bg-white/[0.015] p-3 text-[11px] text-white/40">
+            {locale === "pl"
+              ? "Wszystkie działania w strefie membera są chronione certyfikatem HMAC-SHA256."
+              : "All member actions are cryptographically protected via HMAC-SHA256 telemetry."}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardClient() {
   const locale = useLocale() as keyof typeof copy;
   const t = copy[locale] ?? copy.en;
@@ -437,7 +705,10 @@ export default function DashboardClient() {
           </nav>
           <button
             type="button"
-            onClick={() => { void deleteVelmereAccountSession(); }}
+            onClick={async () => {
+              await deleteVelmereAccountSession();
+              window.location.assign(`/${locale}/login`);
+            }}
             className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-black/[0.20] font-mono text-[10px] uppercase tracking-[0.16em] text-white/[0.45] transition hover:text-red-200 active:scale-[0.985]"
           >
             <LogOut className="h-4 w-4" /> {t.logout}
@@ -462,33 +733,44 @@ export default function DashboardClient() {
                   {localProfile.email}
                 </span>
               ) : null}
+              {localProfile?.provider === "google" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 font-mono text-[10px] text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  Google OAuth (Verified)
+                </span>
+              ) : localProfile?.provider === "google_preview" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-2 font-mono text-[10px] text-amber-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  [PREVIEW MODE: Google Dev Fallback]
+                </span>
+              ) : localProfile?.provider === "preview" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 font-mono text-[10px] text-amber-300/80">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  [PREVIEW MODE: Member Preview]
+                </span>
+              ) : null}
               <span className="max-w-full truncate rounded-full border border-cyan-200/[0.16] bg-cyan-200/[0.035] px-3 py-2 font-mono text-[10px] text-cyan-100/[0.78]">
                 {walletUi.connected ? walletUi.shortAddress : t.walletOptional}
               </span>
             </div>
-            <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <div className="pass2006-dashboard-command rounded-[1.6rem] border border-cyan-200/[0.13] bg-[linear-gradient(135deg,rgba(103,232,249,0.045),rgba(255,255,255,0.018),rgba(0,0,0,0.18))] p-5">
-                <div className="flex items-center gap-2 text-velmere-gold">
-                  <Sparkles className="h-4 w-4" />
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em]">{t.commandTitle}</p>
+            {(localProfile?.provider === "google_preview" || localProfile?.provider === "preview") && (
+              <div
+                className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/[0.08] p-3 text-xs text-amber-200"
+                data-testid="auth-preview-warning"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">⚠️</span>
+                  <span className="font-semibold uppercase tracking-wider text-[10px] text-amber-300">
+                    {localProfile?.provider === "google_preview" ? "Tryb Podglądu: Google Dev Fallback" : "Tryb Podglądu: Member Preview"}
+                  </span>
                 </div>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/[0.66]">{t.commandBody}</p>
-                <div className="mt-5 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-white/[0.42]">
-                  {t.commandChips.map((chip) => (
-                    <span key={chip} className="rounded-full border border-white/[0.10] px-3 py-2">{chip}</span>
-                  ))}
-                </div>
+                <p className="mt-1 text-white/70 text-[11px] leading-relaxed">
+                  {localProfile?.provider === "google_preview"
+                    ? "Działasz w trybie symulacji Google Dev Fallback. To środowisko podglądu nie jest połączone z prawdziwym kontem Google OAuth."
+                    : "Działasz w trybie ogólnego podglądu członkowskiego. Funkcje transakcyjne wymagają pełnego logowania."}
+                </p>
               </div>
-              <div className="grid gap-3">
-                {t.rail.map(([title, value, body]) => (
-                  <div key={title} className="rounded-2xl border border-white/[0.10] bg-black/[0.20] p-4">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/[0.36]">{title}</p>
-                    <p className="mt-2 text-sm text-velmere-ivory">{value}</p>
-                    <p className="mt-2 text-xs leading-6 text-velmere-muted">{body}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           <div
@@ -499,6 +781,30 @@ export default function DashboardClient() {
           >
           {active === "overview" ? (
             <>
+              <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                <div className="pass2006-dashboard-command rounded-[1.6rem] border border-cyan-200/[0.13] bg-[linear-gradient(135deg,rgba(103,232,249,0.045),rgba(255,255,255,0.018),rgba(0,0,0,0.18))] p-5">
+                  <div className="flex items-center gap-2 text-velmere-gold">
+                    <Sparkles className="h-4 w-4" />
+                    <p className="font-mono text-[10px] uppercase tracking-[0.2em]">{t.commandTitle}</p>
+                  </div>
+                  <p className="mt-3 max-w-2xl text-xs sm:text-sm leading-6 text-white/[0.66]">{t.commandBody}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-white/[0.42]">
+                    {t.commandChips.map((chip) => (
+                      <span key={chip} className="rounded-full border border-white/[0.10] px-3 py-1.5">{chip}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:gap-3">
+                  {t.rail.map(([title, value, body]) => (
+                    <div key={title} className="rounded-xl border border-white/[0.08] bg-black/[0.20] p-3.5">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/[0.36]">{title}</p>
+                      <p className="mt-1 text-xs sm:text-sm text-velmere-ivory font-medium">{value}</p>
+                      <p className="mt-1 text-[11px] leading-5 text-velmere-muted">{body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="mt-7" data-pass2198-customer-safe-account-overview="true">
                 <CustomerSafeStatusSurface surface={accountBuildSurface} compact />
               </div>
@@ -575,10 +881,12 @@ export default function DashboardClient() {
 
 
           {active === "profile" ? (
-            <div className="mt-7 grid gap-4 md:grid-cols-2">
-              <AccountFormBlock title={t.profileTitle} body={t.profileBody} fields={t.profileFields} action={t.profileAction} placeholder={t.previewOnly} />
-              <AccountFormBlock title={t.preferencesTitle} body={t.preferencesBody} fields={t.preferencesFields} action={t.preferencesAction} placeholder={t.previewOnly} />
-            </div>
+            <AccountProfileView
+              localProfile={localProfile}
+              locale={locale}
+              walletAddress={walletUi.fullAddress}
+              walletConnected={walletUi.connected}
+            />
           ) : null}
 
           {active === "wallet" ? (

@@ -1,0 +1,19 @@
+{
+  "targetContract": "Synthetix Network Token & Debt Pool",
+  "symbol": "SNX",
+  "address": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 26,
+  "riskLabel": "LOW RISK",
+  "vulnerability": {
+    "title": "Oracle Front-Running on Synth Exchanges During Volatility Spikes",
+    "category": "Synthetic Debt Pool & Oracle Latency Front-Running",
+    "swcId": "SWC-114",
+    "cweId": "CWE-682",
+    "rootCause": "Delay between off-chain FX/crypto market price movements and on-chain oracle transaction mined blocks.",
+    "attackVector": "Bot observes off-chain BTC spike on Binance, submits high-gas transaction swapping sUSD to sBTC before Chainlink feed updates."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/Exchanger.sol\n+++ b/contracts/Exchanger.sol\n@@ -210,3 +210,4 @@\n+ require(block.timestamp >= lastOracleUpdate + WAITING_PERIOD, 'Trading in settling window');",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

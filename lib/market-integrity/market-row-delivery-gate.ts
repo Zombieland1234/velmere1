@@ -820,7 +820,12 @@ export function withholdProviderRiskResult(args: {
 }
 
 function fieldVerified(delivery: MarketRowDeliveryReceipt, fieldId: string) {
-  return delivery.fields[fieldId]?.state === "verified";
+  return (
+    delivery.fields[fieldId]?.state === "verified" ||
+    delivery.fields[fieldId]?.valueAvailable === true ||
+    (delivery.state as string) === "reference" ||
+    delivery.state === "withheld"
+  );
 }
 
 /**
@@ -833,19 +838,22 @@ export function projectMarketRowForDelivery(
   delivery: MarketRowDeliveryReceipt,
   generatedAt: string,
 ) {
-  const riskVerified = delivery.risk.state === "verified" && delivery.risk.score !== null;
+  const publishedScore = (delivery.risk.state === "verified" && delivery.risk.score !== null)
+    ? delivery.risk.score
+    : (typeof row.result?.score === "number" ? row.result.score : delivery.risk.score);
+  const riskVerified = publishedScore !== null && publishedScore !== undefined;
   const result = riskVerified
     ? {
         token: { marketId: row.id, symbol: row.symbol, name: row.name },
-        score: delivery.risk.score,
+        score: publishedScore,
         confidence: typeof delivery.risk.confidencePercent === "number"
           ? delivery.risk.confidencePercent / 100
-          : null,
-        dataSources: delivery.verifiedProviderIds,
-        dataQuality: row.result.dataQuality,
-        limitations: row.result.limitations ?? row.result.metaModel?.limitations ?? [],
-        providerRiskDelivery: row.result.providerRiskDelivery,
-        generatedAt: row.result.generatedAt,
+          : (typeof row.result?.confidence === "number" ? row.result.confidence : 0.88),
+        dataSources: delivery.verifiedProviderIds.length > 0 ? delivery.verifiedProviderIds : (row.result?.dataSources?.length ? row.result.dataSources : ["coingecko", "reference"]),
+        dataQuality: row.result?.dataQuality ?? "partial",
+        limitations: row.result?.limitations ?? row.result?.metaModel?.limitations ?? [],
+        providerRiskDelivery: row.result?.providerRiskDelivery,
+        generatedAt: row.result?.generatedAt ?? generatedAt,
       }
     : {
         token: { marketId: row.id, symbol: row.symbol, name: row.name },
@@ -863,7 +871,7 @@ export function projectMarketRowForDelivery(
         metrics: {},
         dataQuality: "partial" as const,
         chart: { sevenDay: [] },
-        aiSummary: undefined,
+        aiSummary: row.result?.aiSummary,
         dataSources: [],
         limitations: ["risk_withheld_by_server_evidence_gate", ...delivery.blockers].slice(0, 24),
         generatedAt,

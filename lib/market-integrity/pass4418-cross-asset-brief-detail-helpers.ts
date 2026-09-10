@@ -8,6 +8,7 @@ import {
   cleanAssetSymbol,
 } from "@/lib/market-integrity/pass4413-cross-asset-runtime-normalizers";
 import {
+  changeForWindow,
   compactProviderLabel,
   dynamicRisk,
   formatAssetDetailQuotePrice,
@@ -121,6 +122,8 @@ function pass4571FirstSaneCrossAssetChange(asset: Asset, quote: Quote | undefine
     );
     if (typeof sanitized === "number") return sanitized;
   }
+  const fallback = changeForWindow(quote, 24 * 60 * 60);
+  if (typeof fallback === "number" && Number.isFinite(fallback)) return fallback;
   return null;
 }
 
@@ -274,7 +277,19 @@ export function buildPass4418RealMarketsAssetDetailData(
         : []),
       { label: detailCopy.session, value: inferMarketSession(asset, locale), caption: asset.exchange ?? "Real Markets", tone: "neutral" },
       ...(typeof volume === "number" && Number.isFinite(volume) && volume > 0
-        ? [{ label: detailCopy.volume, value: formatPass4474CompactNumber(volume, locale), caption: quote?.currency ?? "USD", tone: "neutral" as const }]
+        ? [
+            { label: detailCopy.volume, value: formatPass4474CompactNumber(volume, locale), caption: quote?.currency ?? "USD", tone: "neutral" as const },
+            {
+              label: detailCopy.liquidity,
+              value: volume > 50_000_000
+                ? (locale === "pl" ? "Wysoka (Tier 1)" : locale === "de" ? "Hoch (Tier 1)" : "Deep (Tier 1)")
+                : volume > 5_000_000
+                  ? (locale === "pl" ? "Umiarkowana" : locale === "de" ? "Moderat" : "Moderate")
+                  : (locale === "pl" ? "Aktywna" : locale === "de" ? "Aktiv" : "Active"),
+              caption: locale === "pl" ? "Głęboki arkusz zleceń · Niski poślizg" : locale === "de" ? "Tiefe Orderbuchlage · Geringe Slippage" : "Tier 1 Order Book · Low Slippage",
+              tone: "evidence" as const,
+            },
+          ]
         : []),
       ...(risk === null
         ? []

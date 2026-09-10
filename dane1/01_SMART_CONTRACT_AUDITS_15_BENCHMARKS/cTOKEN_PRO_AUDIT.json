@@ -1,0 +1,30 @@
+{
+  "contractName": "Compound cToken (cUSDC / cETH)",
+  "symbol": "cTOKEN",
+  "address": "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.5.16",
+  "proxyPattern": "CErc20Delegator Proxy Pattern",
+  "riskScore": 24,
+  "riskLabel": "LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Compound cToken (cUSDC / cETH).",
+  "findings": [
+    {
+      "title": "AccrueInterest Reentrancy & ExchangeRate Stale State",
+      "severity": "MEDIUM",
+      "swcId": "SWC-107",
+      "cweId": "CWE-841",
+      "description": "Exchange rate calculation depends on cash, borrows, and reserves which must be accrued prior to any mint/redeem/borrow operation."
+    }
+  ],
+  "verificationDigest": "c28afbcf399f55deaee2cf10ddf5586e651c0b6c80d672f5fda0f89c5008f94a",
+  "attackSurface": {
+    "category": "Lending Interest Rate & Collateral Solvency",
+    "attackVector": "Interacting with cToken via flash loan before accrueInterest is called could theoretical execute on stale interest index."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/CToken.sol\n+++ b/contracts/CToken.sol\n@@ -180,2 +180,3 @@\n+ require(accrueInterest() == NO_ERROR, 'Interest accrual failed');\n  return mintFresh(msg.sender, mintAmount);"
+  }
+}

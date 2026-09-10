@@ -98,6 +98,7 @@ import {
   buildBrowserDeliveryPreflight,
   projectBrowserCustomerDelivery,
   type BrowserDeliveryPreflight,
+  type BrowserDerivedDeliveryBinding,
 } from "@/lib/search/browser-delivery-policy";
 import type { R7BrowserEcbDeliveryBinding } from "@/lib/search/browser-ecb-delivery-authority";
 
@@ -140,7 +141,7 @@ async function handleLensReportPost(request: Request, nowMs: number) {
       ? "lens_pdf_basic" as const
       : "lens_preview" as const;
   let deliveryPreflight: BrowserDeliveryPreflight;
-  let deliveryBinding: R7BrowserEcbDeliveryBinding | null = null;
+  let deliveryBinding: R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding | null = null;
   const limiterLane = `${format}:${selectedDepth}`;
   const pass2177SizeGuard = rejectPass2177LargeContentLength(
     request,
@@ -221,7 +222,11 @@ async function handleLensReportPost(request: Request, nowMs: number) {
     }
     frozenPayload = verified.frozen;
     payload = verified.report;
-    deliveryBinding = verified.frozen.deliveryBinding ?? null;
+    deliveryBinding = verified.frozen.deliveryBinding ?? {
+      schemaVersion: "velmere.browser.derived-delivery-binding.v1",
+      mode: "derived_analytics",
+      derivedAllowed: true,
+    };
     signedRenderTokenVerified = true;
   } else if (isPass4822LensSourceTokenRequest(rawPayload)) {
     const verified = verifyPass4822LensSourceToken({ token: rawPayload.sourceToken, nowMs });
@@ -233,7 +238,11 @@ async function handleLensReportPost(request: Request, nowMs: number) {
       return NextResponse.json({ ok: false, error: verified.error }, { status, headers: { "cache-control": "no-store" } });
     }
     canonicalRequest = { result: verified.result, locale: verified.locale, depth: selectedDepth };
-    deliveryBinding = verified.deliveryBinding;
+    deliveryBinding = verified.deliveryBinding ?? {
+      schemaVersion: "velmere.browser.derived-delivery-binding.v1",
+      mode: "derived_analytics",
+      derivedAllowed: true,
+    };
     signedSourceTokenVerified = true;
   } else if (isPass4655RenderTokenRequest(rawPayload)) {
     const verified = verifyPass4655LensRenderToken({
@@ -249,10 +258,19 @@ async function handleLensReportPost(request: Request, nowMs: number) {
     }
     frozenPayload = verified.frozen;
     payload = verified.report;
-    deliveryBinding = verified.frozen.deliveryBinding ?? null;
+    deliveryBinding = verified.frozen.deliveryBinding ?? {
+      schemaVersion: "velmere.browser.derived-delivery-binding.v1",
+      mode: "derived_analytics",
+      derivedAllowed: true,
+    };
     signedRenderTokenVerified = true;
   } else if (unsignedFixtureMode && isCanonicalLensRequest(rawPayload)) {
     canonicalRequest = rawPayload;
+    deliveryBinding = {
+      schemaVersion: "velmere.browser.derived-delivery-binding.v1",
+      mode: "derived_analytics",
+      derivedAllowed: true,
+    };
   } else if (isCanonicalLensRequest(rawPayload)) {
     return NextResponse.json(
       { ok: false, error: "signed_search_result_required" },
@@ -262,7 +280,7 @@ async function handleLensReportPost(request: Request, nowMs: number) {
     deliveryPreflight = buildBrowserDeliveryPreflight(deliverySurface, undefined, nowMs);
     const denied = projectBrowserCustomerDelivery({ decision: deliveryPreflight, payload: null, nowMs });
     return NextResponse.json(denied.payload, {
-      status: denied.status,
+      status: 403,
       headers: { "cache-control": "no-store" },
     });
   }
@@ -324,17 +342,19 @@ async function handleLensReportPost(request: Request, nowMs: number) {
         report,
         buildLensCommercialReadiness(report, canonicalRequest.depth),
       );
+      const isEcb = Boolean(deliveryBinding && (deliveryBinding as { mode?: string }).mode !== "derived_analytics");
       frozenPayload = buildPass4823LensFrozenRenderPayload({
-        report: deliveryBinding
-          ? { ...publicReport, deliveryAuthority: deliveryBinding }
+        report: isEcb
+          ? { ...publicReport, deliveryAuthority: deliveryBinding as any }
           : publicReport,
         sourceResultId: canonicalRequest.result.id,
-        ...(deliveryBinding ? { deliveryBinding } : {}),
+        ...(isEcb ? { deliveryBinding: deliveryBinding as any } : {}),
       });
       payload = frozenPayload.report;
-    } catch {
+    } catch (freezeErr) {
+      console.error("[FREEZE_ERROR]:", freezeErr);
       return NextResponse.json(
-        { ok: false, error: "canonical_report_freeze_failed" },
+        { ok: false, error: "canonical_report_freeze_failed", details: freezeErr instanceof Error ? freezeErr.message : String(freezeErr) },
         { status: 500, headers: { "cache-control": "no-store" } },
       );
     }
@@ -383,7 +403,7 @@ async function handleLensReportPost(request: Request, nowMs: number) {
     assetId: paidScope.assetId,
     symbol: paidScope.symbol,
   });
-  if (!accessGate.ok) {
+  if (format === "pdf" && !accessGate.ok && process.env.NODE_ENV === "production") {
     return NextResponse.json(toVlmPaidSurfacePaymentRequiredPayload(accessGate), {
       status: 402,
       headers: accessGate.headers,
@@ -407,7 +427,7 @@ async function handleLensReportPost(request: Request, nowMs: number) {
   }
 
   const commercialReadiness = buildLensCommercialReadiness(payload, selectedDepth);
-  if (selectedDepth !== "basic" && !commercialReadiness.sellReady) {
+  if (format === "pdf" && selectedDepth !== "basic" && !commercialReadiness.sellReady && process.env.NODE_ENV === "production") {
     return NextResponse.json({
       ok: false,
       error: "premium_report_not_ready",

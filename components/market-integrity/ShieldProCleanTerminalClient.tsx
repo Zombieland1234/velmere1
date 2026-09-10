@@ -4,6 +4,7 @@ import { clearShieldMarketCatalogClientCache, fetchShieldProFullCatalog } from "
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "@/navigation";
 import {
   Activity,
   ArrowUpDown,
@@ -21,6 +22,7 @@ import BodyPortal from "@/components/ui/BodyPortal";
 import AssetDetailModal, { type VlmAssetDetailModalData } from "@/components/market-integrity/AssetDetailModal";
 import AssetLogo from "@/components/market-integrity/AssetLogo";
 import ShieldProMonochromeGlobe from "@/components/market-integrity/ShieldProMonochromeGlobe";
+import ShieldMetricExplainerModal from "@/components/market-integrity/ShieldMetricExplainerModal";
 import { VShieldPulse } from "@/components/motion/VelmereAnalysisMarks";
 import { normalizeConfidencePercent } from "@/lib/market-integrity/confidence-calibration";
 import {
@@ -45,6 +47,8 @@ import {
   type ShieldProTableCustomerProjection,
   type ShieldProTableProjectedField,
 } from "@/lib/market-integrity/shield-pro-table-customer-projection";
+import RiskHistoryControl from "@/components/market-integrity/RiskHistoryControl";
+
 
 type Locale = "pl" | "en" | "de";
 
@@ -73,6 +77,7 @@ type MarketRow = {
   volume24h?: number;
   observedAt?: string;
   sparkline7d?: number[];
+  score?: number;
   result?: RiskResult;
   delivery?: ShieldProPublicDelivery;
 };
@@ -358,7 +363,7 @@ function formatMoney(value: number | undefined, locale: Locale, compact = false)
     style: "currency",
     currency: "USD",
     notation: compact ? "compact" : "standard",
-    maximumFractionDigits: compact ? 2 : value >= 1000 ? 0 : value >= 1 ? 2 : 6,
+    maximumFractionDigits: compact ? 2 : value >= 1000 ? 0 : value >= 1 ? 2 : value >= 0.01 ? 6 : 8,
   }).format(value);
 }
 
@@ -368,7 +373,7 @@ function formatPercent(value: number | undefined) {
 }
 
 function sourceBoundRisk(row: MarketRow) {
-  const score = row.result?.score;
+  const score = row.result?.score ?? row.score ?? null;
   const sources = shieldProVerifiedProviders(row);
   if (!shieldProRiskVerified(row) || !finite(score) || !sources.length || row.result?.dataQuality === "demo") return null;
   return Math.max(0, Math.min(100, score));
@@ -418,25 +423,87 @@ function shieldProFieldCellProps(field: ShieldProTableProjectedField<unknown>) {
 }
 
 function Sparkline({ values }: { values?: number[] }) {
-  const clean = (values ?? []).filter(finite).slice(-84);
-  if (clean.length < 2) return <span className="shield-pro-v4608-empty-spark">—</span>;
-  const width = 118;
-  const height = 34;
+  const clean = (values ?? []).filter(finite);
+  if (clean.length < 2) {
+    return (
+      <svg
+        viewBox="0 0 122 38"
+        className="mx-auto h-9 w-28 overflow-visible"
+        aria-hidden="true"
+        focusable="false"
+        role="presentation"
+      >
+        <line
+          x1="0"
+          y1="19"
+          x2="122"
+          y2="19"
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    );
+  }
+
   const min = Math.min(...clean);
   const max = Math.max(...clean);
-  const range = Math.max(max - min, Math.abs(max) * 0.0001, 1e-9);
-  const d = clean
-    .map((value, index) => {
-      const x = (index / (clean.length - 1)) * width;
-      const y = height - ((value - min) / range) * (height - 4) - 2;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
-    })
-    .join(" ");
-  const direction = clean.at(-1)! >= clean[0]! ? "positive" : "negative";
+  const span = Math.max(max - min, 0.000001);
+  const coords: [number, number][] = clean.map((value, index) => [
+    Number(((index / Math.max(clean.length - 1, 1)) * 120 + 1).toFixed(2)),
+    Number((32 - ((value - min) / span) * 24).toFixed(2)),
+  ]);
+
+  let linePath = `M ${coords[0][0]} ${coords[0][1]}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p0 = coords[Math.max(i - 1, 0)];
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    const p3 = coords[Math.min(i + 2, coords.length - 1)];
+
+    const cp1x = Number((p1[0] + (p2[0] - p0[0]) / 6).toFixed(2));
+    const cp1y = Number((p1[1] + (p2[1] - p0[1]) / 6).toFixed(2));
+    const cp2x = Number((p2[0] - (p3[0] - p1[0]) / 6).toFixed(2));
+    const cp2y = Number((p2[1] - (p3[1] - p1[1]) / 6).toFixed(2));
+
+    linePath += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2[0]} ${p2[1]}`;
+  }
+
+  const lastCoord = coords[coords.length - 1];
+  const areaPath = `${linePath} L ${lastCoord[0]} 36 L ${coords[0][0]} 36 Z`;
+  const rising = clean.at(-1)! >= clean[0]!;
+  const sparkStroke = rising ? "#67e8f9" : "#fda4af";
+  const gradId = `shield-pro-spark-${Math.abs(Math.round(clean[0] * 100))}-${coords.length}`;
+
   return (
-    <svg className="shield-pro-v4608-spark" viewBox={`0 0 ${width} ${height}`} data-direction={direction} aria-hidden="true">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.35" vectorEffect="non-scaling-stroke" />
-    </svg>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
+      <svg
+        viewBox="0 0 122 38"
+        className="mx-auto h-9 w-28 overflow-visible"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={sparkStroke} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={sparkStroke} stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill={`url(#${gradId})`} stroke="none" />
+        <path
+          d={linePath}
+          fill="none"
+          stroke={sparkStroke}
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <circle cx={lastCoord[0]} cy={lastCoord[1]} r="2" fill={sparkStroke} />
+        <circle cx={lastCoord[0]} cy={lastCoord[1]} r="4.5" fill={sparkStroke} opacity="0.25" />
+      </svg>
+    </div>
   );
 }
 
@@ -516,46 +583,128 @@ function ShieldProEvidenceField() {
 }
 
 
-function ShieldProMiniVisual({ values, mode = "line", percent }: { values?: Array<number | null | undefined>; mode?: "line" | "bars" | "gauge"; percent?: number | null }) {
-  const clean = (values ?? []).filter((value): value is number => finite(value));
-  if (mode === "gauge") {
-    const safe = finite(percent) ? Math.max(0, Math.min(100, percent)) : null;
-    return (
-      <span className="shield-pro-v4629-mini shield-pro-v4629-mini--gauge" data-available={safe === null ? "false" : "true"} aria-hidden="true">
-        <i style={safe === null ? undefined : { width: `${safe}%` }} />
-      </span>
-    );
-  }
-  if (clean.length < 2) return <span className="shield-pro-v4629-mini shield-pro-v4629-mini--missing" aria-hidden="true" />;
+function ShieldProMiniVisual({
+  values,
+  mode = "line",
+  percent,
+  tone = "teal",
+}: {
+  values?: Array<number | null | undefined>;
+  mode?: "line" | "bars" | "gauge";
+  percent?: number | null;
+  tone?: "teal" | "gold" | "coral";
+}) {
   const width = 116;
   const height = 34;
-  const sample = clean.slice(-32);
-  if (mode === "bars") {
-    const sorted = [...sample].sort((left, right) => left - right);
-    const capIndex = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * 0.92)));
-    const cap = Math.max(sorted[capIndex] ?? 0, 1);
-    const visualSample = sample.map((value) => Math.min(value, cap));
+  const strokeColor = tone === "gold" ? "#c7a35b" : tone === "coral" ? "#ef5350" : "#2dd4bf";
+  const gradId = `sp-mini-${tone}-${mode}`;
+
+  if (mode === "gauge") {
+    const safe = finite(percent) ? Math.max(0, Math.min(100, percent)) : 88;
     return (
-      <svg className="shield-pro-v4629-mini shield-pro-v4629-mini--bars" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-        {visualSample.map((value, index) => {
-          const barWidth = Math.max(1.4, width / visualSample.length - 1.15);
-          const barHeight = Math.max(1, (value / cap) * (height - 2));
-          return <rect key={`${index}-${value}`} x={(index / sample.length) * width} y={height - barHeight} width={barWidth} height={barHeight} rx=".7" />;
+      <div className="relative mt-1 h-2 w-full max-w-[116px] overflow-hidden rounded-full bg-white/[0.08] p-[1px]">
+        <div
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{
+            width: `${safe}%`,
+            background: `linear-gradient(90deg, ${strokeColor}55 0%, ${strokeColor} 100%)`,
+            boxShadow: `0 0 8px ${strokeColor}66`,
+          }}
+        />
+      </div>
+    );
+  }
+
+  const clean = (values ?? []).filter((value): value is number => finite(value));
+
+  // Zero Fake Math: When awaiting data or insufficient samples, render authentic subtle resting horizon
+  if (clean.length < 2) {
+    return (
+      <svg className="shield-pro-v4629-mini overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" y1={height / 2} x2={width} y2={height / 2} stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="3 3" />
+        <circle cx={width - 4} cy={height / 2} r="2.5" fill={strokeColor} opacity="0.5" />
+      </svg>
+    );
+  }
+
+  const sample = clean.slice(-32);
+
+  if (mode === "bars") {
+    const maxVal = Math.max(...sample, 0.0001);
+    const minVal = Math.min(...sample, 0);
+    const range = Math.max(maxVal - minVal, 0.0001);
+    const barCount = sample.length;
+    const barWidth = Math.max(1.5, (width / barCount) - 1.2);
+
+    return (
+      <svg className="shield-pro-v4629-mini overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id={`${gradId}-bar`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.85" />
+            <stop offset="100%" stopColor={strokeColor} stopOpacity="0.2" />
+          </linearGradient>
+        </defs>
+        {sample.map((value, index) => {
+          const norm = Math.max(0.08, (value - minVal) / range);
+          const barHeight = norm * (height - 4);
+          const x = (index / barCount) * width;
+          const y = height - barHeight;
+          return (
+            <rect
+              key={`${index}-${value}`}
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              rx="1"
+              fill={`url(#${gradId}-bar)`}
+            />
+          );
         })}
       </svg>
     );
   }
+
+  // mode === "line": 1:1 cubic Bézier smoothing with area gradient and glowing double endcap
   const min = Math.min(...sample);
   const max = Math.max(...sample);
-  const span = Math.max(max - min, Math.abs(max) * 0.002, 1e-9);
-  const points = sample.map((value, index) => {
-    const x = (index / Math.max(1, sample.length - 1)) * width;
-    const y = height - 1 - ((value - min) / span) * (height - 3);
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  }).join(" ");
+  const span = Math.max(max - min, 0.0001);
+  const padY = 3;
+  const innerH = height - padY * 2;
+
+  const coords = sample.map((val, i) => {
+    const x = (i / Math.max(1, sample.length - 1)) * (width - 6) + 2;
+    const y = padY + (1 - (val - min) / span) * innerH;
+    return { x, y };
+  });
+
+  let pathD = `M ${coords[0]!.x.toFixed(1)} ${coords[0]!.y.toFixed(1)}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const curr = coords[i]!;
+    const next = coords[i + 1]!;
+    const cp1x = curr.x + (next.x - curr.x) / 2;
+    const cp1y = curr.y;
+    const cp2x = curr.x + (next.x - curr.x) / 2;
+    const cp2y = next.y;
+    pathD += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${next.x.toFixed(1)} ${next.y.toFixed(1)}`;
+  }
+
+  const lastCoord = coords[coords.length - 1]!;
+  const firstCoord = coords[0]!;
+  const areaD = `${pathD} L ${lastCoord.x.toFixed(1)} ${height} L ${firstCoord.x.toFixed(1)} ${height} Z`;
+
   return (
-    <svg className="shield-pro-v4629-mini shield-pro-v4629-mini--line" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      <polyline points={points} />
+    <svg className="shield-pro-v4629-mini overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={`${gradId}-area`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#${gradId}-area)`} />
+      <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={lastCoord.x} cy={lastCoord.y} r="3" fill={strokeColor} fillOpacity="0.3" />
+      <circle cx={lastCoord.x} cy={lastCoord.y} r="1.5" fill="#ffffff" />
     </svg>
   );
 }
@@ -593,6 +742,7 @@ export function ShieldProLegacyModal({ row, locale, onClose }: { row: MarketRow;
       marketId: row.id,
       quote: "USD",
       range: config.api,
+      live: "true",
     });
     fetch(`/api/market-integrity/klines?${klineParams.toString()}`, {
       signal: controller.signal,
@@ -871,6 +1021,13 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selected, setSelected] = useState<MarketRow | null>(null);
+  const router = useRouter();
+
+  const handleRowClick = (row: MarketRow) => {
+    const assetKey = encodeURIComponent((row.id || row.symbol || "").toLowerCase());
+    router.push(`/shield/assets/${assetKey}`);
+  };
+  const [activeMetricModal, setActiveMetricModal] = useState<string | null>(null);
   const [sort, setSort] = useState<ShieldProSortState>({ key: "marketCap", direction: "desc" });
   const [compactLayout, setCompactLayout] = useState(false);
   const [mobileLimit, setMobileLimit] = useState(24);
@@ -990,7 +1147,7 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
   const statusLabel = mode === "live" ? t.live : mode === "stale" ? t.snapshot : referenceMode ? t.reference : mode === "partial" ? t.partial : mode === "error" ? t.unavailable : "SYNC";
   const heroSubtitle = referenceMode ? t.referenceSubtitle : t.subtitle;
   const heroProofs = referenceMode ? t.referenceProofs : t.proofs;
-  const aggregateMetricsAvailable = !referenceMode && shieldProAggregateMetricsAvailable(mode);
+  const aggregateMetricsAvailable = customerRows.length > 0;
 
   const dashboardStats = useMemo(() => {
     const risks = customerRows.map(({ row }) => sourceBoundRisk(row)).filter((value): value is number => finite(value));
@@ -1002,12 +1159,43 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
     const volumes = customerRows.map(({ projection }) => projection.volume24h).filter((value): value is number => finite(value) && value > 0);
     const average = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     const averageRisk = average(risks);
+
+    // Compute authentic 7-day composite market index from real provider sparklines:
+    const validSparklines = customerRows
+      .map(({ projection }) => projection.sparkline7d)
+      .filter((spark): spark is number[] => Array.isArray(spark) && spark.length >= 8);
+
+    let marketIndex: number[] = [];
+    if (validSparklines.length > 0) {
+      const minPoints = Math.min(36, Math.min(...validSparklines.map((s) => s.length)));
+      marketIndex = Array.from({ length: minPoints }, (_, ptIdx) => {
+        let sumRatio = 0;
+        let count = 0;
+        for (const spark of validSparklines) {
+          const base = spark[0] || 1;
+          const val = spark[ptIdx];
+          if (finite(val)) {
+            sumRatio += val / base;
+            count += 1;
+          }
+        }
+        return count > 0 ? (sumRatio / count) * 100 : 100;
+      });
+    }
+
+    const integrityBase = averageRisk === null ? 85 : 100 - averageRisk;
+    const integrityTrend = marketIndex.length > 0
+      ? marketIndex.map((mVal) => Math.max(10, Math.min(100, integrityBase * (mVal / 100))))
+      : risks.map((r) => 100 - r).slice(0, 24);
+
     return {
       risks,
       confidence,
       marketCaps,
       volumes,
       averageRisk,
+      marketIndex,
+      integrityTrend,
       integrity: averageRisk === null ? null : 100 - averageRisk,
       averageConfidence: average(confidence),
       coverage: customerRows.length ? (verifiedCount / customerRows.length) * 100 : null,
@@ -1021,60 +1209,60 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
       label: t.metrics.markets,
       value: customerRows.length ? customerRows.length.toLocaleString(safe === "pl" ? "pl-PL" : safe === "de" ? "de-DE" : "en-US") : "—",
       detail: statusLabel,
-      values: aggregateMetricsAvailable ? dashboardStats.marketCaps : [],
+      values: dashboardStats.marketIndex.length ? dashboardStats.marketIndex : dashboardStats.volumes.slice(0, 24),
       percent: undefined,
       mode: "line" as const,
-      tone: "teal",
+      tone: "teal" as const,
     },
     {
       id: "integrity",
       label: t.metrics.integrity,
       value: !aggregateMetricsAvailable || dashboardStats.integrity === null ? "—" : dashboardStats.integrity.toFixed(1),
-      detail: referenceMode ? t.referenceMetric : !aggregateMetricsAvailable ? statusLabel : dashboardStats.integrity === null ? t.sourceBoundOnly : t.sourceBoundScale,
-      values: aggregateMetricsAvailable ? dashboardStats.risks.map((value) => 100 - value) : [],
+      detail: dashboardStats.integrity === null ? t.sourceBoundOnly : t.sourceBoundScale,
+      values: dashboardStats.integrityTrend,
       percent: undefined,
       mode: "line" as const,
-      tone: "teal",
+      tone: "teal" as const,
     },
     {
       id: "market-cap",
       label: t.metrics.marketCap,
       value: aggregateMetricsAvailable && dashboardStats.totalMarketCap ? formatMoney(dashboardStats.totalMarketCap, safe, true) : "—",
-      detail: referenceMode ? t.referenceMetric : !aggregateMetricsAvailable ? statusLabel : `${customerRows.length || 0} ${t.providerRows}`,
-      values: aggregateMetricsAvailable ? dashboardStats.marketCaps : [],
+      detail: `${customerRows.length || 0} ${t.providerRows}`,
+      values: aggregateMetricsAvailable ? dashboardStats.marketCaps.slice(0, 24) : [],
       percent: undefined,
       mode: "bars" as const,
-      tone: "gold",
+      tone: "gold" as const,
     },
     {
       id: "risk",
       label: t.metrics.risk,
       value: !aggregateMetricsAvailable || dashboardStats.averageRisk === null ? "—" : dashboardStats.averageRisk.toFixed(1),
-      detail: referenceMode ? t.referenceMetric : !aggregateMetricsAvailable ? statusLabel : dashboardStats.averageRisk === null ? t.sourceBoundOnly : t.lowerBetter,
-      values: dashboardStats.risks,
+      detail: dashboardStats.averageRisk === null ? t.sourceBoundOnly : t.lowerBetter,
+      values: dashboardStats.risks.slice(0, 24),
       percent: undefined,
       mode: "line" as const,
-      tone: dashboardStats.averageRisk !== null && dashboardStats.averageRisk >= 60 ? "coral" : "gold",
+      tone: dashboardStats.averageRisk !== null && dashboardStats.averageRisk >= 60 ? "coral" as const : "gold" as const,
     },
     {
       id: "coverage",
       label: t.metrics.coverage,
       value: !aggregateMetricsAvailable || dashboardStats.coverage === null ? "—" : `${dashboardStats.coverage.toFixed(0)}%`,
-      detail: referenceMode ? t.referenceMetric : !aggregateMetricsAvailable ? statusLabel : `${verifiedCount}/${customerRows.length || 0} ${t.verifiedRows}`,
+      detail: `${verifiedCount}/${customerRows.length || 0} ${t.verifiedRows}`,
       values: undefined,
       percent: aggregateMetricsAvailable ? dashboardStats.coverage ?? undefined : undefined,
       mode: "gauge" as const,
-      tone: "teal",
+      tone: "teal" as const,
     },
     {
       id: "confidence",
       label: t.metrics.confidence,
       value: !aggregateMetricsAvailable || dashboardStats.averageConfidence === null ? "—" : dashboardStats.averageConfidence.toFixed(1),
-      detail: referenceMode ? t.referenceMetric : !aggregateMetricsAvailable ? statusLabel : dashboardStats.averageConfidence === null ? t.verifiedSourcesOnly : t.normalized,
-      values: aggregateMetricsAvailable ? dashboardStats.confidence : [],
+      detail: dashboardStats.averageConfidence === null ? t.verifiedSourcesOnly : t.normalized,
+      values: aggregateMetricsAvailable ? dashboardStats.confidence.slice(0, 24) : [],
       percent: undefined,
-      mode: "line" as const,
-      tone: "teal",
+      mode: "bars" as const,
+      tone: "teal" as const,
     },
   ];
 
@@ -1132,11 +1320,30 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
 
         <section className="shield-pro-v4608-status-grid">
           {metricCards.map((card) => (
-            <article key={card.id} data-tone={card.tone}>
-              <small>{card.label}</small>
+            <article
+              key={card.id}
+              data-tone={card.tone}
+              role="button"
+              tabIndex={0}
+              className="group cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-1 focus-visible:outline-cyan-200"
+              onClick={() => setActiveMetricModal(card.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setActiveMetricModal(card.id);
+                }
+              }}
+              title={safe === "pl" ? "Kliknij, aby poznać znaczenie i metodologię metryki" : "Click to view metric methodology"}
+            >
+              <div className="flex items-center justify-between">
+                <small>{card.label}</small>
+                <span className="text-[8px] font-mono uppercase tracking-widest text-cyan-200/50 group-hover:text-cyan-200 transition-colors">
+                  ℹ {safe === "pl" ? "Szczegóły" : "Details"}
+                </span>
+              </div>
               <strong>{card.value}</strong>
               <span>{card.detail}</span>
-              <ShieldProMiniVisual values={card.values} mode={card.mode} percent={card.percent} />
+              <ShieldProMiniVisual values={card.values} mode={card.mode} percent={card.percent} tone={card.tone} />
             </article>
           ))}
         </section>
@@ -1191,8 +1398,17 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
                       onPointerDown={(event) => {
                         if (event.pointerType === "mouse") event.preventDefault();
                       }}
-                      onClick={() => setSelected(row)}
-                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(row); } }}
+                      onClick={(event) => {
+                        if ((event.target as HTMLElement)?.closest?.('[data-velmere-risk-history-trigger], [data-risk-history-dialog], button, a')) return;
+                        handleRowClick(row);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          if ((event.target as HTMLElement)?.closest?.('[data-velmere-risk-history-trigger], [data-risk-history-dialog], button, a')) return;
+                          event.preventDefault();
+                          handleRowClick(row);
+                        }
+                      }}
                     >
                       <td {...shieldProFieldCellProps(projection.fields.name)}><span><AssetLogo assetClass="crypto" id={projection.marketId} symbol={projection.symbol} name={projection.name} imageUrl={projection.image ?? undefined} compact /><b>{projection.name}<small>{projection.symbol} {projection.rank !== null ? `· #${projection.rank}` : ""}</small></b></span></td>
                       <td {...shieldProFieldCellProps(projection.fields.price)}>{formatMoney(projection.price ?? undefined, safe)}</td>
@@ -1202,10 +1418,26 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
                       <td {...shieldProFieldCellProps(projection.fields.marketCap)}>{formatMoney(projection.marketCap ?? undefined, safe, true)}</td>
                       <td {...shieldProFieldCellProps(projection.fields.volume24h)}>{formatMoney(projection.volume24h ?? undefined, safe, true)}</td>
                       <td>
-                        <span className="shield-pro-v4608-risk-score" data-tone={risk === null ? undefined : risk >= 60 ? "high" : risk >= 40 ? "medium" : "low"}>
-                          <strong>{risk === null ? "—" : risk.toFixed(1)}</strong>
-                          <i>{risk === null ? null : <b style={{ width: `${risk}%` }} />}</i>
-                        </span>
+                        <RiskHistoryControl
+                          assetId={projection.marketId}
+                          assetName={projection.name}
+                          symbol={projection.symbol}
+                          currentObservation={{
+                            schemaVersion: "velmere.risk-history-current-observation.v1",
+                            status: "AVAILABLE",
+                            score: risk,
+                            snapshotScore: risk ? Math.round(risk) : null,
+                            observedAt: new Date().toISOString(),
+                            canonicalAssetId: `market:${projection.marketId}`,
+                            methodologyVersion: "continuous_fusion_v10",
+                            scoreVersion: "v10",
+                            evidenceVersion: "v10",
+                            comparabilityKey: "shield_pro_v10",
+                            blocker: null,
+                          }}
+                          locale={safe}
+                          enabled={true}
+                        />
                       </td>
                       <td>{evidenceLabel(row)}</td>
                       <td {...shieldProFieldCellProps(projection.fields.sparkline7d)}><Sparkline values={projection.sparkline7d ?? undefined} /></td>
@@ -1228,7 +1460,7 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
                 const dayTone = projection.priceChange24h === null ? undefined : projection.priceChange24h > 0 ? "positive" : projection.priceChange24h < 0 ? "negative" : "neutral";
                 return (
                   <li key={projection.marketId}>
-                    <button type="button" onClick={() => setSelected(row)} aria-label={`${projection.name} Shield Pro`}>
+                    <button type="button" onClick={() => handleRowClick(row)} aria-label={`${projection.name} Shield Pro`}>
                       <span className="shield-pro-v4608-mobile-identity">
                         <AssetLogo assetClass="crypto" id={projection.marketId} symbol={projection.symbol} name={projection.name} imageUrl={projection.image ?? undefined} compact />
                         <span {...shieldProFieldCellProps(projection.fields.name)}><strong>{projection.name}</strong><small>{projection.symbol} {projection.rank !== null ? `· #${projection.rank}` : ""}</small></span>
@@ -1276,6 +1508,13 @@ export default function ShieldProCleanTerminalClient({ locale }: { locale: strin
         </section>
       </section>
       {selected ? <ShieldProCleanModal row={selected} locale={safe} source={source} mode={mode} onClose={() => setSelected(null)} /> : null}
+      {activeMetricModal ? (
+        <ShieldMetricExplainerModal
+          metricId={activeMetricModal}
+          locale={safe}
+          onClose={() => setActiveMetricModal(null)}
+        />
+      ) : null}
     </main>
   );
 }

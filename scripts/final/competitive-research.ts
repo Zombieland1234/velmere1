@@ -1,0 +1,219 @@
+export interface CompetitorComparison {
+  competitor: string;
+  category: string;
+  marketRole: string;
+  keyStrengths: string[];
+  keyWeaknesses: string[];
+  velmereComparison: "ADVANTAGE" | "PARITY" | "WEAKNESS" | "UNKNOWN";
+  comparisonDetails: string;
+}
+
+export interface GapMatrixRow {
+  category: string;
+  velmere: string;
+  marketLeader: string;
+  gap: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "ROADMAP";
+  customerImpact: string;
+  implementation: string;
+  test: string;
+  evidence: string;
+  status: "ACTIVE" | "ROADMAP_Q4_2026" | "ROADMAP_Q1_2027" | "OUT_OF_SCOPE";
+}
+
+export function generateCompetitiveResearch(): {
+  competitors: CompetitorComparison[];
+  gapMatrix: GapMatrixRow[];
+} {
+  const competitors: CompetitorComparison[] = [
+    {
+      competitor: "OpenZeppelin Defender",
+      category: "Operations & Incident Response",
+      marketRole: "Automated smart contract operations, relayers, and operational monitoring",
+      keyStrengths: [
+        "Direct integration with OpenZeppelin Contracts library.",
+        "Automated proposal execution and relayer transaction management.",
+        "SOC 2 Type II certified enterprise infrastructure.",
+      ],
+      keyWeaknesses: [
+        "Audit outputs require human engagement; automated analyzer is not standalone.",
+        "Limited to EVM chains; zero traditional finance or cross-market integration.",
+        "High recurring cost targeted primarily at large protocols.",
+      ],
+      velmereComparison: "ADVANTAGE",
+      comparisonDetails:
+        "Velmère generates instant standalone canonical PDF reports with Ed25519 PKI and cross-market TradFi telemetry, while Defender focuses on operational transaction execution.",
+    },
+    {
+      competitor: "Certora Prover",
+      category: "Formal Verification",
+      marketRole: "Pioneer in mathematical specification languages (CVL) and SMT automated theorem proving",
+      keyStrengths: [
+        "Mathematical proof of correctness across all possible inputs and state transitions.",
+        "Agentic AutoProver tooling expanding specification coverage.",
+        "Industry standard for blue-chip lending and vault protocols (Aave, Maker).",
+      ],
+      keyWeaknesses: [
+        "Requires deep formal methods expertise to write CVL specifications.",
+        "High compute latency; solving complex invariants can take hours or timeout.",
+        "Does not provide real-time market depth, DEX liquidity, or TradFi metrics.",
+      ],
+      velmereComparison: "WEAKNESS",
+      comparisonDetails:
+        "Certora possesses a decisive advantage in mathematical formal verification. Velmère uses deterministic static analysis and AST heuristics, not an SMT theorem prover.",
+    },
+    {
+      competitor: "Trail of Bits / Crytic (Slither & Echidna)",
+      category: "Static Analysis & Fuzzing",
+      marketRole: "Leading independent security research firm and authors of premier open-source tooling",
+      keyStrengths: [
+        "Slither is the standard open-source static analyzer with extensive detector coverage.",
+        "Echidna provides property-based fuzzing with corpus generation.",
+        "Elite human security researchers with deep cryptographic expertise.",
+      ],
+      keyWeaknesses: [
+        "Slither produces high false-positive rates on complex architectures.",
+        "Command-line developer tooling without hosted consumer-grade audit terminals.",
+        "Human audits have long lead times (weeks/months) and cost $50k-$200k+.",
+      ],
+      velmereComparison: "PARITY",
+      comparisonDetails:
+        "Velmère packages AST/opcode detectors into a zero-setup, sub-second web terminal with multi-tier provider consensus and cryptographic PDF generation.",
+    },
+    {
+      competitor: "CertiK Skynet",
+      category: "Security Intelligence & Scoring",
+      marketRole: "Prominent web3 security score aggregator and on-chain monitoring platform",
+      keyStrengths: [
+        "High brand recognition and extensive token coverage across thousands of coins.",
+        "Skynet security score widely referenced on CoinMarketCap.",
+        "Broad exchange integration and bug bounty platform.",
+      ],
+      keyWeaknesses: [
+        "Proprietary Skynet score operates as a black box with opaque weighting.",
+        "Past false negatives on protocols that were subsequently exploited.",
+        "Heavy marketing emphasis over raw cryptographic evidence verification.",
+      ],
+      velmereComparison: "ADVANTAGE",
+      comparisonDetails:
+        "Velmère enforces strict Class A-F evidence separation, displays exact opcode disassembly, and adheres to 'NO EVIDENCE -> NO FACT', avoiding black-box marketing scores.",
+    },
+    {
+      competitor: "Nansen",
+      category: "On-Chain Analytics & Wallet Labels",
+      marketRole: "Premier blockchain analytics platform tracking smart money and entity flows",
+      keyStrengths: [
+        "Millions of curated wallet labels (funds, whales, exchanges, MEV bots).",
+        "Point-in-time API endpoints reconstructing historical wallet states and PnL.",
+        "Deep DEX token flow analytics and token god mode.",
+      ],
+      keyWeaknesses: [
+        "Does not perform smart contract bytecode decompilation or security vulnerability auditing.",
+        "No formal verification, reentrancy analysis, or compiler AST inspections.",
+        "High subscription cost ($399-$2,500/mo).",
+      ],
+      velmereComparison: "PARITY",
+      comparisonDetails:
+        "Nansen leads in historical wallet labeling and smart money tracking, while Velmère uniquely fuses on-chain whale telemetry with automated smart contract security auditing.",
+    },
+    {
+      competitor: "Kaiko",
+      category: "Financial Market Data",
+      marketRole: "Institutional cryptocurrency market data provider for tick-by-tick trades and order books",
+      keyStrengths: [
+        "Institutional-grade data feeds with direct connectivity to 100+ spot and derivatives exchanges.",
+        "Regulated benchmark indices compliant with BMR.",
+        "Deep liquidity metrics and market depth analysis.",
+      ],
+      keyWeaknesses: [
+        "Pure market data feed; zero smart contract security or bytecode analysis.",
+        "Expensive enterprise licensing models targeted at hedge funds.",
+      ],
+      velmereComparison: "PARITY",
+      comparisonDetails:
+        "Velmère ingests multi-provider market telemetry (including Kaiko/Binance/CoinGecko) and bridges it with smart contract risk metrics into a unified interface.",
+    },
+    {
+      competitor: "Chainalysis",
+      category: "Forensics & Compliance",
+      marketRole: "Global authority on blockchain investigation, AML compliance, and sanctions screening",
+      keyStrengths: [
+        "Decisive lead in clustering algorithms and law enforcement attribution graphs.",
+        "Direct integration with regulatory agencies worldwide.",
+        "Comprehensive stolen fund tracking and transaction exposure risk scoring.",
+      ],
+      keyWeaknesses: [
+        "Does not audit smart contract code or compile vulnerability reports.",
+        "Extremely restrictive enterprise sales cycle with government focus.",
+      ],
+      velmereComparison: "WEAKNESS",
+      comparisonDetails:
+        "Chainalysis dominates off-chain sanctions and law-enforcement attribution. Velmère does not claim to match Chainalysis's closed investigative database.",
+    },
+  ];
+
+  const gapMatrix: GapMatrixRow[] = [
+    {
+      category: "Formal Verification",
+      velmere: "Static AST pattern matching & opcode disassembly",
+      marketLeader: "Certora Prover (CVL & SMT Z3 Solver)",
+      gap: "Lack of mathematical infinite-state satisfiability proof engine",
+      severity: "ROADMAP",
+      customerImpact: "Enterprise lending pools requiring formal mathematical proofs must use Certora",
+      implementation: "Develop Velmère Prover sidecar using bounded model checking for ERC-4626 vaults",
+      test: "Automated CVL assertion runner against known invariant violations",
+      evidence: "lib/security/engines/evm-contract-engine.ts",
+      status: "ROADMAP_Q1_2027",
+    },
+    {
+      category: "Mempool Simulation",
+      velmere: "Real-time block telemetry and whale watch",
+      marketLeader: "Flashbots / Blocknative (Pre-inclusion mempool simulation)",
+      gap: "Lack of private mempool bundle frontrunning prediction",
+      severity: "MEDIUM",
+      customerImpact: "Traders cannot simulate sandwich attacks before block inclusion",
+      implementation: "Ingest Flashbots MEV-Boost stream to calculate pre-inclusion frontrunning probability",
+      test: "Synthetic MEV bundle detection probe",
+      evidence: "app/[locale]/shield/page.tsx",
+      status: "ROADMAP_Q4_2026",
+    },
+    {
+      category: "Automated Code Remediation",
+      velmere: "Detailed code diff recommendations in audit reports",
+      marketLeader: "GitHub Copilot / specialized remediation bots",
+      gap: "Lack of automated GitHub Pull Request submission for detected vulnerabilities",
+      severity: "LOW",
+      customerImpact: "Developers must manually copy remediation diffs from reports into their git repos",
+      implementation: "Build Velmère Remediation GitHub App with webhook-driven PR generation",
+      test: "Mock GitHub API PR creation test",
+      evidence: "lib/security/audit-canonical-report.ts#L30-L36",
+      status: "ROADMAP_Q1_2027",
+    },
+    {
+      category: "Cross-Asset Market Integration",
+      velmere: "Unified TradFi (Equities, FX, Commodities) + Crypto on single terminal",
+      marketLeader: "None (Market is fragmented between crypto-only and TradFi terminals)",
+      gap: "Velmère holds unique market advantage; expanding coverage to sovereign bonds and rates",
+      severity: "LOW",
+      customerImpact: "Institutional quants can evaluate smart contract risk alongside macro volatility",
+      implementation: "Expand FRED St. Louis Fed API connector to include US Treasury yield curves",
+      test: "TradFi quote validation suite across SPY, AAPL, EURUSD, XAUUSD",
+      evidence: "app/[locale]/real-markets/page.tsx",
+      status: "ACTIVE",
+    },
+    {
+      category: "Cryptographic Provenance",
+      velmere: "Ed25519 signed release manifest & SHA-256 PDF digests",
+      marketLeader: "OpenZeppelin / CertiK (Standard web downloads with watermarks)",
+      gap: "Velmère holds clear cryptographic advantage over competitors",
+      severity: "LOW",
+      customerImpact: "Audits are independently verifiable offline without contacting Velmère servers",
+      implementation: "Production Ed25519 PKI signer active in artifacts/final/signatures/",
+      test: "tests/adversarial/world-class-adversarial-corpus.test.ts signature verification",
+      evidence: "artifacts/final/signatures/signed-release-manifest.json",
+      status: "ACTIVE",
+    },
+  ];
+
+  return { competitors, gapMatrix };
+}

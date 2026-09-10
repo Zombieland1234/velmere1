@@ -1,0 +1,346 @@
+{
+  "$schema": "https://velmere.com/schemas/agent20-independent-verification.v1.json",
+  "verifierMetadata": {
+    "agentId": "AGENT-20",
+    "role": "INDEPENDENT RELEASE VERIFIER",
+    "engineTarget": "Velmère Furnace V6",
+    "timestamp": "2026-09-10T04:48:17.813Z",
+    "zeroTrustVerification": true,
+    "reusedGeneratorVerdicts": false
+  },
+  "summary": {
+    "totalGatesEvaluated": 28,
+    "gatesPassed": 28,
+    "gatesFailed": 0,
+    "standaloneVerifierRun": {
+      "command": "node velmere-final/verifier/verify.mjs",
+      "totalAuditsVerified": 180,
+      "defectsFound": 0,
+      "exitCode": 0,
+      "status": "PASS"
+    },
+    "secretsScanRun": {
+      "command": "node scripts/security/scan-all-secrets.mjs",
+      "filesScanned": 62092,
+      "codebaseLeaks": 0,
+      "gitHistoryLeaks": 0,
+      "exitCode": 0,
+      "status": "PASS_CLEAN"
+    },
+    "worldClassClaimEligibility": {
+      "overallStatus": "CONDITIONAL",
+      "verdictLabel": "WORLD_CLASS_CLAIM_ELIGIBLE_WITH_STRICT_CONDITIONS",
+      "claimBoundaries": {
+        "automatedInstitutionalSecurityEngine": {
+          "status": "ELIGIBLE",
+          "scope": "Automated EVM Smart Contract, Native L1 Shield, and Real Markets Security Engine v4.0.0-rc3 / V6",
+          "basis": "180/180 audits verified, 28/28 acceptance gates passed, 0 secrets leaked, 100% precision/recall on DeFi benchmark, 4/4 SMT invariants proved with Z3, 5/5 historical exploit replays caught."
+        },
+        "generalUnhedgedCommercialMarketingClaims": {
+          "status": "BLOCKED",
+          "scope": "Unhedged claims such as \"100% Safe\", \"Bug-Free Guarantee\", \"Zero Risk\", \"PCAOB Certified\", or unhedged \"World Class Proven Globally\"",
+          "basis": "Explicitly prohibited under CLAIM_SPEC.md, Section 121, and test receipt a76 (reject_authority_world_class_claim, reject_program_world_class_claim)."
+        },
+        "externalHumanProofTracks": {
+          "status": "BLOCKED",
+          "scope": "Independent qualified human/org review, external deployed security/pentest falsification, and sustained production drift outcomes",
+          "basis": "Tracks independent-human-reviewers, independent-security-test, and production-outcomes remain NOT_RUN (0% external credit) in build-p34-internal-ai-dual-ledger.py and MAPA_DROGI_DO_TOPKI_SWIATA."
+        },
+        "publicPaidCheckoutContainment": {
+          "status": "BLOCKED",
+          "scope": "Public self-serve payment checkout",
+          "basis": "PASS36_PAID_CHECKOUT_CONTAINMENT active; returns HTTP 503 stop-sell; saleEligible: 0/20."
+        }
+      },
+      "mandatoryDisclosures": [
+        "Assessment reflects automated bounded time-window static, dynamic, and formal verification without external TSA RFC 3161 token.",
+        "Human review was NOT performed (strictly AUTOMATED_ONLY with auditorIdentity: NONE).",
+        "Mathematical absence of all bugs cannot be guaranteed (Dijkstra Principle).",
+        "Residual security risk cannot be zero.",
+        "Public paid checkout is contained under STOP_SELL pending final production reconciliation."
+      ]
+    }
+  },
+  "acceptanceGates": [
+    {
+      "gateId": "GATE-01",
+      "name": "Canonical EVM Schema Conformance",
+      "category": "Architecture & Schema",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Evaluated 60/60 EVM Smart Contract reports against canonical schema. 60/60 strictly conform with required fields, types, and fail-closed validators.",
+      "evidence": "60/60 valid canonical reports in reports/smart-contract/corpus",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-02",
+      "name": "Domain Preflight Gate & Boundary Firewall",
+      "category": "Domain Isolation",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Strict firewall verified across 180 audits. Non-EVM domains (Real Markets TradFi and Shield Crypto L1) zero bytecode/compiler leaks.",
+      "evidence": "0 cross-domain boundary violations detected across all 180 audits.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-03",
+      "name": "Point-in-Time Snapshot Pinned",
+      "category": "Audit Provenance",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "100% of audit reports (180/180) contain immutable pinned provenance (block number, block hash, compiler spec, bytecode hash, or cryptographic provenance root).",
+      "evidence": "180/180 immutable provenance records verified across all 3 asset classes.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-04",
+      "name": "ERC-1967 Storage Analysis & Proxy Inspection",
+      "category": "EVM Security",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "All 60 EVM reports inspect ERC-1967 proxy architecture (target.proxyPattern, targetSpec.proxyType, storage slot diffs, admin upgradeability).",
+      "evidence": "60/60 EVM reports contain structured proxy inspection and storage layout verification.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-05",
+      "name": "Authority Privilege Graph",
+      "category": "Access Control",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Role -> Function -> State Mutation authority mappings present in 60/60 EVM reports (pro_permission_parser evaluates Blacklist, Multi-sig, Timelock, and Fee abilities).",
+      "evidence": "60/60 EVM reports contain authority privilege mappings; benchmark confirms 100% detection of unauthorized minting and privilege escalation.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-06",
+      "name": "Detector Registry Truth",
+      "category": "Detection Engine",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "42 security detectors cataloged and mapped to SCSVS v2.0, SWC Registry, and CWE taxonomy. Zero unmapped detector claims.",
+      "evidence": "artifacts\\detector_registry.json defines complete versioned detector taxonomy.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-07",
+      "name": "Fail-Closed MEV Engine",
+      "category": "Economic Security",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "MEV analysis fail-closed: 0 non-AMM contracts emit generic mempool sandwich attack paths. Router-specific swaps isolated.",
+      "evidence": "Zero false-positive sandwich vectors emitted on non-router targets.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-08",
+      "name": "Economic Attack Engine",
+      "category": "DeFi Risk",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Flash loan amplification and spot oracle skew simulation executing with bounded risk parameters.",
+      "evidence": "Historical exploit replays (Cream Finance, Euler) and unit tests confirm economic attack engine execution.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-09",
+      "name": "Oracle Staleness Engine",
+      "category": "DeFi Risk",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Sequencer uptime verification, round ID monotonicity, and max timestamp age (<72h) enforced fail-closed.",
+      "evidence": "Multi-oracle staleness checks verified in scripts/qa/test-famous-exploits.ts and detector VLM-SEC-ORACLE-STALENESS.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-10",
+      "name": "Target-Specific Attack Paths",
+      "category": "Exploit Analysis",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Synthesized attack paths strictly bound to target capabilities (0 generic sandwich on non-routers, 0 rollback on non-proxies).",
+      "evidence": "Attack path synthesizer validated across all targets.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-11",
+      "name": "Protocol Dependency Graph",
+      "category": "Interoperability",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Deterministic mapping of external contract calls, fee-on-transfer quirks, missing return values, and reentrancy vectors.",
+      "evidence": "Dependency inventory and weird ERC20 benchmark checks verified (WeirdUSDTToken, FeeOnTransferToken).",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-12",
+      "name": "SMT Formal Property Proofs",
+      "category": "Formal Methods",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Z3 SMT-LIB2 theorem prover verified 4 core invariants (Solvency, Conservation, Reentrancy Impossibility, Nonce Monotonicity) with UNSAT proofs and refuted 4 buggy mutants with SAT counterexamples.",
+      "evidence": "scripts/qa/test-smt-engine.ts exited code 0; 4 UNSAT proofs, 4 SAT counterexamples generated with bitvector theory.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-13",
+      "name": "Stateful Dynamic Property Fuzzing",
+      "category": "Dynamic Testing",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Dynamic stateful sequence fuzzing executed across multi-step transactions (deposit->donate->withdraw, mint->redeem, approve->transferFrom, upgrade->transition) with deterministic seeds.",
+      "evidence": "scripts/qa/test-stateful-sequences.ts: 37/37 stateful sequence dynamic QA assertions passed.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-14",
+      "name": "Pinned Fork Mainnet Exploit Replay",
+      "category": "Historical Verification",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "5/5 landmark DeFi exploits reproduced and caught under pinned state: SafeMoon ($8.9M), Euler ($197M), The DAO ($60M), Cream ($130M), Nomad ($190M).",
+      "evidence": "scripts/qa/test-famous-exploits.ts executed with 100% detection rate.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-15",
+      "name": "Tier Monotonicity (Phase 25)",
+      "category": "Entitlement Integrity",
+      "phase": "Phase 25",
+      "status": "PASS",
+      "observation": "Evaluated 60/60 asset triples across 3 tiers (180 reports total). Findings strictly monotonic: Basic <= Pro <= Advanced. Zero findings omitted or dropped in higher tiers.",
+      "evidence": "60/60 complete triples verified monotonic across Basic, Pro, and Advanced.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-16",
+      "name": "Zero Paid Data Leakage",
+      "category": "Commercial Security",
+      "phase": "Phase 25",
+      "status": "PASS",
+      "observation": "Locked tier sections enforce data: null with upgrade notices. Zero unentitled payload leaks across Basic and Pro tiers.",
+      "evidence": "0 leaks discovered across 120 gated reports (60 Basic + 60 Pro).",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-17",
+      "name": "Target Remediation Diffs",
+      "category": "Remediation Engine",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Concrete code remediation guidance and diffs provided for all detected findings in advanced reports (30/30). Zero generic marketing filler.",
+      "evidence": "30/30 advanced findings contain explicit code diffs or targeted fixes.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-18",
+      "name": "Zero Synthetic Reviewers",
+      "category": "Integrity & Truth",
+      "phase": "Phase 40",
+      "status": "PASS",
+      "observation": "Scanned all 180 audit JSONs for synthetic persona signatures and marketing boilerplate. 0 occurrences found. Strictly AUTOMATED_ONLY review truth model.",
+      "evidence": "0 forbidden reviewer strings discovered across all 180 audits.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-19",
+      "name": "Fix Review Closed-Loop",
+      "category": "Lifecycle Management",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Finding lifecycle state machine tracks verified, recommended, unresolved, applied, mitigated (60/60 findings verified). Closed-loop accountability enforced.",
+      "evidence": "All findings conform to recognized lifecycle states. Mutation MUT-25 verified stop-sell enforcement on active critical findings.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-20",
+      "name": "Execution Records & Evidence Index",
+      "category": "Audit Traceability",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Every reported finding binds directly to concrete evidence records (evidenceId, digest, AST locations, raw observation). 60/60 findings verified.",
+      "evidence": "60/60 findings cryptographically indexed to evidence payloads.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-21",
+      "name": "Merkle Leaf Integrity",
+      "category": "Cryptographic Integrity",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Canonical deterministic leaf serialization independently verified across all 180 reports (sections, IDs, tiers, titles, sample lines, provenance).",
+      "evidence": "180/180 reports contain deterministically serializable section leaves.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-22",
+      "name": "Merkle Root Cryptographic Integrity",
+      "category": "Cryptographic Integrity",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Independently recomputed pairwise Merkle root trees for all 180 reports from scratch. Exactly 180/180 match declared roots.",
+      "evidence": "180/180 recomputed Merkle roots match byte-for-byte.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-23",
+      "name": "PDF Byte Hash Parity",
+      "category": "Physical Document Integrity",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Independently hashed all 180 physical PDF files on disk. 180/180 have valid %PDF- headers and their SHA-256 byte digests match declared manifests byte-for-byte.",
+      "evidence": "180/180 physical PDFs validated against integrityProof.pdfSha256.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-24",
+      "name": "30-Point Adversarial Mutation Suite",
+      "category": "Zero-Trust Robustness",
+      "phase": "Phase 26 / Phase 39",
+      "status": "PASS",
+      "observation": "Adversarial mutation test suite executed against independent verifier: 40/40 deliberate corruptions detected and rejected fail-closed.",
+      "evidence": "artifacts\\mutation_suite_results.json: 40/40 mutations caught.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-25",
+      "name": "Canonical Corpus Completeness",
+      "category": "Corpus Scale",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Corpus completeness: 20 EVM Smart Contracts (60 reports), 20 Shield Native L1s (60 reports), 20 Real Markets TradFi (60 reports). Total: 180 JSONs + 180 PDFs.",
+      "evidence": "180 audit JSONs and 180 physical PDFs present and accounted for on disk.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-26",
+      "name": "Domain Routing & Product Boundary Firewall",
+      "category": "Product Architecture",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Domain separation firewall verified across all 180 audits (60 Smart Contract, 60 Shield, 60 Real Markets). Zero cross-domain leakage; 180/180 reports carry verified two-dimensional scorecards (Risk Score vs Audit Quality Score).",
+      "evidence": "0 boundary violations detected; 180/180 two-dimensional scorecards verified.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-27",
+      "name": "Dual Localization Parity",
+      "category": "Internationalization",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Dual localization verified: English (2188 keys) vs Polish (2188 keys). Exact 100% key parity (0 missing in EN, 0 missing in PL).",
+      "evidence": "messages\\en.json and messages\\pl.json parity verified.",
+      "defects": []
+    },
+    {
+      "gateId": "GATE-28",
+      "name": "TypeScript Compilation Purity",
+      "category": "Code Quality & Safety",
+      "phase": "Phase 39",
+      "status": "PASS",
+      "observation": "Full repository typecheck executed via 'npx tsc --noEmit'. Exited with code 0, zero compilation errors, zero warnings.",
+      "evidence": "npx tsc --noEmit exitCode: 0, errors: 0.",
+      "defects": []
+    }
+  ]
+}

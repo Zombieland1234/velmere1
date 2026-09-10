@@ -10,7 +10,7 @@ import type { Pass4644ProviderEvidenceReceipt } from "./provider-evidence-receip
 
 const ALLOWED_KEYS = new Set(["query", "locale"]);
 const CONTROL_OR_BIDI = C0_C1_OR_BIDI_PATTERN;
-const EVM_ADDRESS = /^(?:address:)?(0x[a-fA-F0-9]{40})$/u;
+const EVM_ADDRESS = /^(?:address:)?(0[xX][a-fA-F0-9]{40})$/u;
 const SAFE_IDENTITY_QUERY = /^[A-Za-z0-9][A-Za-z0-9 .^=/_:-]*$/u;
 const RECEIPT_CLOCK_SKEW_MS = 120_000;
 

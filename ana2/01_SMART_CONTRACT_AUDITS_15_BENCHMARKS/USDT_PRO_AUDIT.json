@@ -1,0 +1,19 @@
+{
+  "targetContract": "Tether USD (USDT)",
+  "symbol": "USDT",
+  "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 42,
+  "riskLabel": "MODERATE RISK",
+  "vulnerability": {
+    "title": "Centralized Blacklist & Zero-Return Token Transfer Trap",
+    "category": "Centralized Privilege Escalation & Arbitrary Asset Freeze",
+    "swcId": "SWC-105",
+    "cweId": "CWE-284",
+    "rootCause": "Non-standard ERC20 implementation omitting boolean return on transfer(), alongside centralized destroyBlackFunds().",
+    "attackVector": "Smart contract calling IERC20(usdt).transfer() fails silently or reverts in safeTransfer wrappers unless SafeERC20 is used."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/TetherToken.sol\n+++ b/contracts/TetherToken.sol\n@@ -110,3 +110,4 @@\n- function transfer(address _to, uint _value) public {\n+ function transfer(address _to, uint _value) public returns (bool) {\n   require(!isBlackListed[msg.sender]);\n+  return true;\n }",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

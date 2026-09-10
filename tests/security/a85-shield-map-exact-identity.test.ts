@@ -350,6 +350,7 @@ assert.equal(
   true,
 );
 
+void (async () => {
 const resolutionProviderCalls = { market: 0, address: 0 };
 const substitutedMarketResult = marketResult([
   marketReceipt({
@@ -573,3 +574,8 @@ console.log(JSON.stringify({
   withheldDownstreamCalls: Object.values(withheldEffectCalls).reduce((sum, value) => sum + value, 0),
   allowedDownstreamCalls: Object.values(allowedEffectCalls).reduce((sum, value) => sum + value, 0),
 }, null, 2));
+})().catch((err) => {
+  console.error("a85-shield-map-exact-identity error:", err);
+  process.exit(1);
+});
+

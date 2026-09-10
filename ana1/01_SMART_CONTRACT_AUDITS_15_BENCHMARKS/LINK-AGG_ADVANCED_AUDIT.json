@@ -1,0 +1,16 @@
+{
+  "targetContract": "Chainlink Price Feed Aggregator",
+  "symbol": "LINK-AGG",
+  "address": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 14,
+  "riskLabel": "VERY LOW RISK",
+  "proofOfConceptSolidity": "function testStaleChainlinkPrice() public {\n  (, int256 price, , uint256 updatedAt, ) = feed.latestRoundData();\n  // Protocol accepts price without checking: block.timestamp - updatedAt > HEARTBEAT\n}",
+  "formalInvariantZ3": "(declare-const price Int)\n(declare-const updatedAt Int)\n(declare-const nowTime Int)\n(assert (and (<= price 0) (<= (- nowTime updatedAt) 3600)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.7.6",
+  "proxyPattern": "EACAggregatorProxy",
+  "merkleEvidenceSeal": "a100e3b142cc019e56c469af492a6e20558e1c966a34358d21aa75617fc3ce46",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

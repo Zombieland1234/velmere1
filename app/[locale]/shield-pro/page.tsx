@@ -11,8 +11,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return buildVelmereMetadata({
     locale,
     path: "/shield-pro",
-    title: "Velmère Shield Pro — Monochrome Risk Terminal",
-    description: "Black-and-white Velmère Shield Pro terminal with consent gate, decimal risk, confidence and source-bound evidence lanes.",
+    title: "Velmère Shield Pro — Institutional Terminal",
+    description: "Shield Pro institutional terminal with real-time risk telemetry, multi-exchange orderbook depth, and VLM Brain analytics.",
   });
 }
 
@@ -22,3 +22,4 @@ export default async function ShieldProPage({ params }: PageProps) {
   setRequestLocale(locale);
   return <ShieldProCleanTerminalClient locale={locale} />;
 }
+

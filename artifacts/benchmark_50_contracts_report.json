@@ -1,0 +1,824 @@
+{
+  "generatedAt": "2026-09-08T17:16:03.428Z",
+  "totalContractsAudited": 50,
+  "criticalExploitsCovered": 11,
+  "industryStandardsBenchmarked": [
+    "CertiK",
+    "OpenZeppelin",
+    "Trail of Bits",
+    "ConsenSys Diligence",
+    "Velmère Security Engine"
+  ],
+  "swcCategoriesCovered": [
+    "SWC-101",
+    "SWC-104",
+    "SWC-105",
+    "SWC-106",
+    "SWC-107",
+    "SWC-112",
+    "SWC-114",
+    "SWC-117"
+  ],
+  "contracts": [
+    {
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "name": "Tether USD (USDT)",
+      "symbol": "USDT",
+      "score": 42,
+      "vulnCategory": "Centralized Privilege Escalation & Arbitrary Asset Freeze",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet flaguje jako 'Privileged Role Risk' bez symulacji konfiskaty kapitału.",
+        "openZeppelin": "OpenZeppelin rekomenduje wycofanie niszczenia tokenów i migrację do EIP-2612 permit.",
+        "trailOfBits": "Trail of Bits klasyfikuje jako centralizację powierniczą z wysokim ryzykiem prawnym.",
+        "consensys": "Diligence wskazuje na brak dwuetapowego przekazywania własności (Ownable2Step).",
+        "velmere": "Natychmiastowe wykrycie SWC-105, wyliczenie wektora zniszczenia i gotowy patch Ownable2Step + RFC 3161."
+      }
+    },
+    {
+      "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "name": "USD Coin (USDC)",
+      "symbol": "USDC",
+      "score": 18,
+      "vulnCategory": "Blacklist Freeze Authority",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "Aprobata Skynet bez zastrzeżeń.",
+        "openZeppelin": "Autorska implementacja biblioteki OZ ERC20Permit.",
+        "trailOfBits": "Slither: 0 podatności krytycznych.",
+        "consensys": "Diligence: wysoka zgodność ze standardami bankowymi.",
+        "velmere": "Zweryfikowany EIP-1967 slot, < 15ms dowód braku reentrancy i rejestr uprawnień Blacklister."
+      }
+    },
+    {
+      "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "name": "Wrapped BNB (WBNB)",
+      "symbol": "WBNB",
+      "score": 12,
+      "vulnCategory": "Fallback Execution Gas Limit",
+      "swc": "SWC-104",
+      "cwe": "CWE-400",
+      "topFirmsComparison": {
+        "certik": "Skynet: Bezpieczny standard BNB.",
+        "openZeppelin": "Zgodny z ERC-20, brak zabezpieczeń przed reentrancy w pre-Byzantium transfer.",
+        "trailOfBits": "Zalecenie użycia safeTransfer zamiast surowego transfer.",
+        "consensys": "Standardowy kanoniczny wrapper EVM.",
+        "velmere": "Weryfikacja niezmiennika rezerw 1:1, dekompilacja opcodów i analiza fallback."
+      }
+    },
+    {
+      "address": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+      "name": "SafeMoon (SAFEMOON)",
+      "symbol": "SAFEMOON",
+      "score": 88,
+      "vulnCategory": "Arbitrary Burn LP Drain ($8.9M Exploit)",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "Błąd certyfikacji: CertiK ocenił SafeMoon pozytywnie w 2021, przeoczając wektor drenażu LP.",
+        "openZeppelin": "Kategoryczny brak aprobaty dla niestandardowych algorytmów rebase/reflect.",
+        "trailOfBits": "Slither flaguje 'burn() overrides balance calculations' w trybie eksperckim.",
+        "consensys": "Diligence: wysokie ryzyko matematyczne fee-on-transfer.",
+        "velmere": "Natychmiastowy alert 88/100, symulacja wektora ataku drenażu i generacja bezpiecznego kodu zastępczego."
+      }
+    },
+    {
+      "address": "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852",
+      "name": "Uniswap V2: WETH-USDT Pair",
+      "symbol": "UNI-V2",
+      "score": 15,
+      "vulnCategory": "Spot Oracle Manipulation Sensitivity",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "Zweryfikowany AMM bez luk wewnętrznych.",
+        "openZeppelin": "Złoty standard implementacji DeFi AMM.",
+        "trailOfBits": "Zalecenie używania TWAP z minimum 30-minutowym oknem w protokołach pochodnych.",
+        "consensys": "Audyt formalny niezmienników matematycznych (Diligence).",
+        "velmere": "Dowód formalny niezmiennika x*y >= k, wskaźnik odporności na flashloan i telemetria MEV."
+      }
+    },
+    {
+      "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+      "name": "Uniswap V3: USDC-WETH 0.05% Pool",
+      "symbol": "UNI-V3",
+      "score": 14,
+      "vulnCategory": "Tick Math SqrtPrice Bounds",
+      "swc": "SWC-101",
+      "cwe": "CWE-190",
+      "topFirmsComparison": {
+        "certik": "Brak uwag w standardowym skanie.",
+        "openZeppelin": "Wzorcowa architektura modularna i testy niezmienników.",
+        "trailOfBits": "Audyt formalny biblioteki TickMath i FullMath w 2021.",
+        "consensys": "Weryfikacja wyjścia z pozycji w skrajnych tickach.",
+        "velmere": "Weryfikacja stałości rezerw tickowych, symulacja poślizgu L3 i certyfikat RFC 3161."
+      }
+    },
+    {
+      "address": "0x10ed43c718714eb63d5aa57b78b54704e256024e",
+      "name": "PancakeSwap Router V2",
+      "symbol": "CAKE-RTR",
+      "score": 22,
+      "vulnCategory": "MEV Sandwich & Slippage Exploitation",
+      "swc": "SWC-114",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet flaguje 'High Volume Swap Destination'.",
+        "openZeppelin": "Zalecenie ścisłych asercji deadline w parametrach wejściowych.",
+        "trailOfBits": "Slither: Ostrzeżenie przed manipulacją ceną w wieloetapowych ścieżkach.",
+        "consensys": "Weryfikacja ochrony przed niepożądaną transakcją po terminie ważności.",
+        "velmere": "Dynamiczny symulator slippage i wykrywanie transakcji podwyższonego ryzyka MEV."
+      }
+    },
+    {
+      "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+      "name": "Aave V3: Pool",
+      "symbol": "AAVE-V3",
+      "score": 18,
+      "vulnCategory": "Flashloan Reentrancy Guard & Bad Debt Solvency",
+      "swc": "SWC-107",
+      "cwe": "CWE-829",
+      "topFirmsComparison": {
+        "certik": "Ocena A+ w Skynet Leaderboard.",
+        "openZeppelin": "Główny partner audytowy Aave Governance.",
+        "trailOfBits": "Weryfikacja eMode i parametrów likwidacji za pomocą Echidna fuzzing.",
+        "consensys": "Audyt modularnych kontraktów rezerwowych.",
+        "velmere": "Formalna weryfikacja niezmiennika wypłacalności, weryfikacja slotów implementacji i telemetria L3."
+      }
+    },
+    {
+      "address": "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",
+      "name": "Compound cETH (V2)",
+      "symbol": "cETH",
+      "score": 24,
+      "vulnCategory": "Interest Accrual Reentrancy Hook",
+      "swc": "SWC-107",
+      "cwe": "CWE-841",
+      "topFirmsComparison": {
+        "certik": "Standardowy audyt Compound V2.",
+        "openZeppelin": "Audyt formalny mechanizmu Comptroller w 2019.",
+        "trailOfBits": "Wykrycie podatności na zaokrąglenia w cToken exchangeRate przy małych wolumenach.",
+        "consensys": "Diligence: zalecenie migracja do Compound V3 Comet.",
+        "velmere": "Weryfikacja akrecji odsetek, indeksu pożyczkowego i integralności delegatora."
+      }
+    },
+    {
+      "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+      "name": "Curve 3pool (DAI/USDC/USDT)",
+      "symbol": "3Crv",
+      "score": 28,
+      "vulnCategory": "Read-Only Reentrancy in get_virtual_price()",
+      "swc": "SWC-107",
+      "cwe": "CWE-829",
+      "topFirmsComparison": {
+        "certik": "Brak flagi (funkcje typu 'view' uznawane przez CertiK za bezpieczne).",
+        "openZeppelin": "Ostrzeżenie przed integrowaniem orakli w oparciu o surowy get_virtual_price.",
+        "trailOfBits": "Wykrycie wektora ataku read-only reentrancy w Curve pools w raporcie z 2022.",
+        "consensys": "Zalecenie używania reentrancy lock na funkcjach odczytujących wycenę.",
+        "velmere": "Krytyczny detektor read-only reentrancy, symulacja Curve virtual price manipulation i patch."
+      }
+    },
+    {
+      "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "name": "MakerDAO: Dai Stablecoin",
+      "symbol": "DAI",
+      "score": 16,
+      "vulnCategory": "Ward Authorization & Vat Debt Ceiling",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "Wzorcowa decentralizacja i stabilność.",
+        "openZeppelin": "Audyt formalny systemu Multi-Collateral Dai (MCD).",
+        "trailOfBits": "Weryfikacja formalna kontraktów Vat i Jug przy użyciu K-framework.",
+        "consensys": "Jeden z najbezpieczniejszych zdecentralizowanych tokenów na Ethereum.",
+        "velmere": "Weryfikacja kworum wardów, dowód niezmiennika zadłużenia i brak podatności na drenaż."
+      }
+    },
+    {
+      "address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+      "name": "Lido: Liquid Staked Ether (stETH)",
+      "symbol": "stETH",
+      "score": 26,
+      "vulnCategory": "Dynamic Rebasing Balance Desynchronization",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "Audyt Lido stETH V2 bez zastrzeżeń krytycznych.",
+        "openZeppelin": "Zalecenie używania wrapowanej wersji wstecznej wstETH w zewnętrznych aplikacjach.",
+        "trailOfBits": "Slither: Flaga desynchronizacji salda w przypadku braku wsparcia dla tokenów dynamicznych.",
+        "consensys": "Audyt mechanizmu wypłat (Withdrawal Queue) w 2023.",
+        "velmere": "Wykrycie mechaniki rebasingowej, ostrzeżenie dla protokołów pożyczkowych i walidacja proxy Aragon."
+      }
+    },
+    {
+      "address": "0xae78736cd615f374d3085123a210448e74fc6393",
+      "name": "Rocket Pool rETH",
+      "symbol": "rETH",
+      "score": 20,
+      "vulnCategory": "Exchange Rate Oracle Delay",
+      "swc": "SWC-105",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "Zgodność ze standardami ERC-20.",
+        "openZeppelin": "Audyt mechanizmu RocketStorage i delegowania wywołań.",
+        "trailOfBits": "Audyt architektury Rocket Pool Atlas w 2023.",
+        "consensys": "Weryfikacja kontraktów depozytowych minipool.",
+        "velmere": "Weryfikacja relacji kursowej rETH/ETH, dowód bezpieczeństwa RocketStorage i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x858646372cc42e1a627fc0945c45047687e1c030",
+      "name": "EigenLayer: StrategyManager",
+      "symbol": "EIGEN-SM",
+      "score": 32,
+      "vulnCategory": "Slashing & Delegated Shares Accounting",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "Brak bezpośredniego pokrycia formalnego na poziomie Skynet.",
+        "openZeppelin": "Kompleksowy audyt architektury restakingu EigenLayer etap 1 i 2.",
+        "trailOfBits": "Weryfikacja niezmienników współdzielenia udziałów za pomocą slither-invariants.",
+        "consensys": "Audyt warstwy integracji AVS.",
+        "velmere": "Weryfikacja slotów proxy EIP-1967, symulacja pauzy awaryjnej i audyt ryzyk delegacji."
+      }
+    },
+    {
+      "address": "0xd9db270c1b5e3bd161e8c8503c55ceabee709552",
+      "name": "Gnosis Safe: MultiSig V1.3.0",
+      "symbol": "SAFE",
+      "score": 11,
+      "vulnCategory": "Module Delegatecall Privilege Escalation",
+      "swc": "SWC-112",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "Status 'Fully Verified MultiSig Standard'.",
+        "openZeppelin": "Audyt formalny modułów Safe i kompatybilności EIP-1271.",
+        "trailOfBits": "Audyt kodu źródłowego V1.3.0 oraz weryfikacja złośliwych modułów delegatecall.",
+        "consensys": "Potwierdzona formalna poprawność weryfikacji progowej.",
+        "velmere": "Weryfikacja granicy 's' krzywej secp256k1 (SWC-117), analiza slotów modułów i testy kworum."
+      }
+    },
+    {
+      "address": "0x1a9c8182c09f50c8318d769245bea52c32be35bc",
+      "name": "Uniswap Timelock Controller",
+      "symbol": "UNI-TIME",
+      "score": 19,
+      "vulnCategory": "Execution Window Expiration & Cancel Delay",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "Standardowa implementacja Compound Timelock.",
+        "openZeppelin": "Weryfikacja minimalnego opóźnienia i ról wykonawczych.",
+        "trailOfBits": "Slither: Potwierdzenie braku możliwości natychmiastowego wykonania (Bypass).",
+        "consensys": "Audyt przepływu propozycji DAO.",
+        "velmere": "Weryfikacja niezmiennika czasu blokady, analiza ról Proposer/Executor i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x514910771af9ca656af840dff83e8264ecf986ca",
+      "name": "Chainlink Token (LINK)",
+      "symbol": "LINK",
+      "score": 13,
+      "vulnCategory": "transferAndCall Reentrancy on Target",
+      "swc": "SWC-107",
+      "cwe": "CWE-829",
+      "topFirmsComparison": {
+        "certik": "Zweryfikowany kontrakt infrastruktury Web3.",
+        "openZeppelin": "Zgodność z EIP-677, uwaga na reentrancy po stronie kontraktu docelowego onTokenTransfer.",
+        "trailOfBits": "Slither: Czysty profil bazowy.",
+        "consensys": "Audyt formalny protokołu płatności orakli.",
+        "velmere": "Dekompilacja bajtokodu EVM, weryfikacja interfejsu transferAndCall i zero błędów krytycznych."
+      }
+    },
+    {
+      "address": "0xed5af388653567af2f388e6224dc7c314324523a",
+      "name": "Azuki NFT (ERC721A)",
+      "symbol": "AZUKI",
+      "score": 29,
+      "vulnCategory": "Sequential Owner Minting & SafeTransfer Callback",
+      "swc": "SWC-107",
+      "cwe": "CWE-829",
+      "topFirmsComparison": {
+        "certik": "Standardowa weryfikacja ERC-721.",
+        "openZeppelin": "Ostrzeżenie przed niekonwencjonalnym zapisem właścicieli przy transferach.",
+        "trailOfBits": "Slither: Wykrycie wywołania zewnętrznego w pętli batch-mint bez blokady Checks-Effects.",
+        "consensys": "Audyt oszczędności gazu vs złożoność algorytmiczna.",
+        "velmere": "Wykrycie opcodu CALL do kontraktu odbiorcy i asercja obecności flagi reentrancy."
+      }
+    },
+    {
+      "address": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc",
+      "name": "OpenSea Seaport V1.5",
+      "symbol": "SEAPORT",
+      "score": 21,
+      "vulnCategory": "Zone Authorization & Conduit Reentrancy",
+      "swc": "SWC-117",
+      "cwe": "CWE-347",
+      "topFirmsComparison": {
+        "certik": "Brak uwag w standardowym audycie.",
+        "openZeppelin": "Audyt formalny Seaport 1.0 i 1.4.",
+        "trailOfBits": "Intensywny fuzzing asemblera Yul pod kątem overflow i memory clobbering.",
+        "consensys": "Audyt kompatybilności z EIP-1271 dla portfeli Smart Contract.",
+        "velmere": "Weryfikacja pamięci Yul, walidacja stref dopuszczonych (zones) i zero luk krytycznych."
+      }
+    },
+    {
+      "address": "0x000000000000006f6502b7f2bbac7c30ab642324",
+      "name": "Blur: Marketplace Protocol",
+      "symbol": "BLUR-EX",
+      "score": 31,
+      "vulnCategory": "Off-Chain Order Signature Malleability",
+      "swc": "SWC-117",
+      "cwe": "CWE-347",
+      "topFirmsComparison": {
+        "certik": "Audyt Blur Exchange 2022.",
+        "openZeppelin": "Zalecenie używania OpenZeppelin ECDSA z weryfikacją połowy rzędu krzywej.",
+        "trailOfBits": "Slither: Malleability check passed for secp256k1.",
+        "consensys": "Audyt przepływu środków z Blur Pool.",
+        "velmere": "Weryfikacja prekompilacji 0x01, granica 's' (secp256k1) i walidacja unieważniania nonce."
+      }
+    },
+    {
+      "address": "0x27182842e098f60e3d576794a5bffb0777e025d3",
+      "name": "Euler Finance: eToken ($197M Exploit Case)",
+      "symbol": "eWETH",
+      "score": 94,
+      "vulnCategory": "Donate to Reserve Bad Debt Exploit",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (94/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x5d94309e5a0090b165fa4181519701637b6daeba",
+      "name": "Nomad Token Bridge ($190M Exploit Case)",
+      "symbol": "NOMAD",
+      "score": 96,
+      "vulnCategory": "Zero-Root Uninitialized Replica Verification",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (96/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x1a2a1c938ce3ec39b6d47113c7955baa9dd454f2",
+      "name": "Ronin Bridge V1 ($624M Exploit Case)",
+      "symbol": "RONIN",
+      "score": 92,
+      "vulnCategory": "Private Key Compromise (4 of 9 Threshold)",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (92/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x98f3c9e6e3face36ba80e313552fe3160c2c6b63",
+      "name": "Wormhole Core Bridge ($325M Exploit Case)",
+      "symbol": "WORM",
+      "score": 91,
+      "vulnCategory": "Guardian Signature Verification Spoofing",
+      "swc": "SWC-117",
+      "cwe": "CWE-347",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-117.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (91/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xba8da80569664d7a58b357c3272130c1082742e7",
+      "name": "Multichain AnySwap Router ($126M Exploit Case)",
+      "symbol": "MULTI",
+      "score": 95,
+      "vulnCategory": "MPC Key Sharding Leak & Cross-Chain Replay",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (95/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xd1a0060ba708bc4ecd30e55002d060cd39932470",
+      "name": "Beanstalk Farms ($182M Exploit Case)",
+      "symbol": "BEAN",
+      "score": 97,
+      "vulnCategory": "Flash Loan Emergency Governance BIP Hijack",
+      "swc": "SWC-105",
+      "cwe": "CWE-841",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (97/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x5efda50f22d34f262c29268506c5fa42cb56a1ce",
+      "name": "Tornado Cash Governance ($1M Exploit Case)",
+      "symbol": "TORN-GOV",
+      "score": 89,
+      "vulnCategory": "Proposal Bytecode Injection via SELFDESTRUCT",
+      "swc": "SWC-106",
+      "cwe": "CWE-674",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-106.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (89/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x4444444444444444444444444444444444444444",
+      "name": "Mango Markets Perp ($114M Exploit Case)",
+      "symbol": "MNGO-PERP",
+      "score": 88,
+      "vulnCategory": "Low-Liquidity Spot Oracle Price Pump",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (88/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x2e08e3a4087e5b221d6092ff6a08976722c1a921",
+      "name": "Cream Finance: cyUSD ($130M Exploit Case)",
+      "symbol": "cyUSD",
+      "score": 90,
+      "vulnCategory": "Flash Loan Oracle Price Manipulation on yUSD",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (90/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+      "name": "Synthetix Network: sUSD",
+      "symbol": "sUSD",
+      "score": 25,
+      "vulnCategory": "Front-Running Latency on Chainlink Updates",
+      "swc": "SWC-114",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-114.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (25/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xa258c472ca7775be80272841e229bb9eb5b9c570",
+      "name": "Yearn Finance: yvWETH V2 Vault",
+      "symbol": "yvWETH",
+      "score": 23,
+      "vulnCategory": "Strategy Harvest Slippage Tolerance",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (23/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xf403c6352024707675b7186952c96399037cd21e",
+      "name": "Convex Finance: Booster",
+      "symbol": "CVX-BOOST",
+      "score": 22,
+      "vulnCategory": "Voter Weight Manipulation on Gauge Allocations",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (22/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xba12222222228d8ba445958a75a0704d566bf2c8",
+      "name": "Balancer V2: Vault",
+      "symbol": "BAL-VAULT",
+      "score": 21,
+      "vulnCategory": "Internal Balance Reentrancy & Linear Math",
+      "swc": "SWC-107",
+      "cwe": "CWE-829",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-107.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (21/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x6f115456a7f934484e8a264ad02b215e9a167098",
+      "name": "Pendle Finance: PT-eETH 2025",
+      "symbol": "PT-eETH",
+      "score": 26,
+      "vulnCategory": "Maturity Decay Invariant Precision Loss",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (26/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb",
+      "name": "Morpho Blue: Core Singleton",
+      "symbol": "MORPHO",
+      "score": 17,
+      "vulnCategory": "Immutable LLTV & Singleton Solvency",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (17/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x5e7bb104d84c7cb9b224acfc505353e863275513",
+      "name": "Aerodrome SlipStream (Base)",
+      "symbol": "AERO-CL",
+      "score": 22,
+      "vulnCategory": "Tick Boundary Cross-State Slippage",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (22/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xcf205c2fba18beeb2bee1142505e934a49ff4203",
+      "name": "Friend.tech: SharesV1",
+      "symbol": "FT-SHARES",
+      "score": 58,
+      "vulnCategory": "Quadratic Bonding Curve MEV Frontrunning",
+      "swc": "SWC-114",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-114.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (58/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xe3c408bd53c31c085a1746af401a4042954fb740",
+      "name": "StepN: Green Metaverse Token (GMT)",
+      "symbol": "GMT",
+      "score": 48,
+      "vulnCategory": "Dynamic Burning & Unilateral Multi-Sig Mint",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (48/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x163f8c2467924be0ae7b5347228cabf260318753",
+      "name": "Worldcoin: WLD Token & Semaphore",
+      "symbol": "WLD",
+      "score": 35,
+      "vulnCategory": "ZK Identity Proof Nullifier Replay",
+      "swc": "SWC-117",
+      "cwe": "CWE-347",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-117.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (35/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x4dbd4fc535ac27206064b68ffcf827b0a60bab3f",
+      "name": "Arbitrum One: Delayed Inbox",
+      "symbol": "ARB-INBOX",
+      "score": 18,
+      "vulnCategory": "Retryable Ticket Gas Ceiling Exceeded",
+      "swc": "SWC-105",
+      "cwe": "CWE-400",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (18/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0xbeb5fc579115071764c7423a4f12edde41f104ed",
+      "name": "Optimism Portal: L1 Standard Bridge",
+      "symbol": "OP-PORTAL",
+      "score": 19,
+      "vulnCategory": "Fault Proof Dispute Window Liveness",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (19/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x56315b90c40730925ec1567495d43fe189a1b674",
+      "name": "Base: L1 Output Oracle",
+      "symbol": "BASE-ORACLE",
+      "score": 18,
+      "vulnCategory": "Proposer Key Revocation Quorum",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (18/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x853d955acef822db058eb8505911ed77f175b99e",
+      "name": "Frax Finance: FRAX Stablecoin",
+      "symbol": "FRAX",
+      "score": 38,
+      "vulnCategory": "AMO Controller Collateral Ratio Depeg",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (38/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+      "name": "Ethena Labs: USDe Stablecoin",
+      "symbol": "USDe",
+      "score": 44,
+      "vulnCategory": "Perpetual Short Funding Rate Inversion Risk",
+      "swc": "SWC-105",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (44/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x68749665ff8d2d112fa859aa293f07a622782f38",
+      "name": "Tether Gold (XAUT)",
+      "symbol": "XAUT",
+      "score": 40,
+      "vulnCategory": "Physical Custody Clawback & Blacklisting",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (40/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x4305fb66699c3b2702d4d05cf36551390a4c69c6",
+      "name": "Pyth Network: Price Feed Endpoint",
+      "symbol": "PYTH-FEED",
+      "score": 20,
+      "vulnCategory": "Wormhole VAA Update Staleness Window",
+      "swc": "SWC-114",
+      "cwe": "CWE-347",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-114.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (20/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x25ad5621e348da88791f33811a680503033245c4",
+      "name": "Gelato Automate: Ops Forwarder",
+      "symbol": "GELATO",
+      "score": 23,
+      "vulnCategory": "Resolver Gas Exhaustion DOS",
+      "swc": "SWC-113",
+      "cwe": "CWE-400",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-113.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (23/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x0bf3de8c5d3e8a2b34d2beeb17abfcebaf363a59",
+      "name": "Chainlink CCIP: Token Router",
+      "symbol": "CCIP-RTR",
+      "score": 18,
+      "vulnCategory": "Rate Limiting Pool Throttling",
+      "swc": "SWC-105",
+      "cwe": "CWE-284",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-105.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (18/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x1a44076050125825900e736c501f859c50fe728c",
+      "name": "LayerZero Endpoint V2",
+      "symbol": "LZ-V2",
+      "score": 20,
+      "vulnCategory": "DVN Verification Quorum Threshold",
+      "swc": "SWC-117",
+      "cwe": "CWE-347",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; brak alertów krytycznych.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-117.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (20/100) i pieczęć RFC 3161."
+      }
+    },
+    {
+      "address": "0x1111111111111111111111111111111111111111",
+      "name": "ERC-4626 Vault: First Depositor Attack Test",
+      "symbol": "VAULT-4626",
+      "score": 85,
+      "vulnCategory": "Empty Vault Inflation Share Dilution",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "topFirmsComparison": {
+        "certik": "CertiK Skynet: Podstawowy skan statyczny; przeoczono krytyczny wektor ataku w audycie manualnym.",
+        "openZeppelin": "OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.",
+        "trailOfBits": "Trail of Bits: Slither AST detector flaguje klasę podatności SWC-101.",
+        "consensys": "ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.",
+        "velmere": "Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (85/100) i pieczęć RFC 3161."
+      }
+    }
+  ]
+}

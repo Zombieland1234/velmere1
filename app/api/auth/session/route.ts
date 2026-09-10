@@ -110,7 +110,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const previewAuthenticated = Boolean(account) && !productionLike() && account?.provider === "preview";
+  const previewAuthenticated = Boolean(account) && !productionLike() && (account?.provider === "preview" || account?.provider === "google_preview");
   const authenticated = previewAuthenticated || Boolean(account && supabaseAuthenticated && bindingState === "ready");
   return NextResponse.json({
     ok: true,

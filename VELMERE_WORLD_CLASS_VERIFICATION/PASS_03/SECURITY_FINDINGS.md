@@ -1,0 +1,3 @@
+# PASS_03 SECURITY FINDINGS
+
+Verified finding `VLM-SEC-PROXY-UNINITIALIZED-01` with severity `CRITICAL`.

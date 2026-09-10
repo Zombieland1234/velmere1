@@ -1,0 +1,25 @@
+{
+  "id": "GSC-010",
+  "name": "oracle-manipulation",
+  "description": "Lending or liquidation contract deriving price directly from spot DEX reserves without TWAP or Chainlink feed.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+  "expectedFindings": [
+    "SPOT_RESERVE_ORACLE_DEPENDENCY",
+    "FLASH_LOAN_PRICE_SKEW_VULNERABILITY"
+  ],
+  "expectedNonFindings": [
+    "DECENTRALIZED_TWAP_ORACLE"
+  ],
+  "expectedEvidenceStates": {
+    "oracleIntegrationAudit": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 80,
+    "maxRisk": 100
+  }
+}

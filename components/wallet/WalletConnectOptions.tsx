@@ -3,7 +3,7 @@
 import Image from "next/image";
 import {
   useEffect,
-  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   ExternalLink,
   QrCode,
+  Search,
   ShieldCheck,
   WalletCards,
   X,
@@ -37,6 +38,7 @@ const copy = {
     hardware: "Hardware wallet",
     other: "Other wallets",
     otherTitle: "Choose another wallet",
+    otherSubtitle: "Choose another wallet (15+ supported)",
     otherBody:
       "Choose the wallet you already use. Available browser wallets connect here; mobile options open their trusted app or website.",
     notInstalled: "Install / open",
@@ -56,6 +58,12 @@ const copy = {
     noSignature: "No signature",
     noTransaction: "No transaction",
     noApproval: "No token permission",
+    searchPlaceholder: "Search wallets...",
+    categoryAll: "All",
+    categoryDetected: "Detected",
+    categoryExtension: "Browser",
+    categoryMobile: "Mobile / QR",
+    categoryHardware: "Hardware",
   },
   pl: {
     current: "Aktualny portfel",
@@ -69,6 +77,7 @@ const copy = {
     hardware: "Portfel sprzętowy",
     other: "Inne portfele",
     otherTitle: "Wybierz inny portfel",
+    otherSubtitle: "Wybierz inny portfel (15+ portfeli)",
     otherBody:
       "Wybierz portfel, którego już używasz. Dostępne portfele przeglądarkowe połączą się tutaj, a opcje mobilne otworzą zaufaną aplikację lub stronę.",
     notInstalled: "Zainstaluj / otwórz",
@@ -88,6 +97,12 @@ const copy = {
     noSignature: "Bez podpisu",
     noTransaction: "Bez transakcji",
     noApproval: "Bez uprawnień do tokenów",
+    searchPlaceholder: "Szukaj portfela...",
+    categoryAll: "Wszystkie",
+    categoryDetected: "Wykryte",
+    categoryExtension: "Przeglądarka",
+    categoryMobile: "Mobilne / QR",
+    categoryHardware: "Sprzętowe",
   },
   de: {
     current: "Aktuelles Wallet",
@@ -102,6 +117,7 @@ const copy = {
     hardware: "Hardware-Wallet",
     other: "Weitere Wallets",
     otherTitle: "Weiteres Wallet wählen",
+    otherSubtitle: "Weiteres Wallet wählen (15+ Wallets)",
     otherBody:
       "Wähle das Wallet, das du bereits nutzt. Verfügbare Browser-Wallets verbinden sich hier; mobile Optionen öffnen ihre vertrauenswürdige App oder Website.",
     notInstalled: "Installieren / öffnen",
@@ -121,6 +137,12 @@ const copy = {
     noSignature: "Keine Signatur",
     noTransaction: "Keine Transaktion",
     noApproval: "Keine Token-Berechtigung",
+    searchPlaceholder: "Wallet suchen...",
+    categoryAll: "Alle",
+    categoryDetected: "Erkannt",
+    categoryExtension: "Browser",
+    categoryMobile: "Mobil / QR",
+    categoryHardware: "Hardware",
   },
 } as const;
 
@@ -136,6 +158,7 @@ type WalletOption = {
   label: string;
   icon: string;
   description: string;
+  category?: "extension" | "mobile" | "hardware" | "other";
   action: () => Promise<void> | void;
   fallbackHref?: string;
   available?: boolean;
@@ -159,27 +182,47 @@ function WalletMark({ icon }: { icon: string }) {
   }
   if (icon === "walletconnect") {
     return (
-      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
-        <path d="M9 21c8-8 22-8 30 0l-5 5c-5-5-15-5-20 0l-5-5Z" fill="#38bdf8" />
-        <path d="M16 28c4-4 12-4 16 0l-4 4c-2-2-6-2-8 0l-4-4Z" fill="#67e8f9" />
-      </svg>
+      <Image
+        src="/wallets/walletconnect.svg"
+        alt=""
+        width={28}
+        height={28}
+        className={`${common} object-contain`}
+        aria-hidden="true"
+      />
     );
   }
   if (icon === "coinbase") {
     return (
-      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
-        <circle cx="24" cy="24" r="18" fill="#2563eb" />
-        <rect x="17" y="17" width="14" height="14" rx="3" fill="white" />
-      </svg>
+      <Image
+        src="/wallets/coinbase.svg"
+        alt=""
+        width={28}
+        height={28}
+        className={`${common} object-contain`}
+        aria-hidden="true"
+      />
+    );
+  }
+  if (icon === "okx") {
+    return (
+      <Image
+        src="/wallets/okx.svg"
+        alt=""
+        width={28}
+        height={28}
+        className={`${common} object-contain`}
+        aria-hidden="true"
+      />
     );
   }
   if (icon === "rabby") {
     return (
       <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
-        <rect x="9" y="13" width="30" height="23" rx="9" fill="#94a3b8" />
-        <circle cx="18" cy="25" r="3" fill="#0f172a" />
-        <circle cx="30" cy="25" r="3" fill="#0f172a" />
-        <path d="M18 33c4 2 8 2 12 0" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
+        <rect x="6" y="8" width="36" height="32" rx="10" fill="#8B98A5" />
+        <circle cx="16" cy="22" r="3.5" fill="#0B0E14" />
+        <circle cx="32" cy="22" r="3.5" fill="#0B0E14" />
+        <path d="M16 30c3 3 13 3 16 0" stroke="#0B0E14" strokeWidth="2.5" strokeLinecap="round" fill="none" />
       </svg>
     );
   }
@@ -188,6 +231,31 @@ function WalletMark({ icon }: { icon: string }) {
       <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
         <path d="M24 6l15 6v10c0 10-6 16-15 20C15 38 9 32 9 22V12l15-6Z" fill="#38bdf8" />
         <path d="M24 12v23c6-3 9-7 9-13v-6l-9-4Z" fill="#0ea5e9" />
+      </svg>
+    );
+  }
+  if (icon === "rainbow") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <path d="M8 36c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#ff4136" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M12 36c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="#ffdc00" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M16 36c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#0074d9" strokeWidth="4" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
+  if (icon === "bitget") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#00f0ff" />
+        <path d="M14 24l7 7 13-14" stroke="#000" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    );
+  }
+  if (icon === "zerion") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#2962ff" />
+        <path d="M14 16h20L14 32h20" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       </svg>
     );
   }
@@ -206,8 +274,85 @@ function WalletMark({ icon }: { icon: string }) {
   }
   if (icon === "ledger") {
     return (
+      <Image
+        src="/wallets/ledger.svg"
+        alt=""
+        width={28}
+        height={28}
+        className={`${common} object-contain`}
+        aria-hidden="true"
+      />
+    );
+  }
+  if (icon === "trezor") {
+    return (
       <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
-        <path d="M10 10h11v5h-6v6h-5V10Zm17 0h11v11h-5v-6h-6v-5ZM10 27h5v6h6v5H10V27Zm23 0h5v11H27v-5h6v-6Z" fill="#e5e7eb" />
+        <rect x="14" y="10" width="20" height="28" rx="5" fill="#0a84ff" />
+        <circle cx="24" cy="20" r="4" fill="#fff" />
+        <rect x="22" y="24" width="4" height="8" rx="2" fill="#fff" />
+      </svg>
+    );
+  }
+  if (icon === "exodus") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#1b1c31" />
+        <path d="M15 14l9 9-9 9m18-18l-9 9 9 9" stroke="#9050e9" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    );
+  }
+  if (icon === "brave") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#fb542b" />
+        <circle cx="24" cy="24" r="10" fill="#fff" />
+        <circle cx="24" cy="24" r="6" fill="#fb542b" />
+      </svg>
+    );
+  }
+  if (icon === "safe") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#12ff80" />
+        <path d="M18 20v-4a6 6 0 0 1 12 0v4m-14 0h16v16H16z" stroke="#000" strokeWidth="3" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
+  if (icon === "uniswap") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#ff007a" />
+        <path d="M26 12c-2 4-8 8-10 12-1 2-1 5 1 7 2 2 6 2 8-1 2-3 2-6 4-9 1-2 3-5 5-7-3 0-6-1-8-2z" fill="#fff" />
+        <circle cx="34" cy="20" r="3" fill="#fff" />
+      </svg>
+    );
+  }
+  if (icon === "1inch") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#1b2839" />
+        <path d="M14 34l8-20 4 8 8-4-6 16z" fill="#1e88e5" />
+        <path d="M22 14l4 8-8 12z" fill="#d32f2f" />
+      </svg>
+    );
+  }
+  if (icon === "backpack") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#e33e38" />
+        <path d="M16 18c0-4 4-8 8-8s8 4 8 8v16c0 2-2 4-4 4H20c-2 0-4-2-4-4V18z" fill="#fff" opacity="0.9" />
+        <rect x="20" y="24" width="8" height="8" rx="2" fill="#e33e38" />
+      </svg>
+    );
+  }
+  if (icon === "kraken") {
+    return (
+      <svg viewBox="0 0 48 48" className={common} aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#5841d8" />
+        <circle cx="20" cy="20" r="3" fill="#fff" />
+        <circle cx="28" cy="20" r="3" fill="#fff" />
+        <path d="M16 26c0 6 4 10 8 10s8-4 8-10" stroke="#fff" strokeWidth="3" strokeLinecap="round" fill="none" />
+        <path d="M20 32v6m8-6v6" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
       </svg>
     );
   }
@@ -269,7 +414,7 @@ function WalletRow({
     <button
       type="button"
       onClick={runAction}
-      className={`velmere-interaction-pulse group grid min-h-[5rem] w-full grid-cols-[3rem_minmax(0,1fr)] items-center gap-3 rounded-3xl border p-3 text-left transition hover:-translate-y-0.5 ${
+      className={`velmere-interaction-pulse group grid min-h-[4.5rem] w-full grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 ${
         option.featured
           ? "border-velmere-gold/[0.30] bg-[linear-gradient(135deg,rgba(200,169,106,0.18),rgba(255,255,255,0.045))] hover:border-velmere-gold/[0.45]"
           : "border-white/[0.10] bg-white/[0.034] hover:border-white/[0.20] hover:bg-white/[0.055]"
@@ -281,14 +426,22 @@ function WalletRow({
         featured={option.featured}
       />
       <span className="min-w-0 flex-1">
-        <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[0.92rem] font-semibold leading-5 text-white/[0.86] sm:text-[0.98rem]">
-          {option.label}
+        <span className="flex items-center gap-2">
+          <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[0.92rem] font-semibold leading-5 text-white/[0.90] sm:text-[0.98rem]">
+            {option.label}
+          </span>
+          {option.available ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-emerald-400 border border-emerald-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Online
+            </span>
+          ) : null}
         </span>
-        <span className="mt-1 block font-mono text-[9px] uppercase leading-4 tracking-[0.14em] text-white/[0.38]">
+        <span className="mt-1 block font-mono text-[9px] uppercase leading-4 tracking-[0.14em] text-white/[0.42]">
           {option.description}
         </span>
       </span>
-      <span className="velmere-command-pill col-span-2 ml-[3.75rem] w-fit shrink-0 px-2.5 py-1 text-[8px] text-white/[0.42] group-hover:text-velmere-gold">
+      <span className="velmere-command-pill w-fit shrink-0 px-2.5 py-1 text-[8px] text-white/[0.42] group-hover:text-velmere-gold">
         {option.available ? (
           <CheckCircle2 className="h-3 w-3 text-velmere-gold" />
         ) : (
@@ -299,7 +452,6 @@ function WalletRow({
     </button>
   );
 }
-
 
 function WalletConsentNotice({ compact = false }: { compact?: boolean }) {
   return (
@@ -331,7 +483,7 @@ function OtherWalletPanel({
   previewLabel,
   side = "right",
   affiliateSurfaceId,
-  panelStyle,
+  t,
 }: {
   open: boolean;
   onClose: () => void;
@@ -345,80 +497,157 @@ function OtherWalletPanel({
   side?: "left" | "right" | "inline";
   affiliateSurfaceId?: string;
   panelStyle?: CSSProperties;
+  t: (typeof copy)[keyof typeof copy];
 }) {
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "detected" | "extension" | "mobile" | "hardware">("all");
+
+  const filtered = useMemo(() => {
+    return options.filter((opt) => {
+      const matchSearch =
+        opt.label.toLowerCase().includes(search.toLowerCase()) ||
+        opt.description.toLowerCase().includes(search.toLowerCase());
+      if (!matchSearch) return false;
+      if (activeTab === "detected") return opt.available;
+      if (activeTab === "extension") return opt.category === "extension";
+      if (activeTab === "mobile") return opt.category === "mobile";
+      if (activeTab === "hardware") return opt.category === "hardware";
+      return true;
+    });
+  }, [options, search, activeTab]);
+
   if (!open) return null;
+
   return (
     <BodyPortal>
-      <button
-        type="button"
-        aria-label={closeLabel}
-        onClick={onClose}
-        className="wallet-sidecar-backdrop fixed inset-0"
+      <div
+        className="wallet-sidecar-backdrop fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200"
         data-velmere-dropdown-affiliate={affiliateSurfaceId}
-      />
-      <section
-        id="velmere-other-wallets-panel"
-        role="dialog"
-        aria-modal="false"
-        aria-label={title}
-        className="wallet-sidecar-panel wallet-sidecar-panel-pass2201 wallet-sidecar-panel-pass2204 fixed flex flex-col overflow-hidden rounded-[1.45rem] border border-cyan-200/[0.16] bg-[#070b10] text-white shadow-[0_28px_110px_rgba(0,0,0,0.78)]"
-        style={panelStyle}
-        data-surface="wallet-other-list-sidecar"
-        data-wallet-sidecar-panel="true"
-        data-pass2204-wallet-scroll="bounded-sidecar-scrollable"
-        data-wallet-other-side={side}
-        data-velmere-dropdown-affiliate={affiliateSurfaceId}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] p-4">
-          <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-velmere-gold">
-              {side === "left" ? "Wallet sidecar" : "Wallet directory"}
-            </p>
-            <h3 className="mt-2 font-serif text-2xl leading-none tracking-[-0.035em] text-white">
-              {title}
-            </h3>
-            <p className="mt-2 max-w-md text-xs leading-6 text-white/[0.52]">
-              {body}
-            </p>
-          </div>
-          <button
-            type="button"
-            onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onClose();
-            }}
-            onClick={onClose}
-            className="velmere-command-pill velmere-interaction-pulse grid h-10 w-10 shrink-0 place-items-center px-0 text-white/[0.50]"
-            aria-label={closeLabel}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div
-          className="wallet-sidecar-scroll wallet-sidecar-scroll-pass2204 min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 luxury-scrollbar"
-          data-modal-scroll-region="true"
-          data-wallet-scroll-contract="bounded-nonmodal-sidecar"
+        <section
+          id="velmere-other-wallets-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          className="wallet-sidecar-panel wallet-sidecar-panel-pass2201 wallet-sidecar-panel-pass2204 relative flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-[2rem] border border-white/[0.14] bg-[#0A0D12] text-white shadow-[0_32px_120px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-150"
+          data-surface="wallet-other-list-sidecar"
+          data-wallet-sidecar-panel="true"
+          data-pass2204-wallet-scroll="bounded-sidecar-scrollable"
+          data-wallet-other-side={side}
+          data-velmere-dropdown-affiliate={affiliateSurfaceId}
         >
-          <div className="grid gap-2.5">
-            {options.map((option) => (
-              <WalletRow
-                key={option.key}
-                option={option}
-                readyLabel={readyLabel}
-                previewLabel={previewLabel}
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] p-5">
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-velmere-gold">
+                Velmère Wallet Gateway
+              </p>
+              <h3 className="mt-1 font-serif text-2xl font-medium tracking-[-0.03em] text-white">
+                {title}
+              </h3>
+              <p className="mt-1 text-xs text-white/[0.55]">
+                {body}
+              </p>
+            </div>
+            <button
+              type="button"
+              onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onClose();
+              }}
+              onClick={onClose}
+              className="velmere-command-pill velmere-interaction-pulse grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.12] bg-white/[0.04] text-white/[0.60] hover:text-white"
+              aria-label={closeLabel}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Search & Categories */}
+          <div className="border-b border-white/[0.06] bg-black/20 p-4 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                className="w-full h-10 pl-10 pr-4 rounded-xl border border-white/[0.10] bg-white/[0.03] text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-velmere-gold/40 focus:bg-white/[0.06] transition"
               />
-            ))}
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40 hover:text-white"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-1.5 overflow-x-auto pb-1 text-[10px] font-mono uppercase tracking-wider">
+              {[
+                { id: "all", label: t.categoryAll },
+                { id: "detected", label: t.categoryDetected },
+                { id: "extension", label: t.categoryExtension },
+                { id: "mobile", label: t.categoryMobile },
+                { id: "hardware", label: t.categoryHardware },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  className={`px-3 py-1.5 rounded-lg border transition whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "border-velmere-gold/50 bg-velmere-gold/15 text-velmere-gold font-semibold"
+                      : "border-white/[0.08] bg-white/[0.02] text-white/50 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Wallet List */}
           <div
-            className="velmere-readout-card mt-3 rounded-3xl text-xs leading-6 text-white/[0.55]"
-            data-tone="gold"
+            className="wallet-sidecar-scroll wallet-sidecar-scroll-pass2204 min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 luxury-scrollbar"
+            data-modal-scroll-region="true"
+            data-wallet-scroll-contract="bounded-nonmodal-sidecar"
           >
-            <QrCode className="mb-2 h-4 w-4 text-velmere-gold" />
-            {hint}
+            {filtered.length > 0 ? (
+              <div className="grid gap-2.5">
+                {filtered.map((option) => (
+                  <WalletRow
+                    key={option.key}
+                    option={option}
+                    readyLabel={readyLabel}
+                    previewLabel={previewLabel}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-sm text-white/40">
+                Nie znaleziono portfela dla &ldquo;{search}&rdquo;. Wybierz WalletConnect dla 300+ aplikacji mobilnych.
+              </div>
+            )}
+
+            <div
+              className="velmere-readout-card mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-3 text-xs leading-5 text-white/[0.55]"
+              data-tone="gold"
+            >
+              <div className="flex items-start gap-2">
+                <QrCode className="mt-0.5 h-4 w-4 shrink-0 text-velmere-gold" />
+                <span>{hint}</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </BodyPortal>
   );
 }
@@ -434,7 +663,6 @@ export default function WalletConnectOptions({
   const wallet = useWalletConnect();
   const walletUi = useWalletUiStore();
   const [otherOpen, setOtherOpen] = useState(false);
-  const [sidecarStyle, setSidecarStyle] = useState<CSSProperties>();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const otherButtonRef = useRef<HTMLButtonElement | null>(null);
   const consentBoundary = buildPass634WalletConsentBoundary({
@@ -445,74 +673,55 @@ export default function WalletConnectOptions({
 
   useEffect(() => {
     if (!otherOpen) return undefined;
-    const closeFromPointer = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (rootRef.current?.contains(target)) return;
-      if (
-        target instanceof Element &&
-        target.closest('[data-wallet-sidecar-panel="true"]')
-      )
-        return;
-      setOtherOpen(false);
-    };
     const closeFromKeyboard = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       setOtherOpen(false);
       otherButtonRef.current?.focus({ preventScroll: true });
     };
-    document.addEventListener("pointerdown", closeFromPointer, true);
     document.addEventListener("keydown", closeFromKeyboard, true);
     return () => {
-      document.removeEventListener("pointerdown", closeFromPointer, true);
       document.removeEventListener("keydown", closeFromKeyboard, true);
     };
   }, [otherOpen]);
 
-  useLayoutEffect(() => {
-    if (!otherOpen) return undefined;
-    const updatePosition = () => {
-      const rect = rootRef.current?.getBoundingClientRect();
-      const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-      const viewportHeight =
-        window.visualViewport?.height ?? window.innerHeight;
-      const gutter = 12;
-      const width = Math.min(384, viewportWidth - gutter * 2);
-      const safeTop = Math.max(84, Math.min(rect?.top ?? 84, viewportHeight - 360));
-      const safeMaxHeight = Math.max(260, Math.min(560, viewportHeight - safeTop - 24));
-      if (!rect || viewportWidth < 980 || otherPanelSide === "inline") {
-        setSidecarStyle({
-          top: Math.max(72, Math.min(92, viewportHeight * 0.12)),
-          left: gutter,
-          width,
-          maxHeight: Math.max(260, viewportHeight - 112),
-        });
-        return;
-      }
-      const preferredLeft =
-        otherPanelSide === "left"
-          ? rect.left - width - gutter
-          : rect.right + gutter;
-      setSidecarStyle({
-        top: safeTop,
-        left: Math.max(
-          gutter,
-          Math.min(preferredLeft, viewportWidth - width - gutter),
-        ),
-        width,
-        maxHeight: safeMaxHeight,
-      });
+  // Comprehensive wallet detection
+  const detected = useMemo(() => {
+    if (typeof window === "undefined") {
+      return {
+        metamask: false,
+        phantom: false,
+        rabby: false,
+        coinbase: false,
+        trust: false,
+        rainbow: false,
+        okx: false,
+        bitget: false,
+        zerion: false,
+        brave: false,
+        safe: false,
+        backpack: false,
+        uniswap: false,
+      };
+    }
+    const win = window as unknown as Record<string, unknown>;
+    const eth = win.ethereum as Record<string, unknown> | undefined;
+    return {
+      metamask: Boolean(eth?.isMetaMask && !eth?.isRabby),
+      phantom: Boolean(win.phantom || (win.solana as { isPhantom?: boolean } | undefined)?.isPhantom),
+      rabby: Boolean(eth?.isRabby || win.rabby),
+      coinbase: Boolean(eth?.isCoinbaseWallet || win.coinbaseWalletExtension),
+      trust: Boolean(eth?.isTrust || eth?.isTrustWallet),
+      rainbow: Boolean(eth?.isRainbow),
+      okx: Boolean(win.okxwallet),
+      bitget: Boolean(win.bitkeep),
+      zerion: Boolean(eth?.isZerion),
+      brave: Boolean(eth?.isBraveWallet),
+      safe: Boolean(win.safe),
+      backpack: Boolean(win.backpack),
+      uniswap: Boolean(eth?.isUniswapWallet),
     };
-    updatePosition();
-    window.addEventListener("resize", updatePosition, { passive: true });
-    window.visualViewport?.addEventListener("resize", updatePosition, {
-      passive: true,
-    });
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.visualViewport?.removeEventListener("resize", updatePosition);
-    };
-  }, [otherOpen, otherPanelSide]);
+  }, []);
 
   const primaryOptions: WalletOption[] = [
     {
@@ -520,8 +729,9 @@ export default function WalletConnectOptions({
       label: "MetaMask",
       icon: "metamask",
       description: t.extension,
+      category: "extension",
       action: wallet.connectMetaMask,
-      available: wallet.detectedWallets.metamask,
+      available: wallet.detectedWallets.metamask || detected.metamask,
       featured: true,
     },
     {
@@ -529,8 +739,9 @@ export default function WalletConnectOptions({
       label: "Phantom",
       icon: "phantom",
       description: t.solanaPreview,
+      category: "extension",
       action: wallet.connectPhantom,
-      available: wallet.detectedWallets.phantom,
+      available: wallet.detectedWallets.phantom || detected.phantom,
       featured: true,
     },
   ];
@@ -541,67 +752,181 @@ export default function WalletConnectOptions({
       label: "WalletConnect",
       icon: "walletconnect",
       description: t.mobile,
+      category: "mobile",
       action: wallet.connectWalletConnect,
-      available: wallet.detectedWallets.walletconnect,
+      available: true,
       fallbackHref: "https://walletconnect.com/",
     },
     {
-      key: "browser",
-      label: t.browserWallet,
-      icon: "wallet",
-      description: t.injectedEvm,
+      key: "rabby",
+      label: "Rabby Wallet",
+      icon: "rabby",
+      description: "DeFi & EVM Security First",
+      category: "extension",
       action: wallet.connectMetaMask,
-      available: wallet.detectedWallets.metamask,
+      available: detected.rabby,
+      fallbackHref: "https://rabby.io/",
     },
     {
       key: "coinbase",
       label: "Coinbase Wallet",
       icon: "coinbase",
-      description: t.mobile,
+      description: "Coinbase Smart Wallet & App",
+      category: "mobile",
       action: wallet.connectWalletConnect,
-      available: wallet.detectedWallets.walletconnect,
+      available: detected.coinbase,
       fallbackHref: "https://www.coinbase.com/wallet",
     },
     {
-      key: "rabby",
-      label: "Rabby",
-      icon: "rabby",
-      description: t.extension,
+      key: "okx",
+      label: "OKX Wallet",
+      icon: "okx",
+      description: "Multi-Chain Web3 & DeFi",
+      category: "extension",
       action: wallet.connectMetaMask,
-      available: wallet.detectedWallets.metamask,
-      fallbackHref: "https://rabby.io/",
+      available: detected.okx,
+      fallbackHref: "https://www.okx.com/web3",
     },
     {
       key: "trust",
       label: "Trust Wallet",
       icon: "trust",
-      description: t.mobile,
+      description: "Binance Official Web3",
+      category: "mobile",
       action: wallet.connectWalletConnect,
-      available: wallet.detectedWallets.walletconnect,
+      available: detected.trust,
       fallbackHref: "https://trustwallet.com/",
     },
     {
       key: "rainbow",
       label: "Rainbow",
-      icon: "wallet",
-      description: t.mobile,
+      icon: "rainbow",
+      description: "Fun & Simple Ethereum L2s",
+      category: "mobile",
       action: wallet.connectWalletConnect,
-      available: wallet.detectedWallets.walletconnect,
+      available: detected.rainbow,
       fallbackHref: "https://rainbow.me/",
+    },
+    {
+      key: "bitget",
+      label: "Bitget Wallet",
+      icon: "bitget",
+      description: "Global Multi-Chain Asset Hub",
+      category: "mobile",
+      action: wallet.connectMetaMask,
+      available: detected.bitget,
+      fallbackHref: "https://web3.bitget.com/",
+    },
+    {
+      key: "zerion",
+      label: "Zerion Wallet",
+      icon: "zerion",
+      description: "Smart Portfolio & Multichain",
+      category: "extension",
+      action: wallet.connectMetaMask,
+      available: detected.zerion,
+      fallbackHref: "https://zerion.io/",
     },
     {
       key: "ledger",
       label: "Ledger Live",
       icon: "ledger",
       description: t.hardware,
+      category: "hardware",
       action: wallet.connectWalletConnect,
-      available: wallet.detectedWallets.walletconnect,
+      available: true,
       fallbackHref: "https://www.ledger.com/ledger-live",
+    },
+    {
+      key: "trezor",
+      label: "Trezor Suite",
+      icon: "trezor",
+      description: t.hardware,
+      category: "hardware",
+      action: wallet.connectWalletConnect,
+      available: true,
+      fallbackHref: "https://trezor.io/trezor-suite",
+    },
+    {
+      key: "exodus",
+      label: "Exodus",
+      icon: "exodus",
+      description: "Multi-Asset Desktop & Mobile",
+      category: "mobile",
+      action: wallet.connectWalletConnect,
+      available: false,
+      fallbackHref: "https://www.exodus.com/",
+    },
+    {
+      key: "brave",
+      label: "Brave Wallet",
+      icon: "brave",
+      description: "Privacy Browser Native",
+      category: "extension",
+      action: wallet.connectMetaMask,
+      available: detected.brave,
+      fallbackHref: "https://brave.com/wallet/",
+    },
+    {
+      key: "safe",
+      label: "Safe (Gnosis)",
+      icon: "safe",
+      description: "Institutional Multi-Sig",
+      category: "extension",
+      action: wallet.connectWalletConnect,
+      available: detected.safe,
+      fallbackHref: "https://safe.global/",
+    },
+    {
+      key: "uniswap",
+      label: "Uniswap Wallet",
+      icon: "uniswap",
+      description: "DeFi Native & Self-Custody",
+      category: "mobile",
+      action: wallet.connectWalletConnect,
+      available: detected.uniswap,
+      fallbackHref: "https://wallet.uniswap.org/",
+    },
+    {
+      key: "1inch",
+      label: "1inch Wallet",
+      icon: "1inch",
+      description: "DEX Aggregator & Security",
+      category: "mobile",
+      action: wallet.connectWalletConnect,
+      available: false,
+      fallbackHref: "https://1inch.io/wallet/",
+    },
+    {
+      key: "backpack",
+      label: "Backpack",
+      icon: "backpack",
+      description: "Next-Gen xNFT & Multichain",
+      category: "extension",
+      action: wallet.connectMetaMask,
+      available: detected.backpack,
+      fallbackHref: "https://backpack.app/",
+    },
+    {
+      key: "kraken",
+      label: "Kraken Wallet",
+      icon: "kraken",
+      description: "Institutional Self-Custodial",
+      category: "mobile",
+      action: wallet.connectWalletConnect,
+      available: false,
+      fallbackHref: "https://www.kraken.com/wallet",
     },
   ];
 
   return (
-    <div ref={rootRef} className="wallet-connect-options-root wallet-connect-options-root-pass2201 wallet-connect-options-root-pass2276 relative min-h-[20rem] space-y-3" data-pass1986-wallet-options-root="safe-nested-other-panel" data-pass2002-wallet-options-root="outside-click-escape-other-wallets" data-pass2276-wallet-selector="metamask-phantom-other-visible-when-disconnected">
+    <div
+      ref={rootRef}
+      className="wallet-connect-options-root wallet-connect-options-root-pass2201 wallet-connect-options-root-pass2276 relative min-h-[16rem] space-y-3"
+      data-pass1986-wallet-options-root="safe-nested-other-panel"
+      data-pass2002-wallet-options-root="outside-click-escape-other-wallets"
+      data-pass2276-wallet-selector="metamask-phantom-other-visible-when-disconnected"
+    >
       {showStatus ? (
         <div className="velmere-command-shell overflow-hidden rounded-[1.65rem] border-velmere-gold/[0.10]">
           <div className="border-b border-white/[0.10] p-4">
@@ -661,25 +986,25 @@ export default function WalletConnectOptions({
             data-pass1986-other-wallet-toggle="true"
             data-pass1983-other-wallet-toggle="true"
             data-pass1983-other-wallet-side={otherPanelSide}
-            className={`velmere-command-shell velmere-interaction-pulse group flex min-h-14 w-full items-center justify-between gap-3 rounded-3xl px-4 text-left transition hover:border-velmere-gold/[0.30] hover:bg-white/[0.045] ${compact ? "" : "mt-1"}`}
+            className={`velmere-command-shell velmere-interaction-pulse group flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-white/[0.10] bg-white/[0.025] px-4 text-left transition hover:border-velmere-gold/[0.40] hover:bg-white/[0.05] ${compact ? "" : "mt-2"}`}
             aria-label={t.openOther}
             aria-expanded={otherOpen}
             aria-controls="velmere-other-wallets-panel"
           >
             <span className="inline-flex min-w-0 items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-velmere-gold/[0.20] bg-velmere-gold/[0.08] text-velmere-gold">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-velmere-gold/[0.25] bg-velmere-gold/[0.10] text-velmere-gold">
                 <WalletCards className="h-4 w-4" />
               </span>
               <span>
-                <span className="block font-mono text-[10px] font-black uppercase tracking-[0.18em] text-white/[0.62] group-hover:text-white">
+                <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white/[0.80] group-hover:text-white">
                   {t.other}
                 </span>
-                <span className="mt-1 block text-xs text-white/[0.34]">
-                  {t.otherTitle}
+                <span className="mt-0.5 block text-xs text-white/[0.40]">
+                  {t.otherSubtitle}
                 </span>
               </span>
             </span>
-            <ExternalLink className="h-4 w-4 shrink-0 text-white/[0.34] group-hover:text-velmere-gold" />
+            <ExternalLink className="h-4 w-4 shrink-0 text-white/[0.35] group-hover:text-velmere-gold" />
           </button>
           <OtherWalletPanel
             open={otherOpen}
@@ -688,12 +1013,12 @@ export default function WalletConnectOptions({
             body={t.otherBody}
             hint={t.installHint}
             closeLabel={t.closeWalletPanel}
-            options={otherOptions}
+            options={[...primaryOptions, ...otherOptions]}
             readyLabel={t.statusReady}
             previewLabel={t.statusPreview}
             side={otherPanelSide}
             affiliateSurfaceId={affiliateSurfaceId}
-            panelStyle={sidecarStyle}
+            t={t}
           />
         </>
       ) : (

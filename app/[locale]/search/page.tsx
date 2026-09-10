@@ -19,7 +19,7 @@ export default async function VelmereSearchPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ query?: string; q?: string }>;
+  searchParams?: Promise<{ query?: string; q?: string; asset?: string }>;
 }) {
   const { locale } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
@@ -29,7 +29,7 @@ export default async function VelmereSearchPage({
   return (
     <VelmereIntelligenceSearchClient
       locale={locale}
-      initialQuery={resolvedSearchParams.query || resolvedSearchParams.q || ""}
+      initialQuery={resolvedSearchParams.query || resolvedSearchParams.q || resolvedSearchParams.asset || ""}
     />
   );
 }

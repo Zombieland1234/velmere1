@@ -1,0 +1,19 @@
+{
+  "targetContract": "Balancer V2 Monolithic Vault",
+  "symbol": "BAL-VAULT",
+  "address": "0xba12222222228d8ba445958a75a0704d566bf2c8",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 13,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Linear Pool Composable Stable Pool Rate Provider Read-Only Reentrancy",
+    "category": "Multi-Asset Monolithic Vault & Flash Loans",
+    "swcId": "SWC-107",
+    "cweId": "CWE-841",
+    "rootCause": "Rate provider queries scaling factors from child pools during active join/exit swaps before balance reconciliation.",
+    "attackVector": "Flash loan executes asymmetric swap, reentering through custom rate provider callback to borrow at warped exchange rates."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/Vault.sol\n+++ b/contracts/Vault.sol\n@@ -150,3 +150,4 @@\n+ require(!_isUnlocked(), 'Cannot query pool rate during unlocked vault context');",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

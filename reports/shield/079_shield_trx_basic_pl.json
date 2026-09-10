@@ -1,0 +1,286 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_trx_basic_079",
+  "caseRef": "CASE-VLM-TRX-BASIC",
+  "target": {
+    "contractName": "TRON Protocol Virtual Machine",
+    "contractAddress": "native:tron-java-tron",
+    "network": "TRON Mainnet",
+    "chainId": "728126428",
+    "tokenSymbol": "TRX",
+    "proxyPattern": "unverifiable"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:16.727Z",
+  "verdict": {
+    "riskScore": 72,
+    "riskLabel": "PODWYŻSZONE RYZYKO (BRAK DOWODÓW)",
+    "confidenceScore": 60,
+    "auditQualityScore": 64,
+    "summary": "Kontrakt nie posiada zweryfikowanego kodu maszynowego on-chain. Zgodnie ze standardem Velmère brak dowodów skutkuje podwyższoną oceną ryzyka (72/100).",
+    "evidenceCoverage": 20,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
+    "stopSellReason": "INSUFFICIENT_EVIDENCE: Coverage below minimum threshold for institutional sale",
+    "formalProofCoveragePct": 0,
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd protokołu i kontekst sieci L1",
+      "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja natywnego łańcucha bloków i architektury węzłów",
+        "Ewaluacja modelu emisji i niezmienności reguł monetarnych",
+        "Ocena stopnia decentralizacji sieci i odporności na cenzurę"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Protokół / Aktywo",
+            "value": "TRON Protocol Virtual Machine"
+          },
+          {
+            "label": "Typ architektury",
+            "value": "Natywna warstwa bazowa (Layer-1 · Brak kontraktu smart contract)"
+          },
+          {
+            "label": "Identyfikator sieci",
+            "value": "native_chain:trx"
+          },
+          {
+            "label": "Symbol natywny",
+            "value": "TRX"
+          },
+          {
+            "label": "Zarządzanie regułami",
+            "value": "Rozproszony konsensus węzłów i walidatorów / górników"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+      "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja referencyjnego kodu źródłowego klienta węzła",
+        "Walidacja bibliotek kryptograficznych i formatu transakcji",
+        "Analiza odporności na nieprawidłowe bloki i rozwidlenia łańcucha"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Weryfikacja protokołu TRON Protocol Virtual Machine opiera się na specyfikacji konsensusu warstwy pierwszej. Analiza bytecode EVM i dekompilacja kontraktów mają status NOT_APPLICABLE dla natywnych monet."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+      "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie parametrów stabilności sieci bazowej",
+        "Ocena odporności na błędy konsensusu i desynchronizację",
+        "Zgodność z przyjętymi standardami bezpieczeństwa sieci rozproszonych"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+      "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analiza zarządzania konsensem rozproszonym i mechanizmów upgrade protokołu",
+        "Ewaluacja rozkładu walidatorów / górników oraz progu finalności sieci",
+        "Historia koordynacji hard-forków oraz audyt różnorodności klientów węzłów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+      "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Głębokość globalnych ksiąg zleceń na giełdach spot i rezerwy powiernicze",
+        "Prędkość podaży w obiegu on-chain oraz rozkład aktywnych adresów",
+        "Zmienność opłat transakcyjnych sieci i zachowanie kolejki mempool",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+      "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Modelowanie reorganizacji konsensusu i ataku większości hashrate/stake",
+        "Analiza odporności sieci P2P na partycjonowanie, eclipse attack i sybil",
+        "Wektory cenzury transakcji, manipulacji mempool i ekstrakcji MEV",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+      "subtitle": "Weryfikacja kompatybilności binarnej i determinizmu przejść stanów węzłów",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Weryfikacja powtarzalności kompilacji klienta referencyjnego węzła",
+        "Analiza kompatybilności binarnej serializacji konsensusu i protokołu sieciowego",
+        "Deterministyczna weryfikacja granic wykonania silnika przejść stanów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+      "subtitle": "Śledzenie zmian w regułach konsensusu i analiza kompatybilności wstecznej",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia aktywacji propozycji uaktualnień protokołu",
+        "Weryfikacja kompatybilności wstecznej reguł walidacji bloków",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie był uruchamiany dla tego łańcucha)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+      "subtitle": "Atestacja niezależnego audytora systemów rozproszonych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Przegląd analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji analityka",
+        "Wyraźna granica przeglądu manualnego: brak gwarancji braku błędów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:879ff3945f82eb4d4eb1a40f1cafc96598ba35368f1ca69c18f846eb289df060",
+  "applicationSurface": "shield",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "728126428",
+      "contractAddress": "native:tron-java-tron",
+      "network": "TRON Mainnet",
+      "proxyType": "N/A (Decentralized Layer 1 Protocol)"
+    },
+    "consensusSpec": {
+      "consensusArchitecture": "Unverified Source",
+      "nodeClientVersion": "TRON Protocol Virtual Machine",
+      "networkTopology": "Global P2P Gossip Validator Network",
+      "cryptographicPrimitives": "secp256k1 / BLS",
+      "nakamotoCoefficient": 15,
+      "activeValidatorCount": 2000
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:529e8d412eea7d16aa8fb205297e1f0e3d0a79ee18dc204ac9efbab3f40b3e52",
+      "reportDigestSha256": "sha256:529e8d412eea7d16aa8fb205297e1f0e3d0a79ee18dc204ac9efbab3f40b3e52",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:9cf242dc3a86eb9bad177889092a0bf92b1894c574afea72369f75005a09e561",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "10c8a4b37ef453b9022f45e14e1ebe6dd721463c8ab67eabe4dce412370a86c74beaadfea534cc95aedc5a584ed333a9248f2b85faa47cd68f19aea9c5262200",
+    "signedDigest": "dd43a7f5562a571d777eefdf9c93501614cc473f87038a678ac5bcc5b3200422",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "dd43a7f5562a571d777eefdf9c93501614cc473f87038a678ac5bcc5b3200422",
+      "serialNumber": "9cc885d5f2a73be094bf57c19e2f3974",
+      "genTime": "2026-09-10T12:36:16.727Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "b5d68aa1c541f3e8de816c59cf97fc01b9e7b3fa58749cbf649a7d97f206a86d"
+    },
+    "provenanceProof": "sha256:9f4711ed8ac58302a493a0dc27d392955d0296b1ebf86d8d4503d4279fd8ee66"
+  },
+  "integrityProof": {
+    "pdfSha256": "4ead21ba4d7f18482e5796f2f7469ee0fa8e89c952ed92a1c487b0a0c338c45f",
+    "pdfByteLength": 89111,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:16.740Z"
+  }
+}

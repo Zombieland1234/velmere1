@@ -23,7 +23,7 @@ export function CustomerSafeStatusSurface({ surface, compact = false }: Customer
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/[0.44]">Velmère status</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/[0.44]">Status</p>
           <h3 className="mt-1 text-base font-semibold leading-tight text-white">{surface.headline}</h3>
         </div>
         <span className="rounded-full border border-white/[0.14] bg-black/[0.18] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-white/[0.68]">

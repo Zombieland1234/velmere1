@@ -70,7 +70,7 @@ export function detectPass2288AssetFamily(assetText: string): { family: Pass2288
   if (ETF.test(text)) return { family: "etf", label: text || "ETF", blockedClaims: BLOCKED_REAL_MARKET_CLAIMS };
   if (EQUITY.test(text)) return { family: "listed_equity", label: text || "listed equity", blockedClaims: BLOCKED_REAL_MARKET_CLAIMS };
   if (CONTRACT_TOKEN.test(text)) return { family: "contract_token", label: text || "contract token", blockedClaims: ["guaranteed safe", "guaranteed profit", "final verdict without sources"] };
-  return { family: "unknown", label: text || "unknown asset", blockedClaims: ["guaranteed safe", "guaranteed profit", "wallet connect proves payment"] };
+  return { family: "unknown", label: text || "unknown asset", blockedClaims: ["guaranteed safe", "guaranteed profit", "wallet connect proves payment", "autonomous model learning", "continual weight updates"] };
 }
 
 function hasVisibleSection(text: string, re: RegExp) {

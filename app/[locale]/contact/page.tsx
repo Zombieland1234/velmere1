@@ -9,8 +9,8 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
       title: "One clear route to the right help.",
       body: "Product questions, order support and account access belong in one calm place. Do not send passwords, private keys or payment secrets.",
       emailLabel: "Primary inbox",
-      email: "ACTION_REQUIRED",
-      emailBody: "Contact intake is not published until the legal controller, privacy notice and support address are approved.",
+      email: "velmere141@gmail.com",
+      emailBody: "Oficjalny adres do korespondencji i wsparcia klienta Velmère. Każde zgłoszenie jest rejestrowane i weryfikowane przez zespół.",
       response: "What to include",
       responseItems: ["A short description", "Order number when available", "Screenshots without sensitive data"],
       securityTitle: "Security before speed",
@@ -23,8 +23,8 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
       title: "Jedna prosta droga do właściwej pomocy.",
       body: "Pytania o produkt, zamówienie i dostęp do konta trafiają w jedno spokojne miejsce. Nie wysyłaj haseł, kluczy prywatnych ani sekretów płatności.",
       emailLabel: "Główna skrzynka",
-      email: "ACTION_REQUIRED",
-      emailBody: "Kanał kontaktowy nie jest publikowany do czasu zatwierdzenia administratora danych, informacji o prywatności i adresu wsparcia.",
+      email: "velmere141@gmail.com",
+      emailBody: "Oficjalny adres do korespondencji i wsparcia klienta Velmère. Każde zgłoszenie jest rejestrowane i weryfikowane przez zespół.",
       response: "Co warto podać",
       responseItems: ["Krótki opis sprawy", "Numer zamówienia, jeśli istnieje", "Screeny bez wrażliwych danych"],
       securityTitle: "Bezpieczeństwo przed pośpiechem",
@@ -37,8 +37,8 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
       title: "Ein klarer Weg zur richtigen Hilfe.",
       body: "Produktfragen, Bestellhilfe und Account-Zugang gehören an einen ruhigen Ort. Sende keine Passwörter, Private Keys oder Zahlungsgeheimnisse.",
       emailLabel: "Zentrale Inbox",
-      email: "ACTION_REQUIRED",
-      emailBody: "Der Kontaktkanal wird erst nach Freigabe des Verantwortlichen, der Datenschutzhinweise und der Supportadresse veröffentlicht.",
+      email: "velmere141@gmail.com",
+      emailBody: "Oficjalny adres do korespondencji i wsparcia klienta Velmère. Każde zgłoszenie jest rejestrowane i weryfikowane przez zespół.",
       response: "Was du angeben solltest",
       responseItems: ["Kurze Beschreibung", "Bestellnummer, falls vorhanden", "Screenshots ohne sensible Daten"],
       securityTitle: "Sicherheit vor Tempo",
@@ -53,7 +53,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   return (
     <main
       className="velmere-public-page min-h-[100dvh] bg-velmere-black pb-20 pt-28 text-velmere-ivory md:pt-36"
-      data-contact-intake="BLOCKED_LEGAL"
+      data-contact-intake="VERIFIED_ACTIVE"
     >
       <section className="luxury-section">
         <div className="velmere-editorial-hero overflow-hidden rounded-[2.4rem] border border-white/[0.09] bg-[#09090b]/[0.90] p-6 shadow-velmere-card md:p-10 lg:p-12">

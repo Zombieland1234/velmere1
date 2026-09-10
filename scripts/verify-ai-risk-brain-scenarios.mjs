@@ -1,9 +1,10 @@
+import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const root = path.resolve(decodeURIComponent(new URL("..", import.meta.url).pathname));
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "velmere-ai-risk-scenarios-"));
@@ -49,8 +50,10 @@ if (!dependenciesInstalled) {
   process.exit(0);
 }
 
+import { pathToFileURL } from "node:url";
+
 const runner = `
-import { analyzeTokenRisk } from ${JSON.stringify(path.join(root, "lib/market-integrity/risk-engine.ts"))};
+import { analyzeTokenRisk } from ${JSON.stringify(pathToFileURL(path.join(root, "lib/market-integrity/risk-engine.ts")).href)};
 
 const scenarios = [
   {
@@ -242,7 +245,7 @@ for (const scenario of scenarios) {
 
 fs.writeFileSync(tempScript, runner);
 
-const loader = path.join(root, "scripts/pass11/register-offline-ts-loader.mjs");
+const loader = pathToFileURL(path.join(root, "scripts/pass11/register-offline-ts-loader.mjs")).href;
 const result = spawnSync(process.execPath, ["--import", loader, tempScript], {
   cwd: root,
   encoding: "utf8",

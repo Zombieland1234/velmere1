@@ -1,0 +1,22 @@
+{
+  "contractName": "Curve 3Pool",
+  "symbol": "3CRV",
+  "address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+  "tier": "BASIC",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "vyper 0.2.8",
+  "proxyPattern": "Immutable Vyper Contract",
+  "riskScore": 15,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Basic tier static opcode disassembly and entry-point access control audit for Curve 3Pool.",
+  "findings": [
+    {
+      "title": "Read-Only Reentrancy on get_virtual_price() in 3rd Party Integrations",
+      "severity": "MEDIUM",
+      "swcId": "SWC-107",
+      "cweId": "CWE-841",
+      "description": "Curve's remove_liquidity() burns LP tokens before transferring underlying coins, temporarily depressing get_virtual_price()."
+    }
+  ],
+  "verificationDigest": "28c4a5e1b915d28ff3871109090f9ce3ec0cc04e07e445fc17db4f8ca437f1c3"
+}

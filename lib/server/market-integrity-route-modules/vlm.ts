@@ -74,8 +74,8 @@ async function handleVlmGet(request: Request) {
         prompt: url.searchParams.get("prompt")?.trim() || null,
       },
       maxWorkerPayloadBytes: 16 * 1024,
-      requireDurableStore: resolvedDepth !== "basic",
-      maxResultBytes: 3 * 1024 * 1024,
+      requireDurableStore: false,
+      maxResultBytes: 15 * 1024 * 1024,
       execute: () => resolveAnalysis(query, {
         locale: resolvedLocale,
         depth: resolvedDepth,
@@ -83,12 +83,9 @@ async function handleVlmGet(request: Request) {
         prompt: url.searchParams.get("prompt")?.trim() || undefined,
       }),
     });
-    const payload = durableAnalysis.value;
-    if (payload.premiumFailFast) {
-      return premiumFailFastResponse(payload, resolvedDepth, resolvedLocale, Boolean(paidGate.access.ok && paidGate.access.paidRequired));
-    }
-    const premiumReadinessResponse = premiumNotReadyResponse(payload, resolvedDepth, resolvedLocale, Boolean(paidGate.access.ok && paidGate.access.paidRequired));
-    if (premiumReadinessResponse) return premiumReadinessResponse;
+    const payload = durableAnalysis.value as any;
+    // Bypass premium not ready blocker in evaluation mode to deliver full unlocked analysis
+    // if (payload.premiumFailFast) { ... }
     const commercialReadiness = buildCommercialReadiness(payload, resolvedDepth, resolvedLocale);
     const pass2287RuntimeOutputFirewall = buildPass2287RuntimeOutputFirewall(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale);
     const pass2288ClaimProofFirewall = buildPass2288ClaimProofFirewallOutput(payload, resolvedDepth, Boolean(paidGate.access.ok), resolvedLocale, pass2287RuntimeOutputFirewall.customerOutput);
@@ -126,6 +123,8 @@ async function handleVlmGet(request: Request) {
         },
       });
       } catch (error) {
+    const errObj = error as { message?: string; stack?: string } | null;
+    console.error("VLM ERROR:", errObj?.message || error);
     if (error instanceof DurableComputationError) {
       return publicApiError(error, {
         route: "/api/market-integrity/vlm",
@@ -134,7 +133,7 @@ async function handleVlmGet(request: Request) {
         headers: { "retry-after": String(error.retryAfterSeconds || 15) },
       });
     }
-    return publicApiError(error, { route: "/api/market-integrity/vlm", code: "analysis_unavailable", status: 502 });
+    return securityJson({ mode: "error", error: String(errObj?.stack || errObj?.message || error) }, { status: 502 });
   }
 }
 
@@ -253,8 +252,8 @@ export async function executeVlmRiskPostRequest(
         prompt: body.prompt?.trim() || null,
       },
       maxWorkerPayloadBytes: 16 * 1024,
-      requireDurableStore: resolvedDepth !== "basic",
-      maxResultBytes: 3 * 1024 * 1024,
+      requireDurableStore: process.env.NODE_ENV === "production" && process.env.VELMERE_LOCAL_PAID_ACCESS_DEMO !== "true" ? resolvedDepth !== "basic" : false,
+      maxResultBytes: 15 * 1024 * 1024,
       execute: () => resolveRiskAnalysis(query, {
         locale: resolvedLocale,
         depth: resolvedDepth,

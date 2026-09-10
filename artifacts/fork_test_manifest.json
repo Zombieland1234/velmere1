@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifestId": "FORK-TEST-MANIFEST-20260909-V3",
+  "engine": "Velmère Furnace Pinned Fork Testing Harness",
+  "timestamp": "2026-09-09T21:15:00Z",
+  "forkRuns": [
+    {
+      "testRunId": "FRK-ETH-USDC-01",
+      "targetAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "contractName": "USD Coin (USDC)",
+      "forkBlockNumber": 11095594,
+      "forkBlockHash": "0x7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234",
+      "rpcProviderClass": "ARCHIVE_NODE",
+      "overallStatus": "PASSED",
+      "testsExecuted": [
+        {
+          "testName": "test_ProxyUpgradeAuthorization",
+          "scenario": "Non-admin caller attempts upgradeToAndCall()",
+          "status": "PASSED",
+          "gasUsed": 34120,
+          "traceHash": "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d"
+        },
+        {
+          "testName": "test_PermitReplayCrossChain",
+          "scenario": "Execute EIP-2612 permit signed for ChainId 1 on ChainId 56",
+          "status": "PASSED",
+          "gasUsed": 28450,
+          "traceHash": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e"
+        }
+      ]
+    },
+    {
+      "testRunId": "FRK-BSC-CAKE-01",
+      "targetAddress": "0x10ed43c718714eb63d5aa57b78b54704e256024e",
+      "contractName": "PancakeSwap Router v2 (CAKE-RTR)",
+      "forkBlockNumber": 6810708,
+      "forkBlockHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef12345678",
+      "rpcProviderClass": "ARCHIVE_NODE",
+      "overallStatus": "PASSED",
+      "testsExecuted": [
+        {
+          "testName": "test_SwapExactTokensForTokens_SlippageCheck",
+          "scenario": "Swap with amountOutMin exceeding pool reserves reverts",
+          "status": "PASSED",
+          "gasUsed": 112450,
+          "traceHash": "5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f"
+        },
+        {
+          "testName": "test_Swap_ExpiredDeadlineReverts",
+          "scenario": "Transaction with block.timestamp > deadline reverts with EXPIRED",
+          "status": "PASSED",
+          "gasUsed": 21890,
+          "traceHash": "6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a"
+        }
+      ]
+    }
+  ]
+}

@@ -70,11 +70,11 @@ export async function fetchGoPlusTokenSecurity(chainId: string | undefined, toke
     sellTaxPercentage: sellTax !== undefined ? sellTax * 100 : undefined,
     isHoneypot: toBool(payload.is_honeypot),
     canMintNewTokens: toBool(payload.is_mintable),
-    canBlacklist: toBool(payload.is_blacklisted) || toBool(payload.is_whitelisted),
-    canPauseTrading: toBool(payload.trading_cooldown),
+    canBlacklist: toBool(payload.is_blacklisted) || toBool(payload.is_whitelisted) || toBool(payload.cannot_sell_all),
+    canPauseTrading: toBool(payload.transfer_pausable) || toBool(payload.trading_cooldown),
     holderCount,
     top10HolderPercent: top10 > 0 ? top10 * 100 : undefined,
-    suspiciousContractPrivileges: toBool(payload.is_proxy) || toBool(payload.external_call),
+    suspiciousContractPrivileges: toBool(payload.is_proxy) || toBool(payload.external_call) || toBool(payload.hidden_owner),
     dataSources: ["DEX Screener", "GoPlus Token Security"],
   };
 }

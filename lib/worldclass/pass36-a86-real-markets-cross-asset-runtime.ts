@@ -501,11 +501,11 @@ function mutationKilled(packet: A86TierPacket, policy: A86Policy, family: string
   else if (family === "decision_promotion") mutated.analysisDecision = mutated.analysisDecision === "FUNCTIONAL_READY_OFFLINE" ? "UNAVAILABLE_NOT_FOR_SALE" : "FUNCTIONAL_READY_OFFLINE";
   else if (family === "blocker_drop") mutated.blockers = mutated.blockers.length ? [] : ["forged_blocker"];
   else if (family === "http_status_substitution") mutated.httpStatus = mutated.httpStatus === 200 ? 403 : 200;
-  else if (family === "channel_fact_addition") mutated.channelProjections[0].addsFacts = true;
+  else if (family === "channel_fact_addition") (mutated.channelProjections[0] as any).addsFacts = true;
   else if (family === "facts_digest_substitution") mutated.factsDigestSha256 = sha256("forged");
-  else if (family === "rights_promotion") mutated.providerRightsApproved = true;
-  else if (family === "browser_promotion") mutated.productionBrowserExecuted = true;
-  else if (family === "live_sale_promotion") { mutated.liveProven = true; mutated.saleEnabled = true; }
+  else if (family === "rights_promotion") (mutated as any).providerRightsApproved = true;
+  else if (family === "browser_promotion") (mutated as any).productionBrowserExecuted = true;
+  else if (family === "live_sale_promotion") { (mutated as any).liveProven = true; (mutated as any).saleEnabled = true; }
   else if (family === "crypto_scope_substitution") mutated.cryptoScope = mutated.cryptoScope === "COMPARISON_ONLY" ? "PRIMARY_REAL_MARKETS_SURFACE" : "COMPARISON_ONLY";
   for (const field of mutated.fields) field.evidenceDigestSha256 = sha256({ fieldId: field.fieldId, state: field.state, applicable: field.applicable, semanticValue: field.semanticValue, providerFamilies: field.providerFamilies });
   if (family !== "facts_digest_substitution") mutated.factsDigestSha256 = sha256(factsCoreFromPacket(mutated));

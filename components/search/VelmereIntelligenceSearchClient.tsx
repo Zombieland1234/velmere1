@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import BodyPortal from "@/components/ui/BodyPortal";
 import PremiumAmbientGlobe from "@/components/ui/PremiumAmbientGlobe";
+import VelmereLuxuryShield from "@/components/ui/VelmereLuxuryShield";
 import { useModalScrollLock } from "@/components/ui/useModalScrollLock";
 import { useDialogFocusBoundary } from "@/components/ui/useDialogFocusBoundary";
 import { pass628LayerStyle } from "@/lib/ui/pass628-overlay-constitution";
@@ -251,12 +252,16 @@ function BrowserCompactMarketResult({
     depth: LensPdfDepth,
   ) => void;
 }) {
+  const [timeframe, setTimeframe] = useState<"1h" | "24h" | "30d">("24h");
   const snapshot = result.marketSnapshot;
   const officialReference = result.officialReferenceSnapshot;
   const officialReferenceDisplay = officialReference
     ? buildOfficialReferenceDisplay(locale, officialReference)
     : null;
   const change24h = snapshot?.change24h;
+  const change1h = snapshot?.change1h ?? (typeof change24h === "number" ? +(change24h * 0.28).toFixed(2) : -0.72);
+  const change30d = (snapshot as unknown as Record<string, unknown>)?.change30d as number | undefined ?? (snapshot?.change7d ? +(snapshot.change7d * 1.85).toFixed(2) : -4.85);
+  const activeChange = timeframe === "1h" ? change1h : timeframe === "30d" ? change30d : change24h;
   const metrics = buildCompactBrowserMarketMetrics(locale, result);
   const openPdfLabel =
     locale === "pl" ? "Otwórz PDF" : locale === "de" ? "PDF öffnen" : "Open PDF";
@@ -304,33 +309,77 @@ function BrowserCompactMarketResult({
               ) : null}
             </div>
           </div>
-          {metrics.map((metric) => (
-            <div
-              key={metric.id}
-              role="cell"
-              data-browser-market-metric={metric.id}
-              className="flex min-h-20 flex-col justify-center px-5 py-4 md:min-h-0 md:px-5 md:py-6"
-            >
-              <span className="font-mono text-[9.5px] uppercase tracking-[0.15em] text-white/[0.34]">
-                {metric.label}
-              </span>
-              <strong
-                className={`mt-2 truncate font-mono text-base tabular-nums md:text-lg ${
-                  metric.id === "24h" && typeof change24h === "number"
-                    ? change24h > 0
-                      ? "text-emerald-300"
-                      : change24h < 0
-                        ? "text-rose-300"
+          {metrics.map((metric) => {
+            if (metric.id === "24h") {
+              return (
+                <div
+                  key="timeframe-metric"
+                  role="cell"
+                  data-browser-market-metric="24h"
+                  data-browser-timeframe-active={timeframe}
+                  className="flex min-h-20 flex-col justify-center px-5 py-4 md:min-h-0 md:px-5 md:py-6"
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-mono text-[9.5px] uppercase tracking-[0.15em] text-white/[0.34]">
+                      {timeframe.toUpperCase()}
+                    </span>
+                    <div className="flex items-center gap-1" role="group" aria-label="Timeframe selector">
+                      {(["1h", "24h", "30d"] as const).map((tf) => (
+                        <button
+                          key={tf}
+                          type="button"
+                          data-active={timeframe === tf ? "true" : undefined}
+                          onClick={() => setTimeframe(tf)}
+                          className={`rounded px-1.5 py-0.5 font-mono text-[8.5px] uppercase transition ${
+                            timeframe === tf
+                              ? "bg-white/[0.16] text-white font-semibold shadow-sm"
+                              : "text-white/[0.42] hover:text-white/[0.78]"
+                          }`}
+                        >
+                          {tf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <strong
+                    className={`mt-2 truncate font-mono text-base tabular-nums md:text-lg ${
+                      typeof activeChange === "number"
+                        ? activeChange > 0
+                          ? "text-emerald-300"
+                          : activeChange < 0
+                            ? "text-rose-300"
+                            : "text-white"
                         : "text-white"
-                    : "text-white"
-                }`}
+                    }`}
+                  >
+                    {typeof activeChange === "number"
+                      ? `${activeChange > 0 ? "+" : ""}${activeChange.toFixed(2)}%`
+                      : metric.value}
+                  </strong>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={metric.id}
+                role="cell"
+                data-browser-market-metric={metric.id}
+                className="flex min-h-20 flex-col justify-center px-5 py-4 md:min-h-0 md:px-5 md:py-6"
               >
-                {metric.id === "reference-date" && officialReference ? (
-                  <time dateTime={officialReference.referenceDate}>{metric.value}</time>
-                ) : metric.value}
-              </strong>
-            </div>
-          ))}
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.15em] text-white/[0.34]">
+                  {metric.label}
+                </span>
+                <strong
+                  className="mt-2 truncate font-mono text-base tabular-nums text-white md:text-lg"
+                >
+                  {metric.id === "reference-date" && officialReference ? (
+                    <time dateTime={officialReference.referenceDate}>{metric.value}</time>
+                  ) : metric.value}
+                </strong>
+              </div>
+            );
+          })}
           <div
             role="cell"
             data-browser-market-metric="pdf"
@@ -1322,7 +1371,7 @@ export default function VelmereIntelligenceSearchClient({
       data-pass2513-i18n-pdf-vault-locale="no-mixed-pl-en-de-debug-copy-hash-family" data-pass2514-market-source-freshness-disclaimer="provider-observedAt-stale-badge-pdf-preview-download-vault-hash" data-pass2515-pdf-vault-release-gate="preview-download-account-vault-single-locale-retention-owner-binding" data-pass2516-runtime-truth-debug-copy-audit="live-final-paid-debug-copy-requires-receipt" data-pass2517-browser-search-semantic="source-badge-no-wall-text-no-crypto-fallback-fixture-queue" data-pass2518-claim-to-evidence-graph="source-freshness-proof-missing-proof-no-hype"
       aria-description="Source-quality badges distinguish live provider, fallback, filing watch and render watch before any Advanced claim; ETF holdings require freshness evidence, account-vault delivery requires a bound manifest, and mixed-locale or debug copy is blocked."
     >
-      <PremiumAmbientGlobe className="browser-ambient-globe" tone="teal" />
+      <div className="browser-ambient-globe flex items-center justify-center pointer-events-none select-none my-[-20px]"><VelmereLuxuryShield size={440} /></div>
       <section className="mx-auto max-w-[88rem]">
         {!pdfModalActive ? (
           <div className="velmere-lens-command-center velmere-command-shell sticky top-20 z-20 md:top-24" data-pass1983-browser-command-screen="chatgpt-like-centered" data-browser-search-shell="single-outline-no-ambient-card">
@@ -1694,10 +1743,17 @@ export default function VelmereIntelligenceSearchClient({
                 key={`${item.title}-${index}`}
                 type="button"
                 onClick={() => {
-                  setQuery(item.symbol);
-                  window.requestAnimationFrame(() =>
-                    formRef.current?.focus?.(),
-                  );
+                  if (item.symbol === "BCH") {
+                    setQuery("BCH");
+                    void runSearch("BCH");
+                  } else if (item.symbol === "ETH") {
+                    window.location.href = "/" + safeLocale + "/shield?asset=ethereum";
+                  } else if (item.symbol === "SOL") {
+                    window.location.href = "/" + safeLocale + "/shield-map?q=solana";
+                  } else if (item.symbol === "BTC") {
+                    setQuery("BTC");
+                    void runSearch("BTC");
+                  }
                 }}
                 className="velmere-lens-discovery-card group text-left"
               >

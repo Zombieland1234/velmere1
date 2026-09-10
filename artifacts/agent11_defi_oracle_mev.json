@@ -1,0 +1,339 @@
+{
+  "metadata": {
+    "agentId": "AGENT-11",
+    "agentTitle": "DEFI / ORACLE / MEV SPECIALIST",
+    "framework": "Velmère Furnace V6",
+    "verificationTimestamp": "2026-09-10T04:49:17.182Z",
+    "auditScope": [
+      "MEV Analysis Fail-Closed Gating on Non-AMM Targets",
+      "Chainlink Oracle Freshness, Staleness Heartbeats, and Round Completeness",
+      "L2 Sequencer Uptime Sentinel with Grace Period Verification (Arbitrum, Optimism, Base)",
+      "AMM Slippage Enforcements and Transaction Deadline Bounds",
+      "Flash Loan Receiver Callback Authorization & Reentrancy Guards",
+      "Read-Only Reentrancy in Curve / Balancer Virtual Price Computation"
+    ],
+    "standardsCompliance": [
+      {
+        "standard": "OWASP SC03",
+        "title": "Price Oracle Manipulation",
+        "status": "VERIFIED"
+      },
+      {
+        "standard": "SWC-114",
+        "title": "Transaction Order Dependence / Front-Running",
+        "status": "VERIFIED"
+      },
+      {
+        "standard": "CWE-829",
+        "title": "Inclusion of Sensitive Functionality from Untrusted Sphere",
+        "status": "VERIFIED"
+      },
+      {
+        "standard": "CWE-285",
+        "title": "Improper Authorization (Flash Loan Callback)",
+        "status": "VERIFIED"
+      },
+      {
+        "standard": "CWE-841",
+        "title": "User-Controlled Critical Operation Consensus (Read-Only Reentrancy)",
+        "status": "VERIFIED"
+      }
+    ]
+  },
+  "mevAnalysisGating": {
+    "rule": "FAIL_CLOSED_NON_AMM_GATING",
+    "description": "Sandwich attack simulations (SANDWICH_MEV_DRAIN) and VLM-MEV-SANDWICH-01 findings are strictly restricted to contracts with AMM router or pool swap interfaces. Non-AMM contracts (standard tokens, lending pools, staking contracts) fail-closed with MEV_ANALYSIS_NOT_APPLICABLE.",
+    "nonAmmSanctityGuarantee": "Zero sandwich attack vectors or simulations are ever emitted for standard ERC-20 tokens or lending pools, even if getReserves() (0x0902f1ac) is queried as an oracle source.",
+    "totalContractsTested": 10,
+    "matrixResults": [
+      {
+        "target": "Tether USD (USDT)",
+        "category": "STANDARD_TOKEN",
+        "isAmmRouterOrPool": false,
+        "mevStatus": "MEV_ANALYSIS_NOT_APPLICABLE",
+        "sandwichSimulationsCount": 0,
+        "sandwichFindingEmitted": false,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "USD Coin (USDC)",
+        "category": "STANDARD_TOKEN",
+        "isAmmRouterOrPool": false,
+        "mevStatus": "MEV_ANALYSIS_NOT_APPLICABLE",
+        "sandwichSimulationsCount": 0,
+        "sandwichFindingEmitted": false,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "Dai Stablecoin (DAI)",
+        "category": "STANDARD_TOKEN",
+        "isAmmRouterOrPool": false,
+        "mevStatus": "MEV_ANALYSIS_NOT_APPLICABLE",
+        "sandwichSimulationsCount": 0,
+        "sandwichFindingEmitted": false,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "Aave V3 Pool",
+        "category": "LENDING_POOL",
+        "isAmmRouterOrPool": false,
+        "mevStatus": "MEV_ANALYSIS_NOT_APPLICABLE",
+        "sandwichSimulationsCount": 0,
+        "sandwichFindingEmitted": false,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "SpotReserveLending (Reserve Oracle Reader)",
+        "category": "LENDING_POOL",
+        "isAmmRouterOrPool": false,
+        "mevStatus": "MEV_ANALYSIS_NOT_APPLICABLE",
+        "sandwichSimulationsCount": 0,
+        "sandwichFindingEmitted": false,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "Compound Comet (cUSDCv3)",
+        "category": "LENDING_POOL",
+        "isAmmRouterOrPool": false,
+        "mevStatus": "MEV_ANALYSIS_NOT_APPLICABLE",
+        "sandwichSimulationsCount": 0,
+        "sandwichFindingEmitted": false,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "Uniswap V2 Swap Router",
+        "category": "AMM_ROUTER",
+        "isAmmRouterOrPool": true,
+        "mevStatus": "APPLICABLE",
+        "sandwichSimulationsCount": 1,
+        "sandwichFindingEmitted": true,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "Uniswap V3 SwapRouter",
+        "category": "AMM_ROUTER",
+        "isAmmRouterOrPool": true,
+        "mevStatus": "APPLICABLE",
+        "sandwichSimulationsCount": 1,
+        "sandwichFindingEmitted": true,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "PancakeSwap V2 Router",
+        "category": "AMM_ROUTER",
+        "isAmmRouterOrPool": true,
+        "mevStatus": "APPLICABLE",
+        "sandwichSimulationsCount": 1,
+        "sandwichFindingEmitted": true,
+        "failClosedGatingPassed": true
+      },
+      {
+        "target": "Uniswap V2 Pair (Pool)",
+        "category": "AMM_POOL",
+        "isAmmRouterOrPool": true,
+        "mevStatus": "APPLICABLE",
+        "sandwichSimulationsCount": 1,
+        "sandwichFindingEmitted": true,
+        "failClosedGatingPassed": true
+      }
+    ],
+    "allTargetsCompliant": true
+  },
+  "oracleFreshnessVerification": {
+    "chainlinkFreshnessRequirements": {
+      "answerNonZero": "require(answer > 0, 'Invalid price')",
+      "timestampNonZero": "require(updatedAt > 0, 'Zero timestamp')",
+      "heartbeatFreshness": "require(block.timestamp - updatedAt <= MAX_STALENESS, 'Stale price')",
+      "roundCompleteness": "require(answeredInRound >= roundId, 'Incomplete round')",
+      "minMaxBoundaryBounds": "Assert answer > minAnswer && answer < maxAnswer to detect aggregator circuit breaker trigger"
+    },
+    "l2SequencerUptimeFeeds": {
+      "activeRollups": [
+        {
+          "chainId": "42161",
+          "name": "Arbitrum One",
+          "feedAddress": "0xFdB630b6844dE5a5FCE5972322971a42a1e39572"
+        },
+        {
+          "chainId": "10",
+          "name": "Optimism Mainnet",
+          "feedAddress": "0x371EAD81c97Ed2A4B277Ecb8401Dc8D5C7822923"
+        },
+        {
+          "chainId": "8453",
+          "name": "Base",
+          "feedAddress": "0xBCF85224fc0756B9Fa45aA7892530B47e10b6433"
+        }
+      ],
+      "sequencerValidationProtocol": [
+        "1. Query latestRoundData() on the designated L2 Sequencer Uptime Feed",
+        "2. Enforce sequencer status: require(sequencerAnswer == 0, 'Sequencer is down')",
+        "3. Enforce restart grace period: require(block.timestamp - sequencerStartedAt > GRACE_PERIOD, 'Grace period active')"
+      ],
+      "gracePeriodStandardSeconds": 3600
+    },
+    "testCaseMatrix": [
+      {
+        "name": "Arbitrum One — Fully Compliant Feed with Sequencer & Grace Period",
+        "network": "Arbitrum One",
+        "chainId": "42161",
+        "heartbeatDetected": true,
+        "roundCompletenessDetected": true,
+        "sequencerSentinelDetected": true,
+        "findingStalenessEmitted": false,
+        "findingSequencerEmitted": false,
+        "testPassed": true
+      },
+      {
+        "name": "Optimism — Missing L2 Sequencer Check (Staleness Checked)",
+        "network": "Optimism Mainnet",
+        "chainId": "10",
+        "heartbeatDetected": true,
+        "roundCompletenessDetected": true,
+        "sequencerSentinelDetected": false,
+        "findingStalenessEmitted": false,
+        "findingSequencerEmitted": true,
+        "testPassed": true
+      },
+      {
+        "name": "Base — Sequencer Status Checked but Grace Period Omitted",
+        "network": "Base",
+        "chainId": "8453",
+        "heartbeatDetected": true,
+        "roundCompletenessDetected": true,
+        "sequencerSentinelDetected": false,
+        "findingStalenessEmitted": false,
+        "findingSequencerEmitted": true,
+        "testPassed": true
+      },
+      {
+        "name": "Ethereum L1 — Compliant Heartbeat & Round Monotonicity (L2 Check Not Required)",
+        "network": "Ethereum Mainnet",
+        "chainId": "1",
+        "heartbeatDetected": true,
+        "roundCompletenessDetected": true,
+        "sequencerSentinelDetected": true,
+        "findingStalenessEmitted": false,
+        "findingSequencerEmitted": false,
+        "testPassed": true
+      },
+      {
+        "name": "Ethereum L1 — Unchecked Raw latestRoundData (Staleness & Heartbeat Missing)",
+        "network": "Ethereum Mainnet",
+        "chainId": "1",
+        "heartbeatDetected": false,
+        "roundCompletenessDetected": false,
+        "sequencerSentinelDetected": true,
+        "findingStalenessEmitted": true,
+        "findingSequencerEmitted": false,
+        "testPassed": true
+      }
+    ],
+    "allOracleTestsPassed": true
+  },
+  "ammSlippageAndDeadlines": {
+    "slippageEnforcement": {
+      "vulnerabilityPattern": "Literal 0 amountOutMin or unconstrained slippage passed to AMM router",
+      "mitigation": "Caller must supply dynamically bounded amountOutMin calculated with slippage tolerance threshold",
+      "detectorRule": "VLM-MEV-SANDWICH-01"
+    },
+    "deadlineEnforcement": {
+      "vulnerabilityPattern": "Passing block.timestamp as the deadline parameter eliminates validator delay protection",
+      "mitigation": "Require explicit deadline parameter passed from caller and verified with require(block.timestamp <= deadline)",
+      "detectorRule": "VLM-MEV-DEADLINE-BYPASS-01"
+    },
+    "scenarioResults": [
+      {
+        "name": "AMM Swap with Zero Slippage Protection (amountOutMin = 0)",
+        "feature": "SLIPPAGE",
+        "isVulnerable": true,
+        "detectedFindingId": "VLM-MEV-SANDWICH-01",
+        "auditPassed": true
+      },
+      {
+        "name": "AMM Swap with Enforced Slippage Bounds (amountOutMin calculated dynamically)",
+        "feature": "SLIPPAGE",
+        "isVulnerable": false,
+        "detectedFindingId": "",
+        "auditPassed": true
+      },
+      {
+        "name": "AMM Swap with block.timestamp as Execution Deadline (Bypasses Delay Defense)",
+        "feature": "DEADLINE",
+        "isVulnerable": true,
+        "detectedFindingId": "VLM-MEV-DEADLINE-BYPASS-01",
+        "auditPassed": true
+      },
+      {
+        "name": "AMM Swap with User-Specified Execution Deadline (require(block.timestamp <= deadline))",
+        "feature": "DEADLINE",
+        "isVulnerable": false,
+        "detectedFindingId": "",
+        "auditPassed": true
+      }
+    ]
+  },
+  "flashLoanAndReentrancy": {
+    "flashLoanCallbackAuthorization": {
+      "protocols": [
+        "ERC-3156 (onFlashLoan)",
+        "Aave V2/V3 (executeOperation)",
+        "Balancer (receiveFlashLoan)"
+      ],
+      "mandatoryChecks": [
+        "require(msg.sender == address(authorizedLenderPool), 'Untrusted lender')",
+        "require(initiator == address(this), 'Untrusted initiator')"
+      ],
+      "findingId": "VLM-SEC-DEFI-FLASH-CALLBACK-01"
+    },
+    "readOnlyReentrancyDefense": {
+      "vulnerableSurfaces": [
+        "Curve get_virtual_price()",
+        "Balancer getRate()",
+        "Uniswap V2 getReserves() during swap hook"
+      ],
+      "recommendedMitigations": [
+        "Probe reentrancy lock before reading view: ICurvePool(pool).claim_admin_fees()",
+        "Implement nonReentrantView modifier using ephemeral storage or status slots"
+      ],
+      "findingId": "VLM-SEC-REENTRANCY-RO-02"
+    },
+    "scenarioResults": [
+      {
+        "name": "Flash Loan Receiver: Missing Initiator and Lender Validation (ERC-3156 onFlashLoan)",
+        "feature": "FLASH_CALLBACK_AUTH",
+        "isVulnerable": true,
+        "detectedFindingId": "VLM-SEC-DEFI-FLASH-CALLBACK-01",
+        "auditPassed": true
+      },
+      {
+        "name": "Flash Loan Receiver: Properly Guarded Initiator & Lender Authorization",
+        "feature": "FLASH_CALLBACK_AUTH",
+        "isVulnerable": false,
+        "detectedFindingId": "",
+        "auditPassed": true
+      },
+      {
+        "name": "Curve Pool Read-Only Reentrancy via get_virtual_price() without View Guard",
+        "feature": "READ_ONLY_REENTRANCY",
+        "isVulnerable": true,
+        "detectedFindingId": "VLM-SEC-REENTRANCY-RO-02",
+        "auditPassed": true
+      },
+      {
+        "name": "Curve Pool Read-Only Reentrancy Mitigated via Reentrancy Lock Probe (claim_admin_fees)",
+        "feature": "READ_ONLY_REENTRANCY",
+        "isVulnerable": false,
+        "detectedFindingId": "",
+        "auditPassed": true
+      }
+    ]
+  },
+  "summaryScorecard": {
+    "totalEvaluations": 23,
+    "passedEvaluations": 23,
+    "successRatePct": 100,
+    "status": "ALL_SYSTEMS_OPERATIONAL",
+    "institutionalVerdict": "APPROVED"
+  }
+}

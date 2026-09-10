@@ -1,0 +1,294 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_sol_basic_067",
+  "caseRef": "CASE-VLM-SOL-BASIC",
+  "target": {
+    "contractName": "Solana Consensus Protocol",
+    "contractAddress": "native:sol-cluster",
+    "network": "Solana Mainnet-Beta",
+    "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    "tokenSymbol": "SOL",
+    "proxyPattern": "Immutable Distributed Consensus (Tower BFT)"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:16.534Z",
+  "verdict": {
+    "riskScore": 24,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 96,
+    "auditQualityScore": 64,
+    "summary": "Sieć o wysokiej przepustowości transakcyjnej z mechanizmem Proof-of-History. Współczynnik Nakamoto wynosi 19-21. Wdrażany niezależny klient Firedancer.",
+    "evidenceCoverage": 96,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 312000000,
+      "snapshotBlockHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+      "consensusLedgerStateRootSha256": "0x08d6503bf58ac37b80317cabd703babb0729ffb5c6ffcec2174061c4233dc928",
+      "pinnedChainId": "101",
+      "analysisEngineVersion": "v4.0.0-rc3-shield",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd protokołu i kontekst sieci L1",
+      "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja natywnego łańcucha bloków i architektury węzłów",
+        "Ewaluacja modelu emisji i niezmienności reguł monetarnych",
+        "Ocena stopnia decentralizacji sieci i odporności na cenzurę"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Protokół / Aktywo",
+            "value": "Solana Consensus Protocol"
+          },
+          {
+            "label": "Typ architektury",
+            "value": "Natywna warstwa bazowa (Layer-1 · Brak kontraktu smart contract)"
+          },
+          {
+            "label": "Identyfikator sieci",
+            "value": "native_chain:sol"
+          },
+          {
+            "label": "Symbol natywny",
+            "value": "SOL"
+          },
+          {
+            "label": "Zarządzanie regułami",
+            "value": "Rozproszony konsensus węzłów i walidatorów / górników"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+      "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja referencyjnego kodu źródłowego klienta węzła",
+        "Walidacja bibliotek kryptograficznych i formatu transakcji",
+        "Analiza odporności na nieprawidłowe bloki i rozwidlenia łańcucha"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Weryfikacja protokołu Solana Consensus Protocol opiera się na specyfikacji konsensusu warstwy pierwszej. Analiza bytecode EVM i dekompilacja kontraktów mają status NOT_APPLICABLE dla natywnych monet."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+      "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie parametrów stabilności sieci bazowej",
+        "Ocena odporności na błędy konsensusu i desynchronizację",
+        "Zgodność z przyjętymi standardami bezpieczeństwa sieci rozproszonych"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+      "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analiza zarządzania konsensem rozproszonym i mechanizmów upgrade protokołu",
+        "Ewaluacja rozkładu walidatorów / górników oraz progu finalności sieci",
+        "Historia koordynacji hard-forków oraz audyt różnorodności klientów węzłów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+      "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Głębokość globalnych ksiąg zleceń na giełdach spot i rezerwy powiernicze",
+        "Prędkość podaży w obiegu on-chain oraz rozkład aktywnych adresów",
+        "Zmienność opłat transakcyjnych sieci i zachowanie kolejki mempool",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+      "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Modelowanie reorganizacji konsensusu i ataku większości hashrate/stake",
+        "Analiza odporności sieci P2P na partycjonowanie, eclipse attack i sybil",
+        "Wektory cenzury transakcji, manipulacji mempool i ekstrakcji MEV",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+      "subtitle": "Weryfikacja kompatybilności binarnej i determinizmu przejść stanów węzłów",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Weryfikacja powtarzalności kompilacji klienta referencyjnego węzła",
+        "Analiza kompatybilności binarnej serializacji konsensusu i protokołu sieciowego",
+        "Deterministyczna weryfikacja granic wykonania silnika przejść stanów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+      "subtitle": "Śledzenie zmian w regułach konsensusu i analiza kompatybilności wstecznej",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia aktywacji propozycji uaktualnień protokołu",
+        "Weryfikacja kompatybilności wstecznej reguł walidacji bloków",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie był uruchamiany dla tego łańcucha)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+      "subtitle": "Atestacja niezależnego audytora systemów rozproszonych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Przegląd analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji analityka",
+        "Wyraźna granica przeglądu manualnego: brak gwarancji braku błędów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:cb01d87fb221675caba4e1b46d328a838e9b4e33b8693f3c5be5861c75efa625",
+  "applicationSurface": "shield",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "blockNumber": 312000000,
+      "contractAddress": "native:sol-cluster",
+      "network": "Solana Mainnet-Beta",
+      "proxyType": "N/A (Decentralized Layer 1 Protocol)"
+    },
+    "consensusSpec": {
+      "consensusArchitecture": "Solana Labs Rust 1.18 / Agave",
+      "nodeClientVersion": "Solana Core Ledger (SOL)",
+      "networkTopology": "Global P2P Gossip Validator Network",
+      "cryptographicPrimitives": "Ed25519 / SHA-512",
+      "nakamotoCoefficient": 22,
+      "activeValidatorCount": 1450
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 96,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:2af638545184f4e99a38b823f2379188d87bd072ede73a234b0ab74810de4dd6",
+      "reportDigestSha256": "sha256:2af638545184f4e99a38b823f2379188d87bd072ede73a234b0ab74810de4dd6",
+      "provenanceHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:951b55bff818e424cfc93b6cf38570455cbf8130f7ba1241339142a66932641f",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "87d62bfe273ef3c6e41b4f1489e937f34df06fd6441d4b67faa30957268f582966c631b1cc2f13cea0b577e2e16c2bf572003f7823589885fc7f666d7408f305",
+    "signedDigest": "8d6cd8403e822a6b0ced23f9d21df99a18829148dc096c060948e3823fd48451",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "8d6cd8403e822a6b0ced23f9d21df99a18829148dc096c060948e3823fd48451",
+      "serialNumber": "351738c92488ea13dacef9c9653396ed",
+      "genTime": "2026-09-10T12:36:16.534Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "e032c0ae17c0cc48ea67a8388330606096c4c41cdf6a6f4b2f2562e16ed27743"
+    },
+    "provenanceProof": "sha256:8d012dbced0cfe47dc37b14a777a281381d2a56c4a3ec14ac48de3266963041d"
+  },
+  "integrityProof": {
+    "pdfSha256": "c6815815da3fe8dfeee20d586748e37f244b799b9ae5a13b91fa50adebb0b3d7",
+    "pdfByteLength": 89039,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:16.549Z"
+  }
+}

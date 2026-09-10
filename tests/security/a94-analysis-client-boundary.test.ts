@@ -21,30 +21,36 @@ const asset: VlmAnalysisAsset = {
     { timestamp: 2, close: 100, volume: 12 },
   ],
 };
+async function main() {
+  await assert.rejects(
+    runVlmAnalysis(asset, "pro", { locale: "pl" }),
+    /paid_tier_requires_server_entitlement/,
+  );
+  await assert.rejects(
+    runVlmAnalysis(asset, "advanced", { locale: "de" }),
+    /paid_tier_requires_server_entitlement/,
+  );
 
-await assert.rejects(
-  runVlmAnalysis(asset, "pro", { locale: "pl" }),
-  /paid_tier_requires_server_entitlement/,
-);
-await assert.rejects(
-  runVlmAnalysis(asset, "advanced", { locale: "de" }),
-  /paid_tier_requires_server_entitlement/,
-);
+  const german = buildDeterministicVlmAnalysis(asset, "basic", "de");
+  assert.equal(german.tier, "basic");
+  assert.equal(german.signals.length, 10);
+  assert.ok(german.signals.some((signal) => signal.name === "Marktregime"));
+  assert.match(german.summary, /beigefügten Snapshot/);
+  assert.doesNotMatch(german.summary, /current market conditions/i);
+  assert.ok(german.signals.every((signal) => signal.evidence.every((entry) => !/evidence ledger/i.test(entry.source))));
 
-const german = buildDeterministicVlmAnalysis(asset, "basic", "de");
-assert.equal(german.tier, "basic");
-assert.equal(german.signals.length, 10);
-assert.ok(german.signals.some((signal) => signal.name === "Marktregime"));
-assert.match(german.summary, /beigefügten Snapshot/);
-assert.doesNotMatch(german.summary, /current market conditions/i);
-assert.ok(german.signals.every((signal) => signal.evidence.every((entry) => !/evidence ledger/i.test(entry.source))));
+  const polish = buildDeterministicVlmAnalysis(asset, "basic", "pl");
+  assert.match(polish.summary, /dołączonego snapshotu/);
+  assert.ok(polish.signals.some((signal) => signal.name === "Jakość danych"));
 
-const polish = buildDeterministicVlmAnalysis(asset, "basic", "pl");
-assert.match(polish.summary, /dołączonego snapshotu/);
-assert.ok(polish.signals.some((signal) => signal.name === "Jakość danych"));
+  const english = buildDeterministicVlmAnalysis(asset, "basic", "en");
+  assert.match(english.summary, /attached snapshot/);
+  assert.doesNotMatch(english.summary, /current market conditions/i);
 
-const english = buildDeterministicVlmAnalysis(asset, "basic", "en");
-assert.match(english.summary, /attached snapshot/);
-assert.doesNotMatch(english.summary, /current market conditions/i);
+  console.log("A94 client analysis entitlement and PL/EN/DE behavior: PASS");
+}
 
-console.log("A94 client analysis entitlement and PL/EN/DE behavior: PASS");
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

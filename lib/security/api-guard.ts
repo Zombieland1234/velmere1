@@ -60,6 +60,9 @@ export const PASS4198_DURABLE_RATE_LIMIT_RUNTIME_LOCK = {
 } as const;
 
 export function isVelmereProductionLikeRuntime() {
+  // NODE_ENV is the deployment-mode boundary. Requiring a Vercel-only signal
+  // here would silently downgrade a self-hosted production deployment to the
+  // QA-only in-memory limiter.
   return process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 }
 

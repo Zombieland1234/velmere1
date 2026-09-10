@@ -67,6 +67,8 @@ function isUsableUpstashRestUrl(value: string | undefined) {
 }
 
 export function inspectDurableRateLimitRuntime(env: NodeJS.ProcessEnv = process.env) {
+  // A production deployment may be self-hosted. Durable state must remain a
+  // hard requirement there too; Vercel metadata is not a security boundary.
   const productionLike = env.NODE_ENV === "production" || env.VERCEL_ENV === "production";
   const disabledRequested = env.VELMERE_RATE_LIMIT_DISABLED === "1";
   const hasUpstashUrl = Boolean(env.UPSTASH_REDIS_REST_URL?.trim());

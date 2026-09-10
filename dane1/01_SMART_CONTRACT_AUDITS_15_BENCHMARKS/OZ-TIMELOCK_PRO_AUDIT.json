@@ -1,0 +1,30 @@
+{
+  "contractName": "OpenZeppelin TimelockController",
+  "symbol": "OZ-TIMELOCK",
+  "address": "0x1a9c8182c09f50c8318d769245bea52c32be35bc",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.8.20",
+  "proxyPattern": "AccessControl / Timelock",
+  "riskScore": 11,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for OpenZeppelin TimelockController.",
+  "findings": [
+    {
+      "title": "Self-Admin Escalation & Execution Order Cancellation Trap",
+      "severity": "MEDIUM",
+      "swcId": "SWC-105",
+      "cweId": "CWE-284",
+      "description": "TimelockController must not grant executor role to zero address unless explicitly intended for open public execution."
+    }
+  ],
+  "verificationDigest": "28c2be8ed2659cdcd88337a26e688cadefe705a3b299853e85e86198a14b249f",
+  "attackSurface": {
+    "category": "DAO Governance & Execution Delay",
+    "attackVector": "Misconfiguration where proposer can schedule immediate un-timelocked upgrade without governance review."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/TimelockController.sol\n+++ b/contracts/TimelockController.sol\n@@ -78,2 +78,3 @@\n+ require(delay >= minDelay, 'INSUFFICIENT_TIMELOCK_DELAY');\n  _timestamps[id] = block.timestamp + delay;"
+  }
+}

@@ -510,7 +510,23 @@ export async function storeAuditAccountMessage(input: StoreAuditAccountMessageIn
       .select("*")
       .eq("id", candidate.id)
       .maybeSingle();
-    if (existingError) throw new Error(`audit_account_message_existing_read_failed:${existingError.message}`);
+    if (existingError) {
+      if (existingError.code === "PGRST205" && !isAuditAccountDeliveryProductionStorageStrict()) {
+        const existingMemory = memoryStore.get(candidate.id);
+        if (existingMemory && existingMemory.accountId !== candidate.accountId) {
+          throw new Error("audit_account_message_owner_immutable_conflict");
+        }
+        if (existingMemory?.canonicalCustomerSnapshot && candidate.canonicalCustomerSnapshot && existingMemory.canonicalCustomerSnapshot.snapshotDigest !== candidate.canonicalCustomerSnapshot.snapshotDigest) {
+          throw new Error("audit_account_customer_snapshot_immutable_conflict");
+        }
+        if (existingMemory?.canonicalCustomerSnapshot && !candidate.canonicalCustomerSnapshot) {
+          candidate = { ...candidate, canonicalCustomerSnapshot: existingMemory.canonicalCustomerSnapshot };
+        }
+        memoryStore.set(candidate.id, candidate);
+        return { record: candidate, source: "memory" };
+      }
+      throw new Error(`audit_account_message_existing_read_failed:${existingError.message}`);
+    }
     if (existingData) {
       const existing = parseAuditAccountMessageSupabaseRow(existingData as Record<string, unknown>);
       if (existing.accountId !== candidate.accountId) {
@@ -582,7 +598,24 @@ export async function listAuditAccountMessages(
     }
 
     const { data, error } = await query;
-    if (error) throw new Error(`audit_account_message_durable_list_failed:${error.message}`);
+    if (error) {
+      if (error.code === "PGRST205" && !isAuditAccountDeliveryProductionStorageStrict()) {
+        const messages = Array.from(memoryStore.values())
+          .filter((message) => message.locale === locale)
+          .filter((message) => {
+            if (explicitAccountId) {
+              return message.accountId === accountId
+                && (!contactEmail || message.contactEmail === contactEmail);
+            }
+            return true;
+          })
+          .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+          .slice(0, limit);
+
+        return { messages, source: "memory", accountId };
+      }
+      throw new Error(`audit_account_message_durable_list_failed:${error.message}`);
+    }
     if (Array.isArray(data)) {
       const messages = data.map(parseAuditAccountMessageSupabaseRow);
       if (
@@ -628,7 +661,12 @@ async function findSupabaseRecord(identifier: string, locale: "pl" | "en" | "de"
       .eq("locale", locale);
     if (accountId) query = query.eq("account_id", accountId);
     const { data, error } = await query.maybeSingle();
-    if (error) throw new Error(`audit_account_message_durable_lookup_failed:${column}:${error.message}`);
+    if (error) {
+      if (error.code === "PGRST205" && !isAuditAccountDeliveryProductionStorageStrict()) {
+        return findMemoryRecord(identifier, locale, accountId);
+      }
+      throw new Error(`audit_account_message_durable_lookup_failed:${column}:${error.message}`);
+    }
     if (data) return parseAuditAccountMessageSupabaseRow(data);
   }
   return null;

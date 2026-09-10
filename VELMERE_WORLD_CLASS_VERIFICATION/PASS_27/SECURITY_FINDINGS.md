@@ -1,0 +1,3 @@
+# PASS_27 SECURITY FINDINGS
+
+Verified finding `VLM-DATA-STALE-HEARTBEAT-01` with severity `HIGH`.

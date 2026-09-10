@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { ArrowUpRight, Bell, CreditCard, Headphones, PackageCheck, Truck, WalletCards } from "lucide-react";
+import { ArrowUpRight, Bell, CreditCard, Headphones, PackageCheck, Truck, WalletCards, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Link } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import ProductCard from "@/components/ProductCard";
 import LuxurySection from "@/components/layout/LuxurySection";
 import { fadeUp } from "@/lib/motion";
@@ -157,10 +157,127 @@ export default function ShopPage({ products: publicProducts, catalogReceipt }: S
     { icon: Truck, label: t("deliveryVisible") },
   ];
 
+  const router = useRouter();
+
+  // PASS 5: Lock body scroll while modal is mounted
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = origOverflow;
+    };
+  }, []);
+
+  // PASS 5: Handle ESC key to dismiss modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        router.push("/");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
+
+  const closeModal = () => {
+    router.push("/");
+  };
+
   return (
-    <main className="velmere-public-page min-h-[100dvh] bg-velmere-black text-white" data-pass316-public-commerce-trim="shop" data-pass318-public-storefront-focus="shop" data-pass319-public-first-purchase-flow="shop" data-pass320-public-atelier-trust-ribbon="shop" data-pass320-shop-trust-ribbon="true" data-pass321-public-copy-polish="shop" data-pass322-public-product-pathway-receipt="shop" data-pass322-shop-product-pathway-receipt="true" data-pass323-public-provenance-drop-concierge="shop" data-pass323-shop-provenance-drop-concierge="true" data-pass324-public-size-confidence-concierge="shop" data-pass326-lookbook-collection="true" data-pass327-lookbook-trim="true" data-pass1999-shop-copy="commerce-atelier-no-lookbook-clutter" data-pass2008-shop="real-category-filter-static-hero-solid-low-lag" data-pass2051-public-catalog-readthrough={catalogReceipt?.mode ?? "static"}>
-      <span className="sr-only">Trust before checkout</span>
-      <LuxurySection className="py-28 md:py-36">
+    <main className="velmere-public-page relative min-h-[100dvh] overflow-hidden bg-velmere-black text-white" data-pass316-public-commerce-trim="shop" data-pass318-public-storefront-focus="shop" data-pass319-public-first-purchase-flow="shop" data-pass320-public-atelier-trust-ribbon="shop" data-pass320-shop-trust-ribbon="true" data-pass321-public-copy-polish="shop" data-pass322-public-product-pathway-receipt="shop" data-pass322-shop-product-pathway-receipt="true" data-pass323-public-provenance-drop-concierge="shop" data-pass323-shop-provenance-drop-concierge="true" data-pass324-public-size-confidence-concierge="shop" data-pass1999-shop-copy="commerce-atelier-no-lookbook-clutter" data-pass2008-shop="real-category-filter-static-hero-solid-low-lag" data-pass2051-public-catalog-readthrough={catalogReceipt?.mode ?? "static"}>
+      {/* Fullscreen Coming Soon Modal Overlay */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="coming-soon-title"
+        onClick={closeModal}
+      >
+        <div
+          className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/[0.14] bg-[#070d0e]/[0.96] p-8 text-center shadow-[0_32px_120px_rgba(0,0,0,0.92)] backdrop-blur-2xl md:p-12"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={closeModal}
+            className="absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.04] text-white/70 transition hover:bg-white/[0.10] hover:text-white"
+            aria-label={locale === "pl" ? "Zamknij" : "Close"}
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          {/* Subtle gold sheen background */}
+          <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-[#c7a35b]/[0.10] blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-cyan-400/[0.08] blur-3xl" />
+
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-velmere-gold">
+            Velmère Atelier · Drop Status
+          </p>
+
+          <h1 id="shop-drop-status-title" className="mt-4 font-serif text-3xl font-medium tracking-tight text-white md:text-5xl">
+            {locale === "pl"
+              ? "WERYFIKACJA ŁAŃCUCHA DOSTAW"
+              : locale === "de"
+                ? "LIEFERKETTEN-VERIFIZIERUNG"
+                : "SUPPLY CHAIN VERIFICATION"}
+          </h1>
+
+          <div className="mt-4 space-y-2 text-left text-xs leading-relaxed text-white/[0.80] md:text-sm bg-black/40 border border-white/[0.08] p-4 rounded-xl">
+            <p>
+              <span className="font-mono text-velmere-gold font-bold">
+                {locale === "pl" ? "DLACZEGO: " : locale === "de" ? "WARUM: " : "WHY: "}
+              </span>
+              {locale === "pl"
+                ? "Kolekcja rzemieślnicza Velmère nie trafia do sprzedaży bez laboratoryjnego potwierdzenia składu tkanin i certyfikacji pochodzenia przędzy."
+                : locale === "de"
+                  ? "Die handwerkliche Kollektion von Velmère wird erst nach Laborbestätigung der Faserzusammensetzung freigegeben."
+                  : "Velmère artisan collection is not offered for sale prior to laboratory confirmation of fiber composition and yarn provenance."}
+            </p>
+            <p>
+              <span className="font-mono text-amber-300 font-bold">
+                {locale === "pl" ? "BLOKADA: " : locale === "de" ? "BLOCKER: " : "BLOCKER: "}
+              </span>
+              <code className="text-[11px] bg-white/[0.08] px-1.5 py-0.5 rounded text-amber-200">
+                SUPPLY_CHAIN_VERIFICATION_PENDING
+              </code>{" "}
+              — {locale === "pl" ? "Brak podpisu drugiego rzeczoznawcy włókiennictwa." : locale === "de" ? "Zweite Gutachterprüfung ausstehend." : "Second textile auditor sign-off pending."}
+            </p>
+            <p>
+              <span className="font-mono text-cyan-300 font-bold">
+                {locale === "pl" ? "PROPONOWANY FIX: " : locale === "de" ? "LÖSUNG: " : "PROPOSED FIX: "}
+              </span>
+              {locale === "pl"
+                ? "Dokończenie niezależnego audytu laboratoryjnego partii i wdrożenie cyfrowego paszportu produktu (DPP)."
+                : locale === "de"
+                  ? "Abschluss des unabhängigen Laboraudits und Integration des digitalen Produktpasses (DPP)."
+                  : "Finalization of independent laboratory audit and minting of digital product passport (DPP)."}
+            </p>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-white/[0.16] bg-white/[0.05] px-6 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:border-white/[0.35] hover:bg-white/[0.10] sm:w-auto"
+            >
+              {locale === "pl" ? "Strona główna" : locale === "de" ? "Startseite" : "Home"}
+            </Link>
+
+            <Link
+              href="/shield"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-velmere-gold/[0.5] bg-velmere-gold/[0.12] px-6 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-velmere-gold shadow-[0_0_24px_rgba(199,163,91,0.2)] transition hover:border-velmere-gold hover:bg-velmere-gold/[0.22] sm:w-auto"
+            >
+              <PackageCheck className="h-4 w-4" aria-hidden="true" />
+              {locale === "pl" ? "Przejdź do Shield" : locale === "de" ? "Zu Shield wechseln" : "Go to Shield"}
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Blurred Underlying Catalog Background */}
+      <div className="pointer-events-none select-none filter blur-lg opacity-30 -mt-24">
+        <span className="sr-only">Trust before checkout</span>
+        <LuxurySection className="py-28 md:py-36">
         <div className="velmere-lookbook-intro velmere-editorial-hero velmere-surface-sheen mb-10 grid gap-8 rounded-[2rem] border border-white/[0.06] p-6 lg:grid-cols-12 lg:items-end md:p-9" data-pass1999-shop-hero="quiet-commerce-typewriter-no-heavy-lines">
           <div className="max-w-3xl lg:col-span-8">
             <p className="luxury-kicker text-velmere-gold/[0.80]">{matrix.label}</p>
@@ -223,7 +340,7 @@ export default function ShopPage({ products: publicProducts, catalogReceipt }: S
               );
             })}
             <Link
-              href="/lookbook"
+              href="/atelier"
               className="velmere-command-pill velmere-interaction-pulse min-h-11 px-4 text-[10px] text-white/[0.58] hover:text-white"
               data-pass1999-shop-link="atelier-not-lookbook-copy"
             >
@@ -330,6 +447,7 @@ export default function ShopPage({ products: publicProducts, catalogReceipt }: S
           </Link>
         </motion.section>
       </LuxurySection>
+      </div>
     </main>
   );
 }

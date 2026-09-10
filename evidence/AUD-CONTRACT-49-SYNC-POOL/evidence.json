@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "velmere.v3.evidence-records",
+  "auditId": "AUD-CONTRACT-49-SYNC-POOL",
+  "evidenceRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+  "recordsCount": 2,
+  "records": [
+    {
+      "id": "EV-SRC-POOL",
+      "auditId": "AUD-CONTRACT-49-SYNC-POOL",
+      "category": "SOURCE",
+      "status": "PASS",
+      "method": "OBSERVED",
+      "source": "Source File Parsing",
+      "tool": "velmere-ast-parser",
+      "toolVersion": "3.0.0",
+      "timestamp": "2026-09-09T11:54:19.271Z",
+      "file": "sync-pool.sol",
+      "lineStart": 1,
+      "lineEnd": 16,
+      "inputData": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract SyncSwapClassicPoolDeployer {\n    address public owner;\n    mapping(address => uint256) public balances;\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    constructor() { owner = msg.sender; }\n    function withdraw() external {\n        uint256 bal = balances[msg.sender];\n        require(bal > 0, \"No balance\");\n        balances[msg.sender] = 0;\n        (bool ok, ) = msg.sender.call{value: bal}(\"\");\n        require(ok, \"Call failed\");\n    }\n}\n",
+      "outputData": {
+        "lines": 16,
+        "fileName": "sync-pool.sol"
+      },
+      "inputHash": "3816d1d5ee6f957ea087b06483aa126b55bdc680955ddd21f2fbef800a9638da",
+      "outputHash": "bf2a117b59de9890fffe46a96c792c7984b0f2e33826a466054d68ba1b0b678c"
+    },
+    {
+      "id": "EV-FORMAL-POOL-01",
+      "auditId": "AUD-CONTRACT-49-SYNC-POOL",
+      "category": "FORMAL",
+      "status": "NOT_RUN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Formal Engine Gatekeeper",
+      "tool": "z3",
+      "timestamp": "2026-09-09T11:54:19.271Z",
+      "outputData": {
+        "notice": "Formal verification not included in Basic tier"
+      },
+      "inputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputHash": "0b0e5dba2f95013e4648850bbac4b61054466fb3dfabf087759d1b5a00352549"
+    }
+  ]
+}

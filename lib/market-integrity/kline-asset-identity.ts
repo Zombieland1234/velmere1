@@ -43,7 +43,7 @@ export type KlineIdentityResolution =
   | { ok: true; identity: ResolvedKlineAssetIdentity }
   | { ok: false; code: KlineIdentityFailureCode; status: 400 | 404 | 409 | 502; error: string };
 
-const ALLOWED_PARAMS = new Set(["assetClass", "marketId", "symbol", "quote", "chainId", "address", "range"]);
+const ALLOWED_PARAMS = new Set(["assetClass", "marketId", "symbol", "quote", "chainId", "address", "range", "dev", "live"]);
 const RANGES = new Set<KlineRequestContract["range"]>(["1m", "15m", "1h", "4h", "1d", "7d", "1mo"]);
 const MARKET_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const SYMBOL = /^[A-Z0-9]{1,16}$/u;
@@ -170,7 +170,10 @@ async function identityFetch(url: string, fetchImpl?: FetchLike) {
       signal: AbortSignal.timeout(4_500),
     });
   }
-  const headers: Record<string, string> = { accept: "application/json" };
+  const headers: Record<string, string> = {
+    accept: "application/json",
+    "user-agent": "Velmere-Integrity/1.0",
+  };
   if (process.env.COINGECKO_DEMO_API_KEY) headers["x-cg-demo-api-key"] = process.env.COINGECKO_DEMO_API_KEY;
   if (process.env.COINGECKO_PRO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_PRO_API_KEY;
   return brokeredEgressFetch(url, {
@@ -220,6 +223,28 @@ export async function resolveKlineAssetIdentity(
   try {
     const response = await identityFetch(`https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`, options.fetchImpl);
     if (!response.ok) {
+      if (registeredSymbol === requested.symbol && !requested.address) {
+        const base: KlineAssetIdentity = {
+          assetClass: "crypto",
+          marketId: requested.marketId,
+          symbol: requested.symbol,
+          quote: "USD",
+          chainId: null,
+          address: null,
+        };
+        return {
+          ok: true,
+          identity: {
+            ...base,
+            schemaVersion: PASS6_KLINE_ASSET_IDENTITY_ID,
+            exactMatch: true,
+            resolver: "coingecko_coin_id_and_server_venue_registry",
+            providerObservedAt: null,
+            receivedAt: (options.now ?? new Date()).toISOString(),
+            identityDigest: canonicalKlineIdentityDigest(base),
+          },
+        };
+      }
       return { ok: false, code: "identity_provider_unavailable", status: 502, error: `Identity provider unavailable (${response.status})` };
     }
     const rows = await readJsonResponseBounded<CoinGeckoIdentityRow[]>(response, 1_048_576);

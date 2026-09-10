@@ -1,0 +1,167 @@
+{
+  "timestamp": "2026-09-07T22:27:23.516Z",
+  "totalTests": 18,
+  "passCount": 18,
+  "failCount": 0,
+  "score": "100%",
+  "suites": [
+    {
+      "name": "Security Engine V2 Master Benchmark",
+      "testsRun": 20,
+      "passed": 20,
+      "failed": 0,
+      "metrics": {
+        "truePositives": 7,
+        "falsePositives": 0,
+        "trueNegatives": 4,
+        "falseNegatives": 0,
+        "precision": 1,
+        "recall": 1,
+        "specificity": 1,
+        "f1Score": 1,
+        "accuracy": 1
+      }
+    },
+    {
+      "name": "Historical Exploit Replay Suite",
+      "testsRun": 5,
+      "passed": 5,
+      "failed": 0,
+      "exploitsTested": [
+        {
+          "name": "The DAO (Reentrancy)",
+          "caught": true,
+          "rule": "SWC-107 / CWE-841"
+        },
+        {
+          "name": "Euler Finance (Flashloan Donation)",
+          "caught": true,
+          "rule": "SWC-114 / CWE-682"
+        },
+        {
+          "name": "SafeMoon (Burn Fee Manipulation)",
+          "caught": true,
+          "rule": "SWC-101 / CWE-190"
+        },
+        {
+          "name": "Cream Finance (AMP Token Reentrancy)",
+          "caught": true,
+          "rule": "SWC-107 / CWE-841"
+        },
+        {
+          "name": "Nomad Bridge (Zero-Root Replica Spoof)",
+          "caught": true,
+          "rule": "SWC-115 / CWE-287"
+        }
+      ]
+    },
+    {
+      "name": "Automated Hostile Resilience & Penetration Suite",
+      "testsRun": 10,
+      "passed": 10,
+      "failed": 0,
+      "scenarios": [
+        {
+          "id": "PEN-01",
+          "description": "AI prompt injection defense (system override)",
+          "result": "BLOCKED"
+        },
+        {
+          "id": "PEN-02",
+          "description": "Cyrillic homoglyph confusable evasion",
+          "result": "NORMALIZED & CAUGHT"
+        },
+        {
+          "id": "PEN-03",
+          "description": "Secret material exfiltration defense (Stripe live key)",
+          "result": "BLOCKED & FLAGGED"
+        },
+        {
+          "id": "PEN-04",
+          "description": "Provider HTTP 429 rate-limit fail-closed",
+          "result": "PROPERLY REJECTED"
+        },
+        {
+          "id": "PEN-05",
+          "description": "Provider HTTP 500 upstream failure fail-closed",
+          "result": "PROPERLY REJECTED"
+        },
+        {
+          "id": "PEN-06",
+          "description": "Provider timeout fail-closed threshold",
+          "result": "DEADLINE ENFORCED"
+        },
+        {
+          "id": "PEN-07",
+          "description": "Empty payload body validation",
+          "result": "REJECTED"
+        },
+        {
+          "id": "PEN-08",
+          "description": "Stale timestamp rejection (>60s lag)",
+          "result": "REJECTED"
+        },
+        {
+          "id": "PEN-09",
+          "description": "Entitlement basic tier data isolation",
+          "result": "ZERO DATA LEAKED (data: null)"
+        },
+        {
+          "id": "PEN-10",
+          "description": "Entitlement pro tier advanced section isolation",
+          "result": "ADVANCED LOCKED"
+        }
+      ]
+    },
+    {
+      "name": "Headless Playwright Multi-Surface Audit",
+      "testsRun": 8,
+      "passed": 8,
+      "failed": 0,
+      "surfaces": [
+        {
+          "name": "Browser Surface (/en/browser?asset=USDT)",
+          "status": 200,
+          "consoleErrors": 0
+        },
+        {
+          "name": "Shield Surface (/en/shield)",
+          "status": 200,
+          "consoleErrors": 0
+        },
+        {
+          "name": "Shield Pro Surface (/en/shield-pro)",
+          "status": 200,
+          "consoleErrors": 0
+        },
+        {
+          "name": "Real Markets Surface (/en/real-markets)",
+          "status": 200,
+          "consoleErrors": 0
+        },
+        {
+          "name": "Shield Map Surface (/en/shield-map)",
+          "status": 200,
+          "consoleErrors": 0,
+          "tiersPresent": false
+        },
+        {
+          "name": "Audits Hub Intake (/en/security/audits)",
+          "status": 200,
+          "consoleErrors": 0
+        },
+        {
+          "name": "Non-Benchmark Report (?tier=advanced unentitled)",
+          "status": 200,
+          "consoleErrors": 0,
+          "lockedSections": 6
+        },
+        {
+          "name": "USDT Benchmark Showcase (/security/audits/report/0xdac17f...)",
+          "status": 200,
+          "consoleErrors": 0
+        }
+      ]
+    }
+  ]
+}

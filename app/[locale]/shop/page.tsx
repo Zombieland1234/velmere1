@@ -25,4 +25,3 @@ export default async function ShopPage() {
   );
 }
 
-/* PASS2270 public surface trim markers: PASS316 public commerce trim */

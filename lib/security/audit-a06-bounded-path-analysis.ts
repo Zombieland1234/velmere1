@@ -352,7 +352,7 @@ export function executeBoundedPathAnalysis(input: Pass35A5A06Case): Pass35A5A06R
     exploration = explorePaths(blocks, maxPaths, maxDepth, maxVisitsPerBlock);
   }
   const riskSignals = instructions.flatMap((instruction) => {
-    const severity = instruction.name === "SELFDESTRUCT"
+    const severity: "high" | "medium" | "low" | "informational" | null = instruction.name === "SELFDESTRUCT"
       ? "high"
       : ["DELEGATECALL", "CALLCODE"].includes(instruction.name)
         ? "medium"

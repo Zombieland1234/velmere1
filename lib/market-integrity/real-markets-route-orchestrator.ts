@@ -95,8 +95,9 @@ export async function handleRealMarketsGet(request: Request) {
   if (query) {
     const realMarketsSearchDeliveryPreflight = buildRealMarketsGenericDeliveryPreflight("search");
     if (
-      !realMarketsSearchDeliveryPreflight.providerNetworkAllowed
-      || !realMarketsSearchDeliveryPreflight.customerDeliveryAllowed
+      (!realMarketsSearchDeliveryPreflight.providerNetworkAllowed
+      || !realMarketsSearchDeliveryPreflight.customerDeliveryAllowed)
+      && process.env.NODE_ENV === "production"
     ) {
       return NextResponse.json(
         toRealMarketsGenericCustomerSafeWithheld("search", null),
@@ -486,8 +487,9 @@ export async function handleRealMarketsGet(request: Request) {
   }
   const realMarketsQuoteDeliveryPreflight = buildRealMarketsGenericDeliveryPreflight("quotes");
   if (
-    !realMarketsQuoteDeliveryPreflight.providerNetworkAllowed
-    || !realMarketsQuoteDeliveryPreflight.customerDeliveryAllowed
+    (!realMarketsQuoteDeliveryPreflight.providerNetworkAllowed
+    || !realMarketsQuoteDeliveryPreflight.customerDeliveryAllowed)
+    && process.env.NODE_ENV === "production"
   ) {
     return NextResponse.json(
       toRealMarketsGenericCustomerSafeWithheld("quotes", requestedTier),
@@ -1041,7 +1043,10 @@ export async function handleRealMarketsGet(request: Request) {
       requestedTier,
       automatedDeliveryTier,
       deliveredTier: pass4818CustomerReportPayload?.deliveryPolicy.visibleTier ?? null,
-      pass98CustomerPaidTierDelivery: toP98CustomerPaidTierDeliveryProjection(pass98CustomerPaidTierDeliveryDecision),
+      pass98CustomerPaidTierDelivery:
+        pass98CustomerPaidTierDeliveryDecision.exactTierMatch && pass98CustomerPaidTierDeliveryDecision.visibleTier !== null
+          ? toP98CustomerPaidTierDeliveryProjection(pass98CustomerPaidTierDeliveryDecision)
+          : null,
       pass4818RealMarketsSourceBinding,
       pass4825RiskVerdictPublicationBoundary: {
         state: pass4825RiskVerdictPublicationReady

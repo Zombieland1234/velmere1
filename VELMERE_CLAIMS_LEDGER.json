@@ -1,0 +1,184 @@
+{
+  "$schema": "https://velmere.com/schemas/claims-ledger.v1.json",
+  "auditRunId": "velmere-adv-release-gate-2026-09-07",
+  "auditDate": "2026-09-07T13:42:00Z",
+  "totalClaimsCataloged": 22,
+  "claims": [
+    {
+      "claim": "Asset-Class Execution Firewall strictly isolates non-EVM assets (equities, commodities, FX, native UTXO coins) from entering EVM bytecode disassembly and contract analyzers.",
+      "source": "lib/security/asset-class-firewall.ts",
+      "evidence": "tests/adversarial/asset-class-firewall.test.ts (5/5 PASS)",
+      "status": "VERIFIED",
+      "allowedWording": "The Asset-Class Execution Firewall enforces strict separation between EVM smart contracts and non-EVM assets at runtime.",
+      "prohibitedWording": "All assets undergo bytecode analysis; Velmère decompiles any asset type."
+    },
+    {
+      "claim": "First-class CheckStatus enumeration mathematically excludes NOT_APPLICABLE from the pass denominator and flags coverage under 60% as RISK_UNDETERMINED.",
+      "source": "lib/security/status-contract.ts",
+      "evidence": "tests/adversarial/check-status-invariants.test.ts (4/4 PASS), property fuzzer across 1,000 vectors",
+      "status": "VERIFIED",
+      "allowedWording": "Check evaluation excludes non-applicable checks from the calculation denominator, preventing artificial rating inflation.",
+      "prohibitedWording": "Non-applicable checks count as 100% passed; 100% guaranteed pass rate."
+    },
+    {
+      "claim": "Pre-flight Report Semantic Linter validates 9 semantic rules and rejects reports with contradictory claims, synthetic addresses, or unhedged marketing absolutes.",
+      "source": "lib/security/report-semantic-linter.ts",
+      "evidence": "tests/adversarial/report-semantic-linter.test.ts (5/5 PASS)",
+      "status": "VERIFIED",
+      "allowedWording": "Reports pass an automated semantic validation linter prior to PDF rendering or customer distribution.",
+      "prohibitedWording": "Zero defect guarantee; unhackable audit reports."
+    },
+    {
+      "claim": "Cryptographic Traceable Evidence Engine records raw payloads, SHA-256 digests, provider origins, and freshness timestamps.",
+      "source": "lib/security/traceable-evidence-engine.ts",
+      "evidence": "tests/adversarial/report-semantic-linter.test.ts & traceable-evidence-engine.ts",
+      "status": "VERIFIED",
+      "allowedWording": "All reported findings are cryptographically anchored to SHA-256 evidence digests and verifiable data lineage.",
+      "prohibitedWording": "Immutable proof of truth; infallible evidence."
+    },
+    {
+      "claim": "PDF reports are generated cleanly in PDF-1.4 format without synthetic address leaks and with reproducible SHA-256 plan digests.",
+      "source": "scripts/generate_50_production_pdfs.ts",
+      "evidence": "dowody/raport_50_wygenerowanych_pdf.txt (50/50 clean PDFs generated in 771ms)",
+      "status": "VERIFIED",
+      "allowedWording": "PDF reports are deterministically generated and verified with SHA-256 integrity digests.",
+      "prohibitedWording": "Legally certified PDF documents; human-auditor equivalent certified documents."
+    },
+    {
+      "claim": "Customer-safe PDF renderer redacts internal memory references and prevents cross-tier data leaks.",
+      "source": "lib/security/pro-audit-pdf/customer-safe-renderer.ts",
+      "evidence": "lib/security/audit-canonical-report.ts (filterCanonicalReportByEntitlement)",
+      "status": "VERIFIED",
+      "allowedWording": "Customer reports filter locked tier data and redact internal server memory pointers.",
+      "prohibitedWording": "Military-grade data protection; completely leakproof architecture."
+    },
+    {
+      "claim": "Stripe webhook dispatcher enforces idempotent deduplication and rejects unlisted or malicious event injections.",
+      "source": "lib/payments/stripe-webhook/dispatcher.ts",
+      "evidence": "tests/adversarial/payment-red-team.test.ts (6/6 PASS)",
+      "status": "VERIFIED",
+      "allowedWording": "Payment webhooks enforce signature validation and deduplication against replay attacks.",
+      "prohibitedWording": "Unhackable payment gateway; 100% fraud immunity."
+    },
+    {
+      "claim": "Public paid self-serve checkout is strictly contained under PASS36_PAID_CHECKOUT_CONTAINMENT returning HTTP 503 stop-sell.",
+      "source": "lib/commerce/vlm-paid-checkout-containment.ts",
+      "evidence": "tests/adversarial/payment-red-team.test.ts (Scenario #1 & #9)",
+      "status": "VERIFIED",
+      "allowedWording": "Public checkout is currently restricted under controlled beta stop-sell containment pending full fulfillment reconciliation.",
+      "prohibitedWording": "Open for immediate public sales; instant automated digital service purchase."
+    },
+    {
+      "claim": "Prices and tier entitlements are strictly governed by server-side SKU catalog and cannot be overridden by client payloads.",
+      "source": "lib/commerce/vlm-paid-access.ts",
+      "evidence": "tests/adversarial/payment-red-team.test.ts (Scenario #2)",
+      "status": "VERIFIED",
+      "allowedWording": "Product prices and entitlement tiers are server-authoritative and immutable to client manipulation.",
+      "prohibitedWording": "Dynamic client-negotiated pricing; client-controlled tiers."
+    },
+    {
+      "claim": "Quantitative signal engine calculates bounded technical indicators across supported timeframes.",
+      "source": "lib/market/dynamic-signal-engine.ts",
+      "evidence": "tests/commerce/dynamic-signal-engine.test.ts",
+      "status": "VERIFIED",
+      "allowedWording": "Signal engine computes mathematical indicator values within defined price boundaries.",
+      "prohibitedWording": "Guaranteed profit signals; 100% accurate market predictions."
+    },
+    {
+      "claim": "Mutation testing confirms test suites detect inverted firewall rules, inverted coverage gates, and linter bypass attempts.",
+      "source": "tests/adversarial/mutation-testing.test.ts",
+      "evidence": "tests/adversarial/mutation-testing.test.ts (3/3 mutations detected)",
+      "status": "VERIFIED",
+      "allowedWording": "Test suites undergo mutation testing to verify sensitivity to logic and security defects.",
+      "prohibitedWording": "Bug-free software guarantee; flawless test coverage."
+    },
+    {
+      "claim": "Property-based tests verify partition identity across 1,000 randomized check status vectors.",
+      "source": "tests/adversarial/property-based-invariants.test.ts",
+      "evidence": "tests/adversarial/property-based-invariants.test.ts (1,000 vectors PASS)",
+      "status": "VERIFIED",
+      "allowedWording": "Mathematical invariants verify check status partition identities across randomized inputs.",
+      "prohibitedWording": "Mathematical infallibility; infinite coverage proof."
+    },
+    {
+      "claim": "OHLC candlestick price invariants enforce High >= max(Open, Close) and Low <= min(Open, Close).",
+      "source": "tests/adversarial/property-based-invariants.test.ts",
+      "evidence": "tests/adversarial/property-based-invariants.test.ts (Scenario #2 PASS)",
+      "status": "VERIFIED",
+      "allowedWording": "Candlestick bars conform to mathematical high/low bounding constraints.",
+      "prohibitedWording": "Zero market data error guarantee."
+    },
+    {
+      "claim": "Customer buyer personas file represents synthetic AI simulations for architectural stress modeling, not real customer sales.",
+      "source": "dowody/analiza_klientow_ai_50_person.json",
+      "evidence": "dowody/analiza_klientow_ai_50_person.json (validationStatus: SIMULATED_NOT_REAL_CUSTOMERS)",
+      "status": "SIMULATED",
+      "allowedWording": "Customer personas are AI-generated synthetic simulations for product stress testing.",
+      "prohibitedWording": "Real paying customers; market-validated purchase intent; confirmed willingness-to-pay."
+    },
+    {
+      "claim": "On-chain smart contract bytecode is verified against RPC node state with compiler version detection.",
+      "source": "lib/security/audit-canonical-report.ts",
+      "evidence": "scripts/generate_50_production_pdfs.ts (targets 1-30)",
+      "status": "VERIFIED",
+      "allowedWording": "Static bytecode analysis disassembles runtime bytecode obtained from RPC nodes.",
+      "prohibitedWording": "100% vulnerability-free certification; proof of unhackability."
+    },
+    {
+      "claim": "Governance timelocks and multi-signature requirements are parsed from contract profiles.",
+      "source": "lib/security/contract-audit-profiles.ts",
+      "evidence": "lib/security/contract-audit-profiles.ts",
+      "status": "VERIFIED",
+      "allowedWording": "Governance parameters reflect verified timelock and admin configurations for documented contracts.",
+      "prohibitedWording": "Guaranteed protection against governance attacks."
+    },
+    {
+      "claim": "Human review attestation requires manual execution or explicitly displays NOT COMMISSIONED banner.",
+      "source": "lib/security/audit-canonical-report.ts",
+      "evidence": "lib/security/report-semantic-linter.ts (Check 9)",
+      "status": "VERIFIED",
+      "allowedWording": "Automated reports explicitly declare when an independent human auditor review was not commissioned.",
+      "prohibitedWording": "Equivalent to full human audit; certified human review included."
+    },
+    {
+      "claim": "Real-time automated exploit blocking in the live mempool.",
+      "source": "README.md",
+      "evidence": "FINAL_FAILURE_REGISTER.md (FF-008)",
+      "status": "UNVERIFIED",
+      "allowedWording": "Static risk analysis and symbolic layout diffing.",
+      "prohibitedWording": "Autonomous exploit firewall; active mempool front-running protection; 0-day transaction blocking."
+    },
+    {
+      "claim": "Empirical willingness-to-pay and conversion probabilities derived from live market billing.",
+      "source": "dowody/analiza_klientow_ai_50_person.json",
+      "evidence": "FINAL_FAILURE_REGISTER.md (FF-006)",
+      "status": "SIMULATED",
+      "allowedWording": "Synthetic modeling estimates based on simulated buyer profiles.",
+      "prohibitedWording": "Actual verified billing conversion; proven historical market demand."
+    },
+    {
+      "claim": "EVM Bytecode Decompilation for Equities (AAPL, NVDA, TSLA).",
+      "source": "lib/security/asset-class-firewall.ts",
+      "evidence": "lib/security/asset-class-firewall.ts",
+      "status": "NOT_APPLICABLE",
+      "allowedWording": "Equities are analyzed via market microstructure and exchange trading parameters.",
+      "prohibitedWording": "Solidity bytecode decompilation of corporate equity shares."
+    },
+    {
+      "claim": "DEX Liquidity Lock Verification for Bitcoin Native UTXO Layer 1.",
+      "source": "lib/security/audit-canonical-report.ts",
+      "evidence": "lib/security/audit-canonical-report.ts",
+      "status": "NOT_APPLICABLE",
+      "allowedWording": "Bitcoin is analyzed using UTXO consensus and hashrate parameters.",
+      "prohibitedWording": "Uniswap liquidity pool lock verification for native Bitcoin."
+    },
+    {
+      "claim": "Legacy unhedged marketing absolute claims (e.g. '100% secure', 'unhackable').",
+      "source": "legacy copy",
+      "evidence": "lib/security/report-semantic-linter.ts (Check 8)",
+      "status": "RETIRED",
+      "allowedWording": "Risk score bounded by evidence coverage.",
+      "prohibitedWording": "100% secure, guaranteed protection, unhackable."
+    }
+  ]
+}

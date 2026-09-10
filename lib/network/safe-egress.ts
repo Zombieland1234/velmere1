@@ -361,7 +361,14 @@ function pinnedHttpsRequest(
   else if (body instanceof Uint8Array) headers.set("content-length", String(body.byteLength));
   else headers.delete("content-length");
 
-  const pinnedLookup: LookupFunction = (_hostname, _options, callback) => {
+  const pinnedLookup: LookupFunction = (_hostname, options, callback) => {
+    if (typeof options === "object" && options !== null && (options as { all?: boolean }).all) {
+      (callback as (err: null, addresses: Array<{ address: string; family: number }>) => void)(
+        null,
+        [{ address: pinned.address, family: pinned.family }],
+      );
+      return;
+    }
     callback(null, pinned.address, pinned.family);
   };
 

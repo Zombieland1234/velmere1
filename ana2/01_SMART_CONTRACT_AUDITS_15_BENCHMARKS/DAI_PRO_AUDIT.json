@@ -1,0 +1,19 @@
+{
+  "targetContract": "MakerDAO DAI Stablecoin",
+  "symbol": "DAI",
+  "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 14,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Privileged Ward Role Permission Drift",
+    "category": "Decentralized Stablecoin Ward Governance",
+    "swcId": "SWC-105",
+    "cweId": "CWE-284",
+    "rootCause": "Over-reliance on centralized governance multi-sig for emergency ward addition without enforced multi-week timelocks.",
+    "attackVector": "Governance vote manipulation or flash-loan governance hijacking grants ward privileges to unverified smart contract."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/Dai.sol\n+++ b/contracts/Dai.sol\n@@ -45,3 +45,4 @@\n  function rely(address guy) external auth {\n+   require(gsmTimelockPassed(guy), 'GSM timelock pending');\n    wards[guy] = 1;\n }",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

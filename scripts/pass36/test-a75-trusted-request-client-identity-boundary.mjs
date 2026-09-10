@@ -85,6 +85,10 @@ await withEnv({ NODE_ENV: "production", VERCEL_ENV: "production" }, async () => 
   const result = await checkRateLimit(request({ "x-forwarded-for": "198.51.100.31" }), "investigator");
   check("market_guardrail_missing_proxy_fail_closed", !result.ok && result.status === 503, result);
 });
+await withEnv({ NODE_ENV: "production" }, async () => {
+  const result = await checkRateLimit(request({ "x-forwarded-for": "198.51.100.31" }), "investigator");
+  check("self_hosted_production_missing_proxy_fail_closed", !result.ok && result.status === 503, result);
+});
 await withEnv({ NODE_ENV: "production", VERCEL_ENV: "production", VERCEL: "1", VELMERE_TRUSTED_PROXY_PROFILE: "vercel" }, async () => {
   const result = await checkRateLimit(request({ "x-vercel-forwarded-for": "198.51.100.32" }), "investigator");
   check("market_guardrail_missing_durable_store_fail_closed", !result.ok && result.status === 503, result);
@@ -123,7 +127,15 @@ for (const file of [
   "lib/server/market-integrity-route-modules/investigator.ts",
   "lib/server/market-integrity-route-modules/readiness.ts",
   "lib/server/market-integrity-route-modules/source-snapshots.ts",
-]) check(`market_route_awaits:${file}`, read(file).includes("await checkRateLimit(request"));
+]) {
+  // Routes may use the direct guard or an injected guard for testability. In
+  // either case, the security property is that its decision is awaited before
+  // continuing with the request.
+  check(
+    `market_route_awaits:${file}`,
+    /await\s+(?:checkRateLimit|checkRequestRateLimit)\(request\b/u.test(read(file)),
+  );
+}
 check("profile_awaits_central_limiter", read("app/api/profile/route.ts").includes("await rateLimit(request"));
 check("square_posts_no_double_limiter", !read("app/api/square/posts/route.ts").includes('rateLimit(request, "square-posts"'));
 check("square_comments_no_double_limiter", !read("app/api/square/comments/route.ts").includes('rateLimit(request, "square-comments"'));

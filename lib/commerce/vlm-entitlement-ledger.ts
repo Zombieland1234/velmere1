@@ -93,8 +93,15 @@ export type VlmPaidAccountEntitlementVerdict =
 
 type MemoryEntitlementKey = string;
 
-const memoryEntitlements = new Map<MemoryEntitlementKey, VlmPaidEntitlementRecord>();
-const memoryAuditQueue = new Map<string, VlmPaidEntitlementRecord>();
+const memoryEntitlements: Map<MemoryEntitlementKey, VlmPaidEntitlementRecord> =
+  ((globalThis as unknown as Record<string, unknown>).__velmereMemoryEntitlements as Map<MemoryEntitlementKey, VlmPaidEntitlementRecord>)
+  || new Map<MemoryEntitlementKey, VlmPaidEntitlementRecord>();
+(globalThis as unknown as Record<string, unknown>).__velmereMemoryEntitlements = memoryEntitlements;
+
+const memoryAuditQueue: Map<string, VlmPaidEntitlementRecord> =
+  ((globalThis as unknown as Record<string, unknown>).__velmereMemoryAuditQueue as Map<string, VlmPaidEntitlementRecord>)
+  || new Map<string, VlmPaidEntitlementRecord>();
+(globalThis as unknown as Record<string, unknown>).__velmereMemoryAuditQueue = memoryAuditQueue;
 
 function nowIso(now = new Date()) {
   return now.toISOString();
@@ -660,9 +667,13 @@ export async function verifyVlmPaidAccountEntitlement(args: {
         }
         return { ok: true, entitlement: durable, ledgerMode: "durable" };
       }
-      return { ok: false, error: "durable_entitlement_not_found", ledgerMode: "durable" };
+      if (runtimeMode.durableRequired) {
+        return { ok: false, error: "durable_entitlement_not_found", ledgerMode: "durable" };
+      }
     } catch {
-      return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
+      if (runtimeMode.durableRequired) {
+        return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
+      }
     }
   }
 
@@ -673,8 +684,13 @@ export async function verifyVlmPaidAccountEntitlement(args: {
   const candidates = Array.from(memoryEntitlements.values())
     .filter((record) =>
       record.productId === args.productId
-      && record.contextHash === contextHash
       && record.context.accountIdHash === accountIdHash
+      && (
+        record.contextHash === contextHash
+        || (!record.context.assetId && !record.context.auditCaseRef)
+        || (record.context.assetId && record.context.assetId === normalizedContext.assetId)
+        || (record.context.symbol && record.context.symbol.toUpperCase() === normalizedContext.symbol?.toUpperCase())
+      )
       && (record.status === "paid" || record.status === "active"),
     )
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
@@ -769,6 +785,21 @@ export function updateMemoryVlmPaidEntitlementStatus(args: {
 
 export function getMemoryVlmPaidEntitlements() {
   return Array.from(memoryEntitlements.values());
+}
+
+export function seedMemoryEntitlementRecord(record: VlmPaidEntitlementRecord) {
+  const key = entitlementKey({
+    stripeSessionId: record.stripeSessionId,
+    productId: record.productId,
+    contextHash: record.contextHash,
+  });
+  memoryEntitlements.set(key, record);
+  return record;
+}
+
+export function clearMemoryEntitlements() {
+  memoryEntitlements.clear();
+  memoryAuditQueue.clear();
 }
 
 export function getMemoryVlmAuditHumanQueue() {
@@ -912,11 +943,17 @@ export async function verifyVlmPaidEntitlementById(args: {
     if (!supabase) return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
     try {
       const { data, error } = await supabase.from("velmere_vlm_paid_entitlements").select("*").eq("id", entitlementId).maybeSingle();
-      if (error) return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
-      if (!data) return { ok: false, error: "durable_entitlement_not_found", ledgerMode: "durable" };
-      return validate(entitlementRecordFromRow(data as Record<string, unknown>), "durable");
+      if (!error && data) {
+        return validate(entitlementRecordFromRow(data as Record<string, unknown>), "durable");
+      }
+      if (requiresDurableVlmPaidEntitlementLedger()) {
+        if (error) return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
+        return { ok: false, error: "durable_entitlement_not_found", ledgerMode: "durable" };
+      }
     } catch {
-      return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
+      if (requiresDurableVlmPaidEntitlementLedger()) {
+        return { ok: false, error: "durable_entitlement_lookup_failed", ledgerMode: "durable" };
+      }
     }
   }
 

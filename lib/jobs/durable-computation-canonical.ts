@@ -7,7 +7,7 @@ export function sha256Hex(value: string | Uint8Array) {
 export function canonicalDurableJson(value: unknown, rootPath = "$input"): string {
   const ancestors = new WeakSet<object>();
   const visit = (entry: unknown, path: string): string => {
-    if (entry === null) return "null";
+    if (entry === null || entry === undefined) return "null";
     if (typeof entry === "string" || typeof entry === "boolean") return JSON.stringify(entry);
     if (typeof entry === "number") {
       if (!Number.isFinite(entry)) throw new Error(`durable_canonical_json_non_finite:${path}`);

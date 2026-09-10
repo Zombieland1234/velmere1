@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_pancake_router_basic_010",
+  "caseRef": "CASE-VLM-PANCAKE_ROUTER-BASIC",
+  "target": {
+    "contractName": "PancakeSwap Router v2",
+    "contractAddress": "0x10ed43c718714eb63d5aa57b78b54704e256024e",
+    "network": "BNB Smart Chain (BSC)",
+    "chainId": "56",
+    "tokenSymbol": "CakeRouter",
+    "proxyPattern": "Immutable (No Proxy)"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "en",
+  "createdAt": "2026-09-10T12:36:15.541Z",
+  "verdict": {
+    "riskScore": 12,
+    "riskLabel": "LOW RISK",
+    "confidenceScore": 98,
+    "auditQualityScore": 66,
+    "summary": "Canonical PancakeSwap v2 swap router. Immutable execution logic with strict deadline enforcement and user slippage protection.",
+    "evidenceCoverage": 98,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 84,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 31500000,
+      "snapshotBlockHash": "0x6a2c914efbc20f83d987d15668b375b4260d853b0e77457ef454c6fb73dcf271",
+      "runtimeBytecodeSha256": "sha256:2c68e1a6b0c2688f117f7b24340798e6d23cb3a90327f12e8cbcd93393b48f07",
+      "pinnedChainId": "56",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 95,
+      "reachableCFGEdgesPct": 91,
+      "functionsPct": 97,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 93,
+      "formalPropertiesPct": 84
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Audit Overview & Contract Context",
+      "subtitle": "Summary of execution scope and target objectives",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Contract identity verification and network deployment analysis",
+        "Function selector decompilation and proxy pattern scanning",
+        "Baseline attack surface calibration and risk tiering"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Project / Contract",
+            "value": "PancakeSwap Router v2"
+          },
+          {
+            "label": "Contract Address",
+            "value": "0x10ed43c718714eb63d5aa57b78b54704e256024e"
+          },
+          {
+            "label": "Network / Chain ID",
+            "value": "BNB Smart Chain (BSC) (ID: 56)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "CakeRouter"
+          },
+          {
+            "label": "Proxy Pattern",
+            "value": "Immutable (No Proxy)"
+          },
+          {
+            "label": "Compiler Version",
+            "value": "solc 0.6.6"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Source Code Verification & Bytecode Decompilation",
+      "subtitle": "State hash match against blockchain node and dispatcher analysis",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Bytecode integrity matched against RPC node",
+        "Control-flow analysis for public execution entrypoints",
+        "Identification of selfdestruct and arbitrary delegatecall opcodes"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "EVM machine bytecode was disassembled into a control-flow graph (CFG). Standard ERC selectors and privileged opcodes were formally analyzed."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Baseline Security Findings",
+      "subtitle": "Identified vulnerabilities in baseline scan",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Summary of identified security findings",
+        "Severity classification adhering to SWC and CWE taxonomy",
+        "Actionable remediation guidelines and mitigation advice"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-PAN-01",
+            "severity": "low",
+            "category": "Routing Hygiene",
+            "title": "Exact Output Fee-on-transfer Caveat",
+            "description": "swapTokensForExactTokens does not support fee-on-transfer tokens; swapExactTokensForTokensSupportingFeeOnTransferTokens must be used.",
+            "evidence": "function swapExactTokensForTokensSupportingFeeOnTransferTokens(...) external",
+            "recommendation": "Ensure dApps invoke fee-supporting variants when routing unknown BEP20 tokens.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_pancake_router_basic_010-VLM-PAN-01",
+            "evidenceId": "EVD-FIND-rep_pancake_router_basic_010-VLM-PAN-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Privileged Roles, Admin Keys & Governance",
+      "subtitle": "Verification of timelock delay parameters and governance controls",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Verification of timelock delay parameters and governance controls",
+        "Detection of privileged mint, pause, blacklist, and drainage capabilities",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Liquidity, Holder Concentration & Lock Evidence (PRO)",
+      "subtitle": "Token distribution curve, whale clusters, and verifiable DEX lock proofs",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Token distribution curve and top holder concentration analysis",
+        "DEX liquidity pool pairing and lock verification across registered vaults",
+        "Automated honeypot simulation, transfer fee checks, and sell restriction audit",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Attack Surface & Reentrancy Formal Vectors (PRO)",
+      "subtitle": "Simulation of oracle manipulation, flash loans, and cross-function reentrancy",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Cross-function and cross-contract reentrancy guard modeling",
+        "Price oracle staleness, manipulation resilience, and market feed verification",
+        "Economic shock modeling and flash-loan manipulation resistance simulation",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Storage Layout Collision & Multi-Compiler Bytecode Diff (ADVANCED)",
+      "subtitle": "Deep storage layout slot collision detection across implementation upgrades",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Storage slot allocation collision detection across implementation upgrades",
+        "Upgrade proxy layout gap verification and state preservation checks",
+        "Bytecode reproduction against official compiler metadata and build pipelines",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Formal SMT Invariant Proofs & Regression Analysis (ADVANCED)",
+      "subtitle": "Mathematical Z3 solver invariant verification and bytecode regression analysis",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "SMT proofs for solvency, conservation, and reentrancy impossibility invariants",
+        "Bytecode regression analysis and logic change tracking",
+        "Formal SMT Verification (Z3): 84% invariants verified (QF_LIA UNSAT)",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Human Analyst Review & Signed Verification Evidence (ADVANCED)",
+      "subtitle": "Attested reviewer evidence and signed non-automated verification findings",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analyst sign-off requires verified reviewer evidence",
+        "Cryptographically signed attestation digest",
+        "Manual review boundary explicit: no certified safe claims",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:f3fbde356b62461309dca16992f3d3df7503d32bc20efc2a7a48ea7ada154744",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "56",
+      "blockNumber": 31500000,
+      "contractAddress": "0x10ed43c718714eb63d5aa57b78b54704e256024e",
+      "network": "BNB Smart Chain (BSC)",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.6.6",
+      "optimizationRuns": 200,
+      "evmTarget": "istanbul"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": true
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 95,
+      "reachableCFGEdgesPct": 91,
+      "functionsPct": 97,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 84
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:3f0067e03241d41fb580c4de9bbe88ec4a39704856bc674aabacdd3a41111e7d",
+      "reportDigestSha256": "sha256:3f0067e03241d41fb580c4de9bbe88ec4a39704856bc674aabacdd3a41111e7d",
+      "provenanceHash": "0x6a2c914efbc20f83d987d15668b375b4260d853b0e77457ef454c6fb73dcf271"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:656f34a7379e1c85616e9c5eb2930f02309cc2f500cb4d8e725f1277a4f14f1f",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "fa213c177c075cc606362394a0fa408e94a74150a0f668ed4a3b1f89e185592af503424488195f0bbddcee3a3658b6ebcb4d8cd3dfc6db2934c9b6d6e60a2301",
+    "signedDigest": "949604edd7be24005490f763267d205d0980870038f5268dbed09d2aa7cbc908",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "949604edd7be24005490f763267d205d0980870038f5268dbed09d2aa7cbc908",
+      "serialNumber": "207df9de976968b73d04ff885f33706a",
+      "genTime": "2026-09-10T12:36:15.541Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "adc31059c4f8baecd1ab2e7dd2476e91481e4536cf3f4d1b85acc8f8c49242d0"
+    },
+    "provenanceProof": "sha256:1f24c17b4789eb7932bf184a6c37f75f0080ba35b61398f0e9a1f3ffc9add90e"
+  },
+  "integrityProof": {
+    "pdfSha256": "9f450f713208ccbdf7d99ba467ffb655069b2723a64e82bdff0d8651bc8af160",
+    "pdfByteLength": 87309,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:15.552Z"
+  }
+}

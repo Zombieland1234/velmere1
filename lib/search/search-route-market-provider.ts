@@ -280,11 +280,15 @@ export async function loadPass466MarketMatches(
     rows.length === 1 &&
     isPass466ExactMarketMatch(rows[0], query)
   ) {
-    const snapshot = await resolvePass459AlphaVantageSnapshot({
-      symbol: rows[0].symbol,
-      assetClass: providerClass(rows[0]),
-    });
-    return [marketRowToLensResult(rows[0], locale, snapshot)];
+    try {
+      const snapshot = await resolvePass459AlphaVantageSnapshot({
+        symbol: rows[0].symbol,
+        assetClass: providerClass(rows[0]),
+      });
+      return [marketRowToLensResult(rows[0], locale, snapshot)];
+    } catch {
+      return [marketRowToLensResult(rows[0], locale, null)];
+    }
   }
   return rows.map((row) => marketRowToLensResult(row, locale, null));
 }

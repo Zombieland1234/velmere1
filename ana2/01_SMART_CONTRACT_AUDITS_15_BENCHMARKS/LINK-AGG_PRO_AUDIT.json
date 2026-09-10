@@ -1,0 +1,19 @@
+{
+  "targetContract": "Chainlink Price Feed Aggregator",
+  "symbol": "LINK-AGG",
+  "address": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 14,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Stale Price Acceptance & Zero / Negative Value Oracle Exploits",
+    "category": "Decentralized Oracle Feed & L2 Sequencer Uptime",
+    "swcId": "SWC-116",
+    "cweId": "CWE-682",
+    "rootCause": "Consuming protocols ignoring updatedAt timestamp thresholds and minAnswer / maxAnswer circuit breaker bounds.",
+    "attackVector": "LUNA-style death spiral or flash market crash reaches circuit breaker minAnswer ($0.10); feed returns static price while market trades at $0.001."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/OracleConsumer.sol\n+++ b/contracts/OracleConsumer.sol\n@@ -45,3 +45,5 @@\n  require(price > 0, 'Negative or zero oracle price');\n+ require(block.timestamp - updatedAt <= HEARTBEAT_LIMIT, 'Stale price feed');\n+ require(answeredInRound >= roundId, 'Incomplete oracle round');",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

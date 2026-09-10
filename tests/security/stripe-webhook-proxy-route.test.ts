@@ -186,4 +186,7 @@ async function main() {
   console.log("Stripe webhook proxy-to-route behavior: PASS (authentic HMAC + 3 negative families)");
 }
 
-await main();
+void main().catch((err) => {
+  console.error("Test failed:", err);
+  process.exit(1);
+});

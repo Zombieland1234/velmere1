@@ -21,9 +21,9 @@ export type RateLimitResult = {
 
 function routeLimit(route: GuardrailRoute) {
   if (route === "evidence-export") return { limit: 16, windowMs: 10 * 60 * 1000 };
-  if (route === "investigator") return { limit: 30, windowMs: 10 * 60 * 1000 };
-  if (route === "source-snapshots") return { limit: 60, windowMs: 10 * 60 * 1000 };
-  return { limit: 90, windowMs: 10 * 60 * 1000 };
+  if (route === "investigator") return { limit: 120, windowMs: 10 * 60 * 1000 };
+  if (route === "source-snapshots") return { limit: 120, windowMs: 10 * 60 * 1000 };
+  return { limit: 180, windowMs: 10 * 60 * 1000 };
 }
 
 function headerInteger(headers: Headers, name: string, fallback: number) {

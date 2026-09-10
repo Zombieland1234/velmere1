@@ -1,0 +1,19 @@
+{
+  "targetContract": "Arbitrum One Token Gateway",
+  "symbol": "ARB-GATEWAY",
+  "address": "0x72ce9c846789fdb6fc05592925b028d08417384c",
+  "network": "Ethereum -> Arbitrum One",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 18,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Cross-Chain Escrow Desynchronization via Cancelled Retryable Tickets",
+    "category": "Cross-Rollup Message Passing & Retryable Tickets",
+    "swcId": "SWC-105",
+    "cweId": "CWE-345",
+    "rootCause": "Failure of retryable ticket execution on L2 after tokens are locked in L1 escrow without automatic refund mechanism.",
+    "attackVector": "Gas spikes on L2 cause retryable ticket to expire before redemption, stranding user collateral in L1 gateway escrow."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/L1Gateway.sol\n+++ b/contracts/L1Gateway.sol\n@@ -310,3 +310,4 @@\n+ function claimRefundForCancelledTicket(uint256 ticketId) external nonReentrant { ... }",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

@@ -551,8 +551,8 @@ export function executePinnedSolcReproduction(caseInput: Pass35A4SolcCase, tool:
       executionBoundaryId: PASS36_EXTERNAL_COMMAND_BOUNDARY_ID,
       versionArgsSha256,
       compileArgsSha256,
-      isolatedWorkingDirectory: true,
-      inheritedEnvironment: false,
+      isolatedWorkingDirectory: true as const,
+      inheritedEnvironment: false as const,
       fixtureOnly: tool.fixtureOnly,
     },
     inputIdentity: {

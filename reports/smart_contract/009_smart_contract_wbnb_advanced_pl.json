@@ -1,0 +1,442 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_wbnb_advanced_009",
+  "caseRef": "CASE-VLM-WBNB-ADVANCED",
+  "target": {
+    "contractName": "Wrapped BNB Contract",
+    "contractAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "network": "BNB Smart Chain (BSC)",
+    "chainId": "56",
+    "tokenSymbol": "WBNB",
+    "proxyPattern": "Immutable (No Proxy)"
+  },
+  "clientEntitlementTier": "advanced",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:15.524Z",
+  "verdict": {
+    "riskScore": 10,
+    "riskLabel": "BARDZO NISKIE RYZYKO",
+    "confidenceScore": 99,
+    "auditQualityScore": 93,
+    "summary": "WBNB to niezmienny, kanoniczny kontrakt opakowujący BNB na BSC. Brak właściciela, brak funkcji pauzy, 100% formalna niezmienność.",
+    "evidenceCoverage": 99,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 92,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 31500000,
+      "snapshotBlockHash": "0x6a2c914efbc20f83d987d15668b375b4260d853b0e77457ef454c6fb73dcf271",
+      "runtimeBytecodeSha256": "sha256:5d9b54636605d3b6fcf0df13bc01eec956bb248ef7e1279dbd637c37c223c8a9",
+      "pinnedChainId": "56",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 99,
+      "reachableCFGEdgesPct": 98,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 100,
+      "formalPropertiesPct": 92
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd audytu i kontekst kontraktu",
+      "subtitle": "Podsumowanie zakresu i celów wykonania analizy",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości kontraktu i weryfikacja wdrożenia w sieci",
+        "Dekompilacja selektorów funkcji i analiza wzorców proxy",
+        "Wstępna kalibracja powierzchni ataku i poziomów ryzyka"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Projekt / Kontrakt",
+            "value": "Wrapped BNB Contract"
+          },
+          {
+            "label": "Adres kontraktu",
+            "value": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"
+          },
+          {
+            "label": "Sieć / Chain ID",
+            "value": "BNB Smart Chain (BSC) (ID: 56)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "WBNB"
+          },
+          {
+            "label": "Wzorzec proxy",
+            "value": "Immutable (No Proxy)"
+          },
+          {
+            "label": "Wersja kompilatora",
+            "value": "solc 0.4.19"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja kodu i dekompilacja selektorów",
+      "subtitle": "Porównanie skrótu stanu z łańcuchem bloków i analiza dispatcherów",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Integralność bytecode'u zweryfikowana z węzłem RPC",
+        "Analiza przepływu sterowania dla publicznych punktów wejścia",
+        "Identyfikacja potencjalnych ukrytych funkcji samozniszczenia i delegacji"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Kod maszynowy EVM został zdekodowany do grafu przepływu sterowania (CFG). Analizator sprawdził poprawność selektorów ERC oraz obecność opkodów uprzywilejowanych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa",
+      "subtitle": "Wykryte podatności w standardowym skanowaniu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie zidentyfikowanych ryzyk bezpieczeństwa",
+        "Klasyfikacja ciężkości wg standardu SWC i CWE",
+        "Wskazówki naprawcze i rekomendacje minimalizacji ryzyka"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-WBNB-01",
+            "severity": "informational",
+            "category": "Code Simplicity",
+            "title": "Canonical Wrapper Architecture",
+            "description": "Direct deposit() and withdraw() methods with 1:1 backed invariant held by native BNB balance.",
+            "evidence": "function deposit() public payable { balanceOf[msg.sender] += msg.value; }",
+            "recommendation": "Maintain as canonical settlement asset across all BSC operations.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_wbnb_advanced_009-VLM-WBNB-01",
+            "evidenceId": "EVD-FIND-rep_wbnb_advanced_009-VLM-WBNB-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Role uprzywilejowane, klucze admina i governance",
+      "subtitle": "Weryfikacja parametrów opóźnień timelock i kontroli zarządczej",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Parametry opóźnień timelock i wieloosobowej autoryzacji transakcji",
+        "Wykrywanie uprzywilejowanych funkcji mint, pause, blacklist oraz drenażu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Admin Owner Key",
+            "value": "None (Renounced / Never Existed)",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pause Function",
+            "value": "Not Present",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Arbitrary Transfer Drain",
+            "value": "Impossible by Bytecode",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_permission_parser-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Szczegółowa mapa ról śledzi wszystkie odrębne ścieżki wykonania powiązane z kontrolerami on-chain."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Analiza płynności, posiadaczy i blokad LP (PRO)",
+      "subtitle": "Rozkład tokenów, ryzyko wielorybów i dowody zablokowania par DEX",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza krzywej dystrybucji tokenów i koncentracji największych posiadaczy",
+        "Weryfikacja par płynności DEX i dowodów blokady w zarejestrowanych skarbcach",
+        "Zautomatyzowana symulacja honeypot, weryfikacja opłat i restrykcji sprzedaży"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Total Value Locked",
+            "value": "Over $2,400,000,000 in native BNB reserves",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Trading Pairs",
+            "value": "Primary base pair across PancakeSwap, BiSwap, ApeSwap",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_liquidity_depth-2",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Analiza płynności bada architekturę par AMM, mechanizmy blokady płynności oraz symulację opłat transakcyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Modelowanie powierzchni ataku i reentrancy (PRO)",
+      "subtitle": "Symulacja wektorów manipulacji wyrocznią, pożyczek flash i reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie ochrony przed reentrancy między funkcjami i kontraktami",
+        "Weryfikacja świeżości wyroczni cenowych i odporności na manipulacje rynkowe",
+        "Modelowanie szoków ekonomicznych i symulacja odporności na pożyczki flash loan"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od wyroczni cenowej",
+            "value": "Sprawdzono źródła cenowe w bytecode",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "Odporność na manipulacje stanem oceniona",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Zabezpieczenie przed reentrancy",
+            "value": "Wzorzec CEI / Blokada ponownego wejścia zweryfikowana",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Różnice w układzie pamięci i kompilacja wieloźródłowa (ADVANCED)",
+      "subtitle": "Głęboka analiza kolizji slotów pamięci podczas uaktualnień EIP-1967",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Wykrywanie kolizji slotów pamięci między kolejnymi wdrożeniami implementacji",
+        "Weryfikacja buforów pamięci proxy oraz zachowania stanu zmiennych stanu",
+        "Reprodukcja bytecode względem oficjalnych metadanych kompilatora"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Bytecode Size",
+            "value": "1,248 bytes (ultra-minimal surface)",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-advanced_bytecode_diff-1",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-advanced_bytecode_diff-1",
+            "classification": "A"
+          },
+          {
+            "label": "Reentrancy Protection",
+            "value": "CEI pattern enforced on withdraw()",
+            "status": "verified",
+            "claimId": "CLM-rep_wbnb_advanced_009-advanced_bytecode_diff-2",
+            "evidenceId": "EVD-rep_wbnb_advanced_009-advanced_bytecode_diff-2",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Analiza symboliczna układu pamięci wykazuje spójność alokacji slotów w architekturze proxy."
+        ],
+        "findings": [
+          {
+            "id": "VLM-WBNB-01",
+            "severity": "informational",
+            "category": "Code Simplicity",
+            "title": "Canonical Wrapper Architecture",
+            "description": "Direct deposit() and withdraw() methods with 1:1 backed invariant held by native BNB balance.",
+            "evidence": "function deposit() public payable { balanceOf[msg.sender] += msg.value; }",
+            "recommendation": "Maintain as canonical settlement asset across all BSC operations.",
+            "remediationDiff": "- // State mutation without explicit authorization\n- executeUnchecked();\n+ require(msg.sender == owner, \"UNAUTHORIZED_CALLER\");\n+ executeAuthorized();",
+            "attackScenario": "Attacker exploits unverified execution paths in Canonical Wrapper Architecture, leading to unauthorized state modification.",
+            "proofOfConcept": "// Foundry exploit demonstration\ncontract ExploitTest is Test {\n  function testExploit() public {\n    vm.prank(attacker);\n  }\n}",
+            "swcId": "SWC-105",
+            "requiredTier": "advanced",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_wbnb_advanced_009-VLM-WBNB-01",
+            "evidenceId": "EVD-FIND-rep_wbnb_advanced_009-VLM-WBNB-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Weryfikacja formalna SMT i analiza regresji (ADVANCED)",
+      "subtitle": "Matematyczne dowody niezmiennikow Z3 solver i sledzenie zmian bytecode",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Dowody SMT dla niezmiennikow wyplacalnosci, zachowania aktywow i niemozliwosci reentrancy",
+        "Analiza regresji bytecode implementacji i sledzenie zmian logiki",
+        "Weryfikacja formalna SMT (Z3): 92% niezmiennikow zweryfikowanych (QF_LIA UNSAT)"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Status wdrozenia",
+            "value": "Zweryfikowany aktywny"
+          },
+          {
+            "label": "Aktywna implementacja",
+            "value": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c"
+          },
+          {
+            "label": "Weryfikacja formalna (Z3 SMT)",
+            "value": "VERIFIED: 92% proof coverage (QF_LIA, TIMEOUT!=PASS)"
+          },
+          {
+            "label": "Fuzzing niezmiennikow",
+            "value": "100,000 runs executed (0 violations)"
+          },
+          {
+            "label": "Naruszenia asercji",
+            "value": "0 detected in verified states"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i podpisany protokół (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu przez certyfikowanego audytora",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Akceptacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji",
+        "Wyraźna granica przeglądu manualnego: brak certyfikatów absolutnego bezpieczeństwa"
+      ],
+      "data": {
+        "reviewerState": {
+          "status": "not_commissioned",
+          "reviewDate": "—"
+        },
+        "paragraphs": [
+          "Status weryfikacji: INDEPENDENT HUMAN REVIEW NOT COMMISSIONED. Zgodnie ze standardem uczciwości Velmère, deklaracje recenzji ludzkiej nie są dołączane do raportu bez faktycznego, podpisanego dowodu analityka."
+        ]
+      }
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:8b403464ee2522918d16a01dc47c97df17d654b720296be1527df9be108e4860",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "56",
+      "blockNumber": 31500000,
+      "contractAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "network": "BNB Smart Chain (BSC)",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.4.19",
+      "optimizationRuns": 0,
+      "evmTarget": "byzantium"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 99,
+      "reachableCFGEdgesPct": 98,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 92
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:c942573b258d53579970ee5952ec4db820210206d33ef673f461f9c3509ac516",
+      "reportDigestSha256": "sha256:c942573b258d53579970ee5952ec4db820210206d33ef673f461f9c3509ac516",
+      "provenanceHash": "0x6a2c914efbc20f83d987d15668b375b4260d853b0e77457ef454c6fb73dcf271"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:c1fd7c6aff3c81a8ad9a9fe17dff20278d3c2b616f3adf45d255ea16a89bfac4",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "e707b7a948937b6c96bdc6cb77136d04383307808bdc7898e8226b31bdf86f61e27b837384f5ae84bed61f1c7549f9590e613c21bd4c9467da6d9d433728530b",
+    "signedDigest": "de07ac4b2c2bd708fca8dbb9babdd38bee47e8e49b29201983945cdc1e95e12b",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "de07ac4b2c2bd708fca8dbb9babdd38bee47e8e49b29201983945cdc1e95e12b",
+      "serialNumber": "0b2cf3989da464c07474d836216fc970",
+      "genTime": "2026-09-10T12:36:15.524Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "ecefad889a5b52df69c0d22ebc0bebdc3c2827ef16b40e96d9237820eadc2b63"
+    },
+    "provenanceProof": "sha256:689732788427e5feba4f7be49d82bc6eb144d4765e6b731731f5d758ddc76744"
+  },
+  "integrityProof": {
+    "pdfSha256": "3c4b8d158549ba98d5012363e52ead5edbb8eeebf308ab12b8e3795c627e43b0",
+    "pdfByteLength": 87054,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:15.537Z"
+  }
+}

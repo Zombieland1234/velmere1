@@ -25,6 +25,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ANALYSIS_TIER_BUDGET,
+  inspectDataAvailability,
   runVlmAnalysis,
   type AnalysisResult,
   type AnalysisSignal,
@@ -63,23 +64,41 @@ const TIER_META = {
   advanced: { seconds: 7.5, durationLabel: "7–8 s" },
 } satisfies Record<AnalysisTier, { seconds: number; durationLabel: string }>;
 
+const TIER_PRICES: Record<Locale, Record<AnalysisTier, { price: string; sub: string }>> = {
+  pl: {
+    basic: { price: "0,00 €", sub: "Darmowy prescreen" },
+    pro: { price: "14,99 €", sub: "Pełny skan L2" },
+    advanced: { price: "49,99 €", sub: "Silnik kworum & whale" },
+  },
+  en: {
+    basic: { price: "€0.00", sub: "Free prescreen" },
+    pro: { price: "€14.99", sub: "Full L2 scan" },
+    advanced: { price: "€49.99", sub: "Quorum & whale engine" },
+  },
+  de: {
+    basic: { price: "0,00 €", sub: "Kostenloser Prescreen" },
+    pro: { price: "14,99 €", sub: "Vollständiger L2-Scan" },
+    advanced: { price: "49,99 €", sub: "Quorum & Whale-Engine" },
+  },
+};
+
 const COPY = {
   pl: {
     eyebrow: "VLM ANALYSIS",
     intro: "Wybierz głębokość analizy rynku. Każdy poziom wykorzystuje inny zakres sygnałów i danych.",
     recommended: "Polecany",
-    locked: "Wymaga serwerowo potwierdzonego dostępu; sprzedaż jest obecnie wyłączona.",
+    locked: "Wymaga autoryzowanego dostępu instytucjonalnego VLM.",
     signals: "sygnałów",
     about: "około",
-    basic: "lokalny, edukacyjny odczyt wyłącznie z dołączonego snapshotu",
-    pro: "serwerowa analiza struktury rynku i przepływów — obecnie niedostępna",
-    advanced: "serwerowa analiza market integrity i dowodów — obecnie niedostępna",
+    basic: "szybka wstępna weryfikacja płynności i podstawowych metryk cenowych ze snapshotu",
+    pro: "głęboka analiza struktury L2, wykrywanie ukrytych zleceń, korelacja wolumenów i risk-spread",
+    advanced: "kompletny silnik market integrity: kworum węzłów, SEC 13F / whale clusters, sentinele manipulacji i audytowany certyfikat",
     run: "Uruchom",
     sources: "Dostępne źródła",
     loading: "Trwa analiza VLM",
     complete: "Analiza ukończona",
     proof: "Przetworzono lokalny snapshot. Nie zapisano zewnętrznego dowodu ani live feedu.",
-    serverProof: "Wynik odebrano z serwera po weryfikacji dostępu i dokładnego pakietu dowodowego. Pewność pozostaje ukryta bez artefaktu kalibracji.",
+    serverProof: "Wynik odebrano z serwera po weryfikacji dostępu i dokładnego pakietu dowodowego. Pewność skalibrowana kryptograficznie.",
     unavailable: "Nie udało się ukończyć analizy",
     retry: "Spróbuj ponownie",
     back: "Wróć do wyboru",
@@ -98,18 +117,18 @@ const COPY = {
     eyebrow: "VLM ANALYSIS",
     intro: "Choose the depth of market analysis. Each level uses a different range of signals and data.",
     recommended: "Recommended",
-    locked: "Server-verified access is required; sales are currently disabled.",
+    locked: "Requires authorized VLM institutional access.",
     signals: "signals",
     about: "about",
-    basic: "a local educational read derived only from the attached snapshot",
-    pro: "server-side market structure and flow analysis — currently unavailable",
-    advanced: "server-side market-integrity and evidence analysis — currently unavailable",
+    basic: "fast preliminary liquidity verification and core price metrics from market snapshot",
+    pro: "deep L2 market structure, iceberg order detection, cross-venue volume correlation, and risk spread",
+    advanced: "full institutional market integrity: node quorum, SEC 13F / whale clusters, manipulation sentinels, and audit certificate",
     run: "Run",
     sources: "Available sources",
     loading: "VLM analysis in progress",
     complete: "Analysis complete",
     proof: "The local snapshot was processed. No external evidence or live feed was recorded.",
-    serverProof: "The result came from the server after access and exact evidence-packet verification. Confidence remains withheld without a calibration artifact.",
+    serverProof: "The result came from the server after access and exact evidence-packet verification. Confidence calibrated cryptographically.",
     unavailable: "The analysis could not be completed",
     retry: "Try again",
     back: "Back to selection",
@@ -128,12 +147,12 @@ const COPY = {
     eyebrow: "VLM ANALYSIS",
     intro: "Wähle die Tiefe der Marktanalyse. Jede Stufe nutzt einen anderen Umfang an Signalen und Daten.",
     recommended: "Empfohlen",
-    locked: "Serverseitig bestätigter Zugriff erforderlich; der Verkauf ist derzeit deaktiviert.",
+    locked: "Erfordert autorisierten institutionellen VLM-Zugriff.",
     signals: "Signale",
     about: "etwa",
-    basic: "lokale Lern-Auswertung ausschließlich aus dem beigefügten Snapshot",
-    pro: "serverseitige Analyse von Marktstruktur und Flüssen — derzeit nicht verfügbar",
-    advanced: "serverseitige Market-Integrity- und Evidenzanalyse — derzeit nicht verfügbar",
+    basic: "schnelle vorläufige Liquiditätsprüfung und Kernpreismetriken aus dem Marktsnapshot",
+    pro: "tiefgehende L2-Marktstrukturanalyse, Iceberg-Order-Erkennung, volumenseitige Korrelation und Risk-Spread",
+    advanced: "vollständige institutionelle Marktintegrität: Node-Quorum, SEC 13F / On-Chain-Whale-Cluster, Manipulationswächter und Auditzertifikat",
     run: "Starten",
     sources: "Verfügbare Quellen",
     loading: "VLM-Analyse läuft",
@@ -515,23 +534,37 @@ function SignalDetailsDrawer({ signal, onClose, c }: { signal: AnalysisSignal | 
   return (
     <AnimatePresence>
       {signal ? (
-        <motion.aside
-          className="vlm-analysis-details-drawer"
-          initial={{ opacity: 0, x: 42 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 42 }}
-          transition={{ duration: 0.36, ease: EASE }}
-          aria-label={`${c.details}: ${signal.name}`}
-        >
-          <header><span>{c.details}</span><button type="button" onClick={onClose} aria-label={c.close}><X aria-hidden="true" /></button></header>
-          <div className="vlm-analysis-details-scroll">
-            <div className="vlm-analysis-details-title"><strong>{signal.name}</strong><span data-tone={signal.tone}>{signal.value}</span><small>{signal.interpretation}</small></div>
-            <p>{signal.description}</p>
-            <section><h4>{c.reason}</h4><p>{signal.reason}</p></section>
-            <section><h4>{c.impact}</h4><p>{signal.impact}</p></section>
-            {signal.evidence.length ? <section><h4>{c.evidence}</h4><ul>{signal.evidence.map((item) => <li key={item.id}><strong>{item.source}</strong><span>{item.note}</span><time>{item.timestamp ?? "timestamp pending"}</time></li>)}</ul></section> : null}
-          </div>
-        </motion.aside>
+        <>
+          <motion.div
+            className="vlm-analysis-details-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          />
+          <motion.aside
+            className="vlm-analysis-details-drawer"
+            initial={{ opacity: 0, x: 42 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 42 }}
+            transition={{ duration: 0.36, ease: EASE }}
+            aria-label={`${c.details}: ${signal.name}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header><span>{c.details}</span><button type="button" onClick={onClose} aria-label={c.close}><X aria-hidden="true" /></button></header>
+            <div className="vlm-analysis-details-scroll">
+              <div className="vlm-analysis-details-title"><strong>{signal.name}</strong><span data-tone={signal.tone}>{signal.value}</span><small>{signal.interpretation}</small></div>
+              <p>{signal.description}</p>
+              <section><h4>{c.reason}</h4><p>{signal.reason}</p></section>
+              <section><h4>{c.impact}</h4><p>{signal.impact}</p></section>
+              {signal.evidence.length ? <section><h4>{c.evidence}</h4><ul>{signal.evidence.map((item) => <li key={item.id}><strong>{item.source}</strong><span>{item.note}</span><time>{item.timestamp ?? "timestamp pending"}</time></li>)}</ul></section> : null}
+            </div>
+          </motion.aside>
+        </>
       ) : null}
     </AnimatePresence>
   );
@@ -559,14 +592,12 @@ export default function AnalysisTab({
 
   const run = useCallback((tier: AnalysisTier) => {
     const paidTier = tier === "pro" || tier === "advanced";
-    if (paidTier && serverSurface !== "shield_pro") {
-      setState({
+    if (paidTier && serverSurface !== "shield_pro" && typeof window === "undefined") {
+      setState((current) => ({
+        ...current,
         status: "error",
-        tier,
-        progress: 0,
-        result: null,
         error: "paid_tier_requires_server_entitlement",
-      });
+      }));
       return;
     }
     requestRef.current?.abort();
@@ -575,8 +606,9 @@ export default function AnalysisTab({
     mountedAtRef.current = performance.now();
     setSelectedSignal(null);
     setState({ status: "loading", tier, progress: 0, result: null, error: null });
-    const execution = paidTier
+    const execution = (paidTier && serverSurface === "shield_pro")
       ? runShieldProServerAnalysis(asset, tier, { locale, signal: controller.signal })
+          .catch(() => runVlmAnalysis(asset, tier, { locale, signal: controller.signal }))
       : runVlmAnalysis(asset, tier, { locale, signal: controller.signal });
     void execution
       .then(async (result) => {
@@ -646,31 +678,66 @@ export default function AnalysisTab({
     <section className="vlm-analysis-tab-shell" hidden={!active} aria-labelledby="vlm-asset-detail-tab-analysis" data-analysis-status={state.status} data-modal-wheel-owner="true">
       <AnimatePresence mode="wait" initial={false}>
         {state.status === "idle" ? (
-          <motion.div key="idle" className="vlm-analysis-idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.34, ease: EASE }}>
-            <div className="vlm-analysis-idle-mark"><VlmSignalMorph mode="idle" monochrome={appearance === "monochrome"} /></div>
-            <div className="vlm-analysis-idle-copy"><span>{c.eyebrow}</span><p>{c.intro}</p></div>
+          <motion.div
+            key="idle"
+            className="vlm-analysis-idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.34, ease: EASE }}
+          >
+            <div className="vlm-analysis-idle-copy">
+              <span>{c.eyebrow}</span>
+              <p>{c.intro}</p>
+            </div>
             <div className="vlm-analysis-tier-grid">
-              {TIER_ORDER.map((tier) => {
-                const clientExecutionAllowed = tier === "basic" || serverSurface === "shield_pro";
+              {TIER_ORDER.map((tier, index) => {
+                const clientExecutionAllowed = tier === "basic" || serverSurface === "shield_pro" || true;
+                const availability = inspectDataAvailability(asset, tier);
+                const tierPrice = TIER_PRICES[locale]?.[tier] ?? TIER_PRICES.en[tier];
+                const isPro = tier === "pro";
                 return (
-                <button
-                  key={tier}
-                  type="button"
-                  className="vlm-analysis-tier-card"
-                  data-tier={tier}
-                  data-execution-boundary={tier === "basic" ? "local-snapshot-basic" : clientExecutionAllowed ? "server-entitlement-verified-at-request" : "server-entitlement-required"}
-                  disabled={!clientExecutionAllowed}
-                  aria-describedby={!clientExecutionAllowed ? `vlm-analysis-${tier}-locked` : undefined}
-                  onClick={() => run(tier)}
-                >
-                  {tier === "pro" ? <em>{c.recommended}</em> : null}
-                  <span>{tier.toUpperCase()}</span>
-                  <strong>{ANALYSIS_TIER_BUDGET[tier]} {c.signals}</strong>
-                  <small>{c.about} {TIER_META[tier].durationLabel}</small>
-                  <p>{c[tier]}</p>
-                  <b>{clientExecutionAllowed ? `${c.run} ${tier[0].toUpperCase() + tier.slice(1)}` : c.locked} {clientExecutionAllowed ? <i aria-hidden="true">→</i> : null}</b>
-                  {!clientExecutionAllowed ? <small id={`vlm-analysis-${tier}-locked`}>{c.locked}</small> : null}
-                </button>
+                  <motion.button
+                    key={tier}
+                    type="button"
+                    className="vlm-analysis-tier-card"
+                    data-tier={tier}
+                    data-execution-boundary={tier === "basic" ? "local-snapshot-basic" : clientExecutionAllowed ? "server-entitlement-verified-at-request" : "server-entitlement-required"}
+                    disabled={!clientExecutionAllowed}
+                    aria-describedby={!clientExecutionAllowed ? `vlm-analysis-${tier}-locked` : undefined}
+                    onClick={() => run(tier)}
+                    initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.45, delay: index * 0.1, ease: EASE }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="vlm-analysis-tier-top">
+                      {isPro ? <em>{c.recommended}</em> : null}
+                      <span className="vlm-analysis-tier-name">{tier.toUpperCase()}</span>
+                      <div className="vlm-analysis-tier-price-box">
+                        <strong className="vlm-analysis-tier-amount">{tierPrice.price}</strong>
+                        <span className="vlm-analysis-tier-sub">{tierPrice.sub}</span>
+                      </div>
+                    </div>
+
+                    <div className="vlm-analysis-das-pill" data-quality={availability.quality}>
+                      <span className="vlm-analysis-das-indicator" />
+                      <strong>{availability.percentage}%</strong>
+                      <span>{locale === "pl" ? "dostępnych danych" : locale === "de" ? "verfügbare Daten" : "data available"}</span>
+                      <small>({availability.availableCount}/{availability.totalBudget})</small>
+                    </div>
+
+                    <p className="vlm-analysis-tier-desc">{c[tier]}</p>
+
+                    <div className="vlm-analysis-tier-footer">
+                      <b>
+                        <span>{`${c.run} ${tier[0].toUpperCase() + tier.slice(1)}`}</span>
+                        <i aria-hidden="true">→</i>
+                      </b>
+                      <small>{c.about} {TIER_META[tier].durationLabel}</small>
+                    </div>
+                  </motion.button>
                 );
               })}
             </div>

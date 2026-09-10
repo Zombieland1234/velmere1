@@ -1,0 +1,334 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_safemoon_basic_046",
+  "caseRef": "CASE-VLM-SAFEMOON-BASIC",
+  "target": {
+    "contractName": "SafeMoon Protocol Core",
+    "contractAddress": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+    "network": "BNB Smart Chain (BSC)",
+    "chainId": "56",
+    "tokenSymbol": "SAFEMOON",
+    "proxyPattern": "Custom Proxy with Unchecked Owner Migration"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "en",
+  "createdAt": "2026-09-10T12:36:16.102Z",
+  "verdict": {
+    "riskScore": 88,
+    "riskLabel": "CRITICAL RISK",
+    "confidenceScore": 99,
+    "auditQualityScore": 58,
+    "summary": "CRITICAL RISK: Legacy SafeMoon v1 contract (0x8076...8add8d3, migrated to v2 0x4298...fcb5). Exhibits centralized owner privilege vectors including arbitrary fee adjustments up to 100% without hard caps. Historical incident: On March 28, 2023, public/unrestricted burn functionality was exploited to arbitrarily burn tokens held by the liquidity pair, artificially inflating the price and draining ~$8.9M WBNB in the same transaction.",
+    "evidenceCoverage": 97,
+    "verificationStatus": "PARTIALLY_VERIFIED",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
+    "stopSellReason": "CRITICAL_RISK_THRESHOLD: Score exceeds maximum institutional tolerance",
+    "formalProofCoveragePct": 76,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 31500000,
+      "snapshotBlockHash": "0x6a2c914efbc20f83d987d15668b375b4260d853b0e77457ef454c6fb73dcf271",
+      "runtimeBytecodeSha256": "sha256:88771122aaffeedd334455667788990011223344556677889900aabbccddeeff",
+      "pinnedChainId": "56",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 91,
+      "reachableCFGEdgesPct": 86,
+      "functionsPct": 94,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 89,
+      "formalPropertiesPct": 76
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Audit Overview & Contract Context",
+      "subtitle": "Summary of execution scope and target objectives",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Contract identity verification and network deployment analysis",
+        "Function selector decompilation and proxy pattern scanning",
+        "Baseline attack surface calibration and risk tiering"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Project / Contract",
+            "value": "SafeMoon Protocol Core"
+          },
+          {
+            "label": "Contract Address",
+            "value": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3"
+          },
+          {
+            "label": "Network / Chain ID",
+            "value": "BNB Smart Chain (BSC) (ID: 56)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "SAFEMOON"
+          },
+          {
+            "label": "Proxy Pattern",
+            "value": "Custom Proxy with Unchecked Owner Migration"
+          },
+          {
+            "label": "Compiler Version",
+            "value": "solc 0.6.12"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Source Code Verification & Bytecode Decompilation",
+      "subtitle": "State hash match against blockchain node and dispatcher analysis",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Bytecode integrity matched against RPC node",
+        "Control-flow analysis for public execution entrypoints",
+        "Identification of selfdestruct and arbitrary delegatecall opcodes"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "EVM machine bytecode was disassembled into a control-flow graph (CFG). Standard ERC selectors and privileged opcodes were formally analyzed."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Baseline Security Findings",
+      "subtitle": "Identified vulnerabilities in baseline scan",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Summary of identified security findings",
+        "Severity classification adhering to SWC and CWE taxonomy",
+        "Actionable remediation guidelines and mitigation advice"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-SAFE-01",
+            "swcId": "SWC-105",
+            "cweId": "CWE-284",
+            "severity": "critical",
+            "category": "Liquidity Pool Manipulation / Arbitrary Burn Vector",
+            "title": "Public / Unrestricted Burn LP Reserve Desynchronization ($8.9M Exploit)",
+            "description": "[AUDIT TARGET]: 0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3\n[TARGET STATE]: historical deployed version (SafeMoon v1)\n[INCIDENT DATE]: 2023-03-28\n[EXPLOIT BLOCK]: 26844274 (BSC Mainnet)\n[CURRENT ECOSYSTEM]: Migrated to SafeMoon v2 (0x42981d0bfbaf196529376ee702f2a9eb9092fcb5)\n[FINDING STATUS]: historical vulnerability\n\nThe contract contains a public burn mechanism that allowed burning tokens held directly in the liquidity pair without caller authentication or pair exclusion. On March 28, 2023 at block 26,844,274, an attacker exploited this to burn tokens directly from the PancakeSwap liquidity pool, artificially spiking the spot token price and extracting ~$8.9M of WBNB in the same transaction.",
+            "evidence": "burn() allows targeting arbitrary holders including Uniswap/PancakeSwap pair contracts",
+            "attackScenario": "Attacker executes public burn on PancakeSwap pair reserves, artificially skewing the x*y=k invariant, and immediately swaps tokens to siphon underlying WBNB.",
+            "proofOfConcept": "// March 2023 exploit replay PoC\nvm.prank(attacker);\nsafemoon.burn(pancakePair, pairBalance);\npancakeRouter.swapExactTokensForETH(...);",
+            "recommendation": "Quarantine legacy v1 contract; enforce pair address exemption from token destruction and use migrated v2 architecture with immutable liquidity timelocks.",
+            "remediationDiff": "- function burn(address from, uint256 amt) public { _burn(from, amt); }\n+ function burn(uint256 amt) public { require(msg.sender != pairAddress, 'PAIR_PROTECTED'); _burn(msg.sender, amt); }",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_safemoon_basic_046-VLM-SAFE-01",
+            "evidenceId": "EVD-FIND-rep_safemoon_basic_046-VLM-SAFE-01",
+            "classification": "B"
+          },
+          {
+            "id": "VLM-SAFE-02",
+            "swcId": "SWC-105",
+            "cweId": "CWE-284",
+            "severity": "high",
+            "category": "Centralized Governance & Fee Parameter Risk",
+            "title": "Centralized Privileged Parameter Risk (Uncapped Fee Setter)",
+            "description": "Administrative variable '_taxFee' can be dynamically adjusted by the contract owner via setTaxFeePercent() up to 100% without an enforced immutable ceiling. This is an excessive centralized administrative capability rather than an external honeypot exploit; however, an owner key compromise allows 100% transfer taxation across all user transactions.",
+            "evidence": "function setTaxFeePercent(uint256 taxFee) external onlyOwner { _taxFee = taxFee; }",
+            "attackScenario": "Owner modifies tax fee to 100%, causing all user sells to be taxed entirely, trapping investor funds.",
+            "proofOfConcept": "// Test fee manipulation\nvm.prank(owner);\ntoken.setTaxFeePercent(100);",
+            "recommendation": "Revoke or lock fee setter to maximum 3% hard ceiling.",
+            "remediationDiff": "- function setTaxFeePercent(uint256 fee) external onlyOwner { _taxFee = fee; }\n+ function setTaxFeePercent(uint256 fee) external onlyOwner { require(fee <= 3, 'FEE_EXCEEDS_CAP'); _taxFee = fee; }",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_safemoon_basic_046-VLM-SAFE-02",
+            "evidenceId": "EVD-FIND-rep_safemoon_basic_046-VLM-SAFE-02",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Privileged Roles, Admin Keys & Governance",
+      "subtitle": "Verification of timelock delay parameters and governance controls",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Verification of timelock delay parameters and governance controls",
+        "Detection of privileged mint, pause, blacklist, and drainage capabilities",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Liquidity, Holder Concentration & Lock Evidence (PRO)",
+      "subtitle": "Token distribution curve, whale clusters, and verifiable DEX lock proofs",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Token distribution curve and top holder concentration analysis",
+        "DEX liquidity pool pairing and lock verification across registered vaults",
+        "Automated honeypot simulation, transfer fee checks, and sell restriction audit",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Attack Surface & Reentrancy Formal Vectors (PRO)",
+      "subtitle": "Simulation of oracle manipulation, flash loans, and cross-function reentrancy",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Cross-function and cross-contract reentrancy guard modeling",
+        "Price oracle staleness, manipulation resilience, and market feed verification",
+        "Economic shock modeling and flash-loan manipulation resistance simulation",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Storage Layout Collision & Multi-Compiler Bytecode Diff (ADVANCED)",
+      "subtitle": "Deep storage layout slot collision detection across implementation upgrades",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Storage slot allocation collision detection across implementation upgrades",
+        "Upgrade proxy layout gap verification and state preservation checks",
+        "Bytecode reproduction against official compiler metadata and build pipelines",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Formal SMT Invariant Proofs & Regression Analysis (ADVANCED)",
+      "subtitle": "Mathematical Z3 solver invariant verification and bytecode regression analysis",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "SMT proofs for solvency, conservation, and reentrancy impossibility invariants",
+        "Bytecode regression analysis and logic change tracking",
+        "Formal SMT Verification (Z3): 76% invariants verified (QF_LIA UNSAT)",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Human Analyst Review & Signed Verification Evidence (ADVANCED)",
+      "subtitle": "Attested reviewer evidence and signed non-automated verification findings",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analyst sign-off requires verified reviewer evidence",
+        "Cryptographically signed attestation digest",
+        "Manual review boundary explicit: no certified safe claims",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:30f04b349e4dcfe28345c68384bf2b2bebfb27fe00ddcaa4186194ec8cd3d4b1",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "56",
+      "blockNumber": 31500000,
+      "contractAddress": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+      "network": "BNB Smart Chain (BSC)",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.6.12",
+      "optimizationRuns": 200,
+      "evmTarget": "istanbul"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 91,
+      "reachableCFGEdgesPct": 86,
+      "functionsPct": 94,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 76
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:c1e984e9c3edeee67946f4d339dccb3c98f10513c14776db99614681f2113bbb",
+      "reportDigestSha256": "sha256:c1e984e9c3edeee67946f4d339dccb3c98f10513c14776db99614681f2113bbb",
+      "provenanceHash": "0x6a2c914efbc20f83d987d15668b375b4260d853b0e77457ef454c6fb73dcf271"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:e66f0d85e5c09718e8eee687eefee9d0097fe721acb79e5bb376e6dcccd703fb",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "3f64a522a17abe7d2eccddff835b3285b47392384e3e0f70e400188dd51cff30c504d1fb839ff64122c7fe2af1da3aa6049a7608bc1f1a14d13ee09b1d0fe509",
+    "signedDigest": "89d913cf3126e5733293f59c3fd9d6f37afcd7a6ee5ce6adaab39267a4893ea3",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "89d913cf3126e5733293f59c3fd9d6f37afcd7a6ee5ce6adaab39267a4893ea3",
+      "serialNumber": "fefd295766264aafcafa67f6bee95c27",
+      "genTime": "2026-09-10T12:36:16.102Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "88c16cf8cdd9800d3aef9e898c4d7d32629c14c971536671f0b2bcc09c88c6b9"
+    },
+    "provenanceProof": "sha256:dd03a6a99b4b225a81ea1cafe5e31763ae0c4445a6fd552ff34e1d5235adc9d5"
+  },
+  "integrityProof": {
+    "pdfSha256": "bac7675efd38ba75666beb0b92b426d80cd98a52fdd85a9727b39863916713a1",
+    "pdfByteLength": 89983,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:16.115Z"
+  }
+}

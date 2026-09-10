@@ -1,0 +1,424 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_aapl_advanced_123",
+  "caseRef": "CASE-VLM-AAPL-ADVANCED",
+  "target": {
+    "contractName": "Apple Inc. Common Stock",
+    "contractAddress": "nasdaq:aapl",
+    "network": "NASDAQ Stock Market",
+    "chainId": "MIC:XNAS",
+    "tokenSymbol": "AAPL",
+    "proxyPattern": "N/A (Regulated Central Depository / DTCC-NSCC)"
+  },
+  "clientEntitlementTier": "advanced",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:17.468Z",
+  "verdict": {
+    "riskScore": 10,
+    "riskLabel": "BARDZO NISKIE RYZYKO",
+    "confidenceScore": 100,
+    "auditQualityScore": 94,
+    "summary": "Akcje spółki giełdowej notowane na NASDAQ. Najwyższa płynność rynku publicznego, sprawozdawczość SEC Form 10-K i rozliczenie T+1 przez DTCC/NSCC.",
+    "evidenceCoverage": 100,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "regulatoryFilingHash": "0xafc191f8dd9e0a75341d3496fa475bc78591795618bb1d6b6c068768d47d594e",
+      "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+      "pinnedChainId": "9901",
+      "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+      "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości instrumentu i rejestracji u emitenta",
+        "Identyfikacja giełdy macierzystej i standardów rozliczeniowych",
+        "Klasyfikacja profilu ryzyka rynkowego i płynnościowego"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Instrument / Nazwa",
+            "value": "Apple Inc. Common Stock"
+          },
+          {
+            "label": "Klasa aktywów",
+            "value": "Rynek Tradycyjny / Regulowany (Akcje / Towary / FX / ETF)"
+          },
+          {
+            "label": "Ticker rynkowy",
+            "value": "AAPL"
+          },
+          {
+            "label": "Rynek notowań",
+            "value": "NASDAQ Stock Market"
+          },
+          {
+            "label": "Ramy prawne i nadzór",
+            "value": "Regulacje papierów wartościowych i rynków finansowych (SEC / ESMA / KNF)"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+      "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja integralności sprawozdań z rejestrami organów nadzoru",
+        "Audyt spójności danych fundamentalnych i struktury kapitałowej",
+        "Ocena ciągłości notowań i statusu dopuszczenia do obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Logika smart kontraktu EVM",
+            "value": "NOT_APPLICABLE (Traditional Market Instrument)",
+            "status": "neutral",
+            "claimId": "CLM-rep_aapl_advanced_123-contract_identity-1",
+            "evidenceId": "EVD-rep_aapl_advanced_123-contract_identity-1",
+            "classification": "C"
+          }
+        ],
+        "paragraphs": [
+          "Instrument Apple Inc. Common Stock podlega nadzorowi rynków regulowanych i izb rozliczeniowych. Dekompilacja bytecode EVM oraz skanowanie smart kontraktów mają status NOT_APPLICABLE dla instrumentów tradycyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+      "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie stabilności notowań i płynności rynkowej",
+        "Ocena zmienności historycznej i ekspozycji na szoki rynkowe",
+        "Zgodność ze standardami rozliczeń depozytowych T+1"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+      "subtitle": "Struktura akcjonariatu, prawa głosu i nadzór rady dyrektorów",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Struktura ładu korporacyjnego, nadzór rady dyrektorów i klasy akcji z prawem głosu",
+        "Ujawnienia w raportach regulacyjnych (SEC/KNF) i zgodność sprawozdawcza",
+        "Uprawnienia zarządu, mandaty do rozwodnienia kapitału i prawa akcjonariuszy"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Nadzór korporacyjny i zarządczy",
+            "value": "Zarząd i Rada Dyrektorów",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Statutowe uprawnienia zarządcze",
+            "value": "Zdefiniowane w statucie spółki",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Wyłączniki bezpieczeństwa obrotu (Circuit Breakers)",
+            "value": "Aktywne (Zasady LULD / SEC)",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Emisja dodatkowych akcji / jednostek",
+            "value": "Zgodnie ze statutem / Uchwałą WZA",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Ład korporacyjny Apple Inc. Common Stock opiera się na przepisach prawa handlowego, statucie spółki oraz regulacjach rynków kapitałowych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+      "subtitle": "Rozkład spreadów NBBO, płynność animatorów rynku i handel blokowy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Głębokość ciągłych notowań giełdowych i spready NBBO (National Best Bid/Offer)",
+        "Wolumen transakcji blokowych, routing dark pool i udział animatorów rynku",
+        "Widełki wyłączników rynkowych (reguły LULD) oraz historia zawieszeń obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Model płynności rynkowej",
+            "value": "Regulowany arkusz zleceń (CLOB)",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pary płynności DEX AMM",
+            "value": "NOT_APPLICABLE (Traditional Exchange Venue)",
+            "status": "neutral",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_liquidity_depth-2",
+            "classification": "C"
+          },
+          {
+            "label": "Prowizje transakcyjne protokołu / sell tax",
+            "value": "0.0% (Standard Regulated Trading)",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Płynność dla Apple Inc. Common Stock jest zapewniana przez licencjonowanych animatorów rynku i zlecenia inwestorów na giełdach publicznych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+      "subtitle": "Modelowanie spoofingu, layeringu, ryzyka rozliczeniowego i margin call",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Wektory manipulacji mikrostrukturą rynku (spoofing, layering, wash trading)",
+        "Ryzyko kontrahenta rozliczeniowego i wymogi depozytowe izb rozliczeniowych",
+        "Ryzyko krótkiego ścisku płynności (squeeze) oraz systemowe zależności kredytowe"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od zewnętrznych wyroczni cenowych",
+            "value": "NOT_APPLICABLE (Direct Exchange Pricing)",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "NOT_APPLICABLE (Traditional Clearing)",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Ryzyko awarii silnika dopasowywania zleceń",
+            "value": "Zabezpieczone redundancją giełdową",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_aapl_advanced_123-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+      "subtitle": "Weryfikacja uzgodnień centralnych depozytów papierów wartościowych",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Architektura uzgodnień rozliczeniowo-depozytowych (DTC/KDPW/Euroclear)",
+        "Weryfikacja skrótu kryptograficznego sprawozdań z rejestrami publicznymi",
+        "Deterministyczna realizacja operacji korporacyjnych (splity, dywidendy)"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Rozliczenia izby depozytowej",
+            "value": "Standard rozliczeń T+1",
+            "status": "verified",
+            "claimId": "CLM-rep_aapl_advanced_123-advanced_bytecode_diff-1",
+            "evidenceId": "EVD-rep_aapl_advanced_123-advanced_bytecode_diff-1",
+            "classification": "A"
+          },
+          {
+            "label": "Skanowanie slotów pamięci EVM",
+            "value": "NOT_APPLICABLE (Non-EVM Asset)",
+            "status": "neutral",
+            "claimId": "CLM-rep_aapl_advanced_123-advanced_bytecode_diff-2",
+            "evidenceId": "EVD-rep_aapl_advanced_123-advanced_bytecode_diff-2",
+            "classification": "C"
+          }
+        ],
+        "paragraphs": [
+          "Rozliczenia dla Apple Inc. Common Stock są realizowane przez autoryzowane izby rozliczeniowe i depozyty papierów wartościowych. Różnice układu pamięci maszynowej EVM mają status NOT_APPLICABLE."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+      "subtitle": "Śledzenie podziałów akcji, wypłat dywidend i emisji dodatkowych",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Historia operacji na kapitale i podziałów akcji (stock splits)",
+        "Weryfikacja spójności praw akcjonariuszy między emisjami",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie dotyczy aktywów tradycyjnych)"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Status obrotu",
+            "value": "Aktywne notowania na giełdzie regulowanej"
+          },
+          {
+            "label": "Fuzzing reguł kontraktu",
+            "value": "NOT_APPLICABLE (Non-Contract Traditional Asset)"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu sprawozdawczości przez analityka finansowego",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Atestacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót weryfikacji sprawozdań",
+        "Wyraźna granica przeglądu manualnego: brak rekomendacji inwestycyjnej"
+      ],
+      "data": {
+        "reviewerState": {
+          "status": "not_commissioned",
+          "reviewDate": "—"
+        },
+        "paragraphs": [
+          "Status weryfikacji: INDEPENDENT HUMAN REVIEW NOT COMMISSIONED. Zgodnie ze standardem uczciwości Velmère, deklaracje recenzji ludzkiej nie są dołączane do raportu bez faktycznego, podpisanego dowodu analityka."
+        ]
+      }
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:695d58fe5929b085adf5a80052e82539552f70971ce690239d5da2b011f0c4d6",
+  "applicationSurface": "real-markets",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "MIC:XNAS",
+      "contractAddress": "nasdaq:aapl",
+      "network": "NASDAQ Stock Market",
+      "proxyType": "N/A (Traditional Financial Instrument)"
+    },
+    "marketSpec": {
+      "identifierType": "TICKER",
+      "identifierValue": "AAPL",
+      "source": "Consolidated Tape / Primary Exchange",
+      "exchangeMic": "XNAS",
+      "figi": "BBGNASDAQAAP",
+      "isin": "USNASDAQAAP0",
+      "tickerSymbol": "AAPL",
+      "assetClass": "SEC-Regulated Equity Security (NASDAQ Tier-1)",
+      "pricingSource": "Consolidated Tape / Primary Exchange",
+      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
+      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:c7eee21da623a35dfc6ec9f6275d88bd378e05fff670d33e459e9e8ca50fbb32",
+      "reportDigestSha256": "sha256:c7eee21da623a35dfc6ec9f6275d88bd378e05fff670d33e459e9e8ca50fbb32",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:4309a9937815fefb935a426dd2a94cc68c9a689cd0aed46b727cc526a2c3dbb8",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "b31ef7865c689e0084ad9902f390b15b2fbf91ea1189e9d9fdb090a07d1fc82eace0198f1514838cbaaaed7b8aba650a4be802f0e9f91694d23cb60829229d07",
+    "signedDigest": "e614177e7b6417880641eab2b521d46c174866c89788ccf474c3efb4f6a64ddf",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "e614177e7b6417880641eab2b521d46c174866c89788ccf474c3efb4f6a64ddf",
+      "serialNumber": "864d790e1222fbf7744dd86070971836",
+      "genTime": "2026-09-10T12:36:17.468Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "10e3dc58ff72fbbac5707e8c2149a7b18c4ac18f61cb5d1c76ba19a9ca11880b"
+    },
+    "provenanceProof": "sha256:07f2c3e7abc164dd324e2c8f70f005926bbb130e90dcddd44c8543128af36d1c"
+  },
+  "integrityProof": {
+    "pdfSha256": "7e480a86ab32b6e63abd2758c5b0b4f6d8867a89a8b81f4352b3aafef4090c2d",
+    "pdfByteLength": 84150,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:17.480Z"
+  }
+}

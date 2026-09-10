@@ -1,0 +1,26 @@
+{
+  "id": "GSC-002",
+  "name": "reentrancy-vulnerable",
+  "description": "Contract with state update occurring after untrusted external .call{value: ...}().",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0xbb9bc244d798123fde783fcc1c72d3bb8c189413",
+  "expectedFindings": [
+    "SWC-107_REENTRANCY_EXTERNAL_CALL_BEFORE_UPDATE",
+    "MISSING_REENTRANCY_GUARD"
+  ],
+  "expectedNonFindings": [
+    "CEI_PATTERN_ENFORCED"
+  ],
+  "expectedEvidenceStates": {
+    "controlFlowGraph": "FAIL",
+    "reentrancyStaticCheck": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 90,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 75,
+    "maxRisk": 100
+  }
+}

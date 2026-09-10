@@ -324,27 +324,36 @@ export function inferMarketSession(asset: Asset, locale: Pass4414Locale) {
 }
 
 export function formatPrice(quote?: Quote) {
-  if (!quote || quote.currentPrice === null) return "—";
+  if (!quote || quote.currentPrice === null || !Number.isFinite(quote.currentPrice)) return "—";
+  const abs = Math.abs(quote.currentPrice);
+  const maxDigits = abs < 0.0001 ? 8 : abs < 0.01 ? 6 : abs < 1 ? 4 : abs < 10 ? 4 : 2;
+  const minDigits = abs < 0.0001 ? 6 : abs < 0.01 ? 4 : 2;
   try {
     if (quote.currency) {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
         currency: quote.currency,
-        maximumFractionDigits: quote.currentPrice < 10 ? 4 : 2,
+        minimumFractionDigits: minDigits,
+        maximumFractionDigits: maxDigits,
       }).format(quote.currentPrice);
     }
   } catch {
     // Fall through to a source-neutral number.
   }
   return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: quote.currentPrice < 10 ? 5 : 2,
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
   }).format(quote.currentPrice);
 }
 
 export function formatAssetDetailQuotePrice(quote?: Quote) {
-  if (!quote || quote.currentPrice === null) return "—";
+  if (!quote || quote.currentPrice === null || !Number.isFinite(quote.currentPrice)) return "—";
+  const abs = Math.abs(quote.currentPrice);
+  const maxDigits = abs < 0.0001 ? 8 : abs < 0.01 ? 6 : abs < 1 ? 4 : abs < 10 ? 4 : 2;
+  const minDigits = abs < 0.0001 ? 6 : abs < 0.01 ? 4 : 2;
   const formatted = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: Math.abs(quote.currentPrice) < 10 ? 4 : 2,
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
   }).format(quote.currentPrice);
   return `${formatted} ${quote.currency ?? "USD"}`;
 }

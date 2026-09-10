@@ -1,0 +1,30 @@
+{
+  "contractName": "Lido stETH",
+  "symbol": "stETH",
+  "address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.8.9",
+  "proxyPattern": "AppProxyUpgradeable (Aragon)",
+  "riskScore": 22,
+  "riskLabel": "LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Lido stETH.",
+  "findings": [
+    {
+      "title": "Rebase Share-to-Balance 1-Wei Precision Truncation",
+      "severity": "MEDIUM",
+      "swcId": "SWC-114",
+      "cweId": "CWE-682",
+      "description": "Dynamic share-to-balance rebase arithmetic where transfer(balance) calculates shares via integer division."
+    }
+  ],
+  "verificationDigest": "0290fb68e3250585c712c2440188323e4bf34e95963f1bd35ffba8bb87567790",
+  "attackSurface": {
+    "category": "Liquid Staking & Rebase Mechanics",
+    "attackVector": "Dust transfer creating 1-wei rounding mismatch in 3rd party smart contract vaults integrating stETH without wstETH wrapper."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/Lido.sol\n+++ b/contracts/Lido.sol\n@@ -298,3 +298,4 @@\n- uint256 shares = getSharesByPooledEth(_amount);\n+ uint256 shares = FullMath.mulDivRoundingUp(_amount, totalShares, totalEther);\n  _transferShares(msg.sender, _recipient, shares);"
+  }
+}

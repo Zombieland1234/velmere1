@@ -1,0 +1,32 @@
+[
+  {
+    "disagreementId": "DISAGREE-01",
+    "agentA": "AGENT-15 (Real Markets Specialist)",
+    "agentB": "AGENT-20 (Independent Release Verifier)",
+    "topic": "Inclusion of proxyPattern: 'N/A (Regulated Central Depository / DTCC-NSCC)' in Real Markets reports",
+    "positionA": "Field explicitly marks proxy pattern as non-applicable for TradFi instruments",
+    "positionB": "Section 6 & 22 strictly forbid emitting any smart-contract proxy fields in pure TradFi instruments (RELEASE_FAIL)",
+    "resolutionMethod": "Executed domain firewall audit. Purged target.proxyPattern from all 60 Real Markets reports. Merkle roots and PDF digests re-verified 100% valid.",
+    "finalVerdict": "AGENT-20 position upheld fail-closed. 0 violations in FINAL_DOMAIN_INTEGRITY.json."
+  },
+  {
+    "disagreementId": "DISAGREE-02",
+    "agentA": "AGENT-07 (Dynamic Fuzzing Specialist)",
+    "agentB": "AGENT-08 (Formal SMT Specialist)",
+    "topic": "Vault Inflation Attack Severity Classification on ERC-4626",
+    "positionA": "Classify as MEDIUM if vault deposits exceed 100 ETH due to economic attack friction",
+    "positionB": "Classify as CRITICAL under SMT solver model if first depositor can steal 100% of second deposit without virtual offset",
+    "resolutionMethod": "Executed Z3 SMT solver on VLM-FORMAL-01-SOLVENCY. Proved counterexample exists in unbounded model. Verified OpenZeppelin 5.1 virtual shares offset defense.",
+    "finalVerdict": "AGENT-08 position upheld. Severity locked at CRITICAL with mandatory virtual shares remediation."
+  },
+  {
+    "disagreementId": "DISAGREE-03",
+    "agentA": "AGENT-18 (PDF JSON Consistency Specialist)",
+    "agentB": "AGENT-16 (Provider Rights Specialist)",
+    "topic": "Sub-cent token pricing precision format ($0.000012)",
+    "positionA": "Must preserve full precision 6 decimal places in TXT/PDF without scientific notation",
+    "positionB": "Must round to 2 decimals to match standard fiat banking interfaces",
+    "resolutionMethod": "Tested PEPE/SHIB micro-pricing across JSON, TXT, and PDF. Truncating to 2 decimals displayed $0.00, which completely hid asset valuation.",
+    "finalVerdict": "AGENT-18 position upheld. Adaptive precision enforced (>= $1 -> 2 decimals, < $1 -> 6 decimals)."
+  }
+]

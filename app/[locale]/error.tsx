@@ -50,7 +50,7 @@ export default function LocaleErrorBoundary({
   const reference = useMemo(() => createBrowserErrorReference(error.digest), [error.digest]);
 
   useEffect(() => {
-    reportBrowserBoundaryFailure({
+        reportBrowserBoundaryFailure({
       event: "locale_view_recovery",
       error,
       digest: reference,

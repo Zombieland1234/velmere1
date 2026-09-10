@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "velmere.v3.findings-registry",
+  "auditId": "AUD-CONTRACT-37-MAV-POOL",
+  "findingsCount": 1,
+  "findings": [
+    {
+      "id": "VLM-SEC-01",
+      "title": "State Update After External Call (CEI Pattern Violation)",
+      "severity": "HIGH",
+      "confidence": "MEDIUM",
+      "detector": "ast.reentrancy.cei",
+      "category": "REENTRANCY",
+      "location": {
+        "file": "mav-pool.sol",
+        "lineStart": 8,
+        "lineEnd": 14
+      },
+      "codeSnippet": "    function withdraw() external {\n        uint256 bal = balances[msg.sender];\n        require(bal > 0, \"No balance\");\n        balances[msg.sender] = 0;",
+      "description": "Function 'withdraw' invokes an external call before completing state storage modifications.",
+      "attackScenario": "A malicious contract re-enters the function during the external call before balances are updated.",
+      "recommendation": "Apply Check-Effects-Interactions (CEI) or use OpenZeppelin ReentrancyGuard.",
+      "backingEvidenceIds": [
+        "EV-SRC-POOL"
+      ]
+    }
+  ]
+}

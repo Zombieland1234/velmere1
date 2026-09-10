@@ -1,0 +1,3 @@
+# PASS_14 SECURITY FINDINGS
+
+Verified finding `VLM-SEC-DOS-UNBOUNDED-01` with severity `MEDIUM`.

@@ -1,0 +1,248 @@
+{
+  "timestamp": "2026-09-10T04:47:09.292Z",
+  "totalMutations": 40,
+  "caughtMutations": 40,
+  "mutationCatchRatePct": 100,
+  "results": [
+    {
+      "mutationId": "MUT-01",
+      "description": "1 finding mutation: omit required finding title or structure",
+      "wasCaught": true,
+      "rejectionReason": "Finding VLM-USDT-01 is missing required title or description."
+    },
+    {
+      "mutationId": "MUT-02",
+      "description": "2 risk mutation: risk score out of bounds",
+      "wasCaught": true,
+      "rejectionReason": "Risk score must be between 0 and 100, got 150."
+    },
+    {
+      "mutationId": "MUT-03",
+      "description": "3 severity mutation: invalid finding severity level",
+      "wasCaught": true,
+      "rejectionReason": "Invalid finding severity: \"catastrophic\". Allowed: critical, high, medium, low, informational"
+    },
+    {
+      "mutationId": "MUT-04",
+      "description": "4 confidence mutation: contradictory high confidence with low evidence coverage",
+      "wasCaught": true,
+      "rejectionReason": "Confidence (95) cannot exceed 80 when evidence coverage is low (20%)."
+    },
+    {
+      "mutationId": "MUT-05",
+      "description": "5 formal coverage mutation: formal proof coverage out of bounds",
+      "wasCaught": true,
+      "rejectionReason": "Formal proof coverage must be between 0 and 100, got 120."
+    },
+    {
+      "mutationId": "MUT-06",
+      "description": "6 property result mutation: coverage tuple metric out of bounds",
+      "wasCaught": true,
+      "rejectionReason": "Coverage tuple metric functionsPct is out of bounds [0, 100]: 150"
+    },
+    {
+      "mutationId": "MUT-07",
+      "description": "7 evidence ID mutation: missing traceable evidence ID",
+      "wasCaught": true,
+      "rejectionReason": "Finding VLM-USDT-01 missing traceable evidenceId."
+    },
+    {
+      "mutationId": "MUT-08",
+      "description": "8 evidence payload mutation: empty or placeholder evidence payload",
+      "wasCaught": true,
+      "rejectionReason": "Finding VLM-USDT-01 lacks concrete evidence payload."
+    },
+    {
+      "mutationId": "MUT-09",
+      "description": "9 block number mutation: non-positive snapshot block number",
+      "wasCaught": true,
+      "rejectionReason": "Snapshot block number must be a positive integer, got -100."
+    },
+    {
+      "mutationId": "MUT-10",
+      "description": "10 block hash mutation: malformed snapshot block hash",
+      "wasCaught": true,
+      "rejectionReason": "Snapshot block hash must be 32-byte hex or native blockchain block hash, got 0xinvalid_block_hash."
+    },
+    {
+      "mutationId": "MUT-11",
+      "description": "11 address mutation: synthetic placeholder contract address",
+      "wasCaught": true,
+      "rejectionReason": "Synthetic placeholder target address '0x1111111111111111111111111111111111111111' is prohibited in verified reports."
+    },
+    {
+      "mutationId": "MUT-12",
+      "description": "12 bytecode hash mutation: malformed runtime bytecode hash",
+      "wasCaught": true,
+      "rejectionReason": "Runtime bytecode hash must be valid SHA256 hex digest, got '0xmutated_hash'."
+    },
+    {
+      "mutationId": "MUT-13",
+      "description": "13 execution state mutation: invalid reproducibility status",
+      "wasCaught": true,
+      "rejectionReason": "Invalid reproducibility status: 'NON_DETERMINISTIC'. Must be DETERMINISTIC_REPRODUCIBLE."
+    },
+    {
+      "mutationId": "MUT-14",
+      "description": "14 detector version mutation: unversioned detector/engine release tag",
+      "wasCaught": true,
+      "rejectionReason": "Analysis engine version 'unversioned_dev' must follow release semantic versioning."
+    },
+    {
+      "mutationId": "MUT-15",
+      "description": "15 timestamp mutation: future createdAt timestamp",
+      "wasCaught": true,
+      "rejectionReason": "Report timestamp is in the future: 2099-01-01T00:00:00.000Z"
+    },
+    {
+      "mutationId": "MUT-16",
+      "description": "16 scope mutation: target specification address mismatch in audit scope manifest",
+      "wasCaught": true,
+      "rejectionReason": "Scope manifest contractAddress does not match report target address."
+    },
+    {
+      "mutationId": "MUT-17",
+      "description": "17 tier mutation: tier entitlement violation with unlocked higher-tier section",
+      "wasCaught": true,
+      "rejectionReason": "Section 'adv_formal' requires tier 'advanced' but was unlocked for user tier 'basic'."
+    },
+    {
+      "mutationId": "MUT-18",
+      "description": "18 locale contamination: Polish language text leaking into English report",
+      "wasCaught": true,
+      "rejectionReason": "Report marked as 'en' contains localized text from another language: 'Podsumowanie wykonawcze z załącznikami'"
+    },
+    {
+      "mutationId": "MUT-19",
+      "description": "19 PDF content mutation: truncated PDF byte stream or missing %PDF- header",
+      "wasCaught": true,
+      "rejectionReason": "PDF byteLength too small (100)"
+    },
+    {
+      "mutationId": "MUT-20",
+      "description": "20 JSON/PDF mismatch: PDF byte hash does not match integrityProof.pdfSha256",
+      "wasCaught": true,
+      "rejectionReason": "PDF byte hash (91d00e14bf94aaab68fc4259a76e9446ced1c643c6cf8aa71893f38716ec1c09) does not match integrityProof.pdfSha256 (fce55a6bb319234b42e8bd5c3c54ba8e636150a9dab702c4d19817878322218d)"
+    },
+    {
+      "mutationId": "MUT-21",
+      "description": "21 Merkle leaf mutation: tampered section contents without root recomputation",
+      "wasCaught": true,
+      "rejectionReason": "Report merkleRoot sha256:18521316b75bce23d312d36d972b77e3cea060e0b885272094ba6507cfca26da does not match computed root sha256:ea41096279e469f280864858d91e5b9d70c4d9f00376e5a19d270e68d443fa0c"
+    },
+    {
+      "mutationId": "MUT-22",
+      "description": "22 Merkle root manipulation: corrupted Merkle root hash",
+      "wasCaught": true,
+      "rejectionReason": "Report merkleRoot 0xbad_merkle_root_hash does not match computed root sha256:18521316b75bce23d312d36d972b77e3cea060e0b885272094ba6507cfca26da"
+    },
+    {
+      "mutationId": "MUT-23",
+      "description": "23 reviewer claim mutation: synthetic auditor identity injected",
+      "wasCaught": true,
+      "rejectionReason": "Forbidden synthetic reviewer claim found: \"Velmère Institutional Principal Auditor\""
+    },
+    {
+      "mutationId": "MUT-24",
+      "description": "24 attack-path node mutation: Mempool Sandwich vector on non-router/non-AMM target",
+      "wasCaught": true,
+      "rejectionReason": "Mempool Sandwich attack path emitted on non-router/non-AMM contract."
+    },
+    {
+      "mutationId": "MUT-25",
+      "description": "25 remediation mutation: critical finding active without stop-sell enforcement",
+      "wasCaught": true,
+      "rejectionReason": "Critical finding is active, but stopSellActive is false!"
+    },
+    {
+      "mutationId": "MUT-26",
+      "description": "26 provider/source mutation: contradictory network and chain ID provider specification",
+      "wasCaught": true,
+      "rejectionReason": "Target network 'Binance Smart Chain Mainnet' is contradictory to chainId '1'."
+    },
+    {
+      "mutationId": "MUT-27",
+      "description": "27 rights-state mutation: confidential data payload leaked inside locked section",
+      "wasCaught": true,
+      "rejectionReason": "Locked section pro_mev leaked data payload!"
+    },
+    {
+      "mutationId": "MUT-28",
+      "description": "28 target-name substitution: substituted contract name and symbol for target address",
+      "wasCaught": true,
+      "rejectionReason": "Target contract name 'Wrapped BTC (WBTC)' / symbol 'WBTC' does not match USDT address '0xdac17f958d2ee523a2206206994597c13d831ec7'."
+    },
+    {
+      "mutationId": "MUT-29",
+      "description": "29 cross-target evidence injection: foreign report evidence ID injected into target finding",
+      "wasCaught": true,
+      "rejectionReason": "Finding VLM-USDT-01 references foreign evidence ID 'EVD-FIND-rep_dai_advanced_001-VLM-DAI-01' from another report."
+    },
+    {
+      "mutationId": "MUT-30",
+      "description": "30 generic template injection: forbidden synthetic boilerplate brand \"Velmère Guard\"",
+      "wasCaught": true,
+      "rejectionReason": "Report contains forbidden synthetic pattern: Velm[èe]re Guard"
+    },
+    {
+      "mutationId": "MUT-31",
+      "description": "31 fuzz count mutation: negative or inflated fuzz count (-1000 runs)",
+      "wasCaught": true,
+      "rejectionReason": "Fuzz iteration count must be non-negative integer <= 10,000,000, got: -1000"
+    },
+    {
+      "mutationId": "MUT-32",
+      "description": "32 solver result corruption: property marked PROVEN/UNSAT but contains counterexample model",
+      "wasCaught": true,
+      "rejectionReason": "Formal property 'VLM-FORMAL-01' claims PROVEN/UNSAT but contains a counterexample model."
+    },
+    {
+      "mutationId": "MUT-33",
+      "description": "33 proof hash mutation: corrupted non-hex formal proof hash string",
+      "wasCaught": true,
+      "rejectionReason": "Formal proof hash for property 'VLM-FORMAL-01' must be valid 64-hex SHA-256 digest, got: 'corrupted-non-hex-proof-hash'"
+    },
+    {
+      "mutationId": "MUT-34",
+      "description": "34 source code hash mutation: corrupted source code SHA-256 digest",
+      "wasCaught": true,
+      "rejectionReason": "Source code hash must be valid 64-hex SHA-256 digest, got: 'corrupted_source_hash_invalid_length'"
+    },
+    {
+      "mutationId": "MUT-35",
+      "description": "35 system deployment graph mutation: rootAddress mismatches target address",
+      "wasCaught": true,
+      "rejectionReason": "SystemDeploymentGraph rootAddress '0x000000000000000000000000000000000000dead' does not match target address '0xdac17f958d2ee523a2206206994597c13d831ec7'."
+    },
+    {
+      "mutationId": "MUT-36",
+      "description": "36 dependency address mutation: peripheral dependency has zero-address",
+      "wasCaught": true,
+      "rejectionReason": "Peripheral dependency address is zero-address or malformed: '0x0000000000000000000000000000000000000000'"
+    },
+    {
+      "mutationId": "MUT-37",
+      "description": "37 canonical artifact mutation: invalid canonical semantic artifact hash format",
+      "wasCaught": true,
+      "rejectionReason": "Canonical semantic artifact hash must be valid 64-hex digest, got: 'invalid_canonical_hash_length'"
+    },
+    {
+      "mutationId": "MUT-38",
+      "description": "38 rights state violation: provider rights status is BLOCKED but exportPermitted is true",
+      "wasCaught": true,
+      "rejectionReason": "Provider rights status is BLOCKED but exportPermitted is true."
+    },
+    {
+      "mutationId": "MUT-39",
+      "description": "39 domain model contamination: TradFi equity target contaminated with EVM compilerSpec",
+      "wasCaught": true,
+      "rejectionReason": "TradFi instrument record contaminated with EVM compiler or runtime bytecode specifications."
+    },
+    {
+      "mutationId": "MUT-40",
+      "description": "40 timestamp skew mutation: snapshot block timestamp post-dates report creation date",
+      "wasCaught": true,
+      "rejectionReason": "Snapshot block timestamp (2026-10-01T12:00:00.000Z) is later than report createdAt (2026-09-01T12:00:00.000Z)."
+    }
+  ]
+}

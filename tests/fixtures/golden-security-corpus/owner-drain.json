@@ -1,0 +1,26 @@
+{
+  "id": "GSC-003",
+  "name": "owner-drain",
+  "description": "Privileged emergencyWithdraw() function allowing owner to drain any ERC20 or native ETH balance without timelock.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x1111111254fb6c44bac0bed2854e76f90643097d",
+  "expectedFindings": [
+    "ARBITRARY_TOKEN_SWEEP_CAPABILITY",
+    "CENTRALIZED_DRAIN_RISK"
+  ],
+  "expectedNonFindings": [
+    "TIMELOCK_ENFORCED_WITHDRAWAL"
+  ],
+  "expectedEvidenceStates": {
+    "accessControlAudit": "FAIL",
+    "balanceDrainAudit": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 80,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 65,
+    "maxRisk": 95
+  }
+}

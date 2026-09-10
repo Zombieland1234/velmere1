@@ -1,0 +1,289 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_bch_basic_100",
+  "caseRef": "CASE-VLM-BCH-BASIC",
+  "target": {
+    "contractName": "Bitcoin Cash Protocol",
+    "contractAddress": "native:bch-chain",
+    "network": "Bitcoin Cash Mainnet",
+    "chainId": "bch:mainnet",
+    "tokenSymbol": "BCH",
+    "websiteUrl": "https://bitcoincash.org",
+    "docsUrl": "https://bitcoincash.org",
+    "githubRepo": "https://github.com/bitcoin-cash-node/bitcoin-cash-node",
+    "proxyPattern": "unverifiable"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "en",
+  "createdAt": "2026-09-10T12:36:17.078Z",
+  "verdict": {
+    "riskScore": 72,
+    "riskLabel": "ELEVATED RISK (UNVERIFIED CODE)",
+    "confidenceScore": 60,
+    "auditQualityScore": 64,
+    "summary": "Contract lacks verified on-chain runtime bytecode. In accordance with Velmère evidence standards, missing bytecode results in an elevated risk assessment (72/100).",
+    "evidenceCoverage": 20,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
+    "stopSellReason": "INSUFFICIENT_EVIDENCE: Coverage below minimum threshold for institutional sale",
+    "formalProofCoveragePct": 0,
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Protocol Overview & Native L1 Network Context",
+      "subtitle": "Summary of distributed architecture and consensus mechanism",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Native blockchain and node architecture verification",
+        "Emission model evaluation and monetary rule immutability",
+        "Network decentralization degree and censorship resistance assessment"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Protocol / Asset",
+            "value": "Bitcoin Cash Protocol"
+          },
+          {
+            "label": "Architecture Type",
+            "value": "Native Base Layer (Layer-1 · No Smart Contract)"
+          },
+          {
+            "label": "Network Identifier",
+            "value": "native_chain:bch"
+          },
+          {
+            "label": "Native Symbol",
+            "value": "BCH"
+          },
+          {
+            "label": "Rule Governance",
+            "value": "Distributed node consensus across validators / miners"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Consensus Specification & Node Client Verification",
+      "subtitle": "Analysis of block validation rules, transactions, and cryptographic curves",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Node client reference source code verification",
+        "Validation of cryptographic primitives and transaction serialization",
+        "Resilience analysis against invalid blocks and chain splits"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Verification of Bitcoin Cash Protocol is conducted against native Layer-1 consensus specifications. EVM bytecode decompilation is NOT_APPLICABLE for native base protocol assets."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Baseline Network Security Findings",
+      "subtitle": "Identified risk vectors in base layer architecture",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Summary of base network stability parameters",
+        "Assessment of consensus error resilience and desynchronization",
+        "Compliance with established distributed network security baselines"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Consensus Governance & Protocol Upgrade Analysis (PRO)",
+      "subtitle": "Decentralization evaluation, validator distribution, and improvement proposal process",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Distributed consensus governance and protocol upgrade mechanism analysis",
+        "Validator / miner distribution and network finality threshold evaluation",
+        "Hard-fork coordination history and client implementation diversity audit",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Spot Market Depth, Exchange Reserves & Network Velocity (PRO)",
+      "subtitle": "Global market liquidity, supply velocity, and mempool dynamics",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Global order book depth across regulated spot venues and custodial reserves",
+        "On-chain circulating supply velocity and active address distribution",
+        "Network transaction fee volatility and mempool congestion behavior",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Network Attack Vectors & Consensus Resilience (PRO)",
+      "subtitle": "Modeling of chain reorganizations, Sybil attacks, and P2P partitioning",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Pro Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Consensus reorganization and majority hashrate/stake attack modeling",
+        "P2P network partition, eclipse attack, and sybil resistance analysis",
+        "Mempool front-running, transaction censorship, and MEV extraction vectors",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "State Engine Determinism & Multi-Client Wire Compatibility (ADVANCED)",
+      "subtitle": "Binary compatibility verification and state transition engine determinism",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Reference node client reproducible build verification against repository tags",
+        "Consensus serialization and wire protocol binary compatibility analysis",
+        "State transition engine deterministic execution boundary checks",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Protocol Hard/Soft Fork Evolution & Invariant Proofs (ADVANCED)",
+      "subtitle": "Tracking of consensus rule evolution and backward compatibility guarantees",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Protocol upgrade proposal activation and deployment history",
+        "Backward compatibility verification of block validation logic",
+        "Formal verification: NOT EXECUTED (Formal verification engine not commissioned)",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Human Analyst Review & Protocol Architecture Audit (ADVANCED)",
+      "subtitle": "Attestation by independent distributed systems auditor",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analyst sign-off requires verified reviewer evidence",
+        "Cryptographically signed analyst attestation digest",
+        "Manual review boundary explicit: no guarantee of absolute perfection",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:7132632e0e78e34fc2ca2380ab3c80cd4e0d803789774fe4248d51de685c1eea",
+  "applicationSurface": "shield",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "bch:mainnet",
+      "contractAddress": "native:bch-chain",
+      "network": "Bitcoin Cash Mainnet",
+      "proxyType": "N/A (Decentralized Layer 1 Protocol)"
+    },
+    "consensusSpec": {
+      "consensusArchitecture": "Unverified Source",
+      "nodeClientVersion": "Bitcoin Cash Protocol",
+      "networkTopology": "Global P2P Gossip Validator Network",
+      "cryptographicPrimitives": "secp256k1 / BLS",
+      "nakamotoCoefficient": 15,
+      "activeValidatorCount": 2000
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:ded03b12f1572a717a7b5e1f4d9a72cd33facf5f259d42a086cb235adfdb103c",
+      "reportDigestSha256": "sha256:ded03b12f1572a717a7b5e1f4d9a72cd33facf5f259d42a086cb235adfdb103c",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:d54146d6154faf7e35f7956760cefec81228bb27b659e494ffc4e843ab89a9b0",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "f799c97f7c687501e5dd5f988f17b81cc433372a06e43ff452946a1551dbee42033cafe0aa9d0f53c0b96e737fe92a68c75b02d1185f46548ddb2531668c4b07",
+    "signedDigest": "6e64ed96d3659b9ab084be61270a532345388e4f8cd9a6844a60d24907ecab98",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "6e64ed96d3659b9ab084be61270a532345388e4f8cd9a6844a60d24907ecab98",
+      "serialNumber": "271dd58577fc73aac1c3a924f1fd092d",
+      "genTime": "2026-09-10T12:36:17.078Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "df14ae410e014083230690888236d5f2682282ee91c7a53ea64e2cd3bca3a668"
+    },
+    "provenanceProof": "sha256:4fb75a8f2de97c2b4748e7145bda8c2f91f29529e6b4904fd578c84a949b4cc0"
+  },
+  "integrityProof": {
+    "pdfSha256": "54bd865d61266501e0a1e71bba214c8f5cb3615269b625aac1fbafc4c18a629b",
+    "pdfByteLength": 85378,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:17.089Z"
+  }
+}

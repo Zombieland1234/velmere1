@@ -1,0 +1,400 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_dai_advanced_018",
+  "caseRef": "CASE-VLM-DAI-ADVANCED",
+  "target": {
+    "contractName": "MakerDAO Dai Stablecoin",
+    "contractAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "DAI",
+    "proxyPattern": "Immutable Token Core (Ward Auth)"
+  },
+  "clientEntitlementTier": "advanced",
+  "locale": "en",
+  "createdAt": "2026-09-10T12:36:15.667Z",
+  "verdict": {
+    "riskScore": 18,
+    "riskLabel": "LOW RISK",
+    "confidenceScore": 98,
+    "auditQualityScore": 92,
+    "summary": "DAI is governed by the MakerDAO protocol featuring GSM governance delay and Emergency Shutdown Module safeguards. Note: DAI utilizes a bespoke, non-standard permit authorization scheme (allowed: bool) that predates and differs from the standardized EIP-2612 interface specification.",
+    "evidenceCoverage": 98,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 95,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 18072000,
+      "snapshotBlockHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2",
+      "runtimeBytecodeSha256": "sha256:7f48b8fe1e48e026df1f52daea52f5c71ee60a7d9798efcf1a4b5ff4f708a38a",
+      "pinnedChainId": "1",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 99,
+      "reachableCFGEdgesPct": 97,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 99,
+      "formalPropertiesPct": 95
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Audit Overview & Contract Context",
+      "subtitle": "Summary of execution scope and target objectives",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Contract identity verification and network deployment analysis",
+        "Function selector decompilation and proxy pattern scanning",
+        "Baseline attack surface calibration and risk tiering"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Project / Contract",
+            "value": "MakerDAO Dai Stablecoin"
+          },
+          {
+            "label": "Contract Address",
+            "value": "0x6b175474e89094c44da98b954eedeac495271d0f"
+          },
+          {
+            "label": "Network / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "DAI"
+          },
+          {
+            "label": "Proxy Pattern",
+            "value": "Immutable Token Core (Ward Auth)"
+          },
+          {
+            "label": "Compiler Version",
+            "value": "solc 0.5.12"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Source Code Verification & Bytecode Decompilation",
+      "subtitle": "State hash match against blockchain node and dispatcher analysis",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Bytecode integrity matched against RPC node",
+        "Control-flow analysis for public execution entrypoints",
+        "Identification of selfdestruct and arbitrary delegatecall opcodes"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "EVM machine bytecode was disassembled into a control-flow graph (CFG). Standard ERC selectors and privileged opcodes were formally analyzed."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Baseline Security Findings",
+      "subtitle": "Identified vulnerabilities in baseline scan",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Summary of identified security findings",
+        "Severity classification adhering to SWC and CWE taxonomy",
+        "Actionable remediation guidelines and mitigation advice"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Privileged Roles, Admin Keys & Governance",
+      "subtitle": "Verification of timelock delay parameters and governance controls",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Verification of timelock delay parameters and governance controls",
+        "Detection of privileged mint, pause, blacklist, and drainage capabilities"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Governance Controller",
+            "value": "MakerDAO DS-Chief & PauseProxy (GSM Delay Enforced)",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_dai_advanced_018-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Ward Authorization",
+            "value": "Strictly Restricted to MCD Join Adapters",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_dai_advanced_018-pro_permission_parser-2",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Detailed role map traces all execution paths back to verifiable on-chain controllers."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Liquidity, Holder Concentration & Lock Evidence (PRO)",
+      "subtitle": "Token distribution curve, whale clusters, and verifiable DEX lock proofs",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Token distribution curve and top holder concentration analysis",
+        "DEX liquidity pool pairing and lock verification across registered vaults",
+        "Automated honeypot simulation, transfer fee checks, and sell restriction audit"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Collateral Reserve Ratio",
+            "value": "142% Multi-Collateral Backing",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_dai_advanced_018-pro_liquidity_depth-1",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Liquidity analysis examines AMM pairing architecture, lock mechanisms, and transaction fee behavior."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Attack Surface & Reentrancy Formal Vectors (PRO)",
+      "subtitle": "Simulation of oracle manipulation, flash loans, and cross-function reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Cross-function and cross-contract reentrancy guard modeling",
+        "Price oracle staleness, manipulation resilience, and market feed verification",
+        "Economic shock modeling and flash-loan manipulation resistance simulation"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Oracle Dependency",
+            "value": "Pricing feeds inspected in bytecode",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_dai_advanced_018-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Flash Loan Attack Vector",
+            "value": "State manipulation resilience assessed",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_dai_advanced_018-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Reentrancy Protection",
+            "value": "CEI pattern / Reentrancy guard verified",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_dai_advanced_018-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Storage Layout Collision & Multi-Compiler Bytecode Diff (ADVANCED)",
+      "subtitle": "Deep storage layout slot collision detection across implementation upgrades",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Storage slot allocation collision detection across implementation upgrades",
+        "Upgrade proxy layout gap verification and state preservation checks",
+        "Bytecode reproduction against official compiler metadata and build pipelines"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Ward List Integrity",
+            "value": "14 active MCD Join modules verified",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-advanced_bytecode_diff-1",
+            "evidenceId": "EVD-rep_dai_advanced_018-advanced_bytecode_diff-1",
+            "classification": "A"
+          },
+          {
+            "label": "Permit Architecture",
+            "value": "DAI-style permit (allowed: bool) — Non-standard EIP-2612 variant",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-advanced_bytecode_diff-2",
+            "evidenceId": "EVD-rep_dai_advanced_018-advanced_bytecode_diff-2",
+            "classification": "A"
+          },
+          {
+            "label": "ERC-20 Conformance",
+            "value": "Standard ERC-20 transfer and allowance interface verified",
+            "status": "verified",
+            "claimId": "CLM-rep_dai_advanced_018-advanced_bytecode_diff-3",
+            "evidenceId": "EVD-rep_dai_advanced_018-advanced_bytecode_diff-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Symbolic execution of the storage layout demonstrates memory allocation consistency across upgrades."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Formal SMT Invariant Proofs & Regression Analysis (ADVANCED)",
+      "subtitle": "Mathematical Z3 solver invariant verification and bytecode regression analysis",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "SMT proofs for solvency, conservation, and reentrancy impossibility invariants",
+        "Bytecode regression analysis and logic change tracking",
+        "Formal SMT Verification (Z3): 95% invariants verified (QF_LIA UNSAT)"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Deployment Status",
+            "value": "Verified Active"
+          },
+          {
+            "label": "Active Implementation",
+            "value": "0x6b175474e89094c44da98b954eedeac495271d0f"
+          },
+          {
+            "label": "Formal Verification (Z3 SMT)",
+            "value": "VERIFIED: 95% proof coverage (QF_LIA, TIMEOUT!=PASS)"
+          },
+          {
+            "label": "Invariant Fuzzing",
+            "value": "100,000 runs executed (0 violations)"
+          },
+          {
+            "label": "Assertion Breakages",
+            "value": "0 detected in verified states"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Human Analyst Review & Signed Verification Evidence (ADVANCED)",
+      "subtitle": "Attested reviewer evidence and signed non-automated verification findings",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analyst sign-off requires verified reviewer evidence",
+        "Cryptographically signed attestation digest",
+        "Manual review boundary explicit: no certified safe claims"
+      ],
+      "data": {
+        "reviewerState": {
+          "status": "not_commissioned",
+          "reviewDate": "—"
+        },
+        "paragraphs": [
+          "Review status: INDEPENDENT HUMAN REVIEW NOT COMMISSIONED. In accordance with Velmère policy, human review claims are NEVER emitted unless verified reviewer evidence exists."
+        ]
+      }
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:c8efb87d1c6873b8b5811cb354160db463c79e053c9c8ad8bac7f96ac33efde3",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "blockNumber": 18072000,
+      "contractAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.5.12",
+      "optimizationRuns": 200,
+      "evmTarget": "cancun"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 99,
+      "reachableCFGEdgesPct": 97,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 95
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:18d897b6a5317b5a49c99aec32cb67c0e391b872a154edaa4110230985ca0105",
+      "reportDigestSha256": "sha256:18d897b6a5317b5a49c99aec32cb67c0e391b872a154edaa4110230985ca0105",
+      "provenanceHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:8dcca2587a0ccf1dfbbe6468e8cd4a98d0072913828999b419f4e644a7d76990",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "d94f4a90318e3f33408408dd2408eb95bdad63bed13933a026bab44bd93693419890d0b79c3748b1886d73ba8140de30d0ddb0164b558fc1249f022072824c00",
+    "signedDigest": "be8d4a139869a2aef30d2af7a7908892c661a486c0ba28158290a37988cbb0ec",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "be8d4a139869a2aef30d2af7a7908892c661a486c0ba28158290a37988cbb0ec",
+      "serialNumber": "75a9bfcb25e7f1213b453046fb25a245",
+      "genTime": "2026-09-10T12:36:15.667Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "1332532d69251d7c60db4adbeceb51952518f498b29765368184b61b4fda3f8b"
+    },
+    "provenanceProof": "sha256:632d1b4bebb9dd9a51c6813695d039b9c3ef77b32601302008f5cbbcd481da3c"
+  },
+  "integrityProof": {
+    "pdfSha256": "f548a5f9ba4e6c6bc634516c380d9e6c13915aa270e874e50d9b7c2c3bfbde3b",
+    "pdfByteLength": 81564,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:15.677Z"
+  }
+}

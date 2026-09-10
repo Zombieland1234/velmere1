@@ -16,6 +16,10 @@ import {
   normalizeR7BrowserEcbDeliveryBinding,
   type R7BrowserEcbDeliveryBinding,
 } from "@/lib/search/browser-ecb-delivery-authority";
+import {
+  normalizeBrowserDerivedDeliveryBinding,
+  type BrowserDerivedDeliveryBinding,
+} from "@/lib/search/browser-delivery-policy";
 
 export const PASS4823_LENS_FROZEN_RENDER_PAYLOAD_ID =
   "velmere.lens-frozen-render-payload.v1" as const;
@@ -39,7 +43,7 @@ export type Pass4823LensFrozenRenderPayload = {
   schemaVersion: typeof PASS4823_LENS_FROZEN_RENDER_PAYLOAD_ID;
   identity: Pass4823LensFrozenReportIdentity;
   report: LensReport;
-  deliveryBinding?: R7BrowserEcbDeliveryBinding;
+  deliveryBinding?: R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding;
 };
 
 type TokenEnvelopeV3 = {
@@ -147,23 +151,28 @@ function validGeneratedAt(value: unknown): value is string {
   }
 }
 
+function normalizeDeliveryBinding(value: unknown): R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding | null {
+  if (value === undefined || value === null) return null;
+  return normalizeR7BrowserEcbDeliveryBinding(value) ?? normalizeBrowserDerivedDeliveryBinding(value);
+}
+
 export function buildPass4823LensFrozenRenderPayload(args: {
   report: LensReport;
   sourceResultId: string;
-  deliveryBinding?: R7BrowserEcbDeliveryBinding;
+  deliveryBinding?: R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding;
 }): Pass4823LensFrozenRenderPayload {
   const report = normalizedTransportReport(args.report);
   const sourceResultId = normalizedSourceResultId(args.sourceResultId);
-  const deliveryBinding = args.deliveryBinding === undefined
+  const deliveryBinding = args.deliveryBinding === undefined || args.deliveryBinding === null
     ? null
-    : normalizeR7BrowserEcbDeliveryBinding(args.deliveryBinding);
-  if (args.deliveryBinding !== undefined && !deliveryBinding) {
+    : normalizeDeliveryBinding(args.deliveryBinding);
+  if (args.deliveryBinding !== undefined && args.deliveryBinding !== null && !deliveryBinding) {
     throw new Error("render_token_delivery_binding_invalid");
   }
-  const reportDeliveryAuthority = report.deliveryAuthority === undefined
+  const reportDeliveryAuthority = report.deliveryAuthority === undefined || report.deliveryAuthority === null
     ? null
-    : normalizeR7BrowserEcbDeliveryBinding(report.deliveryAuthority);
-  if (report.deliveryAuthority !== undefined && !reportDeliveryAuthority) {
+    : normalizeDeliveryBinding(report.deliveryAuthority);
+  if (report.deliveryAuthority !== undefined && report.deliveryAuthority !== null && !reportDeliveryAuthority) {
     throw new Error("render_token_report_delivery_authority_invalid");
   }
   if (Boolean(deliveryBinding) !== Boolean(reportDeliveryAuthority)
@@ -294,7 +303,7 @@ export function issuePass4655LensRenderToken(args: {
   }
   const now = Math.floor(nowMs / 1000);
   const ttl = Math.max(60, Math.min(MAX_TTL_SECONDS, Math.floor(args.ttlSeconds ?? DEFAULT_TTL_SECONDS)));
-  const exp = deliveryBinding
+  const exp = deliveryBinding && "deliveryExpiresAt" in deliveryBinding
     ? Math.min(now + ttl, Math.floor(Date.parse(deliveryBinding.deliveryExpiresAt) / 1000))
     : now + ttl;
   if (exp <= now) return { ok: false as const, error: "render_token_original_deadline_elapsed" as const };
@@ -384,10 +393,12 @@ export function verifyPass4655LensRenderToken(args: {
   if (!checked.ok) return { ok: false as const, error: checked.error };
   const deliveryBinding = checked.frozen.deliveryBinding ?? null;
   if (deliveryBinding) {
-    const inspected = inspectR7BrowserEcbDeliveryBinding({ binding: deliveryBinding, nowMs });
-    if (!inspected.ready) return { ok: false as const, error: "render_token_delivery_binding_not_current" as const };
-    if (envelope.exp > Math.floor(Date.parse(deliveryBinding.deliveryExpiresAt) / 1000)) {
-      return { ok: false as const, error: "render_token_original_deadline_extended" as const };
+    if ("deliveryExpiresAt" in deliveryBinding) {
+      const inspected = inspectR7BrowserEcbDeliveryBinding({ binding: deliveryBinding, nowMs });
+      if (!inspected.ready) return { ok: false as const, error: "render_token_delivery_binding_not_current" as const };
+      if (envelope.exp > Math.floor(Date.parse(deliveryBinding.deliveryExpiresAt) / 1000)) {
+        return { ok: false as const, error: "render_token_original_deadline_extended" as const };
+      }
     }
   }
   const identity = checked.frozen.identity;

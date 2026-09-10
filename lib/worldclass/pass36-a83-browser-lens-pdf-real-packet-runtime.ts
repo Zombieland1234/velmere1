@@ -440,8 +440,7 @@ export function buildA83Entry(row: A83FixtureCase, locale: A83Locale, tier: A83T
 export function verifyA83EntryRecord(value: A83Entry, policy: A83Policy) {
   try {
     validateA83Policy(policy);
-    const core = { ...value };
-    delete core.integrity;
+    const { integrity: _, ...core } = value;
     if (value.integrity?.digest !== sha256(core)) return false;
     if (value.revisionId !== A83_REVISION || !A83_LOCALES.includes(value.locale) || !A83_TIERS.includes(value.tier)) return false;
     if (value.entryId !== `${value.caseId}:${value.locale}:${value.tier}`) return false;
@@ -558,8 +557,7 @@ export function buildA83Corpus(root: string, policy: A83Policy, options: { write
 
 export function verifyA83CorpusManifest(root: string, policy: A83Policy, manifest: A83CorpusManifest, expectedDigest?: string) {
   validateA83Policy(policy);
-  const core = { ...manifest };
-  delete core.integrity;
+  const { integrity: _, ...core } = manifest;
   if (manifest.integrity?.digest !== sha256(core) || (expectedDigest && manifest.integrity.digest !== expectedDigest)) return { ok: false, reason: "manifest_digest" };
   if (manifest.revisionId !== A83_REVISION || manifest.entries?.length !== 450) return { ok: false, reason: "manifest_denominator" };
   if (manifest.totals?.renderedPages !== 2100 || manifest.totals?.channelProjections !== 2700 || manifest.totals?.semanticMutations !== 8100 || manifest.totals?.mutationKilled !== 8100 || manifest.mutationFailures?.length !== 0) return { ok: false, reason: "manifest_totals" };

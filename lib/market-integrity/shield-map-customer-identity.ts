@@ -1,5 +1,5 @@
 const SAFE_QUERY = /^[A-Za-z0-9][A-Za-z0-9 .^=/_:-]{0,119}$/u;
-const EVM_ADDRESS = /^(?:address:)?(0x[a-fA-F0-9]{40})$/u;
+const EVM_ADDRESS = /^(?:address:)?(0[xX][a-fA-F0-9]{40})$/u;
 const MARKET_ID = /^[a-z0-9][a-z0-9._/-]{0,119}$/u;
 const CHAIN_ID = /^[a-z0-9][a-z0-9._:-]{0,79}$/u;
 const SYMBOL = /^[A-Z0-9.^=/-]{1,32}$/u;

@@ -12,6 +12,7 @@ import {
 import AtelierNetworkMap from "@/components/atelier/AtelierNetworkMap";
 import type { AtelierFacility } from "@/components/atelier/AtelierThreeGlobe";
 import Reveal from "@/components/ui/Reveal";
+import LuxuryProductCarousel from "@/components/home/LuxuryProductCarousel";
 
 type Locale = "pl" | "en" | "de";
 type RegionKey = "northAmerica" | "europe" | "asia" | "partner";
@@ -577,6 +578,13 @@ export default function AtelierPage({ locale }: { locale: Locale }) {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* Luxury Garments & Silhouette Showcase (Migrated from Home per zadanie.txt Pass 02) */}
+      <section className="border-t border-white/[0.08] bg-[#070709] px-5 py-12 md:px-9 md:py-20 xl:px-12">
+        <div className="mx-auto max-w-[108rem]">
+          <LuxuryProductCarousel />
         </div>
       </section>
 

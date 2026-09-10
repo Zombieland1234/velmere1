@@ -47,16 +47,21 @@ export function reportSection(
 
 export function formatSnapshotMoney(locale: string, value?: number, currency = "USD") {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  const abs = Math.abs(value);
+  const maxDigits = abs < 0.0001 ? 8 : abs < 1 ? 6 : 2;
+  const minDigits = abs < 0.0001 ? 6 : abs < 0.01 ? 4 : 2;
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
-      notation: Math.abs(value) >= 1_000_000 ? "compact" : "standard",
-      maximumFractionDigits: Math.abs(value) < 1 ? 6 : 2,
+      notation: abs >= 1_000_000 ? "compact" : "standard",
+      minimumFractionDigits: minDigits,
+      maximumFractionDigits: maxDigits,
     }).format(value);
   } catch {
     return new Intl.NumberFormat(locale, {
-      maximumFractionDigits: Math.abs(value) < 1 ? 6 : 2,
+      minimumFractionDigits: minDigits,
+      maximumFractionDigits: maxDigits,
     }).format(value);
   }
 }

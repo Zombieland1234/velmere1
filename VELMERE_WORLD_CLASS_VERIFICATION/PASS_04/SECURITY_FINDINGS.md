@@ -1,0 +1,3 @@
+# PASS_04 SECURITY FINDINGS
+
+Verified finding `VLM-SEC-REENTRANCY-READONLY-01` with severity `HIGH`.

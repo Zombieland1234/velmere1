@@ -1,0 +1,30 @@
+{
+  "contractName": "Tether USD (USDT)",
+  "symbol": "USDT",
+  "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.4.18",
+  "proxyPattern": "Custom Upgradeable Storage Proxy",
+  "riskScore": 42,
+  "riskLabel": "MODERATE RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Tether USD (USDT).",
+  "findings": [
+    {
+      "title": "Centralized Blacklist & Zero-Return Token Transfer Trap",
+      "severity": "HIGH",
+      "swcId": "SWC-105",
+      "cweId": "CWE-284",
+      "description": "Non-standard ERC20 implementation omitting boolean return on transfer(), alongside centralized destroyBlackFunds()."
+    }
+  ],
+  "verificationDigest": "1def118eae4d6f8a07e015520a8a4c713855de53ffab5bef0bb657ead9106bef",
+  "attackSurface": {
+    "category": "Centralized Privilege Escalation & Arbitrary Asset Freeze",
+    "attackVector": "Smart contract calling IERC20(usdt).transfer() fails silently or reverts in safeTransfer wrappers unless SafeERC20 is used."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/TetherToken.sol\n+++ b/contracts/TetherToken.sol\n@@ -110,3 +110,4 @@\n- function transfer(address _to, uint _value) public {\n+ function transfer(address _to, uint _value) public returns (bool) {\n   require(!isBlackListed[msg.sender]);\n+  return true;\n }"
+  }
+}

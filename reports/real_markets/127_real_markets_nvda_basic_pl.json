@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_nvda_basic_127",
+  "caseRef": "CASE-VLM-NVDA-BASIC",
+  "target": {
+    "contractName": "NVIDIA Corporation",
+    "contractAddress": "nasdaq:nvda",
+    "network": "NASDAQ Stock Market",
+    "chainId": "MIC:XNAS",
+    "tokenSymbol": "NVDA",
+    "proxyPattern": "N/A (Regulated Central Depository / DTCC-NSCC)"
+  },
+  "clientEntitlementTier": "basic",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:17.528Z",
+  "verdict": {
+    "riskScore": 16,
+    "riskLabel": "NISKIE RYZYKO",
+    "confidenceScore": 98,
+    "auditQualityScore": 66,
+    "summary": "Wiodący producent układów AI i akceleratorów graficznych. Wysoki obrót na NASDAQ, audyt PwC, rozliczenie T+1. Zwiększona ekspozycja na zmienność opcyjną.",
+    "evidenceCoverage": 98,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "regulatoryFilingHash": "0x10337f7a7ae17420503d56ebdc78ca90497f869ff373839666a32002208e8286",
+      "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+      "pinnedChainId": "9902",
+      "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+      "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości instrumentu i rejestracji u emitenta",
+        "Identyfikacja giełdy macierzystej i standardów rozliczeniowych",
+        "Klasyfikacja profilu ryzyka rynkowego i płynnościowego"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Instrument / Nazwa",
+            "value": "NVIDIA Corporation"
+          },
+          {
+            "label": "Klasa aktywów",
+            "value": "Rynek Tradycyjny / Regulowany (Akcje / Towary / FX / ETF)"
+          },
+          {
+            "label": "Ticker rynkowy",
+            "value": "NVDA"
+          },
+          {
+            "label": "Rynek notowań",
+            "value": "NASDAQ Stock Market"
+          },
+          {
+            "label": "Ramy prawne i nadzór",
+            "value": "Regulacje papierów wartościowych i rynków finansowych (SEC / ESMA / KNF)"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+      "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja integralności sprawozdań z rejestrami organów nadzoru",
+        "Audyt spójności danych fundamentalnych i struktury kapitałowej",
+        "Ocena ciągłości notowań i statusu dopuszczenia do obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Logika smart kontraktu EVM",
+            "value": "NOT_APPLICABLE (Traditional Market Instrument)",
+            "status": "neutral",
+            "claimId": "CLM-rep_nvda_basic_127-contract_identity-1",
+            "evidenceId": "EVD-rep_nvda_basic_127-contract_identity-1",
+            "classification": "C"
+          }
+        ],
+        "paragraphs": [
+          "Instrument NVIDIA Corporation podlega nadzorowi rynków regulowanych i izb rozliczeniowych. Dekompilacja bytecode EVM oraz skanowanie smart kontraktów mają status NOT_APPLICABLE dla instrumentów tradycyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+      "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie stabilności notowań i płynności rynkowej",
+        "Ocena zmienności historycznej i ekspozycji na szoki rynkowe",
+        "Zgodność ze standardami rozliczeń depozytowych T+1"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+      "subtitle": "Struktura akcjonariatu, prawa głosu i nadzór rady dyrektorów",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Struktura ładu korporacyjnego, nadzór rady dyrektorów i klasy akcji z prawem głosu",
+        "Ujawnienia w raportach regulacyjnych (SEC/KNF) i zgodność sprawozdawcza",
+        "Uprawnienia zarządu, mandaty do rozwodnienia kapitału i prawa akcjonariuszy",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+      "subtitle": "Rozkład spreadów NBBO, płynność animatorów rynku i handel blokowy",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Głębokość ciągłych notowań giełdowych i spready NBBO (National Best Bid/Offer)",
+        "Wolumen transakcji blokowych, routing dark pool i udział animatorów rynku",
+        "Widełki wyłączników rynkowych (reguły LULD) oraz historia zawieszeń obrotu",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+      "subtitle": "Modelowanie spoofingu, layeringu, ryzyka rozliczeniowego i margin call",
+      "requiredTier": "pro",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Pro",
+      "data": null,
+      "sampleSummaryLines": [
+        "Wektory manipulacji mikrostrukturą rynku (spoofing, layering, wash trading)",
+        "Ryzyko kontrahenta rozliczeniowego i wymogi depozytowe izb rozliczeniowych",
+        "Ryzyko krótkiego ścisku płynności (squeeze) oraz systemowe zależności kredytowe",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+      "subtitle": "Weryfikacja uzgodnień centralnych depozytów papierów wartościowych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Architektura uzgodnień rozliczeniowo-depozytowych (DTC/KDPW/Euroclear)",
+        "Weryfikacja skrótu kryptograficznego sprawozdań z rejestrami publicznymi",
+        "Deterministyczna realizacja operacji korporacyjnych (splity, dywidendy)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+      "subtitle": "Śledzenie podziałów akcji, wypłat dywidend i emisji dodatkowych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia operacji na kapitale i podziałów akcji (stock splits)",
+        "Weryfikacja spójności praw akcjonariuszy między emisjami",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie dotyczy aktywów tradycyjnych)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu sprawozdawczości przez analityka finansowego",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Atestacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót weryfikacji sprawozdań",
+        "Wyraźna granica przeglądu manualnego: brak rekomendacji inwestycyjnej",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:861ce904456f5342f82185a53b8b95c155fc18f8c3ee55d296ef9e9a31326018",
+  "applicationSurface": "real-markets",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "MIC:XNAS",
+      "contractAddress": "nasdaq:nvda",
+      "network": "NASDAQ Stock Market",
+      "proxyType": "N/A (Traditional Financial Instrument)"
+    },
+    "marketSpec": {
+      "identifierType": "TICKER",
+      "identifierValue": "NVDA",
+      "source": "Consolidated Tape / Primary Exchange",
+      "exchangeMic": "XNAS",
+      "figi": "BBGNASDAQNVD",
+      "isin": "USNASDAQNVD0",
+      "tickerSymbol": "NVDA",
+      "assetClass": "SEC-Regulated Equity Security (NASDAQ Tier-1)",
+      "pricingSource": "Consolidated Tape / Primary Exchange",
+      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
+      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:8dbce17239d3d7217d41302c4e76b8ea380c2d1400e63823121251a85796ffa1",
+      "reportDigestSha256": "sha256:8dbce17239d3d7217d41302c4e76b8ea380c2d1400e63823121251a85796ffa1",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:6af86c2d4f1dea1bad48ed04983dbd7326e519c00b9755353de31ec02b3fd5e6",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "9772617ecf088ab839bc963da223ae8875f0e338ec5379e3f40ea240342cbcd67d04ab1f71e41854d1436e909151c2507130a0f55ac9582086e000234c0a7f0d",
+    "signedDigest": "e97bb2cc19f1e046ba8f16a92696b1ad448de3b25b7099601da80fb1418ed964",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "e97bb2cc19f1e046ba8f16a92696b1ad448de3b25b7099601da80fb1418ed964",
+      "serialNumber": "aaa246f46c0e71eb2297671e811f120c",
+      "genTime": "2026-09-10T12:36:17.528Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "5795fb20833797512c471fef26fd810b9dfd089d1a35b85ee836098bfe7c06a4"
+    },
+    "provenanceProof": "sha256:d7c46f8a2d29292dc0a3fff33b6f17bf684f7d22ddf3b798865dc0f913102817"
+  },
+  "integrityProof": {
+    "pdfSha256": "0c50fca2d8e16a743635ecdff2aa302efa712bf8c8105c5201ca20dacf2cbfd0",
+    "pdfByteLength": 89287,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:17.541Z"
+  }
+}

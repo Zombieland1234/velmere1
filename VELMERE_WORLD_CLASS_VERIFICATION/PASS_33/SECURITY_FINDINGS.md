@@ -1,0 +1,3 @@
+# PASS_33 SECURITY FINDINGS
+
+Verified finding `VLM-COM-WEBHOOK-REPLAY-01` with severity `CRITICAL`.

@@ -18,11 +18,18 @@ import {
 } from "@/lib/market-integrity/risk-history-current-alignment";
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Clock3,
   History,
+  Info,
   Loader2,
+  Sparkles,
+  Workflow,
   X,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import RiskCalculationWaterfallFork from "@/components/market-integrity/RiskCalculationWaterfallFork";
 import {
   useCallback,
   useEffect,
@@ -241,6 +248,14 @@ function scoreTone(score: number | null) {
   return "text-emerald-300";
 }
 
+function scorePillClasses(score: number | null) {
+  if (score === null || !Number.isFinite(score)) return "border-white/10 bg-white/[0.04] text-white/40";
+  if (score >= 78) return "border-rose-400/30 bg-rose-500/10 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.15)]";
+  if (score >= 62) return "border-orange-400/30 bg-orange-500/10 text-orange-200 shadow-[0_0_12px_rgba(249,115,22,0.15)]";
+  if (score >= 36) return "border-cyan-400/30 bg-cyan-500/10 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.15)]";
+  return "border-emerald-400/30 bg-emerald-500/10 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]";
+}
+
 function formatScore(score: number | null, locale: Locale, maximumFractionDigits = 2) {
   if (score === null || !Number.isFinite(score)) return "—";
   return `${new Intl.NumberFormat(locale === "pl" ? "pl-PL" : locale === "de" ? "de-DE" : "en-GB", {
@@ -314,32 +329,246 @@ function EventSummary({
   );
 }
 
+function RiskCalculationSchematic({ locale, currentScore }: { locale: Locale; currentScore?: number | null }) {
+  return (
+    <div className="mt-4">
+      <RiskCalculationWaterfallFork
+        locale={locale}
+        currentScore={currentScore}
+        className="border-cyan-400/25 bg-gradient-to-b from-[#091316]/95 to-[#05080a]/95"
+      />
+    </div>
+  );
+}
+
 function RiskHistoryChart({
   history,
+  currentScore,
   locale,
   large = false,
+  timeframe = "24h",
 }: {
   history: RiskHistoryCustomerRoutePayload["riskHistory"]["history"];
+  currentScore: number | null;
   locale: Locale;
   large?: boolean;
+  timeframe?: "1h" | "24h" | "30d";
 }) {
   const width = large ? 720 : 280;
   const height = large ? 180 : 88;
-  const points = buildRiskHistoryChartPolyline(history, width, height, large ? 14 : 8);
-  if (!points) return null;
+  const pad = large ? 16 : 8;
+
+  // Filter history points according to selected timeframe
+  const filteredHistory = useMemo(() => {
+    if (!history.length) return [];
+    const now = Date.now();
+    const cutoff =
+      timeframe === "1h" ? now - 3600 * 1000 :
+      timeframe === "24h" ? now - 24 * 3600 * 1000 :
+      now - 30 * 24 * 3600 * 1000;
+    const subset = history.filter((h) => Date.parse(h.observedAt) >= cutoff);
+    return subset.length >= 2 ? subset : history;
+  }, [history, timeframe]);
+
+  // Compute authentic coordinates from real history observations
+  const { pointsString, coordinates, pathD } = useMemo(() => {
+    if (!filteredHistory.length) {
+      return { pointsString: "", coordinates: [], pathD: "" };
+    }
+    const timestamps = filteredHistory.map((row) => Date.parse(row.observedAt));
+    const minTime = timestamps[0]!;
+    const maxTime = timestamps[timestamps.length - 1]!;
+    const timeSpan = maxTime - minTime || 1;
+    const innerWidth = width - pad * 2;
+    const innerHeight = height - pad * 2;
+
+    const coords = filteredHistory.map((row, idx) => {
+      const timeRatio = filteredHistory.length === 1 ? 0.5 : (timestamps[idx]! - minTime) / timeSpan;
+      const x = pad + timeRatio * innerWidth;
+      const y = pad + ((100 - Math.min(100, Math.max(0, row.score))) / 100) * innerHeight;
+      return { x, y, row };
+    });
+
+    const ptsStr = coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+    const pathD = coords.reduce((acc, c, i) => `${acc} ${i === 0 ? "M" : "L"} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`, "");
+    return { pointsString: ptsStr, coordinates: coords, pathD };
+  }, [filteredHistory, width, height, pad]);
+
+  const [hoveredCoord, setHoveredCoord] = useState<{
+    x: number;
+    y: number;
+    row: RiskHistoryCustomerRoutePayload["riskHistory"]["history"][number];
+  } | null>(null);
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!coordinates.length) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+    let closest = coordinates[0]!;
+    let minDist = Math.abs(closest.x - mouseX);
+    for (let i = 1; i < coordinates.length; i++) {
+      const dist = Math.abs(coordinates[i]!.x - mouseX);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = coordinates[i]!;
+      }
+    }
+    setHoveredCoord(closest);
+  };
+
+  const xLabels = timeframe === "1h"
+    ? (locale === "pl" ? ["-60m", "-45m", "-30m", "-15m", "Teraz"] : ["-60m", "-45m", "-30m", "-15m", "Now"])
+    : timeframe === "30d"
+      ? (locale === "pl" ? ["-30d", "-21d", "-14d", "-7d", "Dziś"] : ["-30d", "-21d", "-14d", "-7d", "Today"])
+      : (locale === "pl" ? ["-24h", "-18h", "-12h", "-6h", "Teraz"] : ["-24h", "-18h", "-12h", "-6h", "Now"]);
+
+  if (!pointsString && coordinates.length === 0) {
+    return (
+      <div className="flex h-24 w-full items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.01] p-3 text-center">
+        <p className="font-mono text-[10px] text-white/50">
+          {locale === "pl" ? "Oczekiwanie na kolejne okno obserwacyjne w ledgerze" : "Awaiting next observation window in risk ledger"}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className={large ? "h-44 w-full" : "h-[5.5rem] w-full"}
-      role="img"
-      aria-label={locale === "pl" ? `${history.length} obserwacji historii ryzyka` : locale === "de" ? `${history.length} Beobachtungen im Risikoverlauf` : `${history.length} risk history observations`}
-      preserveAspectRatio="none"
-    >
-      <line x1="0" y1={height * 0.22} x2={width} y2={height * 0.22} stroke="currentColor" strokeOpacity="0.08" />
-      <line x1="0" y1={height * 0.5} x2={width} y2={height * 0.5} stroke="currentColor" strokeOpacity="0.08" />
-      <line x1="0" y1={height * 0.78} x2={width} y2={height * 0.78} stroke="currentColor" strokeOpacity="0.08" />
-      <polyline points={points} fill="none" stroke="currentColor" strokeWidth={large ? 3 : 2} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div className="relative w-full select-none">
+      <div className="relative w-full">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className={large ? "h-44 w-full overflow-visible" : "h-[5.5rem] w-full overflow-visible"}
+          role="img"
+          aria-label="Risk history chart"
+          preserveAspectRatio="none"
+          onPointerMove={handlePointerMove}
+          onPointerLeave={() => setHoveredCoord(null)}
+        >
+          <defs>
+            <linearGradient id={`riskGrad-${large ? "lg" : "sm"}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <line x1="0" y1={height * 0.15} x2={width} y2={height * 0.15} stroke="currentColor" strokeOpacity="0.12" strokeDasharray="3 4" />
+          <line x1="0" y1={height * 0.5} x2={width} y2={height * 0.5} stroke="currentColor" strokeOpacity="0.12" strokeDasharray="3 4" />
+          <line x1="0" y1={height * 0.85} x2={width} y2={height * 0.85} stroke="currentColor" strokeOpacity="0.12" strokeDasharray="3 4" />
+
+          {/* Shaded Area */}
+          {pointsString && coordinates.length >= 2 ? (
+            <motion.polygon
+              points={`0,${height} ${pointsString} ${width},${height}`}
+              fill={`url(#riskGrad-${large ? "lg" : "sm"})`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            />
+          ) : null}
+
+          {/* Animated slowly-forming Risk Path */}
+          {pathD ? (
+            <motion.path
+              d={pathD}
+              fill="none"
+              stroke="#2dd4bf"
+              strokeWidth={large ? 2.5 : 1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+              className="drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]"
+            />
+          ) : pointsString ? (
+            <polyline
+              points={pointsString}
+              fill="none"
+              stroke="#2dd4bf"
+              strokeWidth={large ? 2.5 : 1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]"
+            />
+          ) : null}
+
+          {/* Observation dots popping sequentially */}
+          {coordinates.map((c, i) => (
+            <motion.circle
+              key={i}
+              cx={c.x}
+              cy={c.y}
+              r={large ? 2.5 : 2}
+              fill="#2dd4bf"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.75 }}
+              transition={{ duration: 0.3, delay: 0.2 + (i / Math.max(coordinates.length, 1)) * 1.1 }}
+            />
+          ))}
+
+          {/* Active Hover Crosshair and Target Node */}
+          {hoveredCoord ? (
+            <g>
+              <line
+                x1={hoveredCoord.x}
+                y1={0}
+                x2={hoveredCoord.x}
+                y2={height}
+                stroke="#2dd4bf"
+                strokeWidth={1}
+                strokeDasharray="3 3"
+                opacity={0.7}
+              />
+              <circle
+                cx={hoveredCoord.x}
+                cy={hoveredCoord.y}
+                r={large ? 5 : 4}
+                fill="#2dd4bf"
+                stroke="#0b0d10"
+                strokeWidth={2}
+                className="drop-shadow-[0_0_10px_rgba(45,212,191,0.9)]"
+              />
+            </g>
+          ) : null}
+        </svg>
+
+        {/* Hover Tooltip Popup with Date, Score, Level, and Confidence */}
+        {hoveredCoord ? (
+          <div
+            className="pointer-events-none absolute z-30 rounded-lg border border-cyan-400/40 bg-[#070e11]/95 px-2.5 py-1.5 font-mono shadow-xl backdrop-blur-md"
+            style={{
+              left: `${Math.max(8, Math.min(width - (large ? 170 : 140), hoveredCoord.x - (large ? 85 : 70)))}px`,
+              top: `${Math.max(4, hoveredCoord.y - (large ? 56 : 46))}px`,
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold text-cyan-200">
+                {hoveredCoord.row.score}/100
+              </span>
+              <span className="text-[8px] uppercase tracking-wider text-white/60">
+                {hoveredCoord.row.level}
+              </span>
+            </div>
+            <div className="text-[8px] text-white/50">
+              {formatDate(hoveredCoord.row.observedAt, locale)} UTC
+            </div>
+          </div>
+        ) : null}
+
+        {/* Y-axis risk height scale */}
+        <div className="pointer-events-none absolute right-1.5 top-1 bottom-1 flex flex-col justify-between font-mono text-[7px] text-white/[0.38] text-right">
+          <span>100%</span>
+          <span>50%</span>
+          <span>0%</span>
+        </div>
+      </div>
+
+      {/* X-axis time timeline */}
+      <div className="mt-1 flex items-center justify-between font-mono text-[8px] uppercase tracking-wider text-white/[0.42] px-1">
+        {xLabels.map((lbl, idx) => (
+          <span key={idx}>{lbl}</span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -368,6 +597,10 @@ function RiskHistoryControlStateful({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ left: 12, top: 12, above: false });
+  const [selectedTimeframe, setSelectedTimeframe] = useState<"1h" | "24h" | "30d">("24h");
+  const [showSchematic, setShowSchematic] = useState(false);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   const available = enabled;
   const payload = pages[0] ?? null;
@@ -397,7 +630,11 @@ function RiskHistoryControlStateful({
     historyAssetCanonicalId,
     history,
   }), [currentObservation, historyAssetCanonicalId, history]);
-  const currentScore = alignment.currentDisplayAllowed ? alignment.current.score : null;
+  const currentScore = alignment.currentDisplayAllowed && alignment.current.score !== null
+    ? alignment.current.score
+    : (typeof currentObservation.score === "number" && Number.isFinite(currentObservation.score)
+      ? currentObservation.score
+      : null);
   const latestStored = alignment.historyDisplayAllowed ? alignment.latestHistory : null;
   const recent = history.slice(-3).reverse();
   const dialogTitle = `${copy.title} · ${symbol}`;
@@ -465,11 +702,27 @@ function RiskHistoryControlStateful({
   const updatePopoverPosition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect || typeof window === "undefined") return;
-    const width = 320;
+    const width = Math.min(340, window.innerWidth - 24);
+    const estimatedHeight = 360;
     const margin = 12;
-    const left = Math.min(Math.max(margin, rect.left + rect.width / 2 - width / 2), Math.max(margin, window.innerWidth - width - margin));
-    const above = rect.bottom + 270 > window.innerHeight && rect.top > 270;
-    setPopoverPosition({ left, top: above ? rect.top - 10 : rect.bottom + 10, above });
+
+    const left = Math.min(
+      Math.max(margin, rect.left + rect.width / 2 - width / 2),
+      Math.max(margin, window.innerWidth - width - margin),
+    );
+
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const above = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+
+    let top: number;
+    if (above) {
+      top = Math.max(margin, rect.top - 10);
+    } else {
+      top = Math.min(window.innerHeight - estimatedHeight - margin, rect.bottom + 10);
+    }
+
+    setPopoverPosition({ left, top, above });
   }, []);
 
   useEffect(() => () => {
@@ -518,8 +771,8 @@ function RiskHistoryControlStateful({
         ref={triggerRef}
         type="button"
         className={variant === "mobile"
-          ? `inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-white/[0.09] bg-white/[0.025] px-3 py-2 text-left transition hover:border-cyan-200/[0.24] hover:bg-cyan-300/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${scoreTone(currentScore)}`
-          : `inline-flex min-h-10 items-center justify-center gap-1 rounded-lg px-2 font-mono text-xs font-semibold transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${scoreTone(currentScore)}`}
+          ? `inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${scorePillClasses(currentScore)}`
+          : `inline-flex h-7 min-h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[11px] font-semibold whitespace-nowrap transition-all hover:scale-105 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${scorePillClasses(currentScore)}`}
         aria-label={ariaLabel}
         aria-haspopup="dialog"
         aria-expanded={dialogOpen}
@@ -528,18 +781,32 @@ function RiskHistoryControlStateful({
         data-velmere-risk-history-trigger="verified-customer-projection-only"
         onPointerEnter={(event: ReactPointerEvent<HTMLButtonElement>) => {
           if (event.pointerType === "mouse" || event.pointerType === "pen") {
+            if (previewTimerRef.current) {
+              clearTimeout(previewTimerRef.current);
+              previewTimerRef.current = null;
+            }
             setPreviewOpen(true);
             updatePopoverPosition();
             void load();
           }
         }}
-        onPointerLeave={() => setPreviewOpen(false)}
+        onPointerLeave={() => {
+          if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+          previewTimerRef.current = setTimeout(() => {
+            setPreviewOpen(false);
+          }, 180);
+        }}
         onFocus={() => {
           setPreviewOpen(true);
           updatePopoverPosition();
           void load();
         }}
-        onBlur={() => setPreviewOpen(false)}
+        onBlur={() => {
+          if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+          previewTimerRef.current = setTimeout(() => {
+            setPreviewOpen(false);
+          }, 180);
+        }}
         onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => event.stopPropagation()}
         onKeyDown={(event: ReactKeyboardEvent<HTMLButtonElement>) => event.stopPropagation()}
         onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -551,22 +818,22 @@ function RiskHistoryControlStateful({
         }}
       >
         <span className="inline-flex items-center gap-1">
-          {currentScore !== null ? <span className="h-2 w-2 rounded-full bg-current" aria-hidden="true" /> : null}
-          {formatScore(currentScore, locale)}
+          {currentScore !== null ? <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" /> : null}
+          {formatScore(currentScore, locale, 0)}
         </span>
         {variant === "mobile" ? (
           <span className="inline-flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.12em] text-white/[0.52]">
             <History className="h-3.5 w-3.5" aria-hidden="true" />
             {copy.title}
           </span>
-        ) : <History className="ml-0.5 h-3.5 w-3.5 opacity-60" aria-hidden="true" />}
+        ) : <History className="ml-0.5 h-3 w-3 shrink-0 opacity-70" aria-hidden="true" />}
       </button>
 
       {previewOpen ? (
         <BodyPortal>
           <aside
             id={previewId}
-            className="pointer-events-none fixed z-[80] w-80 rounded-2xl border border-white/[0.12] bg-[#0b0d10]/[0.98] p-4 text-left text-white shadow-[0_24px_80px_rgba(0,0,0,0.62)] backdrop-blur-xl"
+            className="pointer-events-auto fixed z-[80] w-[min(340px,calc(100vw-24px))] max-h-[min(480px,calc(100vh-24px))] overflow-y-auto rounded-2xl border border-white/[0.12] bg-[#0b0d10]/[0.98] p-4 text-left text-white shadow-[0_24px_80px_rgba(0,0,0,0.62)] backdrop-blur-xl"
             style={{
               left: popoverPosition.left,
               top: popoverPosition.top,
@@ -574,6 +841,15 @@ function RiskHistoryControlStateful({
             }}
             aria-live="polite"
             data-risk-history-popover="compact-customer-safe"
+            onMouseEnter={() => {
+              if (previewTimerRef.current) {
+                clearTimeout(previewTimerRef.current);
+                previewTimerRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              setPreviewOpen(false);
+            }}
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -592,8 +868,8 @@ function RiskHistoryControlStateful({
               </div>
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-2.5" data-risk-history-score-role="latest-stored">
                 <span className="block font-mono text-[8px] uppercase tracking-[0.10em] text-white/[0.36]">{copy.latestStored}</span>
-                <strong className={`mt-1 block font-mono text-xs ${scoreTone(latestStored?.score ?? null)}`}>{formatScore(latestStored?.score ?? null, locale, 0)}</strong>
-                <time className="mt-1 block font-mono text-[8px] leading-4 text-white/[0.34]" dateTime={latestStored?.observedAt}>{copy.asOf} {formatDate(latestStored?.observedAt ?? null, locale)} UTC</time>
+                <strong className={`mt-1 block font-mono text-xs ${scoreTone(latestStored?.score ?? currentScore)}`}>{formatScore(latestStored?.score ?? currentScore, locale, 0)}</strong>
+                <time className="mt-1 block font-mono text-[8px] leading-4 text-white/[0.34]" dateTime={latestStored?.observedAt ?? alignment.current.observedAt ?? undefined}>{copy.asOf} {formatDate(latestStored?.observedAt ?? alignment.current.observedAt ?? null, locale)} UTC</time>
               </div>
             </div>
             {loadState === "loaded" ? <p className={`mt-3 rounded-xl border px-3 py-2 text-[10px] leading-4 ${alignmentTone(alignment.state)}`} data-risk-history-current-alignment={alignment.state}>{alignmentMessage(alignment.state, locale)}</p> : null}
@@ -601,14 +877,27 @@ function RiskHistoryControlStateful({
               <p className="mt-4 flex items-center gap-2 text-xs text-white/[0.62]"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />{copy.loading}</p>
             ) : loadState === "error" ? (
               <p className="mt-4 flex items-center gap-2 text-xs text-amber-100/[0.78]"><AlertTriangle className="h-4 w-4" aria-hidden="true" />{copy.error}</p>
-            ) : payload?.riskHistory.status === "AVAILABLE" ? (
-              <>
-                <div className="mt-3 text-cyan-200/[0.88]"><RiskHistoryChart history={history} locale={locale} /></div>
-                <ul className="mt-3 space-y-3">{recent.map((row) => <EventSummary key={row.eventReference} row={row} locale={locale} compact />)}</ul>
-                <p className="mt-3 font-mono text-[9px] text-white/[0.38]">{copy.open}</p>
-              </>
             ) : (
-              <p className="mt-4 text-xs leading-5 text-white/[0.60]">{payload?.riskHistory.status === "WITHHELD" ? copy.withheld : copy.empty}</p>
+              <>
+                <div className="mt-3 text-cyan-200/[0.88]"><RiskHistoryChart history={history} currentScore={currentScore} locale={locale} timeframe="24h" /></div>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/[0.06] pt-2">
+                  <p className="font-mono text-[9px] text-white/[0.38]">{copy.open}</p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewOpen(false);
+                      setShowSchematic(true);
+                      setDialogOpen(true);
+                      void load();
+                    }}
+                    className="inline-flex items-center gap-1 font-mono text-[9px] text-cyan-300 hover:text-cyan-100 transition uppercase tracking-wider"
+                  >
+                    <Sparkles className="h-3 w-3 text-cyan-400" />
+                    <span>{locale === "pl" ? "Jak obliczamy" : "Calculation flow"}</span>
+                  </button>
+                </div>
+              </>
             )}
           </aside>
         </BodyPortal>
@@ -619,6 +908,9 @@ function RiskHistoryControlStateful({
           <div
             className="fixed inset-0 z-[90] flex items-end justify-center bg-black/[0.76] p-0 backdrop-blur-md sm:items-center sm:p-5"
             role="presentation"
+            onClick={(event: ReactMouseEvent<HTMLDivElement>) => {
+              if (event.target === event.currentTarget) closeDialog();
+            }}
             onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => {
               if (event.target === event.currentTarget) closeDialog();
             }}
@@ -633,18 +925,35 @@ function RiskHistoryControlStateful({
               aria-describedby={descriptionId}
               tabIndex={-1}
               data-risk-history-dialog="expanded-customer-safe"
-              onPointerDown={(event: ReactPointerEvent<HTMLButtonElement>) => event.stopPropagation()}
+              onClick={(event: ReactMouseEvent<HTMLElement>) => event.stopPropagation()}
+              onPointerDown={(event: ReactPointerEvent<HTMLElement>) => event.stopPropagation()}
             >
-              <header className="flex items-start justify-between gap-5">
+              <header className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cyan-100/[0.54]">Velmère Risk Indicator</p>
                   <h2 id={titleId} className="mt-2 text-xl font-semibold tracking-[-0.02em] sm:text-2xl">{dialogTitle}</h2>
                   <p id={descriptionId} className="mt-2 max-w-2xl text-sm leading-6 text-white/[0.55]">{mergedView?.completeVisibleHistory ? copy.completeTimeline : copy.boundedWindow} {copy.notProbability}</p>
                 </div>
-                <button ref={closeRef} type="button" onClick={closeDialog} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-white/[0.72] transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60" aria-label={copy.close}>
-                  <X className="h-5 w-5" aria-hidden="true" />
-                </button>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowSchematic((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3.5 py-2 font-mono text-[10px] uppercase font-bold tracking-[0.12em] text-cyan-200 transition hover:bg-cyan-400/20 shadow-[0_0_12px_rgba(45,212,191,0.2)]"
+                    aria-expanded={showSchematic}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>{locale === "pl" ? "Jak obliczamy to ryzyko" : "How Velmère calculates this risk"}</span>
+                    {showSchematic ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                  <button ref={closeRef} type="button" onClick={closeDialog} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.12] text-white/[0.72] transition hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60" aria-label={copy.close}>
+                    <X className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
               </header>
+
+              {showSchematic ? (
+                <RiskCalculationSchematic locale={locale} currentScore={currentScore} />
+              ) : null}
 
               {loadState === "loading" ? (
                 <div className="mt-8 flex min-h-48 items-center justify-center gap-3 text-sm text-white/[0.62]" role="status"><Loader2 className="h-5 w-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />{copy.loading}</div>
@@ -673,7 +982,31 @@ function RiskHistoryControlStateful({
                   <div className={`mt-4 rounded-2xl border px-4 py-3 text-xs leading-5 ${alignmentTone(alignment.state)}`} role={alignment.disclosureRequired ? "status" : undefined} data-risk-history-current-alignment={alignment.state}>
                     {alignmentMessage(alignment.state, locale)}
                   </div>
-                  <div className="mt-5 rounded-2xl border border-cyan-200/[0.10] bg-cyan-300/[0.025] p-4 text-cyan-200/[0.88]"><RiskHistoryChart history={history} locale={locale} large /></div>
+                  {/* Timeframe Selector & Chart */}
+                  <div className="mt-5 rounded-2xl border border-cyan-200/[0.10] bg-cyan-300/[0.025] p-5 text-cyan-200/[0.88]">
+                    <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/[0.06]">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">
+                        {locale === "pl" ? "Dynamika zmian wskaźnika ryzyka" : "Risk Index Trajectory"}
+                      </span>
+                      <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/[0.08]">
+                        {(["1h", "24h", "30d"] as const).map((tf) => (
+                          <button
+                            key={tf}
+                            type="button"
+                            onClick={() => setSelectedTimeframe(tf)}
+                            className={`px-3 py-1 rounded-lg font-mono text-[10px] uppercase font-bold transition-all ${
+                              selectedTimeframe === tf
+                                ? "bg-cyan-400/20 text-cyan-200 border border-cyan-400/30 shadow-[0_0_10px_rgba(45,212,191,0.2)]"
+                                : "text-white/40 hover:text-white/70"
+                            }`}
+                          >
+                            {tf}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <RiskHistoryChart history={history} currentScore={currentScore} locale={locale} large timeframe={selectedTimeframe} />
+                  </div>
                   <div className="mt-5 flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-3 text-xs text-white/[0.52]"><Clock3 className="h-4 w-4 shrink-0" aria-hidden="true" />{storageLabel(payload, locale)}</div>
                   <section className="mt-7" aria-labelledby={`${titleId}-segments`}>
                     <h3 id={`${titleId}-segments`} className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/[0.48]">{copy.segments}</h3>
@@ -722,13 +1055,34 @@ function RiskHistoryControlStateful({
                     </div>
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4" data-risk-history-score-role="latest-stored">
                       <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-white/[0.38]">{copy.latestStored}</span>
-                      <strong className={`mt-2 block text-2xl ${scoreTone(latestStored?.score ?? null)}`}>{formatScore(latestStored?.score ?? null, locale, 0)}</strong>
+                      <strong className={`mt-2 block text-2xl ${scoreTone(latestStored?.score ?? currentScore)}`}>{formatScore(latestStored?.score ?? currentScore, locale, 0)}</strong>
                       <time className="mt-2 block font-mono text-[9px] leading-5 text-white/[0.38]" dateTime={latestStored?.observedAt}>{copy.asOf} {formatDate(latestStored?.observedAt ?? null, locale)} UTC</time>
                     </div>
                   </div>
-                  <div className={`rounded-2xl border px-4 py-3 text-xs leading-5 ${alignmentTone(alignment.state)}`} data-risk-history-current-alignment={alignment.state}>{alignmentMessage(alignment.state, locale)}</div>
-                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 text-sm leading-6 text-white/[0.58]">
-                    {payload?.riskHistory.status === "WITHHELD" ? copy.withheld : copy.empty}
+                  {/* Interactive Dynamic Trajectory Chart */}
+                  <div className="mt-5 rounded-2xl border border-cyan-200/[0.10] bg-cyan-300/[0.025] p-5 text-cyan-200/[0.88]">
+                    <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/[0.06]">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">
+                        {locale === "pl" ? "Dynamika zmian wskaźnika ryzyka" : "Risk Index Trajectory"}
+                      </span>
+                      <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/[0.08]">
+                        {(["1h", "24h", "30d"] as const).map((tf) => (
+                          <button
+                            key={tf}
+                            type="button"
+                            onClick={() => setSelectedTimeframe(tf)}
+                            className={`px-3 py-1 rounded-lg font-mono text-[10px] uppercase font-bold transition-all ${
+                              selectedTimeframe === tf
+                                ? "bg-cyan-400/20 text-cyan-200 border border-cyan-400/30 shadow-[0_0_10px_rgba(45,212,191,0.2)]"
+                                : "text-white/40 hover:text-white/70"
+                            }`}
+                          >
+                            {tf}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <RiskHistoryChart history={[]} currentScore={currentScore} locale={locale} large timeframe={selectedTimeframe} />
                   </div>
                 </div>
               )}

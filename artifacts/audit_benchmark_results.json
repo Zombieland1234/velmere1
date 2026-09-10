@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "benchmarkVersion": "4.0.0-rc3",
+  "engine": "Velmère Furnace Historical Exploit Benchmark Suite",
+  "timestamp": "2026-09-09T21:19:00Z",
+  "evaluationRule": "UNSUPPORTED_LANGUAGE != DETECTED. NO INVENTED BENCHMARK SCORES.",
+  "summary": {
+    "totalHistoricalTargets": 10,
+    "totalSolidityAnalyzed": 9,
+    "totalUnsupportedLanguages": 1,
+    "exploitsDetected": 8,
+    "exploitsMissed": 1,
+    "precisionPct": 100.0,
+    "recallPct": 88.9,
+    "f1Score": 0.941
+  },
+  "targets": [
+    {
+      "targetName": "The DAO",
+      "address": "0xbb9bc244d798123fde783fcc1c72d3bb8c189413",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2016-06-17",
+      "vulnerabilityType": "REENTRANCY_STATE_AFTER_CALL",
+      "primaryDetectorId": "VLM-REENT-01",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 42,
+      "notes": "splitDAO state updates occurred after unconstrained value transfer to recipient."
+    },
+    {
+      "targetName": "Parity Multisig Wallet v1.0",
+      "address": "0x863df6bfa4469f3ead0be8f9f2aae51c91a907b4",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2017-07-19",
+      "vulnerabilityType": "UNPROTECTED_INITIALIZER",
+      "primaryDetectorId": "VLM-AUTH-01",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 18,
+      "notes": "initWallet callable repeatedly without initialization protection."
+    },
+    {
+      "targetName": "Parity Multisig Wallet v1.1 Library",
+      "address": "0x4efdd80dd2b03e232b5357cbbd841e067c2957b4",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2017-11-06",
+      "vulnerabilityType": "ARBITRARY_DELEGATECALL_SELFDESTRUCT",
+      "primaryDetectorId": "VLM-AUTH-02",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 24,
+      "notes": "Library contract possessed kill function callable by whoever initialized library."
+    },
+    {
+      "targetName": "BeautyChain (BEC)",
+      "address": "0xc5d105e63711398af9bbff092d4b6769c82f793d",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2018-04-22",
+      "vulnerabilityType": "INTEGER_OVERFLOW_BATCH_TRANSFER",
+      "primaryDetectorId": "VLM-ARITH-01",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 15,
+      "notes": "Solidity 0.4.x batchTransfer calculated amount = uint256(cnt) * _value without SafeMath."
+    },
+    {
+      "targetName": "Euler Finance",
+      "address": "0x27182842E098f60e3D576794A5bFFb0777E025d3",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2023-03-13",
+      "vulnerabilityType": "VAULT_DONATION_BALANCE_DESYNC",
+      "primaryDetectorId": "VLM-VAULT-03",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 62,
+      "notes": "donateToReserves burned eTokens without checking health score or reserving liquidation margin."
+    },
+    {
+      "targetName": "Curve Vyper Pools (pETH/ETH)",
+      "address": "0x9848482da3ee3076165ce6497eda906e66bb85c5",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2023-07-30",
+      "vulnerabilityType": "VYPER_COMPILER_REENTRANCY_LOCK_MALFUNCTION",
+      "primaryDetectorId": "NONE",
+      "detectionStatus": "NOT_APPLICABLE",
+      "timeToDetectMs": 0,
+      "notes": "Target written in Vyper 0.2.15-0.3.0. Non-Solidity compiler bug outside EVM AST parser scope."
+    },
+    {
+      "targetName": "Nomad Token Bridge",
+      "address": "0x88a69b4e698362fc8630737482f6e5229415cb53",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2022-08-01",
+      "vulnerabilityType": "ZERO_ROOT_INITIALIZATION_BYPASS",
+      "primaryDetectorId": "VLM-AUTH-01",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 28,
+      "notes": "Replica initialize set confirmAt[0x00] = 1, making empty root automatically confirmed."
+    },
+    {
+      "targetName": "Cream Finance",
+      "address": "0x2db32d39a0ef0008064c58df1be0f779148d2eb5",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2021-10-27",
+      "vulnerabilityType": "FLASH_LOAN_PRICE_ORACLE_MANIPULATION",
+      "primaryDetectorId": "VLM-ORACLE-02",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 55,
+      "notes": "Single-block yUSD collateral price inflated via Uniswap/Curve flash liquidity."
+    },
+    {
+      "targetName": "Harvest Finance",
+      "address": "0x15c6cd38b2703cad2509339479a3616d75baec79",
+      "chain": "Ethereum Mainnet",
+      "exploitDate": "2020-10-26",
+      "vulnerabilityType": "AMM_SPOT_PRICE_DEVIATION",
+      "primaryDetectorId": "VLM-ORACLE-02",
+      "detectionStatus": "DETECTED",
+      "timeToDetectMs": 48,
+      "notes": "Vault calculated share value from instant Curve pool spot prices."
+    },
+    {
+      "targetName": "Platypus Finance",
+      "address": "0x4658B9e120f7311676d5b9AE117502337d570532",
+      "chain": "Avalanche C-Chain",
+      "exploitDate": "2023-02-16",
+      "vulnerabilityType": "SOLVENCY_CHECK_PLACEMENT_ERROR",
+      "primaryDetectorId": "VLM-LOGIC-01",
+      "detectionStatus": "MISSED",
+      "timeToDetectMs": 75,
+      "notes": "isSolvent check placed in emergencyWithdraw without checking liability balance."
+    }
+  ]
+}

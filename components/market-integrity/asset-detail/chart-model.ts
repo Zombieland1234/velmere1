@@ -190,8 +190,11 @@ export function formatDateLabel(timestamp: number, timeframe: VlmAssetTimeframe)
 }
 
 export function formatPrice(value: number) {
+  if (value === undefined || value === null || !Number.isFinite(value)) return "—";
   const abs = Math.abs(value);
-  return value.toLocaleString("en-US", { maximumFractionDigits: abs < 1 ? 5 : abs < 10 ? 4 : abs < 1000 ? 2 : 0, minimumFractionDigits: abs < 10 ? 2 : 0 });
+  const maxDigits = abs < 0.0001 ? 8 : abs < 0.01 ? 6 : abs < 1 ? 4 : abs < 10 ? 4 : 2;
+  const minDigits = abs < 0.0001 ? 6 : abs < 0.01 ? 4 : 2;
+  return value.toLocaleString("en-US", { maximumFractionDigits: maxDigits, minimumFractionDigits: minDigits });
 }
 
 export function futureSpaceBars(span: number) { return Math.max(1, Math.min(4, Math.round(span * 0.025))); }
@@ -200,10 +203,10 @@ export function clampRange(
   range: ChartRange,
   candlesLength: number,
   extraFutureBars = 0,
-  minimumSpan = 12,
+  minimumSpan = 5,
 ): ChartRange {
   if (candlesLength <= 1) return { from: 0, to: 0 };
-  const boundedMinimumSpan = Math.min(Math.max(12, minimumSpan), Math.max(12, candlesLength - 1));
+  const boundedMinimumSpan = Math.min(Math.max(5, minimumSpan), Math.max(5, candlesLength - 1));
   const span = Math.max(boundedMinimumSpan, range.to - range.from);
   const maxTo = candlesLength - 1 + Math.max(0, extraFutureBars);
   const maxFrom = Math.max(0, maxTo - span);
@@ -224,11 +227,12 @@ export function getChartLayout(width: number, height: number): ChartLayout {
   const compact = width < 720;
   const left = compact ? 16 : 24;
   const right = compact ? 68 : 84;
-  const top = compact ? 24 : 30;
+  const top = compact ? 26 : 32;
   const bottom = compact ? 28 : 34;
+  const volumeHeight = Math.min(54, Math.max(28, (height - top - bottom) * 0.18));
   const volumeBottom = height - bottom;
-  const volumeTop = volumeBottom;
-  const priceBottom = Math.max(top + 170, height - bottom - 16);
+  const volumeTop = volumeBottom - volumeHeight;
+  const priceBottom = volumeTop - 8;
   const plotWidth = Math.max(120, width - left - right);
   const priceHeight = Math.max(120, priceBottom - top);
   return { width, height, left, right, top, priceBottom, volumeTop, volumeBottom, bottom, plotWidth, priceHeight };

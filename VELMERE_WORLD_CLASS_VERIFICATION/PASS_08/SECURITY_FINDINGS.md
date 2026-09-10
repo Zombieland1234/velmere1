@@ -1,0 +1,3 @@
+# PASS_08 SECURITY FINDINGS
+
+Verified finding `VLM-SEC-EVM-DELEGATECALL-01` with severity `CRITICAL`.

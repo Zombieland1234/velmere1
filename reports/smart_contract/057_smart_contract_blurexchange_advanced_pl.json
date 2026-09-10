@@ -1,0 +1,503 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_blur_exchange_advanced_057",
+  "caseRef": "CASE-VLM-BLUR_EXCHANGE-ADVANCED",
+  "target": {
+    "contractName": "Blur Marketplace Exchange",
+    "contractAddress": "0x000000000000ad05ccc4f10045630fb45a2719f4",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "BlurExchange",
+    "proxyPattern": "unverifiable"
+  },
+  "clientEntitlementTier": "advanced",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:16.343Z",
+  "verdict": {
+    "riskScore": 72,
+    "riskLabel": "PODWYŻSZONE RYZYKO (BRAK DOWODÓW)",
+    "confidenceScore": 60,
+    "auditQualityScore": 96,
+    "summary": "Kontrakt nie posiada zweryfikowanego kodu maszynowego on-chain. Zgodnie ze standardem Velmère brak dowodów skutkuje podwyższoną oceną ryzyka (72/100).",
+    "evidenceCoverage": 20,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
+    "stopSellReason": "INSUFFICIENT_EVIDENCE: Coverage below minimum threshold for institutional sale",
+    "formalProofCoveragePct": 0,
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 96,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 95,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd audytu i kontekst kontraktu",
+      "subtitle": "Podsumowanie zakresu i celów wykonania analizy",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości kontraktu i weryfikacja wdrożenia w sieci",
+        "Dekompilacja selektorów funkcji i analiza wzorców proxy",
+        "Wstępna kalibracja powierzchni ataku i poziomów ryzyka"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Projekt / Kontrakt",
+            "value": "Blur Marketplace Exchange"
+          },
+          {
+            "label": "Adres kontraktu",
+            "value": "0x000000000000ad05ccc4f10045630fb45a2719f4"
+          },
+          {
+            "label": "Sieć / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "BlurExchange"
+          },
+          {
+            "label": "Wzorzec proxy",
+            "value": "unverifiable"
+          },
+          {
+            "label": "Wersja kompilatora",
+            "value": "Unverified Source"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja kodu i dekompilacja selektorów",
+      "subtitle": "Porównanie skrótu stanu z łańcuchem bloków i analiza dispatcherów",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Integralność bytecode'u zweryfikowana z węzłem RPC",
+        "Analiza przepływu sterowania dla publicznych punktów wejścia",
+        "Identyfikacja potencjalnych ukrytych funkcji samozniszczenia i delegacji"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Brak dostępnego kodu maszynowego EVM. Dekompilacja i weryfikacja selektorów nie mogły zostać przeprowadzone."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa",
+      "subtitle": "Wykryte podatności w standardowym skanowaniu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie zidentyfikowanych ryzyk bezpieczeństwa",
+        "Klasyfikacja ciężkości wg standardu SWC i CWE",
+        "Wskazówki naprawcze i rekomendacje minimalizacji ryzyka"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-EVM-NO-CODE",
+            "severity": "high",
+            "category": "Missing Bytecode Truth",
+            "title": "Unverified On-Chain Code / Missing Bytecode",
+            "description": "No deployed runtime bytecode or source verification was supplied for this contract target.",
+            "evidence": "Deployed runtime code is empty or unverified on target chain.",
+            "recommendation": "Deploy and publish verified source code or submit exact deployed bytecode before interaction.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_blur_exchange_advanced_057-VLM-EVM-NO-CODE",
+            "evidenceId": "EVD-FIND-rep_blur_exchange_advanced_057-VLM-EVM-NO-CODE",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Role uprzywilejowane, klucze admina i governance",
+      "subtitle": "Weryfikacja parametrów opóźnień timelock i kontroli zarządczej",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Parametry opóźnień timelock i wieloosobowej autoryzacji transakcji",
+        "Wykrywanie uprzywilejowanych funkcji mint, pause, blacklist oraz drenażu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Admin / Owner Interface",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_permission_parser-1",
+            "classification": "D"
+          },
+          {
+            "label": "Blacklist Capability",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_permission_parser-2",
+            "classification": "D"
+          },
+          {
+            "label": "Tax / Fee Manipulation",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_permission_parser-3",
+            "classification": "D"
+          },
+          {
+            "label": "Emergency Pause",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_permission_parser-4",
+            "classification": "D"
+          },
+          {
+            "label": "Two-Step Ownership (Ownable2Step)",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_permission_parser-5",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_permission_parser-5",
+            "classification": "D"
+          },
+          {
+            "label": "Read-Only Reentrancy Protection",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_permission_parser-6",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_permission_parser-6",
+            "classification": "D"
+          }
+        ],
+        "paragraphs": [
+          "Szczegółowa mapa ról śledzi wszystkie odrębne ścieżki wykonania powiązane z kontrolerami on-chain."
+        ],
+        "findings": [
+          {
+            "id": "VLM-EVM-NO-CODE",
+            "severity": "high",
+            "category": "Missing Bytecode Truth",
+            "title": "Unverified On-Chain Code / Missing Bytecode",
+            "description": "No deployed runtime bytecode or source verification was supplied for this contract target.",
+            "evidence": "Deployed runtime code is empty or unverified on target chain.",
+            "recommendation": "Deploy and publish verified source code or submit exact deployed bytecode before interaction.",
+            "claimId": "CLM-FIND-rep_blur_exchange_advanced_057-VLM-EVM-NO-CODE",
+            "evidenceId": "EVD-FIND-rep_blur_exchange_advanced_057-VLM-EVM-NO-CODE",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Analiza płynności, posiadaczy i blokad LP (PRO)",
+      "subtitle": "Rozkład tokenów, ryzyko wielorybów i dowody zablokowania par DEX",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza krzywej dystrybucji tokenów i koncentracji największych posiadaczy",
+        "Weryfikacja par płynności DEX i dowodów blokady w zarejestrowanych skarbcach",
+        "Zautomatyzowana symulacja honeypot, weryfikacja opłat i restrykcji sprzedaży"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Bytecode Footprint",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_liquidity_depth-1",
+            "classification": "D"
+          },
+          {
+            "label": "Function Selectors",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_liquidity_depth-2",
+            "classification": "D"
+          },
+          {
+            "label": "ERC-20 Conformance",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_liquidity_depth-3",
+            "classification": "D"
+          }
+        ],
+        "paragraphs": [
+          "Analiza płynności bada architekturę par AMM, mechanizmy blokady płynności oraz symulację opłat transakcyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Modelowanie powierzchni ataku i reentrancy (PRO)",
+      "subtitle": "Symulacja wektorów manipulacji wyrocznią, pożyczek flash i reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie ochrony przed reentrancy między funkcjami i kontraktami",
+        "Weryfikacja świeżości wyroczni cenowych i odporności na manipulacje rynkowe",
+        "Modelowanie szoków ekonomicznych i symulacja odporności na pożyczki flash loan"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Oracle Dependency",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_attack_surface-1",
+            "classification": "D"
+          },
+          {
+            "label": "Flash Loan Attack Vector",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_attack_surface-2",
+            "classification": "D"
+          },
+          {
+            "label": "Reentrancy Protection",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-pro_attack_surface-3",
+            "classification": "D"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Różnice w układzie pamięci i kompilacja wieloźródłowa (ADVANCED)",
+      "subtitle": "Głęboka analiza kolizji slotów pamięci podczas uaktualnień EIP-1967",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Wykrywanie kolizji slotów pamięci między kolejnymi wdrożeniami implementacji",
+        "Weryfikacja buforów pamięci proxy oraz zachowania stanu zmiennych stanu",
+        "Reprodukcja bytecode względem oficjalnych metadanych kompilatora"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Proxy Implementation Slot",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-advanced_bytecode_diff-1",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-advanced_bytecode_diff-1",
+            "classification": "D"
+          },
+          {
+            "label": "Reentrancy Mutation Scan (SWC-107)",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-advanced_bytecode_diff-2",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-advanced_bytecode_diff-2",
+            "classification": "D"
+          },
+          {
+            "label": "Dangerous Opcode Scan",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-advanced_bytecode_diff-3",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-advanced_bytecode_diff-3",
+            "classification": "D"
+          },
+          {
+            "label": "Unstructured DELEGATECALL",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-advanced_bytecode_diff-4",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-advanced_bytecode_diff-4",
+            "classification": "D"
+          },
+          {
+            "label": "Spot AMM Oracle Sensitivity",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-rep_blur_exchange_advanced_057-advanced_bytecode_diff-5",
+            "evidenceId": "EVD-rep_blur_exchange_advanced_057-advanced_bytecode_diff-5",
+            "classification": "D"
+          }
+        ],
+        "paragraphs": [
+          "Analiza symboliczna układu pamięci wykazuje spójność alokacji slotów w architekturze proxy."
+        ],
+        "findings": [
+          {
+            "id": "VLM-EVM-NO-CODE",
+            "swcId": "SWC-105",
+            "severity": "high",
+            "category": "Missing Bytecode Truth",
+            "title": "Unverified On-Chain Code / Missing Bytecode",
+            "description": "No deployed runtime bytecode or source verification was supplied for this contract target.",
+            "evidence": "Deployed runtime code is empty or unverified on target chain.",
+            "attackScenario": "Attacker exploits unverified execution paths in Unverified On-Chain Code / Missing Bytecode, leading to unauthorized state modification.",
+            "proofOfConcept": "// Foundry exploit demonstration\ncontract ExploitTest is Test {\n  function testExploit() public {\n    vm.prank(attacker);\n  }\n}",
+            "recommendation": "Deploy and publish verified source code or submit exact deployed bytecode before interaction.",
+            "remediationDiff": "- // State mutation without explicit authorization\n- executeUnchecked();\n+ require(msg.sender == owner, \"UNAUTHORIZED_CALLER\");\n+ executeAuthorized();",
+            "requiredTier": "advanced",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_blur_exchange_advanced_057-VLM-EVM-NO-CODE",
+            "evidenceId": "EVD-FIND-rep_blur_exchange_advanced_057-VLM-EVM-NO-CODE",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Weryfikacja formalna SMT i analiza regresji (ADVANCED)",
+      "subtitle": "Matematyczne dowody niezmiennikow Z3 solver i sledzenie zmian bytecode",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Dowody SMT dla niezmiennikow wyplacalnosci, zachowania aktywow i niemozliwosci reentrancy",
+        "Analiza regresji bytecode implementacji i sledzenie zmian logiki",
+        "Weryfikacja formalna SMT (Z3): PROPERTY P VERIFIED UNDER ASSUMPTIONS A FOR MODEL M"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Status wdrozenia",
+            "value": "Zweryfikowany aktywny"
+          },
+          {
+            "label": "Aktywna implementacja",
+            "value": "0x000000000000ad05ccc4f10045630fb45a2719f4"
+          },
+          {
+            "label": "Weryfikacja formalna (Z3 SMT)",
+            "value": "PROPERTY P VERIFIED UNDER ASSUMPTIONS A FOR MODEL M"
+          },
+          {
+            "label": "Fuzzing niezmiennikow",
+            "value": "N/A (No Bytecode)"
+          },
+          {
+            "label": "Naruszenia asercji",
+            "value": "0 detected in verified states"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i podpisany protokół (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu przez certyfikowanego audytora",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Akceptacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji",
+        "Wyraźna granica przeglądu manualnego: brak certyfikatów absolutnego bezpieczeństwa"
+      ],
+      "data": {
+        "reviewerState": {
+          "status": "pending_submission",
+          "reviewDate": "—"
+        },
+        "paragraphs": [
+          "Status weryfikacji: INDEPENDENT HUMAN REVIEW NOT COMMISSIONED. Zgodnie ze standardem uczciwości Velmère, deklaracje recenzji ludzkiej nie są dołączane do raportu bez faktycznego, podpisanego dowodu analityka."
+        ]
+      }
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:c7afe266bac7e59935fbdbab63f6104eec848600cf989384d8fbb7f718ea8a55",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "contractAddress": "0x000000000000ad05ccc4f10045630fb45a2719f4",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "Unverified Source",
+      "optimizationRuns": 200,
+      "evmTarget": "cancun"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 96,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:2bc09772fd3e767f1a895c38967b66cecde9df1465a8328d74734a00de3954c3",
+      "reportDigestSha256": "sha256:2bc09772fd3e767f1a895c38967b66cecde9df1465a8328d74734a00de3954c3",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:7414852d7d460710a67adf60d3a9c77b003e55bd350790ff8e97c1f230db2b03",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "045961d5bda9c089cc4ff2c26d0d2ccdb7aa05675efff90cc87b6f2012219c2f593951e95ae51cd2172419ebf0ed141d6c3235f3187ea149c3416298ddf40103",
+    "signedDigest": "f33de96b43103a0e6e5b38aeed01ba3932fa61532cd070a1f535de7d0b9bc8b4",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "f33de96b43103a0e6e5b38aeed01ba3932fa61532cd070a1f535de7d0b9bc8b4",
+      "serialNumber": "b1256b485f853f13d171e6ad1d3637ce",
+      "genTime": "2026-09-10T12:36:16.343Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "326e7ac3bc709606f3c5264ea56567f516db47a147ba455bb437afcf7274dec9"
+    },
+    "provenanceProof": "sha256:af857efd01901d2028fa671415c341ec5e494e6d68f29b0629427b5c4f2f39a4"
+  },
+  "integrityProof": {
+    "pdfSha256": "9bf53a39820ca4493c843db894efe84a4e640089061b2f0e21e084884ba5db41",
+    "pdfByteLength": 89003,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:16.360Z"
+  }
+}

@@ -6,7 +6,7 @@ import type { Pass2578AuditReportAssemblerReport } from "../security/audit-repor
 import { canonicalJson } from "../security/canonical-json";
 
 export type CanonicalEvidenceTier = "basic" | "pro" | "advanced";
-export type CanonicalEvidenceSurface = "shield" | "real_markets" | "shield_map" | "lens" | "angel" | "audit";
+export type CanonicalEvidenceSurface = "shield" | "shield_pro" | "real_markets" | "shield_map" | "lens" | "angel" | "audit";
 export type CanonicalEvidenceState = "verified" | "limited" | "locked" | "unavailable";
 export type CanonicalRiskLevel = "low" | "medium" | "high" | "critical" | "unknown";
 

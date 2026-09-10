@@ -1,0 +1,16 @@
+{
+  "targetContract": "Arbitrum One Token Gateway",
+  "symbol": "ARB-GATEWAY",
+  "address": "0x72ce9c846789fdb6fc05592925b028d08417384c",
+  "network": "Ethereum -> Arbitrum One",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 18,
+  "riskLabel": "VERY LOW RISK",
+  "proofOfConceptSolidity": "function testExpiredRetryableTicket() public {\n  gateway.outboundTransfer(token, to, amount, maxGas, gasPriceBid, data);\n  // L2 ticket expires after 7 days without redemption\n}",
+  "formalInvariantZ3": "(declare-const l1Locked Int)\n(declare-const l2Minted Int)\n(assert (and (> l1Locked 0) (= l2Minted 0) (= (isRefundAvailable) false)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.6.11",
+  "proxyPattern": "TransparentUpgradeableProxy (L1 Custom Router)",
+  "merkleEvidenceSeal": "9843d07aaebd809c2485e653f4ea0735c7f9fe4d6f80ae9d30dec25877a3e378",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

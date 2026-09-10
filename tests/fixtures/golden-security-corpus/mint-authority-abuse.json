@@ -1,0 +1,28 @@
+{
+  "id": "GSC-004",
+  "name": "mint-authority-abuse",
+  "description": "Unbounded mint() function restricted to single EOA owner with no maximum supply cap.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+  "expectedFindings": [
+    "UNBOUNDED_MINT_AUTHORITY",
+    "NO_SUPPLY_CAP",
+    "SINGLE_KEY_MINT_TRIGGER"
+  ],
+  "expectedNonFindings": [
+    "FIXED_SUPPLY_CAP",
+    "MULTISIG_MINT_THRESHOLD"
+  ],
+  "expectedEvidenceStates": {
+    "supplyCapAudit": "FAIL",
+    "mintRoleAudit": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 70,
+    "maxRisk": 95
+  }
+}

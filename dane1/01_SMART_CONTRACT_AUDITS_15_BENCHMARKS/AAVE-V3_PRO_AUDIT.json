@@ -1,0 +1,30 @@
+{
+  "contractName": "Aave V3 Pool",
+  "symbol": "AAVE-V3",
+  "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.8.10",
+  "proxyPattern": "InitializableImmutableAdminUpgradeabilityProxy",
+  "riskScore": 16,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Aave V3 Pool.",
+  "findings": [
+    {
+      "title": "Isolation Mode Collateral Debt Ceiling & Oracle LTV Bound",
+      "severity": "MEDIUM",
+      "swcId": "SWC-101",
+      "cweId": "CWE-190",
+      "description": "Isolated asset collateralization caps must enforce total debt across all stable borrowing positions without overflow."
+    }
+  ],
+  "verificationDigest": "cf33d2f263c445600f6fa9d02ce943bda042f19d429cf88a782343f900d5d589",
+  "attackSurface": {
+    "category": "Liquidity Pool & Isolation Mode Collateral",
+    "attackVector": "Manipulating newly listed low-liquidity collateral to borrow high-liquidity assets beyond isolated debt ceiling."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/Pool.sol\n+++ b/contracts/Pool.sol\n@@ -310,2 +310,3 @@\n+ require(newTotalDebt <= reserve.debtCeiling, 'DEBT_CEILING_EXCEEDED');\n  reserve.isolationModeTotalDebt = newTotalDebt;"
+  }
+}

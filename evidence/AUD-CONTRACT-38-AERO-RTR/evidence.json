@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "velmere.v3.evidence-records",
+  "auditId": "AUD-CONTRACT-38-AERO-RTR",
+  "evidenceRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+  "recordsCount": 5,
+  "records": [
+    {
+      "id": "EV-SRC--RTR",
+      "auditId": "AUD-CONTRACT-38-AERO-RTR",
+      "category": "SOURCE",
+      "status": "PASS",
+      "method": "OBSERVED",
+      "source": "Source File Parsing",
+      "tool": "velmere-ast-parser",
+      "toolVersion": "3.0.0",
+      "timestamp": "2026-09-09T11:54:19.171Z",
+      "file": "aero-router.sol",
+      "lineStart": 1,
+      "lineEnd": 16,
+      "inputData": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract AerodromeSlipstreamRouter {\n    address public owner;\n    mapping(address => uint256) public balances;\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    constructor() { owner = msg.sender; }\n    function withdraw() external {\n        uint256 bal = balances[msg.sender];\n        require(bal > 0, \"No balance\");\n        balances[msg.sender] = 0;\n        (bool ok, ) = msg.sender.call{value: bal}(\"\");\n        require(ok, \"Call failed\");\n    }\n}\n",
+      "outputData": {
+        "lines": 16,
+        "fileName": "aero-router.sol"
+      },
+      "inputHash": "4c56b7f34eb3604bdde9c80b6ac4570d84fa5e6884a9649bff47b7878ab6d105",
+      "outputHash": "ce3614862f40b0a410c3a8277bb9631980be9f38890994e0c0ff3c76f636e6cf"
+    },
+    {
+      "id": "EV-FORMAL--RTR-VLM-FORMAL-01",
+      "auditId": "AUD-CONTRACT-38-AERO-RTR",
+      "category": "INVARIANT",
+      "status": "NOT_RUN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.171Z",
+      "inputData": "(= totalSupply (sum-balances accounts))",
+      "outputData": {
+        "status": "NOT_RUN",
+        "durationMs": 0
+      },
+      "inputHash": "ae41674c192785704052de3ec07cba2414b32b0d84afb108dc2edc674ea766a9",
+      "outputHash": "78a05714dbd968afb3442685ea13130cba27905e3304bf1e1b9b1710571acdde"
+    },
+    {
+      "id": "EV-FORMAL--RTR-VLM-FORMAL-02",
+      "auditId": "AUD-CONTRACT-38-AERO-RTR",
+      "category": "INVARIANT",
+      "status": "NOT_RUN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.171Z",
+      "inputData": "(=> (concluded tx) (= lockStatus NOT_ENTERED))",
+      "outputData": {
+        "status": "NOT_RUN",
+        "durationMs": 0
+      },
+      "inputHash": "9f06afe0a996a650baa221ea214b2e5acd264412a5d736303db9465d8a3d1597",
+      "outputHash": "78a05714dbd968afb3442685ea13130cba27905e3304bf1e1b9b1710571acdde"
+    },
+    {
+      "id": "EV-FORMAL--RTR-VLM-FORMAL-03",
+      "auditId": "AUD-CONTRACT-38-AERO-RTR",
+      "category": "INVARIANT",
+      "status": "NOT_RUN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.171Z",
+      "inputData": "(=> (call transferOwnership) (= msg.sender owner))",
+      "outputData": {
+        "status": "NOT_RUN",
+        "durationMs": 0
+      },
+      "inputHash": "e2c46e400e35a6f3551924c9662b399218343deeda8846698269bdb4db2c6dec",
+      "outputHash": "78a05714dbd968afb3442685ea13130cba27905e3304bf1e1b9b1710571acdde"
+    },
+    {
+      "id": "EV-FUZZ--RTR",
+      "auditId": "AUD-CONTRACT-38-AERO-RTR",
+      "category": "STATEFUL_FUZZING",
+      "status": "NOT_RUN",
+      "method": "SIMULATED",
+      "source": "Foundry Medusa/Echidna Invariant Runner",
+      "tool": "foundry-fuzzer",
+      "timestamp": "2026-09-09T11:54:19.171Z",
+      "outputData": {
+        "runs": 0,
+        "status": "NOT_RUN"
+      },
+      "inputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputHash": "21be5f466585e6d5ca860c8b68cd696f7d68a7d9f18ca0d3c42c7b1bbdee0a84"
+    }
+  ]
+}

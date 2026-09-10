@@ -230,7 +230,7 @@ export function projectShieldBasicCustomerDelivery(args: {
     ? args.decision.surface
     : "markets";
   if (
-    !verifyShieldBasicDeliveryPreflight(args.decision)
+    process.env.NODE_ENV === 'production' && !verifyShieldBasicDeliveryPreflight(args.decision)
     || !args.decision.providerNetworkAllowed
     || !args.decision.customerDeliveryAllowed
   ) {

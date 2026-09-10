@@ -1,0 +1,19 @@
+{
+  "targetContract": "Lido stETH Liquid Staking",
+  "symbol": "stETH",
+  "address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 22,
+  "riskLabel": "LOW RISK",
+  "vulnerability": {
+    "title": "Oracle Rebase 1-2 Wei Disparity & Slashing Rebase Lag",
+    "category": "Dynamic Rebase Oracle & Slashing Socialization",
+    "swcId": "CWE-682",
+    "cweId": "CWE-682",
+    "rootCause": "Rebase distribution arithmetic calculates shares to balance using integer division, socialized across millions of holders.",
+    "attackVector": "Large stETH holder transfers shares during active rebase frame to trigger rounding discrepancy across integrated DeFi lending pools."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/StETH.sol\n+++ b/contracts/StETH.sol\n@@ -340,3 +340,3 @@\n- return (_shares * _totalPooledEther) / _totalShares;\n+ return Math.mulDiv(_shares, _totalPooledEther, _totalShares, Math.Rounding.Down);",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

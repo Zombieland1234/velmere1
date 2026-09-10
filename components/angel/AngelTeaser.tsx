@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/navigation";
 import AngelPanel from "@/components/angel/AngelPanel";
 import { useCart } from "@/components/CartProvider";
 import { VShieldPulse } from "@/components/motion/VelmereAnalysisMarks";
 
 export default function AngelTeaser() {
+  const pathname = usePathname();
   const t = useTranslations("Angel");
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -43,9 +45,12 @@ export default function AngelTeaser() {
     setOpen(true);
   };
 
+  const isAssetPage = Boolean(pathname?.includes("/assets/"));
+  const shouldRender = !hidden && !isAssetPage;
+
   return (
     <>
-      {!hidden ? (
+      {shouldRender ? (
         <button
           type="button"
           onClick={openAngel}
@@ -60,7 +65,7 @@ export default function AngelTeaser() {
           </span>
         </button>
       ) : null}
-      <AngelPanel open={open && !hidden} handoffMessage={handoffMessage} onClose={() => setOpen(false)} />
+      <AngelPanel open={open && shouldRender} handoffMessage={handoffMessage} onClose={() => setOpen(false)} />
     </>
   );
 }

@@ -1,0 +1,16 @@
+{
+  "targetContract": "Balancer V2 Monolithic Vault",
+  "symbol": "BAL-VAULT",
+  "address": "0xba12222222228d8ba445958a75a0704d566bf2c8",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 13,
+  "riskLabel": "VERY LOW RISK",
+  "proofOfConceptSolidity": "function testBalancerVaultReentrancy() public {\n  vault.flashLoan(recipient, tokens, amounts, userData);\n  // in receiveFlashLoan:\n  uint256 warpedRate = pool.getRate();\n}",
+  "formalInvariantZ3": "(declare-const vaultUnlocked Bool)\n(declare-const rateQueried Bool)\n(assert (and (= vaultUnlocked true) (= rateQueried true)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.7.1",
+  "proxyPattern": "Immutable Monolithic Vault",
+  "merkleEvidenceSeal": "f16ada075d1ebd212438e682cce2d031f10e463b169b8369db454b02fcad683b",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

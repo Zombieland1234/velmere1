@@ -1,0 +1,19 @@
+{
+  "targetContract": "OpenZeppelin TimelockController",
+  "symbol": "OZ-TIMELOCK",
+  "address": "0x1a9c8182c09f50c8318d769245bea52c32be35bc",
+  "network": "Ethereum Mainnet",
+  "tier": "PRO_INSPECTION_ATTACK_TRACE",
+  "riskScore": 11,
+  "riskLabel": "VERY LOW RISK",
+  "vulnerability": {
+    "title": "Executor Privilege Escalation via Self-Administration Pattern",
+    "category": "Decentralized Governance Timelock & Role Renouncement",
+    "swcId": "SWC-106",
+    "cweId": "CWE-284",
+    "rootCause": "Timelock assigning admin role to itself without removing deployer address as initial default admin.",
+    "attackVector": "Compromised deployer private key bypasses community timelock delay by proposing and instantly executing administrative role grants."
+  },
+  "remediationOpenZeppelin": "--- a/contracts/TimelockController.sol\n+++ b/contracts/TimelockController.sol\n@@ -80,3 +80,4 @@\n  _setRoleAdmin(TIMELOCK_ADMIN_ROLE, TIMELOCK_ADMIN_ROLE);\n+ _revokeRole(TIMELOCK_ADMIN_ROLE, msg.sender);",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

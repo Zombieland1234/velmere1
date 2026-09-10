@@ -1,0 +1,740 @@
+{
+  "metadata": {
+    "generatedAt": "2026-09-10T09:50:08.955Z",
+    "standard": "velmere.canonical-audit-report.v1",
+    "description": "Data Contracts Specification across Basic, Pro, and Advanced Tiers for Shield and Real Markets"
+  },
+  "shield": {
+    "asset": "Bitcoin (BTC) L1 Protocol",
+    "basic": {
+      "reportId": "rep_btc_basic_061",
+      "caseRef": "CASE-VLM-BTC-BASIC",
+      "tier": "basic",
+      "target": {
+        "contractName": "Bitcoin Core Protocol",
+        "contractAddress": "Natywna sieć L1 (brak kontraktu EVM · UTXO)",
+        "network": "Bitcoin Mainnet",
+        "chainId": "0 (UTXO Mainnet)",
+        "tokenSymbol": "BTC",
+        "websiteUrl": "https://bitcoin.org",
+        "docsUrl": "https://bitcoin.org/bitcoin.pdf",
+        "githubRepo": "https://github.com/bitcoin/bitcoin",
+        "proxyPattern": "Immutable Distributed Consensus (No Proxies)"
+      },
+      "scores": {
+        "riskScore": 8,
+        "riskLabel": "BARDZO NISKIE RYZYKO",
+        "confidenceScore": 100,
+        "auditQualityScore": 59,
+        "verificationStatus": "AUTOMATED_ONLY",
+        "formalProofCoveragePct": 100
+      },
+      "provenance": {
+        "snapshotBlockNumber": 887200,
+        "snapshotBlockHash": "00000000000000000001f3b2a472c91a083f231e7c5417830bca6674de1c9901",
+        "consensusLedgerStateRootSha256": "0xed11599da5ef201d807046f015b5835a0a9794c6da77e276997014a0606e2d41",
+        "pinnedChainId": "0",
+        "analysisEngineVersion": "v4.0.0-rc3-shield",
+        "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+      },
+      "cryptography": {
+        "merkleRoot": "sha256:abb6d5568db65e00e0df163d0bd8411e01c75b6209f8798d491e3ba39481a7b4",
+        "reportDigest": "sha256:dade8dd717133de9509607890e5051c67829c8a73dd6fd63ac4df8c92836bfed",
+        "pdfSha256": "5db17eaca0920311526d41333dc588085cadb7476e2b47ac5eeafa614100afee"
+      },
+      "sectionsCount": 9,
+      "unlockedSections": [
+        {
+          "id": "overview",
+          "title": "Przegląd protokołu i kontekst sieci L1",
+          "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "contract_identity",
+          "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+          "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "basic_findings",
+          "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+          "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        }
+      ],
+      "lockedSections": [
+        {
+          "id": "pro_permission_parser",
+          "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+          "requiredTier": "pro",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "pro_liquidity_depth",
+          "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+          "requiredTier": "pro",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "pro_attack_surface",
+          "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+          "requiredTier": "pro",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_bytecode_diff",
+          "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_multi_version",
+          "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_human_review",
+          "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        }
+      ]
+    },
+    "pro": {
+      "reportId": "rep_btc_pro_062",
+      "caseRef": "CASE-VLM-BTC-PRO",
+      "tier": "pro",
+      "target": {
+        "contractName": "Bitcoin Core Protocol",
+        "contractAddress": "Natywna sieć L1 (brak kontraktu EVM · UTXO)",
+        "network": "Bitcoin Mainnet",
+        "chainId": "0 (UTXO Mainnet)",
+        "tokenSymbol": "BTC",
+        "websiteUrl": "https://bitcoin.org",
+        "docsUrl": "https://bitcoin.org/bitcoin.pdf",
+        "githubRepo": "https://github.com/bitcoin/bitcoin",
+        "proxyPattern": "Immutable Distributed Consensus (No Proxies)"
+      },
+      "scores": {
+        "riskScore": 8,
+        "riskLabel": "BARDZO NISKIE RYZYKO",
+        "confidenceScore": 100,
+        "auditQualityScore": 84,
+        "verificationStatus": "AUTOMATED_ONLY",
+        "formalProofCoveragePct": 100
+      },
+      "provenance": {
+        "snapshotBlockNumber": 887200,
+        "snapshotBlockHash": "00000000000000000001f3b2a472c91a083f231e7c5417830bca6674de1c9901",
+        "consensusLedgerStateRootSha256": "0xed11599da5ef201d807046f015b5835a0a9794c6da77e276997014a0606e2d41",
+        "pinnedChainId": "0",
+        "analysisEngineVersion": "v4.0.0-rc3-shield",
+        "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+      },
+      "cryptography": {
+        "merkleRoot": "sha256:35df95f12cea515a30ecb19939f44f6b60d4814471c51b993cad572d99e4d541",
+        "reportDigest": "sha256:de6a1a8d843e0c54f0f6e1d0cb5fd069b612617e1e721baa1db9dc2bc0b97b48",
+        "pdfSha256": "b538c3eb69dec51624a64df647428f8ab42ede8a36d4c31598af82a561d1450b"
+      },
+      "sectionsCount": 9,
+      "unlockedSections": [
+        {
+          "id": "overview",
+          "title": "Przegląd protokołu i kontekst sieci L1",
+          "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "contract_identity",
+          "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+          "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "basic_findings",
+          "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+          "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_permission_parser",
+          "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+          "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_liquidity_depth",
+          "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+          "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_attack_surface",
+          "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+          "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        }
+      ],
+      "lockedSections": [
+        {
+          "id": "advanced_bytecode_diff",
+          "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_multi_version",
+          "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_human_review",
+          "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        }
+      ]
+    },
+    "advanced": {
+      "reportId": "rep_btc_advanced_063",
+      "caseRef": "CASE-VLM-BTC-ADVANCED",
+      "tier": "advanced",
+      "target": {
+        "contractName": "Bitcoin Core Protocol",
+        "contractAddress": "Natywna sieć L1 (brak kontraktu EVM · UTXO)",
+        "network": "Bitcoin Mainnet",
+        "chainId": "0 (UTXO Mainnet)",
+        "tokenSymbol": "BTC",
+        "websiteUrl": "https://bitcoin.org",
+        "docsUrl": "https://bitcoin.org/bitcoin.pdf",
+        "githubRepo": "https://github.com/bitcoin/bitcoin",
+        "proxyPattern": "Immutable Distributed Consensus (No Proxies)"
+      },
+      "scores": {
+        "riskScore": 8,
+        "riskLabel": "BARDZO NISKIE RYZYKO",
+        "confidenceScore": 100,
+        "auditQualityScore": 94,
+        "verificationStatus": "AUTOMATED_ONLY",
+        "formalProofCoveragePct": 100
+      },
+      "provenance": {
+        "snapshotBlockNumber": 887200,
+        "snapshotBlockHash": "00000000000000000001f3b2a472c91a083f231e7c5417830bca6674de1c9901",
+        "consensusLedgerStateRootSha256": "0xed11599da5ef201d807046f015b5835a0a9794c6da77e276997014a0606e2d41",
+        "pinnedChainId": "0",
+        "analysisEngineVersion": "v4.0.0-rc3-shield",
+        "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+      },
+      "cryptography": {
+        "merkleRoot": "sha256:5fff432c312af755b426ab91ec8569bbe0b50a97fced929daa690f07ad6c1db7",
+        "reportDigest": "sha256:61ed64af9e2c9d7870d5a035c07d4f1b7785f3392b304225596365d2297147c0",
+        "pdfSha256": "bb51375b61e04077dd08b4da434ef908c828dc08b4c476a38dc480a98f05e597"
+      },
+      "sectionsCount": 9,
+      "unlockedSections": [
+        {
+          "id": "overview",
+          "title": "Przegląd protokołu i kontekst sieci L1",
+          "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "contract_identity",
+          "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+          "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "basic_findings",
+          "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+          "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_permission_parser",
+          "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+          "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_liquidity_depth",
+          "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+          "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_attack_surface",
+          "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+          "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "advanced_bytecode_diff",
+          "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+          "subtitle": "Weryfikacja kompatybilności binarnej i determinizmu przejść stanów węzłów",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "advanced_multi_version",
+          "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+          "subtitle": "Śledzenie zmian w regułach konsensusu i analiza kompatybilności wstecznej",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "advanced_human_review",
+          "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+          "subtitle": "Atestacja niezależnego audytora systemów rozproszonych",
+          "hasData": true,
+          "dataKeys": [
+            "reviewerState",
+            "paragraphs"
+          ]
+        }
+      ],
+      "lockedSections": []
+    }
+  },
+  "realMarkets": {
+    "asset": "Apple Inc. (AAPL) Nasdaq Common Stock",
+    "basic": {
+      "reportId": "rep_aapl_basic_121",
+      "caseRef": "CASE-VLM-AAPL-BASIC",
+      "tier": "basic",
+      "target": {
+        "contractName": "Apple Inc. Common Stock",
+        "contractAddress": "nasdaq:aapl",
+        "network": "NASDAQ Stock Market",
+        "chainId": "MIC:XNAS",
+        "tokenSymbol": "AAPL"
+      },
+      "scores": {
+        "riskScore": 10,
+        "riskLabel": "BARDZO NISKIE RYZYKO",
+        "confidenceScore": 100,
+        "auditQualityScore": 59,
+        "verificationStatus": "AUTOMATED_ONLY",
+        "formalProofCoveragePct": 100
+      },
+      "provenance": {
+        "regulatoryFilingHash": "0xafc191f8dd9e0a75341d3496fa475bc78591795618bb1d6b6c068768d47d594e",
+        "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+        "pinnedChainId": "9901",
+        "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+        "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+      },
+      "cryptography": {
+        "merkleRoot": "sha256:58a4c76ce76a463539842f694ae813c9e01f7519ae358c05e9056fd5f6ea96bd",
+        "reportDigest": "sha256:16cc72f774fe33e9565e96a08e1e573d5a2b785e4cdbd789048a9f8d476480ed",
+        "pdfSha256": "1ce8c27113c270c104e500ed5c6a094f748e30a04340aac775956d5de7d78ea9"
+      },
+      "sectionsCount": 9,
+      "unlockedSections": [
+        {
+          "id": "overview",
+          "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+          "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "contract_identity",
+          "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+          "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "basic_findings",
+          "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+          "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        }
+      ],
+      "lockedSections": [
+        {
+          "id": "pro_permission_parser",
+          "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+          "requiredTier": "pro",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "pro_liquidity_depth",
+          "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+          "requiredTier": "pro",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "pro_attack_surface",
+          "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+          "requiredTier": "pro",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_bytecode_diff",
+          "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_multi_version",
+          "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_human_review",
+          "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        }
+      ]
+    },
+    "pro": {
+      "reportId": "rep_aapl_pro_122",
+      "caseRef": "CASE-VLM-AAPL-PRO",
+      "tier": "pro",
+      "target": {
+        "contractName": "Apple Inc. Common Stock",
+        "contractAddress": "nasdaq:aapl",
+        "network": "NASDAQ Stock Market",
+        "chainId": "MIC:XNAS",
+        "tokenSymbol": "AAPL"
+      },
+      "scores": {
+        "riskScore": 10,
+        "riskLabel": "BARDZO NISKIE RYZYKO",
+        "confidenceScore": 100,
+        "auditQualityScore": 84,
+        "verificationStatus": "AUTOMATED_ONLY",
+        "formalProofCoveragePct": 100
+      },
+      "provenance": {
+        "regulatoryFilingHash": "0xafc191f8dd9e0a75341d3496fa475bc78591795618bb1d6b6c068768d47d594e",
+        "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+        "pinnedChainId": "9901",
+        "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+        "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+      },
+      "cryptography": {
+        "merkleRoot": "sha256:0ce70806ff5ba950425dac1c1e5ae4a29299f6b7479b7638e1da497158fa9294",
+        "reportDigest": "sha256:db298ad196a25bf4287d1deb7712b58226c39d29a331ecb1553147b16e54a955",
+        "pdfSha256": "f9294da1bfb866c7e1da5b40a65c9e3a65568a0a8a98a8d860e5529460c805ed"
+      },
+      "sectionsCount": 9,
+      "unlockedSections": [
+        {
+          "id": "overview",
+          "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+          "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "contract_identity",
+          "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+          "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "basic_findings",
+          "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+          "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_permission_parser",
+          "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+          "subtitle": "Struktura akcjonariatu, prawa głosu i nadzór rady dyrektorów",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_liquidity_depth",
+          "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+          "subtitle": "Rozkład spreadów NBBO, płynność animatorów rynku i handel blokowy",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_attack_surface",
+          "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+          "subtitle": "Modelowanie spoofingu, layeringu, ryzyka rozliczeniowego i margin call",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        }
+      ],
+      "lockedSections": [
+        {
+          "id": "advanced_bytecode_diff",
+          "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_multi_version",
+          "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        },
+        {
+          "id": "advanced_human_review",
+          "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+          "requiredTier": "advanced",
+          "isZeroLeakage": true
+        }
+      ]
+    },
+    "advanced": {
+      "reportId": "rep_aapl_advanced_123",
+      "caseRef": "CASE-VLM-AAPL-ADVANCED",
+      "tier": "advanced",
+      "target": {
+        "contractName": "Apple Inc. Common Stock",
+        "contractAddress": "nasdaq:aapl",
+        "network": "NASDAQ Stock Market",
+        "chainId": "MIC:XNAS",
+        "tokenSymbol": "AAPL"
+      },
+      "scores": {
+        "riskScore": 10,
+        "riskLabel": "BARDZO NISKIE RYZYKO",
+        "confidenceScore": 100,
+        "auditQualityScore": 94,
+        "verificationStatus": "AUTOMATED_ONLY",
+        "formalProofCoveragePct": 100
+      },
+      "provenance": {
+        "regulatoryFilingHash": "0xafc191f8dd9e0a75341d3496fa475bc78591795618bb1d6b6c068768d47d594e",
+        "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+        "pinnedChainId": "9901",
+        "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+        "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+      },
+      "cryptography": {
+        "merkleRoot": "sha256:0f29f20ac60b5bec6d307a6951f86193f8d1778c4f29893a7e60aee39aa0e758",
+        "reportDigest": "sha256:a08ed46f4e73de9985c86521a3f0bae3aa1e9e504d7412ce771be283f3666521",
+        "pdfSha256": "f2da441a15b3bf09fb1d005050981d02e6999bcb754e201178eae25b104d57cb"
+      },
+      "sectionsCount": 9,
+      "unlockedSections": [
+        {
+          "id": "overview",
+          "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+          "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "contract_identity",
+          "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+          "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "basic_findings",
+          "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+          "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_permission_parser",
+          "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+          "subtitle": "Struktura akcjonariatu, prawa głosu i nadzór rady dyrektorów",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_liquidity_depth",
+          "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+          "subtitle": "Rozkład spreadów NBBO, płynność animatorów rynku i handel blokowy",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "pro_attack_surface",
+          "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+          "subtitle": "Modelowanie spoofingu, layeringu, ryzyka rozliczeniowego i margin call",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "advanced_bytecode_diff",
+          "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+          "subtitle": "Weryfikacja uzgodnień centralnych depozytów papierów wartościowych",
+          "hasData": true,
+          "dataKeys": [
+            "metrics",
+            "paragraphs",
+            "findings"
+          ]
+        },
+        {
+          "id": "advanced_multi_version",
+          "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+          "subtitle": "Śledzenie podziałów akcji, wypłat dywidend i emisji dodatkowych",
+          "hasData": true,
+          "dataKeys": [
+            "keyValuePairs",
+            "metrics",
+            "findings"
+          ]
+        },
+        {
+          "id": "advanced_human_review",
+          "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+          "subtitle": "Dowód niezależnego przeglądu sprawozdawczości przez analityka finansowego",
+          "hasData": true,
+          "dataKeys": [
+            "reviewerState",
+            "paragraphs"
+          ]
+        }
+      ],
+      "lockedSections": []
+    }
+  }
+}

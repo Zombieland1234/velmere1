@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Check, ChevronDown, FlaskConical, ScanLine, ShieldCheck, Sigma } from "lucide-react";
+import VelmereProprietaryResearchSection from "./VelmereProprietaryResearchSection";
 import styles from "./ResearchLabExperience.module.css";
 
 export type ResearchLabCopy = {
@@ -240,6 +241,10 @@ export default function ResearchLabExperience({
             </Reveal>
           ))}
         </section>
+
+        <Reveal>
+          <VelmereProprietaryResearchSection locale={locale} />
+        </Reveal>
 
         <Reveal>
           <section className={styles.validation} aria-labelledby="research-validation-title">

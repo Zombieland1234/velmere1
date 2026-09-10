@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "velmere.v3.evidence-records",
+  "category": "DYNAMIC_STATEFUL_SEQUENCES",
+  "timestamp": "2026-09-10T04:38:04.043Z",
+  "seed": "sha256:52a3ee4f4efb532380e8ce6f9c5d2829c515ac4df813ac6eaea4d615b43abe4e",
+  "runCount": 37,
+  "exitCode": 0,
+  "sequencesTested": [
+    {
+      "sequenceId": "SEQ-01-ERC4626-DEPOSIT-DONATE-WITHDRAW",
+      "name": "ERC-4626 Vault Inflation & Solvency Defense",
+      "status": "VERIFIED",
+      "findingsIdentified": [
+        "VLM-SEC-DEFI-VAULT-INFLATION-01"
+      ],
+      "mitigationTested": "Virtual Shares Offset & Decimals Offset"
+    },
+    {
+      "sequenceId": "SEQ-02-MINT-REDEEM-CONSERVATION",
+      "name": "Supply & Solvency Invariant Conservation",
+      "status": "VERIFIED",
+      "invariantsChecked": [
+        "INV-01-SUPPLY-CONSERVATION",
+        "INV-03-SOLVENCY"
+      ]
+    },
+    {
+      "sequenceId": "SEQ-03-ERC20-APPROVE-TRANSFERFROM",
+      "name": "Allowance Monotonicity & Double-Spend Elimination",
+      "status": "VERIFIED",
+      "invariantsChecked": [
+        "INV-04-NO-NEGATIVE-BALANCES",
+        "ALLOWANCE_BOUND"
+      ]
+    },
+    {
+      "sequenceId": "SEQ-04-UUPS-UPGRADE-STATE-TRANSITION",
+      "name": "ERC-1967 Storage Layout Integrity & Upgrade Authorization",
+      "status": "VERIFIED",
+      "slotsVerified": [
+        "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+        "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+      ]
+    }
+  ],
+  "summary": "All 4 critical stateful sequences completed with 100% invariant adherence and zero state corruptions."
+}

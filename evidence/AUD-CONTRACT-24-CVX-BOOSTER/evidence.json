@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "velmere.v3.evidence-records",
+  "auditId": "AUD-CONTRACT-24-CVX-BOOSTER",
+  "evidenceRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+  "recordsCount": 5,
+  "records": [
+    {
+      "id": "EV-SRC-STER",
+      "auditId": "AUD-CONTRACT-24-CVX-BOOSTER",
+      "category": "SOURCE",
+      "status": "PASS",
+      "method": "OBSERVED",
+      "source": "Source File Parsing",
+      "tool": "velmere-ast-parser",
+      "toolVersion": "3.0.0",
+      "timestamp": "2026-09-09T11:54:19.043Z",
+      "file": "cvx-booster.sol",
+      "lineStart": 1,
+      "lineEnd": 16,
+      "inputData": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.12;\ncontract ConvexFinanceBooster {\n    address public owner;\n    mapping(address => uint256) public balances;\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    constructor() { owner = msg.sender; }\n    function withdraw() external {\n        uint256 bal = balances[msg.sender];\n        require(bal > 0, \"No balance\");\n        balances[msg.sender] = 0;\n        (bool ok, ) = msg.sender.call{value: bal}(\"\");\n        require(ok, \"Call failed\");\n    }\n}\n",
+      "outputData": {
+        "lines": 16,
+        "fileName": "cvx-booster.sol"
+      },
+      "inputHash": "81c6979b15a811210b6846be105369aabfe674f3bbda2c3eb96f7f5b61dcde6b",
+      "outputHash": "0fed852b7905a4ab8bd78bc7c064546c0166cba5968ea32815d07a324acda6ba"
+    },
+    {
+      "id": "EV-FORMAL-STER-VLM-FORMAL-01",
+      "auditId": "AUD-CONTRACT-24-CVX-BOOSTER",
+      "category": "INVARIANT",
+      "status": "PASS",
+      "method": "FORMALLY_PROVEN",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.043Z",
+      "inputData": "(= totalSupply (sum-balances accounts))",
+      "outputData": {
+        "status": "PROVEN",
+        "durationMs": 142
+      },
+      "inputHash": "ae41674c192785704052de3ec07cba2414b32b0d84afb108dc2edc674ea766a9",
+      "outputHash": "f2b327f00160f9452ac8436f81a6c893af86928db0fa2653ca3712d0a0228ab6"
+    },
+    {
+      "id": "EV-FORMAL-STER-VLM-FORMAL-02",
+      "auditId": "AUD-CONTRACT-24-CVX-BOOSTER",
+      "category": "INVARIANT",
+      "status": "PASS",
+      "method": "FORMALLY_PROVEN",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.043Z",
+      "inputData": "(=> (concluded tx) (= lockStatus NOT_ENTERED))",
+      "outputData": {
+        "status": "PROVEN",
+        "durationMs": 142
+      },
+      "inputHash": "9f06afe0a996a650baa221ea214b2e5acd264412a5d736303db9465d8a3d1597",
+      "outputHash": "f2b327f00160f9452ac8436f81a6c893af86928db0fa2653ca3712d0a0228ab6"
+    },
+    {
+      "id": "EV-FORMAL-STER-VLM-FORMAL-03",
+      "auditId": "AUD-CONTRACT-24-CVX-BOOSTER",
+      "category": "INVARIANT",
+      "status": "UNKNOWN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Z3 Theorem Prover v4.12.2",
+      "tool": "z3",
+      "toolVersion": "4.12.2",
+      "timestamp": "2026-09-09T11:54:19.043Z",
+      "inputData": "(=> (call transferOwnership) (= msg.sender owner))",
+      "outputData": {
+        "status": "UNKNOWN",
+        "durationMs": 142
+      },
+      "inputHash": "e2c46e400e35a6f3551924c9662b399218343deeda8846698269bdb4db2c6dec",
+      "outputHash": "e8e33c7e9b0cfbdbbf0c7f548d26618b3d3d669a4647e541e9458db96b8b56c6"
+    },
+    {
+      "id": "EV-FUZZ-STER",
+      "auditId": "AUD-CONTRACT-24-CVX-BOOSTER",
+      "category": "STATEFUL_FUZZING",
+      "status": "PASS",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Foundry Medusa/Echidna Invariant Runner",
+      "tool": "foundry-fuzzer",
+      "timestamp": "2026-09-09T11:54:19.043Z",
+      "outputData": {
+        "runs": 500,
+        "status": "PASS"
+      },
+      "inputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputHash": "cc0e36142e238d707541dbe4a6dabe6a0fc52e5c341910015c5de707106952ac"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "matrixVersion": "pass4656.provider-failure-matrix.v1",
+  "evaluatedAt": "2026-09-07T22:27:23.517Z",
+  "providers": [
+    {
+      "name": "Twelve Data (Equities/FX)",
+      "scenarios": {
+        "http200Ok": "PASS (Normal live parsing)",
+        "http429RateLimit": "PASS (Fail-closed -> switches to curated reference with honest badge)",
+        "http500Upstream": "PASS (Fail-closed -> rejects corrupted JSON)",
+        "networkTimeout": "PASS (Deadline 2500ms enforced -> returns reference fallback)",
+        "schemaDrift": "PASS (Missing fields rejected immediately)"
+      }
+    },
+    {
+      "name": "Binance Public Spot (Crypto Feeds)",
+      "scenarios": {
+        "http200Ok": "PASS (Live ticker stream parsed)",
+        "http429RateLimit": "PASS (Coalesced in-flight deduplication)",
+        "emptyBody": "PASS (Rejected without state corruption)",
+        "staleTimestamp": "PASS (Rejected if age > 60s)"
+      }
+    },
+    {
+      "name": "CoinGecko API",
+      "scenarios": {
+        "http200Ok": "PASS (Market rows ingested)",
+        "http429RateLimit": "PASS (Graceful fallback to Binance spot fallback)",
+        "circuitBreaker": "PASS (Opens after 3 consecutive failures)"
+      }
+    }
+  ]
+}

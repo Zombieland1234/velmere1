@@ -15,6 +15,7 @@ import {
   type AuditBusinessTone,
 } from "@/lib/security/audit-business-flow";
 import { buildAuditBenchmarkPage } from "@/lib/security/audit-page-benchmark";
+import ProVsAdvancedComparisonView from "@/components/security/ProVsAdvancedComparisonView";
 
 const toneClass: Record<AuditBusinessTone, string> = {
   gold: "border-velmere-gold/[0.20] bg-velmere-gold/[0.07] text-velmere-gold",
@@ -119,6 +120,10 @@ export default function SecurityAuditPricingPage({ locale }: { locale: string })
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="mt-12" id="pro-vs-advanced-comparison">
+          <ProVsAdvancedComparisonView />
         </section>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)]">

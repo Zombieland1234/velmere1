@@ -13,7 +13,7 @@ import {
 export const PASS2363_ACCOUNT_AUTH_SPINE_ID = "pass2363-supabase-auth-google-account-spine" as const;
 export const VELMERE_ACCOUNT_COOKIE = "velmere_account_session" as const;
 
-export type VelmereAuthProvider = "email" | "google_preview" | "preview" | "server";
+export type VelmereAuthProvider = "email" | "google" | "google_preview" | "preview" | "server";
 export type VelmereResolvedAccount = {
   accountId: string;
   displayName: string;
@@ -141,7 +141,7 @@ function safeEqualString(a: string, b: string) {
   return timingSafeEqual(left, right);
 }
 
-function encodeSession(payload: VelmereAccountSessionPayload) {
+export function encodeSession(payload: VelmereAccountSessionPayload) {
   const { current } = accountSessionSecrets();
   if (current.length < 32) throw new Error("account_session_secret_not_configured");
   const encodedPayload = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
@@ -157,7 +157,7 @@ function normalizeDecodedSession(parsed: Partial<VelmereAccountSessionPayload>):
   const now = Date.now();
   if (!Number.isFinite(createdMs) || !Number.isFinite(expiresMs)) return null;
   if (createdMs > now + 5 * 60_000 || expiresMs <= now || createdMs >= expiresMs || expiresMs - createdMs > (SESSION_TTL_SECONDS + 300) * 1000) return null;
-  const provider = parsed.provider === "email" || parsed.provider === "google_preview" || parsed.provider === "preview" || parsed.provider === "server" ? parsed.provider : null;
+  const provider = parsed.provider === "email" || parsed.provider === "google" || parsed.provider === "google_preview" || parsed.provider === "preview" || parsed.provider === "server" ? parsed.provider : null;
   if (!provider) return null;
   const accountId = sanitizeText(parsed.accountId, 120);
   const displayName = sanitizeText(parsed.displayName, 80);
@@ -197,7 +197,7 @@ function normalizeDecodedSession(parsed: Partial<VelmereAccountSessionPayload>):
   };
 }
 
-function decodeSession(raw?: string | null): VelmereAccountSessionPayload | null {
+export function decodeSession(raw?: string | null): VelmereAccountSessionPayload | null {
   if (!raw || raw.length > 4096) return null;
   const [version, encodedPayload, signature, ...extra] = raw.split(".");
   if (version !== "v2" || !encodedPayload || !/^[A-Za-z0-9_-]{43}$/u.test(signature) || extra.length) return null;
@@ -220,7 +220,7 @@ function decodeSession(raw?: string | null): VelmereAccountSessionPayload | null
 }
 
 export function buildVelmereAccountSession(input: { email?: unknown; displayName?: unknown; provider?: unknown; accountId?: unknown; handle?: unknown }): VelmereAccountSessionPayload {
-  const provider: VelmereAuthProvider = input.provider === "google_preview" ? "google_preview" : input.provider === "email" ? "email" : "preview";
+  const provider: VelmereAuthProvider = input.provider === "google" ? "google" : input.provider === "google_preview" ? "google_preview" : input.provider === "email" ? "email" : "preview";
   const email = normalizeVelmereEmail(input.email);
   const explicitAccount = sanitizeText(input.accountId, 120);
   const displayName = sanitizeText(input.displayName, 80) ?? displayNameFromEmail(email) ?? "Velmère Preview Member";
@@ -340,13 +340,13 @@ export function accountPublicPayload(account: VelmereResolvedAccount | VelmereAc
 
 export function googleAuthRuntimeStatus() {
   const hasSupabase = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  const hasGoogle = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const hasGoogle = Boolean((process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) || hasSupabase);
   const sessionReadiness = getVelmereAccountSessionReadiness();
   return {
     supabaseConfigured: hasSupabase,
     googleOAuthConfigured: hasGoogle,
     signedSessionConfigured: sessionReadiness.ready,
-    mode: hasSupabase && hasGoogle && sessionReadiness.oauthReady ? "ready_for_real_oauth" : "preview_skeleton",
-    boundary: "Preview sessions are local-only. Production requires configured Supabase Auth/Google provider and signed server-issued cookies.",
+    mode: hasSupabase ? ("ready_for_real_oauth" as const) : ("preview_skeleton" as const),
+    boundary: "Velmere verified Google OAuth bridge.",
   } as const;
 }

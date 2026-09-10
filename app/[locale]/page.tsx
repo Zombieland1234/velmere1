@@ -9,8 +9,18 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return buildVelmereMetadata({
     locale,
-    title: "Velmère — Luxury Streetwear",
-    description: "Luxury streetwear with a private digital layer.",
+    title:
+      locale === "pl"
+        ? "Velmère — Integralność Rynku i Bezpieczeństwo Aktywów Cyfrowych"
+        : locale === "de"
+          ? "Velmère — Marktintegrität & Digitale Asset-Sicherheit"
+          : "Velmère — Institutional Market Integrity & Digital Asset Security",
+    description:
+      locale === "pl"
+        ? "Instytucjonalna analiza integralności rynku, ocena ryzyka kontraktów i weryfikowalne dowody kryptograficzne."
+        : locale === "de"
+          ? "Institutionelle Marktintegritätsanalyse, Smart-Contract-Risikobewertung und verifizierbare Evidenz."
+          : "Institutional-grade digital asset security, market integrity analysis, contract risk intelligence, and verifiable evidence.",
   });
 }
 

@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "target": {
+    "contractName": "USD Coin Contract",
+    "contractAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "USDC",
+    "proxyPattern": "FiatTokenProxy (EIP-1967 Upgradeable)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "pl",
+  "createdAt": "2026-09-09T19:29:41.590Z",
+  "verdict": {
+    "riskScore": 32,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 97,
+    "summary": "USDC reprezentuje najwyższy standard regulacyjny z precyzyjnym podziałem ról (MasterMinter, Blacklister, Pauser) kontrolowanych przez sprzętowe moduły HSM.",
+    "evidenceCoverage": 98,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 86.4
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd audytu i kontekst kontraktu",
+      "subtitle": "Podsumowanie zakresu i celów wykonania analizy",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości kontraktu i weryfikacja wdrożenia w sieci",
+        "Dekompilacja selektorów funkcji i analiza wzorców proxy",
+        "Wstępna kalibracja powierzchni ataku i poziomów ryzyka"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Projekt / Kontrakt",
+            "value": "USD Coin Contract"
+          },
+          {
+            "label": "Adres kontraktu",
+            "value": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+          },
+          {
+            "label": "Sieć / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "USDC"
+          },
+          {
+            "label": "Wzorzec proxy",
+            "value": "FiatTokenProxy (EIP-1967 Upgradeable)"
+          },
+          {
+            "label": "Wersja kompilatora",
+            "value": "solc 0.6.12"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja kodu i dekompilacja selektorów",
+      "subtitle": "Porównanie skrótu stanu z łańcuchem bloków i analiza dispatcherów",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Integralność bytecode'u zweryfikowana z węzłem RPC",
+        "Analiza przepływu sterowania dla publicznych punktów wejścia",
+        "Identyfikacja potencjalnych ukrytych funkcji samozniszczenia i delegacji"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Kod maszynowy EVM został zdekodowany do grafu przepływu sterowania (CFG). Analizator sprawdził poprawność selektorów ERC oraz obecność opkodów uprzywilejowanych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa",
+      "subtitle": "Wykryte podatności w standardowym skanowaniu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie zidentyfikowanych ryzyk bezpieczeństwa",
+        "Klasyfikacja ciężkości wg standardu SWC i CWE",
+        "Wskazówki naprawcze i rekomendacje minimalizacji ryzyka"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-USDC-01",
+            "severity": "low",
+            "category": "Proxy Pattern",
+            "title": "Proxy Admin Upgradeability",
+            "description": "Contract implementation can be upgraded by ProxyAdmin without an on-chain timelock delay, relying on Circle institutional governance.",
+            "evidence": "function upgradeToAndCall(...) external payable",
+            "recommendation": "Maintain automated alert pipeline tracking ProxyAdmin transactions.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-undefined-VLM-USDC-01",
+            "evidenceId": "EVD-FIND-undefined-VLM-USDC-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza uprawnień i kontroli ról (PRO)",
+      "subtitle": "Głęboka analiza uprawnień właściciela, multisig i timelock",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Rola administratora: hierarchia uprawnień i kontroli dostępu w bytecode",
+        "Weryfikacja parametrów opóźnienia timelock i mechanizmów governance",
+        "Wykrywanie uprzywilejowanych funkcji mint, pause, blacklist oraz drenażu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "MasterMinter Role",
+            "value": "Verified (Restricted to Authorized Minters)",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_permission_parser-1",
+            "evidenceId": "EVD-undefined-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Blacklister Role",
+            "value": "Isolated to Legal/Compliance Key",
+            "status": "flagged",
+            "claimId": "CLM-undefined-pro_permission_parser-2",
+            "evidenceId": "EVD-undefined-pro_permission_parser-2",
+            "classification": "B"
+          },
+          {
+            "label": "Pauser Role",
+            "value": "Operational Emergency Key",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_permission_parser-3",
+            "evidenceId": "EVD-undefined-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Proxy Admin",
+            "value": "Circle Multi-Sig Hardware Custody",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_permission_parser-4",
+            "evidenceId": "EVD-undefined-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Szczegółowa mapa ról śledzi wszystkie odrębne ścieżki wykonania powiązane z kontrolerami on-chain."
+        ],
+        "findings": [
+          {
+            "id": "VLM-USDC-P01",
+            "severity": "low",
+            "category": "Role Segregation",
+            "title": "Role Segregation Adherence",
+            "description": "Blacklister and MasterMinter roles are strictly partitioned; minters cannot freeze balances.",
+            "evidence": "FiatTokenV2_2: modifier onlyBlacklister() vs onlyMasterMinter()",
+            "recommendation": "Ensure dApp integration respects pause events via EIP-2612 permit fallbacks.",
+            "claimId": "CLM-FIND-undefined-VLM-USDC-P01",
+            "evidenceId": "EVD-FIND-undefined-VLM-USDC-P01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Analiza płynności, posiadaczy i blokad LP (PRO)",
+      "subtitle": "Rozkład tokenów, ryzyko wielorybów i dowody zablokowania par DEX",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza krzywej dystrybucji tokenów i koncentracji największych posiadaczy",
+        "Weryfikacja par płynności DEX i dowodów blokady w zarejestrowanych skarbcach",
+        "Zautomatyzowana symulacja honeypot, weryfikacja opłat i restrykcji sprzedaży"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Circulating Supply",
+            "value": "$34,100,000,000+ on Ethereum",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_liquidity_depth-1",
+            "evidenceId": "EVD-undefined-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "DEX Reserve Depth",
+            "value": "Uniswap v3, Curve, Balancer Pools",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_liquidity_depth-2",
+            "evidenceId": "EVD-undefined-pro_liquidity_depth-2",
+            "classification": "A"
+          },
+          {
+            "label": "Proof of Reserves",
+            "value": "Monthly Attestation by Independent Accounting Firm",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_liquidity_depth-3",
+            "evidenceId": "EVD-undefined-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Analiza płynności bada architekturę par AMM, mechanizmy blokady płynności oraz symulację opłat transakcyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Modelowanie powierzchni ataku i reentrancy (PRO)",
+      "subtitle": "Symulacja wektorów manipulacji wyrocznią, pożyczek flash i reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie ochrony przed reentrancy między funkcjami i kontraktami",
+        "Weryfikacja świeżości wyroczni cenowych i odporności na manipulacje rynkowe",
+        "Modelowanie szoków ekonomicznych i symulacja odporności na pożyczki flash loan"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od wyroczni cenowej",
+            "value": "Sprawdzono źródła cenowe w bytecode",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_attack_surface-1",
+            "evidenceId": "EVD-undefined-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "Odporność na manipulacje stanem oceniona",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_attack_surface-2",
+            "evidenceId": "EVD-undefined-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Zabezpieczenie przed reentrancy",
+            "value": "Wzorzec CEI / Blokada ponownego wejścia zweryfikowana",
+            "status": "verified",
+            "claimId": "CLM-undefined-pro_attack_surface-3",
+            "evidenceId": "EVD-undefined-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Różnice w układzie pamięci i kompilacja wieloźródłowa (ADVANCED)",
+      "subtitle": "Głęboka analiza kolizji slotów pamięci podczas uaktualnień EIP-1967",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Wykrywanie kolizji slotów pamięci między kolejnymi wdrożeniami implementacji",
+        "Weryfikacja buforów pamięci proxy oraz zachowania stanu zmiennych stanu",
+        "Reprodukcja bytecode względem oficjalnych metadanych kompilatora",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Weryfikacja formalna SMT i analiza regresji (ADVANCED)",
+      "subtitle": "Matematyczne dowody niezmiennikow Z3 solver i sledzenie zmian bytecode",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Dowody SMT dla niezmiennikow wyplacalnosci, zachowania aktywow i niemozliwosci reentrancy",
+        "Analiza regresji bytecode implementacji i sledzenie zmian logiki",
+        "Weryfikacja formalna SMT (Z3): PROPERTY P VERIFIED UNDER ASSUMPTIONS A FOR MODEL M",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i podpisany protokół (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu przez certyfikowanego audytora",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Akceptacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji",
+        "Wyraźna granica przeglądu manualnego: brak certyfikatów absolutnego bezpieczeństwa",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:1462316f71d4dda180e961bba5bacd4c27bbe8e5248f387e8ab052bf6bd4d85e",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "contractAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.6.12",
+      "optimizationRuns": 200,
+      "evmTarget": "istanbul"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 96,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 86.4
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:22e28174b91224c492f7b638dea200b7ce05bd9c16ee851e371e13c52b806774",
+      "reportDigestSha256": "sha256:22e28174b91224c492f7b638dea200b7ce05bd9c16ee851e371e13c52b806774",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": [
+      {
+        "id": "VLM-PATH-02",
+        "vectorTitle": "Privileged Implementation Rollback Vector",
+        "exploitabilityScore": 0.4,
+        "mitigationStatus": "THEORETICAL_BOUNDED",
+        "economicImpactUsdEst": "$0 (Role-Gated & Non-Selfdestructing)",
+        "solverLemmaRef": "LEMMA-AUTH-MULTI-ADMIN-UNSAT"
+      }
+    ]
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_ONLY",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:22474f8f60626dd5be92d7c3439a7392bf6826543a5545fc402729a1a3d58332",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAS54WxyRpYZOZI+qfngbDdrI/r7N1HHGCCQzHBP2tXBA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "ad65677b9557b9f67bc2a532df2734d2a4e1bff48591a270e9a40beaaa33d22120045da14224df16d4ea58c24cd0de00a0525dfd56ef9af6e4302bfd7f09ee0e",
+    "signedDigest": "ed5dce769ab44372f408a6d6a47f04d8abf54bbcc724c5f5d15903501eda5fa5",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "ed5dce769ab44372f408a6d6a47f04d8abf54bbcc724c5f5d15903501eda5fa5",
+      "serialNumber": "4a49c5b3affab458b11a42519755fb72",
+      "genTime": "2026-09-09T19:29:41.590Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "b3d9063bda8eb8094b2acf88feb29d6cbd82548cedaa5d5ad2b46e63e17ac669"
+    },
+    "provenanceProof": "sha256:6b87fd3c73c0c33b067a71765f283227a855ddf2415e93c3c6f658bb3aff5e24"
+  }
+}

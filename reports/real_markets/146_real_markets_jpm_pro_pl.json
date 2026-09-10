@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_jpm_pro_146",
+  "caseRef": "CASE-VLM-JPM-PRO",
+  "target": {
+    "contractName": "JPMorgan Chase & Co.",
+    "contractAddress": "nyse:jpm",
+    "network": "New York Stock Exchange",
+    "chainId": "MIC:XNYS",
+    "tokenSymbol": "JPM",
+    "proxyPattern": "N/A (Regulated Clearinghouse / Central Counterparty)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:17.837Z",
+  "verdict": {
+    "riskScore": 12,
+    "riskLabel": "NISKIE RYZYKO",
+    "confidenceScore": 99,
+    "auditQualityScore": 83,
+    "summary": "Największy bank komercyjny w USA o statusie G-SIB. Spełnia z naddatkiem wymogi kapitałowe Bazylea III oraz testy warunków skrajnych Fed CCAR.",
+    "evidenceCoverage": 99,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "regulatoryFilingHash": "0xf90eaabe27ecb5aa10d6b7ceabf5f85e45f4f6ce4bc69a1a7fe245807fa71a96",
+      "marketStateTimestamp": "2026-09-09T16:00:00-04:00 (US Market Close)",
+      "pinnedChainId": "9910",
+      "analysisEngineVersion": "v4.0.0-rc3-tradfi",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd instrumentu i kontekst rynku regulowanego",
+      "subtitle": "Podsumowanie struktury instrumentu, giełdy notowań i ram nadzorczych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości instrumentu i rejestracji u emitenta",
+        "Identyfikacja giełdy macierzystej i standardów rozliczeniowych",
+        "Klasyfikacja profilu ryzyka rynkowego i płynnościowego"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Instrument / Nazwa",
+            "value": "JPMorgan Chase & Co."
+          },
+          {
+            "label": "Klasa aktywów",
+            "value": "Rynek Tradycyjny / Regulowany (Akcje / Towary / FX / ETF)"
+          },
+          {
+            "label": "Ticker rynkowy",
+            "value": "JPM"
+          },
+          {
+            "label": "Rynek notowań",
+            "value": "New York Stock Exchange"
+          },
+          {
+            "label": "Ramy prawne i nadzór",
+            "value": "Regulacje papierów wartościowych i rynków finansowych (SEC / ESMA / KNF)"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja prospektu emisyjnego i sprawozdawczości publicznej",
+      "subtitle": "Weryfikacja raportów okresowych i zgodności z wymogami giełdowymi",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja integralności sprawozdań z rejestrami organów nadzoru",
+        "Audyt spójności danych fundamentalnych i struktury kapitałowej",
+        "Ocena ciągłości notowań i statusu dopuszczenia do obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Logika smart kontraktu EVM",
+            "value": "NOT_APPLICABLE (Traditional Market Instrument)",
+            "status": "neutral",
+            "claimId": "CLM-rep_jpm_pro_146-contract_identity-1",
+            "evidenceId": "EVD-rep_jpm_pro_146-contract_identity-1",
+            "classification": "C"
+          }
+        ],
+        "paragraphs": [
+          "Instrument JPMorgan Chase & Co. podlega nadzorowi rynków regulowanych i izb rozliczeniowych. Dekompilacja bytecode EVM oraz skanowanie smart kontraktów mają status NOT_APPLICABLE dla instrumentów tradycyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa obrotu",
+      "subtitle": "Zidentyfikowane parametry ryzyka rynkowego i płynnościowego",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie stabilności notowań i płynności rynkowej",
+        "Ocena zmienności historycznej i ekspozycji na szoki rynkowe",
+        "Zgodność ze standardami rozliczeń depozytowych T+1"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza ładu korporacyjnego i struktury kontroli zarządczej (PRO)",
+      "subtitle": "Struktura akcjonariatu, prawa głosu i nadzór rady dyrektorów",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Struktura ładu korporacyjnego, nadzór rady dyrektorów i klasy akcji z prawem głosu",
+        "Ujawnienia w raportach regulacyjnych (SEC/KNF) i zgodność sprawozdawcza",
+        "Uprawnienia zarządu, mandaty do rozwodnienia kapitału i prawa akcjonariuszy"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Nadzór korporacyjny i zarządczy",
+            "value": "Zarząd i Rada Dyrektorów",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Statutowe uprawnienia zarządcze",
+            "value": "Zdefiniowane w statucie spółki",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Wyłączniki bezpieczeństwa obrotu (Circuit Breakers)",
+            "value": "Aktywne (Zasady LULD / SEC)",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Emisja dodatkowych akcji / jednostek",
+            "value": "Zgodnie ze statutem / Uchwałą WZA",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Ład korporacyjny JPMorgan Chase & Co. opiera się na przepisach prawa handlowego, statucie spółki oraz regulacjach rynków kapitałowych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość notowań ciągłych i płynność arkusza zleceń (PRO)",
+      "subtitle": "Rozkład spreadów NBBO, płynność animatorów rynku i handel blokowy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Głębokość ciągłych notowań giełdowych i spready NBBO (National Best Bid/Offer)",
+        "Wolumen transakcji blokowych, routing dark pool i udział animatorów rynku",
+        "Widełki wyłączników rynkowych (reguły LULD) oraz historia zawieszeń obrotu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Model płynności rynkowej",
+            "value": "Regulowany arkusz zleceń (CLOB)",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pary płynności DEX AMM",
+            "value": "NOT_APPLICABLE (Traditional Exchange Venue)",
+            "status": "neutral",
+            "claimId": "CLM-rep_jpm_pro_146-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_liquidity_depth-2",
+            "classification": "C"
+          },
+          {
+            "label": "Prowizje transakcyjne protokołu / sell tax",
+            "value": "0.0% (Standard Regulated Trading)",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Płynność dla JPMorgan Chase & Co. jest zapewniana przez licencjonowanych animatorów rynku i zlecenia inwestorów na giełdach publicznych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory manipulacji mikrostrukturą rynku i ryzyko kontrahenta (PRO)",
+      "subtitle": "Modelowanie spoofingu, layeringu, ryzyka rozliczeniowego i margin call",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Wektory manipulacji mikrostrukturą rynku (spoofing, layering, wash trading)",
+        "Ryzyko kontrahenta rozliczeniowego i wymogi depozytowe izb rozliczeniowych",
+        "Ryzyko krótkiego ścisku płynności (squeeze) oraz systemowe zależności kredytowe"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od zewnętrznych wyroczni cenowych",
+            "value": "NOT_APPLICABLE (Direct Exchange Pricing)",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "NOT_APPLICABLE (Traditional Clearing)",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Ryzyko awarii silnika dopasowywania zleceń",
+            "value": "Zabezpieczone redundancją giełdową",
+            "status": "verified",
+            "claimId": "CLM-rep_jpm_pro_146-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_jpm_pro_146-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Rozliczenia depozytowe i zgodność rejestrów własności (ADVANCED)",
+      "subtitle": "Weryfikacja uzgodnień centralnych depozytów papierów wartościowych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Architektura uzgodnień rozliczeniowo-depozytowych (DTC/KDPW/Euroclear)",
+        "Weryfikacja skrótu kryptograficznego sprawozdań z rejestrami publicznymi",
+        "Deterministyczna realizacja operacji korporacyjnych (splity, dywidendy)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia operacji korporacyjnych i zmian kapitałowych (ADVANCED)",
+      "subtitle": "Śledzenie podziałów akcji, wypłat dywidend i emisji dodatkowych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia operacji na kapitale i podziałów akcji (stock splits)",
+        "Weryfikacja spójności praw akcjonariuszy między emisjami",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie dotyczy aktywów tradycyjnych)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka rynku i poświadczenie sprawozdawcze (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu sprawozdawczości przez analityka finansowego",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Atestacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót weryfikacji sprawozdań",
+        "Wyraźna granica przeglądu manualnego: brak rekomendacji inwestycyjnej",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:5a82a73080cf26c7aabd5ea16dc252e0d84f9977616bc7390de7c6f24f593875",
+  "applicationSurface": "real-markets",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "MIC:XNYS",
+      "contractAddress": "nyse:jpm",
+      "network": "New York Stock Exchange",
+      "proxyType": "N/A (Traditional Financial Instrument)"
+    },
+    "marketSpec": {
+      "identifierType": "TICKER",
+      "identifierValue": "JPM",
+      "source": "Consolidated Tape / Primary Exchange",
+      "exchangeMic": "XCME",
+      "figi": "BBGNYSEJPM",
+      "isin": "USNYSEJPM0",
+      "tickerSymbol": "JPM",
+      "assetClass": "Global Systemically Important Bank (G-SIB Equity)",
+      "pricingSource": "Consolidated Tape / Primary Exchange",
+      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
+      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 99,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:434b2342d454a8550ca6db011c076ba21072393042999053c17c9fa911ef0da9",
+      "reportDigestSha256": "sha256:434b2342d454a8550ca6db011c076ba21072393042999053c17c9fa911ef0da9",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:5f52f46f08d83604399ef2b9dbfc15344752b4e9bbf275c8c7e635b80cc3b5d8",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "a256354e947e0e3b23a2ab95fdda4efd51128e704271e988f14dca9f3b872d8df02bd2e8a12b66580c1932065ba4f8d6fb75fc92f64d11d80b19b99d6e5ed408",
+    "signedDigest": "0ab2ee0ec1a5bf5ce223c09a27688d4404882f07ccaac40817546034a7be2fe7",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "0ab2ee0ec1a5bf5ce223c09a27688d4404882f07ccaac40817546034a7be2fe7",
+      "serialNumber": "61811d19843d401496157d0e04bf4206",
+      "genTime": "2026-09-10T12:36:17.837Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "bf47aa6b4615be9ab10ffcea22681d98f29ce760604afaf4f51d993ec5e67f08"
+    },
+    "provenanceProof": "sha256:271210a2f5646dc25511ed7c9ecf9f843776955102d6cf68bcbf65b8533ae4b9"
+  },
+  "integrityProof": {
+    "pdfSha256": "3b0111a9b880e3ee41a9a9c4cc1c8c65ec0b31b0b31ca3bd1f62627720a7788e",
+    "pdfByteLength": 87925,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:17.849Z"
+  }
+}

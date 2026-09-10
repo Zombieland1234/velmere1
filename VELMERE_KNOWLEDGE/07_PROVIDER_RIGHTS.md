@@ -1,6 +1,6 @@
 # 07 — PROVIDER RIGHTS
 
-UPDATED: 2026-09-02 | SOURCE: config/pass21/provider-commercial-rights-registry.json
+UPDATED: 2026-09-03 | SOURCE: config/pass21/provider-commercial-rights-registry.json
 CLASSIFICATION: PROVEN_LOCAL for registry file content, UNVERIFIED for rights
 
 ## Critical principle (master mission §13, M2)
@@ -38,44 +38,68 @@ Location: `config/pass21/provider-commercial-rights-registry.json`
 
 This file is the canonical rights record. It is updated when a new
 provider is added (Pas 1 saw Pyth added with `rightsState: UNVERIFIED`).
+On 2026-09-03 the registry was extended with `tiersObserved` and
+`useCaseMatrix` for: Chainlink, CoinGecko, Twelve Data, Pyth, DeFiLlama,
+Etherscan, Alpha Vantage.
 
-## Provider rows (initial)
+## Per-tier, per-use-case rule (CRITICAL)
 
-Entries observed during Pas 1 + directory scan. Detailed rights will be
-filled by Pas 9.
+A provider's commercial rights MUST be evaluated per plan/tier × per
+use case. The same provider can have several tiers with different
+rights (e.g. CoinGecko keyless vs Basic/Analyst/Lite/Pro; Twelve Data
+Individual vs Business). And within a given plan, UI display, PDF
+inclusion, cache, AI/RAG input, raw redistribution, and model training
+are SEPARATE rights that must each be evaluated.
+
+The registry encodes this with two structures:
+
+* `tiersObserved` — observed plans/tiers with their scope
+* `useCaseMatrix` — per use case, which tiers allow it, and whether it
+  is active in Velmère today
+
+If a use case is not explicitly allowed under a tier, it is
+UNVERIFIED. UNVERIFIED ≠ allowed.
+
+## Per-provider status (current registry)
 
 ### Chainlink
 
 | Field | Value |
 |---|---|
-| Technical access | NOT_IMPLEMENTED as adapter |
+| Technical access | NOT_INTEGRATED (no adapter; public docs exist) |
 | Display | UNVERIFIED |
 | Cache | UNVERIFIED |
 | Export | UNVERIFIED |
 | PDF | UNVERIFIED |
-| Commercial | UNVERIFIED (brand/logo permission ≠ commercial license) |
+| Commercial | UNVERIFIED — brand/logo permission ≠ commercial data license |
 | Redistribution | UNVERIFIED |
-| Attribution | Per Chainlink guidelines |
-| Geo limits | UNVERIFIED |
-| STATUS | UNVERIFIED — NOT integrated |
+| Brand evidence | positive response on logo/brand usage + Data Feeds documentation; NO commercial redistribution license on file |
+| DataLink note | Chainlink's own DataLink product is built around permissioned commercialization → this confirms access ≠ licensing |
+| STATUS | RIGHTS_UNVERIFIED_DESPITE_BRAND_RESPONSE — NOT integrated |
+
+CRITICAL: Until the actual email/message from Chainlink is located in
+the repository, parsed literally, and stored as evidence, do NOT
+expand the brand/brand-usage response into a commercial redistribution
+right. The message, when found, must be used only for exactly what it
+says.
 
 ### Pyth
 
 | Field | Value |
 |---|---|
 | Technical access | YES — `pyth-price-provider.ts` exists |
-| Credential | `PYTH_API_KEY` required for Hermes post-26.08.2026 |
+| Credential | `PYTH_API_KEY` required for Hermes post-2026-08-26 |
 | Source identity | Pyth Network |
-| Display | UNVERIFIED |
+| Display | UNVERIFIED (per-tier) |
 | Cache | UNVERIFIED |
 | Export | UNVERIFIED |
 | PDF | UNVERIFIED |
-| Commercial | UNVERIFIED |
+| Commercial | UNVERIFIED_PER_PLAN |
 | Redistribution | UNVERIFIED |
 | Model training | UNVERIFIED |
-| Contract required | YES (per registry) |
-| Evidence | EMPTY (no evidence links yet) |
-| STATUS | UNVERIFIED — added in unstaged diff |
+| Contract required | YES |
+| Evidence | Empty — Hermes API key requirement snapshot only |
+| STATUS | RIGHTS_UNVERIFIED_PER_PLAN — commercial scope must be checked per Pyth product/API for the specific Velmère use case |
 
 ### CoinGecko
 
@@ -83,15 +107,16 @@ filled by Pas 9.
 |---|---|
 | Technical access | YES — `coingecko.ts` exists |
 | Credential | COINGECKO_DEMO_API_KEY or PRO key |
-| Keyless mode | Available for dev/prototype (per master mission §5) |
-| Source identity | CoinGecko |
-| Display | UNVERIFIED (need specific tier) |
-| Cache | UNVERIFIED |
-| Export | UNVERIFIED |
-| PDF | UNVERIFIED |
-| Commercial | UNVERIFIED (keyless explicitly positioned for non-commercial) |
-| Redistribution | UNVERIFIED |
-| STATUS | UNVERIFIED — B-001 missing key |
+| Keyless mode | Available for dev/prototype ONLY (non-commercial) |
+| Tier A — Keyless public API | non-commercial, no paid product, no display, no PDF, no cache |
+| Tier B — Basic / Analyst / Lite / Pro (Standard Commercial License) | commercial use YES, display YES, derived analytics YES, PDF YES, cache YES, raw API resale/sublicensing/redistribution NO, attribution "Data provided by CoinGecko" + link REQUIRED |
+| Tier C — Custom / Enterprise | required for raw redistribution / resale / sublicensing |
+| STATUS | PARTIAL_PER_USE_CASE — Tier B is sufficient for paid-product use of CoinGecko data, but NOT for raw-feed redistribution; Tier A is NEVER commercial |
+
+Velmère implication: on a Standard Commercial License, Velmère may
+build a paid product that displays CoinGecko data to its customers
+and includes it in PDFs (with attribution). Velmère may NOT resell
+the raw API/data access to customers under Tier B.
 
 ### DeFiLlama
 
@@ -99,14 +124,14 @@ filled by Pas 9.
 |---|---|
 | Technical access | YES — `defillama-adapter.ts` exists |
 | Source identity | DeFiLlama |
-| ToS | Per master mission §6: copying / scraping / harvesting / commercial exploitation / republication / resale require permission |
-| Display | UNVERIFIED |
-| Cache | UNVERIFIED |
+| ToS | Standard public API is personal/non-commercial; commercial copying, scraping, republishing, resale require prior written permission |
+| Display | UNVERIFIED for commercial use |
+| Cache | UNVERIFIED for commercial use |
 | Export | UNVERIFIED |
 | PDF | UNVERIFIED |
-| Commercial | RESTRICTED per their ToS |
+| Commercial | RESTRICTED per ToS |
 | Redistribution | RESTRICTED |
-| STATUS | RIGHTS_UNVERIFIED — only use as reference/internal |
+| STATUS | RIGHTS_RESTRICTED — only use as internal reference until a specific written permission is attached |
 
 ### Alpha Vantage
 
@@ -114,8 +139,10 @@ filled by Pas 9.
 |---|---|
 | Technical access | YES — `alpha-vantage-provider.ts` exists |
 | Credential | ALPHA_VANTAGE_API_KEY required (not in .env.local) |
-| Commercial use | UNVERIFIED (free personal ≠ commercial display) |
-| STATUS | UNVERIFIED |
+| Free key | personal/non-commercial; NOT commercial display permission |
+| Commercial use | UNVERIFIED — requires sales contact + signed agreement |
+| Realtime / 15-min US data | requires additional licensing/regulatory review |
+| STATUS | RIGHTS_RESTRICTED_FOR_COMMERCIAL |
 
 ### Binance
 
@@ -134,9 +161,11 @@ filled by Pas 9.
 
 | Field | Value |
 |---|---|
-| Technical access | NOT_PRESENT as adapter |
+| Technical access | YES — present as adapter |
 | Credential | TWELVE_DATA_API_KEY required (not in .env.local) |
-| STATUS | NOT_IMPLEMENTED |
+| Tier A — Individual Basic/Grow/Pro/Ultra | personal / internal / non-production; NO commercial third-party display |
+| Tier B — Business Venture / Enterprise / Enterprise+ | commercial display YES; raw API redistribution still requires separate agreement |
+| STATUS | PARTIAL_PER_USE_CASE — Tier A must NEVER be wired into a paid public-facing surface; Tier B permits display but not raw redistribution |
 
 ### DexScreener
 
@@ -150,7 +179,10 @@ filled by Pas 9.
 | Field | Value |
 |---|---|
 | Technical access | NOT_PRESENT as direct adapters |
-| STATUS | NOT_INVESTIGATED — per master mission §8, prefer direct RPC over explorer families |
+| Free tier | non-commercial |
+| Paid production | commercial allowed UNVERIFIED (depends on plan) |
+| Redistribution | typically requires separate written permission |
+| STATUS | NOT_INVESTIGATED — per master mission §8, prefer direct RPC over explorer families for the audit core |
 
 ### Arkham
 
@@ -182,21 +214,7 @@ filled by Pas 9.
 | Redistribution | YES (own data) |
 | STATUS | UNKNOWN — Pas 10 inspection needed |
 
-## What Pas 9 will add
-
-For each provider:
-- termsVersion
-- termsRetrievedAt
-- termsHash/archive
-- territory
-- evidenceLinks
-- explicit commercialUse / publicDisplay / authenticatedCustomerDisplay /
-  internalNonDisplay / cache / historicalStorage / PDFInclusion /
-  customerExport / rawRedistribution / derivedAnalytics / AIInput /
-  RAGInput / modelTraining / attribution / correctionRight / retention /
-  termination / exitPlan / status / blockers
-
-## What will NEVER be claimed
+## What is NEVER a basis for commercial approval
 
 - "Provider approved" based on API working
 - "Provider approved" based on documentation
@@ -204,6 +222,32 @@ For each provider:
 - "Provider approved" based on someone responding positively
 - "Provider approved" based on free API existing
 - "Provider approved" based on data being fetchable
+- "Provider approved" based on a public API endpoint returning data
 
 Only commercial / display / cache / export / PDF / redistribution rights
-established per termsCount.
+established per tier × per use case, with terms snapshot + evidence
+hash, count.
+
+## Chainlink evidence handling protocol
+
+The relevant email/message from Chainlink that was discussed in prior
+sessions has NOT been located in the repository as of 2026-09-03. The
+protocol is:
+
+1. Locate the artifact (email file, message log, screenshot, signed
+   letter, etc.) inside the repository.
+2. Read it literally. Quote the operative phrases. Compute a
+   sha256 of the artifact and store it in the registry `evidence`
+   array as `{ "type": "literal_email", "label": "...",
+   "retrievedAt": "2026-09-03", "literalQuote": "...",
+   "scope": "exactly what the email says", "doNotExpandTo":
+   "anything beyond that scope", "sha256": "..." }`.
+3. Map the quote to the `useCaseMatrix` cells. Cells that are
+   explicitly allowed by the quote may flip from UNVERIFIED to a
+   specific tier. All other cells remain UNVERIFIED.
+4. Do NOT derive "general commercial redistribution rights" from a
+   logo/brand-usage response. The message either grants a specific
+   right, or it doesn't.
+
+Until step 1 produces a located artifact, Chainlink's commercial
+rights remain `RIGHTS_UNVERIFIED_DESPITE_BRAND_RESPONSE`.

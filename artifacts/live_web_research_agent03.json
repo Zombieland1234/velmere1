@@ -1,0 +1,63 @@
+{
+  "agentRole": "AGENT-03: LIVE WEB RESEARCH & STANDARDS RESEARCHER",
+  "timestamp": "2026-09-10T06:36:00+02:00",
+  "topics": [
+    {
+      "topic": "OWASP Smart Contract Top 10 (2025/2026 Revision) & OWASP SCSVS v2.0",
+      "sourceUrl": "https://owasp.org/www-project-smart-contract-top-10/",
+      "categories": [
+        "SC01 Access Control",
+        "SC02 Business Logic",
+        "SC03 Price Oracle Manipulation",
+        "SC04 Flash Loans",
+        "SC05 Lack of Input Validation",
+        "SC06 Unchecked External Calls",
+        "SC07 Arithmetic Errors",
+        "SC08 Reentrancy",
+        "SC09 Integer Overflow/Underflow",
+        "SC10 Proxy & Upgradeability"
+      ],
+      "implications": "All 42 AST detectors mapped to SC01-SC10 and SCSVS V1-V12 in static_crosscheck.json with fail-closed gate."
+    },
+    {
+      "topic": "OpenZeppelin Contracts v5.x / 5.1 Standards",
+      "sourceUrl": "https://docs.openzeppelin.com/contracts/5.x/erc4626",
+      "specifications": [
+        "ERC-4626 virtual shares offset (totalAssets + 1, totalSupply + 10^offset)",
+        "UUPS _disableInitializers() in constructor",
+        "AccessControlDefaultAdminRules 2-step transfer with timelock delay"
+      ],
+      "implications": "Enforce VLM-SEC-DEFI-VAULT-INFLATION-01 and VLM-PROXY-AUTH-01."
+    },
+    {
+      "topic": "Ethereum Cancun & Prague Hardfork EVM Specifications",
+      "sourceUrl": "https://eips.ethereum.org/EIPS/eip-1153",
+      "specifications": [
+        "EIP-1153 TSTORE/TLOAD transient storage lifetime",
+        "EIP-6780 SELFDESTRUCT restricted to same-tx creation",
+        "EIP-7702 EOA delegation code"
+      ],
+      "implications": "Verify transient storage cleanup in multicalls; reject SELFDESTRUCT kill-switch assumptions; flag extcodesize(caller) == 0."
+    },
+    {
+      "topic": "Foundry Invariant & Stateful Fuzzing Standards",
+      "sourceUrl": "https://book.getfoundry.sh/forge/invariant-testing",
+      "specifications": [
+        "Handler-based fuzzing with bounded inputs and ghost variables",
+        "runs >= 1024, depth >= 128",
+        "Automated shrink trace minimization"
+      ],
+      "implications": "37 stateful sequences validated in STATEFUL_SEQUENCES_EVIDENCE.json; 100k runs on WBNB/USDT."
+    },
+    {
+      "topic": "Post-Mortem Exploit Forensics (Euler, SafeMoon, Curve)",
+      "sourceUrl": "https://rekt.news/euler-finance-rekt/",
+      "specifications": [
+        "Euler: missing solvency check on donateToReserves",
+        "SafeMoon: public unprotected burn from AMM LP",
+        "Curve: read-only reentrancy on get_virtual_price across lending protocols"
+      ],
+      "implications": "Z3 formal proof lemmas VLM-FORMAL-01 to 04 catch these exact invariant violations within 12ms."
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_ton_pro_092",
+  "caseRef": "CASE-VLM-TON-PRO",
+  "target": {
+    "contractName": "The Open Network Masterchain",
+    "contractAddress": "native:ton-masterchain",
+    "network": "TON Blockchain",
+    "chainId": "ton:mainnet",
+    "tokenSymbol": "TON",
+    "proxyPattern": "Immutable Distributed Consensus (Catchain BFT)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:16.942Z",
+  "verdict": {
+    "riskScore": 23,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 95,
+    "auditQualityScore": 87,
+    "summary": "Asynchroniczny łańcuch z modelem aktorów i dynamicznym shardingiem. Skalowanie poziome zintegrowane z ekosystemem Telegram i maszyną TVM.",
+    "evidenceCoverage": 95,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 41200000,
+      "snapshotBlockHash": "8B7F6C5D4E3A2B1C0D9E8F7A6B5C4D3E2F1A0B9C8D7E6F5A4B3C2D1E0F9A8B7C",
+      "consensusLedgerStateRootSha256": "0xf8f37176753f7236706fd3841bd2e6482fa7ccc9a9baacdaf7d5e468ed1cb411",
+      "pinnedChainId": "0-ton",
+      "analysisEngineVersion": "v4.0.0-rc3-shield",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd protokołu i kontekst sieci L1",
+      "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja natywnego łańcucha bloków i architektury węzłów",
+        "Ewaluacja modelu emisji i niezmienności reguł monetarnych",
+        "Ocena stopnia decentralizacji sieci i odporności na cenzurę"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Protokół / Aktywo",
+            "value": "The Open Network Masterchain"
+          },
+          {
+            "label": "Typ architektury",
+            "value": "Natywna warstwa bazowa (Layer-1 · Brak kontraktu smart contract)"
+          },
+          {
+            "label": "Identyfikator sieci",
+            "value": "native_chain:ton"
+          },
+          {
+            "label": "Symbol natywny",
+            "value": "TON"
+          },
+          {
+            "label": "Zarządzanie regułami",
+            "value": "Rozproszony konsensus węzłów i walidatorów / górników"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+      "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja referencyjnego kodu źródłowego klienta węzła",
+        "Walidacja bibliotek kryptograficznych i formatu transakcji",
+        "Analiza odporności na nieprawidłowe bloki i rozwidlenia łańcucha"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Weryfikacja protokołu The Open Network Masterchain opiera się na specyfikacji konsensusu warstwy pierwszej. Analiza bytecode EVM i dekompilacja kontraktów mają status NOT_APPLICABLE dla natywnych monet."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+      "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie parametrów stabilności sieci bazowej",
+        "Ocena odporności na błędy konsensusu i desynchronizację",
+        "Zgodność z przyjętymi standardami bezpieczeństwa sieci rozproszonych"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+      "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza zarządzania konsensem rozproszonym i mechanizmów upgrade protokołu",
+        "Ewaluacja rozkładu walidatorów / górników oraz progu finalności sieci",
+        "Historia koordynacji hard-forków oraz audyt różnorodności klientów węzłów"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zarządzanie konsensusem sieci",
+            "value": "Rozproszony konsensus węzłów",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Klucze administracyjne kontraktu",
+            "value": "NOT_APPLICABLE (Native Layer-1 Protocol)",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Możliwość awaryjnego zatrzymania sieci",
+            "value": "NOT_APPLICABLE (Decentralized Network)",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Arbitralny drenaż sald użytkowników",
+            "value": "NOT_APPLICABLE (Cryptographic Keys Enforced)",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Zasady protokołu The Open Network Masterchain są egzekwowane przez rozproszony konsensus węzłów walidujących; nie istnieje uprzywilejowany klucz właściciela smart kontraktu."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+      "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Głębokość globalnych ksiąg zleceń na giełdach spot i rezerwy powiernicze",
+        "Prędkość podaży w obiegu on-chain oraz rozkład aktywnych adresów",
+        "Zmienność opłat transakcyjnych sieci i zachowanie kolejki mempool"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Płynność rezerw rynkowych",
+            "value": "Globalna płynność rynku spot",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pary płynności DEX AMM",
+            "value": "NOT_APPLICABLE (Native Base Asset)",
+            "status": "neutral",
+            "claimId": "CLM-rep_ton_pro_092-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_liquidity_depth-2",
+            "classification": "C"
+          },
+          {
+            "label": "Podatek transferowy / sell tax",
+            "value": "NOT_APPLICABLE (Standard Network Fee Model)",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Płynność dla The Open Network Masterchain opiera się na globalnych rynkach kasowych i sieciach powierniczych. Mechanizmy blokad par AMM mają status NOT_APPLICABLE."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+      "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie reorganizacji konsensusu i ataku większości hashrate/stake",
+        "Analiza odporności sieci P2P na partycjonowanie, eclipse attack i sybil",
+        "Wektory cenzury transakcji, manipulacji mempool i ekstrakcji MEV"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od zewnętrznych wyroczni",
+            "value": "NOT_APPLICABLE (Protocol Native Settlement)",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "NOT_APPLICABLE (Non-EVM Execution Environment)",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Ryzyko podwójnego wydania (Double-Spend)",
+            "value": "Zabezpieczone przez konsensus sieci",
+            "status": "verified",
+            "claimId": "CLM-rep_ton_pro_092-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_ton_pro_092-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+      "subtitle": "Weryfikacja kompatybilności binarnej i determinizmu przejść stanów węzłów",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Weryfikacja powtarzalności kompilacji klienta referencyjnego węzła",
+        "Analiza kompatybilności binarnej serializacji konsensusu i protokołu sieciowego",
+        "Deterministyczna weryfikacja granic wykonania silnika przejść stanów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+      "subtitle": "Śledzenie zmian w regułach konsensusu i analiza kompatybilności wstecznej",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia aktywacji propozycji uaktualnień protokołu",
+        "Weryfikacja kompatybilności wstecznej reguł walidacji bloków",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie był uruchamiany dla tego łańcucha)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+      "subtitle": "Atestacja niezależnego audytora systemów rozproszonych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Przegląd analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji analityka",
+        "Wyraźna granica przeglądu manualnego: brak gwarancji braku błędów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:5d8bdb51039e5d1218e5a7752cc1447c0c451c46a23eb165347c51b5603d8044",
+  "applicationSurface": "shield",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "ton:mainnet",
+      "blockNumber": 41200000,
+      "contractAddress": "native:ton-masterchain",
+      "network": "TON Blockchain",
+      "proxyType": "N/A (Decentralized Layer 1 Protocol)"
+    },
+    "consensusSpec": {
+      "consensusArchitecture": "ton-core C++ / FunC & Tact Compilers",
+      "nodeClientVersion": "The Open Network Dynamic Sharding (TON)",
+      "networkTopology": "Global P2P Gossip Validator Network",
+      "cryptographicPrimitives": "secp256k1 / BLS",
+      "nakamotoCoefficient": 15,
+      "activeValidatorCount": 2000
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 95,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:474f5c3606c01f7ac95bfee5877b6f1cbe4557bbab73ef5e623fcf420ca8d87f",
+      "reportDigestSha256": "sha256:474f5c3606c01f7ac95bfee5877b6f1cbe4557bbab73ef5e623fcf420ca8d87f",
+      "provenanceHash": "8B7F6C5D4E3A2B1C0D9E8F7A6B5C4D3E2F1A0B9C8D7E6F5A4B3C2D1E0F9A8B7C"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:9047618611dd778dc485b914c9cfa06b100f5ff102828d18b5e0e302f1d7a095",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "d9f11eda25142644389bd7114f3a8d359d58ae2714d26a3c87bf5407120341cb75a72b99384dd84bf7652d96e4e82f8eb76b3abcd110582e5f34b2d027a4a00a",
+    "signedDigest": "1399803c476db4edefd24a921c6d37a91f7d1b26b32bb23ce7c1164372781031",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "1399803c476db4edefd24a921c6d37a91f7d1b26b32bb23ce7c1164372781031",
+      "serialNumber": "44b63cf2b2dc898a3f8ffd3022c8569d",
+      "genTime": "2026-09-10T12:36:16.942Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "7041add2e599edb684464195c346b5d9d79460b6b4c0c62c6b6e9b3454404c3d"
+    },
+    "provenanceProof": "sha256:84fe7d7731a721f223fda27e1f0403ba772b56144cc1f855df8b556e67f481ec"
+  },
+  "integrityProof": {
+    "pdfSha256": "151d45f1e99703f71f3295528fac236b476f3d151cfc5e425e9d833181e4e414",
+    "pdfByteLength": 88095,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:16.958Z"
+  }
+}

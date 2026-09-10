@@ -1,0 +1,30 @@
+{
+  "contractName": "Chainlink Aggregator V3",
+  "symbol": "LINK-AGG",
+  "address": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.8.16",
+  "proxyPattern": "EACAggregatorProxy",
+  "riskScore": 14,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Chainlink Aggregator V3.",
+  "findings": [
+    {
+      "title": "Stale Price Feed & Negative Price Validation Trap",
+      "severity": "MEDIUM",
+      "swcId": "SWC-114",
+      "cweId": "CWE-682",
+      "description": "Consuming latestRoundData() without verifying answer > 0, updatedAt > 0, and answeredInRound >= roundId."
+    }
+  ],
+  "verificationDigest": "524932b5d2531c46d6861ba5f6baf27b0b41cafbf959364d32cdecf230c719d9",
+  "attackSurface": {
+    "category": "Oracle Data Feed & Round Freshness",
+    "attackVector": "Oracle freezes or crashes during extreme liquidation event; downstream lending protocol consumes stale price."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/OracleConsumer.sol\n+++ b/contracts/OracleConsumer.sol\n@@ -32,3 +32,5 @@\n  (uint80 roundId, int256 price, , uint256 updatedAt, uint80 answeredInRound) = feed.latestRoundData();\n+ require(price > 0, 'NEGATIVE_ORACLE_PRICE');\n+ require(answeredInRound >= roundId, 'STALE_ORACLE_ROUND');\n+ require(block.timestamp - updatedAt <= 3600, 'ORACLE_HEARTBEAT_EXPIRED');"
+  }
+}

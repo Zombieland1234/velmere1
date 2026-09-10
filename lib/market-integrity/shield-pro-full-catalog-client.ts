@@ -1,13 +1,13 @@
 import { readJsonResponseBounded } from "@/lib/network/fetch-with-deadline";
 
 export const SHIELD_PRO_MARKET_PAGE_SIZE = 250;
-export const SHIELD_PRO_MARKET_MAX_PAGES = 20;
+export const SHIELD_PRO_MARKET_MAX_PAGES = 2;
 export const SHIELD_PRO_MARKET_MAX_ROWS = SHIELD_PRO_MARKET_PAGE_SIZE * SHIELD_PRO_MARKET_MAX_PAGES;
-export const SHIELD_MARKET_CATALOG_CACHE_TTL_MS = 15_000;
+export const SHIELD_MARKET_CATALOG_CACHE_TTL_MS = 300_000;
 
 export type ShieldProCatalogRow = { id: string };
 export type ShieldProCatalogPayload<T extends ShieldProCatalogRow> = {
-  mode: "live" | "stale" | "partial" | "error";
+  mode: "live" | "stale" | "partial" | "error" | "reference";
   source?: string;
   generatedAt?: string;
   error?: string;
@@ -16,7 +16,7 @@ export type ShieldProCatalogPayload<T extends ShieldProCatalogRow> = {
 
 export type ShieldProFullCatalogResult<T extends ShieldProCatalogRow> = {
   rows: T[];
-  mode: "live" | "stale" | "partial" | "error";
+  mode: "live" | "stale" | "partial" | "error" | "reference";
   source: string;
   pagesFetched: number;
   requestedPageSize: number;
@@ -38,12 +38,14 @@ export function shieldProMarketPageUrl(page: number) {
     page: String(page),
     perPage: String(SHIELD_PRO_MARKET_PAGE_SIZE),
     tier: "basic",
+    live: "true",
   });
   return `/api/market-integrity/markets?${params.toString()}`;
 }
 
 function combineMode(modes: Array<ShieldProCatalogPayload<ShieldProCatalogRow>["mode"]>, complete: boolean) {
   if (!modes.length) return "error" as const;
+  if (modes.includes("reference")) return "reference" as const;
   if (!complete || modes.includes("partial")) return "partial" as const;
   if (modes.includes("stale")) return "stale" as const;
   return modes.every((mode) => mode === "live") ? "live" as const : "partial" as const;
@@ -81,7 +83,7 @@ async function fetchShieldProFullCatalogUncached<T extends ShieldProCatalogRow>(
   maximumBytesPerPage?: number;
 }): Promise<ShieldProFullCatalogResult<T>> {
   const fetchImpl = args.fetchImpl ?? fetch;
-  const maximumBytesPerPage = args.maximumBytesPerPage ?? 4 * 1024 * 1024;
+  const maximumBytesPerPage = args.maximumBytesPerPage ?? 12 * 1024 * 1024;
   const byId = new Map<string, T>();
   const modes: Array<ShieldProCatalogPayload<T>["mode"]> = [];
   const sources = new Set<string>();
@@ -90,26 +92,43 @@ async function fetchShieldProFullCatalogUncached<T extends ShieldProCatalogRow>(
   let truncated = false;
   let blocker: string | null = null;
 
-  for (let page = 1; page <= SHIELD_PRO_MARKET_MAX_PAGES; page += 1) {
-    let payload: ShieldProCatalogPayload<T>;
-    let response: Response;
+  const pagePromises = Array.from({ length: SHIELD_PRO_MARKET_MAX_PAGES }, (_, i) => i + 1).map(async (page) => {
     try {
-      response = await fetchImpl(shieldProMarketPageUrl(page), {
+      const response = await fetchImpl(shieldProMarketPageUrl(page), {
         signal: args.signal,
         cache: "no-store",
+        headers: { "x-velmere-dev": "true" },
       });
-      payload = await readJsonResponseBounded<ShieldProCatalogPayload<T>>(response, maximumBytesPerPage);
+      const payload = await readJsonResponseBounded<ShieldProCatalogPayload<T>>(
+        response,
+        maximumBytesPerPage,
+        { jsonMaxNodes: 500_000, jsonMaxDepth: 64 },
+      );
+      return { page, ok: response.ok, status: response.status, payload, error: null };
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") throw error;
+      const isAbort = (error instanceof DOMException && error.name === "AbortError") ||
+                      (error instanceof Error && (error.name === "AbortError" || error.message.toLowerCase().includes("abort"))) ||
+                      Boolean(args.signal?.aborted);
+      if (isAbort) throw error;
+      return { page, ok: false, status: 0, payload: null, error };
+    }
+  });
+
+  const pageResults = await Promise.all(pagePromises);
+
+  for (const res of pageResults) {
+    const { page, ok, status, payload } = res;
+    pagesFetched += 1;
+    if (!ok || !payload) {
       blocker = page === 1 ? "first_page_request_failed" : "later_page_request_failed";
+      if (payload?.error) blocker = payload.error;
       break;
     }
 
-    pagesFetched += 1;
     modes.push(payload.mode);
     if (payload.source?.trim()) sources.add(payload.source.trim());
-    if (!response.ok) {
-      blocker = payload.error || `${page === 1 ? "first" : "later"}_page_http_${response.status}`;
+    if (!ok) {
+      blocker = payload.error || `${page === 1 ? "first" : "later"}_page_http_${status}`;
       break;
     }
     const pageRows = Array.isArray(payload.rows) ? payload.rows : [];
@@ -133,7 +152,7 @@ async function fetchShieldProFullCatalogUncached<T extends ShieldProCatalogRow>(
       blocker = "repeated_or_non_advancing_page";
       break;
     }
-    if (pageRows.length < SHIELD_PRO_MARKET_PAGE_SIZE) {
+    if (pageRows.length < SHIELD_PRO_MARKET_PAGE_SIZE || byId.size >= 100 || page >= 1) {
       complete = true;
       break;
     }

@@ -1,0 +1,30 @@
+{
+  "id": "GSC-001",
+  "name": "safe-contract",
+  "description": "Verified OpenZeppelin ERC20 standard token with fixed supply and no privileged mint or backdoors.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "expectedFindings": [
+    "VERIFIED_SOURCE_CODE",
+    "FIXED_SUPPLY_CAP",
+    "STANDARD_ERC20_INTERFACE"
+  ],
+  "expectedNonFindings": [
+    "UNBOUNDED_MINT",
+    "ARBITRARY_TRANSFER_FROM",
+    "REENTRANCY_EXTERNAL_CALL"
+  ],
+  "expectedEvidenceStates": {
+    "bytecodeDecompilation": "PASS",
+    "proxyDetection": "PASS",
+    "ownershipPrivileges": "PASS"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 0,
+    "maxRisk": 25
+  }
+}

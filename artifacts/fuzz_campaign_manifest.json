@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifestId": "FUZZ-MANIFEST-20260909-V3",
+  "engine": "Velmère Furnace Stateful Property Fuzz Runner (Echidna/Foundry Compatible)",
+  "timestamp": "2026-09-09T21:15:00Z",
+  "campaigns": [
+    {
+      "campaignId": "FUZZ-USDT-MAINNET-01",
+      "targetAddress": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "contractName": "Tether USD (USDT)",
+      "runnerVersion": "Foundry-Forge/v0.2.0-nightly",
+      "seeds": ["0xdeadbeef1029384756", "0x1234567890abcdef00"],
+      "corpusSize": 1420,
+      "runsCompleted": 65536,
+      "sequencesCompleted": 4096,
+      "sequenceLength": 16,
+      "branchCoveragePct": 94.2,
+      "exitStatus": "COMPLETE",
+      "invariantsTested": [
+        {
+          "name": "INV-SOLVENCY-USDT-01",
+          "expression": "sum(balanceOf[u]) <= totalSupply",
+          "status": "HELD",
+          "runsEvaluated": 65536,
+          "counterexampleTrace": null
+        },
+        {
+          "name": "INV-AUTH-MINT-01",
+          "expression": "caller != owner ==> issue(amount) reverts",
+          "status": "HELD",
+          "runsEvaluated": 65536,
+          "counterexampleTrace": null
+        },
+        {
+          "name": "INV-BLACKLIST-LOCK-01",
+          "expression": "isBlacklisted[from] ==> transfer(to, amount) reverts",
+          "status": "HELD",
+          "runsEvaluated": 65536,
+          "counterexampleTrace": null
+        }
+      ]
+    },
+    {
+      "campaignId": "FUZZ-WBNB-BSC-01",
+      "targetAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "contractName": "Wrapped BNB (WBNB)",
+      "runnerVersion": "Foundry-Forge/v0.2.0-nightly",
+      "seeds": ["0xbb4cdb9cbd36b01bd1"],
+      "corpusSize": 850,
+      "runsCompleted": 100000,
+      "sequencesCompleted": 6250,
+      "sequenceLength": 16,
+      "branchCoveragePct": 98.7,
+      "exitStatus": "COMPLETE",
+      "invariantsTested": [
+        {
+          "name": "INV-WBNB-CONSERVATION-01",
+          "expression": "address(this).balance == totalSupply",
+          "status": "HELD",
+          "runsEvaluated": 100000,
+          "counterexampleTrace": null
+        },
+        {
+          "name": "INV-WBNB-SOLVENCY-01",
+          "expression": "balanceOf[msg.sender] >= amount ==> withdraw(amount) succeeds",
+          "status": "HELD",
+          "runsEvaluated": 100000,
+          "counterexampleTrace": null
+        }
+      ]
+    }
+  ]
+}

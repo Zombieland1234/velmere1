@@ -22,9 +22,28 @@ export async function GET(request: Request) {
   const session = await getVelmereSession(request);
   const account = await resolveRequestAccount(request);
   try {
-    const result = session?.id
-      ? await getProfileForRequest(request, session.id)
-      : await getProfile();
+    let result: { profile: import("@/lib/db/profile-service").ProfileRecord; source: string; rlsEnforced?: boolean };
+    if (session?.id) {
+      try {
+        result = await getProfileForRequest(request, session.id);
+      } catch (e) {
+        if (e instanceof CustomerOwnedWriteBoundaryError && (e.code === "missing_token" || e.code === "invalid_token")) {
+          const fallback = await getProfile();
+          result = {
+            profile: {
+              ...fallback.profile,
+              displayName: account?.displayName ?? fallback.profile.displayName,
+              handle: account?.handle ?? fallback.profile.handle,
+            },
+            source: "demo_fallback",
+          };
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      result = await getProfile();
+    }
     return NextResponse.json({
       ...result,
       account: account ? accountPublicPayload(account) : null,

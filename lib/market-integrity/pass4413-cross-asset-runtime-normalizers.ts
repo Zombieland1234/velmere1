@@ -84,6 +84,8 @@ export type Pass4413CrossAssetQuote = {
   exchange: string | null;
   currency: string | null;
   currentPrice: number | null;
+  price?: number | null;
+  volume?: number | null;
   changePercent: number | null;
   candles: Pass4413CrossAssetCandle[];
   assetClass?:

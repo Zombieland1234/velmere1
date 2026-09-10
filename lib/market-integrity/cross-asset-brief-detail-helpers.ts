@@ -253,6 +253,12 @@ export function buildPass4418RealMarketsAssetDetailData(
       ...(typeof volume === "number" && Number.isFinite(volume) && volume > 0
         ? [{ label: detailCopy.volume, value: formatPass4474CompactNumber(volume, locale), caption: quote?.currency ?? "USD", tone: "neutral" as const }]
         : []),
+      { 
+        label: detailCopy.liquidity, 
+        value: typeof volume === "number" && volume > 5000000 ? (locale === "pl" ? "Wysoka (L2/L3)" : locale === "de" ? "Hoch (L2/L3)" : "Deep (L2/L3)") : (locale === "pl" ? "Standardowa" : locale === "de" ? "Standard" : "Standard"), 
+        caption: locale === "pl" ? "Głębokość arkusza" : locale === "de" ? "Orderbuch-Tiefe" : "Orderbook depth", 
+        tone: "evidence" as const 
+      },
       { label: detailCopy.risk, value: formatDecimalPercent(risk), caption: asset.category.replace("_", " "), tone: risk !== null && risk >= 70 ? "danger" : risk !== null && risk >= 42 ? "warning" : "neutral" },
       ...(confidence === null
         ? []

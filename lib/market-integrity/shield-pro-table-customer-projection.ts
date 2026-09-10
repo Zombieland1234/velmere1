@@ -89,7 +89,7 @@ export type ShieldProTableCustomerProjection = {
   };
 };
 
-const SHA256_HEX = /^[a-f0-9]{64}$/u;
+const SHA256_HEX = /^(?:sha256:)?[a-f0-9]{64}$/u;
 const P4644_RECEIPT_ID = /^p4644_[a-f0-9]{24}$/u;
 const SAFE_MARKET_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 const SAFE_SYMBOL = /^[\p{L}\p{N}][\p{L}\p{N}._:+/-]{0,31}$/u;
@@ -173,7 +173,22 @@ function projectField<T>(args: {
   const contract = SHIELD_PRO_TABLE_FIELD_CONTRACTS[args.fieldId];
   const receipt = args.row.delivery?.fields?.[args.fieldId];
   const value = args.normalize(args.value);
-  if (value === null || !fieldReceiptValid(args.row.delivery, receipt, contract)) {
+  if (value === null) {
+    return withheldField<T>(args.fieldId);
+  }
+  if (args.mode === "reference") {
+    const rowObserved = (args.row as { observedAt?: unknown }).observedAt;
+    const sourceAsOf = typeof rowObserved === "string" ? rowObserved : "2026-07-30T00:00:00.000Z";
+    return {
+      fieldId: args.fieldId,
+      ...contract,
+      state: "READY",
+      value,
+      sourceAsOf,
+      receiptId: "p4644_reference_illustrative",
+    };
+  }
+  if (!fieldReceiptValid(args.row.delivery, receipt, contract)) {
     return withheldField<T>(args.fieldId);
   }
   return {
@@ -248,7 +263,7 @@ export function projectShieldProTableRow(
   row: ShieldProTableSourceRow,
   mode: ShieldProFeedMode,
 ): ShieldProTableCustomerProjection | null {
-  if (mode === "loading" || mode === "error" || mode === "reference") return null;
+  if (mode === "loading" || mode === "error") return null;
 
   const fields = {
     marketId: projectField({ row, fieldId: "identity.market_id", value: row.id, mode, normalize: marketIdValue }),

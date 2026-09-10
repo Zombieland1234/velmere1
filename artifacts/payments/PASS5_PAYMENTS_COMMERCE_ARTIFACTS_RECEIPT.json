@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "velmere.pass5.payments-commerce-artifacts.receipt.v1",
+  "executedAt": "2026-09-02T00:40:58.724Z",
+  "totalChecks": 4,
+  "passedCount": 4,
+  "passed": true,
+  "checks": [
+    {
+      "name": "STOP_SELL_PRO_AUDIT_PURCHASE_BLOCKED",
+      "url": "http://localhost:3000/api/checkout/vlm-service",
+      "method": "POST",
+      "status": 403,
+      "durationMs": 47,
+      "passed": true,
+      "sample": "{\n  \"ok\": false,\n  \"mode\": \"origin_required\"\n}"
+    },
+    {
+      "name": "STOP_SELL_ADVANCED_AUDIT_PURCHASE_BLOCKED",
+      "url": "http://localhost:3000/api/checkout/vlm-service",
+      "method": "POST",
+      "status": 403,
+      "durationMs": 6,
+      "passed": true,
+      "sample": "{\n  \"ok\": false,\n  \"mode\": \"origin_required\"\n}"
+    },
+    {
+      "name": "UNAUTHENTICATED_ARTIFACT_DOWNLOAD_BLOCKED",
+      "url": "http://localhost:3000/api/account/customer-artifact?caseRef=AUD-DEMO-9999&format=pdf",
+      "method": "GET",
+      "status": 401,
+      "durationMs": 15,
+      "passed": true,
+      "sample": "{\"ok\":false,\"error\":\"account_session_required\"}"
+    },
+    {
+      "name": "PREVIEW_ONLY_TIER_PAYLOAD_CONFIRMED",
+      "url": "http://localhost:3000/api/security/audit-watch/paid-preview?tier=pro&locale=en&format=json",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 15,
+      "passed": true,
+      "sample": "{\n  \"ok\": true,\n  \"preview\": {\n    \"schemaVersion\": \"velmere.pass36.a102r44p22.server-redacted-audit-tier-preview.v1\",\n    \"artifactClass\": \"SERVER_REDACTED_TIE"
+    }
+  ]
+}

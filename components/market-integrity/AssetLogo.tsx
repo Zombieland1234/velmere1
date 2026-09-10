@@ -144,6 +144,7 @@ export default function AssetLogo({
       data-logo-source={sourceKind}
       data-logo-loaded={visuallyReady ? "true" : "false"}
       data-logo-symbol={resolution.symbol}
+      data-asset-class={assetClass ?? "market"}
       data-logo-near-viewport={nearViewport ? "true" : "false"}
       data-logo-candidate-count={resolution.imageCandidates.length}
       data-logo-exhausted={!src && resolution.imageCandidates.length > 0 ? "true" : "false"}
@@ -171,7 +172,11 @@ export default function AssetLogo({
           onError={advanceCandidate}
         />
       ) : null}
-      <span className="velmere-asset-logo-fallback" aria-hidden="true">{resolution.glyph}</span>
+      {!visuallyReady ? (
+        <span className="velmere-asset-logo-fallback" aria-hidden="true">
+          {resolution.glyph}
+        </span>
+      ) : null}
     </span>
   );
 }

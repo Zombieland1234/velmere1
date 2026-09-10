@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 
   try {
     const response = await safeEgressFetch(url.toString(), {
-      headers: { accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,image/x-icon;q=0.8" },
+      headers: { accept: "image/png,image/jpeg;q=0.9" },
       next: { revalidate: 60 * 60 * 24 },
     } as RequestInit & { next: { revalidate: number } }, {
       allowedHosts: ALLOWED_HOSTS,
@@ -68,24 +68,24 @@ export async function GET(request: Request) {
       maxResponseBytes: 600_000,
       operation: "token_icon_proxy",
     });
-    if (!response.ok) return new Response(null, { status: response.status });
+    if (!response.ok) return new Response(null, { status: 204, headers: { "cache-control": "public, max-age=3600", "x-velmere-icon-fallback": "remote-status-fallback" } });
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.toLowerCase().startsWith("image/")) {
-      return new Response(null, { status: 415 });
+      return new Response(null, { status: 204, headers: { "cache-control": "public, max-age=3600", "x-velmere-icon-fallback": "remote-content-type-fallback" } });
     }
 
     const contentLength = Number(response.headers.get("content-length") ?? 0);
     if (contentLength > 600_000) {
-      return new Response(null, { status: 413 });
+      return new Response(null, { status: 204, headers: { "cache-control": "public, max-age=3600", "x-velmere-icon-fallback": "remote-size-fallback" } });
     }
 
     const body = await readResponseBytesBounded(response, 600_000);
     if (body.byteLength > 600_000) {
-      return new Response(null, { status: 413 });
+      return new Response(null, { status: 204, headers: { "cache-control": "public, max-age=3600", "x-velmere-icon-fallback": "remote-size-fallback" } });
     }
     const signature = validateProxiedRasterImage(body, contentType);
-    if (!signature) return new Response(null, { status: 415 });
+    if (!signature) return new Response(null, { status: 204, headers: { "cache-control": "public, max-age=3600", "x-velmere-icon-fallback": "remote-signature-fallback" } });
 
     return new Response(body, {
       status: 200,

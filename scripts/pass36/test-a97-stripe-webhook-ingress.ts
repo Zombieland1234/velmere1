@@ -125,4 +125,7 @@ async function main() {
   }, null, 2));
 }
 
-await main();
+void main().catch((err) => {
+  console.error("Test failed:", err);
+  process.exit(1);
+});

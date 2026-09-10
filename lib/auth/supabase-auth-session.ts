@@ -124,13 +124,17 @@ function authSessionPayload(user: AuthUser, displayName?: string, handle?: strin
   const email = normalizeVerifiedEmail(user);
   const fallbackName = typeof user.user_metadata?.display_name === "string"
     ? user.user_metadata.display_name
-    : displayName;
+    : typeof user.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name
+      : displayName;
+  const isGoogle = user.app_metadata?.provider === "google"
+    || (Array.isArray(user.app_metadata?.providers) && (user.app_metadata.providers as unknown[]).includes("google"));
   return buildVelmereAccountSession({
     accountId: `supabase:${user.id}`,
     email,
     displayName: fallbackName,
     handle,
-    provider: "email",
+    provider: isGoogle ? "google" : "email",
   });
 }
 

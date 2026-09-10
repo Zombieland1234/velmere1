@@ -123,12 +123,12 @@ function requireDigest(value: unknown, code: string): string {
 
 function fileIdentity(metadata: ReturnType<typeof fstatSync>): FileIdentity {
   return {
-    dev: metadata.dev,
-    ino: metadata.ino,
-    size: metadata.size,
-    mode: metadata.mode,
-    mtimeMs: metadata.mtimeMs,
-    ctimeMs: metadata.ctimeMs,
+    dev: Number(metadata.dev),
+    ino: Number(metadata.ino),
+    size: Number(metadata.size),
+    mode: Number(metadata.mode),
+    mtimeMs: Number(metadata.mtimeMs),
+    ctimeMs: Number(metadata.ctimeMs),
   };
 }
 
@@ -187,6 +187,7 @@ function validateArgs(value: unknown): string[] {
 
 function sanitizedEnvironment(allowlist: readonly string[], isolatedHome: string, isolatedExecutableDirectory: string): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
+    NODE_ENV: process.env.NODE_ENV || "production",
     PATH: isolatedExecutableDirectory,
     HOME: isolatedHome,
     USERPROFILE: isolatedHome,

@@ -1,0 +1,25 @@
+{
+  "id": "GSC-005",
+  "name": "fee-manipulation",
+  "description": "setTaxFeePercent() function permitting owner to arbitrarily alter buy/sell tax up to 100%.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x8076c74c5e3f5852037f31ff0093eeb8c8add8d3",
+  "expectedFindings": [
+    "DYNAMIC_UNBOUNDED_TAX_FEE",
+    "POTENTIAL_HONEYPOT_TAX_MODIFICATION"
+  ],
+  "expectedNonFindings": [
+    "HARDCODED_FEE_CEILING"
+  ],
+  "expectedEvidenceStates": {
+    "feeStructureAudit": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 70,
+    "maxRisk": 95
+  }
+}

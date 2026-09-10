@@ -1,0 +1,30 @@
+{
+  "contractName": "ERC4626 Tokenized Vault",
+  "symbol": "ERC4626",
+  "address": "0x111111125421ca6dc452d289314280a0f8842a65",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.8.20",
+  "proxyPattern": "TransparentUpgradeableProxy",
+  "riskScore": 28,
+  "riskLabel": "LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for ERC4626 Tokenized Vault.",
+  "findings": [
+    {
+      "title": "First-Deposit Share Inflation Attack (Donation Dilution)",
+      "severity": "HIGH",
+      "swcId": "SWC-114",
+      "cweId": "CWE-682",
+      "description": "First depositor deposits 1 wei of assets and donates 100 ether directly to vault, driving share price to 100 ether/share."
+    }
+  ],
+  "verificationDigest": "f19cc58a4fdf4439e8d1f06546458dec8ebf5a0c12b5ba0a25da437f1a7fbc44",
+  "attackSurface": {
+    "category": "DeFi Yield Vault & Inflation Attack",
+    "attackVector": "Next victim's 99 ether deposit rounds down to 0 shares due to integer division, forfeiting assets to first depositor."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/ERC4626.sol\n+++ b/contracts/ERC4626.sol\n@@ -50,3 +50,4 @@\n+ uint256 internal constant VIRTUAL_OFFSET = 1e3;\n- return totalAssets() == 0 ? assets : assets.mulDiv(totalSupply(), totalAssets());\n+ return assets.mulDiv(totalSupply() + 10 ** VIRTUAL_OFFSET, totalAssets() + 1);"
+  }
+}

@@ -162,7 +162,26 @@ export function buildPublicAiSummary(
   customerNarrative: string,
   resolvedLocale: VlmLocale,
 ) {
-  const output = payload.ai.output;
+  const output = payload?.ai?.output || {
+    schemaVersion: "vlm-brain-output-v1",
+    generatedAt: new Date().toISOString(),
+    locale: resolvedLocale,
+    depth: payload?.ai?.depth || "basic",
+    providerMode: "heuristic",
+    asset: payload?.result?.token || { symbol: "ASSET", name: "Asset" },
+    verdict: "review",
+    headline: "Automated Evidence Review",
+    summary: payload?.result?.aiSummary || payload?.result?.metaModel?.summary || "Analysis ready",
+    confidence: 0,
+    facts: [],
+    keyFindings: [],
+    contradictions: [],
+    missingData: [],
+    nextChecks: [],
+    sources: [],
+    report: null,
+    diagnostics: {},
+  };
   const numericVerdictPublished = commercialReadiness.status !== "insufficient_data";
   return {
     version: payload.ai.version,
@@ -344,7 +363,8 @@ export function safeVlmReasons(payload: FullResolvedVlmAnalysis) {
 }
 
 export function safeVlmCustomerOutput(payload: FullResolvedVlmAnalysis) {
-  return `${payload.ai.output ?? ""} ${safeVlmReasons(payload).join(" ")}`.trim();
+  const aiOutput = payload?.ai?.output || payload?.result?.aiSummary || payload?.result?.metaModel?.summary || "";
+  return `${aiOutput} ${safeVlmReasons(payload).join(" ")}`.trim();
 }
 
 export function buildPublicEvidencePacket(

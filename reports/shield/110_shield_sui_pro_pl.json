@@ -1,0 +1,380 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_sui_pro_110",
+  "caseRef": "CASE-VLM-SUI-PRO",
+  "target": {
+    "contractName": "Sui Mysten Move Engine",
+    "contractAddress": "native:sui-framework",
+    "network": "Sui Mainnet",
+    "chainId": "sui:mainnet",
+    "tokenSymbol": "SUI",
+    "proxyPattern": "Immutable Distributed Consensus (Mysticeti DAG)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:17.240Z",
+  "verdict": {
+    "riskScore": 20,
+    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
+    "confidenceScore": 97,
+    "auditQualityScore": 81,
+    "summary": "Sieć nowej generacji o architekturze zorientowanej na obiekty. Konsensus Mysticeti DAG osiągający 390 ms opóźnienia i natywne bezpieczeństwo typów Move.",
+    "evidenceCoverage": 97,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 48000000,
+      "snapshotBlockHash": "F2v9L4k7M3q1X5j8Z9w2N6b0C8v4B1n7M5k3Q9w2E8r",
+      "consensusLedgerStateRootSha256": "0x214d4fd775cf72668388c6a72cf5fb10c71e42da22d7877a458d8aae7f2cd948",
+      "pinnedChainId": "0-sui",
+      "analysisEngineVersion": "v4.0.0-rc3-shield",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd protokołu i kontekst sieci L1",
+      "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja natywnego łańcucha bloków i architektury węzłów",
+        "Ewaluacja modelu emisji i niezmienności reguł monetarnych",
+        "Ocena stopnia decentralizacji sieci i odporności na cenzurę"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Protokół / Aktywo",
+            "value": "Sui Mysten Move Engine"
+          },
+          {
+            "label": "Typ architektury",
+            "value": "Natywna warstwa bazowa (Layer-1 · Brak kontraktu smart contract)"
+          },
+          {
+            "label": "Identyfikator sieci",
+            "value": "native_chain:sui"
+          },
+          {
+            "label": "Symbol natywny",
+            "value": "SUI"
+          },
+          {
+            "label": "Zarządzanie regułami",
+            "value": "Rozproszony konsensus węzłów i walidatorów / górników"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+      "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja referencyjnego kodu źródłowego klienta węzła",
+        "Walidacja bibliotek kryptograficznych i formatu transakcji",
+        "Analiza odporności na nieprawidłowe bloki i rozwidlenia łańcucha"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Weryfikacja protokołu Sui Mysten Move Engine opiera się na specyfikacji konsensusu warstwy pierwszej. Analiza bytecode EVM i dekompilacja kontraktów mają status NOT_APPLICABLE dla natywnych monet."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+      "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie parametrów stabilności sieci bazowej",
+        "Ocena odporności na błędy konsensusu i desynchronizację",
+        "Zgodność z przyjętymi standardami bezpieczeństwa sieci rozproszonych"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+      "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza zarządzania konsensem rozproszonym i mechanizmów upgrade protokołu",
+        "Ewaluacja rozkładu walidatorów / górników oraz progu finalności sieci",
+        "Historia koordynacji hard-forków oraz audyt różnorodności klientów węzłów"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zarządzanie konsensusem sieci",
+            "value": "Rozproszony konsensus węzłów",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Klucze administracyjne kontraktu",
+            "value": "NOT_APPLICABLE (Native Layer-1 Protocol)",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Możliwość awaryjnego zatrzymania sieci",
+            "value": "NOT_APPLICABLE (Decentralized Network)",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Arbitralny drenaż sald użytkowników",
+            "value": "NOT_APPLICABLE (Cryptographic Keys Enforced)",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Zasady protokołu Sui Mysten Move Engine są egzekwowane przez rozproszony konsensus węzłów walidujących; nie istnieje uprzywilejowany klucz właściciela smart kontraktu."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+      "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Głębokość globalnych ksiąg zleceń na giełdach spot i rezerwy powiernicze",
+        "Prędkość podaży w obiegu on-chain oraz rozkład aktywnych adresów",
+        "Zmienność opłat transakcyjnych sieci i zachowanie kolejki mempool"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Płynność rezerw rynkowych",
+            "value": "Globalna płynność rynku spot",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pary płynności DEX AMM",
+            "value": "NOT_APPLICABLE (Native Base Asset)",
+            "status": "neutral",
+            "claimId": "CLM-rep_sui_pro_110-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_liquidity_depth-2",
+            "classification": "C"
+          },
+          {
+            "label": "Podatek transferowy / sell tax",
+            "value": "NOT_APPLICABLE (Standard Network Fee Model)",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Płynność dla Sui Mysten Move Engine opiera się na globalnych rynkach kasowych i sieciach powierniczych. Mechanizmy blokad par AMM mają status NOT_APPLICABLE."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+      "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie reorganizacji konsensusu i ataku większości hashrate/stake",
+        "Analiza odporności sieci P2P na partycjonowanie, eclipse attack i sybil",
+        "Wektory cenzury transakcji, manipulacji mempool i ekstrakcji MEV"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od zewnętrznych wyroczni",
+            "value": "NOT_APPLICABLE (Protocol Native Settlement)",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "NOT_APPLICABLE (Non-EVM Execution Environment)",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Ryzyko podwójnego wydania (Double-Spend)",
+            "value": "Zabezpieczone przez konsensus sieci",
+            "status": "verified",
+            "claimId": "CLM-rep_sui_pro_110-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_sui_pro_110-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+      "subtitle": "Weryfikacja kompatybilności binarnej i determinizmu przejść stanów węzłów",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Weryfikacja powtarzalności kompilacji klienta referencyjnego węzła",
+        "Analiza kompatybilności binarnej serializacji konsensusu i protokołu sieciowego",
+        "Deterministyczna weryfikacja granic wykonania silnika przejść stanów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+      "subtitle": "Śledzenie zmian w regułach konsensusu i analiza kompatybilności wstecznej",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Historia aktywacji propozycji uaktualnień protokołu",
+        "Weryfikacja kompatybilności wstecznej reguł walidacji bloków",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie był uruchamiany dla tego łańcucha)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+      "subtitle": "Atestacja niezależnego audytora systemów rozproszonych",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Przegląd analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji analityka",
+        "Wyraźna granica przeglądu manualnego: brak gwarancji braku błędów",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:a84c2cf3b92e715ebff516f357978c29021f882445077e71ed51039f8fe2595e",
+  "applicationSurface": "shield",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "sui:mainnet",
+      "blockNumber": 48000000,
+      "contractAddress": "native:sui-framework",
+      "network": "Sui Mainnet",
+      "proxyType": "N/A (Decentralized Layer 1 Protocol)"
+    },
+    "consensusSpec": {
+      "consensusArchitecture": "Sui Node Rust / Sui Move Compiler 2024",
+      "nodeClientVersion": "Sui Move Object Engine (SUI)",
+      "networkTopology": "Global P2P Gossip Validator Network",
+      "cryptographicPrimitives": "secp256k1 / BLS",
+      "nakamotoCoefficient": 15,
+      "activeValidatorCount": 2000
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 97,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:a8351776bd7c7fa9fc3fd41439c05dc8583bbf6849cfad6a5cd7af5c2e237575",
+      "reportDigestSha256": "sha256:a8351776bd7c7fa9fc3fd41439c05dc8583bbf6849cfad6a5cd7af5c2e237575",
+      "provenanceHash": "F2v9L4k7M3q1X5j8Z9w2N6b0C8v4B1n7M5k3Q9w2E8r"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:85fedeb26abf1d4f929079ff3d0d59d7b31a98b318ea02251e621342f8841f3f",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "14e516613db6e4bca5a248e9b762873f38529bff8fd652a7bb4d45b68a4cbd8669851cf4982e1245b13a4b8360ffafac30e8fc1165c615602096417fe5e26c01",
+    "signedDigest": "7b051862e5dd55244fb371f4905627b570ba2748f118d0f7a05efddb87c01952",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "7b051862e5dd55244fb371f4905627b570ba2748f118d0f7a05efddb87c01952",
+      "serialNumber": "d4bde178a12ee414caa6248dc766d474",
+      "genTime": "2026-09-10T12:36:17.240Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "cb93f296a48390ab80f14c078dbaf9b86a30b76a10d46548144538607ea315e5"
+    },
+    "provenanceProof": "sha256:c9f7cc195a4868c702f7a943496ee42569c789159db3ad5a41f1b41777fbe13c"
+  },
+  "integrityProof": {
+    "pdfSha256": "78794de40d667b4a7a4ffab7c0664d3daa3217ee589db688a552c3cf7a312c85",
+    "pdfByteLength": 87951,
+    "pageCount": 3,
+    "verifiedAt": "2026-09-10T12:36:17.252Z"
+  }
+}

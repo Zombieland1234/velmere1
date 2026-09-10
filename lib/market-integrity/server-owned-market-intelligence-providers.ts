@@ -381,7 +381,7 @@ function bindingSummary(args: {
       error: null,
     };
   }
-  const canonical = CANONICAL_MARKETS[assetKey];
+  const canonical = CANONICAL_MARKETS[assetKey] ?? CANONICAL_MARKETS[assetKey.split(/[-_/]/)[0]];
   if (!canonical) {
     return {
       state: "required", chainId: null, tokenAddress: null, tokenSymbol: assetKey,

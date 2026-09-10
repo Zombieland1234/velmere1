@@ -192,7 +192,7 @@ export function parseStrictJsonText<T = unknown>(raw: string, options: StrictJso
     index: 0,
     nodes: 0,
     maxDepth: Math.max(1, Math.min(128, options.maxDepth ?? 32)),
-    maxNodes: Math.max(1, Math.min(1_000_000, options.maxNodes ?? 50_000)),
+    maxNodes: Math.max(1, Math.min(2_000_000, options.maxNodes ?? 250_000)),
     rejectDuplicateKeys: options.rejectDuplicateKeys !== false,
     rejectDangerousKeys: options.rejectDangerousKeys !== false,
   };

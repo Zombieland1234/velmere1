@@ -1,0 +1,415 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_btc_advanced_063",
+  "caseRef": "CASE-VLM-BTC-ADVANCED",
+  "target": {
+    "contractName": "Bitcoin Core Protocol",
+    "contractAddress": "Natywna sieć L1 (brak kontraktu EVM · UTXO)",
+    "network": "Bitcoin Mainnet",
+    "chainId": "0 (UTXO Mainnet)",
+    "tokenSymbol": "BTC",
+    "websiteUrl": "https://bitcoin.org",
+    "docsUrl": "https://bitcoin.org/bitcoin.pdf",
+    "githubRepo": "https://github.com/bitcoin/bitcoin",
+    "proxyPattern": "Immutable Distributed Consensus (No Proxies)"
+  },
+  "clientEntitlementTier": "advanced",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:16.462Z",
+  "verdict": {
+    "riskScore": 8,
+    "riskLabel": "BARDZO NISKIE RYZYKO",
+    "confidenceScore": 100,
+    "auditQualityScore": 94,
+    "summary": "Natywny łańcuch bloków o najwyższym poziomie decentralizacji. Brak uprzywilejowanych ról administracyjnych i brak podatności smart kontraktów.",
+    "evidenceCoverage": 100,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 0,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 887200,
+      "snapshotBlockHash": "00000000000000000001f3b2a472c91a083f231e7c5417830bca6674de1c9901",
+      "consensusLedgerStateRootSha256": "0xed11599da5ef201d807046f015b5835a0a9794c6da77e276997014a0606e2d41",
+      "pinnedChainId": "0",
+      "analysisEngineVersion": "v4.0.0-rc3-shield",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 0,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 0,
+      "formalPropertiesPct": 0
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd protokołu i kontekst sieci L1",
+      "subtitle": "Podsumowanie architektury rozproszonej i mechanizmu konsensusu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja natywnego łańcucha bloków i architektury węzłów",
+        "Ewaluacja modelu emisji i niezmienności reguł monetarnych",
+        "Ocena stopnia decentralizacji sieci i odporności na cenzurę"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Protokół / Aktywo",
+            "value": "Bitcoin Core Protocol"
+          },
+          {
+            "label": "Typ architektury",
+            "value": "Natywna warstwa bazowa (Layer-1 · Brak kontraktu smart contract)"
+          },
+          {
+            "label": "Identyfikator sieci",
+            "value": "native_chain:btc"
+          },
+          {
+            "label": "Symbol natywny",
+            "value": "BTC"
+          },
+          {
+            "label": "Zarządzanie regułami",
+            "value": "Rozproszony konsensus węzłów i walidatorów / górników"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja specyfikacji konsensusu i implementacji węzła",
+      "subtitle": "Analiza reguł walidacji bloków, transakcji i kryptografii krzywych",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja referencyjnego kodu źródłowego klienta węzła",
+        "Walidacja bibliotek kryptograficznych i formatu transakcji",
+        "Analiza odporności na nieprawidłowe bloki i rozwidlenia łańcucha"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Weryfikacja protokołu Bitcoin Core Protocol opiera się na specyfikacji konsensusu warstwy pierwszej. Analiza bytecode EVM i dekompilacja kontraktów mają status NOT_APPLICABLE dla natywnych monet."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa sieci",
+      "subtitle": "Zidentyfikowane wektory ryzyka w architekturze bazowej",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie parametrów stabilności sieci bazowej",
+        "Ocena odporności na błędy konsensusu i desynchronizację",
+        "Zgodność z przyjętymi standardami bezpieczeństwa sieci rozproszonych"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Analiza zarządzania konsensusem i koordynacji uaktualnień (PRO)",
+      "subtitle": "Ewaluacja decentralizacji, rozkładu walidatorów i procesu BIP/EIP",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza zarządzania konsensem rozproszonym i mechanizmów upgrade protokołu",
+        "Ewaluacja rozkładu walidatorów / górników oraz progu finalności sieci",
+        "Historia koordynacji hard-forków oraz audyt różnorodności klientów węzłów"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zarządzanie konsensusem sieci",
+            "value": "Rozproszony konsensus węzłów",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Klucze administracyjne kontraktu",
+            "value": "NOT_APPLICABLE (Native Layer-1 Protocol)",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Możliwość awaryjnego zatrzymania sieci",
+            "value": "NOT_APPLICABLE (Decentralized Network)",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_permission_parser-3",
+            "classification": "A"
+          },
+          {
+            "label": "Arbitralny drenaż sald użytkowników",
+            "value": "NOT_APPLICABLE (Cryptographic Keys Enforced)",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_permission_parser-4",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_permission_parser-4",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Zasady protokołu Bitcoin Core Protocol są egzekwowane przez rozproszony konsensus węzłów walidujących; nie istnieje uprzywilejowany klucz właściciela smart kontraktu."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Głębokość rynku spot, rezerwy giełdowe i aktywność sieci (PRO)",
+      "subtitle": "Płynność na rynkach światowych, prędkość podaży i zachowanie mempoolu",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Głębokość globalnych ksiąg zleceń na giełdach spot i rezerwy powiernicze",
+        "Prędkość podaży w obiegu on-chain oraz rozkład aktywnych adresów",
+        "Zmienność opłat transakcyjnych sieci i zachowanie kolejki mempool"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Płynność rezerw rynkowych",
+            "value": "Globalna płynność rynku spot",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_liquidity_depth-1",
+            "classification": "A"
+          },
+          {
+            "label": "Pary płynności DEX AMM",
+            "value": "NOT_APPLICABLE (Native Base Asset)",
+            "status": "neutral",
+            "claimId": "CLM-rep_btc_advanced_063-pro_liquidity_depth-2",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_liquidity_depth-2",
+            "classification": "C"
+          },
+          {
+            "label": "Podatek transferowy / sell tax",
+            "value": "NOT_APPLICABLE (Standard Network Fee Model)",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_liquidity_depth-3",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_liquidity_depth-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Płynność dla Bitcoin Core Protocol opiera się na globalnych rynkach kasowych i sieciach powierniczych. Mechanizmy blokad par AMM mają status NOT_APPLICABLE."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Wektory ataków na sieć i odporność konsensusu (PRO)",
+      "subtitle": "Modelowanie reorganizacji łańcucha, ataków Sybil i partycjonowania P2P",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie reorganizacji konsensusu i ataku większości hashrate/stake",
+        "Analiza odporności sieci P2P na partycjonowanie, eclipse attack i sybil",
+        "Wektory cenzury transakcji, manipulacji mempool i ekstrakcji MEV"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od zewnętrznych wyroczni",
+            "value": "NOT_APPLICABLE (Protocol Native Settlement)",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "NOT_APPLICABLE (Non-EVM Execution Environment)",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Ryzyko podwójnego wydania (Double-Spend)",
+            "value": "Zabezpieczone przez konsensus sieci",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_btc_advanced_063-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Determinizm silnika stanów i kompatybilność klientów (ADVANCED)",
+      "subtitle": "Weryfikacja kompatybilności binarnej i determinizmu przejść stanów węzłów",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja powtarzalności kompilacji klienta referencyjnego węzła",
+        "Analiza kompatybilności binarnej serializacji konsensusu i protokołu sieciowego",
+        "Deterministyczna weryfikacja granic wykonania silnika przejść stanów"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Determinizm przejścia stanów",
+            "value": "Zgodny ze specyfikacją protokołu",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-advanced_bytecode_diff-1",
+            "evidenceId": "EVD-rep_btc_advanced_063-advanced_bytecode_diff-1",
+            "classification": "A"
+          },
+          {
+            "label": "Różnorodność klientów sieci",
+            "value": "Weryfikacja implementacji referencyjnych",
+            "status": "verified",
+            "claimId": "CLM-rep_btc_advanced_063-advanced_bytecode_diff-2",
+            "evidenceId": "EVD-rep_btc_advanced_063-advanced_bytecode_diff-2",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Integralność stanu Bitcoin Core Protocol zależy od determinizmu silnika rozproszonego; skanowanie slotów pamięci EVM ma status NOT_APPLICABLE."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Historia ewolucji protokołu i soft/hard forków (ADVANCED)",
+      "subtitle": "Śledzenie zmian w regułach konsensusu i analiza kompatybilności wstecznej",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Historia aktywacji propozycji uaktualnień protokołu",
+        "Weryfikacja kompatybilności wstecznej reguł walidacji bloków",
+        "Weryfikacja formalna: NOT EXECUTED (Silnik weryfikacji formalnej nie był uruchamiany dla tego łańcucha)"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Status protokołu",
+            "value": "Główna sieć produkcyjna (Mainnet)"
+          },
+          {
+            "label": "Fuzzing reguł konsensusu",
+            "value": "NOT EXECUTED (Engine not commissioned)"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i audyt architektury protokołu (ADVANCED)",
+      "subtitle": "Atestacja niezależnego audytora systemów rozproszonych",
+      "requiredTier": "advanced",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Przegląd analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji analityka",
+        "Wyraźna granica przeglądu manualnego: brak gwarancji braku błędów"
+      ],
+      "data": {
+        "reviewerState": {
+          "status": "not_commissioned",
+          "reviewDate": "—"
+        },
+        "paragraphs": [
+          "Status weryfikacji: INDEPENDENT HUMAN REVIEW NOT COMMISSIONED. Zgodnie ze standardem uczciwości Velmère, deklaracje recenzji ludzkiej nie są dołączane do raportu bez faktycznego, podpisanego dowodu analityka."
+        ]
+      }
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:c9d7d75f31ab32539ccd755cd99867afea59c99fe568de28f07fd886f18c426a",
+  "applicationSurface": "shield",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "0 (UTXO Mainnet)",
+      "blockNumber": 887200,
+      "contractAddress": "Natywna sieć L1 (brak kontraktu EVM · UTXO)",
+      "network": "Bitcoin Mainnet",
+      "proxyType": "N/A (Decentralized Layer 1 Protocol)"
+    },
+    "consensusSpec": {
+      "consensusArchitecture": "Bitcoin Core C++ / consensus spec",
+      "nodeClientVersion": "Bitcoin Core (BTC)",
+      "networkTopology": "Global P2P Gossip Validator Network",
+      "cryptographicPrimitives": "SHA-256d / secp256k1",
+      "nakamotoCoefficient": 2,
+      "activeValidatorCount": 18000
+    },
+    "analysisDimensions": {
+      "staticGraph": false,
+      "dynamicSimulation": true,
+      "formalVerification": false,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 0,
+      "reachableCFGEdgesPct": 0,
+      "functionsPct": 100,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 0
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:38b34208acb44b5f5e645bb1501e9f903f5d1704f512b716c0739c19e378b392",
+      "reportDigestSha256": "sha256:38b34208acb44b5f5e645bb1501e9f903f5d1704f512b716c0739c19e378b392",
+      "provenanceHash": "00000000000000000001f3b2a472c91a083f231e7c5417830bca6674de1c9901"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:cee91630d49be611fd9fa108774d3954fbc34ba80e92a515d782db89b2db0236",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "fb3086ddb5d4ef798040966b91a9046688e1d1d4bfb1747cb58d3b814aacb0dd32a960d4e46beaf1f63f19660dfeeff84e29d40edc79e0f87b10130c300ce404",
+    "signedDigest": "1863f071db5563ecc14aaa254e68320b5c9261173645bedc72fe66be5255de8f",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "1863f071db5563ecc14aaa254e68320b5c9261173645bedc72fe66be5255de8f",
+      "serialNumber": "d27cf1eb9ce19fa4fc9b5a256c4c9bab",
+      "genTime": "2026-09-10T12:36:16.462Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "bdbfa0941ae82c7d4b246de8a0d6801a9beb3824cd6ad059bded7e86f2cbc669"
+    },
+    "provenanceProof": "sha256:f3ee884da8722157fd0956635f70b1ec22ef82e330fd314eeaa360ac64c17f1a"
+  },
+  "integrityProof": {
+    "pdfSha256": "9e781b36f67a4a34d056b0f63dfc39b7b538e2709e9536c652441d8f289ccb1a",
+    "pdfByteLength": 84154,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:16.475Z"
+  }
+}

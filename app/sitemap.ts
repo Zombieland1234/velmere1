@@ -6,14 +6,12 @@ const locales = ["pl", "en", "de"];
 const routes = [
   "",
   "/shop",
-  "/vlm-token",
   "/market-integrity",
   "/market-integrity/about",
   "/research-lab",
   "/security",
   "/security/audits",
   "/square",
-  "/lookbook",
   "/archive",
   "/terms",
   "/privacy",
@@ -23,7 +21,6 @@ const routes = [
   "/contact",
   "/faq",
   "/community",
-  "/token-agreement",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

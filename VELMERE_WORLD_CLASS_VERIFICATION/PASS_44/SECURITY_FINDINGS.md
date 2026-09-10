@@ -1,0 +1,3 @@
+# PASS_44 SECURITY FINDINGS
+
+Verified finding `VLM-QA-LATCH-REGRESSION-01` with severity `MEDIUM`.

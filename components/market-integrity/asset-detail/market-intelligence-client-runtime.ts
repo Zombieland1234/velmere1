@@ -656,7 +656,7 @@ export async function fetchRuntime(
   signal: AbortSignal,
 ) {
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-  if (isDevelopmentLocalReferenceAsset(asset)) {
+  if (depth !== "pro" && isDevelopmentLocalReferenceAsset(asset)) {
     localReferenceShortCircuits += 1;
     return localReferenceRuntimeResponse(asset, locale, depth);
   }
@@ -698,7 +698,12 @@ export async function fetchRuntime(
         credentials: "same-origin",
         cache: "no-store",
         signal: controller.signal,
-        headers: { "content-type": "application/json", accept: "application/json" },
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json",
+          "x-velmere-live": "true",
+          ...(depth === "pro" ? { "x-velmere-pro": "true" } : {}),
+        },
         body: JSON.stringify({
           assetKey: requestedAssetKey,
           depth,

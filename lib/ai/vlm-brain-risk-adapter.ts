@@ -113,13 +113,13 @@ const SCORE_SIGNAL_EVIDENCE_CATEGORIES = {
   blacklist_risk: ["contract_permissions"],
   sell_pressure_imbalance: ["derivatives_microstructure"],
   low_dex_liquidity: ["liquidity"],
-  market_volume_stress: [],
+  market_volume_stress: ["market", "derivatives_microstructure"],
   fdv_marketcap_gap: ["supply_tokenomics"],
   supply_overhang: ["supply_tokenomics"],
-  provider_health_degradation: [],
-  source_divergence: [],
-  stale_market_data: [],
-  insufficient_data: [],
+  provider_health_degradation: ["market"],
+  source_divergence: ["market"],
+  stale_market_data: ["market"],
+  insufficient_data: ["identity", "market"],
 } as const satisfies Record<RiskSignalId, readonly Pass4650EvidenceCategory[]>;
 
 const SCORE_BLOCKING_SIGNALS = new Set<RiskSignalId>(["stale_market_data", "insufficient_data"]);

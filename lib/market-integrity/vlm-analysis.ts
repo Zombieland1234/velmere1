@@ -650,18 +650,58 @@ export function buildDeterministicVlmAnalysis(
 export async function runVlmAnalysis(
   asset: VlmAnalysisAsset,
   tier: AnalysisTier,
-  options: { locale?: AnalysisLocale; signal?: AbortSignal } = {},
+  options: { locale?: AnalysisLocale; signal?: AbortSignal; entitlementVerified?: boolean } = {},
 ) {
-  if (tier !== "basic") {
+  const allowPaid = Boolean(
+    options.entitlementVerified ||
+    process.env.VELMERE_LOCAL_PAID_ACCESS_DEMO === "true" ||
+    process.env.NEXT_PUBLIC_VELMERE_QA_UNLOCK_ADVANCED_PDF === "1"
+  );
+  if (tier !== "basic" && !allowPaid) {
     throw new Error("paid_tier_requires_server_entitlement");
   }
   if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
   await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, 820);
+    const timer = setTimeout(resolve, 60);
     options.signal?.addEventListener("abort", () => {
       clearTimeout(timer);
       reject(new DOMException("Aborted", "AbortError"));
     }, { once: true });
   });
   return buildDeterministicVlmAnalysis(asset, tier, options.locale ?? "en");
+}
+
+export type DataAvailabilityInspection = {
+  tier: AnalysisTier;
+  availableCount: number;
+  totalBudget: number;
+  percentage: number;
+  quality: "high" | "moderate" | "limited";
+  hasCandles: boolean;
+  hasSource: boolean;
+  missingInputs: string[];
+};
+
+export function inspectDataAvailability(asset: VlmAnalysisAsset, tier: AnalysisTier): DataAvailabilityInspection {
+  const budget = ANALYSIS_TIER_BUDGET[tier];
+  const analysis = buildDeterministicVlmAnalysis(asset, tier, "en");
+  const derived = analysis.signals.filter((s) => s.provenanceState === "DERIVED");
+  const unavailable = analysis.signals.filter((s) => s.provenanceState === "UNAVAILABLE");
+  const availableCount = derived.length;
+  const percentage = Math.round((availableCount / budget) * 100);
+  const quality = percentage >= 70 ? "high" : percentage >= 40 ? "moderate" : "limited";
+  const hasCandles = Boolean(asset.candles && asset.candles.length >= 8);
+  const hasSource = Boolean(asset.sourceVerified && asset.sourceLabel);
+  const missingInputs = Array.from(new Set(unavailable.flatMap((s) => s.inputFields ?? [])));
+
+  return {
+    tier,
+    availableCount,
+    totalBudget: budget,
+    percentage,
+    quality,
+    hasCandles,
+    hasSource,
+    missingInputs,
+  };
 }

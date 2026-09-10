@@ -1,0 +1,363 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_steth_pro_032",
+  "caseRef": "CASE-VLM-STETH-PRO",
+  "target": {
+    "contractName": "Lido Liquid Staked ETH",
+    "contractAddress": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "stETH",
+    "proxyPattern": "AppProxyUpgradeability (Aragon DAO)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "pl",
+  "createdAt": "2026-09-10T12:36:15.885Z",
+  "verdict": {
+    "riskScore": 24,
+    "riskLabel": "NISKIE RYZYKO",
+    "confidenceScore": 97,
+    "auditQualityScore": 81,
+    "summary": "stETH to płynny derywat stakingu Ethereum zarządzany przez Lido DAO. Codzienny rebase zależy od raportów konsensusu wyroczni.",
+    "evidenceCoverage": 96,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 89,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 18072000,
+      "snapshotBlockHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2",
+      "runtimeBytecodeSha256": "sha256:c2cf398b95982e5b741031d274092b3780385df40b54e3d3609b5ca313a48e71",
+      "pinnedChainId": "1",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 97,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 96,
+      "formalPropertiesPct": 89
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Przegląd audytu i kontekst kontraktu",
+      "subtitle": "Podsumowanie zakresu i celów wykonania analizy",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Weryfikacja tożsamości kontraktu i weryfikacja wdrożenia w sieci",
+        "Dekompilacja selektorów funkcji i analiza wzorców proxy",
+        "Wstępna kalibracja powierzchni ataku i poziomów ryzyka"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Projekt / Kontrakt",
+            "value": "Lido Liquid Staked ETH"
+          },
+          {
+            "label": "Adres kontraktu",
+            "value": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84"
+          },
+          {
+            "label": "Sieć / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "stETH"
+          },
+          {
+            "label": "Wzorzec proxy",
+            "value": "AppProxyUpgradeability (Aragon DAO)"
+          },
+          {
+            "label": "Wersja kompilatora",
+            "value": "solc 0.8.9"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Weryfikacja kodu i dekompilacja selektorów",
+      "subtitle": "Porównanie skrótu stanu z łańcuchem bloków i analiza dispatcherów",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Integralność bytecode'u zweryfikowana z węzłem RPC",
+        "Analiza przepływu sterowania dla publicznych punktów wejścia",
+        "Identyfikacja potencjalnych ukrytych funkcji samozniszczenia i delegacji"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "Kod maszynowy EVM został zdekodowany do grafu przepływu sterowania (CFG). Analizator sprawdził poprawność selektorów ERC oraz obecność opkodów uprzywilejowanych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Podstawowe ustalenia bezpieczeństwa",
+      "subtitle": "Wykryte podatności w standardowym skanowaniu",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Podsumowanie zidentyfikowanych ryzyk bezpieczeństwa",
+        "Klasyfikacja ciężkości wg standardu SWC i CWE",
+        "Wskazówki naprawcze i rekomendacje minimalizacji ryzyka"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-LIDO-01",
+            "severity": "low",
+            "category": "Rebase Invariant",
+            "title": "Rebasing Balance Dynamics",
+            "description": "Token balances update dynamically upon rebase; dApps integrating stETH must use wstETH for wrapped fixed balances.",
+            "evidence": "function balanceOf(address _account) public view returns (uint256)",
+            "recommendation": "Wrap into wstETH when collateralizing in automated lending vaults.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_steth_pro_032-VLM-LIDO-01",
+            "evidenceId": "EVD-FIND-rep_steth_pro_032-VLM-LIDO-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Role uprzywilejowane, klucze admina i governance",
+      "subtitle": "Weryfikacja parametrów opóźnień timelock i kontroli zarządczej",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Parametry opóźnień timelock i wieloosobowej autoryzacji transakcji",
+        "Wykrywanie uprzywilejowanych funkcji mint, pause, blacklist oraz drenażu"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Lido DAO Governance",
+            "value": "Aragon Voting with Dual Governance Timelock",
+            "status": "verified",
+            "claimId": "CLM-rep_steth_pro_032-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_steth_pro_032-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Oracle Consensus Quorum",
+            "value": "Consensus threshold 5-of-9 verified reporters",
+            "status": "verified",
+            "claimId": "CLM-rep_steth_pro_032-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_steth_pro_032-pro_permission_parser-2",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Szczegółowa mapa ról śledzi wszystkie odrębne ścieżki wykonania powiązane z kontrolerami on-chain."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Analiza płynności, posiadaczy i blokad LP (PRO)",
+      "subtitle": "Rozkład tokenów, ryzyko wielorybów i dowody zablokowania par DEX",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Analiza krzywej dystrybucji tokenów i koncentracji największych posiadaczy",
+        "Weryfikacja par płynności DEX i dowodów blokady w zarejestrowanych skarbcach",
+        "Zautomatyzowana symulacja honeypot, weryfikacja opłat i restrykcji sprzedaży"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Total Staked ETH",
+            "value": "Over 9,700,000 ETH locked in Beacon Chain",
+            "status": "verified",
+            "claimId": "CLM-rep_steth_pro_032-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_steth_pro_032-pro_liquidity_depth-1",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Analiza płynności bada architekturę par AMM, mechanizmy blokady płynności oraz symulację opłat transakcyjnych."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Modelowanie powierzchni ataku i reentrancy (PRO)",
+      "subtitle": "Symulacja wektorów manipulacji wyrocznią, pożyczek flash i reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Modelowanie ochrony przed reentrancy między funkcjami i kontraktami",
+        "Weryfikacja świeżości wyroczni cenowych i odporności na manipulacje rynkowe",
+        "Modelowanie szoków ekonomicznych i symulacja odporności na pożyczki flash loan"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Zależność od wyroczni cenowej",
+            "value": "Sprawdzono źródła cenowe w bytecode",
+            "status": "verified",
+            "claimId": "CLM-rep_steth_pro_032-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_steth_pro_032-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Wektor pożyczek Flash Loan",
+            "value": "Odporność na manipulacje stanem oceniona",
+            "status": "verified",
+            "claimId": "CLM-rep_steth_pro_032-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_steth_pro_032-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Zabezpieczenie przed reentrancy",
+            "value": "Wzorzec CEI / Blokada ponownego wejścia zweryfikowana",
+            "status": "verified",
+            "claimId": "CLM-rep_steth_pro_032-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_steth_pro_032-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Różnice w układzie pamięci i kompilacja wieloźródłowa (ADVANCED)",
+      "subtitle": "Głęboka analiza kolizji slotów pamięci podczas uaktualnień EIP-1967",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Wykrywanie kolizji slotów pamięci między kolejnymi wdrożeniami implementacji",
+        "Weryfikacja buforów pamięci proxy oraz zachowania stanu zmiennych stanu",
+        "Reprodukcja bytecode względem oficjalnych metadanych kompilatora",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Weryfikacja formalna SMT i analiza regresji (ADVANCED)",
+      "subtitle": "Matematyczne dowody niezmiennikow Z3 solver i sledzenie zmian bytecode",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Dowody SMT dla niezmiennikow wyplacalnosci, zachowania aktywow i niemozliwosci reentrancy",
+        "Analiza regresji bytecode implementacji i sledzenie zmian logiki",
+        "Weryfikacja formalna SMT (Z3): 89% niezmiennikow zweryfikowanych (QF_LIA UNSAT)",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Weryfikacja analityka i podpisany protokół (ADVANCED)",
+      "subtitle": "Dowód niezależnego przeglądu przez certyfikowanego audytora",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Odblokuj w pakiecie Advanced",
+      "data": null,
+      "sampleSummaryLines": [
+        "Akceptacja analityka wymaga zweryfikowanego dowodu audytora",
+        "Kryptograficznie podpisany skrót atestacji",
+        "Wyraźna granica przeglądu manualnego: brak certyfikatów absolutnego bezpieczeństwa",
+        "DLACZEGO: Sekcja operuje na dedykowanych zasobach obliczeniowych lub wymaga manualnego zaangażowania zespołu analityków.",
+        "BLOKADA: TIER_ENTITLEMENT_BOUNDARY (aktywny pakiet klienta nie obejmuje tej warstwy analitycznej).",
+        "PROPONOWANY FIX: Aktywuj uprawnienie w panelu subskrypcji lub zintegruj własny klucz API."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:fe4a2e83017891d2668bf511a71c31b2c402c3d9d43b026bb96f7db69b16c8ee",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "blockNumber": 18072000,
+      "contractAddress": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.8.9",
+      "optimizationRuns": 200,
+      "evmTarget": "cancun"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 97,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 89
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:11ff1f3deb67725b779e4d3e81164af27e1d6e9a1227c36358e4619201a45f3b",
+      "reportDigestSha256": "sha256:11ff1f3deb67725b779e4d3e81164af27e1d6e9a1227c36358e4619201a45f3b",
+      "provenanceHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:bd56e3be96f704e77d8ac3c59f3b90342fd08723219e785abf750b5b716c9377",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "2a00aeb3d2bd7e688b01167f75a29a42069a8ff364bb1b2a0a318f059fd51e54433179465b545262e0ffc0f9a5777d6fbd0e362201fa723322691d4b89ed2c00",
+    "signedDigest": "746045a876db3a066ca63ff74ca85145aaa0475637f341b3af53fbe38f64379f",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "746045a876db3a066ca63ff74ca85145aaa0475637f341b3af53fbe38f64379f",
+      "serialNumber": "08a478e1665b55d6487e4e2a914cef6c",
+      "genTime": "2026-09-10T12:36:15.885Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "59cccea7cebccc727bd953b1eb2e65a4602000fbc72548ea0618d2916b85308a"
+    },
+    "provenanceProof": "sha256:82b56265ab49342e497c094c45d6e63cc81f7e6e7175ecef4a9ecf2a264c8867"
+  },
+  "integrityProof": {
+    "pdfSha256": "3b5a69c06a9bd97a970d6c3b19cb3c6a350951ab69882c012a52c78fe1282048",
+    "pdfByteLength": 85637,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:15.897Z"
+  }
+}

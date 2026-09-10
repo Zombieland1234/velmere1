@@ -1,0 +1,3 @@
+# PASS_13 SECURITY FINDINGS
+
+Verified finding `VLM-SEC-BRIDGE-REPLAY-01` with severity `CRITICAL`.

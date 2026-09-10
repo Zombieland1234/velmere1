@@ -3,6 +3,7 @@ import {
   assessEvidenceTimestamp,
   independentLiveProviderFamilies,
 } from "@/lib/ai/evidence-normalization";
+import { resolveVolumeSemantics } from "@/lib/market-integrity/volume-semantics";
 
 export type Pass450Locale = "pl" | "de" | "en";
 export type Pass450TierId = "basic" | "pro" | "advanced";
@@ -147,13 +148,18 @@ export function buildPass450TieredHumanAnalysis(
   const sourceTimestamp = timestamp.observedAt && timestamp.state !== "future" && timestamp.state !== "invalid"
     ? new Date(timestamp.observedAt).toLocaleString(safeLocale)
     : undefined;
+  const volumeSemantics = resolveVolumeSemantics({
+    source: providerFamilies[0],
+    locale: safeLocale,
+    observedAt: snapshot?.observedAt,
+  });
 
   const basicFields: Pass450Field[] = [
     field(safeLocale, "identity", safeLocale === "pl" ? "Instrument" : safeLocale === "de" ? "Instrument" : "Instrument", `${result.symbol || "VLM"} · ${result.title}`),
     field(safeLocale, "price", safeLocale === "pl" ? "Cena" : safeLocale === "de" ? "Preis" : "Price", money(safeLocale, snapshot?.price, currency)),
     field(safeLocale, "marketCap", safeLocale === "pl" ? "Kapitalizacja" : safeLocale === "de" ? "Marktkapitalisierung" : "Market cap", money(safeLocale, snapshot?.marketCap, currency)),
     field(safeLocale, "change24h", safeLocale === "pl" ? "Zmiana 24h" : safeLocale === "de" ? "Änderung 24h" : "24h change", percent(safeLocale, snapshot?.change24h), "review"),
-    field(safeLocale, "volume24h", safeLocale === "pl" ? "Wolumen 24h" : safeLocale === "de" ? "Volumen 24h" : "24h volume", money(safeLocale, snapshot?.volume24h, currency)),
+    field(safeLocale, "volume24h", `${safeLocale === "pl" ? "Wolumen 24h" : safeLocale === "de" ? "Volumen 24h" : "24h volume"} (${volumeSemantics.shortScopeLabel})`, money(safeLocale, snapshot?.volume24h, currency), "confirmed", `${volumeSemantics.scopeLabel}: ${volumeSemantics.disclosure}`),
     field(safeLocale, "range24h", safeLocale === "pl" ? "Zakres 24h" : safeLocale === "de" ? "24h-Spanne" : "24h range", finite(snapshot?.low24h) && finite(snapshot?.high24h) ? `${money(safeLocale, snapshot?.low24h, currency)} – ${money(safeLocale, snapshot?.high24h, currency)}` : "", "review"),
     field(safeLocale, "source", safeLocale === "pl" ? "Źródło główne" : safeLocale === "de" ? "Hauptquelle" : "Primary source", providerFamilies[0]),
     field(safeLocale, "timestamp", safeLocale === "pl" ? "Czas obserwacji" : safeLocale === "de" ? "Beobachtungszeit" : "Observation time", sourceTimestamp),

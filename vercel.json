@@ -1,11 +1,11 @@
 {
-  "installCommand": "corepack npm ci --engine-strict=true --strict-allow-scripts=true --ignore-scripts=false --no-audit --no-fund --progress=false",
-  "buildCommand": "corepack npm run build:deployment",
+  "installCommand": "npm_config_engine_strict=false npm ci --no-audit --no-fund --progress=false",
+  "buildCommand": "next build",
   "framework": "nextjs",
   "crons": [
     {
-      "path": "/api/internal/workers/verify-continuous-monitor",
-      "schedule": "0 3 * * *"
+      "path": "/api/market-integrity/cron?pages=2&perPage=100",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

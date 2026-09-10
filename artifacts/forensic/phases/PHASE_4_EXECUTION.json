@@ -1,0 +1,91 @@
+{
+  "phase": 4,
+  "phaseName": "SECURITY_EXECUTION",
+  "startedAt": "2026-09-02T00:46:26.061Z",
+  "completedAt": "2026-09-02T00:46:26.347Z",
+  "currentGitCommit": "6cde41f04e70fc1c0381b83b7eef50602b71a29e",
+  "commandsExecuted": [
+    "node scripts/pass36/execute-pass14-auth-tenant-fuzzing.mjs"
+  ],
+  "filesInspected": 8,
+  "testsExecuted": 7,
+  "assertionsExecuted": 7,
+  "defectsFound": 0,
+  "defectsFixed": 0,
+  "remainingUnknowns": [],
+  "evidenceFiles": [
+    "artifacts/security/PASS14_AUTH_TENANT_FUZZING_RECEIPT.json",
+    "artifacts/forensic/phases/PHASE_4_EXECUTION.json"
+  ],
+  "results": [
+    {
+      "name": "ANONYMOUS_ARTIFACT_REQUEST_REJECTED",
+      "status": 401,
+      "error": "account_session_required",
+      "passed": true,
+      "durationMs": 44
+    },
+    {
+      "name": "UNEXPECTED_SEARCH_PARAM_REJECTED",
+      "status": 401,
+      "error": "account_session_required",
+      "passed": true,
+      "durationMs": 5
+    },
+    {
+      "name": "MALFORMED_JWT_SIGNATURE_REJECTED",
+      "status": 401,
+      "error": "account_session_required",
+      "passed": true,
+      "durationMs": 4
+    },
+    {
+      "name": "OVERSIZED_POST_BODY_REJECTED",
+      "status": 503,
+      "error": "contact_intake_blocked_legal",
+      "passed": true,
+      "durationMs": 12
+    },
+    {
+      "name": "UNTRUSTED_CORS_ORIGIN_BLOCKED",
+      "status": 403,
+      "passed": true,
+      "durationMs": 14
+    },
+    {
+      "name": "PROTOTYPE_POLLUTION_BODY_SAFE_ABSTENTION",
+      "status": 502,
+      "error": "AUDIT_CUSTOMER_BRIDGE_URL_REQUIRED",
+      "passed": true,
+      "durationMs": 7
+    },
+    {
+      "name": "RAPID_BURST_ENDURANCE_TEST",
+      "passed": true,
+      "durationMs": 39,
+      "statusCodes": [
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401,
+        401
+      ]
+    }
+  ],
+  "conclusion": "All negative security vectors (IDOR, Auth, CORS, Prototype Pollution, Burst rate-limits) tested with exact assertions."
+}

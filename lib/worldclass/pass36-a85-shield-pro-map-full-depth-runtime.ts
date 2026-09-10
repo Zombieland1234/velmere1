@@ -263,13 +263,13 @@ function mutatePacket(packet: A85Packet, family: string): A85Packet {
   if (family === "market_id_substitution") clone.marketIdentity.marketId = `${clone.marketIdentity.marketId}-other`;
   else if (family === "symbol_substitution") clone.marketIdentity.symbol = `${clone.symbol}X`;
   else if (family === "quote_substitution") (clone.marketIdentity as { quote: string }).quote = "USDT";
-  else if (family === "timeframe_drop") (clone.terminal as { timeframes: string[] }).timeframes = [...TIMEFRAMES.slice(0, -1)];
+  else if (family === "timeframe_drop") (clone.terminal as unknown as { timeframes: string[] }).timeframes = [...TIMEFRAMES.slice(0, -1)];
   else if (family === "page_coverage_promotion") clone.terminal.pageCoverageComplete = false as true;
   else if (family === "depth_state_promotion") clone.terminal.depthState = clone.terminal.depthState === "AVAILABLE" ? "STALE" : "AVAILABLE";
   else if (family === "binding_state_promotion") clone.map.bindingState = clone.map.bindingState === "EXACT_MULTI_SOURCE" ? "MISSING" : "EXACT_MULTI_SOURCE";
   else if (family === "address_substitution") clone.map.tokenAddress = "0x000000000000000000000000000000000000dead";
   else if (family === "label_state_promotion") clone.map.labelState = clone.map.labelState === "SIGNED_CURRENT" ? "MISSING" : "SIGNED_CURRENT";
-  else if (family === "lane_drop") (clone.map as { laneIds: string[] }).laneIds = [...LANE_IDS.slice(0, -1)];
+  else if (family === "lane_drop") (clone.map as unknown as { laneIds: string[] }).laneIds = [...LANE_IDS.slice(0, -1)];
   else if (family === "entitlement_promotion") clone.entitlement.realServerEntitlementVerified = true as false;
   else if (family === "paid_delivery_promotion") clone.entitlement.deliveryDecision = clone.tier === "basic" ? "BLOCKED_REQUIRES_SERVER_ENTITLEMENT" : "DELIVER_BASIC";
   else if (family === "tier_substitution") clone.tier = clone.tier === "basic" ? "pro" : "basic";

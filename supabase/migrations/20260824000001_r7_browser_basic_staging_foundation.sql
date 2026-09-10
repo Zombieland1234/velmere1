@@ -193,8 +193,10 @@ grant execute on function public.velmere_r7_erase_account_artifacts(text) to ser
 create schema if not exists velmere_private;
 revoke all on schema velmere_private from public,anon,authenticated;
 create table if not exists velmere_private.r7_jwt_signing_key(id boolean primary key default true check(id),secret bytea not null,created_at timestamptz not null default now());
+alter table if exists velmere_private.r7_jwt_signing_key enable row level security;
 insert into velmere_private.r7_jwt_signing_key(id,secret) values(true,extensions.gen_random_bytes(32)) on conflict(id) do nothing;
 create table if not exists velmere_private.r7_jwt_contexts(context_name text primary key,user_id uuid not null,session_id uuid not null,token text not null,claims jsonb not null,token_sha256 text not null,issued_at timestamptz not null,expires_at timestamptz not null);
+alter table if exists velmere_private.r7_jwt_contexts enable row level security;
 revoke all on all tables in schema velmere_private from public,anon,authenticated,service_role;
 
 create or replace function velmere_private.b64url(p bytea) returns text language sql immutable as $$select rtrim(translate(encode(p,'base64'),'+/','-_'),'=')$$;

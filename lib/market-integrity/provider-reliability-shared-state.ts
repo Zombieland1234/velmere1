@@ -397,6 +397,18 @@ export function createProviderReliabilitySharedAttemptHooks(deps: {
           nowMs: now(),
         });
       } catch {
+        if (process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production") {
+          return processSharedMemoryStore().acquire({
+            providerId: input.providerId,
+            endpointId: input.endpointId,
+            requestIdHash: sha256(`${input.cacheKey}:${input.attempt}:${requestId()}`),
+            quotaLimit: input.quotaLimit,
+            quotaWindowMs: input.quotaWindowMs,
+            cooldownMs: input.cooldownMs,
+            leaseTtlMs: Math.max(input.timeoutMs * 2, 5_000),
+            nowMs: now(),
+          });
+        }
         return {
           allowed: false,
           failureKind: "shared_state_unavailable",
@@ -441,6 +453,15 @@ export function createProviderReliabilitySharedAttemptHooks(deps: {
           completedAtMs: now(),
         });
       } catch {
+        if (process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production") {
+          return processSharedMemoryStore().settle({
+            leaseId: input.admission.leaseId,
+            success: input.success,
+            providerFailure,
+            failureThreshold: input.failureThreshold,
+            completedAtMs: now(),
+          });
+        }
         return {
           settled: false,
           mode: store.mode,

@@ -1,0 +1,161 @@
+{
+  "scannedAt": "2026-09-07T21:02:51.117Z",
+  "project": "velmere-store",
+  "totalFiles": 12815,
+  "totalSizeBytes": 896317168,
+  "environmentAudit": {
+    "envFiles": [
+      ".env.local"
+    ],
+    "serverKeysCount": 18,
+    "publishableKeysCount": 8,
+    "secretKeysMasked": {
+      "SUPABASE_SECRET_KEY": "sb_...[REDACTED_LENGTH_41]",
+      "SUPABASE_SERVICE_ROLE_KEY": "sb_...[REDACTED_LENGTH_41]",
+      "GEMINI_API_KEY": "AQ....[REDACTED_LENGTH_53]",
+      "VELMERE_GEMINI_MODEL": "gem...[REDACTED_LENGTH_16]",
+      "VELMERE_GEMINI_FALLBACK_MODELS": "gem...[REDACTED_LENGTH_33]",
+      "VELMERE_GEMINI_TIMEOUT_MS": "250...[REDACTED_LENGTH_5]",
+      "VELMERE_LENS_SOURCE_TOKEN_SECRET_CURRENT": "pas...[REDACTED_LENGTH_63]",
+      "VELMERE_LENS_RENDER_TOKEN_SECRET_CURRENT": "pas...[REDACTED_LENGTH_63]",
+      "VELMERE_CUSTOMER_REPORT_RENDER_TOKEN_SECRET_CURRENT": "pas...[REDACTED_LENGTH_57]",
+      "VELMERE_SOURCE_RECEIPT_PROJECTION_SECRET_CURRENT": "pas...[REDACTED_LENGTH_48]",
+      "VELMERE_SOURCE_RECEIPT_PROJECTION_KEY_ID_CURRENT": "mar...[REDACTED_LENGTH_19]",
+      "VELMERE_PROVIDER_RECEIPT_SIGNING_SECRET": "pas...[REDACTED_LENGTH_53]",
+      "VELMERE_LOCAL_PAID_ACCESS_DEMO": "tru...[REDACTED_LENGTH_4]",
+      "ADMIN_IMPORT_TOKEN": "vel...[REDACTED_LENGTH_47]",
+      "GROQ_API_KEY": "...[REDACTED_LENGTH_0]",
+      "OPENROUTER_API_KEY": "...[REDACTED_LENGTH_0]",
+      "STRIPE_SECRET_KEY": "sk_...[REDACTED_LENGTH_107]",
+      "STRIPE_WEBHOOK_SECRET": "whs...[REDACTED_LENGTH_24]"
+    },
+    "unusedKeys": [
+      "GROQ_API_KEY",
+      "OPENROUTER_API_KEY"
+    ],
+    "insecurelyExposed": []
+  },
+  "dependenciesAudit": {
+    "nextVersion": "16.2.12",
+    "reactVersion": "19.2.7",
+    "stripeVersion": "22.2.0",
+    "supabaseVersion": "2.108.1",
+    "playwrightVersion": "1.60.0",
+    "totalDependencies": 21,
+    "totalDevDependencies": 21
+  },
+  "surfaceAudit": {
+    "browser": {
+      "route": "/[locale]/browser",
+      "component": "app/[locale]/browser/page.tsx",
+      "endpoint": "/api/search, /api/market-integrity/klines"
+    },
+    "shield": {
+      "route": "/[locale]/shield",
+      "component": "app/[locale]/shield/page.tsx",
+      "endpoint": "/api/security/audits/report"
+    },
+    "shieldPro": {
+      "route": "/[locale]/shield-pro",
+      "component": "app/[locale]/shield-pro/page.tsx",
+      "endpoint": "/api/security/audits/report, /api/audit/report"
+    },
+    "realMarkets": {
+      "route": "/[locale]/real-markets",
+      "component": "app/[locale]/real-markets/page.tsx",
+      "endpoint": "/api/market-integrity/klines, /api/market-integrity/quotes"
+    }
+  },
+  "enginesAudit": {
+    "evmSecurity": [
+      "lib/security/evm-bytecode-analyzer.ts",
+      "lib/security/audit-a01-a05-engine.ts"
+    ],
+    "proxyEngine": [
+      "lib/security/proxy/proxy-analysis-engine.ts"
+    ],
+    "oracleEngine": [
+      "lib/security/oracle/oracle-risk-engine.ts"
+    ],
+    "attackSurfaceEngine": [
+      "lib/security/attack-surface/attack-surface-model.ts"
+    ],
+    "dataFreshness": [
+      "lib/security/freshness/data-freshness-engine.ts"
+    ],
+    "scoringEngine": [
+      "lib/security/scoring/domain-score-engine.ts"
+    ],
+    "remediationEngine": [
+      "lib/security/remediation/remediation-lifecycle.ts"
+    ],
+    "replayEngine": [
+      "lib/security/replay/evidence-replay-engine.ts"
+    ],
+    "assetFirewall": [
+      "lib/security/asset-class-firewall.ts"
+    ]
+  },
+  "paymentsAudit": {
+    "stripeClient": "lib/stripe/server.ts",
+    "stripeWebhookRoute": "app/api/stripe/webhook/route.ts",
+    "webhookHandlers": [
+      "lib/payments/stripe-webhook/ingress.ts",
+      "lib/payments/stripe-webhook-effect-ledger.ts",
+      "lib/payments/stripe-webhook-reconciler.ts"
+    ],
+    "entitlementStore": "lib/security/audit-tier-contract.ts, lib/payments/vlm-paid-stripe-receipt-verifier.ts",
+    "supportedCurrencies": [
+      "USD",
+      "EUR",
+      "PLN",
+      "GBP"
+    ],
+    "enabledPaymentMethods": [
+      "Cards",
+      "Apple Pay",
+      "Google Pay",
+      "Link",
+      "Bancontact",
+      "BLIK",
+      "EPS",
+      "Klarna"
+    ],
+    "pendingDisabledMethods": [
+      "Cartes Bancaires (Pending)",
+      "PayPal (Disabled)",
+      "Revolut Pay (Disabled)",
+      "iDEAL (Disabled)",
+      "Przelewy24 (Ineligible)",
+      "SEPA Direct Debit (Disabled)"
+    ]
+  },
+  "pdfAndMediaAudit": {
+    "pdfGenerator": "lib/security/audit-report-exact-pdf-artifact.ts",
+    "supportedTiers": [
+      "basic",
+      "pro",
+      "advanced"
+    ],
+    "supportedLocales": [
+      "en",
+      "pl",
+      "de"
+    ],
+    "screenshotDirectories": [
+      "artifacts/cycle-XX/screenshots",
+      "artifacts/final/screenshots"
+    ]
+  },
+  "securityAndHeaders": {
+    "cspConfigured": true,
+    "corsConfigured": true,
+    "rateLimiting": [
+      "lib/security/durable-rate-limit.ts",
+      "lib/security/api-guard.ts"
+    ],
+    "rlsPolicies": [
+      "lib/security/supabase-rls-account-delivery-production-lock.ts"
+    ]
+  }
+}

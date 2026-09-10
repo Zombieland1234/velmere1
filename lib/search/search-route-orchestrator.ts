@@ -194,13 +194,6 @@ async function handleSearchGetInternal(request: Request, nowMs: number) {
     return handleR7BrowserEcbSearch({ query, mode, locale, nowMs });
   }
   const deliveryPreflight = buildBrowserDeliveryPreflight("search");
-  const initialDelivery = projectBrowserCustomerDelivery({
-    decision: deliveryPreflight,
-    payload: null,
-  });
-  if (!initialDelivery.allowed) {
-    return jsonResponse(initialDelivery.payload, initialDelivery.status);
-  }
   const pass2482ExactRealMarketSymbol = resolvePass2482ExactRealMarketSymbol(query);
   const pass2482ExactRealMarketQuery = Boolean(pass2482ExactRealMarketSymbol) && (mode === "all" || mode === "market");
   const pass4642ExactCryptoIdentity = resolveExactCryptoIdentity(query);
@@ -334,6 +327,17 @@ async function handleSearchGetInternal(request: Request, nowMs: number) {
       rule: "Lens report generation accepts only a server-signed search-result token or a later server-signed render token; browser-supplied full reports are not authoritative.",
     },
   };
+  if (!deliveryPreflight.customerDeliveryAllowed) {
+    return jsonResponse({
+      ...customerPayload,
+      ok: true,
+      mode: "velmere_intelligence_search_preview",
+      liveClaimed: false,
+      deliveryClass: "REFERENCE_METADATA",
+      rightsState: "LIVE_QUOTES_WITHHELD",
+      rightsReason: "Customer-display and export rights for third-party live quotes are unverified; reference identity and evidence bridge are active.",
+    }, 200);
+  }
   const projected = projectBrowserCustomerDelivery({
     decision: deliveryPreflight,
     payload: customerPayload,

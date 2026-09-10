@@ -6,6 +6,7 @@ import {
 
 const CONTROL_OR_BIDI = ASCII_CONTROL_OR_BIDI_PATTERN;
 const ENCODED_DANGEROUS = /%(?:0[0-9a-f]|1[0-9a-f]|7f|2f|5c|e2%80%(?:8e|8f|aa|ab|ac|ad|ae)|e2%81%(?:a6|a7|a8|a9))/iu;
+const ENCODED_DANGEROUS_ALLOW_SLASH = /%(?:0[0-9a-f]|1[0-9a-f]|7f|5c|e2%80%(?:8e|8f|aa|ab|ac|ad|ae)|e2%81%(?:a6|a7|a8|a9))/iu;
 const LOCALES = new Set(["en", "pl", "de"]);
 
 export const PASS36_A74_NAVIGATION_REDIRECT_BOUNDARY_ID = "velmere.pass36.a74.navigation-redirect-boundary.v1" as const;
@@ -37,12 +38,13 @@ function productionLike() {
   return typeof process !== "undefined" && (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production");
 }
 
-function cleanString(value: unknown, maximumBytes = 1024) {
+function cleanString(value: unknown, maximumBytes = 1024, options: { allowEncodedSlash?: boolean } = {}) {
   if (typeof value !== "string" || !value || new TextEncoder().encode(value).byteLength > maximumBytes) {
     throw new NavigationRedirectBoundaryError("navigation_value_invalid");
   }
   if (CONTROL_OR_BIDI.test(value)) throw new NavigationRedirectBoundaryError("navigation_control_character");
-  if (value.includes("\\") || ENCODED_DANGEROUS.test(value)) {
+  const pattern = options.allowEncodedSlash ? ENCODED_DANGEROUS_ALLOW_SLASH : ENCODED_DANGEROUS;
+  if (value.includes("\\") || pattern.test(value)) {
     throw new NavigationRedirectBoundaryError("navigation_encoding_invalid");
   }
   try {
@@ -157,7 +159,9 @@ export function assertBrowserRedirectUrl(input: unknown, options: {
   browserOrigin: string;
   supabaseOrigin?: string | null;
 }) {
-  const raw = cleanString(input, 4096).trim();
+  const raw = cleanString(input, 4096, {
+    allowEncodedSlash: options.profile === "supabase_oauth" || options.profile === "stripe_checkout",
+  }).trim();
   let url: URL;
   try { url = new URL(raw, options.browserOrigin); } catch { throw new NavigationRedirectBoundaryError("navigation_origin_invalid"); }
   if (url.username || url.password) throw new NavigationRedirectBoundaryError("navigation_credentials_forbidden");

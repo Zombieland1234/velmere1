@@ -4,7 +4,7 @@ export type VelmereClientProfile = {
   displayName: string;
   email?: string;
   accountId?: string;
-  provider?: "email" | "google_preview" | "preview" | "server" | string;
+  provider?: "email" | "google" | "google_preview" | "preview" | "server" | string;
   handle?: string;
   sessionSource?: "server" | "cookie" | "header" | string;
 };

@@ -18,6 +18,7 @@ export type ExpensiveRouteKey =
   | "risk_calibration_get"
   | "venue_health_get"
   | "tier_180_output_matrix_get"
+  | "worldclass_integrity_get"
   | "admin_ai_post";
 
 type BudgetConfig = {
@@ -72,6 +73,7 @@ const DEFAULT_CONFIG: Record<ExpensiveRouteKey, BudgetConfig> = {
   risk_calibration_get: { maxActive: 3, maxQueue: 8, waitMs: 1_500, retryAfterSeconds: 2 },
   venue_health_get: { maxActive: 2, maxQueue: 6, waitMs: 1_500, retryAfterSeconds: 2 },
   tier_180_output_matrix_get: { maxActive: 2, maxQueue: 6, waitMs: 2_500, retryAfterSeconds: 3 },
+  worldclass_integrity_get: { maxActive: 4, maxQueue: 12, waitMs: 1_500, retryAfterSeconds: 2 },
   admin_ai_post: { maxActive: 2, maxQueue: 6, waitMs: 2_500, retryAfterSeconds: 3 },
 };
 

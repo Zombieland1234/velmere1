@@ -1,8 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { ArrowLeft } from "lucide-react";
 import AuthFormClient from "@/components/auth/AuthFormClient";
 import LoginSecurityVisual from "@/components/auth/LoginSecurityVisual";
-import { Link } from "@/navigation";
 import { buildVelmereMetadata } from "@/lib/seo/metadata";
 
 const loginCopy = {
@@ -101,29 +100,19 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
   const copy = loginCopy[locale as keyof typeof loginCopy] ?? loginCopy.en;
 
   return (
-    <main className="relative min-h-[100dvh] overflow-x-hidden bg-velmere-black text-velmere-ivory">
-      <section className="luxury-section pt-28 md:pt-32">
-        <div className="grid gap-6 pb-20 lg:grid-cols-[0.82fr_0.92fr] lg:items-stretch">
-          <section className="rounded-[2rem] border border-white/[0.10] bg-[#0B0B0D] p-6 shadow-velmere-card md:p-8">
-            <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/[0.45] transition hover:text-velmere-gold">
-              <ArrowLeft className="h-4 w-4" /> {copy.returnHome}
-            </Link>
-            <div className="mt-6">
-              <LoginSecurityVisual />
-            </div>
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {copy.trustCards.map(([title, body]) => (
-                <div key={title} className="rounded-2xl border border-white/[0.10] bg-white/[0.025] p-4">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-velmere-gold">{title}</p>
-                  <p className="mt-2 text-xs leading-6 text-white/[0.54]">{body}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <AuthFormClient labels={copy} />
+    <main className="relative min-h-[100dvh] flex flex-col justify-start lg:justify-center overflow-x-hidden bg-velmere-black text-velmere-ivory px-4 sm:px-6 pt-24 pb-80 sm:pb-56 lg:py-16">
+      <div className="my-auto mx-auto w-full max-w-5xl">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+          <div className="order-2 lg:order-1 flex">
+            <LoginSecurityVisual returnHomeText={copy.returnHome} />
+          </div>
+          <div className="order-1 lg:order-2 flex">
+            <Suspense fallback={<div className="h-96 w-full animate-pulse rounded-2xl bg-white/[0.04]" />}>
+              <AuthFormClient labels={copy} />
+            </Suspense>
+          </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

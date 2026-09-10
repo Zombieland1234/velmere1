@@ -1,0 +1,30 @@
+{
+  "contractName": "Arbitrum L1 Gateway Router",
+  "symbol": "ARB-GATEWAY",
+  "address": "0x72ce9c846789fd610ffe91c7e0f2b97978249ca5",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet -> Arbitrum One",
+  "compilerVersion": "solc 0.6.11",
+  "proxyPattern": "TransparentUpgradeableProxy",
+  "riskScore": 18,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Arbitrum L1 Gateway Router.",
+  "findings": [
+    {
+      "title": "Retryable Ticket Gas Estimation & Deposit Calldata Integrity",
+      "severity": "MEDIUM",
+      "swcId": "SWC-105",
+      "cweId": "CWE-284",
+      "description": "L1 to L2 retryable ticket creation requires accurate maxSubmissionCost payment to prevent ticket auto-cancellation on L2."
+    }
+  ],
+  "verificationDigest": "ff07b2258de6ff9cc2318c3526e0d06ff214dde99badf8b52d49bf25bf53d096",
+  "attackSurface": {
+    "category": "Cross-Rollup Message Passing & Retryable Tickets",
+    "attackVector": "Underpaying submission fee causes transaction to stall in retryable inbox, requiring manual redemption before timeout."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/Inbox.sol\n+++ b/contracts/Inbox.sol\n@@ -150,2 +150,3 @@\n+ require(msg.value >= maxSubmissionCost + l2CallValue, 'INSUFFICIENT_SUBMISSION_FEE');\n  _deliverMessage(...);"
+  }
+}

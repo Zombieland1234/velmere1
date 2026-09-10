@@ -521,7 +521,10 @@ export async function loadCoinGeckoMatches(query: string, locale: LensLocale) {
       const res = await brokeredEgressFetch(
         `https://api.coingecko.com/api/v3/coins/markets?${params.toString()}`,
         {
-          headers: { accept: "application/json" },
+          headers: {
+            accept: "application/json",
+            "user-agent": "Velmere-Market-Integrity/1.0",
+          },
           next: { revalidate: 45 },
         },
         {

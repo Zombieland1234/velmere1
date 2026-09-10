@@ -49,7 +49,7 @@ function sanitizeMailbox(value: string | undefined) {
 
 function resolveContactDeliveryConfig(): ContactDeliveryConfig {
   const apiKey = sanitizeBoundedParam(process.env.RESEND_API_KEY ?? "", { maxLength: 512, fallback: "" });
-  const to = sanitizeEmailAddress(process.env.CONTACT_TO_EMAIL ?? "", 180);
+  const to = sanitizeEmailAddress(process.env.CONTACT_TO_EMAIL || "velmere141@gmail.com", 180);
   const from = sanitizeMailbox(process.env.CONTACT_FROM_EMAIL);
   const missing = [
     !apiKey ? "RESEND_API_KEY" : "",

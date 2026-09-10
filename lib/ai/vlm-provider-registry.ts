@@ -229,7 +229,7 @@ const inFlight = new Map<string, Promise<VlmProviderResult>>();
 const CACHE_TTL_MS = 75_000;
 const MAX_CACHE = 160;
 const MAX_ATTEMPTS = 3;
-const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 
 function modelName() {
   return process.env.VELMERE_GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;

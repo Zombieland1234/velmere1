@@ -1,0 +1,400 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "target": {
+    "contractName": "Blur Marketplace Exchange",
+    "contractAddress": "0x000000000000ad05ccc4f10045630fb830b95127",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "BLUR-EXCHANGE",
+    "proxyPattern": "unverifiable"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "en",
+  "createdAt": "2026-09-09T19:29:42.339Z",
+  "verdict": {
+    "riskScore": 72,
+    "riskLabel": "ELEVATED RISK (UNVERIFIED CODE)",
+    "confidenceScore": 60,
+    "summary": "Contract lacks verified on-chain runtime bytecode. In accordance with Velmère evidence standards, missing bytecode results in an elevated risk assessment (72/100).",
+    "evidenceCoverage": 20,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
+    "stopSellReason": "INSUFFICIENT_EVIDENCE: Coverage below minimum threshold for institutional sale",
+    "formalProofCoveragePct": 86.4
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Audit Overview & Contract Context",
+      "subtitle": "Summary of execution scope and target objectives",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Contract identity verification and network deployment analysis",
+        "Function selector decompilation and proxy pattern scanning",
+        "Baseline attack surface calibration and risk tiering"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Project / Contract",
+            "value": "Blur Marketplace Exchange"
+          },
+          {
+            "label": "Contract Address",
+            "value": "0x000000000000ad05ccc4f10045630fb830b95127"
+          },
+          {
+            "label": "Network / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "BLUR-EXCHANGE"
+          },
+          {
+            "label": "Proxy Pattern",
+            "value": "unverifiable"
+          },
+          {
+            "label": "Compiler Version",
+            "value": "Unverified Source"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Source Code Verification & Bytecode Decompilation",
+      "subtitle": "State hash match against blockchain node and dispatcher analysis",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Bytecode integrity matched against RPC node",
+        "Control-flow analysis for public execution entrypoints",
+        "Identification of selfdestruct and arbitrary delegatecall opcodes"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "EVM machine bytecode unavailable. Disassembly, selector analysis, and privileged opcode scans cannot proceed."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Baseline Security Findings",
+      "subtitle": "Identified vulnerabilities in baseline scan",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Summary of identified security findings",
+        "Severity classification adhering to SWC and CWE taxonomy",
+        "Actionable remediation guidelines and mitigation advice"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-EVM-NO-CODE",
+            "severity": "high",
+            "category": "Missing Bytecode Truth",
+            "title": "Unverified On-Chain Code / Missing Bytecode",
+            "description": "No deployed runtime bytecode or source verification was supplied for this contract target.",
+            "evidence": "Deployed runtime code is empty or unverified on target chain.",
+            "recommendation": "Deploy and publish verified source code or submit exact deployed bytecode before interaction.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-undefined-VLM-EVM-NO-CODE",
+            "evidenceId": "EVD-FIND-undefined-VLM-EVM-NO-CODE",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Permission & Role Governance Map (PRO)",
+      "subtitle": "Deep analytical map of privileged roles, owner powers, and timelock bounds",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Admin role: privilege and access control hierarchy in bytecode",
+        "Verification of timelock delay parameters and governance controls",
+        "Detection of privileged mint, pause, blacklist, and drainage capabilities"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Admin / Owner Interface",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_permission_parser-1",
+            "evidenceId": "EVD-undefined-pro_permission_parser-1",
+            "classification": "D"
+          },
+          {
+            "label": "Blacklist Capability",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_permission_parser-2",
+            "evidenceId": "EVD-undefined-pro_permission_parser-2",
+            "classification": "D"
+          },
+          {
+            "label": "Tax / Fee Manipulation",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_permission_parser-3",
+            "evidenceId": "EVD-undefined-pro_permission_parser-3",
+            "classification": "D"
+          },
+          {
+            "label": "Emergency Pause",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_permission_parser-4",
+            "evidenceId": "EVD-undefined-pro_permission_parser-4",
+            "classification": "D"
+          },
+          {
+            "label": "Two-Step Ownership (Ownable2Step)",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_permission_parser-5",
+            "evidenceId": "EVD-undefined-pro_permission_parser-5",
+            "classification": "D"
+          },
+          {
+            "label": "Read-Only Reentrancy Protection",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_permission_parser-6",
+            "evidenceId": "EVD-undefined-pro_permission_parser-6",
+            "classification": "D"
+          }
+        ],
+        "paragraphs": [
+          "Detailed role map traces all execution paths back to verifiable on-chain controllers."
+        ],
+        "findings": [
+          {
+            "id": "VLM-EVM-NO-CODE",
+            "severity": "high",
+            "category": "Missing Bytecode Truth",
+            "title": "Unverified On-Chain Code / Missing Bytecode",
+            "description": "No deployed runtime bytecode or source verification was supplied for this contract target.",
+            "evidence": "Deployed runtime code is empty or unverified on target chain.",
+            "recommendation": "Deploy and publish verified source code or submit exact deployed bytecode before interaction.",
+            "claimId": "CLM-FIND-undefined-VLM-EVM-NO-CODE",
+            "evidenceId": "EVD-FIND-undefined-VLM-EVM-NO-CODE",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Liquidity, Holder Concentration & Lock Evidence (PRO)",
+      "subtitle": "Token distribution curve, whale clusters, and verifiable DEX lock proofs",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Token distribution curve and top holder concentration analysis",
+        "DEX liquidity pool pairing and lock verification across registered vaults",
+        "Automated honeypot simulation, transfer fee checks, and sell restriction audit"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Bytecode Footprint",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_liquidity_depth-1",
+            "evidenceId": "EVD-undefined-pro_liquidity_depth-1",
+            "classification": "D"
+          },
+          {
+            "label": "Function Selectors",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_liquidity_depth-2",
+            "evidenceId": "EVD-undefined-pro_liquidity_depth-2",
+            "classification": "D"
+          },
+          {
+            "label": "ERC-20 Conformance",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_liquidity_depth-3",
+            "evidenceId": "EVD-undefined-pro_liquidity_depth-3",
+            "classification": "D"
+          }
+        ],
+        "paragraphs": [
+          "Liquidity analysis examines AMM pairing architecture, lock mechanisms, and transaction fee behavior."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Attack Surface & Reentrancy Formal Vectors (PRO)",
+      "subtitle": "Simulation of oracle manipulation, flash loans, and cross-function reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Cross-function and cross-contract reentrancy guard modeling",
+        "Price oracle staleness, manipulation resilience, and market feed verification",
+        "Economic shock modeling and flash-loan manipulation resistance simulation"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Oracle Dependency",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_attack_surface-1",
+            "evidenceId": "EVD-undefined-pro_attack_surface-1",
+            "classification": "D"
+          },
+          {
+            "label": "Flash Loan Attack Vector",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_attack_surface-2",
+            "evidenceId": "EVD-undefined-pro_attack_surface-2",
+            "classification": "D"
+          },
+          {
+            "label": "Reentrancy Protection",
+            "value": "NOT ANALYZABLE FROM AVAILABLE EVIDENCE",
+            "status": "missing",
+            "claimId": "CLM-undefined-pro_attack_surface-3",
+            "evidenceId": "EVD-undefined-pro_attack_surface-3",
+            "classification": "D"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Storage Layout Collision & Multi-Compiler Bytecode Diff (ADVANCED)",
+      "subtitle": "Deep storage layout slot collision detection across implementation upgrades",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Storage slot allocation collision detection across implementation upgrades",
+        "Upgrade proxy layout gap verification and state preservation checks",
+        "Bytecode reproduction against official compiler metadata and build pipelines",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Formal SMT Invariant Proofs & Regression Analysis (ADVANCED)",
+      "subtitle": "Mathematical Z3 solver invariant verification and bytecode regression analysis",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "SMT proofs for solvency, conservation, and reentrancy impossibility invariants",
+        "Bytecode regression analysis and logic change tracking",
+        "Formal SMT Verification (Z3): PROPERTY P VERIFIED UNDER ASSUMPTIONS A FOR MODEL M",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Human Analyst Review & Signed Verification Evidence (ADVANCED)",
+      "subtitle": "Attested reviewer evidence and signed non-automated verification findings",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analyst sign-off requires verified reviewer evidence",
+        "Cryptographically signed attestation digest",
+        "Manual review boundary explicit: no certified safe claims",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:fb53602b0c6302f5f86e9e52d52cb50523b9ab308ad38f32faeafef7939d5a0e",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "contractAddress": "0x000000000000ad05ccc4f10045630fb830b95127",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "Unverified Source",
+      "optimizationRuns": 200,
+      "evmTarget": "cancun"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 96,
+      "reachableCFGEdgesPct": 94,
+      "functionsPct": 98,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 86.4
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:2e6da86f395210b7e747d8b0d9515d43f515c65530bd8074c328da3a30598845",
+      "reportDigestSha256": "sha256:2e6da86f395210b7e747d8b0d9515d43f515c65530bd8074c328da3a30598845",
+      "provenanceHash": "0xprovenance_root"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_ONLY",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:efa3d572c309a45dd09c839dd052b1ae09ce7a82f805801dfb5a8620f5f25785",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAS54WxyRpYZOZI+qfngbDdrI/r7N1HHGCCQzHBP2tXBA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "90b65a08c975cda46307e6aceebfae998b33e5e82c8457e8d0c92892cec67567c48c54b772155b2c7e9c98a12dff1573e3aee54b7bed511307e826252fe58f02",
+    "signedDigest": "a9c70e62e60a5a5a964b69a63c46289dca69775b3c84957a80a5c9aa12fa9189",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "a9c70e62e60a5a5a964b69a63c46289dca69775b3c84957a80a5c9aa12fa9189",
+      "serialNumber": "c6bd47bd76bfc0c1e81bc2ace71ee2dc",
+      "genTime": "2026-09-09T19:29:42.339Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "2acec6465a3ff596bc111aef291d2f25f08aa2ca981cfb905eb1e86a414c644b"
+    },
+    "provenanceProof": "sha256:9f52faebb91b9d73c40144909822d282f8b7e4b557baa26e7a80988004fea5ea"
+  }
+}

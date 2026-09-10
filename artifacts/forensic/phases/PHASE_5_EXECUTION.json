@@ -1,0 +1,66 @@
+{
+  "phase": 5,
+  "phaseName": "DATABASE_RLS_EXECUTION",
+  "startedAt": "2026-09-02T00:46:30.008Z",
+  "completedAt": "2026-09-02T00:46:35.485Z",
+  "currentGitCommit": "6cde41f04e70fc1c0381b83b7eef50602b71a29e",
+  "commandsExecuted": [
+    "node scripts/current-execution/test-v4-account-data-export-pglite.mjs",
+    "node scripts/current-execution/test-v4-account-erasure-pglite.mjs"
+  ],
+  "filesInspected": 135,
+  "testsExecuted": 2,
+  "assertionsExecuted": 51,
+  "defectsFound": 0,
+  "defectsFixed": 0,
+  "remainingUnknowns": [
+    "LIVE_SUPABASE_CLOUD_MULTI_TENANT_RLS_REQUIRES_EXTERNAL_STAGING_INFRASTRUCTURE"
+  ],
+  "evidenceFiles": [
+    "artifacts/forensic/phases/PHASE_5_EXECUTION.json"
+  ],
+  "results": {
+    "exportTest": {
+      "schemaVersion": "velmere.v4.account-data-export-pglite-execution.v1",
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "migrationCount": 135,
+      "accountExportMigrationSha256": "ff4cf5f79651598501e799ce5de2e340d2773594d6b847802e3c83474b6d88f8",
+      "assertions": 22,
+      "passed": 22,
+      "failed": 0,
+      "failures": [],
+      "truthBoundary": "Current ordered migration chain plus authenticated two-subject account-export execution in disposable PGlite PostgreSQL with real bundled pgcrypto. No native Supabase staging, deployed JWT/RLS, restore, legal DSAR, customer, FINAL, LIVE or sale credit.",
+      "credits": {
+        "localSemanticsOnly": true,
+        "twoSubjectFixtureOnly": true,
+        "supabaseStaging": false,
+        "legalDsr": false,
+        "customerFinal": 0
+      }
+    },
+    "erasureTest": {
+      "schemaVersion": "velmere.v4.account-erasure-pglite-execution.v1",
+      "status": "PASS_LOCAL_SEMANTICS_ONLY",
+      "migrationCount": 135,
+      "accountErasureMigrationSha256": "196a7e7faaa9e1cd17450fb47e42729d49c76af19abddf26e95e08cd844c0277",
+      "assertions": 29,
+      "passed": 29,
+      "failed": 0,
+      "failures": [],
+      "truthBoundary": "Current ordered migration chain plus two-subject owner request/status/cancel, recent-auth, current-export, RLS, append-only event and service-role revocation-confirmation semantics in disposable PGlite PostgreSQL with real bundled pgcrypto. No customer data was deleted. No Supabase staging, owner/legal policy, retention/legal-hold topology, executor, FINAL, LIVE or sale credit.",
+      "credits": {
+        "localSemanticsOnly": true,
+        "twoSubjectFixtureOnly": true,
+        "dataDeleted": false,
+        "supabaseStaging": false,
+        "ownerLegalPolicy": false,
+        "customerFinal": 0
+      }
+    }
+  },
+  "truthClassification": {
+    "localPostgresRls": "PROVEN_LOCAL",
+    "liveSupabaseRls": "UNKNOWN_EXTERNAL"
+  },
+  "conclusion": "135 real migrations and 2-subject owner export/erasure executed in PGlite PostgreSQL. Local RLS verified; Live Supabase cloud RLS classified as UNKNOWN_EXTERNAL."
+}

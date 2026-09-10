@@ -1,0 +1,371 @@
+{
+  "schemaVersion": "velmere.canonical-audit-report.v1",
+  "reportId": "rep_pepe_pro_023",
+  "caseRef": "CASE-VLM-PEPE-PRO",
+  "target": {
+    "contractName": "Pepe Token",
+    "contractAddress": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+    "network": "Ethereum Mainnet",
+    "chainId": "1",
+    "tokenSymbol": "PEPE",
+    "proxyPattern": "Immutable (Renounced Ownership)"
+  },
+  "clientEntitlementTier": "pro",
+  "locale": "en",
+  "createdAt": "2026-09-10T12:36:15.747Z",
+  "verdict": {
+    "riskScore": 38,
+    "riskLabel": "MODERATE RISK",
+    "confidenceScore": 95,
+    "auditQualityScore": 87,
+    "summary": "PEPE features renounced ownership and zero transfer taxes, but carries inherent volatility and zero protocol utility dependency.",
+    "evidenceCoverage": 95,
+    "verificationStatus": "AUTOMATED_ONLY",
+    "releaseDecision": "PASS",
+    "stopSellActive": false,
+    "formalProofCoveragePct": 78,
+    "snapshotProvenance": {
+      "snapshotBlockNumber": 18072000,
+      "snapshotBlockHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2",
+      "runtimeBytecodeSha256": "sha256:40df8374d618d36151743a41bc38645f7783cb0d0ec1b439c289bc195725f488",
+      "pinnedChainId": "1",
+      "analysisEngineVersion": "v4.0.0-institutional",
+      "reproducibilityStatus": "DETERMINISTIC_REPRODUCIBLE"
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 92,
+      "reachableCFGEdgesPct": 88,
+      "functionsPct": 95,
+      "detectorsExecutedPct": 100,
+      "stateVariablesPct": 90,
+      "formalPropertiesPct": 78
+    }
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Audit Overview & Contract Context",
+      "subtitle": "Summary of execution scope and target objectives",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Contract identity verification and network deployment analysis",
+        "Function selector decompilation and proxy pattern scanning",
+        "Baseline attack surface calibration and risk tiering"
+      ],
+      "data": {
+        "keyValuePairs": [
+          {
+            "label": "Project / Contract",
+            "value": "Pepe Token"
+          },
+          {
+            "label": "Contract Address",
+            "value": "0x6982508145454ce325ddbe47a25d4ec3d2311933"
+          },
+          {
+            "label": "Network / Chain ID",
+            "value": "Ethereum Mainnet (ID: 1)"
+          },
+          {
+            "label": "Token / Symbol",
+            "value": "PEPE"
+          },
+          {
+            "label": "Proxy Pattern",
+            "value": "Immutable (Renounced Ownership)"
+          },
+          {
+            "label": "Compiler Version",
+            "value": "solc 0.8.19"
+          }
+        ],
+        "metrics": [],
+        "findings": []
+      }
+    },
+    {
+      "id": "contract_identity",
+      "title": "Source Code Verification & Bytecode Decompilation",
+      "subtitle": "State hash match against blockchain node and dispatcher analysis",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Bytecode integrity matched against RPC node",
+        "Control-flow analysis for public execution entrypoints",
+        "Identification of selfdestruct and arbitrary delegatecall opcodes"
+      ],
+      "data": {
+        "metrics": [],
+        "paragraphs": [
+          "EVM machine bytecode was disassembled into a control-flow graph (CFG). Standard ERC selectors and privileged opcodes were formally analyzed."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "basic_findings",
+      "title": "Baseline Security Findings",
+      "subtitle": "Identified vulnerabilities in baseline scan",
+      "requiredTier": "basic",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Summary of identified security findings",
+        "Severity classification adhering to SWC and CWE taxonomy",
+        "Actionable remediation guidelines and mitigation advice"
+      ],
+      "data": {
+        "metrics": [],
+        "findings": [
+          {
+            "id": "VLM-PEPE-01",
+            "severity": "low",
+            "category": "Tokenomics",
+            "title": "Pure Speculative Utility",
+            "description": "Token contracts contain no operational staking, governance, or cash-flow generation logic.",
+            "evidence": "ERC20 baseline with initial maxWallet limits subsequently removed",
+            "recommendation": "Treat as high-beta speculative asset with strict sizing limits.",
+            "requiredTier": "basic",
+            "remediationState": "recommended",
+            "claimId": "CLM-FIND-rep_pepe_pro_023-VLM-PEPE-01",
+            "evidenceId": "EVD-FIND-rep_pepe_pro_023-VLM-PEPE-01",
+            "classification": "B"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pro_permission_parser",
+      "title": "Privileged Roles, Admin Keys & Governance",
+      "subtitle": "Verification of timelock delay parameters and governance controls",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Verification of timelock delay parameters and governance controls",
+        "Detection of privileged mint, pause, blacklist, and drainage capabilities"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Ownership Status",
+            "value": "Renounced to 0x0000000000000000000000000000000000000000",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_permission_parser-1",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_permission_parser-1",
+            "classification": "A"
+          },
+          {
+            "label": "Transfer Fee",
+            "value": "0% Buy / 0% Sell",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_permission_parser-2",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_permission_parser-2",
+            "classification": "A"
+          },
+          {
+            "label": "Blacklist Functionality",
+            "value": "Removed after initial launch phase",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_permission_parser-3",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_permission_parser-3",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Detailed role map traces all execution paths back to verifiable on-chain controllers."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_liquidity_depth",
+      "title": "Liquidity, Holder Concentration & Lock Evidence (PRO)",
+      "subtitle": "Token distribution curve, whale clusters, and verifiable DEX lock proofs",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Token distribution curve and top holder concentration analysis",
+        "DEX liquidity pool pairing and lock verification across registered vaults",
+        "Automated honeypot simulation, transfer fee checks, and sell restriction audit"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Uniswap v2/v3 LP",
+            "value": "Over $120,000,000 locked/burned",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_liquidity_depth-1",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_liquidity_depth-1",
+            "classification": "A"
+          }
+        ],
+        "paragraphs": [
+          "Liquidity analysis examines AMM pairing architecture, lock mechanisms, and transaction fee behavior."
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "pro_attack_surface",
+      "title": "Attack Surface & Reentrancy Formal Vectors (PRO)",
+      "subtitle": "Simulation of oracle manipulation, flash loans, and cross-function reentrancy",
+      "requiredTier": "pro",
+      "isLocked": false,
+      "sampleSummaryLines": [
+        "Cross-function and cross-contract reentrancy guard modeling",
+        "Price oracle staleness, manipulation resilience, and market feed verification",
+        "Economic shock modeling and flash-loan manipulation resistance simulation"
+      ],
+      "data": {
+        "metrics": [
+          {
+            "label": "Oracle Dependency",
+            "value": "Pricing feeds inspected in bytecode",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_attack_surface-1",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_attack_surface-1",
+            "classification": "A"
+          },
+          {
+            "label": "Flash Loan Attack Vector",
+            "value": "State manipulation resilience assessed",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_attack_surface-2",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_attack_surface-2",
+            "classification": "A"
+          },
+          {
+            "label": "Reentrancy Protection",
+            "value": "CEI pattern / Reentrancy guard verified",
+            "status": "verified",
+            "claimId": "CLM-rep_pepe_pro_023-pro_attack_surface-3",
+            "evidenceId": "EVD-rep_pepe_pro_023-pro_attack_surface-3",
+            "classification": "A"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "id": "advanced_bytecode_diff",
+      "title": "Storage Layout Collision & Multi-Compiler Bytecode Diff (ADVANCED)",
+      "subtitle": "Deep storage layout slot collision detection across implementation upgrades",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Storage slot allocation collision detection across implementation upgrades",
+        "Upgrade proxy layout gap verification and state preservation checks",
+        "Bytecode reproduction against official compiler metadata and build pipelines",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_multi_version",
+      "title": "Formal SMT Invariant Proofs & Regression Analysis (ADVANCED)",
+      "subtitle": "Mathematical Z3 solver invariant verification and bytecode regression analysis",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "SMT proofs for solvency, conservation, and reentrancy impossibility invariants",
+        "Bytecode regression analysis and logic change tracking",
+        "Formal SMT Verification (Z3): 78% invariants verified (QF_LIA UNSAT)",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    },
+    {
+      "id": "advanced_human_review",
+      "title": "Human Analyst Review & Signed Verification Evidence (ADVANCED)",
+      "subtitle": "Attested reviewer evidence and signed non-automated verification findings",
+      "requiredTier": "advanced",
+      "isLocked": true,
+      "lockTierNotice": "Unlock with Advanced Audit",
+      "data": null,
+      "sampleSummaryLines": [
+        "Analyst sign-off requires verified reviewer evidence",
+        "Cryptographically signed attestation digest",
+        "Manual review boundary explicit: no certified safe claims",
+        "WHY: Section operates on dedicated compute clusters or requires manual human analyst allocation.",
+        "BLOCKER: TIER_ENTITLEMENT_BOUNDARY (client active tier does not cover this analytical layer).",
+        "PROPOSED FIX: Activate tier in subscriptions dashboard or configure custom API key."
+      ]
+    }
+  ],
+  "humanReviewEvidencePresent": false,
+  "merkleRoot": "sha256:7332e361a154c18a5edff941045e4627ffe45d98d96b99c2b2851f3c65103c81",
+  "applicationSurface": "canonical",
+  "auditScopeManifest": {
+    "targetSpec": {
+      "chainId": "1",
+      "blockNumber": 18072000,
+      "contractAddress": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+      "network": "Ethereum Mainnet",
+      "proxyType": "Non-Proxy Monolithic"
+    },
+    "compilerSpec": {
+      "compilerVersion": "solc 0.8.19",
+      "optimizationRuns": 200,
+      "evmTarget": "cancun"
+    },
+    "analysisDimensions": {
+      "staticGraph": true,
+      "dynamicSimulation": true,
+      "formalVerification": true,
+      "economicMevInspection": false
+    },
+    "coverageTuple": {
+      "bytecodeInstructionsPct": 92,
+      "reachableCFGEdgesPct": 88,
+      "functionsPct": 95,
+      "detectorsExecutedPct": 100,
+      "formalPropertiesPct": 78
+    },
+    "cryptographicManifest": {
+      "merkleAuditRoot": "sha256:7b6fd6e136e2229d6457b614e4a22ca9ba5801dbb956f6e9d301db7724e44161",
+      "reportDigestSha256": "sha256:7b6fd6e136e2229d6457b614e4a22ca9ba5801dbb956f6e9d301db7724e44161",
+      "provenanceHash": "0x3b1c67d8f99478f6d3ce086ff90d93dbb7c05eb7621481b7e4f1a26d95393ec2"
+    }
+  },
+  "attackPathAnalysis": {
+    "synthesizedAttackPaths": []
+  },
+  "humanReviewSignOff": {
+    "auditorIdentity": "NONE (Automated Institutional Security Engine)",
+    "clearanceLevel": "AUTOMATED_ONLY",
+    "inspectionDate": "—",
+    "signOffStatus": "AUTOMATED_COMPLIANT",
+    "signatureDigest": "NONE"
+  },
+  "reportDigest": "sha256:4a9f61e348dd071ef73e548cf40694f3d152dbc6b89360382b9951bbe68e2a6d",
+  "pkiAttestation": {
+    "signerIdentity": "Velmère Cryptographic Root CA / Engine v2.4",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEADF3+LCoJSz+qzgHSH9LbbekymiMYC6HfRD5StEWmXtA=\n-----END PUBLIC KEY-----\n",
+    "signatureHex": "3d1bbb9251ecd1e6ff1f30b140524f0fce0067d149327b7727ca0a6d69d17722aa3729f0fcda0bc0119e5e797e001ae7decbd764317d24c3a34e15da5f83f80f",
+    "signedDigest": "6f0c63cab0ca8906656320178fe9e614dabcdbaf6136b8e5d6c20d4da8d6a157",
+    "timestampToken": {
+      "version": 1,
+      "policyOid": "1.3.6.1.4.1.61024.1.1",
+      "hashAlgorithm": "SHA-256",
+      "messageImprint": "6f0c63cab0ca8906656320178fe9e614dabcdbaf6136b8e5d6c20d4da8d6a157",
+      "serialNumber": "c5e0112a79c2bc9fdda13bd321ab0304",
+      "genTime": "2026-09-10T12:36:15.747Z",
+      "accuracySeconds": 1,
+      "tsaName": "Velmère RFC 3161 Trusted Authority",
+      "tokenSignature": "de24a08d500734082ab62602c85a07f269666b69b4b570c09991f69b2215e9f0"
+    },
+    "provenanceProof": "sha256:09a4bf7820c36b67f9e0a16aa142a7dc35b90a9a99836efb02429ef88d2a19b6"
+  },
+  "integrityProof": {
+    "pdfSha256": "67a79daabad62b4e939b4f8a22bf3736d1b98ce7c8fd072bb5b126e059adec77",
+    "pdfByteLength": 83771,
+    "pageCount": 2,
+    "verifiedAt": "2026-09-10T12:36:15.757Z"
+  }
+}

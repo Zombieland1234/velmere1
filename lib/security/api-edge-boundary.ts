@@ -24,11 +24,12 @@ const STRIPE_SIGNATURE_MAX_LENGTH = 2_500;
 const STRIPE_SIGNATURE_MAX_V1_VALUES = 8;
 const STRIPE_TIMESTAMP = /^(?:0|[1-9]\d{0,15})$/u;
 const STRIPE_V1_SIGNATURE = /^[a-f0-9]{64}$/iu;
+const API_MAX_CONTENT_LENGTH_BYTES = 2_097_152;
 
 export type ApiEdgeFailure = {
   ok: false;
   schemaVersion: typeof API_EDGE_SCHEMA;
-  status: 400 | 403 | 405 | 414 | 503;
+  status: 400 | 403 | 405 | 413 | 414 | 503;
   mode: string;
 };
 
@@ -49,7 +50,7 @@ function parseConfiguredOrigin(raw: string | undefined) {
   try {
     const value = new URL(raw.trim());
     if (
-      value.protocol !== "https:" ||
+      (value.protocol !== "https:" && value.protocol !== "http:") ||
       value.username ||
       value.password ||
       value.pathname !== "/" ||
@@ -92,7 +93,16 @@ export function resolveCanonicalRequestOrigins(
     }
   }
 
-  if (!productionLike && origins.size === 0) {
+  const isLoopback = (() => {
+    try {
+      const u = new URL(request.url);
+      return u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "::1";
+    } catch {
+      return false;
+    }
+  })();
+
+  if ((!productionLike || (isLoopback && env.VERCEL !== "1")) && origins.size === 0) {
     try {
       origins.add(new URL(request.url).origin);
     } catch {
@@ -179,7 +189,12 @@ function inspectApiQuery(requestUrl: string) {
     if (
       normalizedName === "__proto__" ||
       normalizedName === "prototype" ||
-      normalizedName === "constructor"
+      normalizedName === "constructor" ||
+      normalizedName.includes("__proto__") ||
+      normalizedName.startsWith("constructor[") ||
+      normalizedName.startsWith("constructor.") ||
+      normalizedName.startsWith("prototype[") ||
+      normalizedName.startsWith("prototype.")
     ) {
       return "api_query_dangerous_name";
     }
@@ -305,8 +320,13 @@ export function inspectApiEdgeRequest(
     return failure(400, "api_transfer_encoding_forbidden");
   }
   const contentLength = request.headers.get("content-length");
-  if (contentLength && (!/^(?:0|[1-9]\d*)$/u.test(contentLength) || !Number.isSafeInteger(Number(contentLength)))) {
-    return failure(400, "api_content_length_invalid");
+  if (contentLength) {
+    if (!/^(?:0|[1-9]\d*)$/u.test(contentLength) || !Number.isSafeInteger(Number(contentLength))) {
+      return failure(400, "api_content_length_invalid");
+    }
+    if (Number(contentLength) > API_MAX_CONTENT_LENGTH_BYTES) {
+      return failure(413, "api_payload_too_large");
+    }
   }
 
   const pathname = rawPathname(request.url);

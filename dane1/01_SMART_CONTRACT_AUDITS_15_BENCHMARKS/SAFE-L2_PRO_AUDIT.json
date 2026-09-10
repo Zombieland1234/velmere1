@@ -1,0 +1,30 @@
+{
+  "contractName": "Gnosis Safe L2",
+  "symbol": "SAFE-L2",
+  "address": "0x3e5c63644e683549055b9be8653de26e0b4cd36e",
+  "tier": "PRO",
+  "network": "Ethereum & L2 Mainnets",
+  "compilerVersion": "solc 0.8.19",
+  "proxyPattern": "MasterCopy / GnosisSafeProxy",
+  "riskScore": 10,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Gnosis Safe L2.",
+  "findings": [
+    {
+      "title": "EIP-712 Signature Malleability & Nonce Replay Prevention",
+      "severity": "MEDIUM",
+      "swcId": "SWC-117",
+      "cweId": "CWE-347",
+      "description": "Safe transaction hashes must enforce strict EIP-712 domain separation including chainId to prevent cross-rollup replay."
+    }
+  ],
+  "verificationDigest": "08532f294abb5b444f5b4771e8700ffb41ca18c2d00ae45ab644485de0c7f286",
+  "attackSurface": {
+    "category": "Multisig Authorization & Nonce Monotonicity",
+    "attackVector": "Attempting to replay valid Ethereum Mainnet signature on Arbitrum or Optimism without domain separator binding."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/GnosisSafe.sol\n+++ b/contracts/GnosisSafe.sol\n@@ -89,2 +89,3 @@\n+ require(block.chainid == domainChainId, 'DOMAIN_CHAIN_ID_MISMATCH');\n  checkSignatures(txHash, txData, signatures);"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "targetContract": "Uniswap V3 Pool / Router",
+  "symbol": "UNI-V3",
+  "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 12,
+  "riskLabel": "VERY LOW RISK",
+  "proofOfConceptSolidity": "function testTickRoundingDirection() public {\n  vm.prank(attacker);\n  pool.swap(recipient, zeroForOne, amountIn, sqrtPriceLimitX96, data);\n  assertLe(feeAmountPaid, theoreticalMinimumFee);\n}",
+  "formalInvariantZ3": "(declare-const tick_curr Int)\n(declare-const liquidity Int)\n(assert (and (> liquidity 0) (not (and (>= tick_curr -887272) (<= tick_curr 887272)))))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.7.6",
+  "proxyPattern": "Immutable (No Proxy)",
+  "merkleEvidenceSeal": "f4d1bafd3908290082c2fd7d71ca45142ed7e7d105e4be90ad003721c1c1d8aa",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

@@ -1,7 +1,8 @@
+import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-const root = path.resolve(decodeURIComponent(new URL("..", import.meta.url).pathname));
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const riskPath = path.join(root, "lib/market-integrity/risk-engine.ts");
 const typesPath = path.join(root, "lib/market-integrity/risk-types.ts");
 const profilePath = path.join(root, "lib/market-integrity/risk-engine-profile.ts");

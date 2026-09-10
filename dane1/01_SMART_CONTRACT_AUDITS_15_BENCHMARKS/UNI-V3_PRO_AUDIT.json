@@ -1,0 +1,30 @@
+{
+  "contractName": "Uniswap V3 Pool / Router",
+  "symbol": "UNI-V3",
+  "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.7.6",
+  "proxyPattern": "Immutable (No Proxy)",
+  "riskScore": 12,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for Uniswap V3 Pool / Router.",
+  "findings": [
+    {
+      "title": "Q64.96 Fixed-Point Rounding & Tick Crossing Edge Cases",
+      "severity": "MEDIUM",
+      "swcId": "SWC-114",
+      "cweId": "CWE-682",
+      "description": "Sub-wei rounding disparity in high-precision tick crossing calculations during extreme volatility flashes."
+    }
+  ],
+  "verificationDigest": "4e5366476c7da2578db57e08f4909da3446ade38205e290ea0e299fd544a2e5b",
+  "attackSurface": {
+    "category": "Concentrated Liquidity & Precision Math",
+    "attackVector": "Attacker executes flash swap traversing 150 ticks in single block, exploiting 1-wei rounding direction."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/UniswapV3Pool.sol\n+++ b/contracts/UniswapV3Pool.sol\n@@ -245,3 +245,3 @@\n- uint256 fee = FullMath.mulDiv(amountIn, feePips, 1e6);\n+ uint256 fee = FullMath.mulDivRoundingUp(amountIn, feePips, 1e6);"
+  }
+}

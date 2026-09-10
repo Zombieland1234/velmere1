@@ -66,10 +66,11 @@ export async function fetchVerifiedAssetDetailCandles(args: {
   signal?: AbortSignal;
 }): Promise<RemoteCandleSet> {
   const config = timeframeConfig(args.timeframe);
-  const url = buildPass4408AssetDetailChartFetchUrl(args.data, config);
+  const rawUrl = buildPass4408AssetDetailChartFetchUrl(args.data, config);
+  const url = rawUrl.includes("?") ? `${rawUrl}&live=true` : `${rawUrl}?live=true`;
   const { response, payload, contentType } = await fetchAssetDetailJson<AssetDetailChartPayload>(
     url,
-    { cache: "no-store" },
+    { cache: "no-store", headers: { "x-velmere-live": "true" } },
     { signal: args.signal },
   );
 

@@ -1,0 +1,26 @@
+{
+  "id": "GSC-014",
+  "name": "false-positive-traps",
+  "description": "Safe patterns that naive analyzers erroneously flag: OpenZeppelin ReentrancyGuard, SafeERC20 wrappers, and Math libraries.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+  "expectedFindings": [
+    "OPENZEPPELIN_REENTRANCY_GUARD_DETECTED",
+    "SAFE_ERC20_USAGE"
+  ],
+  "expectedNonFindings": [
+    "REENTRANCY_VULNERABILITY",
+    "UNCHECKED_TRANSFER_CALL"
+  ],
+  "expectedEvidenceStates": {
+    "falsePositiveTrapsAudit": "PASS"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 0,
+    "maxRisk": 20
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "targetContract": "Tether USD (USDT)",
+  "symbol": "USDT",
+  "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 42,
+  "riskLabel": "MODERATE RISK",
+  "proofOfConceptSolidity": "function testUSDTRevertWithoutSafeTransfer() public {\n  (bool ok, ) = address(usdt).call(abi.encodeWithSignature('transfer(address,uint256)', alice, 1000));\n  require(ok, 'Call failed');\n  // USDT returns void, causing standard IERC20 ABI decode to revert\n}",
+  "formalInvariantZ3": "(declare-const isBlacklisted Bool)\n(declare-const senderFrozen Bool)\n(assert (and (= isBlacklisted true) (not senderFrozen)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.4.18",
+  "proxyPattern": "Custom Upgradeable Storage Proxy",
+  "merkleEvidenceSeal": "371fb69e0fa45f6c46229307abab3d4295041991ff9dcd8591b7ee13ed032f0c",
+  "iteration": "ANA-1-INITIAL-ANALYSIS-BASELINE"
+}

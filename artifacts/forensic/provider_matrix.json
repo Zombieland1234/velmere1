@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "velmere.provider-matrix.v1",
+  "generatedAt": "2026-09-02T21:02:00.000Z",
+  "environment": "development/local",
+  "providers": [
+    {
+      "providerId": "coingecko",
+      "name": "CoinGecko Free API Tier",
+      "category": "Market Data & Quotes",
+      "status": "OPERATIONAL",
+      "commercialRights": "UNVERIFIED_FREE_TIER",
+      "egressMode": "brokered_egress",
+      "rateLimitPolicy": "10-30 req/min free tier, 15m cache TTL",
+      "fallbackStrategy": "Reference Catalog fallback with truthful attribution and withholding disclaimer",
+      "testedLive": true,
+      "verifiedPrice": "Bitcoin $77,288 - $77,409 verified"
+    },
+    {
+      "providerId": "gemini",
+      "name": "Google Gemini Pro AI",
+      "category": "AI Assistant & Intelligence (Angel)",
+      "status": "OPERATIONAL",
+      "commercialRights": "VERIFIED_API_KEY",
+      "egressMode": "direct_egress",
+      "rateLimitPolicy": "Google Cloud standard quota",
+      "fallbackStrategy": "Deterministic safety fallback on injection or policy violation",
+      "testedLive": true,
+      "verifiedSafety": "6/6 adversarial prompt injections blocked cold with 400 security_fallback"
+    },
+    {
+      "providerId": "supabase",
+      "name": "Supabase Cloud Database & Auth",
+      "category": "Database, RLS, Storage & Sessions",
+      "status": "OPERATIONAL",
+      "commercialRights": "VERIFIED_CREDENTIALS",
+      "egressMode": "direct_ssl",
+      "rateLimitPolicy": "Standard project limits",
+      "fallbackStrategy": "Strict fail-closed RLS, memory preview mode in non-production",
+      "testedLive": true,
+      "verifiedMultiTenant": "RLS isolation verified, preview session persistence operational"
+    },
+    {
+      "providerId": "stripe",
+      "name": "Stripe Payments & Webhooks",
+      "category": "Payment Processing & Entitlements",
+      "status": "STOP_SELL_ENFORCED",
+      "commercialRights": "TEST_MODE_GUARDED",
+      "egressMode": "brokered_webhook",
+      "rateLimitPolicy": "Stripe standard webhook signing",
+      "fallbackStrategy": "Strict stop-sell on non-verified tiers, tamper-resistant idempotency ledger",
+      "testedLive": true,
+      "verifiedReplay": "51 assertions passed, 25/25 mutation vectors killed"
+    },
+    {
+      "providerId": "bsc_node",
+      "name": "Binance Smart Chain RPC Node",
+      "category": "On-Chain Audit Targets",
+      "status": "OPERATIONAL",
+      "commercialRights": "PUBLIC_RPC",
+      "egressMode": "json_rpc",
+      "rateLimitPolicy": "Public endpoint throttle",
+      "fallbackStrategy": "Safe read-only target validation",
+      "testedLive": true,
+      "verifiedExecution": "Contract 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c verified"
+    },
+    {
+      "providerId": "ecb_stats",
+      "name": "European Central Bank Statistics",
+      "category": "Macro & Cross-Border Reference",
+      "status": "OPERATIONAL",
+      "commercialRights": "OPEN_PUBLIC_DATA",
+      "egressMode": "cached_fetch",
+      "rateLimitPolicy": "Daily ECB schedule",
+      "fallbackStrategy": "Attributed reference rates",
+      "testedLive": true,
+      "verifiedCompliance": "Public policy attribution verified"
+    }
+  ]
+}

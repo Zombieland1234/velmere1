@@ -2,3 +2,360 @@
 
 .vlm-analysis-mini-unavailable{display:grid;place-items:center;min-height:2.15rem;color:rgba(196,210,207,.42);font-family:var(--font-mono),ui-monospace,monospace;font-size:.9rem;letter-spacing:.08em}
 .vlm-analysis-signal-tile[data-provenance-state="UNAVAILABLE"] .vlm-analysis-view-evidence{opacity:.48}
+/* ==========================================================================
+   VELMÈRE ANALYSIS TAB (PAS 3)
+   Minimalism + Information Density + Clarity
+   No huge empty cards, no gaudy gradients, no heavy glow.
+   ========================================================================== */
+
+.vlm-analysis-mini-unavailable {
+  display: grid;
+  place-items: center;
+  min-height: 1.8rem;
+  color: rgba(196, 210, 207, 0.42);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.vlm-analysis-signal-tile[data-provenance-state="UNAVAILABLE"] .vlm-analysis-view-evidence {
+  opacity: 0.48;
+}
+
+/* Minimalist Tier Grid */
+.vlm-analysis-idle {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100% !important;
+  padding: 1.5rem !important;
+  text-align: center !important;
+  gap: 1.1rem !important;
+}
+
+.vlm-analysis-idle-mark {
+  display: none !important;
+}
+
+.vlm-analysis-idle-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+}
+
+.vlm-analysis-idle-copy > span {
+  font-size: 0.65rem !important;
+  letter-spacing: 0.22em !important;
+  color: var(--analysis-gold) !important;
+  font-family: var(--font-mono), monospace !important;
+  font-weight: 700 !important;
+}
+
+.vlm-analysis-idle-copy > p {
+  max-width: 38rem !important;
+  font-size: 0.76rem !important;
+  color: rgba(220, 230, 228, 0.65) !important;
+  line-height: 1.5 !important;
+}
+
+.vlm-analysis-tier-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 19.5rem)) !important;
+  justify-content: center !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  max-width: 62rem !important;
+  margin: 0.5rem auto !important;
+}
+
+.vlm-analysis-tier-card {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+  text-align: left !important;
+  min-height: 14rem !important;
+  padding: 1.25rem 1.25rem !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  background: rgba(8, 13, 16, 0.72) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(16px) !important;
+  cursor: pointer !important;
+  transition: border-color 220ms ease, background 220ms ease, box-shadow 220ms ease !important;
+}
+
+.vlm-analysis-tier-card:hover:not(:disabled) {
+  border-color: rgba(199, 163, 91, 0.45) !important;
+  background: rgba(13, 21, 26, 0.88) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 25px rgba(199, 163, 91, 0.12) !important;
+}
+
+.vlm-analysis-tier-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+}
+
+.vlm-analysis-tier-card[data-tier="pro"] {
+  border-color: rgba(199, 163, 91, 0.32) !important;
+  background: rgba(16, 20, 24, 0.78) !important;
+}
+
+.vlm-analysis-tier-top {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+}
+
+.vlm-analysis-tier-top em {
+  position: absolute !important;
+  top: 0.85rem !important;
+  right: 0.95rem !important;
+  color: var(--analysis-gold) !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 0.52rem !important;
+  font-style: normal !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border: 1px solid rgba(199, 163, 91, 0.38);
+  background: rgba(199, 163, 91, 0.1);
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+}
+
+.vlm-analysis-tier-name {
+  font-family: var(--font-mono), monospace !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.18em !important;
+  color: var(--analysis-gold) !important;
+  font-weight: 700 !important;
+}
+
+.vlm-analysis-tier-price-box {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.5rem !important;
+  margin-top: 0.2rem !important;
+}
+
+.vlm-analysis-tier-amount {
+  font-size: 1.45rem !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  letter-spacing: -0.02em !important;
+  font-family: var(--font-mono), monospace !important;
+}
+
+.vlm-analysis-tier-sub {
+  font-size: 0.62rem !important;
+  color: rgba(220, 230, 228, 0.5) !important;
+  font-family: var(--font-mono), monospace !important;
+}
+
+.vlm-analysis-das-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  margin: 0.6rem 0 !important;
+  padding: 0.25rem 0.55rem !important;
+  border-radius: 999px !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 0.62rem !important;
+  width: fit-content !important;
+}
+
+.vlm-analysis-das-pill[data-quality="high"] {
+  background: rgba(82, 203, 187, 0.08) !important;
+  border: 1px solid rgba(82, 203, 187, 0.25) !important;
+  color: #52cbbb !important;
+}
+
+.vlm-analysis-das-pill[data-quality="high"] .vlm-analysis-das-indicator {
+  background: #52cbbb !important;
+  box-shadow: 0 0 6px #52cbbb !important;
+}
+
+.vlm-analysis-das-pill[data-quality="moderate"] {
+  background: rgba(199, 163, 91, 0.08) !important;
+  border: 1px solid rgba(199, 163, 91, 0.25) !important;
+  color: #c7a35b !important;
+}
+
+.vlm-analysis-das-pill[data-quality="moderate"] .vlm-analysis-das-indicator {
+  background: #c7a35b !important;
+  box-shadow: 0 0 6px #c7a35b !important;
+}
+
+.vlm-analysis-das-pill[data-quality="limited"] {
+  background: rgba(224, 122, 95, 0.08) !important;
+  border: 1px solid rgba(224, 122, 95, 0.25) !important;
+  color: #e07a5f !important;
+}
+
+.vlm-analysis-das-pill[data-quality="limited"] .vlm-analysis-das-indicator {
+  background: #e07a5f !important;
+  box-shadow: 0 0 6px #e07a5f !important;
+}
+
+.vlm-analysis-das-indicator {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  display: inline-block !important;
+}
+
+.vlm-analysis-das-pill strong {
+  font-weight: 700 !important;
+}
+
+.vlm-analysis-das-pill small {
+  opacity: 0.75 !important;
+}
+
+.vlm-analysis-tier-desc {
+  color: rgba(215, 225, 224, 0.65) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.5 !important;
+  margin: 0.25rem 0 0.75rem !important;
+}
+
+.vlm-analysis-tier-footer {
+  margin-top: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-top: 0.6rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.vlm-analysis-tier-footer b {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(199, 163, 91, 0.32) !important;
+  background: rgba(199, 163, 91, 0.08) !important;
+  color: var(--analysis-gold) !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  transition: all 180ms ease !important;
+}
+
+.vlm-analysis-tier-card:hover .vlm-analysis-tier-footer b {
+  background: rgba(199, 163, 91, 0.18) !important;
+  border-color: rgba(199, 163, 91, 0.6) !important;
+  color: #fff !important;
+}
+
+.vlm-analysis-tier-footer b i {
+  color: var(--analysis-gold) !important;
+  font-style: normal !important;
+}
+
+.vlm-analysis-tier-footer small {
+  color: rgba(220, 230, 228, 0.45) !important;
+  font-size: 0.58rem !important;
+  font-family: var(--font-mono), monospace !important;
+}
+
+/* Success State - Verdict bar */
+.vlm-analysis-verdict {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.45rem !important;
+  background: rgba(9, 14, 17, 0.8) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+}
+
+.vlm-analysis-verdict > div {
+  padding: 0.75rem 0.95rem !important;
+}
+
+.vlm-analysis-verdict > div strong {
+  font-size: 1.15rem !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+}
+
+.vlm-analysis-verdict > div p {
+  font-size: 0.64rem !important;
+  color: rgba(215, 225, 224, 0.55) !important;
+}
+
+.vlm-analysis-verdict dl > span {
+  padding: 0.6rem 0.65rem !important;
+}
+
+.vlm-analysis-verdict dt {
+  font-size: 0.44rem !important;
+  color: rgba(199, 163, 91, 0.6) !important;
+}
+
+.vlm-analysis-verdict dd {
+  font-size: 0.72rem !important;
+  color: #fff !important;
+}
+
+/* High Density Signal Tiles */
+.vlm-analysis-signal-grid {
+  gap: 0.45rem !important;
+  margin-top: 0.45rem !important;
+}
+
+.vlm-analysis-signal-tile {
+  min-height: 7.25rem !important;
+  padding: 0.65rem 0.7rem 0.55rem !important;
+  border-radius: 0.4rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: rgba(9, 14, 17, 0.72) !important;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease !important;
+}
+
+.vlm-analysis-signal-tile:hover {
+  border-color: rgba(199, 163, 91, 0.32) !important;
+  background: rgba(12, 19, 23, 0.88) !important;
+  transform: translateY(-1px) !important;
+}
+
+.vlm-analysis-signal-tile > strong {
+  font-size: 0.62rem !important;
+  color: rgba(225, 232, 230, 0.85) !important;
+}
+
+.vlm-analysis-signal-tile > b {
+  font-size: 0.88rem !important;
+}
+
+.vlm-analysis-signal-tile > small {
+  font-size: 0.52rem !important;
+  line-height: 1.35 !important;
+}
+
+/* Seamless Tab Switching */
+.vlm-analysis-tab-shell,
+.vlm-asset-intelligence-tabs-root,
+.vlm-market-impact-panel,
+.vlm-whale-watch-panel {
+  background: transparent !important;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Signal Details Drawer Backdrop & Click-to-Close */
+.vlm-analysis-details-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 35 !important;
+  background: rgba(0, 0, 0, 0.52) !important;
+  backdrop-filter: blur(3px) !important;
+  cursor: pointer !important;
+}
+
+.vlm-analysis-details-drawer {
+  z-index: 40 !important;
+}
+

@@ -1,0 +1,25 @@
+{
+  "id": "GSC-009",
+  "name": "broken-access-control",
+  "description": "Sensitive state modifying function missing onlyOwner or access control modifier, or using tx.origin.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+  "expectedFindings": [
+    "SWC-115_AUTHORIZATION_THROUGH_TX_ORIGIN",
+    "MISSING_ACCESS_MODIFIER"
+  ],
+  "expectedNonFindings": [
+    "MSG_SENDER_ENFORCED_ACCESS"
+  ],
+  "expectedEvidenceStates": {
+    "accessControlModifiers": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 90,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 75,
+    "maxRisk": 100
+  }
+}

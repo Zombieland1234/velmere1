@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "baselineVersion": "4.0.0-rc3",
+  "auditTimestamp": "2026-09-09T21:11:00Z",
+  "engine": "Velmère Furnace Smart Contract Security Assessment Engine",
+  "strictPrinciple": "CLAIM == OBSERVATION == EXECUTION RECORD == EVIDENCE == ARTIFACT",
+  "summary": {
+    "totalChecklistItems": 20,
+    "verifiedItems": 3,
+    "partialItems": 6,
+    "defectiveItems": 11,
+    "criticalDefects": 4,
+    "highDefects": 5,
+    "mediumDefects": 2
+  },
+  "defects": [
+    {
+      "id": "DEF-01",
+      "checklistItem": 14,
+      "name": "Synthetic Reviewer Claim Injection",
+      "severity": "CRITICAL",
+      "affectedFiles": [
+        "lib/security/audit-canonical-report.ts",
+        "scripts/generate_45_targeted_pdfs.ts",
+        "scripts/generate_180_dowody5_pdfs.ts"
+      ],
+      "codeSnippet": "reviewerName: \"Velmère Institutional Principal Auditor\", clearanceLevel: \"Level-3 Lead Cryptographic Security Reviewer\"",
+      "violation": "Phase 26, Override 01, Override 20. Automated engine emitted synthetic human reviewer identity without external signature artifact.",
+      "remediationStatus": "PLANNED_REMOVAL",
+      "remediationTarget": "lib/security/audit-canonical-report.ts"
+    },
+    {
+      "id": "DEF-02",
+      "checklistItem": 19,
+      "name": "Hardcoded Compiler Metadata Across Targets",
+      "severity": "HIGH",
+      "affectedFiles": ["lib/security/audit-canonical-report.ts"],
+      "codeSnippet": "compilerVersion: \"0.8.24+commit.e11b9ed9\", optimizationRuns: 200, evmTarget: \"cancun\"",
+      "violation": "Phase 0 #19, Override 03. Target-agnostic assumption of Solidity 0.8.24 Cancun ignores real bytecode/source pragmas.",
+      "remediationStatus": "PLANNED_REMOVAL",
+      "remediationTarget": "lib/security/audit-canonical-report.ts"
+    },
+    {
+      "id": "DEF-03",
+      "checklistItem": 15,
+      "name": "Generic Fabricated Attack Paths",
+      "severity": "HIGH",
+      "affectedFiles": ["lib/security/audit-canonical-report.ts"],
+      "codeSnippet": "vectorTitle: \"Mempool Sandwich & Liquidity Skew Vector\", economicImpactUsdEst: \"< $1,200 (Bounded by Block Gas)\"",
+      "violation": "Phase 14, Override 17. Unconditionally emitting sandwich and upgrade rollback paths without AST reachability evidence.",
+      "remediationStatus": "PLANNED_REMOVAL",
+      "remediationTarget": "lib/security/audit-canonical-report.ts"
+    },
+    {
+      "id": "DEF-04",
+      "checklistItem": 9,
+      "name": "Cryptographic Digest Reuse in Scope Manifest",
+      "severity": "MEDIUM",
+      "affectedFiles": ["lib/security/audit-canonical-report.ts"],
+      "codeSnippet": "reportDigestSha256: merkleCommitment.merkleRoot",
+      "violation": "Phase 30, Override 06. Merkle root assigned to report digest field instead of canonical report JSON hash.",
+      "remediationStatus": "PLANNED_FIX",
+      "remediationTarget": "lib/security/audit-canonical-report.ts"
+    },
+    {
+      "id": "DEF-05",
+      "checklistItem": 10,
+      "name": "Monolithic Formal Verification Percentage Without SMT Proof Registry",
+      "severity": "HIGH",
+      "affectedFiles": [
+        "lib/security/audit-canonical-report.ts",
+        "lib/security/contract-audit-profiles.ts"
+      ],
+      "codeSnippet": "formalProofCoveragePct: profile.coverageTuple?.formalPropertiesPct ?? 86.4",
+      "violation": "Phase 18, Override 13. High-level percentage claims without discrete, named mathematical property records.",
+      "remediationStatus": "PLANNED_REMOVAL",
+      "remediationTarget": "artifacts/formal_property_registry.json"
+    },
+    {
+      "id": "DEF-06",
+      "checklistItem": 18,
+      "name": "Cross-Product Domain Coupling in EVM Audit Pipeline",
+      "severity": "HIGH",
+      "affectedFiles": ["lib/security/audit-canonical-report.ts"],
+      "codeSnippet": "if (isBtc) ... if (isEth) ...",
+      "violation": "Phase 1, Override 07. EVM pipeline contained ad-hoc hardcoded handling for UTXO Bitcoin and L1 Ethereum within contract logic.",
+      "remediationStatus": "PLANNED_REFACTOR",
+      "remediationTarget": "lib/security/audit-canonical-report.ts"
+    },
+    {
+      "id": "DEF-07",
+      "checklistItem": 20,
+      "name": "Synthesized Claims Unlinked to Raw Observations",
+      "severity": "MEDIUM",
+      "affectedFiles": ["lib/security/audit-canonical-report.ts"],
+      "codeSnippet": "claimId: `CLM-${input.reportId}-${sec.id}-${mIdx + 1}`",
+      "violation": "Phase 0 #20, Override 05. Claim IDs synthesized on the fly rather than derived from raw observation hashes.",
+      "remediationStatus": "PLANNED_FIX",
+      "remediationTarget": "lib/security/audit-canonical-report.ts"
+    },
+    {
+      "id": "DEF-08",
+      "checklistItem": 16,
+      "name": "Arbitrary Confidence Assignment (95-100%)",
+      "severity": "MEDIUM",
+      "affectedFiles": ["lib/security/contract-audit-profiles.ts"],
+      "codeSnippet": "confidenceScore: 98",
+      "violation": "Phase 24, Override 23. Hardcoded confidence scores without statistical measurement or execution weighting.",
+      "remediationStatus": "PLANNED_REFACTOR",
+      "remediationTarget": "lib/security/contract-audit-profiles.ts"
+    }
+  ],
+  "checklistStatus": [
+    { "index": 1, "name": "Current Audit Pipeline", "status": "PARTIAL" },
+    { "index": 2, "name": "Detector Registry", "status": "PARTIAL" },
+    { "index": 3, "name": "Canonical Audit Schema", "status": "PARTIAL" },
+    { "index": 4, "name": "Tier Gating Logic", "status": "DEFECT" },
+    { "index": 5, "name": "PDF Generation", "status": "VERIFIED" },
+    { "index": 6, "name": "JSON Generation", "status": "VERIFIED" },
+    { "index": 7, "name": "Evidence Generation", "status": "PARTIAL" },
+    { "index": 8, "name": "Merkle Generation", "status": "VERIFIED" },
+    { "index": 9, "name": "Report Hashing", "status": "DEFECT" },
+    { "index": 10, "name": "Formal Verification Orchestration", "status": "DEFECT" },
+    { "index": 11, "name": "Test Fixtures", "status": "VERIFIED" },
+    { "index": 12, "name": "Audit-Related Scripts", "status": "DEFECT" },
+    { "index": 13, "name": "Hard-coded / Sample Findings", "status": "DEFECT" },
+    { "index": 14, "name": "Synthetic Reviewers", "status": "DEFECT" },
+    { "index": 15, "name": "Generic Attack Paths", "status": "DEFECT" },
+    { "index": 16, "name": "Fake Confidence Values", "status": "DEFECT" },
+    { "index": 17, "name": "Duplicated Findings", "status": "PARTIAL" },
+    { "index": 18, "name": "Domain Leakage", "status": "DEFECT" },
+    { "index": 19, "name": "Stale / Hardcoded Compiler Metadata", "status": "DEFECT" },
+    { "index": 20, "name": "Unlinked Claims", "status": "DEFECT" }
+  ]
+}

@@ -19,6 +19,7 @@ import {
   type AuditIntakeTier,
 } from "@/lib/security/audit-intake-case-vault";
 import { appendPass2178MutationReceipt } from "@/lib/security/mutation-receipt-vault";
+import { storeAuditAccountMessage } from "@/lib/account/audit-account-messages";
 
 function cleanString(value: unknown, max: number) {
   if (typeof value !== "string") return "";
@@ -185,6 +186,36 @@ export async function POST(request: Request) {
     },
     safeSummary: "Audit intake case accepted with a redacted target hash. Paid analysis remains blocked until entitlement verification.",
   });
+
+  try {
+    await storeAuditAccountMessage({
+      message: {
+        id: result.record.caseRef,
+        title: `Audit Prescreen Case ${result.record.caseRef}`,
+        body: `Smart contract prescreen for ${target.displayLabel} (${target.chainName} chain) has been registered. Initial static analysis is in progress.`,
+        status: "queued",
+        packageLabel: tier === "basic" ? "Velmère Basic Prescreen" : "Velmère Audit",
+        requestId: clientRequestId,
+        createdAt: new Date().toISOString(),
+        eta: "within 15 minutes",
+        accountRoute: `/${locale}/account?tab=audits&caseRef=${encodeURIComponent(result.record.caseRef)}`,
+        nextSteps: [
+          "Contract validity and AST checks are running in background",
+          "Check permissions, honeypot and ownership controls",
+          "Download your audit artifact once prescreen completes",
+        ],
+      },
+      accountId: account.accountId,
+      contactEmail: account.email,
+      locale,
+      reviewLevel: tier,
+      projectName: "Smart Contract Prescreen",
+      contractAddress: target.canonicalTarget,
+      auditCaseRef: result.record.caseRef,
+    });
+  } catch {
+    // continue safely if message store is offline
+  }
 
   const publicCase = auditIntakePublicCase(result.record);
   const httpStatus = result.duplicate ? 200 : result.record.status === "queued_basic_prescreen" ? 202 : 201;

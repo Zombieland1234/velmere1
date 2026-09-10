@@ -227,6 +227,17 @@ export async function beginSupabaseGoogleOAuth(
       supabaseOrigin: process.env.NEXT_PUBLIC_SUPABASE_URL,
     });
   } catch { throw new SupabaseAuthFlowError("oauth_start_rejected"); }
+  try {
+    const probe = await fetch(redirectUrl, { method: "GET", redirect: "manual", signal: AbortSignal.timeout(3000) });
+    if (probe.status === 400) {
+      const probeBody = await probe.json().catch(() => null);
+      if (probeBody?.msg?.includes("Unsupported provider") || probeBody?.error_code === "validation_failed") {
+        throw new SupabaseAuthFlowError("auth_config_unavailable");
+      }
+    }
+  } catch (probeError) {
+    if (probeError instanceof SupabaseAuthFlowError) throw probeError;
+  }
   const state = { ...draft, storage: memory.snapshot() };
   return { redirectUrl, flowCookie: buildSupabaseAuthFlowCookie(state), state };
 }

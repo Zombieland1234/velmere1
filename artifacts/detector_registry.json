@@ -1,0 +1,432 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "registryVersion": "4.0.0-rc3",
+  "totalDetectors": 42,
+  "standardsMapping": {
+    "scsvs": "OWASP Smart Contract Security Verification Standard v2.0",
+    "swc": "Smart Contract Weakness Classification",
+    "cwe": "Common Weakness Enumeration"
+  },
+  "detectors": [
+    {
+      "id": "VLM-AUTH-01",
+      "name": "Unprotected Initializer",
+      "category": "ACCESS_CONTROL",
+      "severity": "CRITICAL",
+      "scsvs": "V1.1",
+      "swc": "SWC-118",
+      "cwe": "CWE-284",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-AUTH-02",
+      "name": "Arbitrary Delegatecall Target",
+      "category": "ACCESS_CONTROL",
+      "severity": "CRITICAL",
+      "scsvs": "V1.4",
+      "swc": "SWC-112",
+      "cwe": "CWE-829",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-AUTH-03",
+      "name": "Authentication via tx.origin",
+      "category": "ACCESS_CONTROL",
+      "severity": "HIGH",
+      "scsvs": "V1.2",
+      "swc": "SWC-115",
+      "cwe": "CWE-306",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-AUTH-04",
+      "name": "Missing Ownership Renunciation Safeguard",
+      "category": "ACCESS_CONTROL",
+      "severity": "MEDIUM",
+      "scsvs": "V1.5",
+      "swc": "SWC-105",
+      "cwe": "CWE-285",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-REENT-01",
+      "name": "Classic State Modification After External Call",
+      "category": "REENTRANCY",
+      "severity": "CRITICAL",
+      "scsvs": "V5.1",
+      "swc": "SWC-107",
+      "cwe": "CWE-841",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-REENT-02",
+      "name": "Cross-Function Reentrancy",
+      "category": "REENTRANCY",
+      "severity": "CRITICAL",
+      "scsvs": "V5.2",
+      "swc": "SWC-107",
+      "cwe": "CWE-841",
+      "executionEngine": "CFG_DATA_FLOW"
+    },
+    {
+      "id": "VLM-DEFI-REENT-RO-01",
+      "name": "Read-Only Reentrancy via External View Curve/Balancer Query",
+      "category": "REENTRANCY",
+      "severity": "HIGH",
+      "scsvs": "V5.4",
+      "swc": "SWC-107",
+      "cwe": "CWE-841",
+      "executionEngine": "AST_CALL_GRAPH"
+    },
+    {
+      "id": "VLM-REENT-04",
+      "name": "ERC-777 / ERC-1155 Token Callback Hook Reentrancy",
+      "category": "REENTRANCY",
+      "severity": "HIGH",
+      "scsvs": "V5.3",
+      "swc": "SWC-107",
+      "cwe": "CWE-841",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-ORACLE-LINK-01",
+      "name": "Chainlink Stale Answer / Missing Heartbeat Validation",
+      "category": "ORACLE",
+      "severity": "HIGH",
+      "scsvs": "V9.1",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-ORACLE-02",
+      "name": "Spot Price AMM Reserve Dependency (getReserves Manipulation)",
+      "category": "ORACLE",
+      "severity": "CRITICAL",
+      "scsvs": "V9.2",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_CALL_GRAPH"
+    },
+    {
+      "id": "VLM-ORACLE-03",
+      "name": "Missing L2 Sequencer Uptime Grace Period Check",
+      "category": "ORACLE",
+      "severity": "HIGH",
+      "scsvs": "V9.4",
+      "swc": "SWC-136",
+      "cwe": "CWE-754",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-ORACLE-04",
+      "name": "Missing Chainlink minAnswer / maxAnswer Boundary Check",
+      "category": "ORACLE",
+      "severity": "MEDIUM",
+      "scsvs": "V9.3",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-MEV-SANDWICH-01",
+      "name": "Zero Minimum Output Slippage Vector (amountOutMin == 0)",
+      "category": "MEV",
+      "severity": "HIGH",
+      "scsvs": "V10.1",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-MEV-02",
+      "name": "Unbounded Deadline Transaction Exposure (deadline == block.timestamp)",
+      "category": "MEV",
+      "severity": "MEDIUM",
+      "scsvs": "V10.2",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-MEV-03",
+      "name": "Predictable On-Chain Randomness",
+      "category": "MEV",
+      "severity": "HIGH",
+      "scsvs": "V10.3",
+      "swc": "SWC-120",
+      "cwe": "CWE-338",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-DEFI-4626-01",
+      "name": "ERC-4626 First Depositor Vault Share Inflation",
+      "category": "ERC4626",
+      "severity": "HIGH",
+      "scsvs": "V11.1",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-VAULT-02",
+      "name": "ERC-4626 Rounding Direction Bias against Depositor",
+      "category": "ERC4626",
+      "severity": "MEDIUM",
+      "scsvs": "V11.2",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-VAULT-03",
+      "name": "Direct Donation Vault Asset Balance De-synchronization",
+      "category": "ERC4626",
+      "severity": "HIGH",
+      "scsvs": "V11.3",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-ERC20-SEM-01",
+      "name": "Unchecked ERC-20 Return Value (Missing SafeERC20)",
+      "category": "TOKEN",
+      "severity": "MEDIUM",
+      "scsvs": "V6.1",
+      "swc": "SWC-104",
+      "cwe": "CWE-252",
+      "executionEngine": "AST_CALL_GRAPH"
+    },
+    {
+      "id": "VLM-TOKEN-02",
+      "name": "Unhandled Fee-on-Transfer / Deflationary Token Accounting",
+      "category": "TOKEN",
+      "severity": "HIGH",
+      "scsvs": "V6.2",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-TOKEN-03",
+      "name": "Rebasing Token Stored Balance Discrepancy",
+      "category": "TOKEN",
+      "severity": "MEDIUM",
+      "scsvs": "V6.3",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-TOKEN-04",
+      "name": "USDT / Approval Race Frontrunning Exposure",
+      "category": "TOKEN",
+      "severity": "LOW",
+      "scsvs": "V6.4",
+      "swc": "SWC-114",
+      "cwe": "CWE-362",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-AUTH-EIP712-01",
+      "name": "EIP-712 Cross-Chain Signature Replay Hazard",
+      "category": "SIGNATURES",
+      "severity": "HIGH",
+      "scsvs": "V3.1",
+      "swc": "SWC-121",
+      "cwe": "CWE-347",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-SIG-02",
+      "name": "Signature Malleability via Unbounded ecrecover S-Value",
+      "category": "SIGNATURES",
+      "severity": "MEDIUM",
+      "scsvs": "V3.2",
+      "swc": "SWC-117",
+      "cwe": "CWE-347",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-SIG-03",
+      "name": "Missing Nonce Tracking in Signed Authorization",
+      "category": "SIGNATURES",
+      "severity": "CRITICAL",
+      "scsvs": "V3.3",
+      "swc": "SWC-121",
+      "cwe": "CWE-294",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-SIG-04",
+      "name": "Hash Collision Risk via abi.encodePacked Dynamic Types",
+      "category": "SIGNATURES",
+      "severity": "MEDIUM",
+      "scsvs": "V3.4",
+      "swc": "SWC-133",
+      "cwe": "CWE-347",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-PROXY-UPGRADE-01",
+      "name": "Unrestricted Proxy Implementation Upgrade Function",
+      "category": "PROXY",
+      "severity": "CRITICAL",
+      "scsvs": "V8.1",
+      "swc": "SWC-112",
+      "cwe": "CWE-284",
+      "executionEngine": "AST_CONTROL_FLOW"
+    },
+    {
+      "id": "VLM-PROXY-02",
+      "name": "Uninitialized Logic Implementation Contract",
+      "category": "PROXY",
+      "severity": "HIGH",
+      "scsvs": "V8.2",
+      "swc": "SWC-118",
+      "cwe": "CWE-665",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-PROXY-03",
+      "name": "Storage Layout Variable Type / Order Collision",
+      "category": "PROXY",
+      "severity": "CRITICAL",
+      "scsvs": "V8.3",
+      "swc": "SWC-124",
+      "cwe": "CWE-787",
+      "executionEngine": "STORAGE_LAYOUT_DIFF"
+    },
+    {
+      "id": "VLM-PROXY-04",
+      "name": "Missing Implementation Downgrade / Rollback Guard",
+      "category": "PROXY",
+      "severity": "MEDIUM",
+      "scsvs": "V8.4",
+      "swc": "SWC-112",
+      "cwe": "CWE-284",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-DOS-01",
+      "name": "Unbounded Gas Loop Iteration over Dynamic Array",
+      "category": "DOS",
+      "severity": "MEDIUM",
+      "scsvs": "V7.1",
+      "swc": "SWC-128",
+      "cwe": "CWE-400",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-DOS-02",
+      "name": "Push Over Pull Payment Pattern Vulnerability",
+      "category": "DOS",
+      "severity": "MEDIUM",
+      "scsvs": "V7.2",
+      "swc": "SWC-113",
+      "cwe": "CWE-703",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-DOS-03",
+      "name": "Denial of Service via Unhandled External Call Revert",
+      "category": "DOS",
+      "severity": "HIGH",
+      "scsvs": "V7.3",
+      "swc": "SWC-113",
+      "cwe": "CWE-703",
+      "executionEngine": "AST_CALL_GRAPH"
+    },
+    {
+      "id": "VLM-ARITH-01",
+      "name": "Unchecked Integer Overflow / Underflow in Pre-0.8 Code",
+      "category": "ARITHMETIC",
+      "severity": "HIGH",
+      "scsvs": "V4.1",
+      "swc": "SWC-101",
+      "cwe": "CWE-190",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-ARITH-02",
+      "name": "Unsafe Downcasting Leading to Value Truncation",
+      "category": "ARITHMETIC",
+      "severity": "MEDIUM",
+      "scsvs": "V4.2",
+      "swc": "SWC-101",
+      "cwe": "CWE-681",
+      "executionEngine": "AST_DATA_FLOW"
+    },
+    {
+      "id": "VLM-ARITH-03",
+      "name": "Division Before Multiplication Causing Precision Loss",
+      "category": "ARITHMETIC",
+      "severity": "LOW",
+      "scsvs": "V4.3",
+      "swc": "SWC-101",
+      "cwe": "CWE-682",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-LOGIC-01",
+      "name": "State Variable Shadowing Across Inheritance Hierarchy",
+      "category": "LOGIC",
+      "severity": "LOW",
+      "scsvs": "V2.1",
+      "swc": "SWC-119",
+      "cwe": "CWE-710",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-LOGIC-02",
+      "name": "Phantom Function Selector Collision",
+      "category": "LOGIC",
+      "severity": "HIGH",
+      "scsvs": "V2.2",
+      "swc": "SWC-112",
+      "cwe": "CWE-682",
+      "executionEngine": "BYTECODE_DISASSEMBLER"
+    },
+    {
+      "id": "VLM-LOGIC-03",
+      "name": "Missing Zero-Address Validation on Setter",
+      "category": "LOGIC",
+      "severity": "INFORMATIONAL",
+      "scsvs": "V2.3",
+      "swc": "SWC-100",
+      "cwe": "CWE-20",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-LOGIC-04",
+      "name": "Floating Pragma Version Specification",
+      "category": "LOGIC",
+      "severity": "INFORMATIONAL",
+      "scsvs": "V2.4",
+      "swc": "SWC-103",
+      "cwe": "CWE-664",
+      "executionEngine": "AST_VISITOR"
+    },
+    {
+      "id": "VLM-SMT-01",
+      "name": "SMT Invariant: Solvency Under Total Balance Conservation",
+      "category": "FORMAL_SMT",
+      "severity": "CRITICAL",
+      "scsvs": "V12.1",
+      "swc": "SWC-136",
+      "cwe": "CWE-682",
+      "executionEngine": "Z3_SMT_SOLVER"
+    },
+    {
+      "id": "VLM-SMT-02",
+      "name": "SMT Invariant: Non-Reentrancy Guard Mutex Enforcement",
+      "category": "FORMAL_SMT",
+      "severity": "CRITICAL",
+      "scsvs": "V12.2",
+      "swc": "SWC-107",
+      "cwe": "CWE-841",
+      "executionEngine": "Z3_SMT_SOLVER"
+    }
+  ]
+}

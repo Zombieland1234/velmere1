@@ -269,11 +269,21 @@ export default function Navbar() {
     setWalletDrawerExpanded(false);
     setLanguageOpen(false);
     setMemberOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   }, []);
 
   useEffect(() => {
+    closeHeaderSurfaces();
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     const timer = window.setTimeout(() => {
       closeHeaderSurfaces();
+      if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [closeHeaderSurfaces, pathname]);
@@ -416,7 +426,6 @@ export default function Navbar() {
   );
 
   const desktopPrimaryLinks = [
-      { href: "/shop", label: "SHOP" },
       { href: "/security/audits", label: "AUDIT" },
       { href: "/search", label: "BROWSER" },
       { href: "/intelligence", label: "INTELLIGENCE" },
@@ -438,13 +447,13 @@ export default function Navbar() {
     {
       href: "/shield-pro",
       label: "Shield Pro",
-      eyebrow: "PRO 02",
+      eyebrow: activeLocale === "pl" ? "WKRÓTCE" : activeLocale === "de" ? "DEMNÄCHST" : "COMING SOON",
       description:
         activeLocale === "pl"
-          ? "Monochromatyczny terminal dowodów"
+          ? "Przebudowa architektury nowej generacji"
           : activeLocale === "de"
-            ? "Monochromes Evidence-Terminal"
-            : "Monochrome evidence terminal",
+            ? "Neubau der nächsten Generation"
+            : "Next-generation architecture rebuild",
       icon: Activity,
     },
     {
@@ -470,6 +479,30 @@ export default function Navbar() {
             ? "Karte für Beziehungen und Evidenz"
             : "Relationship, flow and evidence map",
       icon: MapIcon,
+    },
+    {
+      href: "/risk-management",
+      label: "Risk Management",
+      eyebrow: "METHOD 05",
+      description:
+        activeLocale === "pl"
+          ? "Architektura i metodologia pomiaru ryzyka"
+          : activeLocale === "de"
+            ? "Risikomanagement und Methodik-Architektur"
+            : "Risk measurement architecture and methodology",
+      icon: Shield,
+    },
+    {
+      href: "/verified-audits",
+      label: "Verified Audits",
+      eyebrow: "REGISTRY 06",
+      description:
+        activeLocale === "pl"
+          ? "Rejestr audytów z dynamiczną detekcją zmian kodu"
+          : activeLocale === "de"
+            ? "Verifizierte Audits mit Codeänderungserkennung"
+            : "Audit registry with dynamic code-change detection",
+      icon: ShieldCheck,
     },
   ];
   const localizedPrimaryLinks = [...desktopPrimaryLinks, ...marketLinks];
@@ -578,7 +611,12 @@ export default function Navbar() {
                             role="menuitem"
                             aria-current={isNavLinkActive(link.href) ? "page" : undefined}
                             data-active={isNavLinkActive(link.href) || undefined}
-                            onClick={closeHeaderSurfaces}
+                            onClick={() => {
+                              closeHeaderSurfaces();
+                              if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                                document.activeElement.blur();
+                              }
+                            }}
                           >
                             <span className="velmere-market-nav-icon"><MarketIcon aria-hidden="true" /></span>
                             <span className="velmere-market-nav-copy">
@@ -613,7 +651,7 @@ export default function Navbar() {
             className="velmere-header-actions relative z-[12] ml-auto flex shrink-0 items-center justify-end gap-1.5 md:gap-2"
             data-velmere-header-actions="true"
           >
-            <div className="relative block">
+            <div className="relative hidden sm:block">
               <button
                 ref={languageButtonRef}
                 type="button"
@@ -796,7 +834,7 @@ export default function Navbar() {
                        : "Velmère Member"
                    : t.account}
               </p>
-              <p className="mt-2 truncate font-serif text-2xl tracking-[-0.045em] text-white">
+              <p className="mt-2 font-serif text-xl sm:text-2xl tracking-[-0.035em] text-white">
                 {isMemberActive ? memberDisplayName : t.privateConsole}
               </p>
             </div>
@@ -814,14 +852,6 @@ export default function Navbar() {
                 : t.noWalletConnected
                : locale === "pl" ? "Konto, zamówienia i dostęp są oddzielone od portfela. Logowanie nie wymaga frazy odzyskiwania." : locale === "de" ? "Konto, Bestellungen und Zugang bleiben vom Wallet getrennt. Beim Login wird nie nach der Seed Phrase gefragt." : "Account, orders and access stay separate from wallet actions. Login never asks for a seed phrase."}
           </p>
-          <div className="relative mt-4 grid grid-cols-2 gap-2">
-            <span className="velmere-account-state-chip-pass2203" data-state={isMemberActive ? "ready" : "locked"}>
-              {isMemberActive ? (locale === "pl" ? "Sesja aktywna" : locale === "de" ? "Session aktiv" : "Session active") : (locale === "pl" ? "Logowanie" : locale === "de" ? "Login" : "Sign in")}
-            </span>
-            <span className="velmere-account-state-chip-pass2203" data-state={walletUi.connected ? "ready" : "neutral"}>
-              {walletUi.connected ? t.walletConnected : t.noWalletConnected}
-            </span>
-          </div>
         </div>
         <div className="grid gap-2 p-2.5">
           <a
@@ -902,16 +932,16 @@ export default function Navbar() {
         >
           <p className="velmere-label text-velmere-gold">
             {locale === "pl"
-              ? "Odkrywaj"
+              ? "Katalog Platformy"
               : locale === "de"
-                ? "Entdecken"
-                : "Explore"}
+                ? "Plattformverzeichnis"
+                : "Platform Directory"}
           </p>
           <nav className="mt-4 grid gap-6" aria-label={t.menuNavigation}>
             {[
               {
                 title:
-                  locale === "pl" ? "SKLEP" : locale === "de" ? "SHOP" : "SHOP",
+                  locale === "pl" ? "GŁÓWNE MODUŁY" : locale === "de" ? "KERNMODULE" : "CORE MODULES",
                 links: [
                   ...localizedPrimaryLinks,
                   { href: "/faq", label: labels.support },
@@ -940,15 +970,6 @@ export default function Navbar() {
                   { href: "/security", label: labels.security },
                   { href: "/security/audits", label: labels.audits },
                   { href: "/research-lab", label: labels.research },
-                  {
-                    href: "/token-agreement",
-                    label:
-                      locale === "pl"
-                        ? "Zasady tokena"
-                        : locale === "de"
-                          ? "Token-Regeln"
-                          : "Token terms",
-                  },
                 ],
               },
               {

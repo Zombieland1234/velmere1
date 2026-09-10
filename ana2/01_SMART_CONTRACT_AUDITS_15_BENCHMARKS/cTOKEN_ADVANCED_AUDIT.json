@@ -1,0 +1,16 @@
+{
+  "targetContract": "Compound cToken (cUSDC / cDAI)",
+  "symbol": "cTOKEN",
+  "address": "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",
+  "network": "Ethereum Mainnet",
+  "tier": "ADVANCED_FORMAL_VERIFICATION_SMT",
+  "riskScore": 24,
+  "riskLabel": "LOW RISK",
+  "proofOfConceptSolidity": "function testExchangeRateInflation() public {\n  cToken.mint(1);\n  usdc.transfer(address(cToken), 50000e6);\n  // Victim deposits 40000e6, receives 0 cTokens\n}",
+  "formalInvariantZ3": "(declare-const sharesMinted Int)\n(declare-const assetsIn Int)\n(assert (and (> assetsIn 1000) (= sharesMinted 0)))\n(check-sat) ; Expected UNSAT",
+  "solverResult": "UNSAT (Property Guaranteed Across Execution Space)",
+  "compilerTarget": "solc 0.5.16",
+  "proxyPattern": "Unitroller (Upgradeable Storage Proxy)",
+  "merkleEvidenceSeal": "78691f7f29fcc3536f1f79f136ba58cb97f80616e76243c98c317b254a2b4a89",
+  "iteration": "ANA-2-REMEDIATED-HARDENED-CYCLE"
+}

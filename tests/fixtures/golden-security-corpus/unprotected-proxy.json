@@ -1,0 +1,26 @@
+{
+  "id": "GSC-008",
+  "name": "unprotected-proxy",
+  "description": "UUPS or Transparent Upgradeable Proxy where the implementation contract is uninitialized and vulnerable to take-over.",
+  "expectedAssetClass": "evm_contract",
+  "targetAddress": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+  "expectedFindings": [
+    "UNINITIALIZED_IMPLEMENTATION_SLOT",
+    "EIP-1967_DELEGATECALL_TAKEOVER_RISK"
+  ],
+  "expectedNonFindings": [
+    "LOCKED_PROXY_INITIALIZER"
+  ],
+  "expectedEvidenceStates": {
+    "proxyStorageLayout": "FAIL",
+    "implementationAudit": "FAIL"
+  },
+  "expectedConfidenceBounds": {
+    "min": 85,
+    "max": 100
+  },
+  "expectedScoreRange": {
+    "minRisk": 80,
+    "maxRisk": 100
+  }
+}

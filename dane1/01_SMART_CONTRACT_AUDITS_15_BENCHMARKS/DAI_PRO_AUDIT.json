@@ -1,0 +1,30 @@
+{
+  "contractName": "MakerDAO DAI",
+  "symbol": "DAI",
+  "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+  "tier": "PRO",
+  "network": "Ethereum Mainnet",
+  "compilerVersion": "solc 0.5.12",
+  "proxyPattern": "Maker Ward Multi-Authorization",
+  "riskScore": 14,
+  "riskLabel": "VERY LOW RISK",
+  "summary": "Pro tier deep decompilation, liquidity drain stress-testing, and privileged access audit for MakerDAO DAI.",
+  "findings": [
+    {
+      "title": "Ward Access Control Management & GSM Pause Delay",
+      "severity": "MEDIUM",
+      "swcId": "SWC-106",
+      "cweId": "CWE-285",
+      "description": "Governance Security Module (GSM) timelock window must prevent flashloan-governance takeover of rely/deny ward privileges."
+    }
+  ],
+  "verificationDigest": "7e161289862bf2ed9e27c61bbfb7df89e6ec69a93a50a6c14fc282c12f625660",
+  "attackSurface": {
+    "category": "Governance & Ward Authority",
+    "attackVector": "Flash loan borrowing massive MKR to pass executive spell within single block if timelock were bypassed."
+  },
+  "remediation": {
+    "recommendedAction": "Apply verified check-effects-interactions, enforce timelocks, and guard critical state variables.",
+    "solidityPatchDiff": "--- a/contracts/DssSpell.sol\n+++ b/contracts/DssSpell.sol\n@@ -45,2 +45,3 @@\n+ require(block.timestamp >= eta + pauseDelay, 'Timelock active');\n  mom.rely(spellTarget);"
+  }
+}

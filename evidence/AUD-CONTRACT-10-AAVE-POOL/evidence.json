@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "velmere.v3.evidence-records",
+  "auditId": "AUD-CONTRACT-10-AAVE-POOL",
+  "evidenceRoot": "0000000000000000000000000000000000000000000000000000000000000000",
+  "recordsCount": 2,
+  "records": [
+    {
+      "id": "EV-SRC-POOL",
+      "auditId": "AUD-CONTRACT-10-AAVE-POOL",
+      "category": "SOURCE",
+      "status": "PASS",
+      "method": "OBSERVED",
+      "source": "Source File Parsing",
+      "tool": "velmere-ast-parser",
+      "toolVersion": "3.0.0",
+      "timestamp": "2026-09-09T11:54:18.925Z",
+      "file": "aave-v3-pool.sol",
+      "lineStart": 1,
+      "lineEnd": 16,
+      "inputData": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.10;\ncontract AaveV3LendingPool {\n    address public owner;\n    mapping(address => uint256) public balances;\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    constructor() { owner = msg.sender; }\n    function withdraw() external {\n        uint256 bal = balances[msg.sender];\n        require(bal > 0, \"No balance\");\n        balances[msg.sender] = 0;\n        (bool ok, ) = msg.sender.call{value: bal}(\"\");\n        require(ok, \"Call failed\");\n    }\n}\n",
+      "outputData": {
+        "lines": 16,
+        "fileName": "aave-v3-pool.sol"
+      },
+      "inputHash": "15a5a6384b33b2d395e43fb79da817f4b18b242a1a4032041086898b96b8a17a",
+      "outputHash": "00e345c41e5368a53130f48af6b2fd04535ac5a106383d2f54f0e1972602e5ec"
+    },
+    {
+      "id": "EV-FORMAL-POOL-01",
+      "auditId": "AUD-CONTRACT-10-AAVE-POOL",
+      "category": "FORMAL",
+      "status": "NOT_RUN",
+      "method": "AUTOMATED_EXECUTION",
+      "source": "Formal Engine Gatekeeper",
+      "tool": "z3",
+      "timestamp": "2026-09-09T11:54:18.925Z",
+      "outputData": {
+        "notice": "Formal verification not included in Basic tier"
+      },
+      "inputHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputHash": "0b0e5dba2f95013e4648850bbac4b61054466fb3dfabf087759d1b5a00352549"
+    }
+  ]
+}

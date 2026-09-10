@@ -1,34 +1,33 @@
 "use client";
 
-import { CheckCircle2, ShieldCheck, Truck, Wallet } from "lucide-react";
+import { Activity, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import { useLocale } from "next-intl";
-import { Link } from "@/navigation";
+import { Link, usePathname } from "@/navigation";
 
 function footerCopy(locale: string) {
   if (locale === "pl") {
     return {
-      tagline: "Luksusowa moda uliczna z prywatną warstwą cyfrową.",
-      micro: "Sklep z ubraniami, dostęp VLM i Square pozostają jasno oddzielone.",
+      tagline: "Deterministyczna weryfikacja kontraktów, integralność rynkowa i niezmienna linia dowodowa.",
+      micro: "Terminal Shield, audyty kryptograficzne, laboratorium analiz oraz redakcyjne atelier.",
       explore: "Eksploruj",
       legal: "Dokumenty",
       trust: "Notatki zaufania",
       rights: "Wszelkie prawa zastrzeżone.",
-      launch: "Dostawa, zwroty, prywatność i warunki pozostają dostępne bez szukania.",
+      launch: "Metodologia, regulacje, prywatność i warunki pozostają dostępne bez szukania.",
       statusTitle: "Warstwa zaufania",
       statusItems: [
-        "Zakupy i portfel są od siebie oddzielone.",
-        "Dostawa i zwroty mają być widoczne przed płatnością.",
+        "Infrastruktura analityczna i portfel są od siebie odseparowane.",
+        "Weryfikacja dowodów i źródeł rynkowych jest deterministyczna.",
         "Bezpieczeństwo jest wzmacniane warstwowo, nie marketingowo.",
       ],
       exploreLinks: [
-        { href: "/shop", label: "Ubrania" },
-        { href: "/vlm-token", label: "Dostęp VLM" },
+        { href: "/shield", label: "Terminal Shield" },
+        { href: "/browser", label: "Przeglądarka aktywów" },
+        { href: "/intelligence", label: "Intelligence" },
+        { href: "/atelier", label: "Atelier" },
         { href: "/research-lab", label: "Laboratorium analiz" },
-        { href: "/security", label: "Bezpieczeństwo" },
-        { href: "/square", label: "Velmère Square" },
-        { href: "/lookbook", label: "Lookbook" },
-        { href: "/community", label: "Społeczność" },
-        { href: "/faq", label: "FAQ" },
+        { href: "/security", label: "Centrum bezpieczeństwa" },
+        { href: "/faq", label: "FAQ i pomoc" },
       ],
       legalLinks: [
         { href: "/impressum", label: "Impressum / dane sprzedawcy" },
@@ -39,10 +38,10 @@ function footerCopy(locale: string) {
         { href: "/contact", label: "Kontakt" },
       ],
       microcopy: [
-        "VLM otwiera prywatny dostęp do narzędzi, premier i Laboratorium analiz.",
-        "Nigdy nie wpisuj frazy odzyskiwania portfela.",
-        "Ceny, podatki, koszty dostawy i prawa zwrotu są pokazywane przed płatnością.",
-        "Prawa konsumenta pozostają bez zmian.",
+        "Velmère udostępnia deterministyczny wgląd w ryzyko rynkowe, kontrakty i linię dowodową.",
+        "Nigdy nie wpisuj frazy odzyskiwania portfela (seed phrase).",
+        "Wszystkie źródła rynkowe i wskaźniki pewności są jawne i weryfikowalne.",
+        "Zamówienia fizyczne i prawa konsumenta podlegają pełnej ochronie prawnej.",
         "Bezpieczeństwo Velmère to warstwy ochrony i ciągłe wzmacnianie, nie obietnica braku ryzyka.",
       ],
     };
@@ -50,28 +49,27 @@ function footerCopy(locale: string) {
 
   if (locale === "de") {
     return {
-      tagline: "Luxury Streetwear mit privater digitaler Ebene.",
-      micro: "Clothing Commerce, VLM Access und Square Community bleiben klar getrennt.",
+      tagline: "Deterministische Vertragsprüfung, Multi-Venue Marktintegrität und unveränderliche Audit-Linie.",
+      micro: "Shield Risikoanalyse, kryptografische Nachweise, Research Lab und redaktionelles Atelier.",
       explore: "Entdecken",
       legal: "Rechtliches",
       trust: "Trust Notes",
       rights: "Alle Rechte vorbehalten.",
-      launch: "Versand, Rückgabe, Datenschutz und Bedingungen bleiben leicht erreichbar.",
+      launch: "Methodik, Governance, Datenschutz und Bedingungen bleiben leicht erreichbar.",
       statusTitle: "Trust Layer",
       statusItems: [
-        "Commerce und Wallet bleiben getrennt.",
-        "Versand und Rückgabe sollen vor Zahlung sichtbar sein.",
+        "Analyseinfrastruktur und Wallet bleiben getrennt.",
+        "Beweismethodik und Multi-Venue-Quellen sind verifizierbar.",
         "Security wird schichtweise gehärtet, nicht vermarktet.",
       ],
       exploreLinks: [
-        { href: "/shop", label: "Kleidung" },
-        { href: "/vlm-token", label: "VLM Access" },
+        { href: "/shield", label: "Shield Terminal" },
+        { href: "/browser", label: "Asset Browser" },
+        { href: "/intelligence", label: "Intelligence" },
+        { href: "/atelier", label: "Atelier" },
         { href: "/research-lab", label: "Research Lab" },
-        { href: "/security", label: "Security" },
-        { href: "/square", label: "Velmère Square" },
-        { href: "/lookbook", label: "Lookbook" },
-        { href: "/community", label: "Community" },
-        { href: "/faq", label: "FAQ" },
+        { href: "/security", label: "Security Hub" },
+        { href: "/faq", label: "FAQ & Hilfe" },
       ],
       legalLinks: [
         { href: "/impressum", label: "Impressum / Anbieterkennzeichnung" },
@@ -82,37 +80,37 @@ function footerCopy(locale: string) {
         { href: "/contact", label: "Kontakt" },
       ],
       microcopy: [
-        "VLM öffnet privaten Zugang zu Tools, Drops und Research Lab.",
+        "Velmère bietet deterministischen Einblick in Marktrisiken, Verträge und Nachweise.",
         "Gib niemals deine Seed Phrase ein.",
-        "Preise, Steuern, Versandkosten und Rückgaberechte werden vor dem Checkout angezeigt.",
-        "Verbraucherrechte bleiben unberührt.",
+        "Alle Datenquellen und Konfidenzmetriken sind transparent und verifizierbar.",
+        "Das redaktionelle Atelier und physische Bestellungen wahren alle Verbraucherrechte.",
         "Velmère Security bedeutet Schutzschichten und kontinuierliche Härtung, kein risikofreies Versprechen.",
       ],
     };
   }
 
   return {
-    tagline: "Luxury streetwear with a private digital layer.",
-    micro: "Clothing commerce, VLM access and Square community features stay clearly separated.",
+    tagline: "Deterministic contract verification, multi-venue market integrity, and immutable audit lineage.",
+    micro: "Shield risk analysis, cryptographic lineage, research laboratory, and editorial atelier.",
     explore: "Explore",
     legal: "Legal",
     trust: "Trust notes",
     rights: "All rights reserved.",
-    launch: "Shipping, returns, privacy and terms stay easy to reach.",
+    launch: "Methodology, governance, privacy, and terms stay easy to reach.",
     statusTitle: "Trust Layer",
     statusItems: [
-      "Commerce and wallet flows stay separated.",
-      "Shipping and returns should be visible before payment.",
+      "Analytics infrastructure and wallet flows stay separated.",
+      "Evidence methodology and multi-venue sources are verifiable.",
       "Security is hardened in layers, not marketed as magic.",
     ],
     exploreLinks: [
-      { href: "/shop", label: "Clothing" },
-      { href: "/vlm-token", label: "VLM Access" },
+      { href: "/shield", label: "Shield Terminal" },
+      { href: "/browser", label: "Asset Browser" },
+      { href: "/intelligence", label: "Intelligence" },
+      { href: "/atelier", label: "Atelier" },
       { href: "/research-lab", label: "Research Lab" },
-      { href: "/square", label: "Velmère Square" },
-      { href: "/lookbook", label: "Lookbook" },
-      { href: "/community", label: "Community" },
-      { href: "/faq", label: "FAQ" },
+      { href: "/security", label: "Security Hub" },
+      { href: "/faq", label: "FAQ & Assistance" },
     ],
     legalLinks: [
       { href: "/impressum", label: "Impressum / Legal Notice" },
@@ -123,17 +121,20 @@ function footerCopy(locale: string) {
       { href: "/contact", label: "Contact" },
     ],
     microcopy: [
-      "VLM unlocks private access to tools, drops and Research Lab.",
-      "Never enter your seed phrase.",
-      "Prices, taxes, delivery costs and return rights are shown before checkout.",
-      "Consumer rights remain unaffected.",
+      "Velmère provides deterministic insight into market risks, contracts, and proof lineage.",
+      "Never enter your wallet recovery seed phrase.",
+      "All data sources and confidence indicators remain explicit and verifiable.",
+      "Editorial atelier and physical orders maintain full consumer protection standards.",
       "Velmère Security means layered protection and continuous hardening, not a risk-free promise.",
     ],
   };
 }
 
 export default function Footer() {
+  const pathname = usePathname();
   const copy = footerCopy(useLocale());
+
+  if (pathname === "/login" || pathname?.includes("/assets/")) return null;
 
   return (
     <footer className="velmere-footer relative border-t border-white/[0.10] bg-[#0B0B0D] text-velmere-ivory">
@@ -156,7 +157,7 @@ export default function Footer() {
               <div className="mt-4 grid gap-3">
                 {copy.statusItems.map((item, index) => {
                   const Icon =
-                    index === 0 ? Wallet : index === 1 ? Truck : ShieldCheck;
+                    index === 0 ? Wallet : index === 1 ? Activity : ShieldCheck;
                   return (
                     <div key={item} className="flex items-start gap-3">
                       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-velmere-gold" />

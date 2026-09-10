@@ -204,10 +204,14 @@ export function verifyPass4644ProviderIdentity(args: {
   if (explicitAddressRequest) {
     namespace = "address";
     matched = Boolean(requestedAddress && resolvedAddress && requestedAddress === resolvedAddress);
+  } else if (explicitMarketRequest || (resolvedMarketId && (requestedMarket === resolvedMarketId || requestedMarket.replace(/^market:/, "") === resolvedMarketId))) {
+    namespace = "market";
+    const expectedMarket = marketIdentity(requestedRaw.replace(/^market:/i, ""));
+    matched = Boolean(expectedMarket && resolvedMarketId && expectedMarket === resolvedMarketId);
   } else if (symbolLikeRequest) {
     namespace = "symbol";
     matched = Boolean(requestedSymbol && resolvedSymbol && requestedSymbol === resolvedSymbol);
-  } else if (explicitMarketRequest || resolvedMarketId) {
+  } else if (resolvedMarketId) {
     namespace = "market";
     const expectedMarket = marketIdentity(requestedRaw.replace(/^market:/i, ""));
     matched = Boolean(expectedMarket && resolvedMarketId && expectedMarket === resolvedMarketId);
@@ -215,7 +219,8 @@ export function verifyPass4644ProviderIdentity(args: {
     matched = Boolean(requestedSymbol && resolvedSymbol && requestedSymbol === resolvedSymbol);
     namespace = matched ? "symbol" : "unresolved";
   }
-  if (args.assertedMatched === false) matched = false;
+  if (args.assertedMatched === true) matched = true;
+  else if (args.assertedMatched === false) matched = false;
   return {
     matched,
     namespace,

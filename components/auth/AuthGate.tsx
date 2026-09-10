@@ -63,12 +63,17 @@ export async function startVelmereGoogleOAuth(locale: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ locale, returnPath: `/${["en", "pl", "de"].includes(locale) ? locale : "en"}/account` }),
   });
-  const payload = await readJsonResponseBounded<{ redirectUrl?: string }>(response, 128 * 1024);
-  if (!response.ok || !payload.redirectUrl) throw new Error("google_oauth_start_failed");
+  const payload = await readJsonResponseBounded<{ redirectUrl?: string; ok?: boolean; code?: string; error?: string }>(response, 128 * 1024);
+  if (!response.ok || !payload.redirectUrl) {
+    throw new Error(payload.code || payload.error || "google_oauth_start_failed");
+  }
+  const configuredOrigin = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_URL
+    ? process.env.NEXT_PUBLIC_SUPABASE_URL
+    : new URL(payload.redirectUrl).origin;
   const redirectUrl = assertBrowserRedirectUrl(payload.redirectUrl, {
     profile: "supabase_oauth",
     browserOrigin: window.location.origin,
-    supabaseOrigin: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseOrigin: configuredOrigin,
   });
   window.location.assign(redirectUrl);
 }
@@ -216,42 +221,42 @@ export default function AuthGate({ children, title, body }: AuthGateProps) {
     en: {
       gate: "Private access",
       title: "Enter the private Velmère layer.",
-      body: "Account access unlocks orders, addresses, Square publishing and optional wallet binding. Clothing checkout stays separate from the access layer.",
+      body: "Private tier access unlocks bespoke portfolio intelligence, verified audit exports, and sovereign wallet binding. Atelier acquisitions and luxury orders remain sovereign from intelligence telemetry.",
       signin: "Sign in / Register",
       preview: "Enter preview",
       safety: "Wallet safety",
       safetyBody:
-        "Wallets are optional and read-only until a clear action is confirmed. Velmère never asks for seed phrases or private keys.",
+        "Wallets are optional and strictly read-only until an action is explicitly authorized. Velmère never requests private keys or seed phrases.",
     },
     pl: {
       gate: "Prywatny dostęp",
-      title: "Wejdź do prywatnej warstwy Velmère.",
-      body: "Konto odblokowuje zamówienia, adresy, publikowanie w Square i opcjonalne powiązanie portfela. Zakup odzieży pozostaje osobno od warstwy dostępu.",
+      title: "Wejdź do prywatnej strefy Velmère.",
+      body: "Dostęp VIP odblokowuje spersonalizowaną telemetrię portfela, eksport audytów dowodowych oraz suwerenne powiązanie portfela. Zamówienia w Atelier pozostają odseparowane od analityki rynkowej.",
       signin: "Zaloguj / Zarejestruj",
-      preview: "Wejdź do podglądu",
+      preview: "Podgląd sesji",
       safety: "Bezpieczeństwo portfela",
       safetyBody:
-        "Portfele są opcjonalne i read-only do czasu jasnego potwierdzenia akcji. Velmère nigdy nie prosi o seed phrase ani klucze prywatne.",
+        "Połączenie portfela jest w 100% pasywne (read-only) do momentu autoryzacji operacji. Velmère nigdy nie pyta o seed phrase ani klucze prywatne.",
     },
     de: {
       gate: "Privater Zugang",
-      title: "Betritt die private Velmère-Ebene.",
-      body: "Ein Account entsperrt Bestellungen, Adressen, Square-Publishing und optionale Wallet-Bindung. Kleidung-Checkout bleibt von der Access-Ebene getrennt.",
+      title: "Betreten Sie die private Velmère-Ebene.",
+      body: "Der VIP-Zugang schaltet maßgeschneiderte Portfolio-Analysen, verifizierte Prüfberichte und souveräne Wallet-Bindung frei. Atelier-Bestellungen bleiben getrennt von der Marktanalyse.",
       signin: "Login / Registrieren",
       preview: "Vorschau öffnen",
       safety: "Wallet-Sicherheit",
       safetyBody:
-        "Wallets sind optional und read-only, bis eine klare Aktion bestätigt wird. Velmère fragt nie nach Seed Phrase oder Private Keys.",
+        "Wallets sind rein passiv (read-only), bis eine Transaktion explizit autorisiert wird. Velmère fragt niemals nach Seed-Phrasen oder privaten Schlüsseln.",
     },
   }[locale] ?? {
     gate: "Private access",
     title: "Enter the private Velmère layer.",
-    body: "Account access unlocks orders, addresses, Square publishing and optional wallet binding. Clothing checkout stays separate from the access layer.",
+    body: "Private tier access unlocks bespoke portfolio intelligence, verified audit exports, and sovereign wallet binding. Atelier acquisitions and luxury orders remain sovereign from intelligence telemetry.",
     signin: "Sign in / Register",
     preview: "Enter preview",
     safety: "Wallet safety",
     safetyBody:
-      "Wallets are optional and read-only until a clear action is confirmed. Velmère never asks for seed phrases or private keys.",
+      "Wallets are optional and strictly read-only until an action is explicitly authorized. Velmère never requests private keys or seed phrases.",
   };
 
   if (!ready) {

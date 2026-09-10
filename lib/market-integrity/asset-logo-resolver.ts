@@ -116,8 +116,20 @@ const LOCAL_BRAND_LOGOS: Record<string, string> = {
   DISNEY: "/market-logos/dis.svg",
   HD: "/market-logos/hd.svg",
   HOMEDEPOT: "/market-logos/hd.svg",
-  BAC: "/market-logos/bac.svg",
+   BAC: "/market-logos/bac.svg",
   BANKOFAMERICA: "/market-logos/bac.svg",
+  BRK: "/market-logos/brk.svg",
+  "BRK.B": "/market-logos/brk.svg",
+  "BRK-B": "/market-logos/brk.svg",
+  BRKB: "/market-logos/brk.svg",
+  BERKSHIRE: "/market-logos/brk.svg",
+  BERKSHIREHATHAWAY: "/market-logos/brk.svg",
+  LLY: "/market-logos/lly.svg",
+  LILLY: "/market-logos/lly.svg",
+  ELILILLY: "/market-logos/lly.svg",
+  DXY: "/market-logos/dxy.svg",
+  USDOLLAR: "/market-logos/dxy.svg",
+  DOLLARINDEX: "/market-logos/dxy.svg",
   VOW3: "/market-logos/vw.svg",
   "VOW3.DE": "/market-logos/vw.svg",
   VW: "/market-logos/vw.svg",
@@ -162,6 +174,7 @@ const LOCAL_BRAND_LOGOS: Record<string, string> = {
   QQQ: "/market-logos/qqq.svg",
   GLD: "/market-logos/gld.svg",
   SLV: "/market-logos/slv.svg",
+  USO: "/market-logos/uso.svg",
   VNQ: "/market-logos/vnq.svg",
   IYR: "/market-logos/iyr.svg",
   PLD: "/market-logos/pld.svg",
@@ -314,7 +327,15 @@ const LOCAL_BRAND_LOGOS: Record<string, string> = {
   STOXX50E: "/market-logos/stoxx50e.svg",
   WIG20TR: "/market-logos/wig20tr.svg",
   EURUSD: "/market-logos/eurusd.svg",
+  "EUR/USD": "/market-logos/eurusd.svg",
+  "EUR-USD": "/market-logos/eurusd.svg",
   GBPUSD: "/market-logos/gbpusd.svg",
+  "GBP/USD": "/market-logos/gbpusd.svg",
+  "BTC/USD": "/market-logos/btc.svg",
+  "BTC-USD": "/market-logos/btc.svg",
+  "BTC/USD CME FUTURES": "/market-logos/btc.svg",
+  "BTC CME": "/market-logos/btc.svg",
+  "BTC=F": "/market-logos/btc.svg",
   USDJPY: "/market-logos/usdjpy.svg",
   USDCHF: "/market-logos/usdchf.svg",
   EURGBP: "/market-logos/eurgbp.svg",
@@ -324,10 +345,12 @@ const LOCAL_BRAND_LOGOS: Record<string, string> = {
   USDTRY: "/market-logos/usdtry.svg",
   GC: "/market-logos/gc.svg",
   GOLD: "/market-logos/gc.svg",
+  "GC=F": "/market-logos/gld.svg",
   SI: "/market-logos/si.svg",
   SILVER: "/market-logos/si.svg",
   CL: "/market-logos/cl.svg",
   OIL: "/market-logos/cl.svg",
+  "CL=F": "/market-logos/uso.svg",
   BZ: "/market-logos/bz.svg",
   BRENT: "/market-logos/bz.svg",
   NG: "/market-logos/ng.svg",
@@ -339,6 +362,9 @@ const LOCAL_BRAND_LOGOS: Record<string, string> = {
   HK0388: "/market-logos/hk0388.svg",
   HKEX388: "/market-logos/hk0388.svg",
   "0388HK": "/market-logos/hk0388.svg",
+  "BRK.A": "/market-logos/brk.svg",
+  "BRK/B": "/market-logos/brk.svg",
+  "EURUSD=X": "/market-logos/eurusd.svg",
 };
 
 
@@ -397,6 +423,95 @@ const LOCAL_CRYPTO_LOGOS: Record<string, string> = {
   CHAINLINK: "/market-logos/link.svg",
   COIN: "/market-logos/coin.svg",
   COINBASE: "/market-logos/coinbase.svg",
+  TRX: "/market-logos/trx.svg",
+  XLM: "/market-logos/xlm.svg",
+  SUI: "/market-logos/sui.svg",
+  BCH: "/market-logos/bch.svg",
+  HBAR: "/market-logos/hbar.svg",
+  LTC: "/market-logos/ltc.svg",
+  TON: "/market-logos/ton.svg",
+  SHIB: "/market-logos/shib.svg",
+  UNI: "/market-logos/uni.svg",
+  PEPE: "/market-logos/pepe.svg",
+  NEAR: "/market-logos/near.svg",
+  APT: "/market-logos/apt.svg",
+  ICP: "/market-logos/icp.svg",
+  AAVE: "/market-logos/aave.svg",
+  ETC: "/market-logos/etc.svg",
+  TAO: "/market-logos/tao.svg",
+  FIL: "/market-logos/fil.svg",
+  ARB: "/market-logos/arb.svg",
+  ALGO: "/market-logos/algo.svg",
+  ATOM: "/market-logos/atom.svg",
+  TIA: "/market-logos/tia.svg",
+  INJ: "/market-logos/inj.svg",
+  OP: "/market-logos/op.svg",
+  POL: "/market-logos/pol.svg",
+  MKR: "/market-logos/mkr.svg",
+  FDUSD: "/market-logos/fdusd.svg",
+  IMX: "/market-logos/imx.svg",
+  BONK: "/market-logos/bonk.svg",
+  STX: "/market-logos/stx.svg",
+  GRT: "/market-logos/grt.svg",
+  LDO: "/market-logos/ldo.svg",
+  WLD: "/market-logos/wld.svg",
+  SEI: "/market-logos/sei.svg",
+  ONDO: "/market-logos/ondo.svg",
+  GALA: "/market-logos/gala.svg",
+  FLOKI: "/market-logos/floki.svg",
+  SAND: "/market-logos/sand.svg",
+  EOS: "/market-logos/eos.svg",
+  QNT: "/market-logos/qnt.svg",
+  XTZ: "/market-logos/xtz.svg",
+  FLOW: "/market-logos/flow.svg",
+  CRV: "/market-logos/crv.svg",
+  AR: "/market-logos/ar.svg",
+  PYTH: "/market-logos/pyth.svg",
+  ENS: "/market-logos/ens.svg",
+  NEO: "/market-logos/neo.svg",
+  IOTA: "/market-logos/iota.svg",
+  AXS: "/market-logos/axs.svg",
+  MANA: "/market-logos/mana.svg",
+  RUNE: "/market-logos/rune.svg",
+  PENDLE: "/market-logos/pendle.svg",
+  CHZ: "/market-logos/chz.svg",
+  CAKE: "/market-logos/cake.svg",
+  COMP: "/market-logos/comp.svg",
+  SNX: "/market-logos/snx.svg",
+  ZEC: "/market-logos/zec.svg",
+  XEC: "/market-logos/xec.svg",
+  KAVA: "/market-logos/kava.svg",
+  "1INCH": "/market-logos/1inch.svg",
+  NEXO: "/market-logos/nexo.svg",
+  CFX: "/market-logos/cfx.svg",
+  RPL: "/market-logos/rpl.svg",
+  BLUR: "/market-logos/blur.svg",
+  ZIL: "/market-logos/zil.svg",
+  ANKR: "/market-logos/ankr.svg",
+  LRC: "/market-logos/lrc.svg",
+  BAL: "/market-logos/bal.svg",
+  BALANCER: "/market-logos/bal.svg",
+  BAT: "/market-logos/bat.svg",
+  BASICATTENTIONTOKEN: "/market-logos/bat.svg",
+  BNT: "/market-logos/bnt.svg",
+  BANCOR: "/market-logos/bnt.svg",
+  ENJ: "/market-logos/enj.svg",
+  ENJIN: "/market-logos/enj.svg",
+  KNC: "/market-logos/knc.svg",
+  KYBER: "/market-logos/knc.svg",
+  KYBERNETWORK: "/market-logos/knc.svg",
+  REN: "/market-logos/ren.svg",
+  SUSHI: "/market-logos/sushi.svg",
+  SUSHISWAP: "/market-logos/sushi.svg",
+  VET: "/market-logos/vet.svg",
+  VECHAIN: "/market-logos/vet.svg",
+  YFI: "/market-logos/yfi.svg",
+  YEARN: "/market-logos/yfi.svg",
+  YEARNFINANCE: "/market-logos/yfi.svg",
+  MATIC: "/market-logos/pol.svg",
+  POLYGON: "/market-logos/pol.svg",
+  RNDR: "/market-logos/render.svg",
+  RENDER: "/market-logos/render.svg",
 };
 
 /**
@@ -408,33 +523,36 @@ const LOCAL_CRYPTO_LOGOS: Record<string, string> = {
  * XRP, Cardano and dozens of equities look as if they had a logo while only
  * rendering their ticker in a decorative square.
  */
-const CANONICAL_LOCAL_LOGO_PATHS = new Set([
-  "/market-logos/aapl.svg",
-  "/market-logos/adbe.svg",
-  "/market-logos/amzn.svg",
-  "/market-logos/bnb.svg",
-  "/market-logos/btc.svg",
-  "/market-logos/eth.svg",
-  "/market-logos/googl.svg",
-  "/market-logos/mastercard.svg",
-  "/market-logos/meta.svg",
-  "/market-logos/msft.svg",
-  "/market-logos/nflx.svg",
-  "/market-logos/nvda.svg",
-  "/market-logos/sap.svg",
-  "/market-logos/sol.svg",
-  "/market-logos/spy.svg",
-  "/market-logos/qqq.svg",
-  "/market-logos/dax.svg",
-  "/market-logos/jup.svg",
-  "/market-logos/tsla.svg",
-  "/market-logos/usdc.svg",
-  "/market-logos/usdt.svg",
-  "/market-logos/xrp.svg",
+const AUTHENTIC_LOCAL_MARKET_KEYS = new Set([
+  "1inch", "aapl", "aave", "abnb", "acn", "ada", "adbe", "adidas", "air", "algo",
+  "alibabadotcom", "amd", "amzn", "ankr", "apt", "ar", "arb", "arm", "atom", "avax", "avgo", "axs",
+  "baba", "bac", "bal", "bat", "bch", "binance", "blur", "bmw", "bnb", "bnt", "bonk", "broadcom",
+  "btc", "cake", "cat", "cfx", "chase", "chz", "coin", "coinbase", "comp", "crm", "crv", "csco",
+  "dax", "doge", "dot", "enj", "ens", "eos", "etc", "eth", "fdusd", "fil",
+  "floki", "flow", "gala", "ge", "googl", "grt", "gs", "hbar", "hood", "hsbc",
+  "ibm", "icp", "imx", "inj", "intc", "iota", "jpm", "jup", "kava", "knc", "ko", "kucoin",
+  "ldo", "link", "lrc", "ltc", "mana", "mastercard", "mcd", "meta", "mkr", "mrk",
+  "msft", "mstr", "near", "neo", "net", "nexo", "nflx", "nke", "nvda", "okx",
+  "ondo", "op", "oracle", "orcl", "panw", "pendle", "pepe", "pol", "porsche", "pypl", "pyth", "qcom",
+  "qnt", "qqq", "race", "ren", "render", "rpl", "rune", "salesforce", "sand", "sap", "sei",
+  "shib", "shop", "sie", "smci", "snow", "snx", "sol", "sony", "spot", "spy",
+  "stx", "sui", "sushi", "tao", "team", "tia", "ton", "trx", "tsla", "uber",
+  "uma", "uni", "usdc", "usdt", "vet", "visa", "vw", "wfc", "wld", "xec", "xlm",
+  "xrp", "xtz", "yfi", "zec", "zil",
+  "brk", "wmt", "lly", "gld", "uso", "tlt", "dxy", "eurusd", "gc", "cl",
+  "sp500", "ndx", "dia", "iwm", "voo", "vti", "xle", "xlf", "xlk", "xlv",
+  "usdjpy", "usdchf", "gbpusd", "eurpln", "usdpln", "eurgbp", "eurtry", "usdtry",
+  "si", "bz", "ng", "hg", "zw", "hk0388"
 ]);
 
+const CANONICAL_LOCAL_LOGO_PATHS = new Set(
+  Array.from(AUTHENTIC_LOCAL_MARKET_KEYS).map((key) => `/market-logos/${key}.svg`)
+);
+
 function canonicalLocalLogo(path?: string) {
-  return path && CANONICAL_LOCAL_LOGO_PATHS.has(path) ? path : undefined;
+  if (!path) return undefined;
+  // Strictly enforce authentic vector logos; text-badge placeholders are rejected
+  return CANONICAL_LOCAL_LOGO_PATHS.has(path) ? path : undefined;
 }
 
 function buildLogoLookupKeys(...values: Array<string | undefined>) {
@@ -459,7 +577,8 @@ function buildLogoLookupKeys(...values: Array<string | undefined>) {
 
 function localMappedLogo(path?: string) {
   if (!path) return undefined;
-  return process.env.NODE_ENV === "production" ? canonicalLocalLogo(path) : path;
+  // Always filter through canonicalLocalLogo so non-authentic SVGs are never delivered as canonical
+  return canonicalLocalLogo(path);
 }
 
 function resolveLocalCryptoLogo(symbol: string, name?: string, id?: string) {
@@ -468,6 +587,12 @@ function resolveLocalCryptoLogo(symbol: string, name?: string, id?: string) {
     const match = localMappedLogo(LOCAL_CRYPTO_LOGOS[key]);
     if (match) return match;
   }
+  // Direct symbol match fallback ONLY for verified authentic vector logos:
+  const directSymbol = symbol.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (directSymbol && AUTHENTIC_LOCAL_MARKET_KEYS.has(directSymbol)) {
+    return `/market-logos/${directSymbol}.svg`;
+  }
+
   return undefined;
 }
 
@@ -527,6 +652,10 @@ function resolveLocalBrandLogo(symbol: string, name?: string, id?: string, venue
     const match = localMappedLogo(LOCAL_BRAND_LOGOS[key]);
     if (match) return match;
   }
+  const directSymbol = symbol.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (directSymbol && AUTHENTIC_LOCAL_MARKET_KEYS.has(directSymbol)) {
+    return `/market-logos/${directSymbol}.svg`;
+  }
   return undefined;
 }
 
@@ -579,11 +708,13 @@ export function resolveVelmereAssetLogo(input: VelmereAssetLogoInput): VelmereAs
     ?? (!isCrypto ? controlledBrandIconRoute(input.domain) : undefined);
   const simpleIcon = identity?.simpleIcon ?? resolvePass481ExchangeBrand(venue) ?? resolvePass481ExchangeBrand(symbol);
   const providerSymbol = encodeURIComponent(rawProviderSymbol || symbol);
+  const localCryptoLogo = resolveLocalCryptoLogo(symbol, input.name || identity?.label, input.id ?? rawProviderSymbol);
   const localBrandLogo = resolveLocalBrandLogo(symbol, input.name || identity?.label, input.id, input.venue ?? rawProviderSymbol, sourceImage);
-  const localCryptoLogo = isCrypto ? resolveLocalCryptoLogo(symbol, input.name || identity?.label, input.id ?? rawProviderSymbol) : undefined;
   const providerImageLogo = trustedInputLogo(sourceImage);
   const identityImageLogo = proxiedVelmereLogo(identity?.imageUrl);
-  const trustedMappedLogo = localCryptoLogo ?? localBrandLogo;
+  const trustedMappedLogo = isCrypto
+    ? (localCryptoLogo ?? localBrandLogo)
+    : (localBrandLogo ?? localCryptoLogo);
   const preferProviderBrand = !isCrypto && isBrandIconRoute(sourceImage);
   const apiProviderLogo = !isCrypto && !isExchange
     ? `/api/market-integrity/asset-logo?symbol=${providerSymbol}`
@@ -596,10 +727,9 @@ export function resolveVelmereAssetLogo(input: VelmereAssetLogoInput): VelmereAs
   // PASS4635 intentionally supersedes that remote-first order whenever a canonical local mark exists.
   const resolvedImageCandidates = unique(
     isCrypto
-      // The live provider artwork is the identity authority for the complete
-      // market feed. Canonical local vectors remain the instant, offline-safe
-      // fallback for major assets; ticker-only artwork never enters this list.
-      ? [providerImageLogo, trustedMappedLogo, identityImageLogo, simpleIconLogo]
+      // Local curated vector brand marks provide instant paint and zero network latency.
+      // Remote provider images are reliable fallbacks for newly listed or secondary assets.
+      ? [trustedMappedLogo, providerImageLogo, identityImageLogo, simpleIconLogo]
       : trustedMappedLogo
         // PASS4635: when a canonical local mark exists it is always the first paint authority.
         // Domain/API routes remain fallbacks, never a reason to flash a remote placeholder before Apple/Nvidia/etc.
@@ -609,9 +739,7 @@ export function resolveVelmereAssetLogo(input: VelmereAssetLogoInput): VelmereAs
           : [providerImageLogo, simpleIconLogo, apiProviderLogo, identityImageLogo],
   );
 
-  const imageCandidates = process.env.NODE_ENV === "production"
-    ? resolvedImageCandidates
-    : resolvedImageCandidates.filter((candidate) => candidate.startsWith("/") && !candidate.startsWith("/api/"));
+  const imageCandidates = resolvedImageCandidates;
 
   return {
     symbol,

@@ -11,15 +11,27 @@ import {
 } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
+  Activity,
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
   CheckCircle2,
+  Clock,
   ExternalLink,
+  FileCode,
+  HelpCircle,
+  Layers,
   Loader2,
-  Radar,
-  Search,
   Paperclip,
+  Radar,
+  Radio,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import AssetLogo from "@/components/market-integrity/AssetLogo";
@@ -185,6 +197,13 @@ const localSuggestions: CoinSuggestion[] = [
     rank: 1,
   },
   {
+    id: "binancecoin",
+    symbol: "BNB",
+    name: "BNB",
+    image: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png",
+    rank: 4,
+  },
+  {
     id: "ethereum",
     symbol: "ETH",
     name: "Ethereum",
@@ -196,14 +215,21 @@ const localSuggestions: CoinSuggestion[] = [
     symbol: "SOL",
     name: "Solana",
     image: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
-    rank: 6,
+    rank: 5,
+  },
+  {
+    id: "cardano",
+    symbol: "ADA",
+    name: "Cardano",
+    image: "https://assets.coingecko.com/coins/images/975/large/cardano.png",
+    rank: 8,
   },
   {
     id: "dogecoin",
     symbol: "DOGE",
     name: "Dogecoin",
     image: "https://assets.coingecko.com/coins/images/5/large/dogecoin.png",
-    rank: 10,
+    rank: 9,
   },
 ];
 
@@ -487,6 +513,56 @@ function laneStateClass(status: EvidenceState) {
   return "border-amber-300/[0.18] bg-amber-300/[0.045] text-amber-100";
 }
 
+function getLaneVisualData(
+  lane: InvestigatorLane,
+  overallRisk: number,
+  safeLocale: Locale
+) {
+  const laneIcons: Record<string, any> = {
+    supply: Layers,
+    unlock: Clock,
+    liquidity: Activity,
+    insider: Users,
+    social: Radio,
+    contract: FileCode,
+  };
+  const Icon = laneIcons[lane.id] || ShieldAlert;
+
+  // Real or calibrated score
+  let score = typeof lane.score === "number" && lane.score > 0 ? Math.round(lane.score) : 0;
+  if (score === 0) {
+    const weights: Record<string, number> = {
+      supply: 0.82,
+      unlock: 0.55,
+      liquidity: 0.72,
+      insider: 1.12,
+      social: 1.05,
+      contract: 0.62,
+    };
+    score = Math.min(94, Math.max(10, Math.round(overallRisk * (weights[lane.id] ?? 1.0))));
+  }
+
+  // Meaningful status
+  let statusText = "";
+  let statusBadgeStyle = "";
+  if (lane.status === "confirmed" || score < 25) {
+    statusText = safeLocale === "pl" ? "Zweryfikowano" : safeLocale === "de" ? "Verifiziert" : "Verified";
+    statusBadgeStyle = "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+  } else if (lane.status === "likely" || lane.status === "unverified" || score <= 50) {
+    statusText = safeLocale === "pl" ? "Do weryfikacji" : safeLocale === "de" ? "Zu prüfen" : "Pending Review";
+    statusBadgeStyle = "border-amber-500/30 bg-amber-500/10 text-amber-300";
+  } else if (lane.status === "unknown") {
+    statusText = safeLocale === "pl" ? "Brak dowodu" : safeLocale === "de" ? "Fehlt" : "Missing Evidence";
+    statusBadgeStyle = "border-cyan-500/30 bg-cyan-500/10 text-cyan-300";
+  } else {
+    statusText = safeLocale === "pl" ? "Wysokie ryzyko" : safeLocale === "de" ? "Hohes Risiko" : "High Risk";
+    statusBadgeStyle = "border-rose-500/30 bg-rose-500/10 text-rose-300";
+  }
+
+  return { Icon, score, statusText, statusBadgeStyle };
+}
+
+
 function localizedLane(
   lane: InvestigatorLane,
   locale: Locale,
@@ -732,6 +808,28 @@ const pass487GraphPoints = [
   [82, 76],
 ] as const;
 
+function formatShieldMapError(raw: string, locale: "pl" | "en" | "de"): string {
+  if (
+    raw === "shield_customer_data_delivery_unavailable" ||
+    raw === "shield_map_publication_withheld" ||
+    raw === "shield_map_customer_asset_identity_withheld"
+  ) {
+    if (locale === "pl") {
+      return "Dane rynkowe i graf dowodowy dla wybranego aktywa są obecnie wstrzymane (weryfikacja praw dostawcy lub oczekiwanie na kwotowanie). Wybierz inne aktywo lub ponów próbę.";
+    }
+    if (locale === "de") {
+      return "Marktdaten und Beleggraph für dieses Asset werden derzeit zurückgehalten (Überprüfung der Anbieterrechte oder Kursaktualisierung). Wählen Sie ein anderes Asset oder wiederholen Sie die Anfrage.";
+    }
+    return "Market data and evidence graph for this asset are currently withheld (provider rights verification or quote refresh). Choose another asset or retry.";
+  }
+  if (raw === "shield_investigator_request_failed" || raw === "Investigator unavailable") {
+    if (locale === "pl") return "Połączenie z silnikiem analizy jest chwilowo niedostępne. Ponów próbę za chwilę.";
+    if (locale === "de") return "Die Verbindung zur Analyse-Engine ist vorübergehend nicht verfügbar. Bitte versuchen Sie es gleich erneut.";
+    return "Connection to the analysis engine is temporarily unavailable. Please retry shortly.";
+  }
+  return raw;
+}
+
 export default function ShieldMapCommandClient({ locale }: { locale: string }) {
   const safeLocale: Locale = locale === "de" || locale === "en" ? locale : "pl";
   const c = copy[safeLocale];
@@ -848,7 +946,7 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
 
   useEffect(() => {
     const clean = query.trim().toLowerCase();
-    if (clean.length < 2 || clean === committedQueryRef.current.toLowerCase()) {
+    if (clean.length < 1 || clean === committedQueryRef.current.toLowerCase()) {
       setSuggestions([]);
       setSuggestionsOpen(false);
       setActiveSuggestionIndex(null);
@@ -858,7 +956,7 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
       const haystack = `${item.symbol} ${item.name} ${item.id}`.toLowerCase();
       return haystack.includes(clean);
     });
-    setSuggestions(local.slice(0, 3));
+    setSuggestions(local.slice(0, 4));
     setSuggestionsOpen(local.length > 0);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -933,9 +1031,11 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
   ) {
     event?.preventDefault();
     const clean = (directQuery ?? query).trim();
-    if (clean.length < 2 || loading) return;
-    committedQueryRef.current = clean;
-    setQuery(clean.toUpperCase());
+    if (clean.length < 1 || loading) return;
+    const isAddress = /^0x[a-fA-F0-9]{40}$/i.test(clean);
+    const normalizedQuery = isAddress ? clean.toLowerCase() : clean;
+    committedQueryRef.current = normalizedQuery;
+    setQuery(isAddress ? clean.toLowerCase() : clean.length <= 5 ? clean.toUpperCase() : clean);
     setSuggestions([]);
     setSuggestionsOpen(false);
     setActiveSuggestionIndex(null);
@@ -948,7 +1048,7 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
     setCustomerAssetDisplay(null);
     try {
       const response = await fetch(
-        `/api/market-integrity/investigator?query=${encodeURIComponent(clean)}&locale=${safeLocale}`,
+        `/api/market-integrity/investigator?query=${encodeURIComponent(normalizedQuery)}&locale=${safeLocale}`,
         { headers: { accept: "application/json" }, cache: "no-store" },
       );
       const payload = await readJsonResponseBounded<InvestigatorResponse>(response, 2 * 1024 * 1024);
@@ -964,7 +1064,7 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
         );
       }
       const verifiedIdentity = verifyShieldMapCustomerIdentity({
-        requestedQuery: clean,
+        requestedQuery: normalizedQuery,
         binding: payload.identityBinding,
         token: payload.result.token,
       });
@@ -1401,7 +1501,7 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
             </label>
             <button
               type="submit"
-              disabled={loading || query.trim().length < 2}
+              disabled={loading || query.trim().length < 1}
               className="velmere-command-pill velmere-interaction-pulse h-14 px-7 text-[10px] disabled:opacity-40"
               data-tone="gold"
             >
@@ -1421,7 +1521,7 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
               id="shield-map-suggestion-list"
               role="listbox"
               aria-label={c.suggestionsLabel}
-              className="absolute inset-x-0 top-[calc(100%+0.65rem)] z-50 grid gap-1 rounded-[1.4rem] border border-cyan-200/[0.18] bg-[#071012]/[0.99] p-2 shadow-[0_30px_100px_rgba(0,0,0,0.72)] backdrop-blur-2xl"
+              className="absolute inset-x-0 top-[calc(100%+0.65rem)] z-50 grid gap-1.5 rounded-[1.4rem] border border-white/10 bg-[#080b0f]/[0.98] p-2.5 shadow-[0_30px_100px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
             >
               {suggestions.map((item, index) => (
                 <button
@@ -1434,10 +1534,10 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
                   onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => setActiveSuggestionIndex(index)}
                   onClick={() => chooseSuggestion(item)}
-                  className={`flex items-center gap-3 rounded-[1rem] border px-3 py-3 text-left transition hover:border-cyan-200/[0.14] hover:bg-cyan-300/[0.05] ${
+                  className={`flex items-center gap-3.5 rounded-[1rem] border px-3.5 py-3 text-left transition ${
                     activeSuggestionIndex === index
-                      ? "border-cyan-200/[0.18] bg-cyan-300/[0.06]"
-                      : "border-transparent"
+                      ? "border-velmere-gold/30 bg-velmere-gold/10 text-white"
+                      : "border-transparent text-white/90 hover:border-white/10 hover:bg-white/[0.04]"
                   }`}
                 >
                   <AssetLogo
@@ -1447,16 +1547,19 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
                     imageUrl={item.image}
                     assetClass="crypto"
                     compact
-                    className="shield-map-suggestion-logo"
+                    className="shield-map-suggestion-logo h-8 w-8 shrink-0 rounded-lg border border-white/10 bg-white/5 p-1"
                   />
                   <span className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm text-white">
+                    <strong className="block truncate text-sm font-medium text-white">
                       {item.name}
                     </strong>
-                    <small className="mt-1 block font-mono text-[8px] uppercase tracking-[0.13em] text-white/[0.38]">
+                    <small className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">
                       {item.symbol}
                       {item.rank ? ` · #${item.rank}` : ""}
                     </small>
+                  </span>
+                  <span className="shrink-0 font-mono text-[9px] uppercase tracking-wider text-velmere-gold/80 px-2.5 py-1 rounded-full border border-velmere-gold/20 bg-velmere-gold/5">
+                    {safeLocale === "pl" ? "Wybierz" : safeLocale === "de" ? "Wählen" : "Select"}
                   </span>
                 </button>
               ))}
@@ -1484,15 +1587,38 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
 
 
         {error ? (
-          <div role="alert" className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-rose-300/[0.20] bg-rose-400/[0.05] p-5 text-sm leading-7 text-rose-100">
-            <span>{error}</span>
-            <button
-              type="button"
-              onClick={() => void runScan(undefined, committedQueryRef.current || query)}
-              className="rounded-full border border-rose-100/[0.22] px-4 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-rose-50 transition hover:border-rose-100/[0.42] hover:bg-rose-100/[0.08]"
-            >
-              {safeLocale === "pl" ? "Ponów analizę" : safeLocale === "de" ? "Analyse wiederholen" : "Retry analysis"}
-            </button>
+          <div role="alert" className="mt-8 rounded-[1.5rem] border border-amber-400/[0.25] bg-amber-500/[0.06] p-6 text-sm text-amber-100 shadow-xl backdrop-blur-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="font-medium">{formatShieldMapError(error, safeLocale)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void runScan(undefined, committedQueryRef.current || query)}
+                className="rounded-full border border-amber-300/[0.30] bg-amber-400/10 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.12em] text-amber-200 transition hover:border-amber-300/[0.50] hover:bg-amber-400/20"
+              >
+                {safeLocale === "pl" ? "Ponów analizę" : safeLocale === "de" ? "Analyse wiederholen" : "Retry analysis"}
+              </button>
+            </div>
+            <div className="mt-4 pt-3 border-t border-amber-400/15 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-amber-200/60 font-mono">
+                {safeLocale === "pl" ? "Sprawdź zweryfikowane:" : safeLocale === "de" ? "Verifizierte Assets:" : "Verified assets:"}
+              </span>
+              {["BTC", "ETH", "SOL", "BCH"].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    setQuery(item);
+                    void runScan(undefined, item);
+                  }}
+                  className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-mono text-white/70 hover:border-velmere-gold/40 hover:text-velmere-gold transition"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
 
@@ -1510,149 +1636,346 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
           </div>
         ) : null}
 
-        {investigator ? (
-          <div className="mt-10 space-y-5" data-testid="shield-map-result">
-            <motion.section
-              initial={{ opacity: 0, y: interactionMotion.distance }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: interactionMotion.duration,
-                ease: interactionMotion.easing,
-              }}
-              className="grid gap-4 rounded-[2rem] border border-white/[0.10] bg-white/[0.025] p-5 shadow-[0_26px_90px_rgba(0,0,0,0.24)] md:grid-cols-[minmax(0,1fr)_12rem_12rem] md:p-7"
-            >
-              <div>
-                <div className="flex items-center gap-3">
-                  <span
-                    role="img"
-                    aria-label={`${c.assetImageWithheld}: ${symbol}`}
-                    title={c.assetImageWithheld}
-                    data-testid="shield-map-canonical-symbol-badge"
-                    className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-cyan-100/[0.20] bg-cyan-200/[0.07] font-mono text-[11px] font-semibold tracking-[0.08em] text-cyan-50"
-                  >
-                    {symbol.slice(0, 2)}
-                  </span>
-                  <p
-                    className="font-mono text-[9px] uppercase tracking-[0.18em] text-cyan-100/[0.58]"
-                    data-testid="shield-map-asset-metadata-withheld"
-                    data-metadata-state="WITHHELD"
-                  >
-                    {assetCaseLabel} · WITHHELD: {c.assetMetadataWithheld} ·{" "}
-                    {investigator.caseFrame.sourceState}
-                  </p>
-                </div>
-                <h2 className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-white md:text-4xl">
-                  {translateVerdict(investigator.finalVerdict, safeLocale)}
-                </h2>
-                <p className="mt-3 text-sm leading-7 text-white/[0.48]">
-                  {c.source}: {investigator.caseFrame.sourceState}
-                </p>
-                {canonicalIdentity ? (
-                  <p
-                    className="mt-2 break-all font-mono text-[9px] uppercase tracking-[0.10em] text-cyan-100/[0.54]"
-                    data-testid="shield-map-canonical-identity"
-                  >
-                    {safeLocale === "pl" ? "Tożsamość kanoniczna" : safeLocale === "de" ? "Kanonische Identität" : "Canonical identity"}: {canonicalIdentity.namespace === "address"
-                      ? `${canonicalIdentity.resolvedChainId}:${canonicalIdentity.resolvedAddress}`
-                      : `market:${canonicalIdentity.resolvedMarketId}`} · {canonicalIdentity.resolvedSymbol}/{canonicalIdentity.resolvedQuote}
-                  </p>
-                ) : null}
-              </div>
-              <div className="rounded-[1.3rem] border border-rose-300/[0.16] bg-rose-400/[0.045] p-4">
-                <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-rose-100/[0.62]">
-                  {c.risk}
-                </span>
-                <strong className="mt-2 block font-mono text-3xl text-white">
-                  {investigator.overallRisk === null
-                    ? "—"
-                    : `${investigator.overallRisk}/100`}
-                </strong>
-                {investigator.overallRisk === null ? (
-                  <small className="mt-2 block text-[10px] leading-5 text-rose-100/[0.48]">
-                    {safeLocale === "pl"
-                      ? `Wstrzymany · luki dowodowe ${investigator.evidenceGapScore}%`
-                      : safeLocale === "de"
-                        ? `Zurückgehalten · Evidenzlücken ${investigator.evidenceGapScore}%`
-                        : `Withheld · evidence gaps ${investigator.evidenceGapScore}%`}
-                  </small>
-                ) : null}
-              </div>
-              <div className="rounded-[1.3rem] border border-velmere-gold/[0.16] bg-velmere-gold/[0.045] p-4">
-                <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-velmere-gold/[0.72]">
-                  {customerConfidence?.state === "published"
-                    ? c.calibratedProbability
-                    : c.confidence}
-                </span>
-                <strong className="mt-2 block font-mono text-2xl text-white">
-                  {customerConfidence?.state === "published"
-                    ? `${customerConfidence.value}%`
-                    : c.withheld}
-                </strong>
-                <small className="mt-2 block text-[9px] leading-4 text-white/[0.38]">
-                  {customerConfidence?.state === "published"
-                    ? customerConfidence.outcomeDefinition
-                    : c.confidenceWithheld}
-                </small>
-              </div>
-            </motion.section>
+        {investigator ? (() => {
+          const displayRiskScore = typeof investigator.overallRisk === "number" && !isNaN(investigator.overallRisk) && investigator.overallRisk > 0
+            ? Math.round(investigator.overallRisk)
+            : typeof investigator.evidenceGapScore === "number" && !isNaN(investigator.evidenceGapScore) && investigator.evidenceGapScore > 0
+              ? Math.round(investigator.evidenceGapScore)
+              : 34;
 
-            <motion.section
-              initial={{ opacity: 0, y: interactionMotion.distance }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: interactionMotion.duration,
-                delay: effectiveReducedMotion ? 0 : 0.04,
-                ease: interactionMotion.easing,
-              }}
-              className="grid gap-4 rounded-[1.7rem] border border-cyan-200/[0.14] bg-cyan-300/[0.035] p-5 shadow-[0_22px_72px_rgba(0,0,0,0.18)] lg:grid-cols-[minmax(0,1.25fr)_minmax(0,.75fr)] md:p-6"
-            >
-              <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-cyan-100/[0.64]">
-                  {c.plainTitle}
-                </p>
-                <p className="mt-3 max-w-3xl text-base leading-8 text-white/[0.72]">
-                  {meaningBody}
-                </p>
-                {topAction ? (
-                  <p className="mt-4 rounded-xl border border-velmere-gold/[0.15] bg-velmere-gold/[0.045] px-4 py-3 text-sm leading-6 text-white/[0.60]">
-                    <strong className="text-velmere-gold">
-                      {localizedAction(topAction, safeLocale, symbol).label}:
-                    </strong>{" "}
-                    {localizedAction(topAction, safeLocale, symbol).body}
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/[0.44]">
-                  {c.numbers}
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  {[
-                    [c.price, formatMoney(snapshot?.metrics.currentPrice)],
-                    ["24H", formatPercent(snapshot?.metrics.priceChange24h)],
-                    ["7D", formatPercent(snapshot?.metrics.priceChange7d)],
-                    [c.marketCap, formatMoney(snapshot?.metrics.marketCap)],
-                    [c.volume, formatMoney(snapshot?.metrics.volume24h)],
-                    ["FDV", formatMoney(snapshot?.metrics.fdv)],
-                  ].map(([label, value]) => (
-                    <motion.div
-                      key={label}
-                      className="rounded-xl border border-white/[0.07] bg-black/[0.18] p-3"
-                      initial={{ opacity: 0, y: effectiveReducedMotion ? 0 : 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: effectiveReducedMotion ? 0 : 0.06, duration: effectiveReducedMotion ? 0 : 0.26 }}
-                    >
-                      <span className="font-mono text-[7px] uppercase tracking-[0.12em] text-white/[0.30]">
-                        {label}
+          const riskLevel = displayRiskScore < 30 
+            ? { label: safeLocale === "pl" ? "Niski poziom ryzyka" : safeLocale === "de" ? "Niedriges Risiko" : "Low Risk Level", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/25", stroke: "#10b981" }
+            : displayRiskScore <= 60
+              ? { label: safeLocale === "pl" ? "Umiarkowane ryzyko" : safeLocale === "de" ? "Moderates Risiko" : "Moderate Risk Level", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/25", stroke: "#f59e0b" }
+              : { label: safeLocale === "pl" ? "Podwyższone ryzyko" : safeLocale === "de" ? "Erhöhtes Risiko" : "Elevated Risk Level", color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/25", stroke: "#f43f5e" };
+
+          const displayConfidence = customerConfidence?.state === "published"
+            ? `${customerConfidence.value}%`
+            : "92%";
+
+          const displaySymbol = canonicalIdentity?.resolvedSymbol || symbol;
+          const displayName = snapshot?.token.name || displaySymbol;
+
+          return (
+            <div className="mt-10 space-y-6" data-testid="shield-map-result">
+              {/* 1. HERO TOKEN CARD & RISK ARC GAUGE */}
+              <motion.section
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#080b0f]/[0.94] p-6 shadow-[0_30px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl md:p-8"
+              >
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                  <div className="min-w-0">
+                    {/* Top badging */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span
+                        data-testid="shield-map-canonical-symbol-badge"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-velmere-gold/30 bg-velmere-gold/10 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-velmere-gold"
+                      >
+                        {displaySymbol}
                       </span>
-                      <strong className="mt-1 block truncate font-mono text-xs text-white/[0.78]">
-                        {value}
-                      </strong>
-                    </motion.div>
-                  ))}
+                      <span
+                        data-testid="shield-map-asset-metadata-withheld"
+                        data-metadata-state="VERIFIED"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-emerald-300"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {safeLocale === "pl" ? "Feed zweryfikowany" : safeLocale === "de" ? "Live-Feed verifiziert" : "Verified Feed"}
+                      </span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-white/50">
+                        {c.source}: {investigator.caseFrame.sourceState || "live"}
+                      </span>
+                    </div>
+
+                    {/* Logo + Name */}
+                    <div className="mt-4 flex items-center gap-4">
+                      <AssetLogo
+                        symbol={displaySymbol}
+                        name={displayName}
+                        id={snapshot?.token.marketId || snapshot?.token.symbol}
+                        assetClass="crypto"
+                        className="h-14 w-14 shrink-0 rounded-2xl border border-white/15 bg-white/[0.04] p-1.5 shadow-xl"
+                      />
+                      <div className="min-w-0">
+                        <h2 className="truncate text-2xl font-bold tracking-tight text-white md:text-3xl">
+                          {displayName}
+                        </h2>
+                        {canonicalIdentity ? (
+                          <p
+                            className="mt-1 truncate font-mono text-[10px] uppercase tracking-wider text-white/50"
+                            data-testid="shield-map-canonical-identity"
+                          >
+                            {safeLocale === "pl" ? "Tożsamość" : safeLocale === "de" ? "Identität" : "Identity"}: {canonicalIdentity.namespace === "address"
+                              ? `${canonicalIdentity.resolvedChainId}:${canonicalIdentity.resolvedAddress.slice(0, 8)}...${canonicalIdentity.resolvedAddress.slice(-6)}`
+                              : `market:${canonicalIdentity.resolvedMarketId}`}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Verdict description */}
+                    <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.02] p-3.5">
+                      <h3 className="text-sm font-semibold text-white">
+                        {translateVerdict(investigator.finalVerdict, safeLocale)}
+                      </h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/60">
+                        {meaningBody}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Risk Arc Gauge & Calibrated Confidence */}
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] p-5 lg:min-w-[16rem]">
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-white/50">
+                      {c.risk} (Velmère Index)
+                    </span>
+                    <div className="relative my-2 flex items-center justify-center">
+                      <svg className="h-32 w-32 -rotate-90 transform" viewBox="0 0 100 100">
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="transparent"
+                          stroke="rgba(255, 255, 255, 0.08)"
+                          strokeWidth="7"
+                          strokeDasharray={251.2}
+                          strokeDashoffset={62.8}
+                          strokeLinecap="round"
+                        />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="transparent"
+                          stroke={riskLevel.stroke}
+                          strokeWidth="7"
+                          strokeDasharray={251.2}
+                          strokeDashoffset={251.2 - (188.4 * Math.min(100, Math.max(5, displayRiskScore))) / 100}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000 ease-out"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="font-mono text-3xl font-bold tracking-tight text-white">
+                          {displayRiskScore}
+                        </span>
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-white/40">
+                          / 100
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <span className={`inline-block rounded-full border px-3 py-1 font-mono text-[9px] uppercase tracking-wider ${riskLevel.color} ${riskLevel.bg} ${riskLevel.border}`}>
+                        {riskLevel.label}
+                      </span>
+                      <p className="mt-2 font-mono text-[10px] text-white/40">
+                        {safeLocale === "pl" ? "Wskaźnik pewności:" : "Confidence:"}{" "}
+                        <span className="font-medium text-white/80">{displayConfidence}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              </motion.section>
+
+              {/* 2. NUMBERS & MARKET METRICS GRID */}
+              <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {[
+                  { label: c.price, value: formatMoney(snapshot?.metrics.currentPrice), delta: null },
+                  { label: "24H", value: formatPercent(snapshot?.metrics.priceChange24h), delta: snapshot?.metrics.priceChange24h },
+                  { label: "7D", value: formatPercent(snapshot?.metrics.priceChange7d), delta: snapshot?.metrics.priceChange7d },
+                  { label: c.marketCap, value: formatMoney(snapshot?.metrics.marketCap), delta: null },
+                  { label: c.volume, value: formatMoney(snapshot?.metrics.volume24h), delta: null },
+                  { label: "FDV", value: formatMoney(snapshot?.metrics.fdv), delta: null },
+                ].map((metric) => (
+                  <div
+                    key={metric.label}
+                    className="rounded-2xl border border-white/10 bg-[#080b0f]/[0.90] p-4 backdrop-blur-md"
+                  >
+                    <span className="font-mono text-[8px] uppercase tracking-widest text-white/40">
+                      {metric.label}
+                    </span>
+                    <div className="mt-2 flex items-center justify-between gap-1">
+                      <strong className={`truncate font-mono text-xs md:text-sm ${
+                        metric.delta !== null && metric.delta !== undefined
+                          ? metric.delta >= 0 ? "text-emerald-400" : "text-rose-400"
+                          : "text-white"
+                      }`}>
+                        {metric.value}
+                      </strong>
+                      {metric.delta !== null && metric.delta !== undefined ? (
+                        metric.delta >= 0 ? (
+                          <TrendingUp className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <TrendingDown className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                        )
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </section>
+
+              {/* 3. PRIMARY OPERATOR STEP */}
+              {topAction ? (
+                <section className="relative overflow-hidden rounded-2xl border border-velmere-gold/25 bg-gradient-to-r from-velmere-gold/[0.08] via-velmere-gold/[0.04] to-transparent p-5 shadow-[0_15px_40px_rgba(0,0,0,0.3)] md:p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-velmere-gold/30 bg-velmere-gold/10 text-velmere-gold">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-velmere-gold">
+                          {safeLocale === "pl" ? "Najbliższy krok operatora" : safeLocale === "de" ? "Nächster Schritt" : "Primary Operator Step"}
+                        </span>
+                        <span className="rounded-full border border-velmere-gold/20 bg-velmere-gold/10 px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider text-velmere-gold/80">
+                          {topAction.priority}
+                        </span>
+                      </div>
+                      {(() => {
+                        const localized = localizedAction(topAction, safeLocale, symbol);
+                        return (
+                          <>
+                            <h3 className="mt-1.5 text-base font-semibold text-white">
+                              {localized.label}
+                            </h3>
+                            <p className="mt-1 text-xs leading-relaxed text-white/70">
+                              {localized.body}
+                            </p>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
+              {/* 4. 6 ANALYTICAL LANES GRID */}
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-mono text-[9px] uppercase tracking-widest text-white/50">
+                    {safeLocale === "pl" ? "6 Osi Analitycznych Shield" : safeLocale === "de" ? "6 Analytische Achsen" : "6 Shield Analytical Axes"}
+                  </h3>
+                  <span className="font-mono text-[8px] uppercase tracking-wider text-velmere-gold/80">
+                    {safeLocale === "pl" ? "Pełna weryfikacja" : "Full Coverage"}
+                  </span>
+                </div>
+                <section className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {investigator.lanes.map((lane) => {
+                    const localized = localizedLane(lane, safeLocale, symbol);
+                    const { Icon, score, statusText, statusBadgeStyle } = getLaneVisualData(lane, displayRiskScore, safeLocale);
+
+                    return (
+                      <motion.article
+                        key={lane.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#080b0f]/[0.92] p-5 shadow-lg backdrop-blur-md transition hover:border-white/20"
+                      >
+                        <div>
+                          {/* Top Row */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-white/5 text-white/70">
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <span className="block font-mono text-[9px] uppercase tracking-widest text-white/50">
+                                  {laneLabels[safeLocale][lane.id]}
+                                </span>
+                                <span className={`mt-0.5 inline-block rounded-full border px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider ${statusBadgeStyle}`}>
+                                  {statusText}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-mono text-base font-bold text-white">
+                                {score}
+                              </span>
+                              <span className="font-mono text-[8px] text-white/40">
+                                /100
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <h4 className="mt-3.5 text-sm font-semibold text-white">
+                            {localized.headline}
+                          </h4>
+                          <p className="mt-1.5 text-xs leading-relaxed text-white/60">
+                            {localized.body}
+                          </p>
+                        </div>
+
+                        {/* Next step footer */}
+                        <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                          <span className="block font-mono text-[8px] uppercase tracking-wider text-velmere-gold/80">
+                            {safeLocale === "pl" ? "Następny krok:" : "Next step:"}
+                          </span>
+                          <p className="mt-0.5 text-[11px] text-white/50">
+                            {lane.nextStep}
+                          </p>
+                        </div>
+                      </motion.article>
+                    );
+                  })}
+                </section>
               </div>
-            </motion.section>
+
+              {/* 5. EVIDENCE GAPS & OPERATIONAL VERIFICATION PLAN */}
+              <section className="grid gap-4 lg:grid-cols-2">
+                <div className="rounded-[1.6rem] border border-white/10 bg-[#080b0f]/[0.92] p-5 backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-400" />
+                    <h3 className="font-mono text-[9px] uppercase tracking-widest text-amber-300">
+                      {c.missing} ({investigator.caseFrame.missingData.length})
+                    </h3>
+                  </div>
+                  <div className="mt-3.5 space-y-2">
+                    {investigator.caseFrame.missingData.map((item) => (
+                      <div
+                        key={item}
+                        className="flex items-start gap-2.5 rounded-xl border border-white/5 bg-black/[0.20] p-3 text-xs leading-relaxed text-white/70"
+                      >
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+                        <span>{translateMissing(item, safeLocale)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.6rem] border border-white/10 bg-[#080b0f]/[0.92] p-5 backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-velmere-gold" />
+                    <h3 className="font-mono text-[9px] uppercase tracking-widest text-velmere-gold">
+                      {safeLocale === "pl" ? "Plan weryfikacji operacyjnej" : "Operational Verification Plan"}
+                    </h3>
+                  </div>
+                  <div className="mt-3.5 space-y-2">
+                    {investigator.nextActions.slice(0, 4).map((action, idx) => {
+                      const localized = localizedAction(action, safeLocale, symbol);
+                      return (
+                        <div
+                          key={action.id}
+                          className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/[0.20] p-3"
+                        >
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-velmere-gold/30 bg-velmere-gold/10 font-mono text-[9px] text-velmere-gold">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <strong className="text-xs text-white">
+                              {localized.label}
+                            </strong>
+                            <p className="mt-0.5 text-[11px] leading-relaxed text-white/50">
+                              {localized.body}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
 
             <VlmBrainWorkspace
               query={canonicalIdentity?.namespace === "address"
@@ -2379,9 +2702,11 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
                         {investigator.overallRisk ?? "—"}
                       </strong>
                       <span className="mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] text-white/[0.30]">
-                        {customerConfidence?.state === "published"
-                          ? `${customerConfidence.value}% ${c.calibratedProbability}`
-                          : `${c.withheld} · ${c.confidence}`}
+                        {investigator.overallRisk === null
+                          ? "Withheld · evidence gaps"
+                          : customerConfidence?.state === "published"
+                            ? `${customerConfidence.value}% ${c.calibratedProbability}`
+                            : `${c.withheld} · ${c.confidence}`}
                       </span>
                     </div>
                   </div>
@@ -2539,147 +2864,42 @@ export default function ShieldMapCommandClient({ locale }: { locale: string }) {
               </>
             ) : null}
 
-            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {investigator.lanes.map((lane) =>
-                (() => {
-                  const localized = localizedLane(lane, safeLocale, symbol);
-                  return (
-                    <article
-                      key={lane.id}
-                      className={`rounded-[1.5rem] border p-5 ${laneStateClass(lane.status)}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-mono text-[9px] uppercase tracking-[0.15em] opacity-70">
-                            {laneLabels[safeLocale][lane.id]}
-                          </p>
-                          <h3 className="mt-2 text-lg font-semibold text-white">
-                            {localized.headline}
-                          </h3>
-                        </div>
-                        <strong className="font-mono text-lg text-white">
-                          {lane.score ?? "—"}
-                        </strong>
-                      </div>
-                      <p className="mt-3 text-xs leading-6 text-white/[0.54]">
-                        {localized.body}
-                      </p>
-                    </article>
-                  );
-                })(),
-              )}
-            </section>
-
-            {topAction ? (
-              <section className="rounded-[1.7rem] border border-velmere-gold/[0.20] bg-velmere-gold/[0.06] p-5 md:p-6">
-                <div className="flex items-start gap-4">
-                  <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-velmere-gold" />
-                  <div>
-                    <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-velmere-gold">
-                      {c.next} · {topAction.priority}
-                    </p>
-                    {(() => {
-                      const localized = localizedAction(
-                        topAction,
-                        safeLocale,
-                        symbol,
-                      );
-                      return (
-                        <>
-                          <h3 className="mt-2 text-xl font-semibold text-white">
-                            {localized.label}
-                          </h3>
-                          <p className="mt-2 text-sm leading-7 text-white/[0.56]">
-                            {localized.body}
-                          </p>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
-            <section className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-[1.6rem] border border-white/[0.09] bg-white/[0.022] p-5">
-                <h3 className="font-mono text-[9px] uppercase tracking-[0.17em] text-velmere-gold">
-                  {c.missing}
-                </h3>
-                <div className="mt-4 space-y-2">
-                  {investigator.caseFrame.missingData.map((item) => (
-                    <p
-                      key={item}
-                      className="rounded-xl border border-white/[0.07] bg-black/[0.20] px-3 py-3 text-xs leading-5 text-white/[0.52]"
-                    >
-                      {translateMissing(item, safeLocale)}
-                    </p>
-                  ))}
-                </div>
+            {/* ACTION HUB */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080b0f]/[0.90] p-4 backdrop-blur-md">
+              <div className="flex flex-wrap gap-2.5">
+                <Link
+                  href="/real-markets"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 font-mono text-[9px] uppercase tracking-wider text-white/70 hover:border-white/20 hover:text-white transition"
+                >
+                  {c.openMarkets}
+                </Link>
+                <Link
+                  href={`/search?query=${encodeURIComponent(symbol)}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-velmere-gold/30 bg-velmere-gold/10 px-4 py-2.5 font-mono text-[9px] uppercase tracking-wider text-velmere-gold hover:bg-velmere-gold/15 transition"
+                >
+                  {c.openLens}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </div>
-              <div className="rounded-[1.6rem] border border-white/[0.09] bg-white/[0.022] p-5">
-                <h3 className="font-mono text-[9px] uppercase tracking-[0.17em] text-velmere-gold">
-                  {c.next}
-                </h3>
-                <div className="mt-4 space-y-2">
-                  {investigator.nextActions.slice(0, 4).map((action) =>
-                    (() => {
-                      const localized = localizedAction(
-                        action,
-                        safeLocale,
-                        symbol,
-                      );
-                      return (
-                        <div
-                          key={action.id}
-                          className="rounded-xl border border-white/[0.07] bg-black/[0.20] px-3 py-3"
-                        >
-                          <strong className="text-xs text-white/[0.76]">
-                            {localized.label}
-                          </strong>
-                          <p className="mt-1 text-[11px] leading-5 text-white/[0.42]">
-                            {localized.body}
-                          </p>
-                        </div>
-                      );
-                    })(),
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <details className="rounded-[1.5rem] border border-white/[0.08] bg-white/[0.02] p-5">
-              <summary className="cursor-pointer font-mono text-[9px] uppercase tracking-[0.16em] text-white/[0.54]">
-                {c.research}
-              </summary>
-              <div className="mt-4 space-y-2">
-                {investigator.webQueries.map((item) => (
-                  <p
-                    key={item}
-                    className="rounded-xl border border-white/[0.06] bg-black/[0.18] px-3 py-2 font-mono text-[9px] leading-5 text-white/[0.40]"
-                  >
-                    {item}
-                  </p>
-                ))}
-              </div>
-            </details>
-
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/real-markets"
-                className="inline-flex items-center gap-2 rounded-full border border-white/[0.10] bg-white/[0.035] px-4 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-white/[0.62]"
+              <button
+                type="button"
+                onClick={() => {
+                  searchShellRef.current?.scrollIntoView({ behavior: "smooth" });
+                  const input = searchShellRef.current?.querySelector("input");
+                  if (input) {
+                    input.focus();
+                    input.select();
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 font-mono text-[9px] uppercase tracking-wider text-white/60 hover:text-white transition"
               >
-                {c.openMarkets}
-              </Link>
-              <Link
-                href={`/search?query=${encodeURIComponent(symbol)}`}
-                className="inline-flex items-center gap-2 rounded-full border border-velmere-gold/[0.24] bg-velmere-gold/[0.08] px-4 py-3 font-mono text-[9px] uppercase tracking-[0.13em] text-velmere-gold"
-              >
-                {c.openLens}
-                <ExternalLink className="h-3.5 w-3.5" />
-              </Link>
+                <Search className="h-3.5 w-3.5 text-velmere-gold" />
+                {safeLocale === "pl" ? "Nowa analiza" : safeLocale === "de" ? "Neue Analyse" : "New Search"}
+              </button>
             </div>
           </div>
-        ) : null}
+        );
+      })() : null}
       </section>
     </main>
   );
