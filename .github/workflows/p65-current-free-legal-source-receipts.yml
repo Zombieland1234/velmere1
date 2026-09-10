@@ -63,7 +63,7 @@ jobs:
           $r | ConvertTo-Json -Depth 8 | Set-Content 'P65_RESULT/P65_EXACT_WINDOWS_CURRENT_SOURCE_RECEIPT.json' -Encoding utf8
           Get-ChildItem P65_RESULT -File | ForEach-Object { "{0}  {1}" -f ((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()),$_.Name } | Set-Content 'P65_RESULT/P65_RESULT_SHA256.txt' -Encoding utf8
       - name: Upload P65 exact Windows source receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: p65-current-free-legal-source-receipts
           path: P65_RESULT
