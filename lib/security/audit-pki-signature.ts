@@ -1,130 +1,125 @@
 /**
- * Velmère Audit Integrity Expansion (V2 Directive Section 43.1)
- * RFC 3161 Trusted Timestamping & Ed25519 Cryptographic Report Signing
+ * Velmère report file-integrity attestation.
+ *
+ * R10 truth boundary:
+ * - this module provides a LOCAL Ed25519 integrity signature over a report digest;
+ * - it does NOT create, emulate, or claim an RFC 3161 TimeStampToken;
+ * - external TSA timestamping, when used, must be supplied as separate observed evidence.
  */
 
 import crypto from "crypto";
 
-export interface Rfc3161TimestampToken {
-  version: 1;
-  policyOid: string; // "1.3.6.1.4.1.61024.1.1" (Velmère RFC 3161 Policy)
-  hashAlgorithm: "SHA-256";
-  messageImprint: string; // hex digest of the canonical report
-  serialNumber: string; // unique monotonically increasing or cryptographic serial
-  genTime: string; // ISO 8601 UTC timestamp
-  accuracySeconds: number; // e.g. 1
-  tsaName: string; // "Velmère RFC 3161 Trusted Authority"
-  tokenSignature: string; // Ed25519 or HMAC signature of the timestamp token
+export interface LocalIntegrityTimestamp {
+  scheme: "LOCAL_GENERATED_AT";
+  generatedAt: string;
+  externalTsa: false;
+  externalTimestampVerified: false;
 }
 
 export interface ReportPkiAttestation {
-  signerIdentity: string; // "Velmère Cryptographic Root CA"
+  attestationType: "LOCAL_FILE_INTEGRITY";
+  signerIdentity: "Velmère Local Integrity Signer";
+  signatureAlgorithm: "Ed25519";
+  digestAlgorithm: "SHA-256";
   publicKeyPem: string;
   signatureHex: string;
   signedDigest: string;
-  timestampToken: Rfc3161TimestampToken;
-  provenanceProof: string;
+  localTimestamp: LocalIntegrityTimestamp;
+  externalTimestampVerified: false;
+  integrityBindingSha256: string;
+  truthBoundary: string;
 }
 
-// Fixed deterministic root key for repeatable reproducible verification
-const VELMERE_ED25519_SEED = Buffer.from(
-  "76656c6d6572652d61756469742d726f6f742d736565642d323032362d3039",
-  "hex"
-); // 32 bytes seed
+const PKCS8_ED25519_SEED_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
+const LOCAL_SIGNING_SEED = crypto
+  .createHash("sha256")
+  .update("velmere-local-report-integrity-v1", "utf8")
+  .digest();
 
-let keyPairCache: crypto.KeyPairSyncResult<string, string> | null = null;
+let keyPairCache: {
+  publicKey: crypto.KeyObject;
+  privateKey: crypto.KeyObject;
+  publicKeyPem: string;
+  privateKeyPem: string;
+  publicKeyJwk: JsonWebKey;
+} | null = null;
 
+/**
+ * Deterministic local signing identity used only for reproducible file-integrity
+ * fixtures/artifacts. This key is embedded in source and therefore MUST NOT be
+ * treated as a private production CA or external trust anchor.
+ */
 export function getVelmereSigningKeys() {
   if (!keyPairCache) {
-    // Generate deterministic Ed25519 key from seed using HKDF
-    const privateKey = crypto.generateKeyPairSync("ed25519", {
-      publicKeyEncoding: { type: "spki", format: "pem" },
-      privateKeyEncoding: { type: "pkcs8", format: "pem" },
-    });
-    keyPairCache = privateKey;
+    const privateKeyDer = Buffer.concat([PKCS8_ED25519_SEED_PREFIX, LOCAL_SIGNING_SEED]);
+    const privateKey = crypto.createPrivateKey({ key: privateKeyDer, format: "der", type: "pkcs8" });
+    const publicKey = crypto.createPublicKey(privateKey);
+    keyPairCache = {
+      privateKey,
+      publicKey,
+      privateKeyPem: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+      publicKeyPem: publicKey.export({ type: "spki", format: "pem" }).toString(),
+      publicKeyJwk: publicKey.export({ format: "jwk" }) as JsonWebKey,
+    };
   }
-  const pubKeyObj = crypto.createPublicKey(keyPairCache.publicKey);
-  const jwk = pubKeyObj.export({ format: "jwk" });
-  return {
-    publicKey: keyPairCache.publicKey,
-    privateKey: keyPairCache.privateKey,
-    publicKeyPem: keyPairCache.publicKey,
-    privateKeyPem: keyPairCache.privateKey,
-    publicKeyJwk: jwk,
-  };
+  return keyPairCache;
 }
 
 export function signWithVelmereKey(data: Buffer): Buffer {
-  const keys = getVelmereSigningKeys();
-  return crypto.sign(null, data, keys.privateKey);
+  return crypto.sign(null, data, getVelmereSigningKeys().privateKey);
 }
 
-export function createRfc3161Timestamp(
-  contentDigestHex: string,
-  timestampIso?: string
-): Rfc3161TimestampToken {
-  const genTime = timestampIso || new Date().toISOString();
-  const serialNumber = crypto
-    .createHash("sha256")
-    .update(`rfc3161:${contentDigestHex}:${genTime}`)
-    .digest("hex")
-    .slice(0, 32);
-
-  const tokenData = `1.3.6.1.4.1.61024.1.1|SHA-256|${contentDigestHex}|${serialNumber}|${genTime}|Velmère RFC 3161 Trusted Authority`;
-  const tokenSignature = crypto.createHash("sha256").update(tokenData).digest("hex");
-
-  return {
-    version: 1,
-    policyOid: "1.3.6.1.4.1.61024.1.1",
-    hashAlgorithm: "SHA-256",
-    messageImprint: contentDigestHex,
-    serialNumber,
-    genTime,
-    accuracySeconds: 1,
-    tsaName: "Velmère RFC 3161 Trusted Authority",
-    tokenSignature,
-  };
+function cleanSha256Digest(reportDigest: string): string {
+  const cleanDigest = reportDigest.startsWith("sha256:") ? reportDigest.slice(7) : reportDigest;
+  if (!/^[a-f0-9]{64}$/i.test(cleanDigest)) {
+    throw new Error("report_integrity_digest_must_be_sha256_hex");
+  }
+  return cleanDigest.toLowerCase();
 }
 
+/**
+ * Backward-compatible function name. The returned object is deliberately NOT
+ * an RFC3161/TSA claim; it is a local integrity attestation only.
+ */
 export function signReportWithPki(
   reportDigest: string,
-  timestampIso?: string
+  timestampIso?: string,
 ): ReportPkiAttestation {
-  const cleanDigest = reportDigest.startsWith("sha256:")
-    ? reportDigest.slice(7)
-    : reportDigest;
-
-  const keys = getVelmereSigningKeys();
-  const timestampToken = createRfc3161Timestamp(cleanDigest, timestampIso);
-
-  const signBuffer = Buffer.from(
-    `VLM-PKI-V2|${cleanDigest}|${timestampToken.serialNumber}|${timestampToken.genTime}`,
-    "utf8"
-  );
-  const signature = crypto.sign(null, signBuffer, keys.privateKey);
-
-  const provenanceProof = crypto
+  const cleanDigest = cleanSha256Digest(reportDigest);
+  const generatedAt = timestampIso || new Date().toISOString();
+  const signBuffer = Buffer.from(`VLM-LOCAL-INTEGRITY-V1|SHA-256|${cleanDigest}`, "utf8");
+  const signature = crypto.sign(null, signBuffer, getVelmereSigningKeys().privateKey);
+  const integrityBindingSha256 = crypto
     .createHash("sha256")
-    .update(`${cleanDigest}|${signature.toString("hex")}|${timestampToken.tokenSignature}`)
+    .update(`${cleanDigest}|${signature.toString("hex")}`)
     .digest("hex");
 
   return {
-    signerIdentity: "Velmère Cryptographic Root CA / Engine v2.4",
-    publicKeyPem: keys.publicKey,
+    attestationType: "LOCAL_FILE_INTEGRITY",
+    signerIdentity: "Velmère Local Integrity Signer",
+    signatureAlgorithm: "Ed25519",
+    digestAlgorithm: "SHA-256",
+    publicKeyPem: getVelmereSigningKeys().publicKeyPem,
     signatureHex: signature.toString("hex"),
     signedDigest: cleanDigest,
-    timestampToken,
-    provenanceProof: `sha256:${provenanceProof}`,
+    localTimestamp: {
+      scheme: "LOCAL_GENERATED_AT",
+      generatedAt,
+      externalTsa: false,
+      externalTimestampVerified: false,
+    },
+    externalTimestampVerified: false,
+    integrityBindingSha256,
+    truthBoundary: "Local signature verifies report-digest integrity only. It is not an RFC 3161 timestamp, external TSA receipt, content-correctness attestation, or release authority.",
   };
 }
 
 export function verifyReportPki(attestation: ReportPkiAttestation): boolean {
   try {
-    const cleanDigest = attestation.signedDigest;
-    const signBuffer = Buffer.from(
-      `VLM-PKI-V2|${cleanDigest}|${attestation.timestampToken.serialNumber}|${attestation.timestampToken.genTime}`,
-      "utf8"
-    );
+    if (attestation.attestationType !== "LOCAL_FILE_INTEGRITY") return false;
+    if (attestation.externalTimestampVerified !== false) return false;
+    const cleanDigest = cleanSha256Digest(attestation.signedDigest);
+    const signBuffer = Buffer.from(`VLM-LOCAL-INTEGRITY-V1|SHA-256|${cleanDigest}`, "utf8");
     const signature = Buffer.from(attestation.signatureHex, "hex");
     return crypto.verify(null, signBuffer, attestation.publicKeyPem, signature);
   } catch {
