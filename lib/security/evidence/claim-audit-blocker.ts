@@ -5,11 +5,20 @@
  * R10 truth rule:
  *   evidence presence is not evidence validity.
  * A customer-facing claim is supportable only when at least one EvidenceRecord
- * for the required category has status PASS and satisfies any claim-specific
- * method/provenance constraints below.
+ * for the required category has status PASS, satisfies any claim-specific
+ * method/provenance constraints, and is bound to the exact requested scope.
  */
 
 import type { EvidenceRecord } from "./evidence-record";
+
+export interface ClaimAuditScope {
+  /** Exact audit/report execution scope. Strong claims require this field. */
+  auditId: string;
+  contractAddress?: string | null;
+  commitHash?: string | null;
+  provider?: string | null;
+  dataset?: string | null;
+}
 
 export interface ClaimAuditResult {
   passed: boolean;
@@ -32,11 +41,36 @@ type ClaimRule = {
   requiredEvidenceCategory?: EvidenceRecord["category"];
   truthfulFallback: string;
   reason: string;
+  requireExactScope?: boolean;
   evidenceValidator?: (evidence: EvidenceRecord) => boolean;
 };
 
+function normalized(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  return value.trim().toLowerCase();
+}
+
+function evidenceMatchesScope(evidence: EvidenceRecord, scope: ClaimAuditScope | undefined): boolean {
+  if (!scope?.auditId) return false;
+  if (evidence.auditId !== scope.auditId) return false;
+
+  const optionalPairs: Array<[string | null | undefined, string | null | undefined]> = [
+    [scope.contractAddress, evidence.contractAddress],
+    [scope.commitHash, evidence.commitHash],
+    [scope.provider, evidence.provider],
+    [scope.dataset, evidence.dataset],
+  ];
+
+  for (const [expected, actual] of optionalPairs) {
+    if (expected == null) continue;
+    if (normalized(expected) !== normalized(actual)) return false;
+  }
+
+  return true;
+}
+
 function hasFreshObservedData(evidence: EvidenceRecord): boolean {
-  return evidence.dataFreshness !== "STALE" && evidence.dataFreshness !== "EXPIRED";
+  return evidence.dataFreshness === "FRESH" && Boolean(evidence.observedAt || evidence.retrievedAt);
 }
 
 function hasExternalRfc3161Proof(evidence: EvidenceRecord): boolean {
@@ -82,12 +116,18 @@ function hasDirectSipL3Proof(evidence: EvidenceRecord): boolean {
   return hasFreshObservedData(evidence) && /\b(SIP|ITCH|OUCH|L3|level\s*3)\b/i.test(haystack);
 }
 
-function supportingEvidence(rule: ClaimRule, records: EvidenceRecord[]): EvidenceRecord | undefined {
+function supportingEvidence(
+  rule: ClaimRule,
+  records: EvidenceRecord[],
+  scope: ClaimAuditScope | undefined,
+): EvidenceRecord | undefined {
   if (!rule.requiredEvidenceCategory) return undefined;
+  if (rule.requireExactScope !== false && !scope?.auditId) return undefined;
 
   return records.find((evidence) => {
     if (evidence.category !== rule.requiredEvidenceCategory) return false;
     if (evidence.status !== "PASS") return false;
+    if (rule.requireExactScope !== false && !evidenceMatchesScope(evidence, scope)) return false;
     if (rule.evidenceValidator && !rule.evidenceValidator(evidence)) return false;
     return true;
   });
@@ -98,9 +138,10 @@ const CRITICAL_CLAIM_PATTERNS: ClaimRule[] = [
     regex: /\b(RFC\s*3161|RFC3161)\b/i,
     category: "CRYPTOGRAPHIC",
     requiredEvidenceCategory: "CRYPTOGRAPHIC",
+    requireExactScope: true,
     evidenceValidator: hasExternalRfc3161Proof,
     truthfulFallback: "SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]",
-    reason: "RFC 3161 requires an observed external TSA TimeStampToken; a local hash alone is insufficient.",
+    reason: "RFC 3161 requires an observed external TSA TimeStampToken bound to the exact audit scope; a local hash alone is insufficient.",
   },
   {
     regex: /\b(PCAOB\s*CERTIFIED|PCAOB\s*AUDITED)\b/i,
@@ -112,17 +153,19 @@ const CRITICAL_CLAIM_PATTERNS: ClaimRule[] = [
     regex: /\b(41\.2%|41,2%)\s*(?:dziennego|dark\s*pool|ats)\b/i,
     category: "MARKET_MICROSTRUCTURE",
     requiredEvidenceCategory: "MARKET_MICROSTRUCTURE",
+    requireExactScope: true,
     evidenceValidator: hasFreshObservedData,
     truthfulFallback: "ATS / Dark Pool Share: NOT OBSERVED [INSUFFICIENT DATA]",
-    reason: "A fixed ATS/dark-pool percentage requires a current observed dataset for the exact instrument/scope.",
+    reason: "A fixed ATS/dark-pool percentage requires a fresh observed dataset bound to the exact instrument/audit scope.",
   },
   {
     regex: /\b2\.8\s*(?:bps|punkty\s*bazowe)\b/i,
     category: "MARKET_MICROSTRUCTURE",
     requiredEvidenceCategory: "MARKET_MICROSTRUCTURE",
+    requireExactScope: true,
     evidenceValidator: hasFreshObservedData,
     truthfulFallback: "Kyle Slippage: ESTIMATED HEURISTIC [UNOBSERVED]",
-    reason: "A fixed slippage metric requires current observed market-depth evidence for the exact scope.",
+    reason: "A fixed slippage metric requires fresh observed market-depth evidence bound to the exact scope.",
   },
   {
     regex: /\b(Wszystkie\s*niezmienniki\s*(?:stanu\s*)?udowodnione|all\s*invariants\s*proven)\b/i,
@@ -134,9 +177,10 @@ const CRITICAL_CLAIM_PATTERNS: ClaimRule[] = [
     regex: /\b(FULL\s*SMT\s*(?:Z3\s*)?SOLVER\s*VERIFICATION|SMT\s*Z3\s*SOLVER\s*VERIFICATION)\b/i,
     category: "FORMAL",
     requiredEvidenceCategory: "FORMAL",
+    requireExactScope: true,
     evidenceValidator: hasFormalSolverProof,
     truthfulFallback: "FORMAL VERIFICATION: NOT VERIFIED FOR THIS SCOPE",
-    reason: "SMT/formal wording requires PASS evidence produced by an executed formal solver for the exact scope.",
+    reason: "SMT/formal wording requires PASS evidence produced by an executed formal solver bound to the exact audit scope.",
   },
   {
     regex: /\b(100%\s*SECURE|100%\s*SAFE|ABSOLUTELY\s*SECURE)\b/i,
@@ -148,39 +192,44 @@ const CRITICAL_CLAIM_PATTERNS: ClaimRule[] = [
     regex: /\b(HUMAN\s*AUDITED|HUMAN\s*REVIEWED|Zweryfikowany\s*przez\s*audytora)\b/i,
     category: "HUMAN_REVIEW",
     requiredEvidenceCategory: "HUMAN_REVIEW",
+    requireExactScope: true,
     evidenceValidator: hasConfirmedHumanReview,
     truthfulFallback: "HUMAN REVIEW: NOT VERIFIED",
-    reason: "Human-review wording requires PASS + HUMAN_VERIFIED + reviewerId + CONFIRMED review status.",
+    reason: "Human-review wording requires exact-scope PASS + HUMAN_VERIFIED + reviewerId + CONFIRMED review status.",
   },
   {
     regex: /\b(L3\/SIP\s*połączenia|Direct\s*L3\/SIP)\b/i,
     category: "MARKET_DATA",
     requiredEvidenceCategory: "MARKET_DATA",
+    requireExactScope: true,
     evidenceValidator: hasDirectSipL3Proof,
     truthfulFallback: "Market Data Source: DIRECT L3/SIP NOT VERIFIED",
-    reason: "Direct L3/SIP wording requires fresh observed evidence identifying the licensed feed/source.",
+    reason: "Direct L3/SIP wording requires fresh observed evidence identifying the licensed feed/source and exact scope.",
   },
   {
     regex: /\b(Best\s*Execution\s*PASS|Best\s*Execution\s*VERIFIED)\b/i,
     category: "MARKET_DATA",
     requiredEvidenceCategory: "MARKET_DATA",
+    requireExactScope: true,
     evidenceValidator: hasFreshObservedData,
     truthfulFallback: "Best Execution: NOT VERIFIED FOR THIS SCOPE",
-    reason: "Best-execution wording requires current execution-routing evidence, not merely a market-data category record.",
+    reason: "Best-execution wording requires current execution-routing evidence bound to the exact scope.",
   },
   {
     regex: /\b(Multisig\s*3-of-5)\b/i,
     category: "ACCESS_CONTROL",
     requiredEvidenceCategory: "ACCESS_CONTROL",
+    requireExactScope: true,
     truthfulFallback: "Multisig: THRESHOLD UNKNOWN [NO VERIFIED ON-CHAIN RESULT]",
-    reason: "A concrete threshold requires a PASS access-control evidence record for the exact contract.",
+    reason: "A concrete threshold requires a PASS access-control evidence record bound to the exact audit/contract scope.",
   },
   {
     regex: /\b(Timelock\s*48h)\b/i,
     category: "ACCESS_CONTROL",
     requiredEvidenceCategory: "ACCESS_CONTROL",
+    requireExactScope: true,
     truthfulFallback: "Timelock: DELAY UNKNOWN [NO VERIFIED ON-CHAIN RESULT]",
-    reason: "A concrete timelock duration requires a PASS access-control evidence record for the exact contract.",
+    reason: "A concrete timelock duration requires a PASS access-control evidence record bound to the exact audit/contract scope.",
   },
   {
     regex: /\b(Zero\s*Risk|Zero\s*Vulnerabilit(?:y|ies)|Zero\s*Ryzyka)\b/i,
@@ -205,13 +254,16 @@ const CRITICAL_CLAIM_PATTERNS: ClaimRule[] = [
 /**
  * Validates and sanitizes report lines against EvidenceRecords.
  *
- * Important R10 invariant:
+ * Important R10 invariants:
  * - FAIL / WARN / UNKNOWN / NOT_RUN / NOT_VERIFIED / INSUFFICIENT_EVIDENCE /
- *   SKIPPED / TIMEOUT / ERROR records NEVER authorize a positive claim.
+ *   SKIPPED / TIMEOUT / ERROR records NEVER authorize a positive claim;
+ * - exact-scope claims require a ClaimAuditScope and matching auditId;
+ * - optional contract/provider/dataset/commit scope values must match when provided.
  */
 export function auditAndSanitizeReportLines(
   lines: string[],
-  evidenceRecords: EvidenceRecord[]
+  evidenceRecords: EvidenceRecord[],
+  scope?: ClaimAuditScope,
 ): ClaimAuditResult {
   let blockedCount = 0;
   let rewrittenCount = 0;
@@ -222,11 +274,10 @@ export function auditAndSanitizeReportLines(
     let sanitizedLine = line;
 
     for (const rule of CRITICAL_CLAIM_PATTERNS) {
-      // Reset stateful regexes defensively if future rules add /g.
       rule.regex.lastIndex = 0;
       if (!rule.regex.test(sanitizedLine)) continue;
 
-      const evidence = supportingEvidence(rule, evidenceRecords);
+      const evidence = supportingEvidence(rule, evidenceRecords, scope);
 
       if (!evidence) {
         rule.regex.lastIndex = 0;
@@ -246,7 +297,7 @@ export function auditAndSanitizeReportLines(
           matchedPattern: rule.category,
           action: "VERIFIED",
           evidenceId: evidence.id,
-          reason: `Backed by PASS EvidenceRecord ${evidence.id}.`,
+          reason: `Backed by exact-scope PASS EvidenceRecord ${evidence.id}.`,
         });
       }
     }
@@ -255,6 +306,9 @@ export function auditAndSanitizeReportLines(
   }
 
   return {
+    // A safely rewritten unsupported claim is a successful fail-closed outcome.
+    // blockedCount is reserved for future non-rewritable claims and therefore
+    // remains zero with the current rule set.
     passed: blockedCount === 0,
     blockedCount,
     rewrittenCount,
