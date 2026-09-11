@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { auditAndSanitizeReportLines } from "../../lib/security/evidence/claim-audit-blocker";
+import {
+  auditAndSanitizeReportLines,
+  type ClaimAuditScope,
+} from "../../lib/security/evidence/claim-audit-blocker";
 import type { EvidenceRecord } from "../../lib/security/evidence/evidence-record";
 
 function evidence(overrides: Partial<EvidenceRecord>): EvidenceRecord {
@@ -18,8 +21,10 @@ function evidence(overrides: Partial<EvidenceRecord>): EvidenceRecord {
   };
 }
 
-function one(line: string, records: EvidenceRecord[]) {
-  return auditAndSanitizeReportLines([line], records);
+const exactScope: ClaimAuditScope = { auditId: "AUDIT-R10-TEST" };
+
+function one(line: string, records: EvidenceRecord[], scope?: ClaimAuditScope) {
+  return auditAndSanitizeReportLines([line], records, scope);
 }
 
 // Regression for the R9/R10 discovery: category presence alone must never verify a claim.
@@ -32,7 +37,7 @@ function one(line: string, records: EvidenceRecord[]) {
       method: "FORMALLY_PROVEN",
       tool: "z3",
     }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "REWRITTEN");
   assert.match(result.sanitizedLines[0] ?? "", /NOT VERIFIED FOR THIS SCOPE/i);
 }
@@ -47,11 +52,42 @@ function one(line: string, records: EvidenceRecord[]) {
       method: "AUTOMATED_EXECUTION",
       tool: "bounded-cfg-engine",
     }),
+  ], exactScope);
+  assert.equal(result.findings[0]?.action, "REWRITTEN");
+}
+
+// Even real solver evidence from another audit must not authorize this claim.
+{
+  const result = one("Full SMT Z3 Solver Verification", [
+    evidence({
+      id: "EV-FORMAL-WRONG-SCOPE",
+      auditId: "AUDIT-OTHER",
+      category: "FORMAL",
+      status: "PASS",
+      method: "FORMALLY_PROVEN",
+      tool: "z3",
+      command: "z3 proof.smt2",
+    }),
+  ], exactScope);
+  assert.equal(result.findings[0]?.action, "REWRITTEN");
+}
+
+// Missing scope is fail-closed even when the solver receipt itself is valid.
+{
+  const result = one("Full SMT Z3 Solver Verification", [
+    evidence({
+      id: "EV-FORMAL-NO-SCOPE",
+      category: "FORMAL",
+      status: "PASS",
+      method: "FORMALLY_PROVEN",
+      tool: "z3",
+      command: "z3 proof.smt2",
+    }),
   ]);
   assert.equal(result.findings[0]?.action, "REWRITTEN");
 }
 
-// Exact formal evidence may authorize the bounded formal wording.
+// Exact formal evidence may authorize the formal wording only inside the exact audit scope.
 {
   const result = one("Full SMT Z3 Solver Verification", [
     evidence({
@@ -62,7 +98,7 @@ function one(line: string, records: EvidenceRecord[]) {
       tool: "z3",
       command: "z3 proof.smt2",
     }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "VERIFIED");
   assert.equal(result.findings[0]?.evidenceId, "EV-FORMAL-Z3-PASS");
 }
@@ -76,11 +112,11 @@ function one(line: string, records: EvidenceRecord[]) {
       status: "PASS",
       method: "AUTOMATED_EXECUTION",
     }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "REWRITTEN");
 }
 
-// A confirmed human receipt with reviewer identity may authorize it.
+// A confirmed human receipt with reviewer identity may authorize it only in scope.
 {
   const result = one("HUMAN REVIEWED", [
     evidence({
@@ -91,7 +127,7 @@ function one(line: string, records: EvidenceRecord[]) {
       reviewerId: "reviewer-fixture",
       reviewStatus: "CONFIRMED",
     }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "VERIFIED");
 }
 
@@ -106,11 +142,11 @@ function one(line: string, records: EvidenceRecord[]) {
       tool: "sha256",
       source: "local deterministic digest",
     }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "REWRITTEN");
 }
 
-// An observed external TSA token can support RFC 3161 wording.
+// An observed external TSA token can support RFC 3161 wording only in exact scope.
 {
   const result = one("RFC 3161 Trusted Timestamp", [
     evidence({
@@ -121,7 +157,7 @@ function one(line: string, records: EvidenceRecord[]) {
       tool: "RFC3161 verifier",
       source: "external TSA TimeStampToken",
     }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "VERIFIED");
 }
 
@@ -129,8 +165,8 @@ function one(line: string, records: EvidenceRecord[]) {
 {
   const result = one("100% SECURE", [
     evidence({ category: "VULNERABILITY", status: "PASS" }),
-  ]);
+  ], exactScope);
   assert.equal(result.findings[0]?.action, "REWRITTEN");
 }
 
-console.log("R10 claim-audit-blocker evidence-status regression: PASS");
+console.log("R10 claim-audit-blocker exact-scope regression: PASS");
