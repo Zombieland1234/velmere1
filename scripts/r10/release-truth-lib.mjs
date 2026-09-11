@@ -26,6 +26,51 @@ export function walkTextFiles(root, relativeRoots) {
   return files;
 }
 
+function scanRealMarketsTruth(relativePath, text) {
+  const findings = [];
+  if (!/real[_-]?markets/i.test(relativePath) && !/"marketSpec"\s*:/i.test(text)) return findings;
+
+  const add = (id, severity, match, reason) => findings.push({ id, severity, path: relativePath, match, reason });
+  const checks = [
+    [
+      "REAL_MARKETS_SMART_CONTRACT_ASSET_CLASS",
+      /"marketSpec"\s*:\s*\{[\s\S]{0,2500}?"assetClass"\s*:\s*"Smart Contract Application"/i,
+      "P0",
+      "Real Markets instrument identity cannot classify traditional-market targets as Smart Contract Application.",
+    ],
+    [
+      "REAL_MARKETS_GENERIC_REGULATOR_TRIAD",
+      /"regulatoryJurisdiction"\s*:\s*"SEC\s*\/\s*FINRA\s*\/\s*CFTC"/i,
+      "P0",
+      "Real Markets jurisdiction must be instrument-specific; the generic SEC/FINRA/CFTC triad is not a valid universal identity field.",
+    ],
+    [
+      "REAL_MARKETS_XAU_PHYSICAL_VS_GC_FUTURE",
+      /(?=[\s\S]*\b(?:XAU|Gold|Physical Gold)\b)(?=[\s\S]*\bcme:gc-front\b)[\s\S]*/i,
+      "P0",
+      "Gold identity mixes physical/spot semantics with the CME GC front-future proxy.",
+    ],
+    [
+      "REAL_MARKETS_XAG_PHYSICAL_VS_SI_FUTURE",
+      /(?=[\s\S]*\b(?:XAG|Silver|Physical Silver)\b)(?=[\s\S]*\bcme:si-front\b)[\s\S]*/i,
+      "P0",
+      "Silver identity mixes physical/spot semantics with the CME SI front-future proxy.",
+    ],
+    [
+      "REAL_MARKETS_FX_SPOT_VS_CME_FUTURE",
+      /(?=[\s\S]*\b(?:EURUSD|USDJPY)\b)(?=[\s\S]*\b(?:spot|OTC|sovereign)\b)(?=[\s\S]*\b(?:6E|6J|cme:[^\s\"']*(?:6E|6J))\b)[\s\S]*/i,
+      "P0",
+      "FX identity mixes spot/OTC semantics with a CME currency-futures identifier.",
+    ],
+  ];
+
+  for (const [id, regex, severity, reason] of checks) {
+    const match = text.match(regex);
+    if (match) add(id, severity, match[0].slice(0, 240), reason);
+  }
+  return findings;
+}
+
 export function scanTextForReleaseTruth(relativePath, text) {
   const findings = [];
   const add = (id, severity, match, reason) => findings.push({ id, severity, path: relativePath, match, reason });
@@ -33,6 +78,7 @@ export function scanTextForReleaseTruth(relativePath, text) {
   const patterns = [
     ["CLAIM_FORMAL_FULL_SMT", /\b(?:Full\s+SMT\s+(?:Z3\s+)?Solver\s+Verification|SMT\s+Z3\s+Solver\s+Verification)\b/i, "P0", "Formal/SMT wording requires exact-scope executed solver evidence."],
     ["CLAIM_FORMAL_STATIC_AND_FORMAL", /AUTOMATED\s+STATIC\s*&\s*FORMAL\s+ANALYSIS/i, "P0", "Do not describe the customer output as formal analysis when formal execution may be NOT_EXECUTED."],
+    ["CLAIM_FORMAL_STATIC_AND_FORMAL_PL", /ZAUTOMATYZOWANA\s+WERYFIKACJA\s+STATYCZNA\s*&\s*FORMALNA/i, "P0", "Polish customer wording must not imply formal execution when formal verification is NOT_EXECUTED."],
     ["CLAIM_FULLY_AUDITED", /\bfully\s+audited\b/i, "P0", "Fully-audited wording requires current exact-scope content evidence and must not be inferred from file integrity."],
     ["CLAIM_PRODUCTION_READY", /\b(?:production[- ]ready|officially\s+certified\s+for\s+production|commercial\s+release\s+approved)\b/i, "P0", "Production-ready claims require current build, staging, authority and open-P0 evidence."],
     ["CLAIM_IMMUTABLE_CONTENT", /\[(?:VERIFIED\s*-\s*IMMUTABLE)\]/i, "P0", "Cryptographic file integrity must not be worded as audit-content correctness."],
@@ -44,6 +90,8 @@ export function scanTextForReleaseTruth(relativePath, text) {
     const match = text.match(regex);
     if (match) add(id, severity, match[0], reason);
   }
+
+  findings.push(...scanRealMarketsTruth(relativePath, text));
   return findings;
 }
 
