@@ -30,6 +30,8 @@ const commands = level === "quick"
       r10Ts("scripts/r10/test-canonical-instrument-identity.ts"),
       [process.execPath, ["scripts/r10/test-active-workflow-audit.mjs"]],
       [process.execPath, ["scripts/r10/verify-active-workflows.mjs"]],
+      [process.execPath, ["scripts/r10/test-authority-genesis.mjs"]],
+      [process.execPath, ["scripts/r10/verify-authority-genesis.mjs"]],
       [process.execPath, ["scripts/r10/verify-release-truth.mjs"]],
       [process.execPath, ["scripts/pass25/audit-prebuild-readiness.mjs"]],
     ]
@@ -92,7 +94,7 @@ const receipt = {
   sourceImmutable,
   commands: results,
   truthBoundary: level === "quick"
-    ? "Static prebuild contracts plus R10 loader/claim/evidence/instrument/dynamic-workflow truth gates only; exact runtime milestone and production builds remain separate gates."
+    ? "Static prebuild contracts plus R10 loader/claim/evidence/instrument/dynamic-workflow/authority-genesis truth gates only; exact runtime milestone and production builds remain separate gates."
     : level === "milestone"
       ? "Exact runtime install/typecheck/lint/test only; successful production builds remain separate."
       : "Successful exact-runtime milestone plus one Webpack and one Turbopack production build; browser/PDF/staging/LIVE remain separate.",
