@@ -88,4 +88,48 @@ assert.equal(fx.target.contractName, "CME Euro FX Front-Month Future");
 assert.equal((fx.auditScopeManifest?.marketSpec as any)?.instrumentType, "future");
 assert.equal((fx.auditScopeManifest?.marketSpec as any)?.canonicalSymbol, "6E");
 
+const baseInput = {
+  reportId: "r10-aapl-evidence",
+  contractName: "Apple Inc. Common Stock",
+  contractAddress: "nasdaq:aapl",
+  network: "NASDAQ Stock Market",
+  chainId: "MIC:XNAS",
+  tokenSymbol: "AAPL",
+  locale: "en" as const,
+  applicationSurface: "real-markets" as const,
+};
+const receipt = {
+  auditId: "r10-aapl-evidence",
+  targetIdentifier: "nasdaq:aapl",
+  observedAt: "2026-09-12T00:00:00.000Z",
+  evidenceCoveragePct: 92,
+  contentVerificationStatus: "VERIFIED" as const,
+  releaseDecision: "PASS" as const,
+  riskScore: 24,
+  confidenceScore: 91,
+  auditQualityScore: 90,
+  provenanceHashSha256: "e".repeat(64),
+  providerIdentity: "fixture-provider-receipt",
+  freshnessSeconds: 15,
+};
+
+const exactScope = buildR10CanonicalAuditReport(baseInput, "advanced", receipt);
+assert.equal(exactScope.verdict.riskScore, 24);
+assert.equal(exactScope.verdict.auditQualityScore, 90);
+assert.equal(exactScope.verdict.evidenceCoverage, 92);
+assert.equal(exactScope.verdict.verificationStatus, "VERIFIED");
+assert.equal(exactScope.verdict.releaseDecision, "PASS");
+assert.equal(exactScope.verdict.stopSellActive, false);
+assert.equal(exactScope.auditScopeManifest?.cryptographicManifest.provenanceHash, `sha256:${"e".repeat(64)}`);
+
+const wrongAudit = buildR10CanonicalAuditReport(baseInput, "advanced", { ...receipt, auditId: "r10-other-audit" });
+assert.equal(wrongAudit.verdict.riskScore, null);
+assert.equal(wrongAudit.verdict.verificationStatus, "INSUFFICIENT_EVIDENCE");
+assert.equal(wrongAudit.verdict.releaseDecision, "BLOCKED");
+
+const wrongTarget = buildR10CanonicalAuditReport(baseInput, "advanced", { ...receipt, targetIdentifier: "nasdaq:msft" });
+assert.equal(wrongTarget.verdict.riskScore, null);
+assert.equal(wrongTarget.verdict.verificationStatus, "INSUFFICIENT_EVIDENCE");
+assert.equal(wrongTarget.verdict.releaseDecision, "BLOCKED");
+
 console.log("R10 fail-closed canonical report truth regression: PASS");
