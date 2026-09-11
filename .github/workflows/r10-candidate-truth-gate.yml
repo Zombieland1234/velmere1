@@ -55,14 +55,22 @@ jobs:
       - name: Test canonical instrument identity
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-canonical-instrument-identity.ts
 
+      - name: Test dynamic active workflow inventory
+        run: node scripts/r10/test-active-workflow-audit.mjs
+
+      - name: Audit all active workflows dynamically
+        run: node scripts/r10/verify-active-workflows.mjs --write --output artifacts/r10/R10_ACTIVE_WORKFLOW_AUDIT.json
+
       - name: Scan candidate release truth
         run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
 
-      - name: Upload R10 truth receipt
+      - name: Upload R10 truth receipts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: r10-truth-${{ github.sha }}
           if-no-files-found: warn
           retention-days: 14
-          path: artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
+          path: |
+            artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
+            artifacts/r10/R10_ACTIVE_WORKFLOW_AUDIT.json
