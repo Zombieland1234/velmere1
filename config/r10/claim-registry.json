@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "velmere.r10.claim-registry.v1",
+  "release": "R10_CANDIDATE",
+  "truthBoundary": "Strong customer-facing claims require exact-scope current evidence. Historical documents, category-only EvidenceRecords, API access, local hashes and post-hoc fixes do not upgrade claim authority.",
+  "claims": [
+    {
+      "claimId": "formal_verification",
+      "patterns": [
+        "Full SMT Z3 Solver Verification",
+        "SMT Z3 Solver Verification",
+        "FORMALLY VERIFIED",
+        "AUTOMATED STATIC & FORMAL ANALYSIS"
+      ],
+      "requiredEvidence": ["FORMAL:PASS", "method:FORMALLY_PROVEN", "solver_provenance", "exact_scope"],
+      "fallback": "FORMAL VERIFICATION: NOT VERIFIED FOR THIS SCOPE"
+    },
+    {
+      "claimId": "human_review",
+      "patterns": ["HUMAN AUDITED", "HUMAN REVIEWED", "certified human auditor"],
+      "requiredEvidence": ["HUMAN_REVIEW:PASS", "method:HUMAN_VERIFIED", "reviewerId", "reviewStatus:CONFIRMED"],
+      "fallback": "HUMAN REVIEW: NOT VERIFIED"
+    },
+    {
+      "claimId": "rfc3161",
+      "patterns": ["RFC 3161", "RFC3161"],
+      "requiredEvidence": ["CRYPTOGRAPHIC:PASS", "method:OBSERVED", "external_TSA_TimeStampToken"],
+      "fallback": "SHA-256 FILE INTEGRITY [LOCAL DETERMINISTIC]"
+    },
+    {
+      "claimId": "production_ready",
+      "patterns": ["production-ready", "production ready", "officially certified for production", "commercial release approved"],
+      "requiredEvidence": ["exact_runtime_build", "current_release_authority", "staging_dynamic_proof", "no_open_P0"],
+      "fallback": "PRODUCTION READINESS: NOT ESTABLISHED"
+    },
+    {
+      "claimId": "live_realtime",
+      "patterns": ["live data", "real-time data", "real time data"],
+      "requiredEvidence": ["provider_identity", "observedAt", "freshness", "live_receipt"],
+      "fallback": "LIVE DATA: NOT VERIFIED"
+    },
+    {
+      "claimId": "content_verified",
+      "patterns": ["AUDIT CONTENT VERIFIED", "fully audited", "fully verified audit"],
+      "requiredEvidence": ["claim_to_evidence_binding", "current_scope", "content_verification_receipt"],
+      "fallback": "AUDIT CONTENT: INSUFFICIENT EVIDENCE"
+    },
+    {
+      "claimId": "immutable_content",
+      "patterns": ["VERIFIED - IMMUTABLE", "verified immutable"],
+      "requiredEvidence": ["explicit_semantics:file_integrity_only"],
+      "fallback": "FILE INTEGRITY VERIFIED"
+    }
+  ],
+  "nonClaimMetrics": {
+    "detectorCount": {
+      "rule": "must_be_derived_from_registry",
+      "forbiddenHardcodedExamples": [72]
+    }
+  }
+}
