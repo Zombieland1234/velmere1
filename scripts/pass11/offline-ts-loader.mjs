@@ -1,12 +1,18 @@
 import { access, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
-import { createRequire, stripTypeScriptTypes } from "node:module";
+import { builtinModules, createRequire, stripTypeScriptTypes } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const offlineDependencyRoot = path.join(root, ".velmere", "offline-test-deps", "node_modules");
 const offlineRequire = createRequire(path.join(root, "package.json"));
+const NODE_BUILTINS = new Set(
+  builtinModules.flatMap((name) => {
+    const bare = name.startsWith("node:") ? name.slice(5) : name;
+    return [bare, `node:${bare}`];
+  }),
+);
 let ts = null;
 if (process.env.VELMERE_OFFLINE_TS_FORCE_BUILTIN !== "1") {
   try {
@@ -71,6 +77,12 @@ export async function resolve(specifier, context, nextResolve) {
   const shim = TEST_SHIMS.get(specifier);
   if (shim) {
     return { url: pathToFileURL(shim).href, shortCircuit: true };
+  }
+
+  // Bare built-ins such as `crypto`, `fs` and `path` are valid Node module
+  // specifiers. Never reinterpret them as repository-relative files.
+  if (NODE_BUILTINS.has(specifier)) {
+    return nextResolve(specifier, context);
   }
 
   if (specifier.startsWith("@/")) {
