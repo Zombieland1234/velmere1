@@ -13,11 +13,21 @@ if ((level === "milestone" || level === "build") && !allowHeavy) {
   process.exit(2);
 }
 
+const r10Ts = (script) => [
+  process.execPath,
+  ["--import", "./scripts/pass11/register-offline-ts-loader.mjs", script],
+];
+
 const commands = level === "quick"
   ? [
       [process.execPath, ["scripts/pass24/run-gate.mjs", "--level", "quick"]],
       [process.execPath, ["scripts/pass25/verify-build-profile-contract.mjs"]],
       [process.execPath, ["scripts/pass25/test-build-watchdog-boundaries.mjs"]],
+      [process.execPath, ["scripts/r10/test-release-truth-gate.mjs"]],
+      r10Ts("scripts/r10/test-claim-evidence-binding.ts"),
+      r10Ts("scripts/r10/test-claim-audit-blocker-evidence-status.ts"),
+      r10Ts("scripts/r10/test-canonical-instrument-identity.ts"),
+      [process.execPath, ["scripts/r10/verify-release-truth.mjs"]],
       [process.execPath, ["scripts/pass25/audit-prebuild-readiness.mjs"]],
     ]
   : level === "milestone"
@@ -79,7 +89,7 @@ const receipt = {
   sourceImmutable,
   commands: results,
   truthBoundary: level === "quick"
-    ? "Static prebuild contracts only; exact runtime milestone and production builds remain separate gates."
+    ? "Static prebuild contracts plus R10 claim/evidence/instrument truth gates only; exact runtime milestone and production builds remain separate gates."
     : level === "milestone"
       ? "Exact runtime install/typecheck/lint/test only; successful production builds remain separate."
       : "Successful exact-runtime milestone plus one Webpack and one Turbopack production build; browser/PDF/staging/LIVE remain separate.",
