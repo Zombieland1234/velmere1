@@ -1,83 +1,81 @@
-# VELMÈRE CAPITAL & INTELLIGENCE
-## COMPREHENSIVE PRODUCT PRICING & COMMERCIAL VALUE ANALYSIS
-**Document Identifier:** `VLM-DOC-PRICING-ANALYSIS-V1`  
-**Standard Authority:** Section 21 of Velmère Master Specification (`zadanie.txt`)  
-**Audit Scope:** Audit (Basic / Pro / Advanced), Shield (Standard / Pro / Advanced), Browser (Standard / Pro / Advanced), Real Markets (Standard / Pro / Advanced)  
-**Valuation Methodology:** Data Depth, Automated Evidence Synthesis, Intelligence Density, Historical Lineage, Human Attestation, Operational Risk Reduction, and Sovereign Independence.
+# VELMÈRE PRICING & COMMERCIAL TRUTH — R10 CANDIDATE
 
----
+**Document status:** `R10_CANDIDATE_COMMERCIAL_TRUTH`  
+**Release authority:** none  
+**Payment activation authority:** none  
+**Purpose:** define what a tier may promise without upgrading unverified capabilities into customer claims.
 
-### EXECUTIVE SUMMARY & PRICING PHILOSOPHY
+## Commercial truth boundary
 
-Velmère is built as an institutional-grade financial intelligence and contract verification platform, not a retail crypto dashboard or speculative token tool. In adherence to Section 21:
-> *"Nie ustawiaj cen dlatego, że «wyglądają dobrze». Cena ma wynikać z: depth of data, automation, evidence, intelligence, historical analysis, human review, operational value, uniqueness."*
+Pricing does not create capability. A feature may be described as available only when the exact customer-facing path has the required entitlement, evidence, runtime and provider-rights receipts.
 
-Every pricing tier across Velmère reflects measurable operational risk mitigation:
-1. **Free / Basic Tiers** provide essential sovereign verification and prescreening with zero synthetic data, preventing retail deception while demonstrating algorithmic integrity.
-2. **Pro Tiers** ($39/mo or 149 PLN/mo) automate deep multi-vector heuristic analysis, multi-timeframe order book and flow reconstruction, and cryptographic PDF evidence generation for active analysts and trading desks.
-3. **Advanced Tiers** ($99/mo or 399 PLN/mo) introduce high-stakes operational certainty, human review attestations with cryptographic key signatures, millisecond-level provider failover, and comprehensive compliance dossiers.
+Current R10 rules:
 
----
+- API access or adapter code alone does not establish customer-facing live-provider readiness.
+- A local SHA-256 digest proves file integrity only.
+- A local Ed25519 report signature is a local integrity attestation, not an external TSA timestamp or content certification.
+- Formal verification is not included or claimed unless formal execution evidence exists for the exact audit scope.
+- Human review is not included by default in any tier.
+- Paid checkout remains stop-sell / unavailable until the product-level payment and fulfillment gates authorize it.
 
-### 1. PRODUCT PRICING MATRIX & VALUE BENCHMARK
+## Security Audit tiers
 
-| Product Line | Tier | Price (USD) | Price (PLN) | Target Customer | Core Operational Value |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Security Audit** | **Basic** | **$0** (Free) | **0 PLN** | Developers, Retail Traders | Real-time static AST analysis, honeypot prescreening, verified contract source verification, single-page executive PDF summary. |
-| **Security Audit** | **Pro** | **$39** / mo | **149 PLN** / mo | Security Researchers, Small Funds | 14-point automated deep decompilation, byte-level bytecode diffing, honeypot simulation, cross-contract proxy detection, cryptographic PDF export. |
-| **Security Audit** | **Advanced** | **$99** / mo | **399 PLN** / mo | Web3 Protocols, Treasury Managers | Full automated suite + Independent Human Auditor manual attestation, formal verification review, cryptographically signed audit seal. |
-| **Velmère Shield** | **Standard** | **$0** (Included) | **0 PLN** | Market Observers | Real-time 6-axis risk radar, multi-venue spread monitor, basic exchange health telemetry, top 20 crypto assets. |
-| **Velmère Shield** | **Pro** | **$39** / mo | **149 PLN** / mo | Proprietary Traders, Quantitative Desks | Institutional terminal view, 30-day historical risk drift tape, order book depth imbalance alerts, manipulation squeeze telemetry, full catalog access. |
-| **Velmère Shield** | **Advanced** | **$99** / mo | **399 PLN** / mo | Hedge Funds, Risk Officers | Continuous surveillance webhooks, institutional SLO health console, cross-venue synthetic arbitrage alerts, dedicated API keys with raw telemetry feeds. |
-| **Real Markets** | **Standard** | **$0** (Included) | **0 PLN** | Macro Observers | Cross-asset multi-market overview (Equities, FX, ETFs, Commodities, REITs, Indices) with honest provider attribution and fallback flags. |
-| **Real Markets** | **Pro** | **$39** / mo | **149 PLN** / mo | Portfolio Managers | Full high-resolution candle streams, Stooq + Finnhub + Yahoo verified fallbacks, cross-asset correlation matrices, 1Y historical depth. |
-| **Real Markets** | **Advanced** | **$99** / mo | **399 PLN** / mo | Asset Allocators, Family Offices | Multi-asset macroeconomic radar, SEC/XBRL fundamental data extraction, raw tick exports, liquidity vacuum predictors across asset classes. |
-| **Velmère Browser** | **Standard** | **$0** (Included) | **0 PLN** | Individual Users | Fast asset search, verified smart contract address lookup, clean ticker routing. |
-| **Velmère Browser** | **Pro** | **$39** / mo | **149 PLN** / mo | Market Researchers | Advanced multi-chain filtering, multi-asset radar overlay, cross-asset search receipts with SHA-256 state hashing. |
-| **Velmère Browser** | **Advanced** | **$99** / mo | **399 PLN** / mo | Compliance Teams | Full audit trail logs, regulatory classification filters, batch address intake, automated daily risk exports. |
+| Tier | Automated product scope | Human+ | Customer claim rule |
+| --- | --- | --- | --- |
+| Basic | bounded automated Smart Contract screening and the evidence exposed by the current release | Not available | only capabilities with current machine-readable evidence may be described as executed |
+| Pro | deeper automated Smart Contract analysis than Basic where the current release enables it | Not available | no Human Review or formal-proof claim without exact-scope evidence |
+| Advanced | deepest automated Smart Contract analysis enabled by the current release | **Optional add-on only** | Human+ remains `NOT_EXECUTED` until a confirmed review receipt is bound to the exact audit |
 
----
+### Human+ rule
 
-### 2. DETAILED VALUATION BREAKDOWN BY PILLAR
+Human+ is an optional service for **Advanced Smart Contract audits only**. It is not part of Shield, Real Markets, Browser, or the default Advanced Smart Contract output.
 
-#### A. Security Audits: Basic vs. Pro vs. Advanced (Human Review)
-* **Depth of Data & Automation:**
-  * *Basic* delivers instant AST parsing, detecting basic honeypots, reentrancy vulnerabilities, and mint exploits directly from verified bytecode.
-  * *Pro* expands automation to decompiled assembly, state-variable storage inspection, and multi-transaction slippage simulation.
-* **Evidence & Cryptographic Proof:**
-  * Both Pro and Advanced generate deterministic, customer-safe PDFs using Velmère's embedded font pipeline and SHA-256 manifest stamping.
-* **Human Review Justification for Advanced:**
-  * Automated tools cannot identify economic exploit incentives, governance flash-loan capture, or subtle business-logic flaws.
-  * The **Advanced** tier incorporates certified auditor review with verifiable public-key attestation (`humanReviewAttestation`), directly justifying the $99/mo price point. Traditional external smart contract audits cost between $5,000 and $50,000; offering rapid hybrid automated/human review at $99/mo represents immense market disruption while maintaining honest scope boundaries.
+A report may say Human Review was executed only when all required review evidence is present for that exact audit, including the reviewer identity and a confirmed review status. Before that point, the customer-visible state must remain equivalent to `HUMAN REVIEW: NOT VERIFIED / NOT EXECUTED`.
 
-#### B. Velmère Shield: Standard vs. Pro vs. Advanced
-* **Operational Risk Reduction:**
-  * Eliminates blind-spot liquidity risks by measuring exchange venue health (Binance, MEXC, Coinbase, Kraken) with dedicated SLO tracking (latency, retry rates, reconnect intervals).
-* **Intelligence & Historical Analysis:**
-  * Standard provides snapshot risk.
-  * Pro delivers 30-day rolling risk variance, allowing traders to observe deterioration days before an insolvency or exploit event occurs.
-* **Uniqueness:**
-  * Unlike CoinGecko or CoinMarketCap which display pure volume and price, Shield correlates cross-venue book depth with on-chain contract lineage, preventing "fake volume" manipulation from polluting risk calculations.
+The existence of a queue, UI button, entitlement, provider relationship, or pricing line is not evidence that a review occurred.
 
-#### C. Real Markets: Multi-Asset Expansion
-* **The Traditional Disconnect:**
-  * Crypto traders typically operate in silos separated from macro commodities, FX, and sovereign yields.
-  * Velmère Real Markets unifies Crypto, Equities (S&P 500, Tech, Defense), FX (EUR/USD, USD/JPY), Commodities (Gold, Oil, Natural Gas), and Treasury Yields on a single monochrome terminal.
-* **Provider Consensus & Honest Fallbacks:**
-  * When Alpha Vantage or Finnhub rate limits trigger, Velmère gracefully switches to Stooq or secondary live providers with explicit UI badges, refusing to synthesize fake numbers.
+## Formal-analysis rule
 
----
+No tier promises “Full SMT Z3 Solver Verification,” “all invariants proven,” or equivalent formal-verification language by default.
 
-### 3. HONEST PRODUCT BOUNDARIES & COMMERCIAL GATING (`vlm-current-sku-truth.ts`)
+If a future release executes a formal solver for the exact scope, the claim must be derived from the corresponding formal evidence receipt, including solver/method provenance and coverage. Otherwise the customer-facing state remains `FORMAL VERIFICATION: NOT VERIFIED FOR THIS SCOPE` or the more specific execution state produced by the evidence system.
 
-To ensure ethical pricing compliance and prevent selling unverified promises:
-1. **Stop-Sell Integrity (`pass35-paid-ui-stop-sell`):**
-   * Before production payments are opened, paid tiers are displayed with an honest "Unavailable / Coming Soon" or waitlist state.
-   * Under no circumstances does Velmère take customer funds without immediate, guaranteed automated fulfillment.
-2. **Deterministic PDF Rights:**
-   * Paid PDF exports require validated server-side case vault entitlements, preventing client-side spoofing while ensuring paying customers receive non-tamperable evidence dossiers.
+## Shield and Real Markets
 
----
+Tier names may change analysis depth, history, visualization, export, or workflow features. They must not change the identity of the underlying asset or instrument.
 
-### 4. CONCLUSION & PRICING VERDICT
-The pricing architecture is **fundamentally sound, defensible, and institutionally grounded**. The price tiers of $0, $39, and $99 (or 0 PLN, 149 PLN, 399 PLN) accurately reflect the functional progression from exploratory screening to professional quantitative analysis and certified institutional risk management.
+For Real Markets:
+
+- canonical instrument identity is tier-independent;
+- spot/physical descriptions must not silently point to futures identifiers;
+- regulatory jurisdiction is instrument-specific;
+- provider identity, freshness and live status require observed receipts;
+- customer display/derived-analysis use is governed by the exact provider rights applicable to that use case.
+
+## Provider commercial-use rule
+
+An API key is technical access, not by itself a commercial-rights receipt. Conversely, Velmère does not require raw-data redistribution rights when it does not redistribute the raw feed.
+
+The relevant rights decision is the exact Velmère use case, such as:
+
+`provider data → Velmère analysis/derived risk information → customer report/UI`
+
+Before a provider-dependent feature is marked customer-runtime-ready, the evidence pack must document the applicable rights for that use, including any display, derived-data, caching, retention, attribution and redistribution restrictions.
+
+## Pricing values
+
+Historical documents contained example price points such as `$0 / $39 / $99` and `0 / 149 / 399 PLN`. This R10 truth document does not authorize those amounts for live checkout.
+
+Price display and payment activation are separate decisions:
+
+1. a displayed price must match the current SKU configuration;
+2. the feature set behind that SKU must be evidence-backed;
+3. checkout/entitlement/webhook paths must pass the current payment gates;
+4. fulfillment must be available for the purchased scope;
+5. stop-sell remains active when any mandatory release condition is not met.
+
+## Current candidate status
+
+This document defines truthful commercial semantics only. It does not certify production readiness, provider rights, Human+ execution, payment readiness, or release eligibility.
+
+Final commercial activation requires the authoritative R10 release receipts for the exact packaged release.
