@@ -26,6 +26,40 @@ export function walkTextFiles(root, relativeRoots) {
   return files;
 }
 
+function collectIdentityStrings(value, out = []) {
+  if (Array.isArray(value)) {
+    for (const item of value) collectIdentityStrings(item, out);
+    return out;
+  }
+  if (!value || typeof value !== "object") return out;
+  const identityKeys = new Set([
+    "target",
+    "identifier",
+    "providersymbol",
+    "canonicalsymbol",
+    "symbol",
+    "description",
+    "economicexposure",
+    "underlying",
+    "assetclass",
+    "instrumenttype",
+    "venue",
+  ]);
+  for (const [key, item] of Object.entries(value)) {
+    if (identityKeys.has(key.toLowerCase()) && typeof item === "string") out.push(item);
+    else if (item && typeof item === "object") collectIdentityStrings(item, out);
+  }
+  return out;
+}
+
+function realMarketsIdentityText(text) {
+  try {
+    return collectIdentityStrings(JSON.parse(text)).join(" ");
+  } catch {
+    return text;
+  }
+}
+
 function scanRealMarketsTruth(relativePath, text) {
   const findings = [];
   if (!/real[_-]?markets/i.test(relativePath) && !/"marketSpec"\s*:/i.test(text)) return findings;
@@ -44,30 +78,52 @@ function scanRealMarketsTruth(relativePath, text) {
       "P0",
       "Real Markets jurisdiction must be instrument-specific; the generic SEC/FINRA/CFTC triad is not a valid universal identity field.",
     ],
-    [
-      "REAL_MARKETS_XAU_PHYSICAL_VS_GC_FUTURE",
-      /(?=[\s\S]*\b(?:XAU|Gold|Physical Gold)\b)(?=[\s\S]*\bcme:gc-front\b)[\s\S]*/i,
-      "P0",
-      "Gold identity mixes physical/spot semantics with the CME GC front-future proxy.",
-    ],
-    [
-      "REAL_MARKETS_XAG_PHYSICAL_VS_SI_FUTURE",
-      /(?=[\s\S]*\b(?:XAG|Silver|Physical Silver)\b)(?=[\s\S]*\bcme:si-front\b)[\s\S]*/i,
-      "P0",
-      "Silver identity mixes physical/spot semantics with the CME SI front-future proxy.",
-    ],
-    [
-      "REAL_MARKETS_FX_SPOT_VS_CME_FUTURE",
-      /(?=[\s\S]*\b(?:EURUSD|USDJPY)\b)(?=[\s\S]*\b(?:spot|OTC|sovereign)\b)(?=[\s\S]*\b(?:6E|6J|cme:[^\s\"']*(?:6E|6J))\b)[\s\S]*/i,
-      "P0",
-      "FX identity mixes spot/OTC semantics with a CME currency-futures identifier.",
-    ],
   ];
 
   for (const [id, regex, severity, reason] of checks) {
     const match = text.match(regex);
     if (match) add(id, severity, match[0].slice(0, 240), reason);
   }
+
+  const identity = realMarketsIdentityText(text);
+  const hasPhysicalOrSpotSemantics = /\b(?:physical|bullion|spot)\b/i.test(identity);
+  if (
+    hasPhysicalOrSpotSemantics &&
+    /\b(?:XAU|Gold)\b/i.test(identity) &&
+    /\bcme\s*:\s*gc[-_:]?front\b/i.test(identity)
+  ) {
+    add(
+      "REAL_MARKETS_XAU_PHYSICAL_VS_GC_FUTURE",
+      "P0",
+      identity.slice(0, 240),
+      "Gold identity mixes physical/spot semantics with the CME GC front-future proxy.",
+    );
+  }
+  if (
+    hasPhysicalOrSpotSemantics &&
+    /\b(?:XAG|Silver)\b/i.test(identity) &&
+    /\bcme\s*:\s*si[-_:]?front\b/i.test(identity)
+  ) {
+    add(
+      "REAL_MARKETS_XAG_PHYSICAL_VS_SI_FUTURE",
+      "P0",
+      identity.slice(0, 240),
+      "Silver identity mixes physical/spot semantics with the CME SI front-future proxy.",
+    );
+  }
+  if (
+    /\b(?:EURUSD|USDJPY)\b/i.test(identity) &&
+    /\b(?:spot|OTC|sovereign)\b/i.test(identity) &&
+    /(?:\bcme\s*:[^\s\"']*(?:6E|6J)\b|\b(?:6E|6J)[FGHJKMNQUVXZ]?\d{0,2}\b)/i.test(identity)
+  ) {
+    add(
+      "REAL_MARKETS_FX_SPOT_VS_CME_FUTURE",
+      "P0",
+      identity.slice(0, 240),
+      "FX identity mixes spot/OTC semantics with a CME currency-futures identifier.",
+    );
+  }
+
   return findings;
 }
 
