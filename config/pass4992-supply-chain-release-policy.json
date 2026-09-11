@@ -1,6 +1,6 @@
 {
   "schemaVersion": "velmere.pass4992.supply-chain-release-policy.v2",
-  "policyId": "pass4992-current-workflow-supply-chain-offline-v2",
+  "policyId": "pass4992-dynamic-workflow-supply-chain-offline-v3",
   "mode": "OFFLINE_PREPARATION_ONLY",
   "toolchain": {
     "node": "24.18.0",
@@ -15,6 +15,11 @@
     "forbidPullRequestTarget": true,
     "forbidWriteAll": true,
     "requireCheckoutCredentialsDisabledForAllWorkflows": true,
+    "workflowInventoryMode": "DISCOVER_ACTIVE_YAML",
+    "requiredBaselineWorkflowFiles": [
+      "pass4992-supply-chain-security.yml",
+      "quality-and-fresh-builds.yml"
+    ],
     "allowedActions": {
       "actions/checkout": [
         "11d5960a326750d5838078e36cf38b85af677262",
@@ -40,19 +45,7 @@
       "github/codeql-action/analyze": [
         "7188fc363630916deb702c7fdcf4e481b751f97a"
       ]
-    },
-    "requiredWorkflowFiles": [
-      "p41-exact-windows-node24-current-root-closure.yml",
-      "p42-exact-windows-node24-lifecycle-quarantine.yml",
-      "p42-exact-windows-semantic-dual-build.yml",
-      "p47-windows-build-relevant-projection.yml",
-      "p65-current-free-legal-source-receipts.yml",
-      "pass26-exact-runtime-bridge.yml",
-      "pass4992-supply-chain-security.yml",
-      "quality-and-fresh-builds.yml",
-      "r6-exact-windows-current-byte-closure.yml"
-    ],
-    "expectedActionReferenceCount": 30
+    }
   },
   "codeql": {
     "requiredLanguages": [
