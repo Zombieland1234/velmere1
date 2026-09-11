@@ -61,6 +61,46 @@ try {
   const direct = scanTextForReleaseTruth("customer.md", "AUTOMATED STATIC & FORMAL ANALYSIS");
   assert.equal(direct[0]?.id, "CLAIM_FORMAL_STATIC_AND_FORMAL");
 
+  const invalidSilver = scanTextForReleaseTruth(
+    "dowody9/real_markets_xag.json",
+    JSON.stringify({
+      target: "XAG Physical Silver spot exposure",
+      identifier: "cme:si-front",
+      marketSpec: { assetClass: "commodity", instrumentType: "spot" },
+    }),
+  );
+  assert(invalidSilver.some((f) => f.id === "REAL_MARKETS_XAG_PHYSICAL_VS_SI_FUTURE"));
+
+  const invalidFx = scanTextForReleaseTruth(
+    "dowody9/real_markets_eurusd.json",
+    JSON.stringify({
+      target: "EURUSD sovereign OTC spot FX",
+      identifier: "cme:6E-front",
+      marketSpec: { assetClass: "fx", instrumentType: "spot" },
+    }),
+  );
+  assert(invalidFx.some((f) => f.id === "REAL_MARKETS_FX_SPOT_VS_CME_FUTURE"));
+
+  const validSilverFuture = scanTextForReleaseTruth(
+    "dowody9/real_markets_si_future.json",
+    JSON.stringify({
+      target: "CME Silver Future",
+      identifier: "cme:si-front",
+      marketSpec: { assetClass: "commodity", instrumentType: "future" },
+    }),
+  );
+  assert.equal(validSilverFuture.filter((f) => f.severity === "P0").length, 0, JSON.stringify(validSilverFuture, null, 2));
+
+  const validFxFuture = scanTextForReleaseTruth(
+    "dowody9/real_markets_6e_future.json",
+    JSON.stringify({
+      target: "CME Euro FX Future",
+      identifier: "cme:6E-front",
+      marketSpec: { assetClass: "fx", instrumentType: "future" },
+    }),
+  );
+  assert.equal(validFxFuture.filter((f) => f.severity === "P0").length, 0, JSON.stringify(validFxFuture, null, 2));
+
   console.log("R10 release truth gate regression: PASS");
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
