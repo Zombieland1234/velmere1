@@ -21,8 +21,10 @@ assert.equal(first.publicKeyPem, second.publicKeyPem);
 assert.equal(getVelmereSigningKeys().publicKeyPem, first.publicKeyPem);
 assert.equal(verifyReportPki(first), true);
 
+assert.equal("timestampToken" in (first as any), false);
+assert.equal("tsaName" in (first as any), false);
 const serialized = JSON.stringify(first);
-assert.doesNotMatch(serialized, /RFC\s*3161|TimeStampToken|Trusted Timestamp|Root CA|Trusted Authority/i);
+assert.doesNotMatch(serialized, /TimeStampToken|Trusted Timestamp|Root CA|Trusted Authority/i);
 assert.match(first.truthBoundary, /integrity only/i);
 assert.match(first.truthBoundary, /not an RFC 3161/i);
 
