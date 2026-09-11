@@ -1,31 +1,72 @@
 # VELMÈRE AUDIT ENGINE: CLAIM REMEDIATION & VERIFICATION MATRIX
-**Status:** FULLY REMEDIATED (100% Zero-Bullshit Compliance)  
+**Status:** HISTORICAL / REQUIRES CURRENT-RELEASE REVALIDATION  
 **Norma:** Directive v3 Sections 1–92  
-**Data Weryfikacji:** 2026-09-09
+**Original verification date:** 2026-09-09  
+**R10 correction:** 2026-09-11
+
+> This document is a historical remediation map, not proof that the current release is fully remediated. A later R9 audit found active claim-truth defects. Current status must be derived from fresh release evidence and the current `ClaimAuditBlocker` regression suite.
 
 ---
 
-## 1. MACIERZ REMEDIACJI WSZYSTKICH ZAKAZANYCH / NIESPRAWDZONYCH CLAIMÓW
-*(Zgodnie ze ścisłą specyfikacją Sekcji 86 zadanie.txt: Old Claim | Why invalid/unverified | New status | Evidence | Code path | Fix | Regression test)*
+## 1. MACIERZ REMEDIACJI ZNANYCH ZAKAZANYCH / NIESPRAWDZONYCH CLAIMÓW
 
-| Old Claim | Why invalid/unverified | New status | Evidence | Code path | Fix | Regression test |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `RFC 3161 Trusted Timestamping` | Brak zewnętrznego tokena TSA z certyfikatem urzędowym X.509 CA. | `SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]` | `EV-CRYPTO-*` Merkle Root SHA-256 | `lib/security/evidence-vault/crypto-vault.ts` | Wyliczanie deterministycznego skrótu SHA-256 bez hasła RFC 3161 | `scripts/test-pass2-vault.mjs` & `test-pass10-adversarial.mjs` |
-| `PCAOB Certified` | Velmère nie jest audytorem finansowym PCAOB; badanie kodu to nie rewizja finansowa. | `AUDITOR: [Firma] [SEC 10-K REFERENCE]` | `EV-REG-*` CIK i filings z SEC EDGAR | `lib/security/market-evidence/market-provenance-engine.ts` | Zastąpienie fikcyjnego certyfikatu danymi rewidenta z formularza 10-K | `scripts/test-pass5-market.mjs` |
-| `41.2% Dark Pool Share` | Arbitralna stała wpisywana bez weryfikacji wolumenu pozagiełdowego (ATS). | `NOT OBSERVED [INSUFFICIENT DATA]` (towary) / `ATS: X.X%` (akcje US) | `EV-MKT-ATS-*` z FINRA ATS Transparency | `lib/security/market-evidence/market-provenance-engine.ts` | Dynamiczne pobieranie danych ATS lub uczciwy fallback `INSUFFICIENT DATA` | `scripts/test-pass5-market.mjs` |
-| `2.8 bps Kyle slippage` | Sztywna wartość bez analizy głębokości orderbooka i płynności L3. | `ESTIMATED HEURISTIC [UNOBSERVED]` | `EV-MKT-SLIP-*` z regresji wpływu ceny | `lib/security/market-evidence/market-provenance-engine.ts` | Model Kyle'a wyliczany z próby lub estymacja heurystyczna | `scripts/test-pass5-market.mjs` |
-| `Wszystkie niezmienniki stanu udowodnione` | Brak dowodu Z3/SMT dla wszystkich ścieżek; występowanie timeoutów. | `INVARIANTS: PROVEN (X), UNKNOWN (Y)` | `EV-FORMAL-*` z logami solwera Z3 | `lib/security/formal/formal-engine.ts` | Flaga `allInvariantsProvenClaimValid` = false przy jakimkolwiek braku dowodu | `scripts/test-pass4-formal.mjs` |
-| `Multisig 3-of-5` | Brak bezpośredniego odpytania węzła RPC o progi i sygnatariuszy on-chain. | `MULTISIG: UNKNOWN [RPC UNQUERIED]` | `EV-ACCESS-*` z weryfikacji węzła RPC | `lib/security/analyzer/contract-analyzer.ts` | Zgłaszanie braku odpytania RPC zamiast domyślnego progu 3-of-5 | `scripts/test-pass3-analyzer.mjs` |
-| `Timelock 48h` | Brak sprawdzenia zmiennej `getMinDelay()` w kontrakcie wdrożonym on-chain. | `TIMELOCK: DELAY UNOBSERVED [NO ON-CHAIN CALL]` | `EV-ACCESS-*` z parametrem `minDelay` | `lib/security/analyzer/contract-analyzer.ts` | Weryfikacja kodu źródłowego i adnotacja o konieczności RPC | `scripts/test-pass3-analyzer.mjs` |
-| `100% SECURE` | Żaden audyt statyczny/dynamiczny nie daje 100% gwarancji braku zero-dayów. | `BOUNDED TIME-WINDOW SCAN [NO ACTIVE EXPLOIT OBSERVED]` | `EV-LIMITATIONS-*` z zakresem audytu | `lib/security/evidence/claim-audit-blocker.ts` | Zamiana hasła 100% SECURE na ograniczone czasowo badanie | `scripts/test-pass1-evidence.mjs` |
-| `HUMAN AUDITED` | Raporty generowane automatycznie przez pipeline nie mogą twierdzić, że badał je człowiek. | `HUMAN REVIEW: NOT PERFORMED [AUTOMATED ENGINE ONLY]` | `EV-HUMAN-*` ze statusem `NOT_RUN` | `lib/security/evidence/claim-audit-blocker.ts` | Zablokowanie przypisywania statusu ludzkiego w audytach maszynowych | `scripts/test-pass10-adversarial.mjs` |
-| `Transparent / EIP-1967 Upgradeable` | Oznaczanie kontraktu jako proxy, gdy w kodzie nie ma delegacji ani slotu `0x3608...`. | `PROXY: NOT_DETECTED` | `EV-PROXY-*` z badania slotów pamięci | `lib/security/analyzer/contract-analyzer.ts` | Badanie rzeczywistych slotów `0x3608...`, Admin i Beacon | `scripts/test-pass3-analyzer.mjs` |
+| Old Claim | Why invalid/unverified | Truthful state/fallback | Evidence required for any stronger wording | Code path | Current rule |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `RFC 3161 Trusted Timestamping` | Brak zewnętrznego tokena TSA nie pozwala na claim RFC 3161. | `SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]` | `PASS` CRYPTOGRAPHIC evidence, `OBSERVED`, identifying an external RFC3161/TSA `TimeStampToken` | `lib/security/evidence/claim-audit-blocker.ts` | Local SHA alone never authorizes RFC 3161 wording. |
+| `PCAOB Certified` | Velmère nie jest audytorem finansowym PCAOB. | `EXTERNAL AUDITOR REFERENCE [NOT A VELMÈRE CERTIFICATION]` | No generic Velmère evidence may turn the product into a PCAOB certification. | `lib/security/evidence/claim-audit-blocker.ts` | Claim is rewritten. |
+| `41.2% Dark Pool Share` | Arbitralna stała bez exact observed dataset. | `ATS / Dark Pool Share: NOT OBSERVED [INSUFFICIENT DATA]` | `PASS` fresh `MARKET_MICROSTRUCTURE` evidence for the exact instrument/scope | `lib/security/evidence/claim-audit-blocker.ts` | Category presence alone is insufficient. |
+| `2.8 bps Kyle slippage` | Sztywna wartość bez exact observed market-depth evidence. | `Kyle Slippage: ESTIMATED HEURISTIC [UNOBSERVED]` | `PASS` fresh `MARKET_MICROSTRUCTURE` evidence for the exact scope | `lib/security/evidence/claim-audit-blocker.ts` | Stale/expired evidence cannot authorize wording. |
+| `Wszystkie niezmienniki stanu udowodnione` | Absolutny claim wymaga complete-path proof, którego nie wolno domniemywać. | `Invariants: BOUNDED / PARTIAL; SEE FORMAL EXECUTION COVERAGE` | Explicit complete-path formal evidence; generic category record is not enough. | `lib/security/evidence/claim-audit-blocker.ts` | Absolute all-invariants wording is rewritten. |
+| `Full SMT Z3 Solver Verification` | Solver wording bez wykonania i receipt jest overclaimem. | `FORMAL VERIFICATION: NOT VERIFIED FOR THIS SCOPE` | `PASS` + `FORMALLY_PROVEN` + Z3/CVC5/SMT solver provenance for the exact scope | `lib/security/evidence/claim-audit-blocker.ts` | `NOT_RUN`, `FAIL`, `UNKNOWN`, generic `PASS` do not authorize. |
+| `Multisig 3-of-5` | Brak zweryfikowanego exact on-chain result. | `Multisig: THRESHOLD UNKNOWN [NO VERIFIED ON-CHAIN RESULT]` | `PASS` `ACCESS_CONTROL` evidence bound to the exact contract | `lib/security/evidence/claim-audit-blocker.ts` | No inferred threshold. |
+| `Timelock 48h` | Brak zweryfikowanego exact on-chain result. | `Timelock: DELAY UNKNOWN [NO VERIFIED ON-CHAIN RESULT]` | `PASS` `ACCESS_CONTROL` evidence bound to the exact contract | `lib/security/evidence/claim-audit-blocker.ts` | No inferred delay. |
+| `100% SECURE` | Żaden bounded audit nie daje absolutnej gwarancji bezpieczeństwa. | `ASSESSMENT: BOUNDED SECURITY ANALYSIS` | Not evidence-upgradable into an absolute claim. | `lib/security/evidence/claim-audit-blocker.ts` | Always rewritten. |
+| `HUMAN AUDITED` / `HUMAN REVIEWED` | Automated pipeline nie może sam potwierdzić human review. | `HUMAN REVIEW: NOT VERIFIED` | `PASS` + `HUMAN_VERIFIED` + `reviewerId` + `reviewStatus=CONFIRMED` | `lib/security/evidence/claim-audit-blocker.ts` | `NOT_RUN` human record is explicitly insufficient. |
+| `Direct L3/SIP` | Public/derived data is not a licensed direct feed. | `Market Data Source: DIRECT L3/SIP NOT VERIFIED` | Fresh `PASS` market evidence identifying SIP/ITCH/OUCH/L3 source | `lib/security/evidence/claim-audit-blocker.ts` | Provider/category presence alone is insufficient. |
+| `Best Execution PASS` | Requires exact execution-routing evidence. | `Best Execution: NOT VERIFIED FOR THIS SCOPE` | Fresh `PASS` execution/market evidence for the exact scope | `lib/security/evidence/claim-audit-blocker.ts` | Generic market-data evidence is not enough by itself. |
+| `Zero Risk` / `Bug-Free Guarantee` | Absolute absence cannot be guaranteed. | residual-risk / bounded-assurance wording | Not evidence-upgradable into an absolute claim. | `lib/security/evidence/claim-audit-blocker.ts` | Always rewritten. |
 
 ---
 
-## 2. WALIDACJA KODOWA REGUŁ BLOKUJĄCYCH (`ClaimAuditBlocker`)
+## 2. R10 SELF-CORRECTION: CLAIMAUDITBLOCKER BUG
 
-W pliku `lib/security/evidence/claim-audit-blocker.ts` wdrożono bezwzględny interceptor AST i tekstu raportu, który przed finalnym renderowaniem do formatu PDF:
-1. Skanuje każdą linię dokumentu pod kątem wzorców zakazanych (RegEx).
-2. Sprawdza, czy w tablicy `evidenceRecords` znajduje się rekord o statusie `PASS`, powiązany z autentycznym narzędziem (np. Z3 dla dowodów, solc dla AST, CIK dla SEC).
-3. W przypadku braku dowodu natychmiast przepisuje linię na postać uczciwą z etykietą `[LOCAL DETERMINISTIC]`, `[NOT RUN]`, `[UNKNOWN]`, uniemożliwiając przeniknięcie jakiejkolwiek fabrykacji do klienta końcowego.
+The previous implementation created a set of valid `PASS` evidence IDs, but did not use it when authorizing claims. Instead it checked whether **any** evidence record existed in the required category.
+
+That meant a record such as:
+
+```text
+category = FORMAL
+status = NOT_RUN
+```
+
+could satisfy the category-presence test and allow a claim to be marked `VERIFIED`.
+
+### R10 correction
+
+`lib/security/evidence/claim-audit-blocker.ts` now requires:
+
+1. exact required evidence category,
+2. `status === PASS`,
+3. additional method/provenance constraints for strong claims where applicable.
+
+Examples:
+- formal solver wording: `PASS + FORMALLY_PROVEN + solver provenance`,
+- human review: `PASS + HUMAN_VERIFIED + reviewerId + CONFIRMED`,
+- RFC 3161: `PASS + OBSERVED + external TSA/RFC3161 token provenance`.
+
+Regression:
+`scripts/r10/test-claim-audit-blocker-evidence-status.ts`
+
+---
+
+## 3. CURRENT AUTHORITY RULE
+
+This matrix does **not** declare the release fully remediated.
+
+A claim is current only when:
+- the exact release source is known,
+- the relevant test is executed against that release,
+- required evidence is current and scope-bound,
+- regenerated customer output is re-audited.
+
+R9 historical findings remain historical facts and are not erased by R10 remediation.
