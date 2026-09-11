@@ -61,6 +61,12 @@ jobs:
       - name: Audit all active workflows dynamically
         run: node scripts/r10/verify-active-workflows.mjs --write --output artifacts/r10/R10_ACTIVE_WORKFLOW_AUDIT.json
 
+      - name: Test authority genesis reset
+        run: node scripts/r10/test-authority-genesis.mjs
+
+      - name: Verify authority genesis reset policy
+        run: node scripts/r10/verify-authority-genesis.mjs --write --output artifacts/r10/R10_AUTHORITY_GENESIS_RECEIPT.json
+
       - name: Scan candidate release truth
         run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
 
@@ -74,3 +80,4 @@ jobs:
           path: |
             artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
             artifacts/r10/R10_ACTIVE_WORKFLOW_AUDIT.json
+            artifacts/r10/R10_AUTHORITY_GENESIS_RECEIPT.json
