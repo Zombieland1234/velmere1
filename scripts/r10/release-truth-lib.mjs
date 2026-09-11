@@ -140,6 +140,9 @@ export function scanTextForReleaseTruth(relativePath, text) {
     ["CLAIM_IMMUTABLE_CONTENT", /\[(?:VERIFIED\s*-\s*IMMUTABLE)\]/i, "P0", "Cryptographic file integrity must not be worded as audit-content correctness."],
     ["CLAIM_HUMAN_DEFAULT", /\b(?:HUMAN\s+AUDITED|HUMAN\s+REVIEWED|certified\s+human\s+auditor)\b/i, "P0", "Human-review claims require a confirmed human-review receipt."],
     ["HARDCODED_DETECTOR_72", /(?:totalDetectors\s*[:=]\s*72\b|\b72\s+Automated\s+Static\s+Detectors\b)/i, "P0", "Detector counts must be derived from the current detector registry, never hardcoded."],
+    ["PSEUDO_RFC3161_LOCAL_TSA", /"tsaName"\s*:\s*"Velm[èe]re\s+RFC\s*3161\s+Trusted\s+Authority"/i, "P0", "A locally synthesized JSON timestamp must not be represented as an RFC 3161 trusted TSA token."],
+    ["PSEUDO_ROOT_CA_LOCAL_SIGNER", /"signerIdentity"\s*:\s*"Velm[èe]re\s+Cryptographic\s+Root\s+CA[^\"]*"/i, "P0", "An embedded/local report signer must not be represented as a trusted root CA."],
+    ["PLACEHOLDER_PROVENANCE_HASH", /"provenanceHash"\s*:\s*"0xprovenance_root"/i, "P0", "Placeholder provenance is not observed provenance and must be null/NOT_OBSERVED until exact-scope evidence exists."],
   ];
 
   for (const [id, regex, severity, reason] of patterns) {
