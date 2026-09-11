@@ -11,20 +11,32 @@ const loader = pathToFileURL(path.join(root, "scripts/pass11/register-offline-ts
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "velmere-r10-loader-builtins-"));
 const script = path.join(tmp, "builtins.ts");
 const moduleDir = path.join(tmp, "module-dir");
+const typesFile = path.join(tmp, "types.ts");
 
 try {
   fs.mkdirSync(moduleDir, { recursive: true });
   fs.writeFileSync(path.join(moduleDir, "index.ts"), 'export const directoryMarker: string = "INDEX_TS_PASS";\n', "utf8");
+  fs.writeFileSync(typesFile, [
+    'export interface TypeOnlyInterface { value: string }',
+    'export type TypeOnlyAlias = { count: number };',
+    'export const runtimeMarker = "RUNTIME_EXPORT_PASS";',
+  ].join("\n") + "\n", "utf8");
   fs.writeFileSync(script, [
     'import crypto from "crypto";',
     'import fs from "fs";',
     'import path from "path";',
     'import { directoryMarker } from "./module-dir";',
+    // Deliberately omit `type` to emulate legacy TS authored for normal tsc transpilation.
+    'import { TypeOnlyInterface, TypeOnlyAlias, runtimeMarker } from "./types";',
+    'const typed: TypeOnlyInterface = { value: "ok" };',
+    'const alias: TypeOnlyAlias = { count: 1 };',
     'const digest: string = crypto.createHash("sha256").update("velmere").digest("hex");',
     'if (typeof fs.readFileSync !== "function") throw new Error("fs_builtin_missing");',
     'if (path.basename("/a/b") !== "b") throw new Error("path_builtin_missing");',
     'if (directoryMarker !== "INDEX_TS_PASS") throw new Error("directory_index_resolution_failed");',
-    'console.log(`R10_BUILTINS_PASS:${digest.length}:${directoryMarker}`);',
+    'if (runtimeMarker !== "RUNTIME_EXPORT_PASS") throw new Error("mixed_import_runtime_export_missing");',
+    'if (typed.value !== "ok" || alias.count !== 1) throw new Error("type_erasure_fixture_failed");',
+    'console.log(`R10_BUILTINS_PASS:${digest.length}:${directoryMarker}:${runtimeMarker}`);',
   ].join("\n") + "\n", "utf8");
 
   const result = spawnSync(process.execPath, ["--import", loader, script], {
@@ -34,10 +46,11 @@ try {
   });
 
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-  assert.match(result.stdout, /R10_BUILTINS_PASS:64:INDEX_TS_PASS/);
+  assert.match(result.stdout, /R10_BUILTINS_PASS:64:INDEX_TS_PASS:RUNTIME_EXPORT_PASS/);
   assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT.*\/(?:crypto|fs|path)\b/i);
   assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /EISDIR/i);
-  console.log("R10 offline TS loader bare Node builtins + directory index regression: PASS");
+  assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /does not provide an export named 'TypeOnly/i);
+  console.log("R10 offline TS loader builtins + directory index + type-only erasure regression: PASS");
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
