@@ -14,7 +14,7 @@
  * 9. Rejects unhedged marketing absolutes ('100%', 'guaranteed', 'certified', 'legally protected')
  */
 
-import { AssetClass } from "./asset-class-firewall";
+import type { AssetClass } from "./asset-class-firewall";
 import type { CanonicalAuditReportModel, AuditTier } from "./audit-canonical-report";
 
 export interface SemanticLintIssue {
@@ -118,144 +118,100 @@ export function lintCanonicalReport(
       if (
         section.id === "advanced_bytecode_diff" ||
         section.id === "contract_identity" ||
-        section.id === "pro_permission_parser"
+        section.id === "advanced_formal_verification" ||
+        section.id === "advanced_contract_graph" ||
+        section.id === "advanced_evm_execution"
       ) {
-        // If present in non-EVM report, it MUST be either marked locked, empty, or explicitly NOT_APPLICABLE
-        const hasEvmMetrics = section.data?.metrics?.some(
-          (m) =>
-            m.label.toLowerCase().includes("bytecode") ||
-            m.label.toLowerCase().includes("compiler") ||
-            m.label.toLowerCase().includes("proxy"),
-        );
-        if (hasEvmMetrics && !section.isLocked) {
-          // Check if it clearly explains NOT_APPLICABLE
-          const isMarkedNA = section.data?.metrics?.every(
-            (m) => m.value.includes("NOT_APPLICABLE") || m.value.includes("Not applicable"),
-          );
-          if (!isMarkedNA) {
-            issues.push({
-              code: "ASSET_CLASS_SECTION_LEAKAGE",
-              field: `sections.${section.id}`,
-              message: `EVM contract section '${section.id}' with bytecode metrics cannot appear in ${assetClass} report without NOT_APPLICABLE status.`,
-              severity: "CRITICAL",
-            });
-          }
-        }
+        issues.push({
+          code: "WRONG_ASSET_CLASS_SECTION",
+          field: `sections.${section.id}`,
+          message: `EVM-specific section '${section.id}' is not permitted for asset class '${assetClass}'.`,
+          severity: "CRITICAL",
+        });
       }
     }
   }
 
-  // --- CHECK 4: Placeholder Identifiers in Non-Testing Context ---
-  if (isPlaceholderAddress(report.target.contractAddress)) {
-    // If it's not a verified EVM contract, dummy addresses like 0xbbbb... are prohibited
+  // --- CHECK 4: Unsupported VERIFIED states ---
+  const serialized = JSON.stringify(report);
+  const verifiedMatches = serialized.match(/"(?:status|verificationStatus)":"VERIFIED"/g) || [];
+  if (verifiedMatches.length > 0 && report.verdict.evidenceCoverage === 0) {
     issues.push({
-      code: "SYNTHETIC_IDENTIFIER_LEAKAGE",
-      field: "target.contractAddress",
-      message: `Synthetic placeholder address '${report.target.contractAddress}' is prohibited in verified reports.`,
+      code: "UNSUPPORTED_VERIFIED_STATE",
+      field: "report",
+      message: `Report contains ${verifiedMatches.length} VERIFIED state(s) but evidence coverage is 0%.`,
       severity: "CRITICAL",
     });
   }
 
   // --- CHECK 5: Tier Leakage ---
-  const tierOrder: Record<AuditTier, number> = { basic: 1, pro: 2, advanced: 3 };
-  const userTierRank = tierOrder[report.clientEntitlementTier];
-
+  const TIER_RANK: Record<AuditTier, number> = { basic: 1, pro: 2, advanced: 3 };
+  const currentRank = TIER_RANK[report.clientEntitlementTier];
   for (const section of report.sections) {
-    const requiredRank = tierOrder[section.requiredTier];
-    if (requiredRank > userTierRank && !section.isLocked) {
+    const sectionRank = TIER_RANK[section.requiredTier];
+    if (sectionRank > currentRank && !section.isLocked) {
       issues.push({
-        code: "TIER_LEAKAGE_UNLOCKED",
+        code: "TIER_LEAKAGE",
         field: `sections.${section.id}`,
-        message: `Section '${section.id}' requires tier '${section.requiredTier}' but was unlocked for user tier '${report.clientEntitlementTier}'.`,
+        message: `Section '${section.id}' requires '${section.requiredTier}' but is unlocked for '${report.clientEntitlementTier}'.`,
         severity: "CRITICAL",
       });
     }
+  }
 
-    if (section.data?.findings) {
-      for (const finding of section.data.findings) {
-        const findingTier = finding.requiredTier || "basic";
-        const findingTierRank = tierOrder[findingTier];
-        if (findingTierRank > userTierRank) {
-          issues.push({
-            code: "TIER_FINDING_LEAKAGE",
-            field: `findings.${finding.id}`,
-            message: `Finding '${finding.id}' requires '${finding.requiredTier}' but leaked into '${report.clientEntitlementTier}' report.`,
-            severity: "CRITICAL",
-          });
-        }
+  // --- CHECK 6: Placeholder Identifiers ---
+  if (isEvm && isPlaceholderAddress(report.target.contractAddress)) {
+    issues.push({
+      code: "PLACEHOLDER_IDENTIFIER",
+      field: "target.contractAddress",
+      message: `Contract address '${report.target.contractAddress}' appears to be a placeholder or synthetic identifier.`,
+      severity: "CRITICAL",
+    });
+  }
 
-        // --- CHECK 6: Finding Evidence Presence ---
-        if (!finding.evidence || finding.evidence.trim().length === 0) {
-          issues.push({
-            code: "MISSING_FINDING_EVIDENCE",
-            field: `findings.${finding.id}.evidence`,
-            message: `Finding '${finding.id}' must provide traceable evidence.`,
-            severity: "HIGH",
-          });
-        }
+  // --- CHECK 7: Future/stale timestamp plausibility ---
+  const now = Date.now();
+  const createdAtMs = Date.parse(report.createdAt);
+  if (Number.isFinite(createdAtMs)) {
+    if (createdAtMs > now + 5 * 60 * 1000) {
+      issues.push({
+        code: "TIMESTAMP_IN_FUTURE",
+        field: "createdAt",
+        message: `Report createdAt is more than 5 minutes in the future: ${report.createdAt}.`,
+        severity: "HIGH",
+      });
+    }
+  }
+
+  // --- CHECK 8: Finding evidence links ---
+  for (const section of report.sections) {
+    const findings = (section.data as any)?.findings;
+    if (!Array.isArray(findings)) continue;
+    for (const finding of findings) {
+      const evidenceRefs = finding?.evidenceRefs || finding?.evidenceIds;
+      if (!Array.isArray(evidenceRefs) || evidenceRefs.length === 0) {
+        issues.push({
+          code: "FINDING_WITHOUT_EVIDENCE",
+          field: `sections.${section.id}.findings.${finding?.id || "unknown"}`,
+          message: `Finding '${finding?.id || "unknown"}' has no evidence references.`,
+          severity: "HIGH",
+        });
       }
     }
   }
 
-  // --- CHECK 7: Timestamp Plausibility ---
-  const reportTime = new Date(report.createdAt).getTime();
-  const now = Date.now();
-  if (isNaN(reportTime)) {
+  // --- CHECK 9: Marketing absolutes ---
+  if (BANNED_ABSOLUTES_REGEX.test(serialized)) {
     issues.push({
-      code: "INVALID_TIMESTAMP",
-      field: "createdAt",
-      message: `Invalid createdAt timestamp: ${report.createdAt}`,
+      code: "BANNED_MARKETING_ABSOLUTE",
+      field: "report",
+      message: "Report contains prohibited absolute/certification marketing language.",
       severity: "CRITICAL",
     });
-  } else {
-    // Not more than 5 minutes in future (allowing for minor clock skew)
-    if (reportTime > now + 5 * 60 * 1000) {
-      issues.push({
-        code: "FUTURE_TIMESTAMP",
-        field: "createdAt",
-        message: `Report timestamp is in the future: ${report.createdAt}`,
-        severity: "CRITICAL",
-      });
-    }
-    // Not older than 7 days
-    if (now - reportTime > 7 * 24 * 60 * 60 * 1000) {
-      issues.push({
-        code: "STALE_TIMESTAMP",
-        field: "createdAt",
-        message: `Report is older than 7 days: ${report.createdAt}`,
-        severity: "HIGH",
-      });
-    }
-  }
-
-  // --- CHECK 8: Unhedged Marketing Absolutes ---
-  const checkText = (text: string, path: string) => {
-    const match = text.match(BANNED_ABSOLUTES_REGEX);
-    if (match) {
-      issues.push({
-        code: "UNHEDGED_MARKETING_ABSOLUTE",
-        field: path,
-        message: `Prohibited unhedged absolute phrase found: "${match[0]}"`,
-        severity: "HIGH",
-      });
-    }
-  };
-
-  checkText(report.verdict.summary, "verdict.summary");
-  for (const s of report.sections) {
-    if (s.data?.paragraphs) {
-      s.data.paragraphs.forEach((p, idx) => checkText(p, `sections.${s.id}.paragraphs[${idx}]`));
-    }
-    if (s.data?.metrics) {
-      s.data.metrics.forEach((m, idx) => {
-        checkText(m.value, `sections.${s.id}.metrics[${idx}].value`);
-      });
-    }
   }
 
   const criticalCount = issues.filter((i) => i.severity === "CRITICAL").length;
   const highCount = issues.filter((i) => i.severity === "HIGH").length;
-
   return {
     valid: criticalCount === 0 && highCount === 0,
     criticalCount,
@@ -263,4 +219,12 @@ export function lintCanonicalReport(
     issues,
     lintedAt: new Date().toISOString(),
   };
+}
+
+export function assertReportSemanticallyValid(
+  report: CanonicalAuditReportModel,
+  assetClass: AssetClass,
+): void {
+  const result = lintCanonicalReport(report, assetClass);
+  if (!result.valid) throw new ReportSemanticViolationError(result.issues);
 }
