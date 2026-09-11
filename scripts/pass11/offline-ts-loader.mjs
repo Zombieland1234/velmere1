@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, stat } from "node:fs/promises";
 import { constants } from "node:fs";
 import { builtinModules, createRequire, stripTypeScriptTypes } from "node:module";
 import path from "node:path";
@@ -33,11 +33,12 @@ const TEST_SHIMS = new Map([
   ["eventemitter3", path.join(root, "scripts", "pass11", "shims", "eventemitter3.mjs")],
 ]);
 
-async function firstReadable(candidates) {
+async function firstReadableFile(candidates) {
   for (const candidate of candidates) {
     try {
       await access(candidate, constants.R_OK);
-      return candidate;
+      const metadata = await stat(candidate);
+      if (metadata.isFile()) return candidate;
     } catch (ignoredError) { void ignoredError; }
   }
   return null;
@@ -46,7 +47,7 @@ async function firstReadable(candidates) {
 async function resolveSourceCandidate(candidate) {
   const extension = path.extname(candidate).toLowerCase();
   const stem = JS_EXTENSIONS.has(extension) ? candidate.slice(0, -extension.length) : candidate;
-  return firstReadable([
+  return firstReadableFile([
     candidate,
     `${candidate}.ts`,
     `${candidate}.tsx`,
