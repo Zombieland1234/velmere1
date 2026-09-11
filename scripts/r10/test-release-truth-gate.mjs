@@ -30,6 +30,13 @@ try {
       identifier: "cme:gc-front",
       regulatoryJurisdiction: "SEC / FINRA / CFTC",
       marketSpec: { assetClass: "Smart Contract Application" },
+      pkiAttestation: {
+        signerIdentity: "Velmère Cryptographic Root CA / Engine v2.4",
+        timestampToken: { tsaName: "Velmère RFC 3161 Trusted Authority" },
+      },
+      auditScopeManifest: {
+        cryptographicManifest: { provenanceHash: "0xprovenance_root" },
+      },
     }, null, 2)
   );
 
@@ -43,6 +50,9 @@ try {
   assert(ids.has("REAL_MARKETS_SMART_CONTRACT_ASSET_CLASS"));
   assert(ids.has("REAL_MARKETS_GENERIC_REGULATOR_TRIAD"));
   assert(ids.has("REAL_MARKETS_XAU_PHYSICAL_VS_GC_FUTURE"));
+  assert(ids.has("PSEUDO_RFC3161_LOCAL_TSA"));
+  assert(ids.has("PSEUDO_ROOT_CA_LOCAL_SIGNER"));
+  assert(ids.has("PLACEHOLDER_PROVENANCE_HASH"));
 
   fs.writeFileSync(path.join(tmp, "next.config.mjs"), "export default { reactStrictMode: true };\n");
   fs.writeFileSync(path.join(tmp, "docs", "audit", "active.md"), "AUDIT CONTENT: INSUFFICIENT EVIDENCE\n");
@@ -51,8 +61,16 @@ try {
     JSON.stringify({
       target: "XAU CME Gold Future",
       identifier: "cme:gc-front",
-      regulatoryJurisdiction: "CFTC / CME",
+      regulatoryJurisdiction: "US_CFTC / CME_RULEBOOK",
       marketSpec: { assetClass: "commodity", instrumentType: "future" },
+      pkiAttestation: {
+        attestationType: "LOCAL_FILE_INTEGRITY",
+        signerIdentity: "Velmère Local Integrity Signer",
+        externalTimestampVerified: false,
+      },
+      auditScopeManifest: {
+        cryptographicManifest: { provenanceHash: null, provenanceStatus: "NOT_OBSERVED" },
+      },
     }, null, 2)
   );
   const clean = runReleaseTruthScan(tmp);
