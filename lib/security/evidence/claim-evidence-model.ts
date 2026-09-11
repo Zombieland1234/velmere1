@@ -1,10 +1,11 @@
 /**
- * VELMÈRE WORLD-CLASS EVIDENCE INTELLIGENCE
+ * VELMÈRE EVIDENCE INTELLIGENCE
  * Claim and Evidence Authoritative Model
- * 
+ *
  * CORE PRINCIPLE:
  * NO EVIDENCE -> NO FACT
  * NO VERIFIED PROVENANCE -> NO VERIFIED CLAIM
+ * NO CLAIM/ASSET BINDING -> NO AUTHORITY
  */
 
 import crypto from "crypto";
@@ -36,7 +37,7 @@ export type EvidenceSourceType =
   | "simulated_fixture";
 
 export interface EvidenceObject {
-  evidence_id: string; // e.g., EVD-EVM-000001
+  evidence_id: string;
   claim_id: string;
   asset_id: string;
   asset_class: CanonicalAssetClassV2;
@@ -61,14 +62,14 @@ export interface EvidenceObject {
 }
 
 export interface ClaimObject {
-  claim_id: string; // e.g., CLM-EVM-000001
+  claim_id: string;
   asset_id: string;
   subject: string;
   statement: string;
   classification: ClaimClassification;
   status: "verified" | "derived" | "heuristic" | "unverified" | "fixture";
   evidence_ids: string[];
-  confidence: number; // 0 to 100
+  confidence: number;
   created_at: string;
 }
 
@@ -91,7 +92,13 @@ export function generateClaimId(prefix: string, index: number): string {
 
 /**
  * Validates that a claim meets strict truth requirements.
- * Returns true if valid, throws an error if unproven claim is labeled VERIFIED.
+ *
+ * R10 invariants:
+ * - classification A may be `verified` only with bound, reproducible, verified evidence;
+ * - classification B is `derived`, not silently upgraded to `verified`;
+ * - heuristic/unverified/fixture evidence never authorizes a verified/derived claim;
+ * - evidence must be bound to the exact claim_id and asset_id;
+ * - simulated fixtures never authorize a real-asset verified/derived claim.
  */
 export function validateClaimIntegrity(claim: ClaimObject, evidenceMap: Map<string, EvidenceObject>): {
   isValid: boolean;
@@ -99,31 +106,80 @@ export function validateClaimIntegrity(claim: ClaimObject, evidenceMap: Map<stri
 } {
   const violations: string[] = [];
 
-  // Rule 1: Only A and B may be called VERIFIED
-  if (claim.status === "verified" && claim.classification !== "A" && claim.classification !== "B") {
-    violations.push(`Violation: Claim ${claim.claim_id} is marked 'verified' but has classification ${claim.classification}. Only A and B may be verified.`);
+  if (claim.confidence < 0 || claim.confidence > 100 || !Number.isFinite(claim.confidence)) {
+    violations.push(`Violation: Claim ${claim.claim_id} confidence must be a finite number from 0 to 100.`);
   }
 
-  // Rule 2: Must have at least one valid evidence reference if verified or derived
-  if ((claim.status === "verified" || claim.status === "derived") && claim.evidence_ids.length === 0) {
+  if (claim.classification === "A" && claim.status !== "verified" && claim.status !== "unverified") {
+    violations.push(`Violation: Direct-evidence claim ${claim.claim_id} has incompatible status ${claim.status}.`);
+  }
+
+  if (claim.classification === "B" && claim.status !== "derived" && claim.status !== "unverified") {
+    violations.push(`Violation: Derived claim ${claim.claim_id} must be labeled 'derived' (or 'unverified'), not ${claim.status}.`);
+  }
+
+  if (claim.classification === "C" && claim.status !== "heuristic" && claim.status !== "unverified") {
+    violations.push(`Violation: Heuristic claim ${claim.claim_id} must be labeled 'heuristic' (or 'unverified').`);
+  }
+
+  if (claim.classification === "D" && claim.status !== "unverified") {
+    violations.push(`Violation: Unverified claim ${claim.claim_id} must have status 'unverified'.`);
+  }
+
+  if (claim.classification === "E" && claim.status === "verified") {
+    violations.push(`Violation: Contradictory/impossible claim ${claim.claim_id} cannot be verified.`);
+  }
+
+  if (claim.classification === "F" && claim.status !== "fixture") {
+    violations.push(`Violation: Fixture claim ${claim.claim_id} must have status 'fixture'.`);
+  }
+
+  const needsAuthoritativeEvidence = claim.status === "verified" || claim.status === "derived";
+  if (needsAuthoritativeEvidence && claim.evidence_ids.length === 0) {
     violations.push(`Violation: Claim ${claim.claim_id} is marked ${claim.status} but has zero evidence IDs.`);
   }
 
-  // Rule 3: Evidence IDs must exist in evidenceMap
+  const resolvedEvidence: EvidenceObject[] = [];
   for (const evId of claim.evidence_ids) {
-    if (!evidenceMap.has(evId)) {
+    const evidence = evidenceMap.get(evId);
+    if (!evidence) {
       violations.push(`Violation: Claim ${claim.claim_id} references nonexistent evidence ID ${evId}.`);
+      continue;
+    }
+    resolvedEvidence.push(evidence);
+
+    if (evidence.claim_id !== claim.claim_id) {
+      violations.push(`Violation: Evidence ${evId} is bound to claim ${evidence.claim_id}, not ${claim.claim_id}.`);
+    }
+    if (evidence.asset_id !== claim.asset_id) {
+      violations.push(`Violation: Evidence ${evId} is bound to asset ${evidence.asset_id}, not ${claim.asset_id}.`);
+    }
+    if (needsAuthoritativeEvidence && !evidence.reproducible) {
+      violations.push(`Violation: Evidence ${evId} is not reproducible and cannot authorize a ${claim.status} claim.`);
+    }
+    if (needsAuthoritativeEvidence && ["heuristic", "unverified", "fixture"].includes(evidence.status)) {
+      violations.push(`Violation: Evidence ${evId} has status ${evidence.status} and cannot authorize a ${claim.status} claim.`);
+    }
+    if (
+      needsAuthoritativeEvidence &&
+      (evidence.source_type === "simulated_fixture" || evidence.asset_class === "SIMULATED_FIXTURE")
+    ) {
+      violations.push(`Violation: Simulated fixture evidence ${evId} cannot authorize a real verified/derived claim.`);
     }
   }
 
-  // Rule 4: Fixture classification F must not be labeled verified
-  if (claim.classification === "F" && claim.status === "verified") {
-    violations.push(`Violation: Fixture claim ${claim.claim_id} cannot be labeled 'verified'. Must be 'fixture'.`);
+  if (claim.status === "verified") {
+    const hasVerifiedEvidence = resolvedEvidence.some((evidence) => evidence.status === "verified");
+    if (!hasVerifiedEvidence) {
+      violations.push(`Violation: Verified claim ${claim.claim_id} has no evidence with status 'verified'.`);
+    }
   }
 
-  // Rule 5: Heuristic C must not be labeled verified
-  if (claim.classification === "C" && claim.status === "verified") {
-    violations.push(`Violation: Heuristic claim ${claim.claim_id} cannot be labeled 'verified'. Must be 'heuristic'.`);
+  if (claim.status === "derived") {
+    const hasUsableEvidence = resolvedEvidence.some((evidence) => evidence.status === "verified" || evidence.status === "derived");
+    if (!hasUsableEvidence) {
+      violations.push(`Violation: Derived claim ${claim.claim_id} has no verified/derived evidence input.`);
+    }
   }
 
   return {
