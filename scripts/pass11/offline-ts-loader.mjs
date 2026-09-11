@@ -74,6 +74,87 @@ async function resolveSourceCandidate(candidate) {
   ]);
 }
 
+async function resolveLocalImportTarget(specifier, importerPath) {
+  if (specifier.startsWith("@/")) {
+    return resolveSourceCandidate(path.join(root, specifier.slice(2)));
+  }
+  if (specifier.startsWith("./") || specifier.startsWith("../")) {
+    return resolveSourceCandidate(path.resolve(path.dirname(importerPath), specifier));
+  }
+  return null;
+}
+
+function declaredTypeExports(source) {
+  const names = new Set();
+  const declaration = /\bexport\s+(?:declare\s+)?(?:type|interface)\s+([A-Za-z_$][\w$]*)/g;
+  for (const match of source.matchAll(declaration)) names.add(match[1]);
+  const typedList = /\bexport\s*\{([^}]+)\}/g;
+  for (const match of source.matchAll(typedList)) {
+    for (const part of match[1].split(",")) {
+      const trimmed = part.trim();
+      const typed = trimmed.match(/^type\s+([A-Za-z_$][\w$]*)/);
+      if (typed) names.add(typed[1]);
+    }
+  }
+  return names;
+}
+
+function importedOriginalName(specifier) {
+  const withoutType = specifier.trim().replace(/^type\s+/, "");
+  const [name] = withoutType.split(/\s+as\s+/i);
+  return name?.trim() ?? "";
+}
+
+/**
+ * Node's built-in stripTypeScriptTypes is intentionally syntax-only and does
+ * not know that `import { Foo }` refers to an interface/type in another file.
+ * A normal TypeScript transpile erases that import. In the dependency-free
+ * fallback, emulate that one semantic step for local named imports by reading
+ * the target source and marking declared `export type` / `export interface`
+ * names as type-only before passing source to stripTypeScriptTypes.
+ */
+async function rewriteLocalTypeOnlyNamedImports(source, importerPath) {
+  const pattern = /import\s*\{([\s\S]*?)\}\s*from\s*(["'])([^"']+)\2\s*;?/g;
+  const matches = [...source.matchAll(pattern)];
+  if (!matches.length) return source;
+
+  let result = "";
+  let cursor = 0;
+  for (const match of matches) {
+    const full = match[0];
+    const start = match.index ?? 0;
+    const named = match[1];
+    const quote = match[2];
+    const specifier = match[3];
+    const target = await resolveLocalImportTarget(specifier, importerPath);
+    if (!target || !SOURCE_EXTENSIONS.has(path.extname(target).toLowerCase())) continue;
+
+    let targetSource;
+    try {
+      targetSource = await readFile(target, "utf8");
+    } catch {
+      continue;
+    }
+    const typeExports = declaredTypeExports(targetSource);
+    if (!typeExports.size) continue;
+
+    const parts = named.split(",").map((item) => item.trim()).filter(Boolean);
+    if (!parts.length) continue;
+    const rewrittenParts = parts.map((item) => {
+      if (/^type\s+/.test(item)) return item;
+      return typeExports.has(importedOriginalName(item)) ? `type ${item}` : item;
+    });
+    if (rewrittenParts.every((item) => /^type\s+/.test(item))) {
+      const cleaned = rewrittenParts.map((item) => item.replace(/^type\s+/, ""));
+      result += source.slice(cursor, start) + `import type { ${cleaned.join(", ")} } from ${quote}${specifier}${quote};`;
+    } else {
+      result += source.slice(cursor, start) + `import { ${rewrittenParts.join(", ")} } from ${quote}${specifier}${quote};`;
+    }
+    cursor = start + full.length;
+  }
+  return cursor === 0 ? source : result + source.slice(cursor);
+}
+
 export async function resolve(specifier, context, nextResolve) {
   const shim = TEST_SHIMS.get(specifier);
   if (shim) {
@@ -164,7 +245,8 @@ export async function load(url, context, nextLoad) {
   if (extension === ".tsx") {
     throw new Error(`offline_tsx_transpile_requires_typescript:${filePath}`);
   }
-  const transformed = stripTypeScriptTypes(source, {
+  const sourceWithTypeOnlyImports = await rewriteLocalTypeOnlyNamedImports(source, filePath);
+  const transformed = stripTypeScriptTypes(sourceWithTypeOnlyImports, {
     mode: "transform",
     sourceMap: true,
     sourceUrl: pathToFileURL(filePath).href,
