@@ -64,4 +64,14 @@ assert.ok(missingLocal.blockers.some((v) => v.includes("local_reusable_missing")
 const explicitKey = inspectWorkflowText("? uses\n: actions/checkout@main\n", "explicit-key.yml", tmp);
 assert.ok(explicitKey.blockers.some((v) => v.includes("explicit_mapping_key_forbidden")));
 
-console.log(JSON.stringify({ schemaVersion: "velmere.r11.workflow-semantic-policy-test.v2", checks: 13, passed: true }, null, 2));
+const shellBlockScalar = inspectWorkflowText("jobs:\n  x:\n    runs-on: ubuntu-latest\n    steps:\n      - run: |\n          ! grep -q forbidden file.txt\n          echo 'uses: actions/checkout@main'\n      - uses: actions/checkout@" + sha + "\n", "shell-block.yml", tmp);
+assert.deepEqual(shellBlockScalar.blockers, []);
+assert.equal(shellBlockScalar.semanticUsesCount, 1);
+
+const blockScalarUses = inspectWorkflowText("jobs:\n  x:\n    uses: |\n      actions/checkout@" + sha + "\n", "block-uses.yml", tmp);
+assert.ok(blockScalarUses.blockers.some((v) => v.includes("uses_must_be_plain_scalar")));
+
+const documentMarker = inspectWorkflowText("---\nname: bad\non: push\n", "document-marker.yml", tmp);
+assert.ok(documentMarker.blockers.some((v) => v.includes("yaml_document_marker_forbidden")));
+
+console.log(JSON.stringify({ schemaVersion: "velmere.r11.workflow-semantic-policy-test.v2", checks: 16, passed: true }, null, 2));
