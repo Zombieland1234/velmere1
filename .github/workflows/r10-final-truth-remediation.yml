@@ -1,0 +1,72 @@
+name: R10 Final Truth Remediation
+
+on:
+  push:
+    branches:
+      - r10-final-truth-remediation
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r10-final-truth-remediation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout remediation branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install
+        run: npm ci --ignore-scripts
+      - name: Apply guarded source remediation
+        run: node scripts/r10/patch-final-rfc3161-truth.mjs
+      - name: Customer truth scan must be clean
+        run: |
+          node scripts/r10/test-release-truth-gate.mjs
+          node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/final-truth-remediation/TRUTH_RECEIPT.json
+      - name: Targeted syntax/lint
+        run: |
+          npx eslint app/api/checkout/stripe-analysis/route.ts components/security/SecurityAuditsCleanPage.tsx
+          node --check scripts/generate-50-audits-benchmark.mjs
+          node --check scripts/build-final-quality-report.mjs
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Production build
+        run: npm run build
+      - name: Commit only truth-remediated source
+        run: |
+          git diff --name-only > /tmp/changed.txt
+          allowed='^(reports/LEGAL_COMPLIANCE_AND_REGULATORY_OPINION\.md|app/api/checkout/stripe-analysis/route\.ts|components/security/SecurityAuditsCleanPage\.tsx|scripts/generate-50-audits-benchmark\.mjs|scripts/furnace/run-world-class-furnace\.ts|scripts/build-final-quality-report\.mjs)$'
+          bad="$(grep -Ev "$allowed" /tmp/changed.txt || true)"
+          if [ -n "$bad" ]; then echo "Unexpected write scope:"; echo "$bad"; exit 1; fi
+          if [ "$(wc -l < /tmp/changed.txt | tr -d ' ')" -ne 6 ]; then echo "Expected six changed source files"; cat /tmp/changed.txt; exit 1; fi
+          git config user.name "velmere-r10-final-truth"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          xargs -d '\n' git add -- < /tmp/changed.txt
+          git commit -m "fix(r10): remove unsupported external timestamp certification claims [truth]"
+          git push origin HEAD:r10-final-truth-remediation
+      - name: Upload receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-final-truth-remediation-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: artifacts/r10/final-truth-remediation/**
