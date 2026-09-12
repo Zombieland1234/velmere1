@@ -7,11 +7,12 @@ import { execFileSync } from "node:child_process";
 const ROOT_COMMIT = "4e6801b7d313348967c4a27f38aab01b6dcd2776";
 const LAST_VISUAL_EVIDENCE_DATE = "2026-09-07";
 const KNOWN_POST_VISUAL_IMPORT = "41e331c34d268e7ecca87984b682ec61104aa788";
+const GIT_BUFFER_BYTES = 16 * 1024 * 1024;
 const manifest = JSON.parse(fs.readFileSync("config/pass14/visual-freeze-manifest.json", "utf8"));
 const sha256 = (buf) => createHash("sha256").update(buf).digest("hex");
-const latestCommit = (file) => execFileSync("git", ["log", "-1", "--format=%H", "--", file], { encoding: "utf8" }).trim();
-const latestDate = (file) => execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { encoding: "utf8" }).trim();
-const rootBytes = (file) => execFileSync("git", ["show", `${ROOT_COMMIT}:${file}`]);
+const latestCommit = (file) => execFileSync("git", ["log", "-1", "--format=%H", "--", file], { encoding: "utf8", maxBuffer: GIT_BUFFER_BYTES }).trim();
+const latestDate = (file) => execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { encoding: "utf8", maxBuffer: GIT_BUFFER_BYTES }).trim();
+const rootBytes = (file) => execFileSync("git", ["show", `${ROOT_COMMIT}:${file}`], { maxBuffer: GIT_BUFFER_BYTES });
 
 const rows = manifest.files.map((entry) => {
   const current = fs.readFileSync(entry.path);
