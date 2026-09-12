@@ -39,6 +39,7 @@ jobs:
         run: |
           node scripts/r10/patch-paid-authz.mjs
           node scripts/r10/patch-paid-authz-lint.mjs
+          node scripts/r10/patch-paid-authz-order.mjs
           node scripts/r10/patch-analysiscards-truth.mjs
       - name: Assert source truth boundaries
         run: |
@@ -62,6 +63,10 @@ jobs:
             if(!src.includes('event.origin !== window.location.origin')) throw new Error(name+'_origin_check_missing');
             if(!src.includes('event.data?.sessionId !== sessionId')) throw new Error(name+'_session_binding_missing');
           }
+          const runIdx=audit.indexOf('async function runAuditExecution');
+          const completeIdx=audit.indexOf('const completeAuditPaymentSuccess');
+          const stageIdx=audit.indexOf('const stageAudit');
+          if(runIdx<0 || completeIdx<0 || stageIdx<0 || !(runIdx<completeIdx && runIdx<stageIdx)) throw new Error('audit_execution_order_invalid');
           if(!audit.includes('Audit intake verification failed. No report was opened.')) throw new Error('audit_fail_closed_redirect_boundary_missing');
           NODE
       - name: Targeted ESLint
