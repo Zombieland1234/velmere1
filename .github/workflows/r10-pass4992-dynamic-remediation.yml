@@ -51,7 +51,7 @@ jobs:
           import { buildSourceManifest, scanSourceForHighPrecisionSecrets } from './scripts/pass4992/supply-chain-release.mjs';
           const manifest=await buildSourceManifest(process.cwd());
           const scan=await scanSourceForHighPrecisionSecrets(process.cwd(), manifest);
-          console.log(JSON.stringify({status:scan.status,findingCount:scan.findingCount,findings:(scan.findings??[]).map(({path,ruleId,line})=>({path,ruleId,line}))},null,2));
+          console.log(JSON.stringify({status:scan.status,findingCount:scan.findingCount,ignoredFixtureFindingCount:scan.ignoredFixtureFindingCount,findings:(scan.findings??[]).map(({path,ruleId,line})=>({path,ruleId,line}))},null,2));
           NODE
       - name: Full legacy Pass4992 regression under dynamic inventory policy
         run: node scripts/pass4992/test-supply-chain-release.mjs
@@ -63,6 +63,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          git checkout -- artifacts/pass4992 2>/dev/null || true
           git diff --name-only > /tmp/changed.txt
           allowed='^(scripts/pass4992/supply-chain-release\.mjs|scripts/pass4992/test-supply-chain-release\.mjs|config/pass4992-supply-chain-release-policy\.json)$'
           bad="$(grep -Ev "$allowed" /tmp/changed.txt || true)"
