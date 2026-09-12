@@ -1,0 +1,87 @@
+name: R11 Red-Team Remediation Gate
+
+on:
+  push:
+    branches:
+      - r11-redteam-remediation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  remediation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Bind exact runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+      - name: Clean install
+        run: npm ci --ignore-scripts
+      - name: Red-team P0 regression canaries
+        run: node scripts/r11/redteam-p0-regressions.mjs
+      - name: NPM audit verifier adversarial canaries
+        run: node scripts/r11/test-npm-audit-verifier.mjs
+      - name: Strict dependency audit
+        run: |
+          mkdir -p artifacts/r11/redteam
+          set +e
+          npm audit --json > artifacts/r11/redteam/NPM_AUDIT.json
+          rc=$?
+          set -e
+          node scripts/r11/verify-npm-audit.mjs --file artifacts/r11/redteam/NPM_AUDIT.json --exit-code "$rc" --output artifacts/r11/redteam/NPM_AUDIT_VERDICT.json
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Security regression
+        run: npm run security:regression
+      - name: Source truth scan
+        run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r11/redteam/SOURCE_TRUTH.json
+      - name: Production build
+        run: npm run build
+      - name: Dirty source gate
+        run: |
+          git diff --exit-code -- . ':(exclude)next-env.d.ts'
+      - name: R11 remediation receipt
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r={
+            schemaVersion:'velmere.r11.redteam-remediation.v1',
+            sourceSha:process.env.GITHUB_SHA,
+            evidenceClass:'CURRENT_GIT_PROVEN_REMEDIATION',
+            coveredFindings:['VA-F01','VA-F02','VA-F03','VA-F04','VA-F05','VA-F07'],
+            p0RegressionCanaries:'PASS',
+            npmAuditVerifier:'FAIL_CLOSED',
+            typecheck:'PASS',
+            securityRegression:'PASS',
+            sourceTruthScan:'PASS',
+            productionBuild:'PASS',
+            exactR9ArchiveBoundInThisCiRun:false,
+            releaseAuthorityCredit:false,
+            officialRelease:false,
+            productionVerdict:'NO_GO_REMEDIATION_IN_PROGRESS'
+          };
+          fs.writeFileSync('artifacts/r11/redteam/RECEIPT.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r11-redteam-remediation-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: error
+          path: artifacts/r11/redteam/**
