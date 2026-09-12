@@ -20,7 +20,7 @@ env:
 jobs:
   lint-autofix:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - name: Checkout lint branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -56,23 +56,37 @@ jobs:
             console.log(JSON.stringify(summary,null,2));
           })().catch((e)=>{console.error(e);process.exit(1)});
           NODE
-      - name: Capture changed paths
+      - name: Capture and validate changed paths
         run: |
           mkdir -p artifacts/r10/lint-autofix
           git diff --name-only > artifacts/r10/lint-autofix/CHANGED_PATHS.txt
           git diff --stat > artifacts/r10/lint-autofix/DIFF_STAT.txt
           cat artifacts/r10/lint-autofix/DIFF_STAT.txt
+          node - <<'NODE'
+          const fs=require('fs');
+          const changed=fs.readFileSync('artifacts/r10/lint-autofix/CHANGED_PATHS.txt','utf8').trim().split(/\r?\n/).filter(Boolean);
+          const allowed=(p)=>/^(app|components|lib|config|types)\//.test(p)||['i18n.ts','navigation.ts','proxy.ts','routing.ts','next.config.mjs'].includes(p);
+          const bad=changed.filter((p)=>!allowed(p));
+          if(bad.length) throw new Error(`lint_autofix_write_scope_violation:${bad.join(',')}`);
+          console.log(JSON.stringify({changed},null,2));
+          NODE
       - name: Commit ESLint-owned fixes if any
         run: |
-          if git diff --quiet -- app components lib config types i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs; then
+          changed="$(git diff --name-only)"
+          if [ -z "$changed" ]; then
             echo "No ESLint-owned source fixes"
             exit 0
           fi
           git config user.name "velmere-r10-lint-autofix"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app components lib config types i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs 2>/dev/null || true
+          printf '%s\n' "$changed" | while IFS= read -r path; do [ -n "$path" ] && git add -- "$path"; done
+          git diff --cached --name-only
           git commit -m "fix(r10): apply eslint-owned release source autofixes [lint]"
           git push origin HEAD:r10-lint-remediation
+      - name: Direct TypeScript after autofix
+        run: npm run typecheck:direct
+      - name: Security regression after autofix
+        run: npm run security:regression
       - name: Upload lint autofix evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
