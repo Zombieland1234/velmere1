@@ -113,15 +113,16 @@ export function lintCanonicalReport(
 
   // --- CHECK 3: Wrong Asset-Class Sections ---
   const isEvm = assetClass === "evm_contract";
+  const evmOnlySectionIds = new Set<string>([
+    "advanced_bytecode_diff",
+    "contract_identity",
+    "advanced_formal_verification",
+    "advanced_contract_graph",
+    "advanced_evm_execution",
+  ]);
   for (const section of report.sections) {
     if (!isEvm) {
-      if (
-        section.id === "advanced_bytecode_diff" ||
-        section.id === "contract_identity" ||
-        section.id === "advanced_formal_verification" ||
-        section.id === "advanced_contract_graph" ||
-        section.id === "advanced_evm_execution"
-      ) {
+      if (evmOnlySectionIds.has(String(section.id))) {
         issues.push({
           code: "WRONG_ASSET_CLASS_SECTION",
           field: `sections.${section.id}`,
