@@ -59,19 +59,7 @@ jobs:
           if((v.high||0)>0 || (v.critical||0)>0) throw new Error('high_or_critical_dependency_vulnerability:'+JSON.stringify(v));
           NODE
       - name: Release-source lint denominator
-        run: |
-          git ls-files -z 'app/**' 'components/**' 'lib/**' 'config/**' 'types/**' i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs \
-            | xargs -0 --no-run-if-empty npx eslint --format json --no-error-on-unmatched-pattern \
-            > artifacts/r10/integration/build/RELEASE_LINT.json || true
-          node - <<'NODE'
-          const fs=require('fs');
-          const rows=JSON.parse(fs.readFileSync('artifacts/r10/integration/build/RELEASE_LINT.json','utf8'));
-          const s=rows.reduce((a,r)=>{a.files++;a.errors+=r.errorCount||0;a.warnings+=r.warningCount||0;return a},{files:0,errors:0,warnings:0});
-          s.scope=['app/**','components/**','lib/**','config/**','types/**','i18n.ts','navigation.ts','proxy.ts','routing.ts','next.config.mjs'];
-          fs.writeFileSync('artifacts/r10/integration/build/RELEASE_LINT_SUMMARY.json',JSON.stringify(s,null,2)+'\n');
-          console.log(JSON.stringify(s,null,2));
-          if(s.errors!==0) throw new Error('release_lint_errors_nonzero');
-          NODE
+        run: node scripts/r10/run-release-source-lint.mjs --output artifacts/r10/integration/build/RELEASE_LINT.json --summary artifacts/r10/integration/build/RELEASE_LINT_SUMMARY.json
       - name: Direct TypeScript
         run: npm run typecheck:direct
       - name: Production build
