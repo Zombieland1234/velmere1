@@ -3,7 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const SCHEMA = "velmere.r11.workflow-semantic-policy.v1";
+export const SCHEMA = "velmere.r11.workflow-semantic-policy.v2";
+
+const PERMISSION_SCOPES = new Set([
+  "actions", "checks", "contents", "deployments", "id-token", "issues", "packages", "pages",
+  "pull-requests", "repository-projects", "security-events", "statuses",
+]);
 
 function unquote(value) {
   const v = value.trim();
@@ -36,66 +41,137 @@ function validLocalReference(value) {
   return relative.length > 0 && relative !== "." && !relative.startsWith("../") && !path.posix.isAbsolute(relative);
 }
 
+function decodeKeyToken(raw) {
+  const token = raw.trim();
+  if (token.startsWith('"')) {
+    try {
+      const value = JSON.parse(token);
+      return typeof value === "string" ? value : null;
+    } catch {
+      return null;
+    }
+  }
+  if (token.startsWith("'")) {
+    if (!token.endsWith("'")) return null;
+    return token.slice(1, -1).replace(/''/gu, "'");
+  }
+  return token;
+}
+
+function parseBlockMapping(clean) {
+  const match = clean.match(/^\s*(?:-\s*)?((?:"(?:[^"\\]|\\.)*")|(?:'(?:[^']|'')*')|(?:[A-Za-z0-9_-]+))\s*:\s*(.*)$/u);
+  if (!match) return null;
+  const key = decodeKeyToken(match[1]);
+  return key === null ? { invalidKey: true, rawKey: match[1], value: match[2] } : { key, value: match[2] };
+}
+
+function withoutExpressions(clean) {
+  return clean.replace(/\$\{\{.*?\}\}/gu, "EXPR");
+}
+
+function countPotentialUsesKeys(clean) {
+  const source = withoutExpressions(clean);
+  const matches = source.match(/(?:^|[\s{,])(?:uses|"uses"|'uses')\s*:/gu);
+  return matches ? matches.length : 0;
+}
+
 export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
   const blockers = [];
   const uses = [];
   const reusableWorkflows = [];
   const permissionWrites = [];
   const lines = text.split(/\r?\n/u);
+  let potentialUsesKeyCount = 0;
 
   if (/^\s*<<\s*:/mu.test(text)) blockers.push(`${workflowPath}:yaml_merge_key_forbidden`);
   if (/(?:^|[\s:[,{])&[A-Za-z0-9_-]+/mu.test(text) || /(?:^|[\s:[,{])\*[A-Za-z0-9_-]+/mu.test(text)) blockers.push(`${workflowPath}:yaml_anchor_or_alias_forbidden`);
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    const lineNo = index + 1;
     if (indentOf(line) < 0) {
-      blockers.push(`${workflowPath}:${index + 1}:tab_indentation_forbidden`);
+      blockers.push(`${workflowPath}:${lineNo}:tab_indentation_forbidden`);
       continue;
     }
+
     const clean = stripComment(line);
-    const usesMatch = clean.match(/^\s*(?:-\s*)?uses\s*:\s*(.*)$/u);
-    if (usesMatch) {
-      const raw = usesMatch[1].trim();
+    if (!clean.trim()) continue;
+    potentialUsesKeyCount += countPotentialUsesKeys(clean);
+
+    if (/^\s*\?/u.test(clean)) blockers.push(`${workflowPath}:${lineNo}:explicit_mapping_key_forbidden`);
+    if (/^\s*(?:-\s*)?!/u.test(clean)) blockers.push(`${workflowPath}:${lineNo}:yaml_tag_forbidden`);
+
+    const structural = withoutExpressions(clean);
+    if (/\{[^}]*?(?:uses|"uses"|'uses')\s*:/u.test(structural)) {
+      blockers.push(`${workflowPath}:${lineNo}:flow_mapping_uses_forbidden`);
+    }
+    if (/(?:permissions|"permissions"|'permissions')\s*:\s*\{/u.test(structural)) {
+      blockers.push(`${workflowPath}:${lineNo}:flow_mapping_permissions_forbidden`);
+      if (/\b(?:actions|checks|contents|deployments|id-token|issues|packages|pages|pull-requests|repository-projects|security-events|statuses)\s*:\s*write\b/u.test(structural)) {
+        blockers.push(`${workflowPath}:${lineNo}:flow_mapping_write_permission_forbidden`);
+      }
+    }
+
+    const mapping = parseBlockMapping(clean);
+    if (mapping?.invalidKey) {
+      blockers.push(`${workflowPath}:${lineNo}:unsupported_mapping_key`);
+      continue;
+    }
+    if (!mapping) continue;
+
+    const key = mapping.key;
+    if (key === "uses") {
+      const raw = mapping.value.trim();
       if (!raw || raw === "|" || raw === ">") {
-        blockers.push(`${workflowPath}:${index + 1}:uses_must_be_plain_scalar`);
+        blockers.push(`${workflowPath}:${lineNo}:uses_must_be_plain_scalar`);
         continue;
       }
       const value = unquote(raw);
-      if (/\$\{\{/u.test(value)) blockers.push(`${workflowPath}:${index + 1}:dynamic_uses_forbidden`);
-      if (/\s/u.test(value)) blockers.push(`${workflowPath}:${index + 1}:uses_contains_whitespace`);
-      const row = { line: index + 1, value };
+      if (/\$\{\{/u.test(value)) blockers.push(`${workflowPath}:${lineNo}:dynamic_uses_forbidden`);
+      if (/\s/u.test(value)) blockers.push(`${workflowPath}:${lineNo}:uses_contains_whitespace`);
+      const row = { line: lineNo, value };
       uses.push(row);
 
       if (value.startsWith("./")) {
-        if (!validLocalReference(value)) blockers.push(`${workflowPath}:${index + 1}:local_uses_path_invalid`);
+        if (!validLocalReference(value)) blockers.push(`${workflowPath}:${lineNo}:local_uses_path_invalid`);
         const target = path.join(root, value.slice(2));
         if (value.startsWith("./.github/workflows/")) {
           reusableWorkflows.push({ ...row, kind: "LOCAL_REUSABLE" });
-          if (!fs.existsSync(target) || !fs.statSync(target).isFile()) blockers.push(`${workflowPath}:${index + 1}:local_reusable_missing:${value}`);
+          if (!fs.existsSync(target) || !fs.statSync(target).isFile()) blockers.push(`${workflowPath}:${lineNo}:local_reusable_missing:${value}`);
         } else if (!fs.existsSync(target)) {
-          blockers.push(`${workflowPath}:${index + 1}:local_action_missing:${value}`);
+          blockers.push(`${workflowPath}:${lineNo}:local_action_missing:${value}`);
         }
       } else {
         const match = value.match(/^([^@]+)@([a-f0-9]{40})$/u);
-        if (!match) blockers.push(`${workflowPath}:${index + 1}:external_uses_not_full_sha_pinned:${value}`);
+        if (!match) blockers.push(`${workflowPath}:${lineNo}:external_uses_not_full_sha_pinned:${value}`);
         if (value.includes("/.github/workflows/")) reusableWorkflows.push({ ...row, kind: "REMOTE_REUSABLE" });
       }
+      continue;
     }
 
-    const permissionsScalar = clean.match(/^\s*permissions\s*:\s*(.+)$/u);
-    if (permissionsScalar) {
-      const scalar = unquote(permissionsScalar[1]);
-      if (scalar === "write-all") blockers.push(`${workflowPath}:${index + 1}:permissions_write_all_forbidden`);
-      if (/\$\{\{/u.test(scalar)) blockers.push(`${workflowPath}:${index + 1}:dynamic_permissions_forbidden`);
+    if (key === "permissions") {
+      const scalar = unquote(mapping.value);
+      if (scalar === "write-all") blockers.push(`${workflowPath}:${lineNo}:permissions_write_all_forbidden`);
+      if (/\$\{\{/u.test(scalar)) blockers.push(`${workflowPath}:${lineNo}:dynamic_permissions_forbidden`);
+      continue;
     }
 
-    const permissionMatch = clean.match(/^\s*(actions|checks|contents|deployments|id-token|issues|packages|pages|pull-requests|repository-projects|security-events|statuses)\s*:\s*(read|write|none)\s*$/u);
-    if (permissionMatch && permissionMatch[2] === "write") permissionWrites.push({ line: index + 1, scope: permissionMatch[1] });
+    if (PERMISSION_SCOPES.has(key)) {
+      const permission = unquote(mapping.value.trim());
+      if (permission === "write") permissionWrites.push({ line: lineNo, scope: key });
+    }
   }
 
-  const textualUsesKeyCount = lines.filter((line) => /^\s*(?:-\s*)?uses\s*:/u.test(stripComment(line))).length;
-  if (uses.length !== textualUsesKeyCount) blockers.push(`${workflowPath}:uses_coverage_mismatch:${uses.length}/${textualUsesKeyCount}`);
-  return { workflowPath, semanticUsesCount: uses.length, textualUsesKeyCount, uses, reusableWorkflows, permissionWrites, blockers: [...new Set(blockers)].sort() };
+  if (uses.length !== potentialUsesKeyCount) blockers.push(`${workflowPath}:uses_coverage_mismatch:${uses.length}/${potentialUsesKeyCount}`);
+  return {
+    workflowPath,
+    semanticUsesCount: uses.length,
+    textualUsesKeyCount: potentialUsesKeyCount,
+    uses,
+    reusableWorkflows,
+    permissionWrites,
+    blockers: [...new Set(blockers)].sort(),
+  };
 }
 
 export function verifyWorkflowSemantics(root = process.cwd()) {
@@ -107,7 +183,7 @@ export function verifyWorkflowSemantics(root = process.cwd()) {
   return {
     schemaVersion: SCHEMA,
     sourceSha: process.env.GITHUB_SHA || null,
-    parserMode: "FAIL_CLOSED_GITHUB_ACTIONS_SEMANTIC_SUBSET",
+    parserMode: "FAIL_CLOSED_GITHUB_ACTIONS_SEMANTIC_SUBSET_V2",
     workflowCount: files.length,
     workflowFiles: files,
     usesCount: workflows.reduce((n, row) => n + row.semanticUsesCount, 0),
@@ -116,7 +192,7 @@ export function verifyWorkflowSemantics(root = process.cwd()) {
     workflows,
     blockers: [...new Set(blockers)].sort(),
     passed: blockers.length === 0,
-    truthBoundary: "Strict GitHub Actions semantic subset: every uses key must resolve to a plain scalar; remote action/reusable-workflow refs require full commit SHAs; local targets must exist; write permissions are inventoried; dynamic uses/permissions and YAML anchors/merge keys fail closed. This does not claim to be a general-purpose YAML parser.",
+    truthBoundary: "Strict GitHub Actions semantic subset v2: block and quoted uses keys are covered; security-sensitive flow mappings are rejected; every remote action/reusable-workflow ref requires a full commit SHA; local targets must exist; write permissions are inventoried; dynamic uses/permissions, YAML anchors/merge keys, explicit keys and tags fail closed. This is not a general-purpose YAML parser and does not yet recursively verify dependencies inside local composite actions.",
   };
 }
 
