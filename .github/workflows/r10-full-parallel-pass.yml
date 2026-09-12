@@ -88,10 +88,13 @@ jobs:
           package-manager-cache: false
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
-      - name: Install deterministic PDF raster dependency
+      - name: Install deterministic PDF raster dependencies
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils
           python3 -m pip install --disable-pip-version-check --no-input Pillow==11.3.0
           command -v pdftoppm
+          pdftoppm -v
           python3 -c 'from PIL import Image; print(Image.__version__)'
       - name: Re-run R10 PDF geometry and truth regression
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-pdf-truth-layout.ts
