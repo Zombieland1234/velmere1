@@ -1,0 +1,117 @@
+name: R10 Real Markets Truth Migration
+
+on:
+  push:
+    branches:
+      - r10-candidate-truth-build
+    paths:
+      - scripts/r10/migrate-corpus-truth-v3.mjs
+      - .github/workflows/r10-real-markets-truth-migration.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r10-real-markets-truth-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  migrate:
+    name: Canonicalize 20 Real Markets instruments x 3 tiers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate for guarded corpus commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+
+      - name: Verify exact bundled toolchain
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+
+      - name: Run existing synthetic 180-report migration regression
+        run: node scripts/r10/test-corpus-truth-migration.mjs
+
+      - name: Preflight v3 against current corpus without retaining writes
+        run: node scripts/r10/migrate-corpus-truth-v3.mjs --output artifacts/r10/R10_REAL_MARKETS_V3_PREFLIGHT.json
+
+      - name: Apply reviewed v3 corpus migration
+        run: node scripts/r10/migrate-corpus-truth-v3.mjs --write --output artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_RECEIPT.json
+
+      - name: Require byte-idempotent second v3 pass
+        run: |
+          node scripts/r10/migrate-corpus-truth-v3.mjs --write --output artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_IDEMPOTENCE.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const receipt = JSON.parse(fs.readFileSync('artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_IDEMPOTENCE.json', 'utf8'));
+          if (receipt.changedFiles !== 0 || receipt.beforeDigest !== receipt.afterDigest) {
+            console.error(JSON.stringify({ changedFiles: receipt.changedFiles, beforeDigest: receipt.beforeDigest, afterDigest: receipt.afterDigest }, null, 2));
+            process.exit(1);
+          }
+          console.log('R10 v3 corpus migration second pass is byte-idempotent: PASS');
+          NODE
+
+      - name: Full truth scan after Real Markets migration
+        shell: bash
+        run: |
+          set +e
+          node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/R10_RELEASE_TRUTH_AFTER_REAL_MARKETS.json
+          scanner_exit=$?
+          set -e
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const receipt = JSON.parse(fs.readFileSync('artifacts/r10/R10_RELEASE_TRUTH_AFTER_REAL_MARKETS.json', 'utf8'));
+          const findings = receipt.findings ?? [];
+          const rm = findings.filter((finding) => finding.path?.startsWith('reports/real_markets/') || String(finding.id).startsWith('REAL_MARKETS_'));
+          if (rm.length !== 0) {
+            console.error(`Real Markets truth blockers remain: ${rm.length}`);
+            console.error(JSON.stringify(rm.slice(0, 12), null, 2));
+            process.exit(1);
+          }
+          const p0 = receipt.counts?.p0 ?? findings.filter((finding) => finding.severity === 'P0').length;
+          if (p0 > 34) {
+            console.error(`Expected Real Markets cleanup to reduce global P0 to <=34; observed ${p0}`);
+            process.exit(1);
+          }
+          console.log(`R10 Real Markets targeted truth closure: PASS; remaining global P0=${p0}; fullScannerExit=${process.env.SCANNER_EXIT ?? 'nonzero allowed for remaining non-RM blockers'}`);
+          NODE
+          echo "Full scanner exit=${scanner_exit}; non-Real-Markets blockers remain release-blocking."
+
+      - name: Commit canonicalized reports and receipts
+        run: |
+          git config user.name "velmere-r10-real-markets-migrator"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/smart_contract reports/shield reports/real_markets artifacts/r10/R10_REAL_MARKETS_V3_PREFLIGHT.json artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_RECEIPT.json artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_IDEMPOTENCE.json artifacts/r10/R10_RELEASE_TRUTH_AFTER_REAL_MARKETS.json
+          if git diff --cached --quiet; then
+            echo "No migration changes to commit."
+            exit 0
+          fi
+          git commit -m "fix(r10): canonicalize real-markets identities [r10-real-markets]"
+          git push origin HEAD:r10-candidate-truth-build
+
+      - name: Upload migration receipts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r10-real-markets-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/r10/R10_REAL_MARKETS_V3_PREFLIGHT.json
+            artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_RECEIPT.json
+            artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_V3_IDEMPOTENCE.json
+            artifacts/r10/R10_RELEASE_TRUTH_AFTER_REAL_MARKETS.json
