@@ -71,10 +71,6 @@ patch("lib/security/unified-audit-pipeline.ts", [
   ["        let invStatus: FormalInvariantRecord[\"status\"] = \"UNKNOWN\";", "        let invStatus: FormalInvariantRecord[\"status\"];", "invariant_status_definite_assignment"],
 ]);
 
-patch("lib/server/market-integrity-route-modules/investigator.ts", [
-  ["  let marketRow = null;", "  let marketRow: Awaited<ReturnType<ShieldMapResolutionProviders[\"searchMarket\"]>> | null;", "market_row_definite_assignment"],
-]);
-
 patch("lib/server/search-route-modules/lens-report.ts", [
   ["  let deliveryBinding: R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding | null = null;", "  let deliveryBinding: R7BrowserEcbDeliveryBinding | BrowserDerivedDeliveryBinding | null;", "delivery_binding_definite_assignment"],
 ]);
@@ -91,4 +87,4 @@ patch("lib/server/search-route-modules/lens-report.ts", [
   fs.writeFileSync(file, src);
 }
 
-console.log(JSON.stringify({ status: "PATCHED", classification: "SEMANTIC_LINT_REMEDIATION_PENDING_VERIFICATION" }, null, 2));
+console.log(JSON.stringify({ status: "PATCHED", classification: "SEMANTIC_LINT_REMEDIATION_PENDING_VERIFICATION", investigatorOwnedBy: "r10-live-fallback-truth" }, null, 2));
