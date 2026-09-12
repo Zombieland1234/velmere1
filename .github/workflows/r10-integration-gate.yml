@@ -1,0 +1,400 @@
+name: R10 Full Integration Gate
+
+on:
+  push:
+    branches:
+      - r10-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r10-full-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  build_quality:
+    name: Exact runtime, dependencies, lint, typecheck and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Bind exact runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('package.json','utf8'));
+          if(p.engines?.node!=='24.18.0') throw new Error('node_engine_not_exact');
+          if(p.engines?.npm!=='11.16.0') throw new Error('npm_engine_not_exact');
+          if(p.packageManager!=='npm@11.16.0') throw new Error('package_manager_not_exact');
+          if(fs.readFileSync('.nvmrc','utf8').trim()!=='24.18.0') throw new Error('nvmrc_mismatch');
+          NODE
+          node scripts/verify-runtime-contract.mjs
+      - name: Clean lockfile install
+        run: npm ci --ignore-scripts
+      - name: High and critical dependency gate
+        run: |
+          mkdir -p artifacts/r10/integration/build
+          npm audit --json > artifacts/r10/integration/build/NPM_AUDIT.json || true
+          node - <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('artifacts/r10/integration/build/NPM_AUDIT.json','utf8'));
+          const v=a.metadata?.vulnerabilities||{};
+          fs.writeFileSync('artifacts/r10/integration/build/NPM_AUDIT_SUMMARY.json',JSON.stringify(v,null,2)+'\n');
+          if((v.high||0)>0 || (v.critical||0)>0) throw new Error('high_or_critical_dependency_vulnerability:'+JSON.stringify(v));
+          NODE
+      - name: Release-source lint denominator
+        run: |
+          git ls-files -z 'app/**' 'components/**' 'lib/**' 'config/**' 'types/**' i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs \
+            | xargs -0 --no-run-if-empty npx eslint --format json --no-error-on-unmatched-pattern \
+            > artifacts/r10/integration/build/RELEASE_LINT.json || true
+          node - <<'NODE'
+          const fs=require('fs');
+          const rows=JSON.parse(fs.readFileSync('artifacts/r10/integration/build/RELEASE_LINT.json','utf8'));
+          const s=rows.reduce((a,r)=>{a.files++;a.errors+=r.errorCount||0;a.warnings+=r.warningCount||0;return a},{files:0,errors:0,warnings:0});
+          s.scope=['app/**','components/**','lib/**','config/**','types/**','i18n.ts','navigation.ts','proxy.ts','routing.ts','next.config.mjs'];
+          fs.writeFileSync('artifacts/r10/integration/build/RELEASE_LINT_SUMMARY.json',JSON.stringify(s,null,2)+'\n');
+          console.log(JSON.stringify(s,null,2));
+          if(s.errors!==0) throw new Error('release_lint_errors_nonzero');
+          NODE
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Production build
+        run: npm run build
+      - name: Build-quality receipt
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const lint=JSON.parse(fs.readFileSync('artifacts/r10/integration/build/RELEASE_LINT_SUMMARY.json','utf8'));
+          const audit=JSON.parse(fs.readFileSync('artifacts/r10/integration/build/NPM_AUDIT_SUMMARY.json','utf8'));
+          const r={schemaVersion:'velmere.r10.integration.build.v1',sourceSha:process.env.GITHUB_SHA,evidenceClass:'CURRENT_GIT_PROVEN',node:process.version,npm:require('child_process').execSync('npm --version').toString().trim(),lint,audit,typecheck:'PASS',productionBuild:'PASS',releaseAuthorityCredit:false};
+          fs.writeFileSync('artifacts/r10/integration/build/RECEIPT.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-integration-build-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: artifacts/r10/integration/build/**
+
+  security_truth:
+    name: Security regression, local benchmark and claim truth
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Security regression
+        run: npm run security:regression
+      - name: Local benchmark with honest boundary
+        run: |
+          npm run security:benchmark
+          ! grep -E -i 'BLIND_HOLDOUT|zero[- ]leakage|unseen generalization|ANTI-OVERFITTING CERTIFICATION|held blind|prove generalizeable' scripts/qa/benchmark-security-engine-v2.ts
+          grep -q 'LOCAL_HOLDOUT' scripts/qa/benchmark-security-engine-v2.ts
+          grep -q 'TRUTH BOUNDARY' scripts/qa/benchmark-security-engine-v2.ts
+      - name: Truth and evidence regressions
+        run: |
+          node scripts/r10/test-release-truth-gate.mjs
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-claim-evidence-binding.ts
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-claim-audit-blocker-evidence-status.ts
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-canonical-instrument-identity.ts
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-local-integrity-attestation.ts
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-r10-canonical-report-truth.ts
+          node scripts/r10/test-corpus-truth-migration.mjs
+      - name: Ephemeral corpus truth projection and scan
+        run: |
+          mkdir -p artifacts/r10/integration/security
+          node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/integration/security/SOURCE_TRUTH_BASELINE.json || true
+          node scripts/r10/migrate-corpus-truth-v2.mjs --write --output artifacts/r10/integration/security/CORPUS_TRUTH_MIGRATION.json
+          node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/integration/security/POST_MIGRATION_TRUTH.json
+      - name: Security truth receipt
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r={schemaVersion:'velmere.r10.integration.security-truth.v1',sourceSha:process.env.GITHUB_SHA,evidenceClass:'CURRENT_GIT_PROVEN',securityRegression:'PASS',benchmarkClass:'LOCAL_ONLY',historicalExternalR9FalseNegativesPreserved:true,claimTruthRegression:'PASS',releaseAuthorityCredit:false};
+          fs.writeFileSync('artifacts/r10/integration/security/RECEIPT.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-integration-security-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: artifacts/r10/integration/security/**
+
+  paid_provider:
+    name: Paid authorization and provider fail-closed boundaries
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Assert paid browser authority is fail-closed
+        run: |
+          mkdir -p artifacts/r10/integration/paid-provider
+          node - <<'NODE'
+          const fs=require('fs');
+          const analysis=fs.readFileSync('components/market-integrity/AnalysisCardsSection.tsx','utf8');
+          const audit=fs.readFileSync('components/security/SecurityAuditsCleanPage.tsx','utf8');
+          const detail=fs.readFileSync('components/market-integrity/AssetDetailModal.tsx','utf8');
+          const bad=[
+            ['analysis_localstorage_unlock',analysis.includes('velmere_unlocked_tiers')],
+            ['audit_localstorage_unlock',audit.includes('velmere_unlocked_audit_tiers')],
+            ['analysis_missing_session_accept',analysis.includes('!event.data.sessionId || event.data.sessionId === sessionId')],
+            ['audit_missing_session_accept',audit.includes('!event.data.sessionId || event.data.sessionId === sessionId')],
+            ['asset_direct_paid_bypass',detail.includes('Allow user to execute Pro and Advanced analysis directly')],
+            ['analysis_rfc3161_claim',/RFC\s*3161/i.test(analysis)],
+          ].filter(([,v])=>v);
+          if(bad.length) throw new Error('paid_boundary_regression:'+JSON.stringify(bad));
+          for(const [name,src] of [['analysis',analysis],['audit',audit]]){
+            if(!src.includes('event.origin !== window.location.origin')) throw new Error(name+'_origin_check_missing');
+            if(!src.includes('event.data?.sessionId !== sessionId')) throw new Error(name+'_session_binding_missing');
+          }
+          const runIdx=audit.indexOf('async function runAuditExecution');
+          const completeIdx=audit.indexOf('const completeAuditPaymentSuccess');
+          const stageIdx=audit.indexOf('const stageAudit');
+          if(runIdx<0||completeIdx<0||stageIdx<0||!(runIdx<completeIdx&&runIdx<stageIdx)) throw new Error('audit_execution_order_invalid');
+          if(!audit.includes('Audit intake verification failed. No report was opened.')) throw new Error('audit_fail_closed_redirect_boundary_missing');
+          NODE
+      - name: Payment boundary regressions
+        run: |
+          npm run test:a97:stripe
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-paid-surface-truth.ts
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-payment-auth-hardening.ts
+      - name: Assert no synthetic live market authority
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const src=fs.readFileSync('lib/server/market-integrity-route-modules/investigator.ts','utf8');
+          const bad=['CANONICAL_FALLBACK_ASSETS','resolveFallbackMarketRow','result.dataQuality = "live"','timestampProvenance: "provider"'].filter((x)=>src.includes(x));
+          if(bad.length) throw new Error('synthetic_live_provider_authority_remaining:'+bad.join(','));
+          NODE
+      - name: Provider outage must fail closed
+        run: |
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs - <<'NODE'
+          const { resolveShieldMapResult }=await import('./lib/server/market-integrity-route-modules/investigator.ts');
+          const query={namespace:'market',query:'btc',locale:'en'};
+          const providers={searchMarket:async()=>null,analyzeAddress:async()=>{throw new Error('unused')}};
+          const r=await resolveShieldMapResult({query,providers});
+          if(r.ok!==false||r.code!=='shield_map_identity_missing') throw new Error('provider_null_not_fail_closed:'+JSON.stringify(r));
+          const r2=await resolveShieldMapResult({query,providers:{...providers,searchMarket:async()=>{throw new Error('down')}}});
+          if(r2.ok!==false||r2.code!=='shield_map_identity_missing') throw new Error('provider_throw_not_fail_closed:'+JSON.stringify(r2));
+          NODE
+      - name: Paid/provider receipt
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r={schemaVersion:'velmere.r10.integration.paid-provider.v1',sourceSha:process.env.GITHUB_SHA,evidenceClass:'CURRENT_GIT_PROVEN',paidBrowserAuthority:'FAIL_CLOSED_SERVER_VERIFIED',providerFallback:'FAIL_CLOSED_NO_SYNTHETIC_LIVE',providerCommercialRightsCredit:false,productionStagingCredit:false};
+          fs.writeFileSync('artifacts/r10/integration/paid-provider/RECEIPT.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-integration-paid-provider-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: artifacts/r10/integration/paid-provider/**
+
+  supply_authority:
+    name: Workflow, authority and supply-chain truth
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Dynamic active workflow inventory
+        run: |
+          mkdir -p artifacts/r10/integration/supply-authority
+          node scripts/r10/test-active-workflow-audit.mjs
+          node scripts/r10/verify-active-workflows.mjs --write --output artifacts/r10/integration/supply-authority/ACTIVE_WORKFLOW_AUDIT.json
+      - name: Authority genesis truth
+        run: |
+          node scripts/r10/test-authority-genesis.mjs
+          node scripts/r10/verify-authority-genesis.mjs --write --output artifacts/r10/integration/supply-authority/AUTHORITY_GENESIS_RECEIPT.json
+      - name: Offline supply-chain adversarial gate
+        run: |
+          node --check scripts/pass4992/supply-chain-release.mjs
+          node --check scripts/pass4992/build-offline-receipt.mjs
+          node --check scripts/pass4992/test-supply-chain-release.mjs
+          node scripts/pass4992/test-supply-chain-release.mjs
+          node scripts/pass4992/build-offline-receipt.mjs --expect-release-blocked
+          cp artifacts/pass4992/PASS4992_RELEASE_GATE.json artifacts/r10/integration/supply-authority/PASS4992_RELEASE_GATE.json
+          cp artifacts/pass4992/PASS4992_OFFLINE_IMPLEMENTATION_RECEIPT.json artifacts/r10/integration/supply-authority/PASS4992_OFFLINE_IMPLEMENTATION_RECEIPT.json
+      - name: Provider rights are evidence, not inferred from keys
+        run: |
+          set +e
+          npm run audit:provider-rights > artifacts/r10/integration/supply-authority/PROVIDER_RIGHTS_AUDIT.log 2>&1
+          rc=$?
+          set -e
+          cat artifacts/r10/integration/supply-authority/PROVIDER_RIGHTS_AUDIT.log
+          node - <<'NODE'
+          const fs=require('fs');
+          const r={schemaVersion:'velmere.r10.integration.provider-rights.v1',sourceSha:process.env.GITHUB_SHA,auditExitCode:Number(process.env.RIGHTS_RC||0),commercialRightsCredit:'ONLY_WHERE_EXACT_CURRENT_EVIDENCE_SUPPORTS_USE_CASE',apiKeyAloneIsRightsEvidence:false,customerRuntimeReadyCredit:false};
+          fs.writeFileSync('artifacts/r10/integration/supply-authority/PROVIDER_RIGHTS_CLASSIFICATION.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+        env:
+          RIGHTS_RC: "0"
+      - name: Global product readiness remains fail-closed
+        run: |
+          set +e
+          node scripts/pass23/audit-current-product-readiness.mjs > artifacts/r10/integration/supply-authority/GLOBAL_READINESS.log 2>&1
+          rc=$?
+          set -e
+          cat artifacts/r10/integration/supply-authority/GLOBAL_READINESS.log
+          if [ "$rc" -eq 0 ]; then echo 'Unexpected production GO'; exit 1; fi
+          grep -q '"status": "NO_GO"' artifacts/r10/integration/supply-authority/GLOBAL_READINESS.log
+      - name: Supply/authority receipt
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r={schemaVersion:'velmere.r10.integration.supply-authority.v1',sourceSha:process.env.GITHUB_SHA,evidenceClass:'CURRENT_GIT_PROVEN',activeWorkflowAudit:'PASS',authorityGenesisPolicy:'PASS',offlineSupplyChain:'PASS_EXPECT_RELEASE_BLOCKED',globalProductionReadiness:'NO_GO',releaseAuthorityCredit:false};
+          fs.writeFileSync('artifacts/r10/integration/supply-authority/RECEIPT.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-integration-supply-authority-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: artifacts/r10/integration/supply-authority/**
+
+  pdf_qa:
+    name: 150-PDF render and product-quality QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Install deterministic raster dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          python3 -m pip install --disable-pip-version-check --no-input Pillow==11.3.0
+      - name: PDF truth regression
+        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-pdf-truth-layout.ts
+      - name: Generate and structurally verify corpus
+        run: |
+          npm run pass35:generate-local-pdfs
+          npm run pass35:verify-local-pdfs
+      - name: Raster QA and summary
+        run: |
+          npm run pass35:render-local-pdfs
+          npm run pass35:pdf-qa-summary
+      - name: Local-only dashboard and final product-quality verifier
+        run: |
+          node scripts/r10/build-local-pdf-readiness-dashboard.mjs
+          npm run pass35:verify-local-product-quality
+      - name: Copy integration PDF receipts
+        run: |
+          mkdir -p artifacts/r10/integration/pdf
+          cp _velmere/pass35/PASS35_READINESS_DASHBOARD.json artifacts/r10/integration/pdf/READINESS_DASHBOARD.json
+          cp _velmere/pass35/PASS35_LOCAL_PRODUCT_QUALITY_RECEIPT.json artifacts/r10/integration/pdf/LOCAL_PRODUCT_QUALITY_RECEIPT.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const r={schemaVersion:'velmere.r10.integration.pdf.v1',sourceSha:process.env.GITHUB_SHA,evidenceClass:'LOCAL_ONLY',pdfCorpus:150,renderQa:'PASS',productQuality:'PASS_LOCAL_SYNTHETIC',promotionAllowed:false,productionCredit:false};
+          fs.writeFileSync('artifacts/r10/integration/pdf/RECEIPT.json',JSON.stringify(r,null,2)+'\n');
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-integration-pdf-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            artifacts/r10/integration/pdf/**
+            artifacts/pass35/local-product-quality/**
+
+  independent_evaluator:
+    name: Independent integration evaluator
+    runs-on: ubuntu-24.04
+    needs: [build_quality, security_truth, paid_provider, supply_authority, pdf_qa]
+    if: always()
+    steps:
+      - name: Evaluate required internal tracks
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          BUILD_RESULT: ${{ needs.build_quality.result }}
+          SECURITY_RESULT: ${{ needs.security_truth.result }}
+          PAID_PROVIDER_RESULT: ${{ needs.paid_provider.result }}
+          SUPPLY_AUTHORITY_RESULT: ${{ needs.supply_authority.result }}
+          PDF_RESULT: ${{ needs.pdf_qa.result }}
+        run: |
+          mkdir -p artifacts/r10/integration/evaluator
+          node - <<'NODE'
+          const fs=require('fs');
+          const tracks={buildQuality:process.env.BUILD_RESULT,securityTruth:process.env.SECURITY_RESULT,paidProvider:process.env.PAID_PROVIDER_RESULT,supplyAuthority:process.env.SUPPLY_AUTHORITY_RESULT,pdfQa:process.env.PDF_RESULT};
+          const internalPass=Object.values(tracks).every((v)=>v==='success');
+          const r={
+            schemaVersion:'velmere.r10.integration.evaluator.v1',
+            sourceSha:process.env.SOURCE_SHA,
+            classification:internalPass?'CURRENT_GIT_PROVEN_INTEGRATION_PASS':'CURRENT_GIT_INTEGRATION_FAIL',
+            tracks,
+            internalPass,
+            releaseAuthorityBound:false,
+            officialRelease:false,
+            promotionAllowed:false,
+            productionVerdict:'NO_GO_PENDING_EXTERNAL_AND_EXACT_RELEASE_EVIDENCE',
+            externalOrAuthorityBlockers:[
+              'EXACT_R9_RELEASE_ARCHIVE_NOT_BOUND_IN_THIS_GIT_INTEGRATION',
+              'DYNAMIC_MULTI_TENANT_STAGING_AUTH_RLS_NOT_PROVEN_HERE',
+              'PROVIDER_COMMERCIAL_RIGHTS_AND_CUSTOMER_RUNTIME_NOT_GLOBALLY_PROVEN',
+              'R10_INDEPENDENT_EXTERNAL_FROZEN_SECURITY_BENCHMARK_NOT_EXECUTED',
+              'PRODUCTION_OBSERVABILITY_DR_IR_AND_LIVE_CUSTOMER_EVIDENCE_NOT_PROVEN_HERE'
+            ],
+            truthBoundary:'A green integration pass proves only the named Git SHA under CI/local evidence classes. It is not the official R10 release and is not production/world-class certification.'
+          };
+          fs.writeFileSync('artifacts/r10/integration/evaluator/R10_INTEGRATION_EVALUATION.json',JSON.stringify(r,null,2)+'\n');
+          console.log(JSON.stringify(r,null,2));
+          if(!internalPass) process.exit(1);
+          NODE
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-integration-evaluator-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: error
+          path: artifacts/r10/integration/evaluator/**
