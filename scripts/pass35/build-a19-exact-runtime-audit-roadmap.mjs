@@ -155,7 +155,7 @@ for (const row of status.rows) {
     row.missing = ["actual Node 24.18.0 archive in execution environment", "actual npm 11.16.0 archive plus verified registry integrity/signature", "complete exact-runtime command execution on final source bytes", "hash-bound clean-machine logs"];
     row.blocker = "TOOLCHAIN_ARCHIVES_AND_EXACT_EXECUTION_UNAVAILABLE_IN_CURRENT_ENVIRONMENT";
     row.nextAction = "Supply the pinned runtime archives, verify their upstream integrity, then execute the complete A19 matrix on frozen final bytes without source mutation.";
-    row.sellImpact = "A19 upgrades exact runtime from pin-only NOT_DONE to a fail-closed executable bootstrap contract; production-ready and SR00 promotion remain blocked until actual execution passes.";
+    row.sellImpact = "A19 upgrades exact runtime from pin-only NOT_DONE to a fail-closed executable bootstrap contract; RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE and SR00 promotion remain blocked until actual execution passes.";
   }
   if (row.id === "AUD05_A05_LOCAL_STATIC_LANES") {
     row.doneEvidence = unique([...row.doneEvidence,

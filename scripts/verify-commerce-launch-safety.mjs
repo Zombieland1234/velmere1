@@ -44,7 +44,7 @@ for (const needle of [
 }
 
 if (!catalog.includes('status: "coming_soon"')) {
-  errors.push("catalog.generated.ts should keep preview products as coming_soon until fulfilment is production-ready.");
+  errors.push("catalog.generated.ts should keep preview products as coming_soon until fulfilment is RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE.");
 }
 
 if (catalog.includes('status: "active"') && catalog.includes('fulfilmentMode: "disabled"')) {

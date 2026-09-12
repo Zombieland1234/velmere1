@@ -14,7 +14,7 @@ The Velmère PDF report generation pipeline is held to strict analytical standar
 Specifically, the engine adheres to six mandatory analytical invariants:
 1. **No Whitewashing of Uncertainty**: Unknown or unexamined parameters remain explicitly marked as `UNKNOWN`, `NOT EXECUTED`, or `UNASSESSED`. Under no circumstances may an unanalyzed vector be defaulted to `LOW RISK` or `PASSED`.
 2. **Strict Separation of Evidence vs Assertion**: On-chain bytecode facts, decompiled control flow graphs, and verified storage slots are clearly separated from heuristic risk scores and qualitative reviewer commentary.
-3. **Automated Pipeline vs Human Review Attestation**: Clear demarcations prevent automated scanner results from masquerading as certified human auditor attestations.
+3. **Automated Pipeline vs Human Review Attestation**: Clear demarcations prevent automated scanner results from masquerading as HUMAN REVIEW RECEIPT REQUIRED attestations.
 4. **Entitlement Tier Boundary Enforcement**: Basic and Pro tiers must never leak proprietary Advanced heuristics, while simultaneously providing unambiguous, customer-safe indicators of gated analytical depth.
 5. **Deterministic Risk Scoring**: Risk numbers (0 to 100) are mathematically bound to verified vulnerability severities, never subject to cosmetic adjustments.
 6. **Commercial Honesty & Non-Warranty Disclaimers**: Institutional legal notices stating that reports represent evidence-bound point-in-time security analysis—not financial advice or insurance guarantees—must be prominently placed.
@@ -110,8 +110,8 @@ The audit inspected reports generated across all three subscription tiers:
 
 To prevent deceptive marketing or false assurance:
 1. **Automated Sections**: Every automated section begins with the explicit metadata banner:
-   - `ANALYSIS TYPE: AUTOMATED STATIC & FORMAL ANALYSIS` (EN)
-   - `TYP ANALIZY: ZAUTOMATYZOWANA WERYFIKACJA STATYCZNA & FORMALNA` (PL)
+   - `ANALYSIS TYPE: AUTOMATED STATIC ANALYSIS - FORMAL STATUS REPORTED SEPARATELY` (EN)
+   - `TYP ANALIZY: ZAUTOMATYZOWANA ANALIZA STATYCZNA - STATUS FORMALNY RAPORTOWANY ODDZIELNIE` (PL)
    - `ANALYSETYP: AUTOMATISIERTE STATISCHE & FORMALE ANALYSE` (DE)
 2. **Human Attested Section**: Section 9 is the only section designated as:
    - `VERIFICATION TYPE: INDEPENDENT MANUAL AUDITOR REVIEW` (EN)

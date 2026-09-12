@@ -112,7 +112,7 @@ if (!siteAudit.includes("audit persistence contract") || !siteAudit.includes("ro
 }
 
 for (const forbidden of [
-  "storage is production ready",
+  "storage is RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE",
   "server auth is complete",
   "safe to expose secret",
   "raw api key",

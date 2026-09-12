@@ -36,7 +36,7 @@ The existence of a queue, UI button, entitlement, provider relationship, or pric
 
 ## Formal-analysis rule
 
-No tier promises “Full SMT Z3 Solver Verification,” “all invariants proven,” or equivalent formal-verification language by default.
+No tier promises “FORMAL SOLVER STATUS REQUIRES EXACT-SCOPE RECEIPT,” “all invariants proven,” or equivalent formal-verification language by default.
 
 If a future release executes a formal solver for the exact scope, the claim must be derived from the corresponding formal evidence receipt, including solver/method provenance and coverage. Otherwise the customer-facing state remains `FORMAL VERIFICATION: NOT VERIFIED FOR THIS SCOPE` or the more specific execution state produced by the evidence system.
 

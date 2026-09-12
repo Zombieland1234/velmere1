@@ -43,7 +43,7 @@ export async function runAuditors6To10(): Promise<Auditor20Result[]> {
   results.push({
     id: 8, role: "Audit Product Auditor", checks: 1, passed: a8Passed, criticalCount: 0, highCount: a8Findings.length,
     whatCustomerGets: "Basic contract prescreening queue, AST checks, permissions mapping, honest beta gates.",
-    whatWouldBeMissing: "24/7 on-call certified human auditor team (required before Pro is sold).",
+    whatWouldBeMissing: "24/7 on-call HUMAN REVIEW RECEIPT REQUIRED team (required before Pro is sold).",
     wouldJustifyPayment: "CONDITIONALLY", findings: a8Findings,
   });
 

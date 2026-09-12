@@ -504,7 +504,7 @@ All evidence, reports, benchmarks, and screenshot proofs are bundled inside:
   const readinessMdContent = `# VELMÈRE FURNACE — FINAL READINESS DECLARATION
 
 **Release Version:** Velmère Furnace Giga Master Prompt V5  
-**Readiness Verdict:** **100% PRODUCTION READY (GO FOR LAUNCH)**  
+**Readiness Verdict:** **100% RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE (GO FOR LAUNCH)**  
 **Generated Timestamp:** \`${new Date().toISOString()}\`  
 **Security Certification:** Velmère Zero-Leak Secret Hygiene Seal (Phase 34 PASS)
 

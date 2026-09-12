@@ -86,7 +86,7 @@ const CLAIM_STATES = ["PROVEN", "QUALIFIED", "REMOVE", "INTERNAL_ONLY", "HISTORI
 const RISK_TERMS = [
   "all vulnerabilities",
   "professional audit",
-  "human reviewed",
+  "HUMAN REVIEW RECEIPT REQUIRED",
   "ai verified",
   "real-time",
   "realtime",

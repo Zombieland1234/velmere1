@@ -223,7 +223,7 @@ HISTORICAL_UNTRUSTED:
 ## 10. Per master mission §105 — NEVER claims
 
 NEVER claimed (correctly):
-- ✗ "Production-ready" (no production proof)
+- ✗ "RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE" (no production proof)
 - ✗ "20/20 customer final" (no per-row live evidence)
 - ✗ "10/10 paid value" (NO_GO_PAID)
 - ✗ "Live cloud RLS" (UNKNOWN_EXTERNAL)

@@ -13,7 +13,7 @@ async function main() {
   txt += `                                          Data wygenerowania: ${generatedDate}\n`;
   txt += `=================================================================================================================================\n\n`;
 
-  txt += `STATUS PRZYGOTOWANIA DO STARTU BIZNESOWEGO (STRIPE & REJESTRACJA SPÓŁKI): [GOTOWY DO WDROŻENIA / PRODUCTION READY]\n`;
+  txt += `STATUS PRZYGOTOWANIA DO STARTU BIZNESOWEGO (STRIPE & REJESTRACJA SPÓŁKI): [GOTOWY DO WDROŻENIA / RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE]\n`;
   txt += `WSZYSTKIE TESTY INTEGRALNOŚCI: 100% SUKCES (20 832 / 20 832 ASERCJE ZALICZONE BEZ BŁĘDU)\n\n`;
 
   txt += `=================================================================================================================================\n`;

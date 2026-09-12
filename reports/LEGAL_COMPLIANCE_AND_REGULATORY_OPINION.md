@@ -155,7 +155,7 @@ Zgodnie z Artykułem 3 ust. 1 pkt 9 MiCA, „token użytkowy” to kryptoaktywo 
 - **Klauzula Guarded Core:** Zgodnie z Dyrektywą (UE) 2016/943 o ochronie tajemnic przedsiębiorstwa, ujawnienie zasad matematycznych przy jednoczesnym utajnieniu wewnętrznych wag optymalizacyjnych i macierzy w celu uniemożliwienia tzw. *gaming the audit* jest w 100% legalne i rekomendowane.
 
 #### C. Nadzór Ludzki (Human-in-the-Loop - Art. 14)
-- Platforma rygorystycznie rozróżnia ocenę automatyczną od rewizji ludzkiej (`ClaimAuditBlocker` bezwzględnie blokuje roszczenia „Human Audited”, jeśli badanie przeprowadził wyłącznie pipeline automatyczny).
+- Platforma rygorystycznie rozróżnia ocenę automatyczną od rewizji ludzkiej (`ClaimAuditBlocker` bezwzględnie blokuje roszczenia „HUMAN REVIEW RECEIPT REQUIRED”, jeśli badanie przeprowadził wyłącznie pipeline automatyczny).
 
 ---
 

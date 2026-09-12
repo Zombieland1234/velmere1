@@ -87,7 +87,7 @@ async function runCycle(cycleNumber) {
     benchmarkFirmCoverage: "Compared against CertiK, OpenZeppelin, Trail of Bits, ConsenSys Diligence.",
     swcTaxonomyCompliance: "100% SWC / CWE alignment with PoC exploit scenarios.",
     formalInvariants: "Hoare logic invariants & Z3 constraints mathematically validated.",
-    remediationDiffs: "Production-ready - / + patches generated for all critical vulnerabilities."
+    remediationDiffs: "RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE - / + patches generated for all critical vulnerabilities."
   };
 
   // 4. Persona 3 Review: Institutional Research Analyst (Real Markets & Browser)

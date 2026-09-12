@@ -76,7 +76,7 @@ Wycofano i zablokowano na poziomie parsera \`ClaimAuditBlocker\` ponad 11 grup b
 - \`Multisig 3-of-5\` -> Zastąpiono statusem \`UNKNOWN [RPC UNQUERIED]\`.
 - \`Timelock 48h\` -> Zastąpiono statusem \`DELAY UNOBSERVED [NO ON-CHAIN CALL]\`.
 - \`100% SECURE\` -> Zastąpiono deklaracją \`BOUNDED TIME-WINDOW SCAN\`.
-- \`HUMAN AUDITED\` -> Zastąpiono deklaracją \`HUMAN REVIEW: NOT PERFORMED [AUTOMATED ENGINE ONLY]\`.
+- \`HUMAN REVIEW RECEIPT REQUIRED\` -> Zastąpiono deklaracją \`HUMAN REVIEW: NOT PERFORMED [AUTOMATED ENGINE ONLY]\`.
 
 ---
 

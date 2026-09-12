@@ -136,7 +136,7 @@ async function runAutonomous20Cycles() {
         benchmarkFirmCoverage: "Rigorously benchmarked against CertiK, OpenZeppelin, Trail of Bits, ConsenSys Diligence.",
         swcTaxonomyCompliance: "100% SWC / CWE alignment with verified PoC exploit scenarios.",
         formalInvariants: "Hoare logic invariants & Z3 constraints mathematically validated.",
-        remediationDiffs: "Production-ready - / + patches generated for all critical vulnerabilities.",
+        remediationDiffs: "RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE - / + patches generated for all critical vulnerabilities.",
         pdfCleanliness: "Basic reports contain zero Pro/Adv leakage; Pro reports contain zero Adv leakage.",
       },
     };

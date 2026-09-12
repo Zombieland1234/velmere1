@@ -81,7 +81,7 @@ async function runForensicAudit(): Promise<VerificationReport> {
   const sampleReportLines = [
     "ID raportu: VLM-AUDIT-2026-X9 | Tier: ADVANCED | Surface: PASS",
     "--- PODSUMOWANIE AUDYTU BEZPIECZENSTWA VELMERE [ADVANCED] ---",
-    "TYP ANALIZY: ZAUTOMATYZOWANA WERYFIKACJA STATYCZNA & FORMALNA",
+    "TYP ANALIZY: ZAUTOMATYZOWANA ANALIZA STATYCZNA - STATUS FORMALNY RAPORTOWANY ODDZIELNIE",
     "Pelna analiza odpornosci kontraktu na wektory podatnosci Web3 i DeFi.",
     "",
     "WERDYKT KONCOWY: BEZPIECZNY - BRAK KRYTYCZNYCH PODATNOSCI (PASSED)",
@@ -305,8 +305,8 @@ async function runForensicAudit(): Promise<VerificationReport> {
   const shortRootHex = Buffer.from(expectedShortRoot, "ascii").toString("hex");
   const hasShortRoot = sealCmdsJoined.includes(shortRootHex);
 
-  // Check verified status badge: [VERIFIED - IMMUTABLE]
-  const verifiedBadgeHex = Buffer.from("[VERIFIED - IMMUTABLE]", "ascii").toString("hex");
+  // Check verified status badge: [FILE INTEGRITY VERIFIED]
+  const verifiedBadgeHex = Buffer.from("[FILE INTEGRITY VERIFIED]", "ascii").toString("hex");
   const hasVerifiedBadge = sealCmdsJoined.includes(verifiedBadgeHex);
 
   // Check RFC 3161 provenance footer
@@ -330,7 +330,7 @@ async function runForensicAudit(): Promise<VerificationReport> {
   console.log(`  -> Zlote obramowanie (stroke '0.77 0.62 0.31 RG'): ${hasGoldBorderStroke ? "OBECNE" : "BRAK"}`);
   console.log(`  -> Zloty filar bezpieczenstwa (spine '0.77 0.62 0.31 rg'): ${hasGoldSpineFill ? "OBECNY" : "BRAK"}`);
   console.log(`  -> Skrot SHA-256 Merkle Root: ${hasShortRoot ? "PRAWIDLOWY" : "BLAD"}`);
-  console.log(`  -> Status Badge [VERIFIED - IMMUTABLE]: ${hasVerifiedBadge ? "OBECNY" : "BRAK"}`);
+  console.log(`  -> Status Badge [FILE INTEGRITY VERIFIED]: ${hasVerifiedBadge ? "OBECNY" : "BRAK"}`);
   console.log(`  -> Stopka RFC 3161 Provenance: ${hasRfc3161Footer ? "OBECNA" : "BRAK"}`);
   console.log(`  -> Zintegrowany wektorowy kod kreskowy Code 128: ${hasBarcodeInSeal ? "OBECNY" : "BRAK"}`);
   console.log(`  -> Regex multi-jezykowy (PL/EN/DE/Seal): ${allRegexMatches ? "ZGODNY" : "BLAD"}`);

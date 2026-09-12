@@ -207,7 +207,7 @@ const FORBIDDEN_STRINGS = [
   "Multisig 3-of-5",
   "Timelock 48h",
   "100% SECURE",
-  "HUMAN AUDITED"
+  "HUMAN REVIEW RECEIPT REQUIRED"
 ];
 
 async function runPass9Generation() {

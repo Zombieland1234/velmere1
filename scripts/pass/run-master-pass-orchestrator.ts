@@ -379,13 +379,13 @@ async function runAllPasses() {
 ## 2. Release Classification by Product & Tier
 | Product | Tier | Status | Verdict |
 |---|---|---|---|
-| **AUDIT** | Basic | **GREEN** | Production-ready free informational pre-screen |
-| **AUDIT** | Pro | **GREEN** | Production-ready deep EVM machine analysis |
-| **AUDIT** | Advanced | **GREEN** | Production-ready cryptographic attestation & patch verification |
-| **SHIELD** | Basic | **GREEN** | Production-ready 56-bar sparklines & token security radar |
-| **SHIELD** | Pro | **GREEN** | Production-ready whale flows & orderbook depth |
-| **REAL MARKETS** | Basic | **GREEN** | Production-ready multi-asset quotes & vector brand icons |
-| **REAL MARKETS** | Pro | **GREEN** | Production-ready VWAP slippage modeling & latency analytics |
+| **AUDIT** | Basic | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE free informational pre-screen |
+| **AUDIT** | Pro | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE deep EVM machine analysis |
+| **AUDIT** | Advanced | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE cryptographic attestation & patch verification |
+| **SHIELD** | Basic | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE 56-bar sparklines & token security radar |
+| **SHIELD** | Pro | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE whale flows & orderbook depth |
+| **REAL MARKETS** | Basic | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE multi-asset quotes & vector brand icons |
+| **REAL MARKETS** | Pro | **GREEN** | RELEASE BLOCKED - PRODUCTION EVIDENCE INCOMPLETE VWAP slippage modeling & latency analytics |
 | **STRIPE & ENTITLEMENTS** | Platform | **GREEN** | Strict server-side verification, zero client bypass |
 | **PDF ENGINE** | Platform | **GREEN** | Vector typography, UTF-8 clean, zero text overlap |
 

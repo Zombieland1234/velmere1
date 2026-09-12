@@ -15,7 +15,7 @@ Patterns searched:
 - "always accurate"
 - "institutional-grade"
 - "audited by"
-- "human reviewed"
+- "HUMAN REVIEW RECEIPT REQUIRED"
 
 ## 2. EN messages (`messages/en.json`)
 
@@ -56,7 +56,7 @@ Combined evidence:
 | accurate | similar | similar | needs separate search |
 | complete | similar | similar | needs separate search |
 | all vulnerabilities | not found | not found | OK |
-| human reviewed | not found | not found | OK |
+| HUMAN REVIEW RECEIPT REQUIRED | not found | not found | OK |
 | certified | conditional | not found | OK |
 | guaranteed | not found | not found | OK |
 | prediction | not found | not found | OK |
