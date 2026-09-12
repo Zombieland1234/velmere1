@@ -51,9 +51,12 @@ patch("lib/security/freshness/data-freshness-engine.ts", [
 
 patch("lib/security/institutional-pipeline-gate.ts", [
   ["let evidenceIntegrity = false;", "let evidenceIntegrity: boolean;", "evidence_integrity_definite_assignment"],
-  ["let formalIntegrity = false;", "let formalIntegrity: boolean;", "formal_integrity_definite_assignment"],
-  ["let scoringIntegrity = false;", "let scoringIntegrity: boolean;", "scoring_integrity_definite_assignment"],
-  ["let pdfIntegrity = false;", "let pdfIntegrity: boolean;", "pdf_integrity_definite_assignment"],
+  ["let formalIntegrity = false;\n", "", "formal_integrity_remove_placeholder"],
+  ["let scoringIntegrity = false;\n", "", "scoring_integrity_remove_placeholder"],
+  ["let pdfIntegrity = false;\n", "", "pdf_integrity_remove_placeholder"],
+  ["formalIntegrity = formalFailures.length === 0;", "const formalIntegrity = formalFailures.length === 0;", "formal_integrity_const"],
+  ["scoringIntegrity = scoringFailures.length === 0;", "const scoringIntegrity = scoringFailures.length === 0;", "scoring_integrity_const"],
+  ["pdfIntegrity = pdfFailures.length === 0;", "const pdfIntegrity = pdfFailures.length === 0;", "pdf_integrity_const"],
 ]);
 
 patch("lib/security/market-evidence/market-provenance-engine.ts", [
