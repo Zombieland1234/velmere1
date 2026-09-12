@@ -63,8 +63,32 @@ jobs:
         run: npm run typecheck:direct
       - name: Security regressions
         run: npm run security:regression
-      - name: Product readiness audit
-        run: node scripts/pass23/audit-current-product-readiness.mjs
+      - name: Global readiness must remain fail-closed
+        run: |
+          mkdir -p artifacts/r10/live-fallback
+          set +e
+          node scripts/pass23/audit-current-product-readiness.mjs > artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log 2>&1
+          rc=$?
+          set -e
+          cat artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log
+          if [ "$rc" -eq 0 ]; then
+            echo "Unexpected global readiness GO while external/current release evidence is incomplete"
+            exit 1
+          fi
+          grep -q '"ok": false' artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log
+          grep -q '"status": "NO_GO"' artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log
+          node - <<'NODE'
+          const fs=require('fs');
+          const receipt={
+            schemaVersion:'velmere.r10.global-readiness-truth-boundary.v1',
+            classification:'EXPECTED_FAIL_CLOSED_NO_GO',
+            reason:'Global readiness requires broader generated/external/staging evidence and is not a focused acceptance gate for removal of synthetic live fallback data.',
+            promotionAllowed:false,
+            productionCredit:false,
+            sourceSha:process.env.GITHUB_SHA,
+          };
+          fs.writeFileSync('artifacts/r10/live-fallback/GLOBAL_READINESS_CLASSIFICATION.json',JSON.stringify(receipt,null,2)+'\n');
+          NODE
       - name: Production build
         run: npm run build
       - name: Commit verified runtime source only
