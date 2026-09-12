@@ -61,7 +61,7 @@ jobs:
       - name: Security regression
         run: npm run security:regression
       - name: Source truth scan
-        run: node scripts/r11/scan-release-truth-scope-v3.mjs --output /tmp/r11b/R11_TRUTH_SCOPE.json
+        run: node scripts/r11/verify-truth-scope-v2.mjs --output /tmp/r11b/R11_TRUTH_SCOPE.json
       - name: No write-capable R11B workers remain
         run: |
           if grep -R -n -E 'contents:[[:space:]]*write' .github/workflows/r11b-*.yml; then
