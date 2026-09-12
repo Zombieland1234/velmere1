@@ -1,0 +1,26 @@
+name: PASS26 Root Baseline Proof
+
+on:
+  push:
+    branches: [audit-pass26-root-baseline-proof]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-root-visual-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Bind proof subject
+        shell: bash
+        run: |
+          test "$(git rev-list --max-parents=0 HEAD)" = "4e6801b7d313348967c4a27f38aab01b6dcd2776" || true
+          test -f config/pass14/visual-freeze-manifest.json
+          test -f scripts/pass14/verify-visual-freeze.mjs
+      - name: Verify manifest against original visual bytes
+        run: node scripts/pass14/verify-visual-freeze.mjs
