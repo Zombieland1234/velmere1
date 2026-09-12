@@ -45,6 +45,14 @@ jobs:
         run: |
           node --check scripts/pass4992/supply-chain-release.mjs
           node --check scripts/pass4992/test-supply-chain-release.mjs
+      - name: Safe secret-scan diagnostic
+        run: |
+          node --input-type=module <<'NODE'
+          import { buildSourceManifest, scanSourceForHighPrecisionSecrets } from './scripts/pass4992/supply-chain-release.mjs';
+          const manifest=await buildSourceManifest(process.cwd());
+          const scan=await scanSourceForHighPrecisionSecrets(process.cwd(), manifest);
+          console.log(JSON.stringify({status:scan.status,findingCount:scan.findingCount,findings:(scan.findings??[]).map(({path,ruleId,line})=>({path,ruleId,line}))},null,2));
+          NODE
       - name: Full legacy Pass4992 regression under dynamic inventory policy
         run: node scripts/pass4992/test-supply-chain-release.mjs
       - name: Dynamic active-workflow adversarial regression
