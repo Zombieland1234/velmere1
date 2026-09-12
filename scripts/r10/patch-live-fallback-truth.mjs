@@ -23,7 +23,7 @@ for (const required of [
 src = src.slice(0, importStart) + src.slice(exportIndex + 1);
 
 const oldDeclaration = '  let marketRow = null;';
-const newDeclaration = '  let marketRow: Awaited<ReturnType<ShieldMapResolutionProviders["searchMarket"]>> | null = null;';
+const newDeclaration = '  let marketRow: Awaited<ReturnType<ShieldMapResolutionProviders["searchMarket"]>>;';
 if (!src.includes(oldDeclaration)) throw new Error("live_fallback_market_row_anchor_missing");
 src = src.replace(oldDeclaration, newDeclaration);
 
