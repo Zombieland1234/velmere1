@@ -27,29 +27,54 @@ const patterns = [
 const exclusions = ["components/backup/legacy/"];
 
 const raw = execFileSync("git", ["ls-files", "-z", ...patterns], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
-const files = raw.split("\0").filter(Boolean).filter((file) => !exclusions.some((prefix) => file.startsWith(prefix)));
-if (!files.length) throw new Error("release_lint_scope_empty");
+const trackedScopeFiles = raw.split("\0").filter(Boolean);
+const explicitlyExcludedFiles = trackedScopeFiles.filter((file) => exclusions.some((prefix) => file.startsWith(prefix)));
+const eligibleFiles = trackedScopeFiles.filter((file) => !exclusions.some((prefix) => file.startsWith(prefix)));
+if (!eligibleFiles.length) throw new Error("release_lint_scope_empty");
 
 const eslint = new ESLint({ errorOnUnmatchedPattern: false });
-const results = await eslint.lintFiles(files);
+const ignoredFlags = await Promise.all(eligibleFiles.map((file) => eslint.isPathIgnored(file)));
+const ignoredFiles = eligibleFiles.filter((_, index) => ignoredFlags[index]);
+const checkedCandidates = eligibleFiles.filter((_, index) => !ignoredFlags[index]);
+if (!checkedCandidates.length) throw new Error("release_lint_checked_scope_empty");
+
+const results = await eslint.lintFiles(checkedCandidates);
 const formatter = await eslint.loadFormatter("json");
 const rendered = formatter.format(results);
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, rendered.endsWith("\n") ? rendered : rendered + "\n");
 
+const failedFiles = results
+  .filter((result) => (result.errorCount || 0) > 0 || (result.fatalErrorCount || 0) > 0)
+  .map((result) => path.relative(process.cwd(), result.filePath).replaceAll(path.sep, "/"));
+
 const summary = results.reduce((acc, result) => {
-  acc.files += 1;
   acc.errors += result.errorCount || 0;
   acc.warnings += result.warningCount || 0;
   acc.fatalErrors += result.fatalErrorCount || 0;
   return acc;
-}, { files: 0, errors: 0, warnings: 0, fatalErrors: 0 });
+}, { errors: 0, warnings: 0, fatalErrors: 0 });
 summary.scope = patterns;
 summary.exclusions = exclusions;
 summary.runtimeReleaseGate = true;
-summary.runner = "ESLINT_NODE_API_SINGLE_PASS";
-summary.sourceFileCount = files.length;
+summary.runner = "ESLINT_NODE_API_SINGLE_PASS_DENOMINATOR_BOUND";
+summary.trackedScopeFileCount = trackedScopeFiles.length;
+summary.explicitlyExcludedFileCount = explicitlyExcludedFiles.length;
+summary.eligibleFileCount = eligibleFiles.length;
+summary.checkedFileCount = results.length;
+summary.ignoredFileCount = ignoredFiles.length;
+summary.failedFileCount = failedFiles.length;
+summary.explicitlyExcludedFiles = explicitlyExcludedFiles;
+summary.ignoredFiles = ignoredFiles;
+summary.failedFiles = failedFiles;
+summary.denominatorConserved = summary.eligibleFileCount === summary.checkedFileCount + summary.ignoredFileCount;
+summary.checkedCandidateCountMatched = checkedCandidates.length === results.length;
+summary.sourceFileCount = eligibleFiles.length;
+summary.files = results.length;
+
 fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2) + "\n");
 console.log(JSON.stringify(summary, null, 2));
+if (!summary.denominatorConserved) throw new Error("release_lint_denominator_not_conserved");
+if (!summary.checkedCandidateCountMatched) throw new Error("release_lint_result_count_mismatch");
 if (summary.errors !== 0 || summary.fatalErrors !== 0) process.exit(1);
