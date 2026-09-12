@@ -17,7 +17,7 @@ env:
 jobs:
   remediation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 65
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
@@ -45,28 +45,40 @@ jobs:
           rc=$?
           set -e
           node scripts/r11/verify-npm-audit.mjs --file artifacts/r11/redteam/NPM_AUDIT.json --exit-code "$rc" --output artifacts/r11/redteam/NPM_AUDIT_VERDICT.json
+      - name: Provider-rights registry integrity
+        run: |
+          npm run audit:provider-rights
+          cp .velmere/pass21-diagnostics/provider-rights-audit.json artifacts/r11/redteam/PROVIDER_RIGHTS_AUDIT.json
+      - name: Truth-scope adversarial canaries
+        run: node scripts/r11/test-truth-scope-v2.mjs
+      - name: Structural RFC3161 claim canaries
+        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r11/test-structural-rfc3161-claim.mjs
       - name: Direct TypeScript
         run: npm run typecheck:direct
       - name: Security regression
         run: npm run security:regression
-      - name: Source truth scan
-        run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r11/redteam/SOURCE_TRUTH.json
+      - name: R10 source truth compatibility scan
+        run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r11/redteam/SOURCE_TRUTH_R10_COMPAT.json
+      - name: R11 strict source truth scope
+        run: node scripts/r11/verify-truth-scope-v2.mjs --output artifacts/r11/redteam/TRUTH_SCOPE_V2.json
       - name: Production build
         run: npm run build
       - name: Dirty source gate
         run: |
-          git diff --exit-code -- . ':(exclude)next-env.d.ts'
+          git diff --exit-code -- . ':(exclude)next-env.d.ts' ':(exclude).velmere/pass21-diagnostics/provider-rights-audit.json'
       - name: R11 remediation receipt
         run: |
           node - <<'NODE'
           const fs=require('fs');
           const r={
-            schemaVersion:'velmere.r11.redteam-remediation.v1',
+            schemaVersion:'velmere.r11.redteam-remediation.v2',
             sourceSha:process.env.GITHUB_SHA,
             evidenceClass:'CURRENT_GIT_PROVEN_REMEDIATION',
-            coveredFindings:['VA-F01','VA-F02','VA-F03','VA-F04','VA-F05','VA-F07'],
+            coveredFindings:['VA-F01','VA-F02','VA-F03','VA-F04','VA-F05','VA-F07','VA-F08','VA-F16'],
             p0RegressionCanaries:'PASS',
             npmAuditVerifier:'FAIL_CLOSED',
+            providerRightsRegistryIntegrity:'PASS_FAIL_CLOSED_EXTERNAL_RIGHTS_ZERO',
+            structuralRfc3161ClaimGuard:'PASS',
             typecheck:'PASS',
             securityRegression:'PASS',
             sourceTruthScan:'PASS',
@@ -85,3 +97,36 @@ jobs:
           retention-days: 30
           if-no-files-found: error
           path: artifacts/r11/redteam/**
+
+  evidence_evaluator:
+    name: Semantic evidence evaluator
+    runs-on: ubuntu-24.04
+    needs: [remediation]
+    if: always()
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verifier adversarial canaries
+        run: node scripts/r11/test-remediation-evidence-verifier.mjs
+      - name: Download immutable remediation artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: r11-redteam-remediation-${{ github.sha }}
+          path: artifacts/r11/evaluator/input
+      - name: Verify receipt semantics and exact subject SHA
+        run: |
+          mkdir -p artifacts/r11/evaluator/output
+          node scripts/r11/verify-remediation-evidence.mjs \
+            --root artifacts/r11/evaluator/input \
+            --sha "${GITHUB_SHA}" \
+            --output artifacts/r11/evaluator/output/EVALUATION.json
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r11-evidence-evaluator-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: error
+          path: artifacts/r11/evaluator/output/**
