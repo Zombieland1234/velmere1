@@ -13,6 +13,18 @@ const sha256 = (buf) => createHash("sha256").update(buf).digest("hex");
 const latestCommit = (file) => execFileSync("git", ["log", "-1", "--format=%H", "--", file], { encoding: "utf8", maxBuffer: GIT_BUFFER_BYTES }).trim();
 const latestDate = (file) => execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { encoding: "utf8", maxBuffer: GIT_BUFFER_BYTES }).trim();
 const rootBytes = (file) => execFileSync("git", ["show", `${ROOT_COMMIT}:${file}`], { maxBuffer: GIT_BUFFER_BYTES });
+const fileEvidence = (file, documentDate) => ({
+  path: file,
+  documentDate,
+  sha256: sha256(fs.readFileSync(file)),
+  lastCommit: latestCommit(file),
+  lastCommitDate: latestDate(file),
+});
+
+const visualEvidence = [
+  fileEvidence("FINAL_SCREENSHOT_QA_REPORT.md", "2026-09-06"),
+  fileEvidence("VELMERE_SCREENSHOT_MANIFEST.md", "2026-09-07"),
+];
 
 const rows = manifest.files.map((entry) => {
   const current = fs.readFileSync(entry.path);
@@ -46,21 +58,26 @@ const counts = rows.reduce((acc, row) => {
 }, {});
 const reapprovalRequired = rows.filter((r) => r.classification.includes("REAPPROVAL_REQUIRED"));
 const unresolved = rows.filter((r) => r.classification === "UNRESOLVED_VISUAL_PROVENANCE");
+const provenanceClassificationPassed = unresolved.length === 0;
+const releaseVisualFreezePassed = provenanceClassificationPassed && reapprovalRequired.length === 0;
 const receipt = {
   schemaVersion: "velmere.pass26.visual-freeze-provenance.v2",
   subjectSha: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   rootCommit: ROOT_COMMIT,
   lastVisualEvidenceDate: LAST_VISUAL_EVIDENCE_DATE,
   knownPostVisualImportCommit: KNOWN_POST_VISUAL_IMPORT,
+  visualEvidence,
   protectedFileCount: rows.length,
   counts,
   reapprovalRequiredCount: reapprovalRequired.length,
+  reapprovalRequiredPaths: reapprovalRequired.map((r) => r.path),
   unresolvedCount: unresolved.length,
+  provenanceClassificationPassed,
+  releaseVisualFreezePassed,
   rows,
-  truthBoundary: "This receipt proves Git/hash provenance only. It does not visually approve post-evidence CSS changes. Files changed after the latest visual evidence remain blocked until deterministic screenshot review/handoff is recorded.",
-  passed: unresolved.length === 0,
+  truthBoundary: "This receipt proves Git/hash provenance only. provenanceClassificationPassed means the mismatch population was classified, not visually approved. releaseVisualFreezePassed remains false while any post-evidence CSS path requires deterministic screenshot review/handoff.",
 };
 fs.mkdirSync(".velmere/pass26-diagnostics", { recursive: true });
 fs.writeFileSync(".velmere/pass26-diagnostics/visual-freeze-provenance-v2.json", JSON.stringify(receipt, null, 2) + "\n");
 console.log(JSON.stringify(receipt, null, 2));
-if (unresolved.length) process.exit(1);
+if (!provenanceClassificationPassed) process.exit(1);
