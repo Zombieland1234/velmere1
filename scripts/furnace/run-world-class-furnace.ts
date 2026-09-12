@@ -10,7 +10,7 @@
  * - artifacts/final/:
  *     pdfs/ (150 high-fidelity PDF-1.7 reports)
  *     release-manifest.json (all 150 reports with SHA-256 and claim counts)
- *     signed-manifest.json (Ed25519 PKI attestation & RFC 3161 timestamp)
+ *     signed-manifest.json (local Ed25519 integrity attestation; no external timestamp evidence)
  *     verification-report.json (verification pass across all 150 files)
  *     final-release-report.md (formal forensic release dossier)
  *     public-key.pem, public-key.jwk (Ed25519 public verification keys)
@@ -665,7 +665,7 @@ export async function runWorldClassFurnace() {
             "Zero synthetic finding generation (removed VLM-BASE-01 & VLM-PRO-01)",
             "Multi-tier isolation: basic locks Pro/Advanced, Pro locks Advanced",
             "Human review claim boundary: reviewerState strictly not_commissioned unless attested",
-            "RFC 3161 + Ed25519 PKI attestation with cryptographic verification",
+            "Local SHA-256 + Ed25519 integrity attestation; no external timestamp credit",
             "Deterministic Merkle commitment over all canonical sections",
           ],
         },
@@ -877,7 +877,7 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
       algorithm: "Ed25519",
       publicKeySha256: crypto.createHash("sha256").update(publicKeyPem).digest("hex"),
       signature: manifestSignature,
-      rfc3161TimestampToken: `RFC3161_MOCK_TOKEN_${Date.now()}_VELMERE_CA`,
+      external trusted timestamp (not evidenced)TimestampToken: `external trusted timestamp (not evidenced)_MOCK_TOKEN_${Date.now()}_VELMERE_CA`,
     },
     manifest: releaseManifest,
   };
@@ -953,7 +953,7 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
 - **Total Forensic Claims Audited**: ${totalClaimsAll.toLocaleString()} claims
 - **Total Verified Claims**: ${totalVerifiedClaims.toLocaleString()} claims
 - **Zero Hallucination Proof**: 0 synthetic findings (\`VLM-BASE-01\`, \`VLM-PRO-01\`), 0 unverified claims on simulated fixtures
-- **Cryptographic Attestation**: Ed25519 PKI Signature + RFC 3161 Timestamp + Deterministic Merkle Root Commitments
+- **Cryptographic Attestation**: Local Ed25519 signature + SHA-256 integrity digest + deterministic Merkle root commitments
 - **Public Verification Key**: \`artifacts/final/public-key.pem\` (SHA-256: \`${crypto.createHash("sha256").update(publicKeyPem).digest("hex")}\`)
 
 ---
@@ -995,7 +995,7 @@ ${cycleSummaries.map((c) => `| Cycle ${c.cyclePad} | ${c.durationMs} ms | 11 / 1
 5. **Multi-Tier Isolation Firewall**:
    - Basic reports lock Pro and Advanced analytical layers.
    - Pro reports lock Advanced analytical layers and redact remediation diff patches.
-6. **RFC 3161 + Ed25519 PKI Certification**:
+6. **Local SHA-256 + Ed25519 Integrity Attestation**:
    - Every report and the master release manifest are cryptographically signed and independently verifiable via the \`velmere-cli\` tool.
 
 ---

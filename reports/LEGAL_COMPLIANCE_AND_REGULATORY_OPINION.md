@@ -21,7 +21,7 @@
    - Rozporządzenie UE MiCA (Markets in Crypto-Assets - 2023/1114)
    - Rozporządzenie EU AI Act (2024/1689)
    - Ramy Regulacyjne USA (SEC & CFTC: Investment Advisers Act, Rule 4.41, Zero-Custody)
-   - Standardy Dowodowe: RFC 3161 vs Deterministyczny SHA-256 Merkle Vault
+   - Standardy Dowodowe: zewnętrzny token zaufanego serwera TSA vs Deterministyczny SHA-256 Merkle Vault
 4. [Projekt Rekomendacji Zmian Regulaminowych i Klauzul Prawnych](#4-projekt-rekomendacji-zmian-regulaminowych-i-klauzul-prawnych)
 5. [Oficjalne Pakiety Disclaimerów Prawnych (Wielojęzyczne)](#5-oficjalne-pakiety-disclaimerów-prawnych)
 6. [Specyfikacja Gwarancji Prawnych dla Klientów Instytucjonalnych (SLA & Safe Harbor)](#6-specyfikacja-gwarancji-prawnych-dla-klientów-instytucjonalnych)
@@ -70,10 +70,10 @@ Podstawowy zarys zgodności z RODO/GDPR (kategorie danych: zamówienia, adresy, 
 Wybitny poziom merytoryczno-inżynieryjny: 4 filary (L3 Order Book Microstructure, EVM Symbolic Execution & AST, Whale Flow Topology, Oracle Resiliency), wzory matematyczne (Kyle's Lambda, Inwarianty SMT, Gini/HHI, Flash Loan Cost) oraz zunifikowana skala 0–100.
 
 #### Ocena Prawna i Ryzyka:
-1. **KRYTYCZNA ROZBIEŻNOŚĆ DOWODOWA: KLAUZULA RFC 3161 vs `CLAIM_SPEC.md`:**
-   - W kodzie komponentu (linie 167, 214, 348, 641) pojawia się twierdzenie: *"RFC 3161 cryptographic timestamp certification included in audit export"* oraz *"Stempel RFC 3161 z hashem SHA-256 w łańcuchu dowodowym"*.
-   - Tymczasem w fundamentalnym pliku polityki dowodowej `CLAIM_SPEC.md` (wiersz 7) oraz `lib/security/evidence/claim-audit-blocker.ts` (linie 36–41) wzorzec `RFC 3161` jest **bezwzględnie zakazany jako roszczenie niepoparte dowodem zewnętrznym**, o ile nie załączono urzędowego tokena TSA (ASN.1 TimeStampToken). Nakazanym zamiennikiem prawnym jest: `SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]`.
-   - **Rekomendacja Prawna:** Wyrównanie treści strony z faktycznym certyfikatem – zastąpienie określenia „RFC 3161” sformułowaniem: *„Kryptograficzny Dowód Integralności SHA-256 Merkle Vault [Zgodny z eIDAS w scenariuszu integracji z kwalifikowanym TSA]”*.
+1. **KRYTYCZNA ROZBIEŻNOŚĆ DOWODOWA: KLAUZULA ZEWNĘTRZNEJ ATESTACJI CZASU vs `CLAIM_SPEC.md`:**
+   - W kodzie komponentu (linie 167, 214, 348, 641) pojawia się twierdzenie: *"zewnętrzny token zaufanego serwera TSA cryptographic timestamp certification included in audit export"* oraz *"Stempel zewnętrzny token zaufanego serwera TSA z hashem SHA-256 w łańcuchu dowodowym"*.
+   - Tymczasem w fundamentalnym pliku polityki dowodowej `CLAIM_SPEC.md` (wiersz 7) oraz `lib/security/evidence/claim-audit-blocker.ts` (linie 36–41) wzorzec `zewnętrzny token zaufanego serwera TSA` jest **bezwzględnie zakazany jako roszczenie niepoparte dowodem zewnętrznym**, o ile nie załączono urzędowego tokena TSA (ASN.1 TimeStampToken). Nakazanym zamiennikiem prawnym jest: `SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]`.
+   - **Rekomendacja Prawna:** Wyrównanie treści strony z faktycznym certyfikatem – zastąpienie określenia „zewnętrzny token zaufanego serwera TSA” sformułowaniem: *„Kryptograficzny Dowód Integralności SHA-256 Merkle Vault [Zgodny z eIDAS w scenariuszu integracji z kwalifikowanym TSA]”*.
 2. **Konieczność Dołączenia Ostrzeżenia o Modelu Iloczynowym:** Modele poślizgu VWAP i symulacje wstrząsów płynnościowych ($10k–$5M) muszą posiadać disclaimer o charakterze symulacyjnym (CFTC Rule 4.41).
 
 ### 2.4. Strona `/risk-methodology` (`app/[locale]/risk-methodology/page.tsx`)
@@ -181,9 +181,9 @@ Zgodnie z Artykułem 3 ust. 1 pkt 9 MiCA, „token użytkowy” to kryptoaktywo 
 
 ### 3.4. Bezpieczeństwo i Nienaruszalność Certyfikatów Audytowych
 
-#### A. Weryfikowalność Kryptograficzna: Merkle Vault & SHA-256 vs RFC 3161
+#### A. Weryfikowalność Kryptograficzna: Merkle Vault & SHA-256 vs zewnętrzny token zaufanego serwera TSA
 - Raport audytowy Velmère generuje deterministyczne Drzewo Merkle'a, którego liśćmi są skróty SHA-256 kodu źródłowego, JSON kompilatora Solidity, dowody SMT oraz odczyty slotów proxy EIP-1967.
-- **Korekta Prawna Dotycząca RFC 3161:** Twierdzenie o „Certyfikacji RFC 3161” bez zewnętrznego tokena TSA z podpisem kwalifikowanego dostawcy zaufania (QTSP wg eIDAS) jest zakazane przez `CLAIM_SPEC.md`. Raporty posługują się terminem: **„Deterministyczny Skrót Nienaruszalności SHA-256 (Merkle Evidence Root)”**.
+- **Korekta Prawna Dotycząca Zewnętrznej Atestacji Czasu:** Twierdzenie o „zewnętrznej atestacji czasu” bez zewnętrznego tokena TSA z podpisem kwalifikowanego dostawcy zaufania (QTSP wg eIDAS) jest zakazane przez `CLAIM_SPEC.md`. Raporty posługują się terminem: **„Deterministyczny Skrót Nienaruszalności SHA-256 (Merkle Evidence Root)”**.
 
 #### B. Dynamiczny Rejestr Nienaruszalności (✓ -> ✗)
 - Wykrycie nieautoryzowanej mutacji kodu bajtowego na łańcuchu natychmiastowo unieważnia certyfikat: zielony znacznik (✓) zostaje zastąpiony czerwonym znakiem alarmowym (✗), a scoring ryzyka podnoszony jest do poziomu krytycznego (95–100/100).
@@ -266,7 +266,7 @@ Dla audytorów, badaczy bezpieczeństwa oraz białych kapeluszy (*white hats*) z
 Platforma Velmère posiada solidne, ponadprzeciętne fundamenty inżynieryjne (izolacja klas aktywów w `Asset-Class Hard Execution Firewall`, interceptor zakazanych roszczeń `ClaimAuditBlocker`, dynamiczne unieważnianie certyfikatów przy podmianie kodu na blockchainie).
 
 ### Priorytety Wdrożeniowe:
-1. **Korekta Terminologiczna RFC 3161:** Natychmiastowe usunięcie nielicencjonowanego hasła „RFC 3161” z `components/risk-management/RiskManagementPage.tsx` i zastąpienie go określeniem `SHA-256 Merkle Evidence Seal` zgodnie z regułą z `CLAIM_SPEC.md`.
+1. **Korekta Terminologiczna — Zewnętrzna Atestacja Czasu:** Natychmiastowe usunięcie nielicencjonowanego hasła „zewnętrzny token zaufanego serwera TSA” z `components/risk-management/RiskManagementPage.tsx` i zastąpienie go określeniem `SHA-256 Merkle Evidence Seal` zgodnie z regułą z `CLAIM_SPEC.md`.
 2. **Aktualizacja Regulaminu `/terms`:** Rozszerzenie sekcji regulaminowej o klauzule SaaS, wyłączenia doradztwa MiCA/SEC, architekturę Zero-Custody oraz jurysdykcję arbitrażową.
 3. **Uzupełnienie Polityki Prywatności `/privacy`:** Dodanie klauzul o przetwarzaniu danych on-chain (pseudonimizowane publiczne klucze) oraz wyłączeniu zautomatyzowanego profilowania osób fizycznych (Art. 22 RODO).
 4. **Wdrożenie Zestawu Disclaimerów:** Implementacja oficjalnych boksów disclaimerowych w stopkach terminali Shield, Real Markets oraz na stronach raportów PDF.

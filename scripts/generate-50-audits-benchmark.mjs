@@ -28,7 +28,7 @@ const CONTRACT_DEFS = [
       openZeppelin: "OpenZeppelin rekomenduje wycofanie niszczenia tokenów i migrację do EIP-2612 permit.",
       trailOfBits: "Trail of Bits klasyfikuje jako centralizację powierniczą z wysokim ryzykiem prawnym.",
       consensys: "Diligence wskazuje na brak dwuetapowego przekazywania własności (Ownable2Step).",
-      velmere: "Natychmiastowe wykrycie SWC-105, wyliczenie wektora zniszczenia i gotowy patch Ownable2Step + RFC 3161."
+      velmere: "Natychmiastowe wykrycie SWC-105, wyliczenie wektora zniszczenia i gotowy patch Ownable2Step + lokalny dowód integralności SHA-256."
     }
   },
   {
@@ -168,7 +168,7 @@ const CONTRACT_DEFS = [
       openZeppelin: "Wzorcowa architektura modularna i testy niezmienników.",
       trailOfBits: "Audyt formalny biblioteki TickMath i FullMath w 2021.",
       consensys: "Weryfikacja wyjścia z pozycji w skrajnych tickach.",
-      velmere: "Weryfikacja stałości rezerw tickowych, symulacja poślizgu L3 i certyfikat RFC 3161."
+      velmere: "Weryfikacja stałości rezerw tickowych, symulacja poślizgu L3 i lokalny dowód integralności SHA-256."
     }
   },
   {
@@ -364,7 +364,7 @@ const CONTRACT_DEFS = [
       openZeppelin: "Audyt mechanizmu RocketStorage i delegowania wywołań.",
       trailOfBits: "Audyt architektury Rocket Pool Atlas w 2023.",
       consensys: "Weryfikacja kontraktów depozytowych minipool.",
-      velmere: "Weryfikacja relacji kursowej rETH/ETH, dowód bezpieczeństwa RocketStorage i pieczęć RFC 3161."
+      velmere: "Weryfikacja relacji kursowej rETH/ETH, dowód bezpieczeństwa RocketStorage i lokalną pieczęć integralności SHA-256."
     }
   },
   {
@@ -448,7 +448,7 @@ const CONTRACT_DEFS = [
       openZeppelin: "Weryfikacja minimalnego opóźnienia i ról wykonawczych.",
       trailOfBits: "Slither: Potwierdzenie braku możliwości natychmiastowego wykonania (Bypass).",
       consensys: "Audyt przepływu propozycji DAO.",
-      velmere: "Weryfikacja niezmiennika czasu blokady, analiza ról Proposer/Executor i pieczęć RFC 3161."
+      velmere: "Weryfikacja niezmiennika czasu blokady, analiza ról Proposer/Executor i lokalną pieczęć integralności SHA-256."
     }
   },
   {
@@ -633,7 +633,7 @@ ADDITIONAL_30.forEach((item, idx) => {
       openZeppelin: `OpenZeppelin: Rekomendacja wdrożenia biblioteki obronnej oraz testów niezmienników.`,
       trailOfBits: `Trail of Bits: Slither AST detector flaguje klasę podatności ${item.swc}.`,
       consensys: `ConsenSys Diligence: Rekomendacja audytu formalnego Hoare logic i weryfikacji tokenomics.`,
-      velmere: `Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (${item.score}/100) i pieczęć RFC 3161.`
+      velmere: `Velmère Security Engine: Natychmiastowa dekompilacja EVM, wyliczenie wektora exploitacji (${item.score}/100) i lokalną pieczęć integralności SHA-256.`
     }
   });
 });
@@ -719,7 +719,7 @@ ALL_50.forEach((c) => {
       { label: "Opcode Reentrancy Scan (SWC-107)", value: "${c.score >= 80 ? 'FLAGGED: CALL->SSTORE Mutation' : 'Clean Checks-Effects'}", status: "${c.score >= 80 ? 'flagged' : 'verified'}" },
       { label: "Dangerous Opcode Scan", value: "${c.vulnCategory.includes('SELFDESTRUCT') ? 'CRITICAL: 0xFF SELFDESTRUCT Found' : 'Zero Destructive Opcodes'}", status: "${c.vulnCategory.includes('SELFDESTRUCT') ? 'flagged' : 'verified'}" },
       { label: "Signature Malleability (SWC-117)", value: "${c.vulnCategory.includes('Signature') ? 'FLAGGED: secp256k1 Upper Bound Unchecked' : 'Secp256k1 Rigorous Bounds'}", status: "${c.vulnCategory.includes('Signature') ? 'flagged' : 'verified'}" },
-      { label: "Cryptographic RFC 3161 Seal", value: "SHA-256 Vectorized Seal #VELMERE-2026", status: "verified" }
+      { label: "Local SHA-256 Integrity Seal", value: "SHA-256 Vectorized Seal #VELMERE-2026", status: "verified" }
     ],
     humanReviewAttestation: {
       reviewerName: "Velmère Lead Security Architect (AI + Human Quorum)",

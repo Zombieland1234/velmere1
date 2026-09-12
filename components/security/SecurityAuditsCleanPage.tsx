@@ -124,8 +124,8 @@ const COPY = {
         id: "pro",
         title: "Pro",
         price: "79.99 €",
-        description: "Głęboka analiza wektorów uprawnień, płynności DEX i wielorybów oraz certyfikowany raport PDF z sumą SHA-256.",
-        features: ["Wszystko z Basic", "Mapa uprawnień (Blacklist, Mint, Tax)", "Koncentracja wielorybów & płynność DEX", "Certyfikowany raport Pro PDF (SHA-256)"],
+        description: "Głęboka analiza wektorów uprawnień, płynności DEX i wielorybów oraz raport PDF z lokalną sumą integralności SHA-256.",
+        features: ["Wszystko z Basic", "Mapa uprawnień (Blacklist, Mint, Tax)", "Koncentracja wielorybów & płynność DEX", "Raport Pro PDF z sumą SHA-256"],
       },
       {
         id: "advanced",
@@ -151,7 +151,7 @@ const COPY = {
       { label: "Łatki naprawcze kodu (Diff - / +)", basic: "Wskazówki ogólne", pro: "Rekomendacje techniczne", advanced: "Gotowe łatki Solidity (Diff - / +)" },
       { label: "Ręczna weryfikacja analityka", basic: false, pro: false, advanced: "Dostępny co-audit Enterprise" },
       { label: "Priorytetowa kontrola dowodów", basic: false, pro: "Tak (błyskawiczny SLA)", advanced: "Najwyższy priorytet kworum" },
-      { label: "Raport PDF (podpis SHA-256)", basic: "Podgląd ekranowy", pro: "Certyfikowany raport Pro PDF", advanced: "Instytucjonalny Dossier PDF" },
+      { label: "Raport PDF (podpis SHA-256)", basic: "Podgląd ekranowy", pro: "Raport Pro PDF z sumą SHA-256", advanced: "Instytucjonalny Dossier PDF" },
     ] satisfies ComparisonRow[],
   },
   en: {
@@ -203,8 +203,8 @@ const COPY = {
         id: "pro",
         title: "Pro",
         price: "79.99 €",
-        description: "Deep permission parser, DEX liquidity depth, whale concentration, and certified PDF report with SHA-256.",
-        features: ["Everything in Basic", "Permission map (Blacklist, Mint, Tax)", "Whale concentration & DEX depth", "Certified Pro PDF Report (SHA-256)"],
+        description: "Deep permission parser, DEX liquidity depth, whale concentration, and PDF report with a local SHA-256 integrity digest.",
+        features: ["Everything in Basic", "Permission map (Blacklist, Mint, Tax)", "Whale concentration & DEX depth", "Pro PDF Report with SHA-256 digest"],
       },
       {
         id: "advanced",
@@ -1888,7 +1888,7 @@ export default function SecurityAuditsCleanPage({ locale }: { locale: string }) 
                   <p className="mt-2 text-xs text-white/70">
                     {auditPaywallModal === "pro"
                       ? "Kompleksowa dekompilacja bajtokodu EVM, analiza SWC/CWE, weryfikacja uprawnień blacklist/mint oraz raport techniczny PDF 1.7."
-                      : "Najwyższy standard audytorski: dowody formalne niezmienników, PoC exploit suite, weryfikacja wektorów reentrancy/flashloan, SHA-256 seal oraz certyfikat RFC 3161."}
+                      : "Rozszerzony zakres audytu: status wykonania niezmienników, scenariusze PoC, weryfikacja wektorów reentrancy/flashloan oraz lokalna pieczęć integralności SHA-256."}
                   </p>
 
                   {/* Accepted payment method pills */}
@@ -1930,7 +1930,7 @@ export default function SecurityAuditsCleanPage({ locale }: { locale: string }) 
                       </div>
                       <div className="flex items-center gap-2.5">
                         <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
-                        <span><strong>Certyfikat Instytucjonalny RFC 3161</strong> z unikalną pieczęcią SHA-256</span>
+                        <span><strong>Lokalny dowód integralności SHA-256</strong> — bez zewnętrznej atestacji czasu</span>
                       </div>
                     </>
                   )}

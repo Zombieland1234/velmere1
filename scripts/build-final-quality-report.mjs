@@ -58,7 +58,7 @@ Market Microstructure & SEC CIK Linking       Two-Dimensional Scorer
 
 ## B. Legacy Defects
 W audytowanym korpusie 150 legacy raportów zidentyfikowano następujące krytyczne wady systemowe:
-1. **Fikcyjne Znakowanie Czasu:** Deklarowanie zgodności z RFC 3161 bez zewnętrznego serwera TSA i certyfikatu X.509.
+1. **Fikcyjne Znakowanie Czasu:** Deklarowanie zewnętrznej, zaufanej atestacji czasu bez rzeczywistego tokena z serwera TSA.
 2. **Statyczna Mikrostruktura:** Kopiowanie sztywnych wartości (41.2% Dark Pool, 2.8 bps poślizg Kyle'a) do wszystkich rodzajów aktywów (nawet kontraktów na złoto i krypto memcoinów).
 3. **Fałszywe Dowody Formalne:** Przypisywanie statusu "Wszystkie niezmienniki udowodnione" bez weryfikacji solwerem SMT.
 4. **Fantomowe Proxy i Uprawnienia:** Oznaczanie zwykłych tokenów ERC-20 jako EIP-1967 Upgradeable oraz Multisig 3-of-5 bez odpytania pamięci węzła RPC.
@@ -68,7 +68,7 @@ W audytowanym korpusie 150 legacy raportów zidentyfikowano następujące krytyc
 
 ## C. Claims Removed
 Wycofano i zablokowano na poziomie parsera \`ClaimAuditBlocker\` ponad 11 grup bezpodstawnych deklaracji:
-- \`RFC 3161\` -> Zastąpiono lokalnym skrótem \`SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]\`.
+- \`external trusted timestamp (not evidenced)\` -> Zastąpiono lokalnym skrótem \`SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]\`.
 - \`PCAOB Certified\` -> Zastąpiono numerem CIK i referencją do formularza 10-K w SEC EDGAR.
 - \`41.2% Dark Pool Share\` -> Zastąpiono pomiarem z FINRA ATS lub \`NOT OBSERVED [INSUFFICIENT DATA]\`.
 - \`2.8 bps Kyle Slippage\` -> Zastąpiono estymacją regresyjną \`ESTIMATED HEURISTIC [UNOBSERVED]\`.
@@ -206,7 +206,7 @@ Zgodnie z zasadą pełnej transparentności, każdy raport zawiera jawną sekcj�
 | 5 | Czy każdy source claim ma provenance? | **YES** | Obliczane są skróty \`sourceHash\` i weryfikowana jest pragma kompilatora. |
 | 6 | Czy każdy commit jest prawdziwy? | **YES** | Prawdziwe commity git lub uczciwy fallback \`COMMIT: NOT PROVIDED\`. |
 | 7 | Czy każdy line range jest prawdziwy? | **YES** | Parser AST wyznacza fizyczne linie \`[L10-L45]\` i pobiera realny wycinek kodu. |
-| 8 | Czy RFC 3161 rzeczywiście istnieje? | **NO** | Uczciwie wycofano hasło RFC 3161; zastąpiono pieczęcią \`SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]\`. |
+| 8 | Czy istnieje zewnętrzna, zaufana atestacja czasu? | **NO** | Nie; uczciwie pozostawiono wyłącznie lokalną pieczęć \`SHA-256 INTEGRITY SEAL [LOCAL DETERMINISTIC]\`. |
 | 9 | Czy każdy human review rzeczywiście istnieje? | **NO** | W audytach automatycznych deklarowany jest uczciwy brak: \`HUMAN REVIEW: NOT PERFORMED\`. |
 | 10 | Czy każde "real-time" jest pomierzone? | **YES** | Raportuje \`OBSERVED\` z timestampem pomiaru lub \`ESTIMATED HEURISTIC\`. |
 | 11 | Czy każde "Dark Pool %" ma dataset? | **YES** | Akcje US bazują na FINRA ATS; dla surowców podawany jest status \`NOT OBSERVED [INSUFFICIENT DATA]\`. |

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         : `Velmère Security — Audyt Smart Kontraktu Advanced (${symbol || contractAddress?.slice(0, 10) || "EVM"})`;
       productDescription = isPro
         ? `Automatyczny audyt dekompilacji EVM, analiza SWC/CWE, OWASP Top 10 SC, detekcja honeypot/backdoor i raport PDF 1.7.`
-        : `Kompleksowa dekompilacja bajtokodu, dowody formalne niezmienników, PoC exploit scenarios, pieczęć kryptograficzna SHA-256 i certyfikat RFC 3161.`;
+        : `Kompleksowa dekompilacja bajtokodu, status wykonania niezmienników, scenariusze PoC oraz lokalna pieczęć integralności SHA-256; bez zewnętrznej atestacji czasu.`;
     } else if (serviceType === "browser") {
       unitAmount = isPro ? 1999 : 19999; // 19.99 EUR or 199.99 EUR
       productName = isPro
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         : `Velmère Market Integrity — Analiza Advanced (${symbol || "Asset"})`;
       productDescription = isPro
         ? `Pakiet 14 sygnałów dowodowych, arkusze głębokości L3 ±2%, radar wielorybów on-chain oraz audyt slippage dla ${symbol || "aktywa"}.`
-        : `Instytucjonalny pakiet 20 sygnałów, formalna dekompilacja smart kontraktu, audyt honeypot/backdoor, modele AI oraz certyfikat RFC 3161 dla ${symbol || "aktywa"}.`;
+        : `Instytucjonalny pakiet 20 sygnałów, dekompilacja smart kontraktu, audyt honeypot/backdoor, modele analityczne oraz lokalna pieczęć integralności SHA-256 dla ${symbol || "aktywa"}.`;
     }
 
     // Determine URLs
