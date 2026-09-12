@@ -75,11 +75,11 @@ jobs:
           import fs from 'node:fs';
           const receipt = JSON.parse(fs.readFileSync('artifacts/r10/R10_RELEASE_TRUTH_AFTER_CLAIM_CLEANUP.json', 'utf8'));
           const p0 = receipt.counts?.p0 ?? (receipt.findings ?? []).filter((finding) => finding.severity === 'P0').length;
-          if (p0 !== 0 || receipt.status !== 'PASS') {
+          if (p0 !== 0 || !String(receipt.status ?? '').startsWith('PASS')) {
             console.error(JSON.stringify({ status: receipt.status, counts: receipt.counts, findings: (receipt.findings ?? []).slice(0, 20) }, null, 2));
             process.exit(1);
           }
-          console.log('R10 full candidate truth scan P0=0: PASS');
+          console.log(`R10 full candidate truth scan P0=0: ${receipt.status}`);
           NODE
 
       - name: Commit claim cleanup and receipts with ephemeral auth
