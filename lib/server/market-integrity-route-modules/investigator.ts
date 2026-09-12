@@ -201,9 +201,11 @@ export async function executeShieldMapGetRequest(
   }
   const { locale } = parsedQuery.value;
   const rightsPreflight = buildShieldBasicDeliveryPreflight("investigator");
-  const isDevOrTest = process.env.NODE_ENV !== "production"
-    || request.headers.get("x-velmere-dev") === "true"
-    || new URL(request.url).searchParams.get("dev") === "true";
+
+  // Test/development mode is controlled exclusively by server deployment state.
+  // Request headers/query parameters are never allowed to bypass provider rights
+  // or customer-delivery policy in production.
+  const isDevOrTest = process.env.NODE_ENV !== "production";
 
   if ((!rightsPreflight.customerDeliveryAllowed || !rightsPreflight.providerNetworkAllowed) && !isDevOrTest) {
     const projected = projectShieldBasicCustomerDelivery({
@@ -233,7 +235,7 @@ export async function executeShieldMapGetRequest(
     });
   } catch (error) {
     const errObj = error as { stack?: string; message?: string } | null;
-    return NextResponse.json({ mode: 'error', error: String(errObj?.stack || errObj?.message || error) }, { status: 502, headers });
+    return NextResponse.json({ mode: "error", error: String(errObj?.stack || errObj?.message || error) }, { status: 502, headers });
   }
 }
 
