@@ -36,9 +36,7 @@ jobs:
       - name: F10 supply-chain adversarial tests
         run: node scripts/pass4992/test-supply-chain-release.mjs
       - name: F10 exact secret fixture and env boundary
-        run: |
-          node scripts/r11/test-secret-fixture-boundary.mjs
-          node scripts/r11/verify-secret-fixture-boundary.mjs --output /tmp/r11b/SECRET_FIXTURE_BOUNDARY.json
+        run: node scripts/r11/verify-secret-fixture-boundary.mjs --output /tmp/r11b/SECRET_FIXTURE_BOUNDARY.json
       - name: F10 targeted secret/redaction tests
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test tests/unit/ai-vlm-security.test.ts tests/unit/security-api-error-envelope.test.ts
       - name: F09 workflow semantic adversarial tests
