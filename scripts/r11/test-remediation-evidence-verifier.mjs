@@ -14,7 +14,7 @@ const sha = "a".repeat(40);
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "velmere-evidence-eval-"));
 const write = (name, value) => fs.writeFileSync(path.join(root, name), `${JSON.stringify(value, null, 2)}\n`);
 
-write("RECEIPT.json", {
+const receipt = {
   sourceSha: sha,
   evidenceClass: "CURRENT_GIT_PROVEN_REMEDIATION",
   coveredFindings: ["VA-F01"],
@@ -24,7 +24,8 @@ write("RECEIPT.json", {
   securityRegression: "PASS",
   sourceTruthScan: "PASS",
   productionBuild: "PASS",
-});
+};
+write("RECEIPT.json", receipt);
 write("NPM_AUDIT_VERDICT.json", {
   schemaVersion: "velmere.r11.npm-audit-verdict.v1",
   ok: true,
@@ -33,11 +34,12 @@ write("NPM_AUDIT_VERDICT.json", {
   critical: 0,
 });
 write("TRUTH_SCOPE_V2.json", {
-  schemaVersion: "velmere.r11.truth-scope.v2",
+  schemaVersion: "velmere.r11.truth-scope.v3",
   sourceSha: sha,
   passed: true,
   p0: 0,
   scannedFiles: 10,
+  safeNegatedFindings: [],
 });
 write("PROVIDER_RIGHTS_AUDIT.json", {
   schemaVersion: "velmere.pass21.provider-rights-audit.v2",
@@ -49,29 +51,28 @@ write("PROVIDER_RIGHTS_AUDIT.json", {
 const pass = verifyRemediationEvidence({ root, expectedSha: sha });
 if (!pass.passed) throw new Error("valid_receipts_did_not_pass");
 
-write("RECEIPT.json", { ...JSON.parse(fs.readFileSync(path.join(root, "RECEIPT.json"), "utf8")), sourceSha: "b".repeat(40) });
+write("RECEIPT.json", { ...receipt, sourceSha: "b".repeat(40) });
 assertThrows(() => verifyRemediationEvidence({ root, expectedSha: sha }), "remediation_receipt_wrong_sha");
+write("RECEIPT.json", receipt);
 
-write("RECEIPT.json", {
-  sourceSha: sha,
-  evidenceClass: "CURRENT_GIT_PROVEN_REMEDIATION",
-  coveredFindings: ["VA-F01"],
-  p0RegressionCanaries: "PASS",
-  npmAuditVerifier: "FAIL_CLOSED",
-  typecheck: "PASS",
-  securityRegression: "PASS",
-  sourceTruthScan: "PASS",
-  productionBuild: "PASS",
-});
 write("TRUTH_SCOPE_V2.json", {
-  schemaVersion: "velmere.r11.truth-scope.v2",
+  schemaVersion: "velmere.r11.truth-scope.v3",
   sourceSha: sha,
   passed: true,
   p0: 0,
   scannedFiles: 0,
+  safeNegatedFindings: [],
 });
 assertThrows(() => verifyRemediationEvidence({ root, expectedSha: sha }), "truth_scope_zero_denominator");
 
+write("TRUTH_SCOPE_V2.json", {
+  schemaVersion: "velmere.r11.truth-scope.v3",
+  sourceSha: sha,
+  passed: true,
+  p0: 0,
+  scannedFiles: 10,
+  safeNegatedFindings: [],
+});
 fs.unlinkSync(path.join(root, "PROVIDER_RIGHTS_AUDIT.json"));
 assertThrows(() => verifyRemediationEvidence({ root, expectedSha: sha }), "missing_receipt");
 
