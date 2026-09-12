@@ -38,9 +38,10 @@ export function verifyRemediationEvidence({ root, expectedSha }) {
   assert(npmVerdict.high === 0 && npmVerdict.critical === 0, "npm_audit_high_or_critical");
 
   assert(truth.sourceSha === expectedSha, "truth_scope_wrong_sha");
-  assert(truth.schemaVersion === "velmere.r11.truth-scope.v2", "truth_scope_schema_invalid");
+  assert(truth.schemaVersion === "velmere.r11.truth-scope.v3", "truth_scope_schema_invalid");
   assert(truth.passed === true && truth.p0 === 0, "truth_scope_p0_remaining");
   assert(Number.isInteger(truth.scannedFiles) && truth.scannedFiles > 0, "truth_scope_zero_denominator");
+  assert(Array.isArray(truth.safeNegatedFindings), "truth_scope_negation_inventory_missing");
 
   assert(providerRights.schemaVersion === "velmere.pass21.provider-rights-audit.v2", "provider_rights_schema_invalid");
   assert(providerRights.ok === true, "provider_rights_registry_integrity_fail");
@@ -48,7 +49,7 @@ export function verifyRemediationEvidence({ root, expectedSha }) {
   assert(providerRights.commerciallyEnabledProviders === 0, "unexpected_commercial_provider_enablement");
 
   return {
-    schemaVersion: "velmere.r11.remediation-evidence-evaluation.v1",
+    schemaVersion: "velmere.r11.remediation-evidence-evaluation.v2",
     sourceSha: expectedSha,
     passed: true,
     verifiedSubjects: ["RECEIPT.json", "NPM_AUDIT_VERDICT.json", "TRUTH_SCOPE_V2.json", "PROVIDER_RIGHTS_AUDIT.json"],
