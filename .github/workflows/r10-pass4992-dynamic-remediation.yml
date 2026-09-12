@@ -1,0 +1,68 @@
+name: R10 Pass4992 Dynamic Inventory Remediation
+
+on:
+  push:
+    branches:
+      - r10-pass4992-dynamic
+    paths:
+      - scripts/r10/patch-pass4992-dynamic-inventory.mjs
+      - .github/workflows/r10-pass4992-dynamic-remediation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r10-pass4992-dynamic-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout worker without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Verify bundled runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+      - name: Apply guarded Pass4992 patch
+        run: node scripts/r10/patch-pass4992-dynamic-inventory.mjs
+      - name: Syntax checks
+        run: |
+          node --check scripts/pass4992/supply-chain-release.mjs
+          node --check scripts/pass4992/test-supply-chain-release.mjs
+      - name: Full legacy Pass4992 regression under dynamic inventory policy
+        run: node scripts/pass4992/test-supply-chain-release.mjs
+      - name: Dynamic active-workflow adversarial regression
+        run: node scripts/r10/test-active-workflow-audit.mjs
+      - name: Offline receipt remains release-blocked
+        run: node scripts/pass4992/build-offline-receipt.mjs --expect-release-blocked
+      - name: Commit only verified Pass4992 source/policy changes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git diff --name-only > /tmp/changed.txt
+          allowed='^(scripts/pass4992/supply-chain-release\.mjs|scripts/pass4992/test-supply-chain-release\.mjs|config/pass4992-supply-chain-release-policy\.json)$'
+          bad="$(grep -Ev "$allowed" /tmp/changed.txt || true)"
+          if [ -n "$bad" ]; then echo "Unexpected write scope:"; echo "$bad"; exit 1; fi
+          if [ "$(wc -l < /tmp/changed.txt | tr -d ' ')" -ne 3 ]; then echo "Expected exactly three verified changes"; cat /tmp/changed.txt; exit 1; fi
+          git config user.name "velmere-r10-pass4992-dynamic"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          xargs -d '\n' git add -- < /tmp/changed.txt
+          git commit -m "fix(r10): derive Pass4992 workflow inventory dynamically [supply-chain]"
+          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+          git -c http.https://github.com/.extraheader="$auth_header" push origin HEAD:r10-pass4992-dynamic
