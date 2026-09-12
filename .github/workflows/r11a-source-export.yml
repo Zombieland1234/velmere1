@@ -38,26 +38,18 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import subprocess, shutil, json, os, zipfile, hashlib
-
-          root=Path.cwd()
-          stage=Path('/tmp/velmere-clean/velmere1-r11a-clean-144152c5')
-          stage.mkdir(parents=True, exist_ok=True)
+          root=Path.cwd(); stage=Path('/tmp/velmere-clean/velmere1-r11a-clean-144152c5'); stage.mkdir(parents=True,exist_ok=True)
           tracked=[x.decode() for x in subprocess.check_output(['git','ls-files','-z']).split(b'\0') if x]
-          runtime_required_files={
-            'artifacts/r7/providers/R7_ECB_USAGE_POLICY_REVIEW_20260824.json',
-          }
+          runtime_required_files={'artifacts/r7/providers/R7_ECB_USAGE_POLICY_REVIEW_20260824.json'}
           excluded_prefixes=(
-            'artifacts/','coverage/','docs/','evaluation/','fixtures/','playwright-report/','test-results/',
-            '.velmere/','_velmere/','VELMERE_WORLD_CLASS_VERIFICATION/','P51_NATIVE_WINDOWS_EXACT_BUNDLE_PROJECTION/',
-            'VELMERE_KNOWLEDGE/','config/supply-chain-license-archive-cas-pass4825/',
-            'config/supply-chain-install-script-archive-cas-pass4825/','config/preflight-snapshots/',
-            'dowody','raporty','velmere-final/','velmere-top5-pack/','pliki/','scratch/','naprawa/','verifier/',
-            'preview_screenshots/','audit_captures'
+            'artifacts/','audit_artifacts/','coverage/','docs/','evaluation/','evidence/','fixtures/','playwright-report/','receipts/','reports/','test-results/',
+            '.velmere/','_velmere/','VELMERE_WORLD_CLASS_VERIFICATION/','P51_NATIVE_WINDOWS_EXACT_BUNDLE_PROJECTION/','VELMERE_KNOWLEDGE/',
+            'config/supply-chain-license-archive-cas-pass4825/','config/supply-chain-install-script-archive-cas-pass4825/','config/preflight-snapshots/',
+            'dowody','raporty','velmere-final/','velmere-top5-pack/','pliki/','scratch/','naprawa/','verifier/','preview_screenshots/','audit_captures'
           )
           archive_ext=('.zip','.tar.gz','.tgz','.7z')
           root_drop_prefixes=('VELMERE_','FINAL_','ULTIMATE_','MASTER_','P51_','P52_','P72','P73','P75','P76','P77','P78','P79','P88','P89','P90','P91','P92','P93','P94','P96','P97','P98','P99','P101','AUDIT_','CLAIM_','EVIDENCE_','EXECUTION_','FORMAL_','FUZZING_','HUMAN_','LEGACY_','MARKET_','PACKAGE_','PROVENANCE_','RAPORT_','RELEASE_','REMEDIATION_','REPRODUCIBILITY_','RISK_','SECURITY_','SMART_','TASKS_','TOP_')
           root_drop_ext=('.txt','.tsv','.patch','.cmd','.ps1','.png','.jpg','.jpeg')
-
           def excluded(path):
             if path in runtime_required_files: return None
             if path.startswith(excluded_prefixes): return 'proof_or_generated_plane'
@@ -66,42 +58,29 @@ jobs:
               name=Path(path).name
               if name.startswith(root_drop_prefixes) or name.lower().endswith(root_drop_ext): return 'root_historical_material'
             return None
-
-          included=[]; excluded_rows=[]; included_bytes=0; excluded_bytes=0; by_top={}
+          included=[]; excluded_rows=[]; included_bytes=excluded_bytes=0; by_top={}
           for rel in tracked:
             src=root/rel
             if not src.exists() or src.is_dir(): continue
             size=src.stat().st_size; reason=excluded(rel)
             if reason:
               excluded_rows.append({'path':rel,'bytes':size,'reason':reason}); excluded_bytes+=size; continue
-            dst=stage/rel; dst.parent.mkdir(parents=True,exist_ok=True)
-            shutil.copy2(src,dst)
-            included.append(rel); included_bytes+=size
-            top=rel.split('/',1)[0]; by_top[top]=by_top.get(top,0)+size
-
+            dst=stage/rel; dst.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dst)
+            included.append(rel); included_bytes+=size; top=rel.split('/',1)[0]; by_top[top]=by_top.get(top,0)+size
           required=['package.json','package-lock.json','next.config.mjs','tsconfig.json','app','components','lib','config','public','scripts']
           missing=[p for p in required if not (stage/p).exists()]
           if missing: raise SystemExit('clean_package_required_inputs_missing:'+','.join(missing))
           for p in runtime_required_files:
             if not (stage/p).is_file(): raise SystemExit('runtime_required_input_missing:'+p)
-
-          meta={
-            'schemaVersion':'velmere.r11a.clean-source-package.v2','sourceSha':os.environ['SOURCE_SHA'],
-            'includedFileCount':len(included),'includedBytes':included_bytes,'excludedFileCount':len(excluded_rows),'excludedBytes':excluded_bytes,
-            'runtimeRequiredEvidenceInputs':sorted(runtime_required_files),
-            'topLevelIncludedBytes':dict(sorted(by_top.items(), key=lambda kv:kv[1], reverse=True)),
-            'excluded':excluded_rows,
-            'truthBoundary':'Clean full source/development package. Generated proof/history payloads are excluded except exact files proven to be build/runtime dependencies. Application source, configs, scripts, tests/migrations and runtime assets remain. Package is validated after extraction.'
-          }
+          meta={'schemaVersion':'velmere.r11a.clean-source-package.v3','sourceSha':os.environ['SOURCE_SHA'],'includedFileCount':len(included),'includedBytes':included_bytes,'excludedFileCount':len(excluded_rows),'excludedBytes':excluded_bytes,'runtimeRequiredEvidenceInputs':sorted(runtime_required_files),'topLevelIncludedBytes':dict(sorted(by_top.items(),key=lambda kv:kv[1],reverse=True)),'excluded':excluded_rows,'truthBoundary':'Clean full source/development package. Generated report/evidence/history planes are excluded except exact files proven build/runtime dependencies. Source, configs, scripts, tests/migrations and runtime assets remain. Package is validated after extraction.'}
           Path('/tmp/CLEAN_PACKAGE_METADATA.json').write_text(json.dumps(meta,indent=2)+'\n')
           out=Path('/tmp')/os.environ['PACKAGE_NAME']; prefix=stage.parent
           with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
             for p in sorted(stage.rglob('*')):
               if p.is_file(): z.write(p,p.relative_to(prefix))
-          digest=hashlib.sha256(out.read_bytes()).hexdigest()
-          Path('/tmp/CLEAN_PACKAGE_SHA256.txt').write_text(f'{digest}  {out.name}\n')
-          print(json.dumps({'zipBytes':out.stat().st_size,'sha256':digest,'includedFiles':len(included),'excludedFiles':len(excluded_rows),'topIncluded':list(meta['topLevelIncludedBytes'].items())[:15]},indent=2))
-          if out.stat().st_size > 300*1024*1024: raise SystemExit('clean_package_too_large_over_300MiB')
+          digest=hashlib.sha256(out.read_bytes()).hexdigest(); Path('/tmp/CLEAN_PACKAGE_SHA256.txt').write_text(f'{digest}  {out.name}\n')
+          print(json.dumps({'zipBytes':out.stat().st_size,'sha256':digest,'includedFiles':len(included),'excludedFiles':len(excluded_rows),'topIncluded':list(meta['topLevelIncludedBytes'].items())[:20]},indent=2))
+          if out.stat().st_size > 180*1024*1024: raise SystemExit('clean_package_too_large_over_180MiB')
           PY
       - name: Validate clean ZIP from scratch
         run: |
@@ -118,7 +97,7 @@ jobs:
           import json,hashlib,os
           from pathlib import Path
           z=Path('/tmp')/os.environ['PACKAGE_NAME']; meta=json.loads(Path('/tmp/CLEAN_PACKAGE_METADATA.json').read_text())
-          r={'schemaVersion':'velmere.r11a.clean-source-package-verification.v2','sourceSha':os.environ['SOURCE_SHA'],'zipSha256':hashlib.sha256(z.read_bytes()).hexdigest(),'zipBytes':z.stat().st_size,'includedFileCount':meta['includedFileCount'],'excludedFileCount':meta['excludedFileCount'],'runtimeRequiredEvidenceInputs':meta['runtimeRequiredEvidenceInputs'],'npmCi':'PASS','directTypeScript':'PASS','securityRegression':'PASS','productionBuild':'PASS','officialRelease':False,'productionCredit':False}
+          r={'schemaVersion':'velmere.r11a.clean-source-package-verification.v3','sourceSha':os.environ['SOURCE_SHA'],'zipSha256':hashlib.sha256(z.read_bytes()).hexdigest(),'zipBytes':z.stat().st_size,'includedFileCount':meta['includedFileCount'],'excludedFileCount':meta['excludedFileCount'],'runtimeRequiredEvidenceInputs':meta['runtimeRequiredEvidenceInputs'],'npmCi':'PASS','directTypeScript':'PASS','securityRegression':'PASS','productionBuild':'PASS','officialRelease':False,'productionCredit':False}
           Path('/tmp/CLEAN_PACKAGE_VERIFICATION.json').write_text(json.dumps(r,indent=2)+'\n')
           PY
       - name: Upload validated clean source package
