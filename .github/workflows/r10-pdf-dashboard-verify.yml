@@ -1,0 +1,63 @@
+name: R10 Local PDF Dashboard Verify
+
+on:
+  push:
+    branches:
+      - r10-pdf-dashboard
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Install deterministic PDF raster dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          python3 -m pip install --disable-pip-version-check --no-input Pillow==11.3.0
+      - name: R10 PDF truth regression
+        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-pdf-truth-layout.ts
+      - name: Generate local PDF corpus
+        run: npm run pass35:generate-local-pdfs
+      - name: Verify generated PDF corpus
+        run: npm run pass35:verify-local-pdfs
+      - name: Raster/render PDF QA
+        run: npm run pass35:render-local-pdfs
+      - name: Build PDF QA summary
+        run: npm run pass35:pdf-qa-summary
+      - name: Build R10 local-only readiness dashboard projection
+        run: node scripts/r10/build-local-pdf-readiness-dashboard.mjs
+      - name: Verify local product quality end-to-end
+        run: npm run pass35:verify-local-product-quality
+      - name: Upload PDF verification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-pdf-dashboard-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/pass35/local-product-quality/**
+            _velmere/pass35/PASS35_READINESS_DASHBOARD.json
+            _velmere/pass35/PASS35_LOCAL_PRODUCT_QUALITY_RECEIPT.json
