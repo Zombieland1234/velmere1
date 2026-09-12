@@ -1,0 +1,52 @@
+name: R11B Internal Read-Only Gate
+
+on:
+  push:
+    branches: [r11b-internal-hardening]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Bind exact runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+      - name: Clean install
+        run: npm ci --ignore-scripts
+      - name: F10 supply-chain adversarial tests
+        run: node scripts/pass4992/test-supply-chain-release.mjs
+      - name: F10 targeted secret/redaction tests
+        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test tests/unit/ai-vlm-security.test.ts tests/unit/security-api-error-envelope.test.ts
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Security regression
+        run: npm run security:regression
+      - name: No write-capable R11B workers remain
+        run: |
+          if grep -R -n -E 'contents:[[:space:]]*write' .github/workflows/r11b-*.yml; then
+            echo 'write-capable R11B workflow remains active' >&2
+            exit 1
+          fi
+      - name: Dirty source gate
+        run: |
+          git checkout -- artifacts/pass4992/PASS4992_SUPPLY_CHAIN_ADVERSARIAL_TEST.json || true
+          git diff --exit-code
