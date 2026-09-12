@@ -4,13 +4,13 @@ import fs from "node:fs";
 const file = "lib/security/audit-canonical-report.ts";
 let source = fs.readFileSync(file, "utf8");
 
-function replaceOnce(oldText, newText, id) {
+function replaceExact(oldText, newText, id, expectedCount = 1) {
   const count = source.split(oldText).length - 1;
-  if (count !== 1) throw new Error(`${id}_match_count:${count}`);
-  source = source.replace(oldText, newText);
+  if (count !== expectedCount) throw new Error(`${id}_match_count:${count}:expected:${expectedCount}`);
+  source = source.split(oldText).join(newText);
 }
 
-replaceOnce(
+replaceExact(
 `  const tierQualityScore = clientTier === "advanced"
     ? Math.min(99, Math.round(92 + (report.verdict.confidenceScore % 7)))
     : clientTier === "pro"
@@ -22,7 +22,7 @@ replaceOnce(
 "synthetic_tier_quality",
 );
 
-replaceOnce(
+replaceExact(
 `      lines.push(
         isPl
           ? "TYP ANALIZY: ZAUTOMATYZOWANA WERYFIKACJA STATYCZNA & FORMALNA"
@@ -40,13 +40,13 @@ replaceOnce(
 "formal_analysis_copy",
 );
 
-replaceOnce(
+replaceExact(
 `  const qScore = report.verdict.auditQualityScore ?? (report.clientEntitlementTier === "advanced" ? 95 : report.clientEntitlementTier === "pro" ? 82 : 62);`,
 `  const qScore = report.verdict.auditQualityScore ?? 0;`,
 "pdf_quality_fallback",
 );
 
-replaceOnce(
+replaceExact(
 `  const releaseDecisionStr = report.verdict.releaseDecision ?? "PASS";
   const verificationStatusStr = report.verdict.verificationStatus ?? "VERIFIED";`,
 `  const releaseDecisionStr = report.verdict.releaseDecision ?? "BLOCKED";
@@ -54,26 +54,18 @@ replaceOnce(
 "verdict_fallbacks",
 );
 
-replaceOnce(
+replaceExact(
 `sp.marketStateTimestamp || "2026-09-09T16:00:00Z (NYSE Close)"`,
 `sp.marketStateTimestamp || "NOT_OBSERVED"`,
-"market_timestamp_fallback_pl",
+"market_timestamp_fallbacks",
+2,
 );
-replaceOnce(
-`sp.marketStateTimestamp || "2026-09-09T16:00:00Z (NYSE Close)"`,
-`sp.marketStateTimestamp || "NOT_OBSERVED"`,
-"market_timestamp_fallback_en",
-);
-replaceOnce(
+replaceExact(
 `sp.regulatoryFilingHash || report.target.contractAddress`,
 `sp.regulatoryFilingHash || "NOT_OBSERVED"`,
-"market_filing_fallback_pl",
-);
-replaceOnce(
-`sp.regulatoryFilingHash || report.target.contractAddress`,
-`sp.regulatoryFilingHash || "NOT_OBSERVED"`,
-"market_filing_fallback_en",
+"market_filing_fallbacks",
+2,
 );
 
 fs.writeFileSync(file, source);
-console.log(JSON.stringify({ status: "PATCHED", file, replacements: 8 }, null, 2));
+console.log(JSON.stringify({ status: "PATCHED", file, replacementGroups: 6, concreteReplacements: 8 }, null, 2));
