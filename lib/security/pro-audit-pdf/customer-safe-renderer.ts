@@ -287,7 +287,7 @@ function normalizedPdfOptions(options: CustomerSafePdfOptions) {
     500,
     7,
   );
-  const integrityLabel = fitTextToWidth(options.integrityLabel || "Document integrity verified by Velmère", 330, 7);
+  const integrityLabel = fitTextToWidth(options.integrityLabel || "File integrity commitment by Velmère", 330, 7);
   const issuer = fitTextToWidth(options.issuer || "Issued by Velmère Security", 240, 7, true);
   const generator = fitTextToWidth(options.generator || "Generated automatically by Velmère Security Engine", 250, 7);
   const issuerLine = fitTextToWidth(`${issuer} | ${generator}`, 500, 7);
@@ -372,7 +372,7 @@ export function planCustomerSafePdf(lines: string[], options: CustomerSafePdfOpt
     });
   }
 
-  let pages = paginateCustomerPdfGroups(groups, 692);
+  let pages = paginateCustomerPdfGroups(groups, 650);
   // Orphan prevention / height balancing:
   // If the last page has very few items (< 140 points used) and document is multi-page:
   if (pages.length > 1 && pages[pages.length - 1].usedHeight < 140) {
@@ -380,10 +380,10 @@ export function planCustomerSafePdf(lines: string[], options: CustomerSafePdfOpt
       ...g,
       rows: g.rows.map((r) => ({
         ...r,
-        height: r.blank ? 6 : r.heading ? 15 : 12.5,
+        height: r.blank ? 6 : r.height >= 50 ? r.height : r.heading ? 15 : 12.5,
       })),
     }));
-    const compactPages = paginateCustomerPdfGroups(compactGroups, 706);
+    const compactPages = paginateCustomerPdfGroups(compactGroups, 650);
     if (compactPages.length < pages.length) {
       pages = compactPages;
     }
@@ -558,7 +558,7 @@ function renderStyledPdfRow(row: CustomerSafePdfRenderRow, y: number, documentId
       "0.35 0.40 0.48 rg",
       "BT", "/F1 7.5 Tf",
       `104 ${qrY + 22} Td`,
-      `${encodeProAuditPdfHexText("ISO/IEC 18004 Compliant 2D Barcode | Direct On-Chain & Forensic Verification")} Tj`,
+      `${encodeProAuditPdfHexText("ISO/IEC 18004 2D Barcode | Document reference and verification endpoint")} Tj`,
       "ET",
       "0.18 0.38 0.78 rg",
       "BT", "/F2 7 Tf",
