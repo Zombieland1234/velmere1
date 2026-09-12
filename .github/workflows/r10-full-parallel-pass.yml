@@ -1,0 +1,190 @@
+name: R10 Full Parallel Candidate Pass
+
+on:
+  push:
+    branches:
+      - r10-candidate-truth-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r10-full-parallel-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  build-runtime:
+    name: Exact clean build and runtime smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Verify exact runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+          node scripts/verify-runtime-contract.mjs
+      - name: Clean install from lockfile
+        run: npm ci --ignore-scripts
+      - name: Direct TypeScript gate
+        run: npm run typecheck:direct
+      - name: ESLint full tree
+        run: npx eslint . --max-warnings=0
+      - name: Next production build
+        run: npm run build
+      - name: Start and HTTP smoke
+        run: |
+          mkdir -p artifacts/r10/full-pass
+          (npm exec next start -- -p 3100 > artifacts/r10/full-pass/next-start.log 2>&1 & echo $! > artifacts/r10/full-pass/next-start.pid)
+          ok=0
+          for i in $(seq 1 45); do
+            if curl -fsSL --max-time 5 http://127.0.0.1:3100/ >/dev/null; then ok=1; break; fi
+            sleep 2
+          done
+          test "$ok" = "1"
+          node -e 'const fs=require("fs");fs.writeFileSync("artifacts/r10/full-pass/BUILD_RUNTIME_RECEIPT.json",JSON.stringify({schemaVersion:"velmere.r10.build-runtime.v1",sha:process.env.GITHUB_SHA,node:process.version,npm:require("child_process").execSync("npm --version").toString().trim(),typecheck:"PASS",lint:"PASS",build:"PASS",httpSmoke:"PASS",releaseCredit:false,generatedAt:new Date().toISOString()},null,2))'
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-build-runtime-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: artifacts/r10/full-pass/**
+
+  pdf-render-qa:
+    name: Regenerate and render PDF corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Re-run R10 PDF geometry and truth regression
+        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-pdf-truth-layout.ts
+      - name: Generate local PDF corpus
+        run: npm run pass35:generate-local-pdfs
+      - name: Verify generated PDF corpus
+        run: npm run pass35:verify-local-pdfs
+      - name: Raster/render PDF QA
+        run: npm run pass35:render-local-pdfs
+      - name: Build PDF QA summary
+        run: npm run pass35:pdf-qa-summary
+      - name: Verify local product PDF quality
+        run: npm run pass35:verify-local-product-quality
+      - name: Upload PDF QA evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-pdf-render-qa-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/pass35/local-product-quality/**
+            artifacts/r10/**
+
+  independent-audit:
+    name: Independent static and release audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Verify R10 release truth
+        run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/FULL_PASS_RELEASE_TRUTH.json
+      - name: Verify dynamic workflow inventory
+        run: node scripts/r10/verify-active-workflows.mjs --write --output artifacts/r10/FULL_PASS_ACTIVE_WORKFLOWS.json
+      - name: Verify authority reset remains fail-closed
+        run: node scripts/r10/verify-authority-genesis.mjs --write --output artifacts/r10/FULL_PASS_AUTHORITY.json
+      - name: PASS25 prebuild audit
+        continue-on-error: true
+        run: node scripts/pass25/audit-prebuild-readiness.mjs
+      - name: Product readiness audit
+        continue-on-error: true
+        run: node scripts/pass23/audit-current-product-readiness.mjs
+      - name: Provider rights audit
+        continue-on-error: true
+        run: node scripts/pass21/audit-provider-rights-registry.mjs
+      - name: Database contract audit
+        continue-on-error: true
+        run: node scripts/pass14/audit-database-contract.mjs
+      - name: Supply-chain dynamic workflow audit
+        run: node scripts/r10/verify-active-workflows.mjs --write --output artifacts/r10/FULL_PASS_SUPPLY_CHAIN.json
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-independent-audit-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/r10/**
+            artifacts/pass23/**
+            artifacts/pass25/**
+            artifacts/providers/**
+            artifacts/db/**
+
+  security-engine:
+    name: Security engine regressions and benchmark
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Security regression suite
+        run: npm run security:regression
+      - name: Security benchmark suite
+        run: npm run security:benchmark
+      - name: Upload security evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-security-engine-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/security/**
+            artifacts/benchmarks/**
+            artifacts/r10/**
