@@ -1,0 +1,52 @@
+name: R10 Direct Typecheck Remediation Verify
+
+on:
+  push:
+    branches:
+      - r10-candidate-truth-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r10-direct-typecheck-remediation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify-remediation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Exact runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+      - name: Apply guarded remediation in ephemeral checkout
+        run: node scripts/r10/fix-direct-typecheck.mjs
+      - name: Install exact lockfile
+        run: npm ci --ignore-scripts
+      - name: Direct TypeScript gate
+        run: npm run typecheck:direct
+      - name: Upload remediation receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-direct-typecheck-remediation-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: artifacts/r10/R10_DIRECT_TYPECHECK_REMEDIATION.json
