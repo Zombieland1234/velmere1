@@ -33,12 +33,16 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p artifacts/r10/lint
-          npx eslint app components lib config i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs --format json > artifacts/r10/lint/RELEASE_LINT.json || true
+          git ls-files -z 'app/**' 'components/**' 'lib/**' 'config/**' 'types/**' i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs \
+            | xargs -0 --no-run-if-empty npx eslint --format json --no-error-on-unmatched-pattern \
+            > artifacts/r10/lint/RELEASE_LINT.json || true
           node - <<'NODE'
           const fs=require('fs');
-          const rows=JSON.parse(fs.readFileSync('artifacts/r10/lint/RELEASE_LINT.json','utf8'));
+          const raw=fs.readFileSync('artifacts/r10/lint/RELEASE_LINT.json','utf8').trim();
+          if(!raw) throw new Error('release_lint_json_empty');
+          const rows=JSON.parse(raw);
           const summary=rows.reduce((a,r)=>{a.files++;a.errors+=r.errorCount||0;a.warnings+=r.warningCount||0;return a},{files:0,errors:0,warnings:0});
-          summary.scope=['app','components','lib','config','i18n.ts','navigation.ts','proxy.ts','routing.ts','next.config.mjs'];
+          summary.scope=['app/**','components/**','lib/**','config/**','types/**','i18n.ts','navigation.ts','proxy.ts','routing.ts','next.config.mjs'];
           summary.runtimeReleaseGate=true;
           fs.writeFileSync('artifacts/r10/lint/RELEASE_LINT_SUMMARY.json',JSON.stringify(summary,null,2));
           console.log(summary);
