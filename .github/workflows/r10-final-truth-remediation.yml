@@ -52,6 +52,8 @@ jobs:
         run: npm run build
       - name: Commit only truth-remediated source
         run: |
+          # Next may normalize this generated declaration during build; it is not part of the remediation.
+          git checkout -- next-env.d.ts
           git diff --name-only > /tmp/changed.txt
           allowed='^(reports/LEGAL_COMPLIANCE_AND_REGULATORY_OPINION\.md|app/api/checkout/stripe-analysis/route\.ts|components/security/SecurityAuditsCleanPage\.tsx|scripts/generate-50-audits-benchmark\.mjs|scripts/furnace/run-world-class-furnace\.ts|scripts/build-final-quality-report\.mjs)$'
           bad="$(grep -Ev "$allowed" /tmp/changed.txt || true)"
