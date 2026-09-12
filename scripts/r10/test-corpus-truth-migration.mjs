@@ -113,7 +113,7 @@ try {
   assert.deepEqual(p0, [], JSON.stringify(p0, null, 2));
 
   const second = migrateCorpus(tmp, { write: true });
-  assert.equal(second.preflightLegacyAliasRestores, 18, "six futures aliases across three tiers should be restored only for recognition");
+  assert.equal(second.preflightLegacyAliasRestores, 12, "four canonical-symbol-changing futures aliases across three tiers should be restored only for recognition");
   assert.equal(second.changedFiles, 0, "migration must be byte-idempotent after first write");
   assert.equal(second.beforeDigest, second.afterDigest);
 
