@@ -28,40 +28,55 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('components/security/SecurityAuditsCleanPage.tsx')
           s = p.read_text()
-          old = '''      if (event.data?.type === "VELMERE_STRIPE_PAYMENT_SUCCESS") {
-                completeAuditPaymentSuccess(tier);'''
-          new = '''      if (event.data?.type === "VELMERE_STRIPE_CHECKOUT_RETURNED") {
-                // The popup return is only a browser navigation signal. It is never
-                // payment or entitlement authority; verify the exact session server-side.
-                void (async () => {
-                  setIsAuditStripeLoading(true);
-                  try {
-                    const res = await fetch(`/api/checkout/stripe-analysis?sessionId=${encodeURIComponent(sessionId)}`);
-                    if (res.ok) {
-                      const checkData = await res.json();
-                      if (checkData.ok && checkData.paid) {
-                        completeAuditPaymentSuccess(tier);
-                        return;
-                      }
-                    }
-                    setAuditStripeError("Płatność nie została jeszcze potwierdzona przez serwer.");
-                  } catch {
-                    setAuditStripeError("Nie udało się zweryfikować płatności po stronie serwera.");
-                  }
-                  setIsAuditStripeLoading(false);
-                })();'''
-          if old in s:
-              s2 = s.replace(old, new, 1)
-              if old in s2:
-                  raise SystemExit('old F17 authority block remains after single replacement')
+          old_token = 'VELMERE_STRIPE_PAYMENT_SUCCESS'
+          new_token = 'VELMERE_STRIPE_CHECKOUT_RETURNED'
+
+          if old_token in s:
+              pattern = re.compile(
+                  r'(?m)^([ \t]*)if \(event\.data\?\.type === "VELMERE_STRIPE_PAYMENT_SUCCESS"\) \{\n[ \t]*completeAuditPaymentSuccess\(tier\);'
+              )
+              m = pattern.search(s)
+              if not m:
+                  raise SystemExit('legacy F17 token exists but exact authority block was not found')
+              indent = m.group(1)
+              inner = indent + '  '
+              deeper = inner + '  '
+              deepest = deeper + '  '
+              replacement = '\n'.join([
+                  indent + 'if (event.data?.type === "VELMERE_STRIPE_CHECKOUT_RETURNED") {',
+                  inner + '// The popup return is only a browser navigation signal. It is never',
+                  inner + '// payment or entitlement authority; verify the exact session server-side.',
+                  inner + 'void (async () => {',
+                  deeper + 'setIsAuditStripeLoading(true);',
+                  deeper + 'try {',
+                  deepest + 'const res = await fetch(`/api/checkout/stripe-analysis?sessionId=${encodeURIComponent(sessionId)}`);',
+                  deepest + 'if (res.ok) {',
+                  deepest + '  const checkData = await res.json();',
+                  deepest + '  if (checkData.ok && checkData.paid) {',
+                  deepest + '    completeAuditPaymentSuccess(tier);',
+                  deepest + '    return;',
+                  deepest + '  }',
+                  deepest + '}',
+                  deepest + 'setAuditStripeError("Płatność nie została jeszcze potwierdzona przez serwer.");',
+                  deeper + '} catch {',
+                  deepest + 'setAuditStripeError("Nie udało się zweryfikować płatności po stronie serwera.");',
+                  deeper + '}',
+                  deeper + 'setIsAuditStripeLoading(false);',
+                  inner + '})();',
+              ])
+              s2, count = pattern.subn(replacement, s, count=1)
+              if count != 1 or old_token in s2:
+                  raise SystemExit(f'F17 replacement count/legacy-token check failed: count={count}')
               p.write_text(s2)
               print('F17 patch applied')
-          elif new in s:
+          elif new_token in s:
               print('F17 patch already present; no source rewrite needed')
           else:
-              raise SystemExit('expected F17 authority block not found')
+              raise SystemExit('neither legacy nor corrected F17 authority token found')
           PY
       - name: Verify F17 authority contract
         run: node scripts/r11/verify-paid-browser-authority.mjs
