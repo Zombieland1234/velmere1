@@ -9,14 +9,17 @@
  */
 
 const DANGEROUS_HTML_PATTERNS = /<[^>]*>|javascript:|data:|vbscript:/gi;
-const CONTROL_CHARACTERS = /[\x00-\x1f\x7f]/g;
+function stripControlCharacters(value: string): string {
+  return Array.from(value).filter((char) => {
+    const code = char.charCodeAt(0);
+    return code > 31 && code !== 127;
+  }).join("");
+}
 const PATH_TRAVERSAL_PATTERNS = /(\.\.[/\\]|[/\\]\.\.|^\/|^\\)/;
 
 export function sanitizeContractInput(value: unknown): string {
   if (typeof value !== "string") return "";
-  return value
-    .replace(DANGEROUS_HTML_PATTERNS, "")
-    .replace(CONTROL_CHARACTERS, "")
+  return stripControlCharacters(value.replace(DANGEROUS_HTML_PATTERNS, ""))
     .trim()
     .slice(0, 256);
 }
