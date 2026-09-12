@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { migrateCorpus } from "./migrate-corpus-truth.mjs";
+import { migrateCorpus } from "./migrate-corpus-truth-v2.mjs";
 import { runReleaseTruthScan } from "./release-truth-lib.mjs";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "velmere-r10-corpus-migration-"));
@@ -76,10 +76,13 @@ try {
   assert.equal(receipt.failClosedVerdicts, 180);
   assert.equal(receipt.changedFiles, 180);
   assert.notEqual(receipt.beforeDigest, receipt.afterDigest);
+  assert.equal(receipt.migrationEngine, "r10-corpus-truth-v2");
 
   const identityBySymbol = new Map();
+  const migratedReports = [];
   for (const name of fs.readdirSync(path.join(tmp, "reports", "real_markets")).filter((x) => x.endsWith(".json")).sort()) {
     const report = JSON.parse(fs.readFileSync(path.join(tmp, "reports", "real_markets", name), "utf8"));
+    migratedReports.push(report);
     assert.equal(report.verdict.riskScore, null);
     assert.equal(report.verdict.auditQualityScore, 0);
     assert.equal(report.verdict.evidenceCoverage, 0);
@@ -95,9 +98,7 @@ try {
     else assert.equal(identityBySymbol.get(alias), identity, `tier identity drift for ${alias}`);
   }
 
-  const jpy = [...fs.readdirSync(path.join(tmp, "reports", "real_markets"))]
-    .filter((name) => /usd_jpy/.test(name))
-    .map((name) => JSON.parse(fs.readFileSync(path.join(tmp, "reports", "real_markets", name), "utf8")));
+  const jpy = migratedReports.filter((report) => report.marketSpec.legacyCustomerAlias === "USDJPY");
   assert.equal(jpy.length, 3);
   for (const report of jpy) {
     assert.equal(report.marketSpec.canonicalSymbol, "6J");
@@ -109,10 +110,11 @@ try {
   assert.deepEqual(p0, [], JSON.stringify(p0, null, 2));
 
   const second = migrateCorpus(tmp, { write: true });
+  assert.equal(second.preflightLegacyAliasRestores, 18, "six futures aliases across three tiers should be restored only for recognition");
   assert.equal(second.changedFiles, 0, "migration must be byte-idempotent after first write");
   assert.equal(second.beforeDigest, second.afterDigest);
 
-  console.log("R10 deterministic 180-report corpus truth migration: PASS");
+  console.log("R10 deterministic 180-report corpus truth migration V2: PASS");
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
