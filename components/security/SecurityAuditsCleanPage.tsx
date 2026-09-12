@@ -813,8 +813,26 @@ export default function SecurityAuditsCleanPage({ locale }: { locale: string }) 
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== popupWindow) return;
       if (event.data?.sessionId !== sessionId) return;
-      if (event.data?.type === "VELMERE_STRIPE_PAYMENT_SUCCESS") {
-        completeAuditPaymentSuccess(tier);
+      if (event.data?.type === "VELMERE_STRIPE_CHECKOUT_RETURNED") {
+        // The popup return is only a browser navigation signal. It is never
+        // payment or entitlement authority; verify the exact session server-side.
+        void (async () => {
+          setIsAuditStripeLoading(true);
+          try {
+            const res = await fetch(`/api/checkout/stripe-analysis?sessionId=${encodeURIComponent(sessionId)}`);
+            if (res.ok) {
+              const checkData = await res.json();
+              if (checkData.ok && checkData.paid) {
+                completeAuditPaymentSuccess(tier);
+                return;
+              }
+            }
+            setAuditStripeError("Płatność nie została jeszcze potwierdzona przez serwer.");
+          } catch {
+            setAuditStripeError("Nie udało się zweryfikować płatności po stronie serwera.");
+          }
+          setIsAuditStripeLoading(false);
+        })();
       } else if (event.data?.type === "VELMERE_STRIPE_PAYMENT_CANCELLED") {
         setAuditStripeError("Płatność została anulowana.");
         setAuditStripePopupState(null);
