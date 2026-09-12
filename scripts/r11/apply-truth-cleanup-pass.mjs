@@ -56,7 +56,10 @@ const retire = [
 ];
 for (const file of retire) {
   if (!fs.existsSync(file)) throw new Error(`retire_target_missing:${file}`);
-  assertNoActiveReference(file);
+  // The cleanup workflow contains an exact write-scope list naming these files.
+  // It self-deletes in the same local transaction, so it is the only allowed
+  // reference during this one-shot retirement pass.
+  assertNoActiveReference(file, ["r11-truth-cleanup-apply.yml"]);
   fs.unlinkSync(file);
 }
 
