@@ -1,0 +1,74 @@
+name: R11B F17 Market One-Shot Patch
+
+on:
+  push:
+    branches: [r11b-f17-payment-authority-v1]
+
+permissions:
+  contents: write
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  patch-market-f17:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Bind exact F17 subjects
+        shell: bash
+        run: |
+          test "$(git hash-object components/security/SecurityAuditsCleanPage.tsx)" = "fc7b65707575bf98cecef2cfd0e5bd746a69a3fc"
+          test "$(git hash-object components/market-integrity/AnalysisCardsSection.tsx)" = "b59229435c7f0bf076300911fbc648822a9c9d33"
+          test "$(git hash-object scripts/r11/verify-paid-browser-authority.mjs)" = "b8fb5f8ea600962ae16e5f83d3e3d9ef76c54123"
+      - name: Apply exact market F17 source patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('components/market-integrity/AnalysisCardsSection.tsx')
+          s = p.read_text()
+          pattern = re.compile(
+              r'(?m)^([ \t]*)if \(event\.data\?\.type === "VELMERE_STRIPE_PAYMENT_SUCCESS"\) \{\n[ \t]*completePaymentSuccess\(tier\);'
+          )
+          replacement = lambda m: (
+              m.group(1) + 'if (event.data?.type === "VELMERE_STRIPE_CHECKOUT_RETURNED") {\n' +
+              m.group(1) + '  void checkSessionStatusNow();'
+          )
+          if 'VELMERE_STRIPE_PAYMENT_SUCCESS' in s:
+              s2, count = pattern.subn(replacement, s, count=1)
+              if count != 1 or 'VELMERE_STRIPE_PAYMENT_SUCCESS' in s2:
+                  raise SystemExit(f'market F17 replacement failed: count={count}')
+              p.write_text(s2)
+              print('market F17 patch applied')
+          elif 'VELMERE_STRIPE_CHECKOUT_RETURNED' in s:
+              print('market F17 patch already present')
+          else:
+              raise SystemExit('market F17 authority token not found')
+          PY
+          changed="$(git diff --name-only)"
+          test "$changed" = "components/market-integrity/AnalysisCardsSection.tsx"
+      - name: Verify global F17 authority contract
+        run: node scripts/r11/verify-paid-browser-authority.mjs --output /tmp/PAID_BROWSER_AUTHORITY.json
+      - name: Commit market source patch
+        shell: bash
+        run: |
+          if git diff --quiet -- components/market-integrity/AnalysisCardsSection.tsx; then
+            echo 'No market source change to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add components/market-integrity/AnalysisCardsSection.tsx
+          git commit -m 'fix(r11b): remove market popup payment authority'
+          git push origin HEAD:r11b-f17-payment-authority-v1
