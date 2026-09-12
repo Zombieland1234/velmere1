@@ -9,7 +9,7 @@ const args = process.argv.slice(2);
 const outputIndex = args.indexOf("--output");
 const outputPath = outputIndex >= 0 ? args[outputIndex + 1] : null;
 const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "velmere-r11-f10-"));
-const fixturePath = "synthetic/pass4992-secret-fingerprint.fixture";
+const fixturePath = "synthetic/pass4992-secret-fingerprint.txt";
 const envPath = ".env";
 const envLocalPath = ".env.local";
 
