@@ -60,11 +60,18 @@ jobs:
             'app/styles/global-header.css',
             'app/styles/shield-pro-terminal.css',
           ];
+          const expectedCaptureSlugs=[
+            'audits-desktop','audits-mobile',
+            'shield-desktop','shield-mobile',
+            'real-markets-desktop','real-markets-mobile',
+            'asset-popup-desktop','asset-popup-mobile',
+          ];
           const sha256=(p)=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');
           const browser=await chromium.launch({headless:true});
           const results=[];
           const pageErrors=[];
           const consoleErrors=[];
+          const captureErrors=[];
 
           async function dismiss(page){
             const labels=['ALLOW ALL','NECESSARY ONLY','ACCEPT ALL','ACCEPT','ONLY NECESSARY','AKCEPTUJ','TYLKO NIEZBĘDNE'];
@@ -90,86 +97,123 @@ jobs:
 
           async function capture(route,slug,viewport,scale){
             const page=await browser.newPage({viewport,deviceScaleFactor:scale,isMobile:viewport.width<500});
-            attachErrorCapture(page,slug);
-            const response=await page.goto(`http://127.0.0.1:3100${route}`,{waitUntil:'domcontentloaded',timeout:60000});
-            await page.waitForTimeout(1800);
-            const dismissedCookieWith=await dismiss(page);
-            await page.waitForTimeout(400);
-            const status=response?.status() ?? 0;
-            const metrics=await page.evaluate(()=>({
-              width:window.innerWidth,
-              scrollWidth:document.documentElement.scrollWidth,
-              height:window.innerHeight,
-              scrollHeight:document.documentElement.scrollHeight,
-              title:document.title,
-            }));
-            const file=`${out}/${slug}.png`;
-            await page.screenshot({path:file,fullPage:true});
-            const row={route,slug,status,viewport,scale,file,sha256:sha256(file),horizontalOverflow:metrics.scrollWidth>metrics.width,metrics,dismissedCookieWith};
-            results.push(row);
-            if(status>=500 || status===0) throw new Error(`visual_route_status:${route}:${status}`);
-            if(row.horizontalOverflow) throw new Error(`horizontal_overflow:${route}:${metrics.scrollWidth}>${metrics.width}`);
-            await page.close();
+            try {
+              attachErrorCapture(page,slug);
+              const response=await page.goto(`http://127.0.0.1:3100${route}`,{waitUntil:'domcontentloaded',timeout:60000});
+              await page.waitForTimeout(1800);
+              const dismissedCookieWith=await dismiss(page);
+              await page.waitForTimeout(400);
+              const status=response?.status() ?? 0;
+              const metrics=await page.evaluate(()=>({
+                width:window.innerWidth,
+                scrollWidth:document.documentElement.scrollWidth,
+                height:window.innerHeight,
+                scrollHeight:document.documentElement.scrollHeight,
+                title:document.title,
+              }));
+              const file=`${out}/${slug}.png`;
+              await page.screenshot({path:file,fullPage:true});
+              const row={route,slug,status,viewport,scale,file,sha256:sha256(file),horizontalOverflow:metrics.scrollWidth>metrics.width,metrics,dismissedCookieWith};
+              results.push(row);
+              if(status>=500 || status===0) throw new Error(`visual_route_status:${route}:${status}`);
+              if(row.horizontalOverflow) throw new Error(`horizontal_overflow:${route}:${metrics.scrollWidth}>${metrics.width}`);
+            } finally {
+              await page.close().catch(()=>undefined);
+            }
           }
 
           for(const [route,slug] of [['/en/security/audits','audits'],['/en/shield','shield'],['/en/real-markets','real-markets']]){
-            await capture(route,`${slug}-desktop`,{width:1440,height:900},2);
-            await capture(route,`${slug}-mobile`,{width:375,height:812},1);
+            for(const [suffix,viewport,scale] of [
+              ['desktop',{width:1440,height:900},2],
+              ['mobile',{width:375,height:812},1],
+            ]) {
+              const captureSlug=`${slug}-${suffix}`;
+              try { await capture(route,captureSlug,viewport,scale); }
+              catch(error){ captureErrors.push({slug:captureSlug,message:String(error?.message||error)}); }
+            }
           }
 
           async function captureRealMarketsPopup(slug,viewport,scale){
             const page=await browser.newPage({viewport,deviceScaleFactor:scale,isMobile:viewport.width<500});
-            attachErrorCapture(page,slug);
-            const response=await page.goto('http://127.0.0.1:3100/en/real-markets',{waitUntil:'domcontentloaded',timeout:60000});
-            await page.waitForTimeout(1800);
-            await dismiss(page);
-            const trigger=page.getByRole('button',{name:/full chart and analysis/i}).first();
-            if(!(await trigger.count()) || !(await trigger.isVisible())) throw new Error(`asset_popup_trigger_missing:${slug}`);
-            const triggerName=await trigger.getAttribute('aria-label');
-            await trigger.click({timeout:5000});
-            const modal=page.locator('[data-pass4590-asset-detail-modal], .vlm-asset-detail-modal').first();
-            await modal.waitFor({state:'visible',timeout:10000});
-            await page.waitForTimeout(600);
-            const modalMetrics=await modal.evaluate(el=>({
-              clientWidth:el.clientWidth,
-              scrollWidth:el.scrollWidth,
-              clientHeight:el.clientHeight,
-              scrollHeight:el.scrollHeight,
-            }));
-            const file=`${out}/${slug}.png`;
-            await page.screenshot({path:file,fullPage:false});
-            const row={
-              route:'/en/real-markets',slug,status:response?.status()??0,viewport,scale,file,sha256:sha256(file),
-              horizontalOverflow:modalMetrics.scrollWidth>modalMetrics.clientWidth,
-              modalMetrics,triggerName,
-            };
-            results.push(row);
-            await page.close();
-            if(row.horizontalOverflow) throw new Error(`asset_popup_horizontal_overflow:${slug}`);
-            return {slug,triggerName};
+            try {
+              attachErrorCapture(page,slug);
+              const response=await page.goto('http://127.0.0.1:3100/en/real-markets',{waitUntil:'domcontentloaded',timeout:60000});
+              await page.waitForTimeout(1800);
+              const dismissedCookieWith=await dismiss(page);
+              const trigger=page.getByRole('button',{name:/full chart and analysis/i}).first();
+              if(!(await trigger.count()) || !(await trigger.isVisible())) throw new Error(`asset_popup_trigger_missing:${slug}`);
+              const triggerName=await trigger.getAttribute('aria-label');
+              await trigger.click({timeout:5000});
+              const modal=page.locator('section[role="dialog"][aria-modal="true"]').first();
+              await modal.waitFor({state:'visible',timeout:10000});
+              await page.waitForTimeout(600);
+              const modalMetrics=await modal.evaluate(el=>{
+                const rect=el.getBoundingClientRect();
+                return {
+                  left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
+                  clientWidth:el.clientWidth,scrollWidth:el.scrollWidth,
+                  clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,
+                  viewportWidth:window.innerWidth,viewportHeight:window.innerHeight,
+                  documentScrollWidth:document.documentElement.scrollWidth,
+                };
+              });
+              const file=`${out}/${slug}.png`;
+              await page.screenshot({path:file,fullPage:false});
+              const horizontalOverflow=
+                modalMetrics.documentScrollWidth>modalMetrics.viewportWidth ||
+                modalMetrics.left < -1 || modalMetrics.right > modalMetrics.viewportWidth + 1;
+              const row={
+                route:'/en/real-markets',slug,status:response?.status()??0,viewport,scale,file,sha256:sha256(file),
+                horizontalOverflow,modalMetrics,triggerName,dismissedCookieWith,
+              };
+              results.push(row);
+              if(horizontalOverflow) throw new Error(`asset_popup_horizontal_overflow:${slug}`);
+            } finally {
+              await page.close().catch(()=>undefined);
+            }
           }
 
-          const popupEvidence=[];
-          popupEvidence.push(await captureRealMarketsPopup('asset-popup-desktop',{width:1440,height:900},2));
-          popupEvidence.push(await captureRealMarketsPopup('asset-popup-mobile',{width:375,height:812},1));
+          for(const [slug,viewport,scale] of [
+            ['asset-popup-desktop',{width:1440,height:900},2],
+            ['asset-popup-mobile',{width:375,height:812},1],
+          ]) {
+            try { await captureRealMarketsPopup(slug,viewport,scale); }
+            catch(error){ captureErrors.push({slug,message:String(error?.message||error)}); }
+          }
 
-          await browser.close();
+          await browser.close().catch(()=>undefined);
+          const capturedSlugs=results.map((row)=>row.slug);
+          const missingCaptureSlugs=expectedCaptureSlugs.filter((slug)=>!capturedSlugs.includes(slug));
+          const popupEvidence=results
+            .filter((row)=>row.slug.startsWith('asset-popup-'))
+            .map((row)=>({slug:row.slug,triggerName:row.triggerName??null,sha256:row.sha256}));
           const receipt={
-            schemaVersion:'velmere.pass26.visual-reapproval-pack.v2',
+            schemaVersion:'velmere.pass26.visual-reapproval-pack.v3',
             subjectSha:process.env.GITHUB_SHA,
             evidenceClass:'EXACT_GIT_CI_RENDERED_SCREENSHOT_PACK',
             protectedHashes:Object.fromEntries(protectedPaths.map(p=>[p,sha256(p)])),
+            expectedCaptureCount:expectedCaptureSlugs.length,
+            capturedCount:results.length,
+            expectedCaptureSlugs,
+            capturedSlugs,
+            missingCaptureSlugs,
             viewports:{desktop:{width:1440,height:900,deviceScaleFactor:2},mobile:{width:375,height:812,deviceScaleFactor:1}},
             results,
             popupCaptured:popupEvidence.length===2,
             popupEvidence,
+            captureErrors,
             pageErrors,
             consoleErrors,
-            automatedLayoutPreconditionsPassed:popupEvidence.length===2 && results.every(r=>!r.horizontalOverflow),
+            denominatorConserved:results.length + missingCaptureSlugs.length === expectedCaptureSlugs.length,
+            automatedLayoutPreconditionsPassed:
+              results.length===expectedCaptureSlugs.length &&
+              missingCaptureSlugs.length===0 &&
+              captureErrors.length===0 &&
+              results.every(r=>!r.horizontalOverflow),
             runtimeHydrationClean:pageErrors.length===0,
             humanVisualReviewRequired:true,
             releaseVisualApproval:false,
-            truthBoundary:'Rendered screenshots and automated overflow/runtime checks are evidence inputs. Layout capture success does not waive browser runtime errors and does not self-approve visual design.',
+            truthBoundary:'Rendered screenshots and automated overflow/runtime checks are evidence inputs. Every expected capture is counted. Missing/failed captures remain explicit. Layout capture success does not waive browser runtime errors and does not self-approve visual design.',
           };
           fs.writeFileSync(`${out}/RECEIPT.json`,JSON.stringify(receipt,null,2)+'\n');
           console.log(JSON.stringify(receipt,null,2));
@@ -222,7 +266,10 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const receipt=JSON.parse(fs.readFileSync('artifacts/pass26/visual-reapproval/RECEIPT.json','utf8'));
-          if(!receipt.automatedLayoutPreconditionsPassed) throw new Error('visual layout prerequisites failed');
+          const path='artifacts/pass26/visual-reapproval/RECEIPT.json';
+          if(!fs.existsSync(path)) throw new Error('visual receipt missing: capture harness failed before receipt creation');
+          const receipt=JSON.parse(fs.readFileSync(path,'utf8'));
+          if(receipt.denominatorConserved!==true) throw new Error('visual capture denominator not conserved');
+          if(!receipt.automatedLayoutPreconditionsPassed) throw new Error(`visual layout prerequisites failed: ${JSON.stringify({missing:receipt.missingCaptureSlugs,captureErrors:receipt.captureErrors})}`);
           if(!receipt.runtimeHydrationClean) throw new Error('browser runtime/hydration errors remain; inspect SHIELD_DEV_HYDRATION.json');
           NODE
