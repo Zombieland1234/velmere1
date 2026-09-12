@@ -416,7 +416,7 @@ export async function startVlmServiceCheckout(args: {
           cleanup();
           try {
             popup?.close();
-          } catch {}
+          } catch { /* intentional best-effort fallback; failure is non-authoritative */ }
           writeVlmPaidAccessBundle({
             productId: args.productId,
             context,
@@ -447,7 +447,7 @@ export async function startVlmServiceCheckout(args: {
                 handleSuccess();
               }
             }
-          } catch {}
+          } catch { /* intentional best-effort fallback; failure is non-authoritative */ }
           if (popup && popup.closed && !isDone) {
             setTimeout(async () => {
               if (isDone) return;

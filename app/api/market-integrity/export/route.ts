@@ -28,7 +28,7 @@ async function handleExport(request: NextRequest) {
     if (request.method === "POST") {
       try {
         body = await request.json();
-      } catch {}
+      } catch { /* intentional best-effort fallback; failure is non-authoritative */ }
     }
 
     const symbol = (body.symbol || searchParams.get("symbol") || "ASSET").toUpperCase();
