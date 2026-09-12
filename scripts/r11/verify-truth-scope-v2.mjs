@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { scanTextForReleaseTruth, verifyBuildTruth, walkTextFiles } from "../r10/release-truth-lib.mjs";
 
 const ROOT = process.cwd();
@@ -20,6 +21,7 @@ const EXACT_EXCLUSIONS = new Set([
   "scripts/r10/release-truth-lib.mjs",
   "scripts/r10/test-release-truth-gate.mjs",
   "scripts/r11/redteam-p0-regressions.mjs",
+  "scripts/r11/test-truth-scope-v2.mjs",
   "scripts/r11/verify-truth-scope-v2.mjs",
 ]);
 
@@ -78,4 +80,4 @@ function main() {
   if (!receipt.passed) process.exit(1);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();
