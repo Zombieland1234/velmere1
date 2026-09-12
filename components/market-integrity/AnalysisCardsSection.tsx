@@ -551,8 +551,8 @@ export default function AnalysisCardsSection({
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== popupWindow) return;
       if (event.data?.sessionId !== sessionId) return;
-      if (event.data?.type === "VELMERE_STRIPE_PAYMENT_SUCCESS") {
-        completePaymentSuccess(tier);
+      if (event.data?.type === "VELMERE_STRIPE_CHECKOUT_RETURNED") {
+        void checkSessionStatusNow();
       } else if (event.data?.type === "VELMERE_STRIPE_PAYMENT_CANCELLED") {
         setStripeError("Płatność została anulowana.");
         setStripePopupState(null);
