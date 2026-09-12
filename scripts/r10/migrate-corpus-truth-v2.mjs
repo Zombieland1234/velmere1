@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,36 +7,73 @@ import { migrateCorpus as migrateCorpusV1 } from "./migrate-corpus-truth.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(HERE, "../..");
+const CORPUS_DIRS = ["smart_contract", "shield", "real_markets"];
 
-function withLegacyAliasesRestored(root, write, callback) {
-  const dir = path.join(root, "reports", "real_markets");
-  const backups = [];
-  let restored = 0;
-  if (fs.existsSync(dir)) {
+function sha256(value) {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function snapshotCorpus(root) {
+  const entries = [];
+  for (const surface of CORPUS_DIRS) {
+    const dir = path.join(root, "reports", surface);
+    if (!fs.existsSync(dir)) continue;
     for (const name of fs.readdirSync(dir).filter((entry) => entry.endsWith(".json")).sort()) {
       const file = path.join(dir, name);
-      const raw = fs.readFileSync(file, "utf8");
-      const report = JSON.parse(raw);
-      const alias = report?.marketSpec?.legacyCustomerAlias;
-      if (!alias || !report?.target || report.target.tokenSymbol === alias) continue;
-      report.target.tokenSymbol = alias;
-      backups.push([file, raw]);
-      fs.writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`, "utf8");
-      restored += 1;
+      entries.push({
+        key: `${surface}/${name}`,
+        file,
+        raw: fs.readFileSync(file, "utf8"),
+      });
     }
   }
-  try {
-    const receipt = callback();
-    return { ...receipt, preflightLegacyAliasRestores: restored, migrationEngine: "r10-corpus-truth-v2" };
-  } finally {
-    if (!write) {
-      for (const [file, raw] of backups) fs.writeFileSync(file, raw, "utf8");
-    }
+  return entries;
+}
+
+function digestSnapshot(entries) {
+  return `sha256:${sha256(entries.map((entry) => `${entry.key}\n${entry.raw}`).join("\n--R10-V2--\n"))}`;
+}
+
+function restoreLegacyAliases(root) {
+  const dir = path.join(root, "reports", "real_markets");
+  let restored = 0;
+  if (!fs.existsSync(dir)) return restored;
+  for (const name of fs.readdirSync(dir).filter((entry) => entry.endsWith(".json")).sort()) {
+    const file = path.join(dir, name);
+    const raw = fs.readFileSync(file, "utf8");
+    const report = JSON.parse(raw);
+    const alias = report?.marketSpec?.legacyCustomerAlias;
+    if (!alias || !report?.target || report.target.tokenSymbol === alias) continue;
+    report.target.tokenSymbol = alias;
+    fs.writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+    restored += 1;
   }
+  return restored;
 }
 
 export function migrateCorpus(root, { write = false } = {}) {
-  return withLegacyAliasesRestored(root, write, () => migrateCorpusV1(root, { write }));
+  const before = snapshotCorpus(root);
+  const beforeByKey = new Map(before.map((entry) => [entry.key, entry.raw]));
+  const restored = restoreLegacyAliases(root);
+  let receipt;
+  try {
+    receipt = migrateCorpusV1(root, { write });
+  } finally {
+    if (!write) {
+      for (const entry of before) fs.writeFileSync(entry.file, entry.raw, "utf8");
+    }
+  }
+
+  const after = write ? snapshotCorpus(root) : before;
+  const changedFiles = after.reduce((count, entry) => count + (beforeByKey.get(entry.key) === entry.raw ? 0 : 1), 0);
+  return {
+    ...receipt,
+    changedFiles,
+    beforeDigest: digestSnapshot(before),
+    afterDigest: digestSnapshot(after),
+    preflightLegacyAliasRestores: restored,
+    migrationEngine: "r10-corpus-truth-v2",
+  };
 }
 
 function parseArgs(argv) {
