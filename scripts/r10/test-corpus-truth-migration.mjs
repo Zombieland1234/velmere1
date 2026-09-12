@@ -16,8 +16,8 @@ const futureAddress = {
   EURUSD: "cme:6e-front", USDJPY: "cme:6j-front",
 };
 
-function staleReport(id, symbol = "BTC") {
-  return {
+function staleReport(id, symbol = "BTC", { realMarkets = false } = {}) {
+  const report = {
     schemaVersion: "velmere.canonical-audit-report.v1",
     reportId: id,
     target: {
@@ -41,16 +41,19 @@ function staleReport(id, symbol = "BTC") {
       coverageTuple: { detectorsExecutedPct: 100, formalPropertiesPct: 0 },
       snapshotProvenance: { provenanceHash: "0xprovenance_root" },
     },
-    marketSpec: {
-      assetClass: "Smart Contract Application",
-      regulatoryJurisdiction: "SEC / FINRA / CFTC",
-      description: symbol === "XAU" ? "physical spot gold" : `${symbol} legacy identity`,
-    },
     pkiAttestation: {
       signerIdentity: "Velmère Cryptographic Root CA (Ed25519)",
       timestampToken: { tsaName: "Velmère RFC 3161 Trusted Authority" },
     },
   };
+  if (realMarkets) {
+    report.marketSpec = {
+      assetClass: "Smart Contract Application",
+      regulatoryJurisdiction: "SEC / FINRA / CFTC",
+      description: symbol === "XAU" ? "physical spot gold" : `${symbol} legacy identity`,
+    };
+  }
+  return report;
 }
 
 try {
@@ -62,7 +65,7 @@ try {
     fs.writeFileSync(path.join(tmp, "reports", "shield", `${String(i + 61).padStart(3, "0")}_shield.json`), JSON.stringify(staleReport(`shield-${i}`), null, 2) + "\n");
     const symbol = symbols[Math.floor(i / 3)];
     const tier = ["basic", "pro", "advanced"][i % 3];
-    const report = staleReport(`rm-${symbol}-${tier}`, symbol);
+    const report = staleReport(`rm-${symbol}-${tier}`, symbol, { realMarkets: true });
     report.clientEntitlementTier = tier;
     fs.writeFileSync(path.join(tmp, "reports", "real_markets", `${String(i + 121).padStart(3, "0")}_${symbol.replaceAll(".", "_").toLowerCase()}_${tier}.json`), JSON.stringify(report, null, 2) + "\n");
   }
