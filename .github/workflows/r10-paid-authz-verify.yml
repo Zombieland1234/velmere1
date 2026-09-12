@@ -36,7 +36,9 @@ jobs:
       - name: Install lockfile
         run: npm ci --ignore-scripts
       - name: Apply guarded paid authz patch
-        run: node scripts/r10/patch-paid-authz.mjs
+        run: |
+          node scripts/r10/patch-paid-authz.mjs
+          node scripts/r10/patch-paid-authz-lint.mjs
       - name: Assert source truth boundaries
         run: |
           node - <<'NODE'
@@ -50,6 +52,7 @@ jobs:
             ['analysis_missing_session_accept', analysis.includes('!event.data.sessionId || event.data.sessionId === sessionId')],
             ['audit_missing_session_accept', audit.includes('!event.data.sessionId || event.data.sessionId === sessionId')],
             ['asset_direct_paid_bypass', detail.includes('Allow user to execute Pro and Advanced analysis directly')],
+            ['audit_preverification_redirect', /setTimeout\(\(\) => \{\s*window\.location\.assign/.test(audit)],
           ];
           const bad=forbidden.filter(([,present])=>present);
           if(bad.length) throw new Error('paid_authz_forbidden_patterns:'+JSON.stringify(bad));
