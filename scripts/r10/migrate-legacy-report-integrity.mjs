@@ -65,6 +65,30 @@ function localAttestation(reportDigest, observedAt) {
   };
 }
 
+function verifyLocalAttestation(attestation) {
+  if (!attestation || attestation.schemaVersion !== "velmere.report-local-integrity.v2") return false;
+  if (attestation.attestationType !== "LOCAL_INTEGRITY_ATTESTATION") return false;
+  if (attestation.scope !== "FILE_INTEGRITY_ONLY") return false;
+  if (attestation.externalTimestampVerified !== false || attestation.contentTruthVerified !== false) return false;
+  const reportDigest = normalizeReportDigest(attestation.reportDigest);
+  if (!reportDigest) return false;
+  try {
+    const publicKey = crypto.createPublicKey({
+      key: Buffer.from(String(attestation.publicKey), "base64"),
+      format: "der",
+      type: "spki",
+    });
+    return crypto.verify(
+      null,
+      Buffer.from(`${LOCAL_SIGNATURE_PREFIX}${reportDigest}`, "utf8"),
+      publicKey,
+      Buffer.from(String(attestation.signature), "base64"),
+    );
+  } catch {
+    return false;
+  }
+}
+
 function collectJsonFiles(directory, output = []) {
   if (!fs.existsSync(directory)) return output;
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -94,8 +118,10 @@ const stats = {
   scannedJson: 0,
   changedJson: 0,
   localAttestationsMigrated: 0,
+  localAttestationsVerified: 0,
   provenancePlaceholdersMigrated: 0,
   skippedMissingReportDigest: 0,
+  invalidMigratedAttestations: 0,
 };
 const changes = [];
 
@@ -118,7 +144,12 @@ for (const file of reportRoots.flatMap((dir) => collectJsonFiles(dir)).sort()) {
       throw new Error(`r10_migration_missing_report_digest:${relative}`);
     }
     value.pkiAttestation = localAttestation(reportDigest, oldTimestamp(value));
+    if (!verifyLocalAttestation(value.pkiAttestation)) {
+      stats.invalidMigratedAttestations += 1;
+      throw new Error(`r10_migration_invalid_local_signature:${relative}`);
+    }
     stats.localAttestationsMigrated += 1;
+    stats.localAttestationsVerified += 1;
     changed = true;
   }
 
@@ -142,16 +173,26 @@ for (const file of reportRoots.flatMap((dir) => collectJsonFiles(dir)).sort()) {
 }
 
 // Targeted fail-closed verification: the migration is incomplete if any report JSON
-// still contains the legacy pseudo-TSA/root-CA semantics or placeholder provenance.
+// still contains legacy pseudo-TSA/root-CA semantics, placeholder provenance, or an
+// invalid local integrity attestation.
 const residual = [];
+const invalidAttestations = [];
 for (const file of reportRoots.flatMap((dir) => collectJsonFiles(dir)).sort()) {
   const text = fs.readFileSync(file, "utf8");
+  const relative = path.relative(root, file).replaceAll(path.sep, "/");
   if (/Velmère RFC 3161 Trusted Authority|Velmère Root CA v1|"provenanceHash"\s*:\s*"0xprovenance_root"/.test(text)) {
-    residual.push(path.relative(root, file).replaceAll(path.sep, "/"));
+    residual.push(relative);
+  }
+  const value = JSON.parse(text);
+  if (value?.pkiAttestation?.schemaVersion === "velmere.report-local-integrity.v2" && !verifyLocalAttestation(value.pkiAttestation)) {
+    invalidAttestations.push(relative);
   }
 }
 if (residual.length) {
   throw new Error(`r10_migration_residual_legacy_integrity:${residual.length}:${residual.slice(0, 10).join(",")}`);
+}
+if (invalidAttestations.length) {
+  throw new Error(`r10_migration_invalid_attestations:${invalidAttestations.length}:${invalidAttestations.slice(0, 10).join(",")}`);
 }
 
 fs.mkdirSync(path.dirname(receiptPath), { recursive: true });
@@ -162,9 +203,15 @@ const receipt = {
   stats,
   changedFiles: changes,
   residualLegacyIntegrityFiles: residual,
-  passed: residual.length === 0 && stats.skippedMissingReportDigest === 0,
+  invalidLocalAttestationFiles: invalidAttestations,
+  passed:
+    residual.length === 0 &&
+    invalidAttestations.length === 0 &&
+    stats.skippedMissingReportDigest === 0 &&
+    stats.invalidMigratedAttestations === 0 &&
+    stats.localAttestationsMigrated === stats.localAttestationsVerified,
   limitations: [
-    "This migration proves only removal of legacy pseudo-TSA/root-CA semantics and placeholder provenance hashes from report JSON.",
+    "This migration proves only removal of legacy pseudo-TSA/root-CA semantics and placeholder provenance hashes from report JSON plus cryptographic verification of the replacement local Ed25519 integrity attestations.",
     "It does not prove report-content correctness, external timestamp authority, external provenance authority, market-data licensing, or production readiness.",
     "Real Markets canonical instrument identity is intentionally handled by a separate reviewed migration.",
   ],
@@ -172,3 +219,4 @@ const receipt = {
 fs.writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
 console.log(`R10 corpus integrity migration: ${receipt.passed ? "PASS" : "FAIL"}`);
 console.log(JSON.stringify(stats));
+if (!receipt.passed) process.exitCode = 1;
