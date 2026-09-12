@@ -265,7 +265,7 @@ export function auditAndSanitizeReportLines(
   evidenceRecords: EvidenceRecord[],
   scope?: ClaimAuditScope,
 ): ClaimAuditResult {
-  let blockedCount = 0;
+  const blockedCount = 0;
   let rewrittenCount = 0;
   const sanitizedLines: string[] = [];
   const findings: ClaimAuditResult["findings"] = [];
