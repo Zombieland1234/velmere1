@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { executeFullAuditV2 } from "../../lib/security/v2/master-audit-orchestrator";
 
 interface BenchmarkContractEntry {
-  split: "DEV" | "VALIDATION" | "BLIND_HOLDOUT";
+  split: "DEV" | "VALIDATION" | "LOCAL_HOLDOUT";
   category: "clean" | "vulnerable" | "edge" | "exploited" | "upgradeable";
   name: string;
   sourcePath: string;
@@ -85,6 +85,7 @@ function generateSimulatedBytecode(source: string): string {
 async function runBenchmark() {
   console.log("\n================================================================================");
   console.log("   VELMÈRE SECURITY ENGINE V2 — BENCHMARK & RESEARCH EVALUATION SUITE");
+  console.log("   TRUTH BOUNDARY: LOCAL IN-REPOSITORY BENCHMARK; NOT INDEPENDENT/BLIND/EXTERNAL");
   console.log("================================================================================\n");
 
   const corpusDir = join(process.cwd(), "golden");
@@ -170,10 +171,10 @@ async function runBenchmark() {
     },
 
     // -------------------------------------------------------------
-    // BLIND_HOLDOUT SPLIT (Zero-Leakage Unseen Generalization Test)
+    // LOCAL_HOLDOUT SPLIT (In-Repository Local Holdout Check)
     // -------------------------------------------------------------
     {
-      split: "BLIND_HOLDOUT",
+      split: "LOCAL_HOLDOUT",
       category: "edge",
       name: "FeeOnTransferToken",
       sourcePath: join(corpusDir, "known-edge", "FeeOnTransferToken.sol"),
@@ -182,7 +183,7 @@ async function runBenchmark() {
       bytecode: "",
     },
     {
-      split: "BLIND_HOLDOUT",
+      split: "LOCAL_HOLDOUT",
       category: "vulnerable",
       name: "VulnerableInflationVault",
       sourcePath: join(corpusDir, "known-vulnerable", "VulnerableInflationVault.sol"),
@@ -191,7 +192,7 @@ async function runBenchmark() {
       bytecode: "",
     },
     {
-      split: "BLIND_HOLDOUT",
+      split: "LOCAL_HOLDOUT",
       category: "upgradeable",
       name: "Eip1967TransparentProxy",
       sourcePath: join(corpusDir, "known-upgradeable", "Eip1967TransparentProxy.sol"),
@@ -213,14 +214,14 @@ async function runBenchmark() {
     fn: number;
   }
 
-  const splitStats: Record<"DEV" | "VALIDATION" | "BLIND_HOLDOUT", SplitStats> = {
+  const splitStats: Record<"DEV" | "VALIDATION" | "LOCAL_HOLDOUT", SplitStats> = {
     DEV: { tp: 0, fp: 0, tn: 0, fn: 0 },
     VALIDATION: { tp: 0, fp: 0, tn: 0, fn: 0 },
-    BLIND_HOLDOUT: { tp: 0, fp: 0, tn: 0, fn: 0 },
+    LOCAL_HOLDOUT: { tp: 0, fp: 0, tn: 0, fn: 0 },
   };
 
   const resultsTable: Array<{
-    split: "DEV" | "VALIDATION" | "BLIND_HOLDOUT";
+    split: "DEV" | "VALIDATION" | "LOCAL_HOLDOUT";
     contract: string;
     category: string;
     variantType: "Resistant (Clean)" | "Vulnerable";
@@ -322,7 +323,7 @@ async function runBenchmark() {
   const globalMetrics = calcMetrics(truePositives, falsePositives, trueNegatives, falseNegatives);
   const devMetrics = calcMetrics(splitStats.DEV.tp, splitStats.DEV.fp, splitStats.DEV.tn, splitStats.DEV.fn);
   const valMetrics = calcMetrics(splitStats.VALIDATION.tp, splitStats.VALIDATION.fp, splitStats.VALIDATION.tn, splitStats.VALIDATION.fn);
-  const blindMetrics = calcMetrics(splitStats.BLIND_HOLDOUT.tp, splitStats.BLIND_HOLDOUT.fp, splitStats.BLIND_HOLDOUT.tn, splitStats.BLIND_HOLDOUT.fn);
+  const blindMetrics = calcMetrics(splitStats.LOCAL_HOLDOUT.tp, splitStats.LOCAL_HOLDOUT.fp, splitStats.LOCAL_HOLDOUT.tn, splitStats.LOCAL_HOLDOUT.fn);
 
   console.log("┌───────────────┬───────────────────────────┬───────────────┬──────────────────────┬──────────┬─────────┐");
   console.log("│ Split         │ Contract Name             │ Category      │ Detected Findings    │ Result   │ Time    │");
@@ -351,11 +352,11 @@ async function runBenchmark() {
   console.log("================================================================================\n");
 
   console.log("================================================================================");
-  console.log("          PARTITIONED BENCHMARK METRICS (DEV / VALIDATION / BLIND)              ");
+  console.log("          PARTITIONED LOCAL BENCHMARK METRICS (DEV / VALIDATION / LOCAL HOLDOUT)              ");
   console.log("================================================================================");
   console.log(` DEV SET          (N=${splitStats.DEV.tp + splitStats.DEV.tn + splitStats.DEV.fp + splitStats.DEV.fn}): TP=${splitStats.DEV.tp}, TN=${splitStats.DEV.tn}, FP=${splitStats.DEV.fp}, FN=${splitStats.DEV.fn} | Prec: ${devMetrics.precision.toFixed(2)}% | Rec: ${devMetrics.recall.toFixed(2)}% | Spec: ${devMetrics.specificity.toFixed(2)}% | F1: ${devMetrics.f1Score.toFixed(2)}%`);
   console.log(` VALIDATION SET   (N=${splitStats.VALIDATION.tp + splitStats.VALIDATION.tn + splitStats.VALIDATION.fp + splitStats.VALIDATION.fn}): TP=${splitStats.VALIDATION.tp}, TN=${splitStats.VALIDATION.tn}, FP=${splitStats.VALIDATION.fp}, FN=${splitStats.VALIDATION.fn} | Prec: ${valMetrics.precision.toFixed(2)}% | Rec: ${valMetrics.recall.toFixed(2)}% | Spec: ${valMetrics.specificity.toFixed(2)}% | F1: ${valMetrics.f1Score.toFixed(2)}%`);
-  console.log(` BLIND_HOLDOUT    (N=${splitStats.BLIND_HOLDOUT.tp + splitStats.BLIND_HOLDOUT.tn + splitStats.BLIND_HOLDOUT.fp + splitStats.BLIND_HOLDOUT.fn}): TP=${splitStats.BLIND_HOLDOUT.tp}, TN=${splitStats.BLIND_HOLDOUT.tn}, FP=${splitStats.BLIND_HOLDOUT.fp}, FN=${splitStats.BLIND_HOLDOUT.fn} | Prec: ${blindMetrics.precision.toFixed(2)}% | Rec: ${blindMetrics.recall.toFixed(2)}% | Spec: ${blindMetrics.specificity.toFixed(2)}% | F1: ${blindMetrics.f1Score.toFixed(2)}%`);
+  console.log(` LOCAL_HOLDOUT    (N=${splitStats.LOCAL_HOLDOUT.tp + splitStats.LOCAL_HOLDOUT.tn + splitStats.LOCAL_HOLDOUT.fp + splitStats.LOCAL_HOLDOUT.fn}): TP=${splitStats.LOCAL_HOLDOUT.tp}, TN=${splitStats.LOCAL_HOLDOUT.tn}, FP=${splitStats.LOCAL_HOLDOUT.fp}, FN=${splitStats.LOCAL_HOLDOUT.fn} | Prec: ${blindMetrics.precision.toFixed(2)}% | Rec: ${blindMetrics.recall.toFixed(2)}% | Spec: ${blindMetrics.specificity.toFixed(2)}% | F1: ${blindMetrics.f1Score.toFixed(2)}%`);
   console.log("================================================================================\n");
 
   console.log("================================================================================");
@@ -370,24 +371,26 @@ async function runBenchmark() {
   console.log("================================================================================\n");
 
   console.log("================================================================================");
-  console.log("            ANTI-CHERRY-PICKING & ANTI-OVERFITTING CERTIFICATION                ");
+  console.log("            LOCAL BENCHMARK HYGIENE CHECK                ");
   console.log("================================================================================");
   console.log(" [✓] Zero Contract-Name Branching: Evaluators verify detectors operate on AST/CFG/Bytecode.");
-  console.log(" [✓] Blind Holdout Integrity: Unseen test set evaluated without parameter leakage.");
+  console.log(" [✓] Local Holdout Scope: kept outside DEV/VALIDATION inside this repository; no independence claim.");
   console.log(" [✓] 100% Passing Audit Gates across all 11 canonical benchmark contracts.");
   console.log("================================================================================\n");
 
   // Write Benchmark Report
   const benchmarkMd = `# VELMÈRE SECURITY ENGINE V2 — BENCHMARK MATRIX & STATISTICAL REPORT
 
+> **Truth boundary:** This is an in-repository local benchmark (N=11; local holdout N=3). It is not independent, externally frozen, blind, or sufficient evidence of production/world-class performance. Historical external R9 false negatives remain unchanged.
+
 ## 1. Executive Summary & Research Methodology
 This report provides the empirical evaluation results of the **Velmère Security Engine V2** against the 11 canonical benchmark contracts in the Golden Corpus.
-To guard against overfitting and cherry-picking, the corpus is partitioned into three rigorous subsets:
+For local regression visibility, this in-repository corpus is partitioned into three subsets:
 - **DEV (Development & Calibration)**: 4 contracts used for baseline detector tuning.
 - **VALIDATION (Threshold & False-Alarm Verification)**: 4 contracts used to confirm mutex suppression and cross-detector independence.
-- **BLIND_HOLDOUT (Out-of-Sample Generalization)**: 3 contracts held blind to guarantee zero data-leakage and prove generalizeable detection on unseen patterns.
+- **LOCAL_HOLDOUT (In-Repository Holdout)**: 3 repository fixtures kept outside DEV/VALIDATION scoring. This is not an independent, externally frozen, or blind benchmark.
 
-## 2. Dataset Partitioning (DEV / VALIDATION / BLIND_HOLDOUT)
+## 2. Local Dataset Partitioning (DEV / VALIDATION / LOCAL_HOLDOUT)
 
 | Split | Contract | Category | Variant Nature | Expected Outcome |
 | :--- | :--- | :--- | :--- | :--- |
@@ -399,9 +402,9 @@ To guard against overfitting and cherry-picking, the corpus is partitioned into 
 | **VALIDATION** | \`SpotReserveLending\` | vulnerable | Vulnerable (Spot Oracle) | DETECTED (VLM-SEC-ORACLE-SPOT-MANIPULATION-01) |
 | **VALIDATION** | \`WeirdUSDTToken\` | edge | Vulnerable (Non-standard Return) | DETECTED (VLM-SEC-ERC-NON-STANDARD-RETURN-01) |
 | **VALIDATION** | \`SafeMoonExploitModel\` | exploited | Vulnerable (Unprotected Burn) | DETECTED (VLM-SEC-AUTH-UNPROTECTED-MINT-03) |
-| **BLIND_HOLDOUT** | \`FeeOnTransferToken\` | edge | Resistant (Clean / Fee-on-transfer) | CLEAN (0 findings) |
-| **BLIND_HOLDOUT** | \`VulnerableInflationVault\` | vulnerable | Vulnerable (ERC-4626 Inflation) | DETECTED (VLM-SEC-DEFI-VAULT-INFLATION-01) |
-| **BLIND_HOLDOUT** | \`Eip1967TransparentProxy\` | upgradeable | Resistant (Clean / Proxy) | CLEAN (0 findings) |
+| **LOCAL_HOLDOUT** | \`FeeOnTransferToken\` | edge | Resistant (Clean / Fee-on-transfer) | CLEAN (0 findings) |
+| **LOCAL_HOLDOUT** | \`VulnerableInflationVault\` | vulnerable | Vulnerable (ERC-4626 Inflation) | DETECTED (VLM-SEC-DEFI-VAULT-INFLATION-01) |
+| **LOCAL_HOLDOUT** | \`Eip1967TransparentProxy\` | upgradeable | Resistant (Clean / Proxy) | CLEAN (0 findings) |
 
 ## 3. Global Confusion Matrix & Statistical Scores
 
@@ -422,7 +425,7 @@ To guard against overfitting and cherry-picking, the corpus is partitioned into 
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **DEV** | 4 | ${splitStats.DEV.tp} | ${splitStats.DEV.fp} | ${splitStats.DEV.tn} | ${splitStats.DEV.fn} | ${devMetrics.precision.toFixed(2)}% | ${devMetrics.recall.toFixed(2)}% | ${devMetrics.specificity.toFixed(2)}% | ${devMetrics.f1Score.toFixed(2)}% |
 | **VALIDATION** | 4 | ${splitStats.VALIDATION.tp} | ${splitStats.VALIDATION.fp} | ${splitStats.VALIDATION.tn} | ${splitStats.VALIDATION.fn} | ${valMetrics.precision.toFixed(2)}% | ${valMetrics.recall.toFixed(2)}% | ${valMetrics.specificity.toFixed(2)}% | ${valMetrics.f1Score.toFixed(2)}% |
-| **BLIND_HOLDOUT** | 3 | ${splitStats.BLIND_HOLDOUT.tp} | ${splitStats.BLIND_HOLDOUT.fp} | ${splitStats.BLIND_HOLDOUT.tn} | ${splitStats.BLIND_HOLDOUT.fn} | ${blindMetrics.precision.toFixed(2)}% | ${blindMetrics.recall.toFixed(2)}% | ${blindMetrics.specificity.toFixed(2)}% | ${blindMetrics.f1Score.toFixed(2)}% |
+| **LOCAL_HOLDOUT** | 3 | ${splitStats.LOCAL_HOLDOUT.tp} | ${splitStats.LOCAL_HOLDOUT.fp} | ${splitStats.LOCAL_HOLDOUT.tn} | ${splitStats.LOCAL_HOLDOUT.fn} | ${blindMetrics.precision.toFixed(2)}% | ${blindMetrics.recall.toFixed(2)}% | ${blindMetrics.specificity.toFixed(2)}% | ${blindMetrics.f1Score.toFixed(2)}% |
 
 ## 5. Contract-by-Contract Detailed Audit Log
 
@@ -436,7 +439,7 @@ ${resultsTable.map((r) => `| **${r.split}** | \`${r.contract}\` | ${r.category} 
    - \`GuardedVault\` vs \`ReentrancyBank\`: Accurately distinguishes guarded mutex state from unprotected external calls.
    - \`FeeOnTransferToken\` vs \`WeirdUSDTToken\`: Distinguishes legitimate transfer tax calculation from broken non-boolean return semantics.
    - \`CleanERC20\` vs \`InsecureTxOriginWallet\`: Correctly validates \`msg.sender\` vs deprecated \`tx.origin\` caller authority.
-3. **Blind Holdout Zero-Leakage**: The \`BLIND_HOLDOUT\` split achieved 100% precision, 100% recall, and 100% specificity with zero prior fine-tuning on its members.
+3. **Blind Holdout local holdout separation**: The \`LOCAL_HOLDOUT\` split achieved 100% precision, 100% recall, and 100% specificity with zero prior fine-tuning on its members.
 `;
 
   writeFileSync(join(process.cwd(), "VELMERE_SECURITY_ENGINE_BENCHMARK.md"), benchmarkMd, "utf-8");
@@ -451,8 +454,8 @@ In smart contract security auditing, false alarms waste valuable engineering tim
 ## 2. Evaluation on Clean & Resistant Reference Contracts
 - **CleanERC20.sol (DEV)**: 0 Critical/High findings. Verified adherence to EIP-20 and Ownable2Step.
 - **GuardedVault.sol (VALIDATION)**: 0 False Reentrancy alarms. Mutex lock pattern (\`_status = _ENTERED\`) and virtual shares offset recognized and suppressed.
-- **FeeOnTransferToken.sol (BLIND_HOLDOUT)**: 0 False alarms. Token fee reflection logic verified without improper flagging.
-- **Eip1967TransparentProxy.sol (BLIND_HOLDOUT)**: 0 False uninitialized or hijack alarms. Standard ERC-1967 storage slots recognized.
+- **FeeOnTransferToken.sol (LOCAL_HOLDOUT)**: 0 False alarms. Token fee reflection logic verified without improper flagging.
+- **Eip1967TransparentProxy.sol (LOCAL_HOLDOUT)**: 0 False uninitialized or hijack alarms. Standard ERC-1967 storage slots recognized.
 
 ## 3. Total False Positives Measured: ${falsePositives}
 False Positive Rate: **0.00%** across all resistant reference contracts.
@@ -474,7 +477,7 @@ False negatives in smart contract security can lead to multi-million-dollar prot
 - **Spot Oracle Manipulation (\`SpotReserveLending.sol\` - VALIDATION)**: Successfully flagged for atomic flash loan risk on instantaneous AMM reserves.
 - **Non-Standard Return (\`WeirdUSDTToken.sol\` - VALIDATION)**: Caught missing boolean return on transfer.
 - **Historical Pair Burn Exploit (\`SafeMoonExploitModel.sol\` - VALIDATION)**: Caught public arbitrary pair token burn flaw.
-- **First-Depositor Vault Inflation (\`VulnerableInflationVault.sol\` - BLIND_HOLDOUT)**: Caught integer division rounding down exploit in unseen holdout vault.
+- **First-Depositor Vault Inflation (\`VulnerableInflationVault.sol\` - LOCAL_HOLDOUT)**: Caught integer division rounding down exploit in unseen holdout vault.
 
 ## 3. Total False Negatives Measured: ${falseNegatives}
 False Negative Rate: **0.00%** on golden vulnerable corpus.
@@ -487,7 +490,7 @@ Recall (Sensitivity): **100.00%**.
     throw new Error(`Benchmark failed: ${falsePositives} FP, ${falseNegatives} FN.`);
   }
 
-  console.log("\n[SUCCESS] Benchmark completed with 100% PASS rate across DEV, VALIDATION, and BLIND_HOLDOUT splits!\n");
+  console.log("\n[SUCCESS] Benchmark completed with 100% PASS rate across DEV, VALIDATION, and LOCAL_HOLDOUT splits!\n");
 }
 
 runBenchmark().catch((err) => {
