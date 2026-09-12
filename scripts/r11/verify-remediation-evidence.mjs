@@ -2,6 +2,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const EXPECTED_SYNTHETIC_SECRET_FINGERPRINT = "71a68559119629d989386448adad9d5920e7e8e83fb7f55282d9ef9fcc7051cf";
+
 function readJson(file) {
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new Error(`missing_receipt:${file}`);
   let parsed;
@@ -21,11 +23,13 @@ export function verifyRemediationEvidence({ root, expectedSha }) {
   const npmVerdict = readJson(path.join(root, "NPM_AUDIT_VERDICT.json"));
   const truth = readJson(path.join(root, "TRUTH_SCOPE_V2.json"));
   const providerRights = readJson(path.join(root, "PROVIDER_RIGHTS_AUDIT.json"));
+  const secretBoundary = readJson(path.join(root, "SECRET_FIXTURE_BOUNDARY.json"));
 
   assert(receipt.sourceSha === expectedSha, "remediation_receipt_wrong_sha");
   assert(receipt.evidenceClass === "CURRENT_GIT_PROVEN_REMEDIATION", "remediation_evidence_class_invalid");
   assert(receipt.p0RegressionCanaries === "PASS", "p0_canaries_not_passed");
   assert(receipt.npmAuditVerifier === "FAIL_CLOSED", "npm_verifier_not_fail_closed");
+  assert(receipt.secretFixtureBoundary === "PASS_EXACT_PATH_RULE_FINGERPRINT_AND_ENV", "secret_fixture_receipt_not_passed");
   assert(receipt.typecheck === "PASS", "typecheck_not_passed");
   assert(receipt.securityRegression === "PASS", "security_regression_not_passed");
   assert(receipt.sourceTruthScan === "PASS", "source_truth_not_passed");
@@ -48,11 +52,32 @@ export function verifyRemediationEvidence({ root, expectedSha }) {
   assert(providerRights.externalRightsVerified === 0, "unexpected_external_rights_credit");
   assert(providerRights.commerciallyEnabledProviders === 0, "unexpected_commercial_provider_enablement");
 
+  assert(secretBoundary.schemaVersion === "velmere.r11.secret-fixture-boundary.v1", "secret_fixture_schema_invalid");
+  assert(secretBoundary.sourceSha === expectedSha, "secret_fixture_wrong_sha");
+  assert(secretBoundary.passed === true, "secret_fixture_boundary_failed");
+  assert(secretBoundary.fixturePolicy === "EXACT_PATH_RULE_AND_SECRET_FINGERPRINT", "secret_fixture_policy_invalid");
+  assert(secretBoundary.envCoverage === "ALL_DOT_ENV_BASENAMES_REGARDLESS_OF_EXTENSION", "secret_env_coverage_invalid");
+  assert(secretBoundary.expectedFixtureCount === 3, "secret_fixture_denominator_invalid");
+  assert(Array.isArray(secretBoundary.blockers) && secretBoundary.blockers.length === 0, "secret_fixture_blockers_present");
+  assert(secretBoundary.envFindingCount === 0, "secret_env_findings_present");
+  assert(Array.isArray(secretBoundary.observedFixtures) && secretBoundary.observedFixtures.length === 3, "secret_fixture_observed_denominator_invalid");
+  for (const observed of secretBoundary.observedFixtures) {
+    assert(observed.count === 1, `secret_fixture_count_invalid:${observed.path}`);
+    assert(Array.isArray(observed.fingerprints) && observed.fingerprints.length === 1, `secret_fixture_fingerprint_count_invalid:${observed.path}`);
+    assert(observed.fingerprints[0] === EXPECTED_SYNTHETIC_SECRET_FINGERPRINT, `secret_fixture_fingerprint_invalid:${observed.path}`);
+  }
+
   return {
-    schemaVersion: "velmere.r11.remediation-evidence-evaluation.v2",
+    schemaVersion: "velmere.r11.remediation-evidence-evaluation.v3",
     sourceSha: expectedSha,
     passed: true,
-    verifiedSubjects: ["RECEIPT.json", "NPM_AUDIT_VERDICT.json", "TRUTH_SCOPE_V2.json", "PROVIDER_RIGHTS_AUDIT.json"],
+    verifiedSubjects: [
+      "RECEIPT.json",
+      "NPM_AUDIT_VERDICT.json",
+      "TRUTH_SCOPE_V2.json",
+      "PROVIDER_RIGHTS_AUDIT.json",
+      "SECRET_FIXTURE_BOUNDARY.json",
+    ],
     releaseAuthorityCredit: false,
     officialRelease: false,
     productionCredit: false,
