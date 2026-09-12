@@ -75,6 +75,10 @@ function countPotentialUsesKeys(clean) {
   return matches ? matches.length : 0;
 }
 
+function blockScalarHeader(value) {
+  return /^[|>](?:[1-9])?[+-]?$/u.test(value.trim()) || /^[|>][+-](?:[1-9])?$/u.test(value.trim());
+}
+
 export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
   const blockers = [];
   const uses = [];
@@ -82,24 +86,40 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
   const permissionWrites = [];
   const lines = text.split(/\r?\n/u);
   let potentialUsesKeyCount = 0;
-
-  if (/^\s*<<\s*:/mu.test(text)) blockers.push(`${workflowPath}:yaml_merge_key_forbidden`);
-  if (/(?:^|[\s:[,{])&[A-Za-z0-9_-]+/mu.test(text) || /(?:^|[\s:[,{])\*[A-Za-z0-9_-]+/mu.test(text)) blockers.push(`${workflowPath}:yaml_anchor_or_alias_forbidden`);
+  let blockScalarParentIndent = null;
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     const lineNo = index + 1;
-    if (indentOf(line) < 0) {
+    const indent = indentOf(line);
+    if (indent < 0) {
       blockers.push(`${workflowPath}:${lineNo}:tab_indentation_forbidden`);
       continue;
     }
 
     const clean = stripComment(line);
     if (!clean.trim()) continue;
+
+    if (blockScalarParentIndent !== null) {
+      if (indent > blockScalarParentIndent) continue;
+      blockScalarParentIndent = null;
+    }
+
+    if (/^\s*(?:---|\.\.\.)\s*$/u.test(clean)) {
+      blockers.push(`${workflowPath}:${lineNo}:yaml_document_marker_forbidden`);
+      continue;
+    }
+    if (/^\s*(?:-\s*)?<<\s*:/u.test(clean)) blockers.push(`${workflowPath}:${lineNo}:yaml_merge_key_forbidden`);
+    if (/(?:^|[\s:[,{])&[A-Za-z0-9_-]+/u.test(clean) || /(?:^|[\s:[,{])\*[A-Za-z0-9_-]+/u.test(clean)) {
+      blockers.push(`${workflowPath}:${lineNo}:yaml_anchor_or_alias_forbidden`);
+    }
+
     potentialUsesKeyCount += countPotentialUsesKeys(clean);
 
     if (/^\s*\?/u.test(clean)) blockers.push(`${workflowPath}:${lineNo}:explicit_mapping_key_forbidden`);
-    if (/^\s*(?:-\s*)?!/u.test(clean)) blockers.push(`${workflowPath}:${lineNo}:yaml_tag_forbidden`);
+    if (/^\s*(?:-\s*)?![^\s]/u.test(clean) || /:\s*![^\s]/u.test(clean)) {
+      blockers.push(`${workflowPath}:${lineNo}:yaml_tag_forbidden`);
+    }
 
     const structural = withoutExpressions(clean);
     if (/\{[^}]*?(?:uses|"uses"|'uses')\s*:/u.test(structural)) {
@@ -120,13 +140,16 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
     if (!mapping) continue;
 
     const key = mapping.key;
+    const rawMappingValue = mapping.value.trim();
+    const startsBlockScalar = blockScalarHeader(rawMappingValue);
+
     if (key === "uses") {
-      const raw = mapping.value.trim();
-      if (!raw || raw === "|" || raw === ">") {
+      if (!rawMappingValue || startsBlockScalar) {
         blockers.push(`${workflowPath}:${lineNo}:uses_must_be_plain_scalar`);
+        if (startsBlockScalar) blockScalarParentIndent = indent;
         continue;
       }
-      const value = unquote(raw);
+      const value = unquote(rawMappingValue);
       if (/\$\{\{/u.test(value)) blockers.push(`${workflowPath}:${lineNo}:dynamic_uses_forbidden`);
       if (/\s/u.test(value)) blockers.push(`${workflowPath}:${lineNo}:uses_contains_whitespace`);
       const row = { line: lineNo, value };
@@ -150,6 +173,11 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
     }
 
     if (key === "permissions") {
+      if (startsBlockScalar) {
+        blockers.push(`${workflowPath}:${lineNo}:permissions_block_scalar_forbidden`);
+        blockScalarParentIndent = indent;
+        continue;
+      }
       const scalar = unquote(mapping.value);
       if (scalar === "write-all") blockers.push(`${workflowPath}:${lineNo}:permissions_write_all_forbidden`);
       if (/\$\{\{/u.test(scalar)) blockers.push(`${workflowPath}:${lineNo}:dynamic_permissions_forbidden`);
@@ -160,6 +188,8 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
       const permission = unquote(mapping.value.trim());
       if (permission === "write") permissionWrites.push({ line: lineNo, scope: key });
     }
+
+    if (startsBlockScalar) blockScalarParentIndent = indent;
   }
 
   if (uses.length !== potentialUsesKeyCount) blockers.push(`${workflowPath}:uses_coverage_mismatch:${uses.length}/${potentialUsesKeyCount}`);
@@ -183,7 +213,7 @@ export function verifyWorkflowSemantics(root = process.cwd()) {
   return {
     schemaVersion: SCHEMA,
     sourceSha: process.env.GITHUB_SHA || null,
-    parserMode: "FAIL_CLOSED_GITHUB_ACTIONS_SEMANTIC_SUBSET_V2",
+    parserMode: "FAIL_CLOSED_GITHUB_ACTIONS_SEMANTIC_SUBSET_V2_1",
     workflowCount: files.length,
     workflowFiles: files,
     usesCount: workflows.reduce((n, row) => n + row.semanticUsesCount, 0),
@@ -192,7 +222,7 @@ export function verifyWorkflowSemantics(root = process.cwd()) {
     workflows,
     blockers: [...new Set(blockers)].sort(),
     passed: blockers.length === 0,
-    truthBoundary: "Strict GitHub Actions semantic subset v2: block and quoted uses keys are covered; security-sensitive flow mappings are rejected; every remote action/reusable-workflow ref requires a full commit SHA; local targets must exist; write permissions are inventoried; dynamic uses/permissions, YAML anchors/merge keys, explicit keys and tags fail closed. This is not a general-purpose YAML parser and does not yet recursively verify dependencies inside local composite actions.",
+    truthBoundary: "Strict GitHub Actions semantic subset v2.1: block and quoted uses keys are covered; security-sensitive flow mappings are rejected; block-scalar bodies are not reinterpreted as YAML structure; every remote action/reusable-workflow ref requires a full commit SHA; local targets must exist; write permissions are inventoried; dynamic uses/permissions, YAML anchors/merge keys, explicit keys, document markers and YAML tags fail closed. This is not a general-purpose YAML parser and does not yet prove duplicate-key handling, effective inherited permissions, or recursively verify dependencies inside local composite actions.",
   };
 }
 
