@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import ShieldRealMarketsParityClient from "@/components/market-integrity/ShieldRealMarketsParityClient";
+import ShieldHydrationBoundary from "@/components/market-integrity/ShieldHydrationBoundary";
 import { buildVelmereMetadata, SUPPORTED_LOCALES } from "@/lib/seo/metadata";
 
 export async function generateMetadata({
@@ -35,7 +35,7 @@ export default async function MarketIntegrityPage({
       className="shield-typography-root realmarkets-page-pass2355 shield-page-pass2356 bg-velmere-black px-5 py-24 text-velmere-ivory md:px-10 md:py-32"
     >
       <section className="mx-auto max-w-[108rem]">
-        <ShieldRealMarketsParityClient locale={locale} />
+        <ShieldHydrationBoundary locale={locale} />
       </section>
     </main>
   );

@@ -1,0 +1,83 @@
+name: R11B Integration v8 Browser Gate
+
+on:
+  push:
+    branches: [r11b-integration-v8-clean]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  browser-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install exact lockfile
+        run: npm ci --ignore-scripts
+      - name: Build exact source
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Asset-detail truth containment browser regression
+        shell: bash
+        run: |
+          mkdir -p /tmp/r11b-browser/asset-detail
+          npx next start -H 127.0.0.1 -p 3103 > /tmp/r11b-browser/asset-detail/NEXT_START.log 2>&1 &
+          echo $! > /tmp/r11b-asset-detail.pid
+          cleanup(){ kill "$(cat /tmp/r11b-asset-detail.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/r11b-asset-detail.html -w '%{http_code}' http://127.0.0.1:3103/en/real-markets/assets/aapl || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat /tmp/r11b-browser/asset-detail/NEXT_START.log; exit 1; fi
+          VELMERE_BASE_URL=http://127.0.0.1:3103 \
+          VELMERE_EVIDENCE_DIR=/tmp/r11b-browser/asset-detail \
+          node scripts/r11/test-asset-detail-truth-containment.mjs
+          trap - EXIT
+          cleanup
+      - name: Shield hydration browser regression
+        shell: bash
+        run: |
+          mkdir -p /tmp/r11b-browser/shield-hydration
+          npx next dev -H 127.0.0.1 -p 3101 > /tmp/r11b-browser/shield-hydration/NEXT_DEV.log 2>&1 &
+          echo $! > /tmp/r11b-shield.pid
+          cleanup(){ kill "$(cat /tmp/r11b-shield.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/r11b-shield.html -w '%{http_code}' http://127.0.0.1:3101/en/shield || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat /tmp/r11b-browser/shield-hydration/NEXT_DEV.log; exit 1; fi
+          VELMERE_BASE_URL=http://127.0.0.1:3101 \
+          VELMERE_EVIDENCE_DIR=/tmp/r11b-browser/shield-hydration \
+          node scripts/r11/test-shield-hydration-browser.mjs
+          trap - EXIT
+          cleanup
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r11b-integration-v8-browser-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: /tmp/r11b-browser
