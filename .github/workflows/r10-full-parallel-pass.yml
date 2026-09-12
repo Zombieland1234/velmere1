@@ -41,6 +41,10 @@ jobs:
           node scripts/verify-runtime-contract.mjs
       - name: Clean install from lockfile
         run: npm ci --ignore-scripts
+      - name: Capture dependency vulnerability evidence
+        run: |
+          mkdir -p artifacts/r10/full-pass
+          npm audit --json > artifacts/r10/full-pass/NPM_AUDIT.json || true
       - name: Direct TypeScript gate
         run: npm run typecheck:direct
       - name: ESLint full tree
@@ -84,6 +88,11 @@ jobs:
           package-manager-cache: false
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
+      - name: Install deterministic PDF raster dependency
+        run: |
+          python3 -m pip install --disable-pip-version-check --no-input Pillow==11.3.0
+          command -v pdftoppm
+          python3 -c 'from PIL import Image; print(Image.__version__)'
       - name: Re-run R10 PDF geometry and truth regression
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-pdf-truth-layout.ts
       - name: Generate local PDF corpus
@@ -128,6 +137,8 @@ jobs:
         run: node scripts/r10/verify-active-workflows.mjs --write --output artifacts/r10/FULL_PASS_ACTIVE_WORKFLOWS.json
       - name: Verify authority reset remains fail-closed
         run: node scripts/r10/verify-authority-genesis.mjs --write --output artifacts/r10/FULL_PASS_AUTHORITY.json
+      - name: Classify evidence freshness and production credit
+        run: node scripts/r10/audit-evidence-freshness.mjs
       - name: PASS25 prebuild audit
         continue-on-error: true
         run: node scripts/pass25/audit-prebuild-readiness.mjs
