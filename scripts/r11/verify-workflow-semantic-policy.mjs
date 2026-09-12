@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const SCHEMA = "velmere.r11.workflow-semantic-policy.v1";
 
@@ -23,10 +24,16 @@ function stripComment(value) {
 }
 
 function indentOf(line) {
-  const m = line.match(/^(\s*)/u);
-  if (!m) return 0;
-  if (m[1].includes("\t")) return -1;
-  return m[1].length;
+  const match = line.match(/^(\s*)/u);
+  if (!match) return 0;
+  if (match[1].includes("\t")) return -1;
+  return match[1].length;
+}
+
+function validLocalReference(value) {
+  if (!value.startsWith("./")) return false;
+  const relative = path.posix.normalize(value.slice(2));
+  return relative.length > 0 && relative !== "." && !relative.startsWith("../") && !path.posix.isAbsolute(relative);
 }
 
 export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
@@ -37,19 +44,15 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
   const lines = text.split(/\r?\n/u);
 
   if (/^\s*<<\s*:/mu.test(text)) blockers.push(`${workflowPath}:yaml_merge_key_forbidden`);
-  if (/(?:^|[\s:[,{])&[A-Za-z0-9_-]+/mu.test(text) || /(?:^|[\s:[,{])\*[A-Za-z0-9_-]+/mu.test(text)) {
-    blockers.push(`${workflowPath}:yaml_anchor_or_alias_forbidden`);
-  }
+  if (/(?:^|[\s:[,{])&[A-Za-z0-9_-]+/mu.test(text) || /(?:^|[\s:[,{])\*[A-Za-z0-9_-]+/mu.test(text)) blockers.push(`${workflowPath}:yaml_anchor_or_alias_forbidden`);
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const indent = indentOf(line);
-    if (indent < 0) {
+    if (indentOf(line) < 0) {
       blockers.push(`${workflowPath}:${index + 1}:tab_indentation_forbidden`);
       continue;
     }
     const clean = stripComment(line);
-
     const usesMatch = clean.match(/^\s*(?:-\s*)?uses\s*:\s*(.*)$/u);
     if (usesMatch) {
       const raw = usesMatch[1].trim();
@@ -64,15 +67,13 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
       uses.push(row);
 
       if (value.startsWith("./")) {
-        const normalized = path.posix.normalize(value);
-        if (!normalized.startsWith("./") || normalized.includes("..")) blockers.push(`${workflowPath}:${index + 1}:local_uses_path_invalid`);
+        if (!validLocalReference(value)) blockers.push(`${workflowPath}:${index + 1}:local_uses_path_invalid`);
+        const target = path.join(root, value.slice(2));
         if (value.startsWith("./.github/workflows/")) {
           reusableWorkflows.push({ ...row, kind: "LOCAL_REUSABLE" });
-          const target = path.join(root, value.slice(2));
           if (!fs.existsSync(target) || !fs.statSync(target).isFile()) blockers.push(`${workflowPath}:${index + 1}:local_reusable_missing:${value}`);
-        } else {
-          const target = path.join(root, value.slice(2));
-          if (!fs.existsSync(target)) blockers.push(`${workflowPath}:${index + 1}:local_action_missing:${value}`);
+        } else if (!fs.existsSync(target)) {
+          blockers.push(`${workflowPath}:${index + 1}:local_action_missing:${value}`);
         }
       } else {
         const match = value.match(/^([^@]+)@([a-f0-9]{40})$/u);
@@ -81,9 +82,9 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
       }
     }
 
-    const writeAll = clean.match(/^\s*permissions\s*:\s*(.+)$/u);
-    if (writeAll) {
-      const scalar = unquote(writeAll[1]);
+    const permissionsScalar = clean.match(/^\s*permissions\s*:\s*(.+)$/u);
+    if (permissionsScalar) {
+      const scalar = unquote(permissionsScalar[1]);
       if (scalar === "write-all") blockers.push(`${workflowPath}:${index + 1}:permissions_write_all_forbidden`);
       if (/\$\{\{/u.test(scalar)) blockers.push(`${workflowPath}:${index + 1}:dynamic_permissions_forbidden`);
     }
@@ -92,19 +93,9 @@ export function inspectWorkflowText(text, workflowPath, root = process.cwd()) {
     if (permissionMatch && permissionMatch[2] === "write") permissionWrites.push({ line: index + 1, scope: permissionMatch[1] });
   }
 
-  const semanticUsesCount = uses.length;
   const textualUsesKeyCount = lines.filter((line) => /^\s*(?:-\s*)?uses\s*:/u.test(stripComment(line))).length;
-  if (semanticUsesCount !== textualUsesKeyCount) blockers.push(`${workflowPath}:uses_coverage_mismatch:${semanticUsesCount}/${textualUsesKeyCount}`);
-
-  return {
-    workflowPath,
-    semanticUsesCount,
-    textualUsesKeyCount,
-    uses,
-    reusableWorkflows,
-    permissionWrites,
-    blockers: [...new Set(blockers)].sort(),
-  };
+  if (uses.length !== textualUsesKeyCount) blockers.push(`${workflowPath}:uses_coverage_mismatch:${uses.length}/${textualUsesKeyCount}`);
+  return { workflowPath, semanticUsesCount: uses.length, textualUsesKeyCount, uses, reusableWorkflows, permissionWrites, blockers: [...new Set(blockers)].sort() };
 }
 
 export function verifyWorkflowSemantics(root = process.cwd()) {
@@ -125,7 +116,7 @@ export function verifyWorkflowSemantics(root = process.cwd()) {
     workflows,
     blockers: [...new Set(blockers)].sort(),
     passed: blockers.length === 0,
-    truthBoundary: "Semantic verifier covers action/reusable-workflow references, dynamic/full-SHA use semantics, local target existence, effective write-permission inventory, and rejects YAML anchors/merge keys that could evade its model. It is a strict GitHub Actions subset parser, not a general YAML implementation.",
+    truthBoundary: "Strict GitHub Actions semantic subset: every uses key must resolve to a plain scalar; remote action/reusable-workflow refs require full commit SHAs; local targets must exist; write permissions are inventoried; dynamic uses/permissions and YAML anchors/merge keys fail closed. This does not claim to be a general-purpose YAML parser.",
   };
 }
 
@@ -141,4 +132,4 @@ function main() {
   if (!result.passed) process.exit(1);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();
