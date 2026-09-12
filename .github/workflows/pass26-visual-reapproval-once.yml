@@ -1,0 +1,168 @@
+name: PASS26 Visual Reapproval One-Shot
+
+on:
+  push:
+    branches:
+      - r11b-audit-hardening-v6-clean
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  visual-reapproval:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact subject without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install exact lockfile
+        run: npm ci --ignore-scripts
+      - name: Build exact source
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Capture deterministic visual review pack
+        shell: bash
+        run: |
+          mkdir -p artifacts/pass26/visual-reapproval
+          npx next start -H 127.0.0.1 -p 3100 > artifacts/pass26/visual-reapproval/NEXT_START.log 2>&1 &
+          echo $! > /tmp/pass26-next.pid
+          cleanup(){ kill "$(cat /tmp/pass26-next.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/pass26-home.html -w '%{http_code}' http://127.0.0.1:3100/en || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat artifacts/pass26/visual-reapproval/NEXT_START.log; exit 1; fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          import { chromium } from 'playwright';
+
+          const out='artifacts/pass26/visual-reapproval';
+          const protectedPaths=[
+            'app/globals.css',
+            'app/styles/asset-popup-resize.css',
+            'app/styles/global-header.css',
+            'app/styles/shield-pro-terminal.css',
+          ];
+          const sha256=(p)=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+          const browser=await chromium.launch({headless:true});
+          const results=[];
+          const pageErrors=[];
+          const consoleErrors=[];
+
+          async function dismiss(page){
+            const labels=['ACCEPT','ACCEPT ALL','ONLY NECESSARY','AKCEPTUJ','TYLKO NIEZBĘDNE'];
+            for(const label of labels){
+              const loc=page.getByRole('button',{name:new RegExp(label,'i')}).first();
+              if(await loc.count()){ try{ if(await loc.isVisible()) await loc.click({timeout:1200}); }catch{} }
+            }
+          }
+          async function capture(route,slug,viewport,scale){
+            const page=await browser.newPage({viewport,deviceScaleFactor:scale,isMobile:viewport.width<500});
+            page.on('pageerror',e=>pageErrors.push({slug,message:String(e?.message||e)}));
+            page.on('console',m=>{ if(m.type()==='error') consoleErrors.push({slug,text:m.text()}); });
+            const response=await page.goto(`http://127.0.0.1:3100${route}`,{waitUntil:'domcontentloaded',timeout:60000});
+            await page.waitForTimeout(1800);
+            await dismiss(page);
+            await page.waitForTimeout(400);
+            const status=response?.status() ?? 0;
+            const metrics=await page.evaluate(()=>({
+              width:window.innerWidth,
+              scrollWidth:document.documentElement.scrollWidth,
+              height:window.innerHeight,
+              scrollHeight:document.documentElement.scrollHeight,
+              title:document.title,
+            }));
+            const file=`${out}/${slug}.png`;
+            await page.screenshot({path:file,fullPage:true});
+            const row={route,slug,status,viewport,scale,file,sha256:sha256(file),horizontalOverflow:metrics.scrollWidth>metrics.width,metrics};
+            results.push(row);
+            if(status>=500 || status===0) throw new Error(`visual_route_status:${route}:${status}`);
+            if(row.horizontalOverflow) throw new Error(`horizontal_overflow:${route}:${metrics.scrollWidth}>${metrics.width}`);
+            return page;
+          }
+
+          for(const [route,slug] of [['/en/security/audits','audits'],['/en/shield','shield'],['/en/real-markets','real-markets']]){
+            const p=await capture(route,`${slug}-desktop`,{width:1440,height:900},2); await p.close();
+            const m=await capture(route,`${slug}-mobile`,{width:375,height:812},1); await m.close();
+          }
+
+          let popupCaptured=false;
+          let popupSource=null;
+          for(const route of ['/en/real-markets','/en/shield']){
+            const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:2});
+            page.on('pageerror',e=>pageErrors.push({slug:'popup',message:String(e?.message||e)}));
+            await page.goto(`http://127.0.0.1:3100${route}`,{waitUntil:'domcontentloaded',timeout:60000});
+            await page.waitForTimeout(1800); await dismiss(page);
+            const candidates=[
+              'button:has-text("Bitcoin")','button:has-text("BTC")','[role="button"]:has-text("Bitcoin")','[role="button"]:has-text("BTC")',
+              '[data-symbol="BTC"]','[data-asset-symbol="BTC"]','.asset-card','[data-asset-id]'
+            ];
+            for(const sel of candidates){
+              const loc=page.locator(sel).first();
+              if(!(await loc.count())) continue;
+              try{
+                if(!(await loc.isVisible())) continue;
+                await loc.click({timeout:2500});
+                await page.waitForTimeout(1000);
+                const modal=page.locator('[data-pass4590-asset-detail-modal], .vlm-asset-detail-modal').first();
+                if(await modal.count() && await modal.isVisible()){
+                  const file=`${out}/asset-popup-desktop.png`;
+                  await page.screenshot({path:file,fullPage:false});
+                  results.push({route,slug:'asset-popup-desktop',status:200,viewport:{width:1440,height:900},scale:2,file,sha256:sha256(file),horizontalOverflow:false});
+                  popupCaptured=true; popupSource={route,selector:sel}; break;
+                }
+              }catch{}
+            }
+            await page.close();
+            if(popupCaptured) break;
+          }
+
+          await browser.close();
+          const receipt={
+            schemaVersion:'velmere.pass26.visual-reapproval-pack.v1',
+            subjectSha:process.env.GITHUB_SHA,
+            evidenceClass:'EXACT_GIT_CI_RENDERED_SCREENSHOT_PACK',
+            protectedHashes:Object.fromEntries(protectedPaths.map(p=>[p,sha256(p)])),
+            viewports:{desktop:{width:1440,height:900,deviceScaleFactor:2},mobile:{width:375,height:812,deviceScaleFactor:1}},
+            results,
+            popupCaptured,
+            popupSource,
+            pageErrors,
+            consoleErrors,
+            automatedVisualPreconditionsPassed:popupCaptured && pageErrors.length===0 && results.every(r=>!r.horizontalOverflow),
+            humanVisualReviewRequired:true,
+            releaseVisualApproval:false,
+            truthBoundary:'Rendered screenshots and automated overflow/runtime checks are evidence inputs. They do not self-approve visual design. releaseVisualApproval remains false until screenshots are opened and reviewed against the intended product surfaces.',
+          };
+          fs.writeFileSync(`${out}/RECEIPT.json`,JSON.stringify(receipt,null,2)+'\n');
+          console.log(JSON.stringify(receipt,null,2));
+          if(!popupCaptured) throw new Error('asset_popup_not_captured');
+          if(pageErrors.length) throw new Error('browser_page_errors:'+JSON.stringify(pageErrors));
+          NODE
+          trap - EXIT
+          cleanup
+      - name: Upload visual review pack
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pass26-visual-reapproval-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: artifacts/pass26/visual-reapproval/**
