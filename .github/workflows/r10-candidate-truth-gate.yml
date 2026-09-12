@@ -61,6 +61,9 @@ jobs:
       - name: Test fail-closed R10 customer report boundary
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/r10/test-r10-canonical-report-truth.ts
 
+      - name: Test deterministic 180-report corpus truth migration
+        run: node scripts/r10/test-corpus-truth-migration.mjs
+
       - name: Test dynamic active workflow inventory
         run: node scripts/r10/test-active-workflow-audit.mjs
 
@@ -73,7 +76,14 @@ jobs:
       - name: Verify authority genesis reset policy
         run: node scripts/r10/verify-authority-genesis.mjs --write --output artifacts/r10/R10_AUTHORITY_GENESIS_RECEIPT.json
 
-      - name: Scan candidate release truth
+      - name: Record pre-migration source truth baseline
+        continue-on-error: true
+        run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/R10_SOURCE_TRUTH_BASELINE.json
+
+      - name: Migrate 180-report corpus to R10 truth projection
+        run: node scripts/r10/migrate-corpus-truth.mjs --write --output artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_RECEIPT.json
+
+      - name: Scan migrated candidate release truth
         run: node scripts/r10/verify-release-truth.mjs --write --output artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
 
       - name: Upload R10 truth receipts
@@ -84,6 +94,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
+            artifacts/r10/R10_SOURCE_TRUTH_BASELINE.json
+            artifacts/r10/R10_CORPUS_TRUTH_MIGRATION_RECEIPT.json
             artifacts/r10/R10_RELEASE_TRUTH_RECEIPT.json
             artifacts/r10/R10_ACTIVE_WORKFLOW_AUDIT.json
             artifacts/r10/R10_AUTHORITY_GENESIS_RECEIPT.json
