@@ -73,15 +73,31 @@ function hasFreshObservedData(evidence: EvidenceRecord): boolean {
   return evidence.dataFreshness === "FRESH" && Boolean(evidence.observedAt || evidence.retrievedAt);
 }
 
-function hasExternalRfc3161Proof(evidence: EvidenceRecord): boolean {
-  const haystack = [
-    evidence.source,
-    evidence.tool,
-    evidence.rawArtifact ?? "",
-    JSON.stringify(evidence.normalizedArtifact ?? {}),
-  ].join(" ");
+function isSha256(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{64}$/i.test(value);
+}
 
-  return evidence.method === "OBSERVED" && /\b(RFC\s*3161|TSA|TimeStampToken)\b/i.test(haystack);
+function hasExternalRfc3161Proof(evidence: EvidenceRecord): boolean {
+  if (evidence.method !== "OBSERVED") return false;
+  const artifact = evidence.normalizedArtifact;
+  if (!artifact || typeof artifact !== "object") return false;
+
+  const tokenDigest = artifact.timeStampTokenSha256 ?? artifact.timestampTokenSha256;
+  const messageImprint = artifact.messageImprintSha256;
+  const signatureVerified = artifact.signatureVerified === true || artifact.cmsSignatureVerified === true;
+  const certificateVerified = artifact.tsaCertificateValidated === true || artifact.certificateChainVerified === true;
+  const tokenPresent = artifact.timeStampTokenPresent === true || isSha256(tokenDigest);
+  const policyOid = artifact.policyOid;
+
+  return (
+    tokenPresent &&
+    isSha256(tokenDigest) &&
+    isSha256(messageImprint) &&
+    signatureVerified &&
+    certificateVerified &&
+    typeof policyOid === "string" &&
+    /^\d+(?:\.\d+)+$/.test(policyOid)
+  );
 }
 
 function hasConfirmedHumanReview(evidence: EvidenceRecord): boolean {
@@ -174,7 +190,7 @@ const CRITICAL_CLAIM_PATTERNS: ClaimRule[] = [
     reason: "An absolute all-invariants claim is prohibited without explicit complete-path coverage evidence.",
   },
   {
-    regex: /\b(FULL\s*SMT\s*(?:Z3\s*)?SOLVER\s*VERIFICATION|SMT\s*Z3\s*SOLVER\s*VERIFICATION)\b/i,
+    regex: /\b(FULL\s*SMT\s*(?:Z3\s*)?SOLVER\s*VERIFICATION|SMT\s+Z3\s+SOLVER\s+VERIFICATION)\b/i,
     category: "FORMAL",
     requiredEvidenceCategory: "FORMAL",
     requireExactScope: true,
