@@ -3,26 +3,26 @@
   "reportId": "rep_usd_jpy_pro_173",
   "caseRef": "CASE-VLM-USD_JPY-PRO",
   "target": {
-    "contractName": "US Dollar / Japanese Yen Pair",
+    "contractName": "Japanese Yen CME Front-Month Futures Proxy",
     "contractAddress": "cme:6j-front",
-    "network": "Chicago Mercantile Exchange (CME)",
+    "network": "CME futures market",
     "chainId": "MIC:XCME",
-    "tokenSymbol": "USDJPY",
-    "proxyPattern": "N/A (Regulated Clearinghouse / Central Counterparty)"
+    "tokenSymbol": "6J",
+    "proxyPattern": "N/A (regulated exchange-traded futures instrument; front-month proxy)"
   },
   "clientEntitlementTier": "pro",
   "locale": "en",
   "createdAt": "2026-09-10T12:36:18.340Z",
   "verdict": {
-    "riskScore": 9,
-    "riskLabel": "VERY LOW RISK",
-    "confidenceScore": 100,
-    "auditQualityScore": 84,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Second most actively traded sovereign currency pair connecting Fedwire and BOJ-NET through CLS Bank. Core conduit of global carry-trade liquidity.",
-    "evidenceCoverage": 100,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0x70bd4ce3582a6e34b3a9c9632ff7895bc800e24162deedb3529dd29accfa2a66",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -319,21 +319,47 @@
     "targetSpec": {
       "chainId": "MIC:XCME",
       "contractAddress": "cme:6j-front",
-      "network": "Chicago Mercantile Exchange (CME)",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "network": "CME futures market",
+      "proxyType": "N/A (regulated exchange-traded futures instrument; front-month proxy)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
-      "identifierType": "COMMODITY_CODE",
-      "identifierValue": "USDJPY",
-      "source": "Consolidated Tape / Primary Exchange",
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-future:6J:front",
+      "identifierType": "FUTURES_CODE",
+      "identifierValue": "6J",
+      "canonicalSymbol": "6J",
+      "legacyCustomerAlias": "USDJPY",
+      "assetClass": "fx",
+      "instrumentType": "future",
+      "economicExposure": "Japanese yen futures versus US dollar; not USD/JPY OTC spot",
+      "underlying": "Japanese yen futures versus US dollar; not USD/JPY OTC spot",
+      "providerIdentifier": "cme:6j-front",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "CME",
       "exchangeMic": "XCME",
-      "figi": "BBGCME6JFRON",
-      "isin": "USCME6JFRON0",
-      "tickerSymbol": "USDJPY",
-      "assetClass": "Global Sovereign Currency Spot Pair",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": "JPY",
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "physical",
+      "priceType": "unknown",
+      "timezone": "America/Chicago",
+      "marketCalendar": "CME_GLOBEX",
+      "jurisdiction": [
+        "US_CFTC"
+      ],
+      "regulatoryJurisdiction": "US_CFTC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -387,5 +413,40 @@
     "pdfByteLength": 85654,
     "pageCount": 2,
     "verifiedAt": "2026-09-10T12:36:18.353Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-future:6J:front",
+    "assetClass": "fx",
+    "instrumentType": "future",
+    "economicExposure": "Japanese yen futures versus US dollar; not USD/JPY OTC spot",
+    "underlying": "Japanese yen futures versus US dollar; not USD/JPY OTC spot",
+    "canonicalSymbol": "6J",
+    "providerSymbol": "cme:6j-front",
+    "venue": "CME",
+    "mic": "XCME",
+    "baseCurrency": "JPY",
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "physical",
+    "priceType": "unknown",
+    "timezone": "America/Chicago",
+    "marketCalendar": "CME_GLOBEX",
+    "jurisdiction": [
+      "US_CFTC"
+    ],
+    "regulatoryJurisdiction": "US_CFTC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+    "legacyCustomerAlias": "USDJPY"
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

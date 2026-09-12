@@ -3,23 +3,23 @@
   "reportId": "rep_gold_pro_158",
   "caseRef": "CASE-VLM-GOLD-PRO",
   "target": {
-    "contractName": "Physical Gold Bullion Standard",
+    "contractName": "Gold COMEX Front-Month Futures Proxy",
     "contractAddress": "cme:gc-front",
-    "network": "Commodity Exchange (COMEX)",
-    "chainId": "MIC:XCME",
-    "tokenSymbol": "XAU",
-    "proxyPattern": "unverifiable"
+    "network": "COMEX futures market",
+    "chainId": "MIC:XCEC",
+    "tokenSymbol": "GC",
+    "proxyPattern": "N/A (regulated exchange-traded futures instrument; front-month proxy)"
   },
   "clientEntitlementTier": "pro",
   "locale": "pl",
   "createdAt": "2026-09-10T12:36:18.066Z",
   "verdict": {
-    "riskScore": 72,
-    "riskLabel": "PODWYŻSZONE RYZYKO (BRAK DOWODÓW)",
-    "confidenceScore": 60,
-    "auditQualityScore": 84,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Kontrakt nie posiada zweryfikowanego kodu maszynowego on-chain. Zgodnie ze standardem Velmère brak dowodów skutkuje podwyższoną oceną ryzyka (72/100).",
-    "evidenceCoverage": 20,
+    "evidenceCoverage": 0,
     "verificationStatus": "INSUFFICIENT_EVIDENCE",
     "releaseDecision": "BLOCKED",
     "stopSellActive": true,
@@ -29,7 +29,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -311,23 +311,49 @@
   "applicationSurface": "real-markets",
   "auditScopeManifest": {
     "targetSpec": {
-      "chainId": "MIC:XCME",
+      "chainId": "MIC:XCEC",
       "contractAddress": "cme:gc-front",
-      "network": "Commodity Exchange (COMEX)",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "network": "COMEX futures market",
+      "proxyType": "N/A (regulated exchange-traded futures instrument; front-month proxy)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
-      "identifierType": "COMMODITY_CODE",
-      "identifierValue": "XAU",
-      "source": "Consolidated Tape / Primary Exchange",
-      "exchangeMic": "XCME",
-      "figi": "BBGCMEGCFRON",
-      "isin": "USCMEGCFRON0",
-      "tickerSymbol": "XAU",
-      "assetClass": "Smart Contract Application",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-future:GC:front",
+      "identifierType": "FUTURES_CODE",
+      "identifierValue": "GC",
+      "canonicalSymbol": "GC",
+      "legacyCustomerAlias": "XAU",
+      "assetClass": "commodity",
+      "instrumentType": "future",
+      "economicExposure": "Gold futures",
+      "underlying": "Gold futures",
+      "providerIdentifier": "cme:gc-front",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "COMEX",
+      "exchangeMic": "XCEC",
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "physical",
+      "priceType": "unknown",
+      "timezone": "America/Chicago",
+      "marketCalendar": "CME_GLOBEX",
+      "jurisdiction": [
+        "US_CFTC"
+      ],
+      "regulatoryJurisdiction": "US_CFTC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -381,5 +407,40 @@
     "pdfByteLength": 88625,
     "pageCount": 3,
     "verifiedAt": "2026-09-10T12:36:18.079Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-future:GC:front",
+    "assetClass": "commodity",
+    "instrumentType": "future",
+    "economicExposure": "Gold futures",
+    "underlying": "Gold futures",
+    "canonicalSymbol": "GC",
+    "providerSymbol": "cme:gc-front",
+    "venue": "COMEX",
+    "mic": "XCEC",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "physical",
+    "priceType": "unknown",
+    "timezone": "America/Chicago",
+    "marketCalendar": "CME_GLOBEX",
+    "jurisdiction": [
+      "US_CFTC"
+    ],
+    "regulatoryJurisdiction": "US_CFTC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+    "legacyCustomerAlias": "XAU"
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

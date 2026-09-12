@@ -14,15 +14,15 @@
   "locale": "en",
   "createdAt": "2026-09-10T12:36:17.499Z",
   "verdict": {
-    "riskScore": 9,
-    "riskLabel": "VERY LOW RISK",
-    "confidenceScore": 100,
-    "auditQualityScore": 84,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Global enterprise software and cloud leader with AAA corporate credit rating. Highly diversified revenues, Deloitte audit, ultra-deep CLOB liquidity.",
-    "evidenceCoverage": 100,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0xdccdc7be45442673dd067cfbff3818e375d504840068f7cd2c5472678c914bf5",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -320,20 +320,46 @@
       "chainId": "MIC:XNAS",
       "contractAddress": "nasdaq:msft",
       "network": "NASDAQ Stock Market",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "proxyType": "N/A (Regulated Central Depository / DTCC-NSCC)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-equity:MSFT",
       "identifierType": "TICKER",
       "identifierValue": "MSFT",
-      "source": "Consolidated Tape / Primary Exchange",
+      "canonicalSymbol": "MSFT",
+      "legacyCustomerAlias": null,
+      "assetClass": "equity",
+      "instrumentType": "equity",
+      "economicExposure": "Common equity of Microsoft Corporation",
+      "underlying": "Microsoft Corporation",
+      "providerIdentifier": "nasdaq:msft",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "NASDAQ",
       "exchangeMic": "XNAS",
-      "figi": "BBGNASDAQMSF",
-      "isin": "USNASDAQMSF0",
-      "tickerSymbol": "MSFT",
-      "assetClass": "SEC-Regulated Equity Security (NASDAQ Tier-1)",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "unknown",
+      "priceType": "unknown",
+      "timezone": "America/New_York",
+      "marketCalendar": "NASDAQ",
+      "jurisdiction": [
+        "US_SEC"
+      ],
+      "regulatoryJurisdiction": "US_SEC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": null,
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -387,5 +413,39 @@
     "pdfByteLength": 85232,
     "pageCount": 2,
     "verifiedAt": "2026-09-10T12:36:17.509Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-equity:MSFT",
+    "assetClass": "equity",
+    "instrumentType": "equity",
+    "economicExposure": "Common equity of Microsoft Corporation",
+    "underlying": "Microsoft Corporation",
+    "canonicalSymbol": "MSFT",
+    "providerSymbol": "nasdaq:msft",
+    "venue": "NASDAQ",
+    "mic": "XNAS",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "unknown",
+    "priceType": "unknown",
+    "timezone": "America/New_York",
+    "marketCalendar": "NASDAQ",
+    "jurisdiction": [
+      "US_SEC"
+    ],
+    "regulatoryJurisdiction": "US_SEC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": null
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

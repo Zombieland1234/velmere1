@@ -3,23 +3,23 @@
   "reportId": "rep_silver_basic_160",
   "caseRef": "CASE-VLM-SILVER-BASIC",
   "target": {
-    "contractName": "Physical Silver Spot / Future",
+    "contractName": "Silver COMEX Front-Month Futures Proxy",
     "contractAddress": "cme:si-front",
-    "network": "Commodity Exchange (COMEX)",
-    "chainId": "MIC:XCME",
-    "tokenSymbol": "XAG",
-    "proxyPattern": "unverifiable"
+    "network": "COMEX futures market",
+    "chainId": "MIC:XCEC",
+    "tokenSymbol": "SI",
+    "proxyPattern": "N/A (regulated exchange-traded futures instrument; front-month proxy)"
   },
   "clientEntitlementTier": "basic",
   "locale": "en",
   "createdAt": "2026-09-10T12:36:18.099Z",
   "verdict": {
-    "riskScore": 72,
-    "riskLabel": "ELEVATED RISK (UNVERIFIED CODE)",
-    "confidenceScore": 60,
-    "auditQualityScore": 64,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Contract lacks verified on-chain runtime bytecode. In accordance with Velmère evidence standards, missing bytecode results in an elevated risk assessment (72/100).",
-    "evidenceCoverage": 20,
+    "evidenceCoverage": 0,
     "verificationStatus": "INSUFFICIENT_EVIDENCE",
     "releaseDecision": "BLOCKED",
     "stopSellActive": true,
@@ -29,7 +29,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -225,23 +225,49 @@
   "applicationSurface": "real-markets",
   "auditScopeManifest": {
     "targetSpec": {
-      "chainId": "MIC:XCME",
+      "chainId": "MIC:XCEC",
       "contractAddress": "cme:si-front",
-      "network": "Commodity Exchange (COMEX)",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "network": "COMEX futures market",
+      "proxyType": "N/A (regulated exchange-traded futures instrument; front-month proxy)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
-      "identifierType": "COMMODITY_CODE",
-      "identifierValue": "XAG",
-      "source": "Consolidated Tape / Primary Exchange",
-      "exchangeMic": "XCME",
-      "figi": "BBGCMESIFRON",
-      "isin": "USCMESIFRON0",
-      "tickerSymbol": "XAG",
-      "assetClass": "Smart Contract Application",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-future:SI:front",
+      "identifierType": "FUTURES_CODE",
+      "identifierValue": "SI",
+      "canonicalSymbol": "SI",
+      "legacyCustomerAlias": "XAG",
+      "assetClass": "commodity",
+      "instrumentType": "future",
+      "economicExposure": "Silver futures",
+      "underlying": "Silver futures",
+      "providerIdentifier": "cme:si-front",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "COMEX",
+      "exchangeMic": "XCEC",
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "physical",
+      "priceType": "unknown",
+      "timezone": "America/Chicago",
+      "marketCalendar": "CME_GLOBEX",
+      "jurisdiction": [
+        "US_CFTC"
+      ],
+      "regulatoryJurisdiction": "US_CFTC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -295,5 +321,40 @@
     "pdfByteLength": 86209,
     "pageCount": 2,
     "verifiedAt": "2026-09-10T12:36:18.111Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-future:SI:front",
+    "assetClass": "commodity",
+    "instrumentType": "future",
+    "economicExposure": "Silver futures",
+    "underlying": "Silver futures",
+    "canonicalSymbol": "SI",
+    "providerSymbol": "cme:si-front",
+    "venue": "COMEX",
+    "mic": "XCEC",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "physical",
+    "priceType": "unknown",
+    "timezone": "America/Chicago",
+    "marketCalendar": "CME_GLOBEX",
+    "jurisdiction": [
+      "US_CFTC"
+    ],
+    "regulatoryJurisdiction": "US_CFTC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+    "legacyCustomerAlias": "XAG"
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

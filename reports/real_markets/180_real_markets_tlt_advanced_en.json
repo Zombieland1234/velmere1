@@ -14,15 +14,15 @@
   "locale": "en",
   "createdAt": "2026-09-10T12:36:18.477Z",
   "verdict": {
-    "riskScore": 12,
-    "riskLabel": "LOW RISK",
-    "confidenceScore": 99,
-    "auditQualityScore": 93,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Leading liquid exchange-traded fund tracking long-term US Treasury bonds (20+ year maturity). Zero credit risk with pure duration/interest rate sensitivity.",
-    "evidenceCoverage": 99,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0xae4ffe465ad1ff694b197c9ab58d5c85a0b5ee897cd689cab5c81e513f09fe3e",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -352,20 +352,46 @@
       "chainId": "MIC:XNAS",
       "contractAddress": "nasdaq:tlt",
       "network": "NASDAQ Stock Market",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "proxyType": "N/A (Regulated Clearinghouse / Central Counterparty)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-etf:TLT",
       "identifierType": "TICKER",
       "identifierValue": "TLT",
-      "source": "Consolidated Tape / Primary Exchange",
+      "canonicalSymbol": "TLT",
+      "legacyCustomerAlias": null,
+      "assetClass": "etf",
+      "instrumentType": "etf",
+      "economicExposure": "US Treasury bonds with 20+ year maturity",
+      "underlying": "iShares 20+ Year Treasury Bond ETF",
+      "providerIdentifier": "nasdaq:tlt",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "NASDAQ",
       "exchangeMic": "XNAS",
-      "figi": "BBGNASDAQTLT",
-      "isin": "USNASDAQTLT0",
-      "tickerSymbol": "TLT",
-      "assetClass": "Registered Sovereign Debt ETF (1940-Act)",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "unknown",
+      "priceType": "unknown",
+      "timezone": "America/New_York",
+      "marketCalendar": "NASDAQ",
+      "jurisdiction": [
+        "US_SEC"
+      ],
+      "regulatoryJurisdiction": "US_SEC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": null,
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -419,5 +445,39 @@
     "pdfByteLength": 83387,
     "pageCount": 2,
     "verifiedAt": "2026-09-10T12:36:18.493Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-etf:TLT",
+    "assetClass": "etf",
+    "instrumentType": "etf",
+    "economicExposure": "US Treasury bonds with 20+ year maturity",
+    "underlying": "iShares 20+ Year Treasury Bond ETF",
+    "canonicalSymbol": "TLT",
+    "providerSymbol": "nasdaq:tlt",
+    "venue": "NASDAQ",
+    "mic": "XNAS",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "unknown",
+    "priceType": "unknown",
+    "timezone": "America/New_York",
+    "marketCalendar": "NASDAQ",
+    "jurisdiction": [
+      "US_SEC"
+    ],
+    "regulatoryJurisdiction": "US_SEC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": null
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

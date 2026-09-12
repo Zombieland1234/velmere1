@@ -14,12 +14,12 @@
   "locale": "pl",
   "createdAt": "2026-09-10T12:36:18.416Z",
   "verdict": {
-    "riskScore": 72,
-    "riskLabel": "PODWYŻSZONE RYZYKO (BRAK DOWODÓW)",
-    "confidenceScore": 60,
-    "auditQualityScore": 96,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Kontrakt nie posiada zweryfikowanego kodu maszynowego on-chain. Zgodnie ze standardem Velmère brak dowodów skutkuje podwyższoną oceną ryzyka (72/100).",
-    "evidenceCoverage": 20,
+    "evidenceCoverage": 0,
     "verificationStatus": "INSUFFICIENT_EVIDENCE",
     "releaseDecision": "BLOCKED",
     "stopSellActive": true,
@@ -29,7 +29,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -346,20 +346,46 @@
       "chainId": "MIC:XCBO",
       "contractAddress": "cboe:vix",
       "network": "Chicago Board Options Exchange",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "proxyType": "unverifiable",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-index:VIX",
       "identifierType": "INDEX_CODE",
       "identifierValue": "VIX",
-      "source": "Consolidated Tape / Primary Exchange",
-      "exchangeMic": "XCME",
-      "figi": "BBGCBOEVIX",
-      "isin": "USCBOEVIX0",
-      "tickerSymbol": "VIX",
-      "assetClass": "Smart Contract Application",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "canonicalSymbol": "VIX",
+      "legacyCustomerAlias": null,
+      "assetClass": "index",
+      "instrumentType": "index",
+      "economicExposure": "Cboe Volatility Index",
+      "underlying": "S&P 500 option-implied volatility",
+      "providerIdentifier": "cboe:vix",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "CBOE",
+      "exchangeMic": "XCBO",
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": null,
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "none",
+      "priceType": "index",
+      "timezone": "America/Chicago",
+      "marketCalendar": "CBOE_INDEX",
+      "jurisdiction": [
+        "US"
+      ],
+      "regulatoryJurisdiction": "US_CBOE_INDEX",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": null,
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -413,5 +439,39 @@
     "pdfByteLength": 84532,
     "pageCount": 2,
     "verifiedAt": "2026-09-10T12:36:18.434Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-index:VIX",
+    "assetClass": "index",
+    "instrumentType": "index",
+    "economicExposure": "Cboe Volatility Index",
+    "underlying": "S&P 500 option-implied volatility",
+    "canonicalSymbol": "VIX",
+    "providerSymbol": "cboe:vix",
+    "venue": "CBOE",
+    "mic": "XCBO",
+    "baseCurrency": null,
+    "quoteCurrency": null,
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "none",
+    "priceType": "index",
+    "timezone": "America/Chicago",
+    "marketCalendar": "CBOE_INDEX",
+    "jurisdiction": [
+      "US"
+    ],
+    "regulatoryJurisdiction": "US_CBOE_INDEX",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": null
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

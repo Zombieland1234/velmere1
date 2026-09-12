@@ -3,26 +3,26 @@
   "reportId": "rep_eur_usd_basic_169",
   "caseRef": "CASE-VLM-EUR_USD-BASIC",
   "target": {
-    "contractName": "Euro / US Dollar Currency Pair",
+    "contractName": "Euro FX CME Front-Month Futures Proxy",
     "contractAddress": "cme:6e-front",
-    "network": "Chicago Mercantile Exchange (CME)",
+    "network": "CME futures market",
     "chainId": "MIC:XCME",
-    "tokenSymbol": "EURUSD",
-    "proxyPattern": "N/A (Regulated Clearinghouse / Central Counterparty)"
+    "tokenSymbol": "6E",
+    "proxyPattern": "N/A (regulated exchange-traded futures instrument; front-month proxy)"
   },
   "clientEntitlementTier": "basic",
   "locale": "pl",
   "createdAt": "2026-09-10T12:36:18.257Z",
   "verdict": {
-    "riskScore": 8,
-    "riskLabel": "BARDZO NISKIE RYZYKO",
-    "confidenceScore": 100,
-    "auditQualityScore": 59,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Najbardziej płynna para walutowa na świecie rozliczana w systemie CLS Bank z eliminacją ryzyka Herstatt (Payment-versus-Payment).",
-    "evidenceCoverage": 100,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0x5c69c668a6d235dd383715db44ecd0a58fed564d86fd21a90a1a8585289ec367",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -233,21 +233,47 @@
     "targetSpec": {
       "chainId": "MIC:XCME",
       "contractAddress": "cme:6e-front",
-      "network": "Chicago Mercantile Exchange (CME)",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "network": "CME futures market",
+      "proxyType": "N/A (regulated exchange-traded futures instrument; front-month proxy)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
-      "identifierType": "COMMODITY_CODE",
-      "identifierValue": "EURUSD",
-      "source": "Consolidated Tape / Primary Exchange",
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-future:6E:front",
+      "identifierType": "FUTURES_CODE",
+      "identifierValue": "6E",
+      "canonicalSymbol": "6E",
+      "legacyCustomerAlias": "EURUSD",
+      "assetClass": "fx",
+      "instrumentType": "future",
+      "economicExposure": "Euro FX futures versus US dollar",
+      "underlying": "Euro FX futures versus US dollar",
+      "providerIdentifier": "cme:6e-front",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "CME",
       "exchangeMic": "XCME",
-      "figi": "BBGCME6EFRON",
-      "isin": "USCME6EFRON0",
-      "tickerSymbol": "EURUSD",
-      "assetClass": "Global Tier-1 Sovereign Currency Spot Pair",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": "EUR",
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "physical",
+      "priceType": "unknown",
+      "timezone": "America/Chicago",
+      "marketCalendar": "CME_GLOBEX",
+      "jurisdiction": [
+        "US_CFTC"
+      ],
+      "regulatoryJurisdiction": "US_CFTC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -301,5 +327,40 @@
     "pdfByteLength": 89564,
     "pageCount": 3,
     "verifiedAt": "2026-09-10T12:36:18.271Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-future:6E:front",
+    "assetClass": "fx",
+    "instrumentType": "future",
+    "economicExposure": "Euro FX futures versus US dollar",
+    "underlying": "Euro FX futures versus US dollar",
+    "canonicalSymbol": "6E",
+    "providerSymbol": "cme:6e-front",
+    "venue": "CME",
+    "mic": "XCME",
+    "baseCurrency": "EUR",
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "physical",
+    "priceType": "unknown",
+    "timezone": "America/Chicago",
+    "marketCalendar": "CME_GLOBEX",
+    "jurisdiction": [
+      "US_CFTC"
+    ],
+    "regulatoryJurisdiction": "US_CFTC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": "FRONT_MONTH_CONTINUOUS_PROXY; contract-specific expiry not observed in this report evidence",
+    "legacyCustomerAlias": "EURUSD"
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

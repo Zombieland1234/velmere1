@@ -14,15 +14,15 @@
   "locale": "pl",
   "createdAt": "2026-09-10T12:36:17.736Z",
   "verdict": {
-    "riskScore": 22,
-    "riskLabel": "NISKIE-UMIARKOWANE RYZYKO",
-    "confidenceScore": 96,
-    "auditQualityScore": 80,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Akcje producenta pojazdów EV i technologii autonomicznych. Wysoka płynność detaliczna i opcyjna, podwyższona implikowana zmienność, audyt PwC.",
-    "evidenceCoverage": 96,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0x361cd2baea791b9531469175da920c61868450e3640af0721c2f265d3c58c320",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -320,20 +320,46 @@
       "chainId": "MIC:XNAS",
       "contractAddress": "nasdaq:tsla",
       "network": "NASDAQ Stock Market",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "proxyType": "N/A (Regulated Central Depository / DTCC-NSCC)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-equity:TSLA",
       "identifierType": "TICKER",
       "identifierValue": "TSLA",
-      "source": "Consolidated Tape / Primary Exchange",
+      "canonicalSymbol": "TSLA",
+      "legacyCustomerAlias": null,
+      "assetClass": "equity",
+      "instrumentType": "equity",
+      "economicExposure": "Common equity of Tesla, Inc.",
+      "underlying": "Tesla, Inc.",
+      "providerIdentifier": "nasdaq:tsla",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "NASDAQ",
       "exchangeMic": "XNAS",
-      "figi": "BBGNASDAQTSL",
-      "isin": "USNASDAQTSL0",
-      "tickerSymbol": "TSLA",
-      "assetClass": "SEC-Regulated Equity Security (NASDAQ Tier-1)",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "unknown",
+      "priceType": "unknown",
+      "timezone": "America/New_York",
+      "marketCalendar": "NASDAQ",
+      "jurisdiction": [
+        "US_SEC"
+      ],
+      "regulatoryJurisdiction": "US_SEC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": null,
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -387,5 +413,39 @@
     "pdfByteLength": 87893,
     "pageCount": 3,
     "verifiedAt": "2026-09-10T12:36:17.749Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-equity:TSLA",
+    "assetClass": "equity",
+    "instrumentType": "equity",
+    "economicExposure": "Common equity of Tesla, Inc.",
+    "underlying": "Tesla, Inc.",
+    "canonicalSymbol": "TSLA",
+    "providerSymbol": "nasdaq:tsla",
+    "venue": "NASDAQ",
+    "mic": "XNAS",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "unknown",
+    "priceType": "unknown",
+    "timezone": "America/New_York",
+    "marketCalendar": "NASDAQ",
+    "jurisdiction": [
+      "US_SEC"
+    ],
+    "regulatoryJurisdiction": "US_SEC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": null
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

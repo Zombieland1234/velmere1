@@ -14,15 +14,15 @@
   "locale": "en",
   "createdAt": "2026-09-10T12:36:17.689Z",
   "verdict": {
-    "riskScore": 15,
-    "riskLabel": "LOW RISK",
-    "confidenceScore": 98,
-    "auditQualityScore": 82,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Leading social platforms and open-source AI infrastructure (Llama). High operational operating margin with negligible net debt.",
-    "evidenceCoverage": 98,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0xab0882bf9187b61503a63511936ce3366658f1e00bb99889a638880533f3864e",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -320,20 +320,46 @@
       "chainId": "MIC:XNAS",
       "contractAddress": "nasdaq:meta",
       "network": "NASDAQ Stock Market",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "proxyType": "N/A (Regulated Clearinghouse / Central Counterparty)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-equity:META",
       "identifierType": "TICKER",
       "identifierValue": "META",
-      "source": "Consolidated Tape / Primary Exchange",
+      "canonicalSymbol": "META",
+      "legacyCustomerAlias": null,
+      "assetClass": "equity",
+      "instrumentType": "equity",
+      "economicExposure": "Common equity of Meta Platforms, Inc.",
+      "underlying": "Meta Platforms, Inc.",
+      "providerIdentifier": "nasdaq:meta",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "NASDAQ",
       "exchangeMic": "XNAS",
-      "figi": "BBGNASDAQMET",
-      "isin": "USNASDAQMET0",
-      "tickerSymbol": "META",
-      "assetClass": "Regulated Public Equity (SEC Form 10-K)",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "unknown",
+      "priceType": "unknown",
+      "timezone": "America/New_York",
+      "marketCalendar": "NASDAQ",
+      "jurisdiction": [
+        "US_SEC"
+      ],
+      "regulatoryJurisdiction": "US_SEC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": null,
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -387,5 +413,39 @@
     "pdfByteLength": 85152,
     "pageCount": 2,
     "verifiedAt": "2026-09-10T12:36:17.699Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-equity:META",
+    "assetClass": "equity",
+    "instrumentType": "equity",
+    "economicExposure": "Common equity of Meta Platforms, Inc.",
+    "underlying": "Meta Platforms, Inc.",
+    "canonicalSymbol": "META",
+    "providerSymbol": "nasdaq:meta",
+    "venue": "NASDAQ",
+    "mic": "XNAS",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "unknown",
+    "priceType": "unknown",
+    "timezone": "America/New_York",
+    "marketCalendar": "NASDAQ",
+    "jurisdiction": [
+      "US_SEC"
+    ],
+    "regulatoryJurisdiction": "US_SEC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": null
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }

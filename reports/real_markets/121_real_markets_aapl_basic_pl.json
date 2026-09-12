@@ -14,15 +14,15 @@
   "locale": "pl",
   "createdAt": "2026-09-10T12:36:17.433Z",
   "verdict": {
-    "riskScore": 10,
-    "riskLabel": "BARDZO NISKIE RYZYKO",
-    "confidenceScore": 100,
-    "auditQualityScore": 59,
+    "riskScore": null,
+    "riskLabel": "INSUFFICIENT_EVIDENCE",
+    "confidenceScore": 0,
+    "auditQualityScore": 0,
     "summary": "Akcje spółki giełdowej notowane na NASDAQ. Najwyższa płynność rynku publicznego, sprawozdawczość SEC Form 10-K i rozliczenie T+1 przez DTCC/NSCC.",
-    "evidenceCoverage": 100,
-    "verificationStatus": "AUTOMATED_ONLY",
-    "releaseDecision": "PASS",
-    "stopSellActive": false,
+    "evidenceCoverage": 0,
+    "verificationStatus": "INSUFFICIENT_EVIDENCE",
+    "releaseDecision": "BLOCKED",
+    "stopSellActive": true,
     "formalProofCoveragePct": 0,
     "snapshotProvenance": {
       "regulatoryFilingHash": "0xafc191f8dd9e0a75341d3496fa475bc78591795618bb1d6b6c068768d47d594e",
@@ -35,7 +35,7 @@
       "bytecodeInstructionsPct": 0,
       "reachableCFGEdgesPct": 0,
       "functionsPct": 0,
-      "detectorsExecutedPct": 100,
+      "detectorsExecutedPct": 0,
       "stateVariablesPct": 0,
       "formalPropertiesPct": 0
     }
@@ -234,20 +234,46 @@
       "chainId": "MIC:XNAS",
       "contractAddress": "nasdaq:aapl",
       "network": "NASDAQ Stock Market",
-      "proxyType": "N/A (Traditional Financial Instrument)"
+      "proxyType": "N/A (Regulated Central Depository / DTCC-NSCC)",
+      "identitySource": "R10_CANONICAL_MARKET_SPEC",
+      "liveObservationCredit": false
     },
     "marketSpec": {
+      "schemaVersion": "velmere.real-markets-canonical-identity.v1",
+      "instrumentId": "us-equity:AAPL",
       "identifierType": "TICKER",
       "identifierValue": "AAPL",
-      "source": "Consolidated Tape / Primary Exchange",
+      "canonicalSymbol": "AAPL",
+      "legacyCustomerAlias": null,
+      "assetClass": "equity",
+      "instrumentType": "equity",
+      "economicExposure": "Common equity of Apple Inc. Common Stock",
+      "underlying": "Apple Inc. Common Stock",
+      "providerIdentifier": "nasdaq:aapl",
+      "source": "R10_TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "tradingVenue": "NASDAQ",
       "exchangeMic": "XNAS",
-      "figi": "BBGNASDAQAAP",
-      "isin": "USNASDAQAAP0",
-      "tickerSymbol": "AAPL",
-      "assetClass": "SEC-Regulated Equity Security (NASDAQ Tier-1)",
-      "pricingSource": "Consolidated Tape / Primary Exchange",
-      "volatilityModel": "Parametric Historical VaR (95%/99%) & GARCH(1,1)",
-      "regulatoryJurisdiction": "SEC / FINRA / CFTC"
+      "figi": null,
+      "isin": null,
+      "identifierEvidenceStatus": "NOT_OBSERVED",
+      "baseCurrency": null,
+      "quoteCurrency": "USD",
+      "contractMonth": null,
+      "expiry": null,
+      "settlementType": "unknown",
+      "priceType": "unknown",
+      "timezone": "America/New_York",
+      "marketCalendar": "NASDAQ",
+      "jurisdiction": [
+        "US_SEC"
+      ],
+      "regulatoryJurisdiction": "US_SEC",
+      "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+      "asOf": null,
+      "freshnessSeconds": null,
+      "rollMethodology": null,
+      "externalIdentityVerified": false,
+      "liveObservationCredit": false
     },
     "analysisDimensions": {
       "staticGraph": false,
@@ -301,5 +327,39 @@
     "pdfByteLength": 89366,
     "pageCount": 3,
     "verifiedAt": "2026-09-10T12:36:17.447Z"
+  },
+  "marketSpec": {
+    "instrumentId": "us-equity:AAPL",
+    "assetClass": "equity",
+    "instrumentType": "equity",
+    "economicExposure": "Common equity of Apple Inc. Common Stock",
+    "underlying": "Apple Inc. Common Stock",
+    "canonicalSymbol": "AAPL",
+    "providerSymbol": "nasdaq:aapl",
+    "venue": "NASDAQ",
+    "mic": "XNAS",
+    "baseCurrency": null,
+    "quoteCurrency": "USD",
+    "contractMonth": null,
+    "expiry": null,
+    "settlementType": "unknown",
+    "priceType": "unknown",
+    "timezone": "America/New_York",
+    "marketCalendar": "NASDAQ",
+    "jurisdiction": [
+      "US_SEC"
+    ],
+    "regulatoryJurisdiction": "US_SEC",
+    "dataProvider": "TARGET_REGISTRY_ONLY_NO_LIVE_OBSERVATION",
+    "asOf": null,
+    "freshnessSeconds": null,
+    "rollMethodology": null
+  },
+  "r10TruthMigration": {
+    "schemaVersion": "velmere.r10.corpus-truth-migration.v1",
+    "failClosed": true,
+    "customerReleaseDecision": "BLOCKED",
+    "exactScopeEvidenceCredit": false,
+    "note": "Truth-preserving migration only. This does not create live/provider/formal/human evidence."
   }
 }
