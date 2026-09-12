@@ -817,11 +817,9 @@ export function filterCanonicalReportByEntitlement(
     analysisVersion: "v4.0.0-rc3",
     schemaVersion: "velmere.canonical-audit-report.v1",
   };
-  const tierQualityScore = clientTier === "advanced"
-    ? Math.min(99, Math.round(92 + (report.verdict.confidenceScore % 7)))
-    : clientTier === "pro"
-    ? Math.min(88, Math.round(80 + (report.verdict.confidenceScore % 8)))
-    : Math.min(68, Math.round(58 + (report.verdict.confidenceScore % 9)));
+  const tierQualityScore = Number.isFinite(report.verdict.auditQualityScore)
+    ? Math.max(0, Math.min(100, Number(report.verdict.auditQualityScore)))
+    : 0;
 
   const commitment = buildAuditMerkleCommitment(filteredSections, leafProvenance, {
     riskScore: report.verdict.riskScore,
@@ -911,7 +909,7 @@ export function canonicalReportToPdfLines(
   lines.push(`${tCreated}: ${report.createdAt}`);
   lines.push("");
 
-  const qScore = report.verdict.auditQualityScore ?? (report.clientEntitlementTier === "advanced" ? 95 : report.clientEntitlementTier === "pro" ? 82 : 62);
+  const qScore = report.verdict.auditQualityScore ?? 0;
   const verdictStr =
     report.verdict.riskScore === null || report.verdict.riskLabel.includes("NOT SCORED")
       ? `${tVerdict}: ${report.verdict.riskLabel} | Audit Quality: ${qScore}/100`
@@ -920,8 +918,8 @@ export function canonicalReportToPdfLines(
 
   const tDecision = isPl ? "Decyzja wdrozeniowa" : isDe ? "Freigabeentscheidung" : "Release Decision";
   const tStatus = isPl ? "Status weryfikacji" : isDe ? "Verifikationsstatus" : "Verification Status";
-  const releaseDecisionStr = report.verdict.releaseDecision ?? "PASS";
-  const verificationStatusStr = report.verdict.verificationStatus ?? "VERIFIED";
+  const releaseDecisionStr = report.verdict.releaseDecision ?? "BLOCKED";
+  const verificationStatusStr = report.verdict.verificationStatus ?? "INSUFFICIENT_EVIDENCE";
   lines.push(`${tDecision}: ${releaseDecisionStr} | ${tStatus}: ${verificationStatusStr}`);
 
   if (report.verdict.stopSellActive) {
@@ -940,8 +938,8 @@ export function canonicalReportToPdfLines(
     if (isMarket) {
       lines.push(
         isPl
-          ? `Proweniencja danych rynkowych: SEC EDGAR / OTC | Znacznik: ${sp.marketStateTimestamp || "2026-09-09T16:00:00Z (NYSE Close)"} | Identyfikator: ${sp.regulatoryFilingHash || report.target.contractAddress} | ${sp.reproducibilityStatus}`
-          : `Market Data Provenance: SEC EDGAR / OTC | Timestamp: ${sp.marketStateTimestamp || "2026-09-09T16:00:00Z (NYSE Close)"} | Filing ID: ${sp.regulatoryFilingHash || report.target.contractAddress} | ${sp.reproducibilityStatus}`
+          ? `Proweniencja danych rynkowych: SEC EDGAR / OTC | Znacznik: ${sp.marketStateTimestamp || "NOT_OBSERVED"} | Identyfikator: ${sp.regulatoryFilingHash || "NOT_OBSERVED"} | ${sp.reproducibilityStatus}`
+          : `Market Data Provenance: SEC EDGAR / OTC | Timestamp: ${sp.marketStateTimestamp || "NOT_OBSERVED"} | Filing ID: ${sp.regulatoryFilingHash || "NOT_OBSERVED"} | ${sp.reproducibilityStatus}`
       );
     } else if (isNative) {
       lines.push(
@@ -1068,10 +1066,10 @@ export function canonicalReportToPdfLines(
     } else {
       lines.push(
         isPl
-          ? "TYP ANALIZY: ZAUTOMATYZOWANA WERYFIKACJA STATYCZNA & FORMALNA"
+          ? "TYP ANALIZY: ZAUTOMATYZOWANA ANALIZA; WERYFIKACJA FORMALNA TYLKO GDY WYKONANA I ZWIĄZANA Z DOWODEM"
           : isDe
-            ? "ANALYSETYP: AUTOMATISIERTE STATISCHE & FORMALE PRÜFUNG"
-            : "ANALYSIS TYPE: AUTOMATED STATIC & FORMAL ANALYSIS"
+            ? "ANALYSETYP: AUTOMATISIERTE ANALYSE; FORMALE VERIFIKATION NUR BEI AUSFÜHRUNG UND NACHWEISBINDUNG"
+            : "ANALYSIS TYPE: AUTOMATED ANALYSIS; FORMAL VERIFICATION ONLY WHEN EXECUTED AND EVIDENCE-BOUND"
       );
     }
     lines.push(section.subtitle);
