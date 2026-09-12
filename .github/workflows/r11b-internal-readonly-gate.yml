@@ -16,7 +16,7 @@ env:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
@@ -30,16 +30,40 @@ jobs:
         run: |
           test "$(node --version)" = "v24.18.0"
           test "$(npm --version)" = "11.16.0"
+          mkdir -p /tmp/r11b
       - name: Clean install
         run: npm ci --ignore-scripts
       - name: F10 supply-chain adversarial tests
         run: node scripts/pass4992/test-supply-chain-release.mjs
+      - name: F10 exact secret fixture and env boundary
+        run: |
+          node scripts/r11/test-secret-fixture-boundary.mjs
+          node scripts/r11/verify-secret-fixture-boundary.mjs --output /tmp/r11b/SECRET_FIXTURE_BOUNDARY.json
       - name: F10 targeted secret/redaction tests
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test tests/unit/ai-vlm-security.test.ts tests/unit/security-api-error-envelope.test.ts
+      - name: F09 workflow semantic adversarial tests
+        run: node scripts/r11/test-workflow-semantic-policy.mjs
+      - name: F09 active workflow semantic policy
+        run: node scripts/r11/verify-workflow-semantic-policy.mjs --output /tmp/r11b/WORKFLOW_SEMANTIC_POLICY.json
+      - name: F11 release lint denominator
+        run: |
+          node scripts/r10/run-release-source-lint.mjs --output /tmp/r11b/RELEASE_LINT.json --summary /tmp/r11b/RELEASE_LINT_SUMMARY.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('/tmp/r11b/RELEASE_LINT_SUMMARY.json','utf8'));
+          if (!r.denominatorConserved || !r.checkedCandidateCountMatched) process.exit(1);
+          if (r.eligibleFileCount !== r.checkedFileCount + r.ignoredFileCount) process.exit(1);
+          if (r.errors !== 0 || r.fatalErrors !== 0) process.exit(1);
+          console.log(JSON.stringify({tracked:r.trackedScopeFileCount,excluded:r.explicitlyExcludedFileCount,eligible:r.eligibleFileCount,checked:r.checkedFileCount,ignored:r.ignoredFileCount,failed:r.failedFileCount,warnings:r.warnings},null,2));
+          NODE
+      - name: F14 finding-level local benchmark semantics
+        run: ./node_modules/.bin/tsx scripts/r11/run-finding-level-local-benchmark.ts --output /tmp/r11b/FINDING_LEVEL_LOCAL_BENCHMARK.json
       - name: Direct TypeScript
         run: npm run typecheck:direct
       - name: Security regression
         run: npm run security:regression
+      - name: Source truth scan
+        run: node scripts/r11/scan-release-truth-scope-v3.mjs --output /tmp/r11b/R11_TRUTH_SCOPE.json
       - name: No write-capable R11B workers remain
         run: |
           if grep -R -n -E 'contents:[[:space:]]*write' .github/workflows/r11b-*.yml; then
@@ -50,3 +74,11 @@ jobs:
         run: |
           git checkout -- artifacts/pass4992/PASS4992_SUPPLY_CHAIN_ADVERSARIAL_TEST.json || true
           git diff --exit-code
+      - name: Upload R11B internal evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r11b-internal-evidence-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: /tmp/r11b
