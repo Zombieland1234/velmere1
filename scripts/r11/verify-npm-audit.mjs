@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 
+export const NPM_AUDIT_VERDICT_SCHEMA = "velmere.r11.npm-audit-verdict.v1";
+
 export function classifyNpmAudit({ payload, exitCode }) {
-  const toolError = payload && typeof payload === "object" && (payload.error || payload.code || payload.message) && !payload.metadata;
+  const toolError = Boolean(
+    payload &&
+    typeof payload === "object" &&
+    (payload.error || payload.code || payload.message) &&
+    !payload.metadata
+  );
   const vulnerabilities = payload?.metadata?.vulnerabilities;
   const keys = ["info", "low", "moderate", "high", "critical", "total"];
-  const schemaValid = vulnerabilities && keys.every((k) => Number.isInteger(vulnerabilities[k]) && vulnerabilities[k] >= 0);
+  const schemaValid = Boolean(
+    vulnerabilities && keys.every((k) => Number.isInteger(vulnerabilities[k]) && vulnerabilities[k] >= 0)
+  );
   const exitValid = exitCode === 0 || exitCode === 1;
 
   const blockers = [];
@@ -19,13 +28,19 @@ export function classifyNpmAudit({ payload, exitCode }) {
     if (vulnerabilities.total < vulnerabilities.high + vulnerabilities.critical) blockers.push("npm_audit_counts_inconsistent");
   }
 
+  const ok = blockers.length === 0;
   return {
-    status: blockers.length === 0 ? "PASS_NO_HIGH_CRITICAL" : "FAIL_OR_UNKNOWN",
+    schemaVersion: NPM_AUDIT_VERDICT_SCHEMA,
+    status: ok ? "PASS_NO_HIGH_CRITICAL" : "FAIL_OR_UNKNOWN",
+    ok,
+    toolError,
     exitCode,
-    schemaValid: Boolean(schemaValid),
+    schemaValid,
+    high: schemaValid ? vulnerabilities.high : null,
+    critical: schemaValid ? vulnerabilities.critical : null,
     vulnerabilities: schemaValid ? vulnerabilities : null,
     blockers,
-    releaseCredit: blockers.length === 0,
+    releaseCredit: ok,
   };
 }
 
