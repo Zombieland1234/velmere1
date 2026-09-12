@@ -115,6 +115,14 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Bind exact evaluator runtime
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
       - name: Verifier adversarial canaries
         run: node scripts/r11/test-remediation-evidence-verifier.mjs
       - name: Download immutable remediation artifact
