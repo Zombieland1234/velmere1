@@ -35,10 +35,11 @@ jobs:
           package-manager-cache: false
       - name: Install lockfile
         run: npm ci --ignore-scripts
-      - name: Apply guarded paid authz patch
+      - name: Apply guarded paid authz and UI truth patches
         run: |
           node scripts/r10/patch-paid-authz.mjs
           node scripts/r10/patch-paid-authz-lint.mjs
+          node scripts/r10/patch-analysiscards-truth.mjs
       - name: Assert source truth boundaries
         run: |
           node - <<'NODE'
@@ -53,6 +54,7 @@ jobs:
             ['audit_missing_session_accept', audit.includes('!event.data.sessionId || event.data.sessionId === sessionId')],
             ['asset_direct_paid_bypass', detail.includes('Allow user to execute Pro and Advanced analysis directly')],
             ['audit_preverification_redirect', /setTimeout\(\(\) => \{\s*window\.location\.assign/.test(audit)],
+            ['analysis_rfc3161_claim', /RFC\s*3161/i.test(analysis)],
           ];
           const bad=forbidden.filter(([,present])=>present);
           if(bad.length) throw new Error('paid_authz_forbidden_patterns:'+JSON.stringify(bad));
@@ -72,6 +74,8 @@ jobs:
         run: |
           node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-paid-surface-truth.ts
           node --import ./scripts/pass11/register-offline-ts-loader.mjs scripts/pass32/test-payment-auth-hardening.ts
+      - name: R10 truth scanner regression
+        run: node scripts/r10/test-release-truth-scanner.mjs
       - name: Production build
         run: npm run build
       - name: Commit verified source-only changes
