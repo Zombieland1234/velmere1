@@ -1,0 +1,72 @@
+name: R10 Release Lint Scope Audit
+
+on:
+  push:
+    branches:
+      - r10-lint-remediation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+
+jobs:
+  lint-scope:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout lint branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install lockfile
+        run: npm ci --ignore-scripts
+      - name: Release-source lint inventory
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/r10/lint
+          npx eslint app components lib config i18n.ts navigation.ts proxy.ts routing.ts next.config.mjs --format json > artifacts/r10/lint/RELEASE_LINT.json || true
+          node - <<'NODE'
+          const fs=require('fs');
+          const rows=JSON.parse(fs.readFileSync('artifacts/r10/lint/RELEASE_LINT.json','utf8'));
+          const summary=rows.reduce((a,r)=>{a.files++;a.errors+=r.errorCount||0;a.warnings+=r.warningCount||0;return a},{files:0,errors:0,warnings:0});
+          summary.scope=['app','components','lib','config','i18n.ts','navigation.ts','proxy.ts','routing.ts','next.config.mjs'];
+          summary.runtimeReleaseGate=true;
+          fs.writeFileSync('artifacts/r10/lint/RELEASE_LINT_SUMMARY.json',JSON.stringify(summary,null,2));
+          console.log(summary);
+          NODE
+      - name: Repository-wide debt inventory
+        continue-on-error: true
+        run: |
+          npx eslint . --format json > artifacts/r10/lint/FULL_TREE_LINT.json || true
+          node - <<'NODE'
+          const fs=require('fs');
+          const rows=JSON.parse(fs.readFileSync('artifacts/r10/lint/FULL_TREE_LINT.json','utf8'));
+          const summary=rows.reduce((a,r)=>{a.files++;a.errors+=r.errorCount||0;a.warnings+=r.warningCount||0;return a},{files:0,errors:0,warnings:0});
+          summary.runtimeReleaseGate=false;
+          summary.classification='REPOSITORY_WIDE_DEBT_INVENTORY';
+          fs.writeFileSync('artifacts/r10/lint/FULL_TREE_LINT_SUMMARY.json',JSON.stringify(summary,null,2));
+          console.log(summary);
+          NODE
+      - name: Enforce release source has zero errors
+        run: |
+          node - <<'NODE'
+          const s=require('./artifacts/r10/lint/RELEASE_LINT_SUMMARY.json');
+          if (s.errors !== 0) process.exit(1);
+          NODE
+      - name: Upload lint evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-lint-scope-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: artifacts/r10/lint/**
