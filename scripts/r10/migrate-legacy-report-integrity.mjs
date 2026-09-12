@@ -102,6 +102,7 @@ function collectJsonFiles(directory, output = []) {
 function oldTimestamp(value) {
   const candidates = [
     value?.pkiAttestation?.timestampToken?.time,
+    value?.pkiAttestation?.timestampToken?.genTime,
     value?.pkiAttestation?.observedAt,
     value?.generatedAt,
     value?.createdAt,
@@ -112,6 +113,32 @@ function oldTimestamp(value) {
     }
   }
   return "1970-01-01T00:00:00.000Z";
+}
+
+function migrateProvenancePlaceholders(node) {
+  let migrated = 0;
+  if (Array.isArray(node)) {
+    for (const item of node) migrated += migrateProvenancePlaceholders(item);
+    return migrated;
+  }
+  if (!node || typeof node !== "object") return migrated;
+
+  if (node.provenanceHash === "0xprovenance_root") {
+    const payload = { ...node };
+    delete payload.provenanceHash;
+    delete payload.provenanceIntegrityScope;
+    delete payload.externalProvenanceVerified;
+    node.provenanceHash = `sha256:${sha256Hex(canonicalJson(payload))}`;
+    node.provenanceIntegrityScope = "LOCAL_RECORD_ONLY";
+    node.externalProvenanceVerified = false;
+    migrated += 1;
+  }
+
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "provenanceHash" || key === "provenanceIntegrityScope" || key === "externalProvenanceVerified") continue;
+    migrated += migrateProvenancePlaceholders(value);
+  }
+  return migrated;
 }
 
 const stats = {
@@ -153,15 +180,9 @@ for (const file of reportRoots.flatMap((dir) => collectJsonFiles(dir)).sort()) {
     changed = true;
   }
 
-  if (value?.dataProvenance?.provenanceHash === "0xprovenance_root") {
-    const provenancePayload = { ...value.dataProvenance };
-    delete provenancePayload.provenanceHash;
-    delete provenancePayload.provenanceIntegrityScope;
-    delete provenancePayload.externalProvenanceVerified;
-    value.dataProvenance.provenanceHash = `sha256:${sha256Hex(canonicalJson(provenancePayload))}`;
-    value.dataProvenance.provenanceIntegrityScope = "LOCAL_RECORD_ONLY";
-    value.dataProvenance.externalProvenanceVerified = false;
-    stats.provenancePlaceholdersMigrated += 1;
+  const provenanceMigrations = migrateProvenancePlaceholders(value);
+  if (provenanceMigrations > 0) {
+    stats.provenancePlaceholdersMigrated += provenanceMigrations;
     changed = true;
   }
 
