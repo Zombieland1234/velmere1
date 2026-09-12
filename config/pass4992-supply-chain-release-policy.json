@@ -1,8 +1,8 @@
 {
   "schemaVersion": "velmere.pass4992.supply-chain-release-policy.v2",
-  "policyId": "pass4992-r10-candidate-compatible-workflow-policy-v3",
+  "policyId": "pass4992-r10-dynamic-active-workflow-policy-v4",
   "mode": "OFFLINE_PREPARATION_ONLY",
-  "candidateNote": "PARTIAL: candidate branch includes the R10 truth workflow. Exact R9/R10 pass must replace static workflow inventory/count with discovery-derived inventory in auditWorkflowDirectory and its tests; do not treat this compatibility list as final closure.",
+  "candidateNote": "R10 closure: active workflow inventory is discovery-derived. requiredWorkflowFiles is a minimum baseline only; every active YAML is audited, additional files are not rejected merely for changing the inventory size, and action-reference totals are observed rather than statically hardcoded. Secret-scan fixture suppression is exact path+rule only and adversarially tested outside fixtures.",
   "toolchain": {
     "node": "24.18.0",
     "npm": "11.16.0",
@@ -54,7 +54,8 @@
       "r10-candidate-truth-gate.yml",
       "r6-exact-windows-current-byte-closure.yml"
     ],
-    "expectedActionReferenceCount": 33
+    "workflowInventoryMode": "DISCOVER_ACTIVE",
+    "requiredWorkflowFilesSemantics": "MINIMUM_BASELINE"
   },
   "codeql": {
     "requiredLanguages": [

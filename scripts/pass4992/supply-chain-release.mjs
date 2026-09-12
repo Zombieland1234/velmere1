@@ -53,6 +53,12 @@ const SECRET_RULES = [
   { id: "stripe-live-secret", pattern: /\b(?:sk|rk)_live_[A-Za-z0-9]{16,}\b/g },
 ];
 
+const SECRET_SCAN_EXACT_FIXTURES = new Set([
+  "scripts/security/scan-all-secrets.mjs:stripe-live-secret",
+  "tests/unit/ai-vlm-security.test.ts:stripe-live-secret",
+  "tests/unit/security-api-error-envelope.test.ts:stripe-live-secret",
+]);
+
 const OPENVEX_NOT_AFFECTED_JUSTIFICATIONS = new Set([
   "component_not_present",
   "inline_mitigations_already_exist",
@@ -424,6 +430,7 @@ export function scanTextForHighPrecisionSecrets(text, filePath = "fixture") {
 
 export async function scanSourceForHighPrecisionSecrets(root, sourceManifest) {
   const findings = [];
+  const ignoredFixtureFindings = [];
   let scannedFileCount = 0;
   let scannedBytes = 0;
   for (const entry of sourceManifest.entries) {
@@ -433,7 +440,14 @@ export async function scanSourceForHighPrecisionSecrets(root, sourceManifest) {
     const text = content.toString("utf8");
     scannedFileCount += 1;
     scannedBytes += content.length;
-    findings.push(...scanTextForHighPrecisionSecrets(text, entry.path));
+    for (const finding of scanTextForHighPrecisionSecrets(text, entry.path)) {
+      const fixtureKey = `${finding.path}:${finding.ruleId}`;
+      if (SECRET_SCAN_EXACT_FIXTURES.has(fixtureKey)) {
+        ignoredFixtureFindings.push({ path: finding.path, line: finding.line, ruleId: finding.ruleId });
+      } else {
+        findings.push(finding);
+      }
+    }
   }
   return {
     schemaVersion: "velmere.pass4992.high-precision-secret-scan.v1",
@@ -444,6 +458,9 @@ export async function scanSourceForHighPrecisionSecrets(root, sourceManifest) {
     scannedFileCount,
     scannedBytes,
     findingCount: findings.length,
+    ignoredFixtureFindingCount: ignoredFixtureFindings.length,
+    ignoredFixtureFindings,
+    fixturePolicy: "EXACT_PATH_PLUS_RULE_ID_ONLY",
     status: findings.length ? "FAIL" : "PASS_OFFLINE_SCOPE_ONLY",
     findings,
   };
@@ -515,14 +532,24 @@ export async function auditWorkflowDirectory(root, policy) {
   }
   const required = [...(policy.githubActions.requiredWorkflowFiles ?? [])].sort();
   const missingWorkflowFiles = required.filter((name) => !names.includes(name));
-  const unexpectedWorkflowFiles = names.filter((name) => !required.includes(name));
   for (const name of missingWorkflowFiles) blockers.push(`workflow_missing:${name}`);
-  for (const name of unexpectedWorkflowFiles) blockers.push(`workflow_unexpected:${name}`);
-  if (Number.isInteger(policy.githubActions.expectedActionReferenceCount)
-    && actionReferenceCount !== policy.githubActions.expectedActionReferenceCount) {
-    blockers.push(`workflow_action_reference_count_mismatch:${actionReferenceCount}`);
-  }
-  return { workflowCount: names.length, workflowFiles: names, actionReferenceCount, missingWorkflowFiles, unexpectedWorkflowFiles, blockers: [...new Set(blockers)].sort() };
+
+  // R10: the active workflow directory is the authority for inventory size.
+  // The policy list is a minimum baseline only; every discovered workflow still
+  // receives the same pinning, permissions and checkout-credential audit.
+  const additionalWorkflowFiles = names.filter((name) => !required.includes(name));
+  const unexpectedWorkflowFiles = [];
+  return {
+    workflowCount: names.length,
+    workflowFiles: names,
+    actionReferenceCount,
+    inventoryMode: "DISCOVER_ACTIVE",
+    requiredWorkflowFiles: required,
+    missingWorkflowFiles,
+    additionalWorkflowFiles,
+    unexpectedWorkflowFiles,
+    blockers: [...new Set(blockers)].sort(),
+  };
 }
 
 export function auditDependabotText(text) {

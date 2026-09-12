@@ -72,9 +72,11 @@ await check("source manifest is content-addressed and excludes generated artifac
 
 await check("all workflow actions are full-SHA pinned and policy allowlisted", async () => {
   const audit = await auditWorkflowDirectory(root, policy);
-  assert.equal(audit.workflowCount, policy.githubActions.requiredWorkflowFiles.length);
-  assert.deepEqual(audit.workflowFiles, [...policy.githubActions.requiredWorkflowFiles].sort());
-  assert.equal(audit.actionReferenceCount, policy.githubActions.expectedActionReferenceCount);
+  assert.equal(audit.inventoryMode, "DISCOVER_ACTIVE");
+  assert.ok(audit.workflowCount >= policy.githubActions.requiredWorkflowFiles.length);
+  for (const required of policy.githubActions.requiredWorkflowFiles) assert.ok(audit.workflowFiles.includes(required));
+  assert.deepEqual(audit.unexpectedWorkflowFiles, []);
+  assert.ok(Array.isArray(audit.additionalWorkflowFiles));
   assert.deepEqual(audit.blockers, []);
 });
 
@@ -163,11 +165,20 @@ await check("high-precision scanner detects secrets without retaining values", (
   for (const value of fixture.split("\n")) assert.equal(serialized.includes(value), false);
 });
 
-await check("current source has no high-precision secret finding", async () => {
+await check("current source has no high-precision secret finding outside exact fixtures", async () => {
   const scan = await scanSourceForHighPrecisionSecrets(root, manifest);
   assert.equal(scan.status, "PASS_OFFLINE_SCOPE_ONLY");
   assert.equal(scan.findingCount, 0);
   assert.equal(scan.historicalGitScanExecuted, false);
+  assert.equal(scan.fixturePolicy, "EXACT_PATH_PLUS_RULE_ID_ONLY");
+  const fixturePairs = new Set(scan.ignoredFixtureFindings.map((finding) => `${finding.path}:${finding.ruleId}`));
+  assert.deepEqual([...fixturePairs].sort(), [
+    "scripts/security/scan-all-secrets.mjs:stripe-live-secret",
+    "tests/unit/ai-vlm-security.test.ts:stripe-live-secret",
+    "tests/unit/security-api-error-envelope.test.ts:stripe-live-secret",
+  ]);
+  const adversarialOutsideFixture = scanTextForHighPrecisionSecrets(["sk", "_live_", "A1B2C3D4E5F6G7H8I9"].join(""), "app/adversarial-real-source.ts");
+  assert.equal(adversarialOutsideFixture.some((finding) => finding.ruleId === "stripe-live-secret"), true);
 });
 
 const baseGateArguments = {
