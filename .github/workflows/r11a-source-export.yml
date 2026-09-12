@@ -1,0 +1,38 @@
+name: R11A Exact Source Export
+
+on:
+  push:
+    branches:
+      - r11-redteam-remediation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact proven R11A source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: 144152c5a3d19145631d60c0a4713ea6d1ba80dc
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify exact source SHA
+        run: |
+          test "$(git rev-parse HEAD)" = "144152c5a3d19145631d60c0a4713ea6d1ba80dc"
+      - name: Build exact tracked-source ZIP
+        run: |
+          git archive --format=zip --prefix=velmere1-r11a-144152c5/ HEAD -o /tmp/VELMERE_R11A_FULL_SOURCE_CANDIDATE_144152c5.zip
+          sha256sum /tmp/VELMERE_R11A_FULL_SOURCE_CANDIDATE_144152c5.zip > /tmp/VELMERE_R11A_FULL_SOURCE_CANDIDATE_144152c5.zip.sha256
+      - name: Upload exact source archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-r11a-full-source-144152c5
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            /tmp/VELMERE_R11A_FULL_SOURCE_CANDIDATE_144152c5.zip
+            /tmp/VELMERE_R11A_FULL_SOURCE_CANDIDATE_144152c5.zip.sha256
