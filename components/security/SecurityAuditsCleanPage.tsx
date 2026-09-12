@@ -42,6 +42,7 @@ type AuditIntakeResponse = {
   ok?: boolean;
   error?: string;
   auth?: { accountResolved?: boolean };
+  nextAction?: "basic_prescreen_queue" | "verify_account_entitlement_before_analysis";
   case?: {
     caseRef?: string;
     status?: "queued_basic_prescreen" | "awaiting_entitlement" | "checkout_pending" | "queued_paid_review";
@@ -711,7 +712,7 @@ export default function SecurityAuditsCleanPage({ locale }: { locale: string }) 
         body: JSON.stringify({
           target: targetAddress,
           chainId: selectedChainId,
-          chainName: selectedChainId === "1" ? "Ethereum Mainnet" : selectedChainId === "42161" ? "Arbitrum One" : selectedChainId === "137" ? "Polygon POS" : "BNB Smart Chain (BSC)",
+          chainName: selectedChainId === "56" ? "BSC" : selectedChainId === "1" ? "Ethereum Mainnet" : selectedChainId === "42161" ? "Arbitrum One" : selectedChainId === "137" ? "Polygon POS" : "UNKNOWN",
           tier: tierToRun,
           locale: localeKey,
           requestId,
@@ -723,15 +724,24 @@ export default function SecurityAuditsCleanPage({ locale }: { locale: string }) 
         const durable = payload.case.durable === true;
         const accountOwned = payload.auth?.accountResolved === true;
         const statusMessage = payload.case.status === "queued_basic_prescreen" ? t.basicQueued : t.paidWaiting;
+        const basicAnalysisAuthorized =
+          tierToRun === "basic" &&
+          payload.case.status === "queued_basic_prescreen" &&
+          payload.nextAction === "basic_prescreen_queue";
         setCaseRef(payload.case.caseRef);
         setAccountOwnedCase(accountOwned);
         if (accountOwned) rememberAuditCaseRef(payload.case.caseRef, { tier: tierToRun });
         setIntakeMessage(`${statusMessage}${durable ? "" : ` ${t.localOnly}`}${accountOwned ? "" : ` ${t.anonymousBasic}`}`);
-        setStaged(true);
-        setIntakeState("success");
-        window.location.assign(
-          `/${localeKey}/security/audits/report/${encodeURIComponent(targetAddress)}?address=${encodeURIComponent(targetAddress)}&tier=${encodeURIComponent(tierToRun)}&chainId=${encodeURIComponent(selectedChainId)}${bytecodeParam}`
-        );
+        setStaged(basicAnalysisAuthorized);
+        if (basicAnalysisAuthorized) {
+          setIntakeState("success");
+          window.location.assign(
+            `/${localeKey}/security/audits/report/${encodeURIComponent(targetAddress)}?address=${encodeURIComponent(targetAddress)}&tier=${encodeURIComponent(tierToRun)}&chainId=${encodeURIComponent(selectedChainId)}${bytecodeParam}`
+          );
+          return;
+        }
+        setIntakeState("idle");
+        if (tierToRun !== "basic") setAuditPaywallModal(tierToRun);
         return;
       }
       setIntakeState("idle");
