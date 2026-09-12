@@ -55,7 +55,6 @@ jobs:
             lib/security/market-evidence/market-provenance-engine.ts \
             lib/security/transient-storage-verifier.ts \
             lib/security/unified-audit-pipeline.ts \
-            lib/server/market-integrity-route-modules/investigator.ts \
             lib/server/search-route-modules/lens-report.ts
       - name: Direct TypeScript
         run: npm run typecheck:direct
@@ -74,7 +73,7 @@ jobs:
       - name: Validate write scope and commit verified source changes
         run: |
           git diff --name-only > /tmp/changed.txt
-          allowed='^(app/api/market-integrity/export/route\.ts|components/market-integrity/AssetAreaChart\.tsx|components/market-integrity/ShieldMapCommandClient\.tsx|components/market-integrity/ShieldRealMarketsParityClient\.tsx|lib/commerce/vlm-paid-access-client\.ts|lib/market-integrity/coingecko\.ts|lib/market-integrity/risk-ledger\.ts|lib/security/audit-canonical-report\.ts|lib/security/formal/formal-engine\.ts|lib/security/freshness/data-freshness-engine\.ts|lib/security/input-sanitizer\.ts|lib/security/institutional-pipeline-gate\.ts|lib/security/market-evidence/market-provenance-engine\.ts|lib/security/transient-storage-verifier\.ts|lib/security/unified-audit-pipeline\.ts|lib/server/market-integrity-route-modules/investigator\.ts|lib/server/search-route-modules/lens-report\.ts)$'
+          allowed='^(app/api/market-integrity/export/route\.ts|components/market-integrity/AssetAreaChart\.tsx|components/market-integrity/ShieldMapCommandClient\.tsx|components/market-integrity/ShieldRealMarketsParityClient\.tsx|lib/commerce/vlm-paid-access-client\.ts|lib/market-integrity/coingecko\.ts|lib/market-integrity/risk-ledger\.ts|lib/security/audit-canonical-report\.ts|lib/security/formal/formal-engine\.ts|lib/security/freshness/data-freshness-engine\.ts|lib/security/input-sanitizer\.ts|lib/security/institutional-pipeline-gate\.ts|lib/security/market-evidence/market-provenance-engine\.ts|lib/security/transient-storage-verifier\.ts|lib/security/unified-audit-pipeline\.ts|lib/server/search-route-modules/lens-report\.ts)$'
           bad="$(grep -Ev "$allowed" /tmp/changed.txt || true)"
           if [ -n "$bad" ]; then echo "Unexpected write scope:"; echo "$bad"; exit 1; fi
           git config user.name "velmere-r10-lint-semantic"
