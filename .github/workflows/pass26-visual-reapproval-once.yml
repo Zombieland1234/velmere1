@@ -67,19 +67,33 @@ jobs:
           const consoleErrors=[];
 
           async function dismiss(page){
-            const labels=['ACCEPT','ACCEPT ALL','ONLY NECESSARY','AKCEPTUJ','TYLKO NIEZBĘDNE'];
+            const labels=['ALLOW ALL','NECESSARY ONLY','ACCEPT ALL','ACCEPT','ONLY NECESSARY','AKCEPTUJ','TYLKO NIEZBĘDNE'];
             for(const label of labels){
-              const loc=page.getByRole('button',{name:new RegExp(label,'i')}).first();
-              if(await loc.count()){ try{ if(await loc.isVisible()) await loc.click({timeout:1200}); }catch{} }
+              const loc=page.getByRole('button',{name:new RegExp(`^${label}$`,'i')}).first();
+              if(await loc.count()){
+                try{
+                  if(await loc.isVisible()){
+                    await loc.click({timeout:1800});
+                    await page.waitForTimeout(250);
+                    return label;
+                  }
+                }catch{}
+              }
             }
+            return null;
           }
-          async function capture(route,slug,viewport,scale){
-            const page=await browser.newPage({viewport,deviceScaleFactor:scale,isMobile:viewport.width<500});
+
+          function attachErrorCapture(page,slug){
             page.on('pageerror',e=>pageErrors.push({slug,message:String(e?.message||e)}));
             page.on('console',m=>{ if(m.type()==='error') consoleErrors.push({slug,text:m.text()}); });
+          }
+
+          async function capture(route,slug,viewport,scale){
+            const page=await browser.newPage({viewport,deviceScaleFactor:scale,isMobile:viewport.width<500});
+            attachErrorCapture(page,slug);
             const response=await page.goto(`http://127.0.0.1:3100${route}`,{waitUntil:'domcontentloaded',timeout:60000});
             await page.waitForTimeout(1800);
-            await dismiss(page);
+            const dismissedCookieWith=await dismiss(page);
             await page.waitForTimeout(400);
             const status=response?.status() ?? 0;
             const metrics=await page.evaluate(()=>({
@@ -91,70 +105,107 @@ jobs:
             }));
             const file=`${out}/${slug}.png`;
             await page.screenshot({path:file,fullPage:true});
-            const row={route,slug,status,viewport,scale,file,sha256:sha256(file),horizontalOverflow:metrics.scrollWidth>metrics.width,metrics};
+            const row={route,slug,status,viewport,scale,file,sha256:sha256(file),horizontalOverflow:metrics.scrollWidth>metrics.width,metrics,dismissedCookieWith};
             results.push(row);
             if(status>=500 || status===0) throw new Error(`visual_route_status:${route}:${status}`);
             if(row.horizontalOverflow) throw new Error(`horizontal_overflow:${route}:${metrics.scrollWidth}>${metrics.width}`);
-            return page;
+            await page.close();
           }
 
           for(const [route,slug] of [['/en/security/audits','audits'],['/en/shield','shield'],['/en/real-markets','real-markets']]){
-            const p=await capture(route,`${slug}-desktop`,{width:1440,height:900},2); await p.close();
-            const m=await capture(route,`${slug}-mobile`,{width:375,height:812},1); await m.close();
+            await capture(route,`${slug}-desktop`,{width:1440,height:900},2);
+            await capture(route,`${slug}-mobile`,{width:375,height:812},1);
           }
 
-          let popupCaptured=false;
-          let popupSource=null;
-          for(const route of ['/en/real-markets','/en/shield']){
-            const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:2});
-            page.on('pageerror',e=>pageErrors.push({slug:'popup',message:String(e?.message||e)}));
-            await page.goto(`http://127.0.0.1:3100${route}`,{waitUntil:'domcontentloaded',timeout:60000});
-            await page.waitForTimeout(1800); await dismiss(page);
-            const candidates=[
-              'button:has-text("Bitcoin")','button:has-text("BTC")','[role="button"]:has-text("Bitcoin")','[role="button"]:has-text("BTC")',
-              '[data-symbol="BTC"]','[data-asset-symbol="BTC"]','.asset-card','[data-asset-id]'
-            ];
-            for(const sel of candidates){
-              const loc=page.locator(sel).first();
-              if(!(await loc.count())) continue;
-              try{
-                if(!(await loc.isVisible())) continue;
-                await loc.click({timeout:2500});
-                await page.waitForTimeout(1000);
-                const modal=page.locator('[data-pass4590-asset-detail-modal], .vlm-asset-detail-modal').first();
-                if(await modal.count() && await modal.isVisible()){
-                  const file=`${out}/asset-popup-desktop.png`;
-                  await page.screenshot({path:file,fullPage:false});
-                  results.push({route,slug:'asset-popup-desktop',status:200,viewport:{width:1440,height:900},scale:2,file,sha256:sha256(file),horizontalOverflow:false});
-                  popupCaptured=true; popupSource={route,selector:sel}; break;
-                }
-              }catch{}
-            }
+          async function captureRealMarketsPopup(slug,viewport,scale){
+            const page=await browser.newPage({viewport,deviceScaleFactor:scale,isMobile:viewport.width<500});
+            attachErrorCapture(page,slug);
+            const response=await page.goto('http://127.0.0.1:3100/en/real-markets',{waitUntil:'domcontentloaded',timeout:60000});
+            await page.waitForTimeout(1800);
+            await dismiss(page);
+            const trigger=page.getByRole('button',{name:/full chart and analysis/i}).first();
+            if(!(await trigger.count()) || !(await trigger.isVisible())) throw new Error(`asset_popup_trigger_missing:${slug}`);
+            const triggerName=await trigger.getAttribute('aria-label');
+            await trigger.click({timeout:5000});
+            const modal=page.locator('[data-pass4590-asset-detail-modal], .vlm-asset-detail-modal').first();
+            await modal.waitFor({state:'visible',timeout:10000});
+            await page.waitForTimeout(600);
+            const modalMetrics=await modal.evaluate(el=>({
+              clientWidth:el.clientWidth,
+              scrollWidth:el.scrollWidth,
+              clientHeight:el.clientHeight,
+              scrollHeight:el.scrollHeight,
+            }));
+            const file=`${out}/${slug}.png`;
+            await page.screenshot({path:file,fullPage:false});
+            const row={
+              route:'/en/real-markets',slug,status:response?.status()??0,viewport,scale,file,sha256:sha256(file),
+              horizontalOverflow:modalMetrics.scrollWidth>modalMetrics.clientWidth,
+              modalMetrics,triggerName,
+            };
+            results.push(row);
             await page.close();
-            if(popupCaptured) break;
+            if(row.horizontalOverflow) throw new Error(`asset_popup_horizontal_overflow:${slug}`);
+            return {slug,triggerName};
           }
+
+          const popupEvidence=[];
+          popupEvidence.push(await captureRealMarketsPopup('asset-popup-desktop',{width:1440,height:900},2));
+          popupEvidence.push(await captureRealMarketsPopup('asset-popup-mobile',{width:375,height:812},1));
 
           await browser.close();
           const receipt={
-            schemaVersion:'velmere.pass26.visual-reapproval-pack.v1',
+            schemaVersion:'velmere.pass26.visual-reapproval-pack.v2',
             subjectSha:process.env.GITHUB_SHA,
             evidenceClass:'EXACT_GIT_CI_RENDERED_SCREENSHOT_PACK',
             protectedHashes:Object.fromEntries(protectedPaths.map(p=>[p,sha256(p)])),
             viewports:{desktop:{width:1440,height:900,deviceScaleFactor:2},mobile:{width:375,height:812,deviceScaleFactor:1}},
             results,
-            popupCaptured,
-            popupSource,
+            popupCaptured:popupEvidence.length===2,
+            popupEvidence,
             pageErrors,
             consoleErrors,
-            automatedVisualPreconditionsPassed:popupCaptured && pageErrors.length===0 && results.every(r=>!r.horizontalOverflow),
+            automatedLayoutPreconditionsPassed:popupEvidence.length===2 && results.every(r=>!r.horizontalOverflow),
+            runtimeHydrationClean:pageErrors.length===0,
             humanVisualReviewRequired:true,
             releaseVisualApproval:false,
-            truthBoundary:'Rendered screenshots and automated overflow/runtime checks are evidence inputs. They do not self-approve visual design. releaseVisualApproval remains false until screenshots are opened and reviewed against the intended product surfaces.',
+            truthBoundary:'Rendered screenshots and automated overflow/runtime checks are evidence inputs. Layout capture success does not waive browser runtime errors and does not self-approve visual design.',
           };
           fs.writeFileSync(`${out}/RECEIPT.json`,JSON.stringify(receipt,null,2)+'\n');
           console.log(JSON.stringify(receipt,null,2));
-          if(!popupCaptured) throw new Error('asset_popup_not_captured');
-          if(pageErrors.length) throw new Error('browser_page_errors:'+JSON.stringify(pageErrors));
+          NODE
+          trap - EXIT
+          cleanup
+      - name: Diagnose Shield hydration in development mode
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/pass26/visual-reapproval
+          npx next dev -H 127.0.0.1 -p 3101 > artifacts/pass26/visual-reapproval/NEXT_DEV.log 2>&1 &
+          echo $! > /tmp/pass26-dev.pid
+          cleanup(){ kill "$(cat /tmp/pass26-dev.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/pass26-shield-dev.html -w '%{http_code}' http://127.0.0.1:3101/en/shield || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat artifacts/pass26/visual-reapproval/NEXT_DEV.log; cleanup; exit 0; fi
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { chromium } from 'playwright';
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage({viewport:{width:1440,height:900}});
+          const pageErrors=[];
+          const consoleErrors=[];
+          page.on('pageerror',e=>pageErrors.push(String(e?.stack||e?.message||e)));
+          page.on('console',m=>{if(m.type()==='error') consoleErrors.push(m.text());});
+          await page.goto('http://127.0.0.1:3101/en/shield',{waitUntil:'domcontentloaded',timeout:60000});
+          await page.waitForTimeout(3500);
+          fs.writeFileSync('artifacts/pass26/visual-reapproval/SHIELD_DEV_HYDRATION.json',JSON.stringify({pageErrors,consoleErrors},null,2)+'\n');
+          console.log(JSON.stringify({pageErrors,consoleErrors},null,2));
+          await browser.close();
           NODE
           trap - EXIT
           cleanup
@@ -166,3 +217,12 @@ jobs:
           retention-days: 14
           if-no-files-found: error
           path: artifacts/pass26/visual-reapproval/**
+      - name: Adjudicate automated visual prerequisites
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const receipt=JSON.parse(fs.readFileSync('artifacts/pass26/visual-reapproval/RECEIPT.json','utf8'));
+          if(!receipt.automatedLayoutPreconditionsPassed) throw new Error('visual layout prerequisites failed');
+          if(!receipt.runtimeHydrationClean) throw new Error('browser runtime/hydration errors remain; inspect SHIELD_DEV_HYDRATION.json');
+          NODE
