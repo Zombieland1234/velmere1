@@ -1,0 +1,62 @@
+name: R10 Final Lint Gate Remediation
+
+on:
+  push:
+    branches:
+      - r10-lint-gate-final
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r10-final-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install
+        run: npm ci --ignore-scripts
+      - name: Patch integration lint step
+        run: node scripts/r10/patch-integration-lint-gate.mjs
+      - name: Verify deterministic release-source lint
+        run: node scripts/r10/run-release-source-lint.mjs --output artifacts/r10/lint-final/RELEASE_LINT.json --summary artifacts/r10/lint-final/RELEASE_LINT_SUMMARY.json
+      - name: Direct TypeScript regression
+        run: npm run typecheck:direct
+      - name: Commit only verified integration gate patch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git diff --name-only > /tmp/changed.txt
+          if [ "$(cat /tmp/changed.txt)" != ".github/workflows/r10-integration-gate.yml" ]; then echo 'Unexpected write scope:'; cat /tmp/changed.txt; exit 1; fi
+          git config user.name "velmere-r10-lint-gate"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/r10-integration-gate.yml
+          git commit -m "fix(r10): make release-source lint denominator deterministic [lint]"
+          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+          git -c http.https://github.com/.extraheader="$auth_header" push origin HEAD:r10-lint-gate-final
+      - name: Upload lint evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-final-lint-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: artifacts/r10/lint-final/**
