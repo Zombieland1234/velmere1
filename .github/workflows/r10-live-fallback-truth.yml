@@ -1,0 +1,112 @@
+name: R10 Live Fallback Truth
+
+on:
+  push:
+    branches:
+      - r10-live-fallback-truth
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r10-live-fallback-truth-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  VELMERE_OFFLINE_TS_FORCE_BUILTIN: "1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout worker branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install lockfile
+        run: npm ci --ignore-scripts
+      - name: Apply guarded live fallback truth patch
+        run: node scripts/r10/patch-live-fallback-truth.mjs
+      - name: Assert no synthetic live provider authority remains
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const src=fs.readFileSync('lib/server/market-integrity-route-modules/investigator.ts','utf8');
+          const bad=['CANONICAL_FALLBACK_ASSETS','resolveFallbackMarketRow','result.dataQuality = "live"'];
+          const found=bad.filter((x)=>src.includes(x));
+          if(found.length) throw new Error('synthetic_live_fallback_remaining:'+found.join(','));
+          NODE
+      - name: Provider failure must fail closed
+        run: |
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs - <<'NODE'
+          const { resolveShieldMapResult } = await import('./lib/server/market-integrity-route-modules/investigator.ts');
+          const query={namespace:'market',query:'btc',locale:'en'};
+          const nullResult=await resolveShieldMapResult({query,providers:{searchMarket:async()=>null,analyzeAddress:async()=>{throw new Error('unused')}}});
+          if(nullResult.ok!==false || nullResult.code!=='shield_map_identity_missing') throw new Error('null_provider_not_fail_closed:'+JSON.stringify(nullResult));
+          const throwing=await resolveShieldMapResult({query,providers:{searchMarket:async()=>{throw new Error('provider_down')},analyzeAddress:async()=>{throw new Error('unused')}}});
+          if(throwing.ok!==false || throwing.code!=='shield_map_identity_missing') throw new Error('throwing_provider_not_fail_closed:'+JSON.stringify(throwing));
+          console.log(JSON.stringify({nullResult,throwing},null,2));
+          NODE
+      - name: Targeted ESLint
+        run: npx eslint lib/server/market-integrity-route-modules/investigator.ts
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Security regressions
+        run: npm run security:regression
+      - name: Global readiness must remain fail-closed
+        run: |
+          mkdir -p artifacts/r10/live-fallback
+          set +e
+          node scripts/pass23/audit-current-product-readiness.mjs > artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log 2>&1
+          rc=$?
+          set -e
+          cat artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log
+          if [ "$rc" -eq 0 ]; then
+            echo "Unexpected global readiness GO while external/current release evidence is incomplete"
+            exit 1
+          fi
+          grep -q '"ok": false' artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log
+          grep -q '"status": "NO_GO"' artifacts/r10/live-fallback/GLOBAL_READINESS_AFTER.log
+          node - <<'NODE'
+          const fs=require('fs');
+          const receipt={
+            schemaVersion:'velmere.r10.global-readiness-truth-boundary.v1',
+            classification:'EXPECTED_FAIL_CLOSED_NO_GO',
+            reason:'Global readiness requires broader generated/external/staging evidence and is not a focused acceptance gate for removal of synthetic live fallback data.',
+            promotionAllowed:false,
+            productionCredit:false,
+            sourceSha:process.env.GITHUB_SHA,
+          };
+          fs.writeFileSync('artifacts/r10/live-fallback/GLOBAL_READINESS_CLASSIFICATION.json',JSON.stringify(receipt,null,2)+'\n');
+          NODE
+      - name: Production build
+        run: npm run build
+      - name: Commit verified runtime source only
+        run: |
+          git diff --name-only > /tmp/changed.txt
+          if [ "$(cat /tmp/changed.txt)" != "lib/server/market-integrity-route-modules/investigator.ts" ]; then
+            echo "Unexpected write scope:"; cat /tmp/changed.txt; exit 1
+          fi
+          git config user.name "velmere-r10-live-fallback"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/server/market-integrity-route-modules/investigator.ts
+          git commit -m "fix(r10): fail closed when live market provider evidence is unavailable [provider-truth]"
+          git push origin HEAD:r10-live-fallback-truth
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-live-fallback-truth-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: artifacts/r10/live-fallback/**
