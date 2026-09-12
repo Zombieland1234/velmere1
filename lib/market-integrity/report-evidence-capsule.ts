@@ -521,7 +521,7 @@ export function buildPass2453ReportEvidenceCapsule(args: {
         "certified safe",
         "no risk",
         "guaranteed exit liquidity",
-        "fully audited",
+        "claim that audit coverage is complete without exact-scope evidence",
         "will pump",
         "will recover",
         "institutional proof",

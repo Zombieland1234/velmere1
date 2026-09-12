@@ -82,7 +82,7 @@ export function getStoreCheckoutReadiness(product?: Product): CheckoutReadiness 
     reasons.push({ code: "tax_ready", message: "Tax/VAT handling must be finalized." });
   }
   if (!flagEnabled("STORE_FULFILMENT_READY")) {
-    reasons.push({ code: "fulfilment_ready", message: "Fulfilment workflow must be production-ready." });
+    reasons.push({ code: "fulfilment_ready", message: "Fulfilment workflow must pass the production-readiness gate." });
   }
 
   if (product) {
