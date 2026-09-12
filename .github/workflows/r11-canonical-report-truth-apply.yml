@@ -1,0 +1,52 @@
+name: R11 Canonical Report Truth Remediation
+
+on:
+  push:
+    branches:
+      - r11-redteam-remediation
+    paths:
+      - scripts/r11/apply-canonical-report-truth-fix.mjs
+      - scripts/r11/test-canonical-report-truth-boundary.mjs
+      - .github/workflows/r11-canonical-report-truth-apply.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r11-canonical-report-truth-remediation
+  cancel-in-progress: true
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Apply exact guarded patch
+        run: node scripts/r11/apply-canonical-report-truth-fix.mjs
+      - name: Truth boundary regression
+        run: node scripts/r11/test-canonical-report-truth-boundary.mjs
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Write scope
+        run: |
+          git diff --name-only > /tmp/changed.txt
+          cat /tmp/changed.txt
+          grep -qx 'lib/security/audit-canonical-report.ts' /tmp/changed.txt
+          test "$(wc -l < /tmp/changed.txt | tr -d ' ')" = "1"
+      - name: Commit verified source patch
+        run: |
+          git config user.name 'velmere-r11-remediation'
+          git config user.email 'velmere-r11-remediation@users.noreply.github.com'
+          git add lib/security/audit-canonical-report.ts
+          git commit -m 'fix(r11): make canonical report defaults fail closed'
+          git push origin HEAD:r11-redteam-remediation
