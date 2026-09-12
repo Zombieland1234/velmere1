@@ -1,0 +1,89 @@
+name: R10 Dependency Remediation
+
+on:
+  push:
+    branches:
+      - r10-dependency-remediation
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r10-dependency-remediation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  remediate-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout remediation branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Apply bounded non-major dependency upgrades
+        run: |
+          npm pkg set dependencies.next=16.3.5
+          npm pkg set devDependencies.solc=0.8.37
+          npm pkg set devDependencies.postcss-selector-parser=6.1.4
+          npm pkg set overrides.sharp=0.35.4
+          npm pkg set overrides.tmp=0.2.7
+          npm install --package-lock-only --ignore-scripts
+      - name: Clean install remediated lockfile
+        run: npm ci --ignore-scripts
+      - name: Audit must have no High or Critical
+        run: |
+          mkdir -p artifacts/r10/dependency-remediation
+          npm audit --json > artifacts/r10/dependency-remediation/NPM_AUDIT_AFTER.json || true
+          node - <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('artifacts/r10/dependency-remediation/NPM_AUDIT_AFTER.json','utf8'));
+          const v=a.metadata?.vulnerabilities||{};
+          console.log(JSON.stringify(v,null,2));
+          if ((v.high||0)>0 || (v.critical||0)>0) process.exit(1);
+          NODE
+      - name: Direct TypeScript compatibility
+        run: npm run typecheck:direct
+      - name: Security regression compatibility
+        run: npm run security:regression
+      - name: Next production build compatibility
+        run: npm run build
+      - name: Write remediation receipt
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const a=JSON.parse(fs.readFileSync('artifacts/r10/dependency-remediation/NPM_AUDIT_AFTER.json','utf8'));
+          const p=JSON.parse(fs.readFileSync('package.json','utf8'));
+          const receipt={schemaVersion:'velmere.r10.dependency-remediation.v1',candidateSha:process.env.GITHUB_SHA,node:process.version,npm:require('child_process').execSync('npm --version').toString().trim(),next:p.dependencies.next,solc:p.devDependencies.solc,postcssSelectorParser:p.devDependencies['postcss-selector-parser'],sharpOverride:p.overrides.sharp,tmpOverride:p.overrides.tmp,vulnerabilities:a.metadata?.vulnerabilities||{},typecheck:'PASS',securityRegression:'PASS',nextBuild:'PASS',releaseCredit:false,generatedAt:new Date().toISOString()};
+          fs.writeFileSync('artifacts/r10/dependency-remediation/RECEIPT.json',JSON.stringify(receipt,null,2));
+          NODE
+      - name: Commit verified package and lockfile only
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency diff to commit"
+            exit 0
+          fi
+          git config user.name "velmere-r10-dependency-remediation"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "fix(r10): remediate npm high and critical vulnerabilities [deps]"
+          git push origin HEAD:r10-dependency-remediation
+      - name: Upload dependency evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r10-dependency-remediation-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: artifacts/r10/dependency-remediation/**
