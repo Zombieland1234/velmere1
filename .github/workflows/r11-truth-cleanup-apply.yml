@@ -1,0 +1,68 @@
+name: R11 Guarded Truth Cleanup
+
+on:
+  push:
+    branches:
+      - r11-redteam-remediation
+    paths:
+      - scripts/r11/apply-truth-cleanup-pass.mjs
+      - .github/workflows/r11-truth-cleanup-apply.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r11-truth-cleanup-apply
+  cancel-in-progress: true
+
+jobs:
+  patch-verify-retire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Clean install
+        run: npm ci --ignore-scripts
+      - name: Apply guarded cleanup and retire one-shot tools
+        run: node scripts/r11/apply-truth-cleanup-pass.mjs
+      - name: Truth-scope adversarial canaries
+        run: node scripts/r11/test-truth-scope-v2.mjs
+      - name: Strict current truth scope must have zero P0
+        run: node scripts/r11/verify-truth-scope-v2.mjs --output /tmp/R11_TRUTH_SCOPE_AFTER_CLEANUP.json
+      - name: Direct TypeScript
+        run: npm run typecheck:direct
+      - name: Verify exact write scope
+        run: |
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/r11-canonical-report-truth-apply.yml
+          .github/workflows/r11-truth-cleanup-apply.yml
+          lib/checkout/readiness.ts
+          lib/market-integrity/report-evidence-capsule.ts
+          scripts/generate-institutional-specs.mjs
+          scripts/r10/migrate-legacy-report-integrity.mjs
+          scripts/r10/patch-analysiscards-truth.mjs
+          scripts/r10/patch-final-rfc3161-truth.mjs
+          scripts/r10/patch-pdf-truth-layout.mjs
+          scripts/r11/apply-canonical-report-truth-fix.mjs
+          scripts/r11/apply-truth-cleanup-pass.mjs
+          EOF
+          git diff --name-only | sort > /tmp/actual.txt
+          sort /tmp/expected.txt -o /tmp/expected.txt
+          echo '--- expected'; cat /tmp/expected.txt
+          echo '--- actual'; cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+      - name: Commit verified cleanup
+        run: |
+          git config user.name 'velmere-r11-remediation'
+          git config user.email 'velmere-r11-remediation@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix(r11): retire stale truth tooling and clear strict P0 scan'
+          git push origin HEAD:r11-redteam-remediation
