@@ -28,11 +28,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Checkout candidate for guarded claim commit
+      - name: Checkout candidate without persisted credentials
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up exact Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -82,7 +82,9 @@ jobs:
           console.log('R10 full candidate truth scan P0=0: PASS');
           NODE
 
-      - name: Commit claim cleanup and receipts
+      - name: Commit claim cleanup and receipts with ephemeral auth
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           git config user.name "velmere-r10-claim-cleaner"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -92,7 +94,8 @@ jobs:
             exit 0
           fi
           git commit -m "fix(r10): neutralize unsupported legacy release claims [r10-claims]"
-          git push origin HEAD:r10-candidate-truth-build
+          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+          git -c http.https://github.com/.extraheader="$auth_header" push origin HEAD:r10-candidate-truth-build
 
       - name: Upload claim cleanup receipts
         if: always()
