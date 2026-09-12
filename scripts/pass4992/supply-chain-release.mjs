@@ -54,7 +54,7 @@ const SECRET_RULES = [
 ];
 
 const SECRET_SCAN_EXACT_FIXTURES = new Map([
-  ["synthetic/pass4992-secret-fingerprint.fixture:stripe-live-secret", new Set(["71a68559119629d989386448adad9d5920e7e8e83fb7f55282d9ef9fcc7051cf"])],
+  ["synthetic/pass4992-secret-fingerprint.txt:stripe-live-secret", new Set(["71a68559119629d989386448adad9d5920e7e8e83fb7f55282d9ef9fcc7051cf"])],
 ]);
 
 const OPENVEX_NOT_AFFECTED_JUSTIFICATIONS = new Set([

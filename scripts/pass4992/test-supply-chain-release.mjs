@@ -181,7 +181,7 @@ await check("current source has no high-precision secret finding outside exact f
 await check("fixture fingerprint is exact and env files are scanned", async () => {
   const tmp = await mkdtemp(path.join(os.tmpdir(), "velmere-f10-"));
   try {
-    const fixturePath = "synthetic/pass4992-secret-fingerprint.fixture";
+    const fixturePath = "synthetic/pass4992-secret-fingerprint.txt";
     const envPath = ".env";
     const envLocalPath = ".env.local";
     await mkdir(path.join(tmp, "synthetic"), { recursive: true });
