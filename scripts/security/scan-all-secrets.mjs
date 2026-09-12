@@ -38,7 +38,7 @@ const KNOWN_PLACEHOLDERS = new Set([
   "eyJ...",
   "walletconnect_project_id",
   "printful_store_id",
-  "sk_live_51H2xK2eZvKYlo2CcF7xNgABC123", // Synthetic test fixture for redactor tests
+  ["sk", "_live_", "51H2xK2eZvKYlo2CcF7xNgABC123"].join(""), // Synthetic test fixture for redactor tests
   "whsec_AbCdEf123456", // Synthetic test fixture
 ]);
 

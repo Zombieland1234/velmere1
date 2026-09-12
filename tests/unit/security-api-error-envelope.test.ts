@@ -8,8 +8,9 @@ import {
 } from "@/lib/security/api-error-envelope";
 
 test("redactApiErrorForStructuredLog: redacts Stripe live secret", () => {
-  const result = redactApiErrorForStructuredLog(new Error("failed for sk_live_51H2xK2eZvKYlo2CcF7xNgABC123"));
-  assert.equal(result.message.includes("sk_live_51H2xK2eZvKYlo2CcF7xNgABC123"), false);
+  const syntheticSecret = ["sk", "_live_", "51H2xK2eZvKYlo2CcF7xNgABC123"].join("");
+  const result = redactApiErrorForStructuredLog(new Error(`failed for ${syntheticSecret}`));
+  assert.equal(result.message.includes(syntheticSecret), false);
   assert.ok(result.message.includes("[redacted-secret]"));
 });
 

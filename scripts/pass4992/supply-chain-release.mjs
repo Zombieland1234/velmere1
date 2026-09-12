@@ -53,10 +53,8 @@ const SECRET_RULES = [
   { id: "stripe-live-secret", pattern: /\b(?:sk|rk)_live_[A-Za-z0-9]{16,}\b/g },
 ];
 
-const SECRET_SCAN_EXACT_FIXTURES = new Set([
-  "scripts/security/scan-all-secrets.mjs:stripe-live-secret",
-  "tests/unit/ai-vlm-security.test.ts:stripe-live-secret",
-  "tests/unit/security-api-error-envelope.test.ts:stripe-live-secret",
+const SECRET_SCAN_EXACT_FIXTURES = new Map([
+  ["synthetic/pass4992-secret-fingerprint.fixture:stripe-live-secret", new Set(["71a68559119629d989386448adad9d5920e7e8e83fb7f55282d9ef9fcc7051cf"])],
 ]);
 
 const OPENVEX_NOT_AFFECTED_JUSTIFICATIONS = new Set([
@@ -428,13 +426,19 @@ export function scanTextForHighPrecisionSecrets(text, filePath = "fixture") {
   return findings.sort((left, right) => left.line - right.line || left.ruleId.localeCompare(right.ruleId));
 }
 
+function isSecretScannablePath(filePath) {
+  const base = path.basename(filePath).toLowerCase();
+  return base === ".env" || base.startsWith(".env.") || SECRET_SCAN_EXTENSIONS.has(path.extname(filePath).toLowerCase());
+}
+
 export async function scanSourceForHighPrecisionSecrets(root, sourceManifest) {
   const findings = [];
   const ignoredFixtureFindings = [];
+  const ignoredFixtureCounts = new Map();
   let scannedFileCount = 0;
   let scannedBytes = 0;
   for (const entry of sourceManifest.entries) {
-    if (entry.type !== "file" || !SECRET_SCAN_EXTENSIONS.has(path.extname(entry.path).toLowerCase())) continue;
+    if (entry.type !== "file" || !isSecretScannablePath(entry.path)) continue;
     const content = await readFile(path.join(root, entry.path));
     if (content.includes(0)) continue;
     const text = content.toString("utf8");
@@ -442,8 +446,12 @@ export async function scanSourceForHighPrecisionSecrets(root, sourceManifest) {
     scannedBytes += content.length;
     for (const finding of scanTextForHighPrecisionSecrets(text, entry.path)) {
       const fixtureKey = `${finding.path}:${finding.ruleId}`;
-      if (SECRET_SCAN_EXACT_FIXTURES.has(fixtureKey)) {
-        ignoredFixtureFindings.push({ path: finding.path, line: finding.line, ruleId: finding.ruleId });
+      const allowedFingerprints = SECRET_SCAN_EXACT_FIXTURES.get(fixtureKey);
+      const occurrenceKey = `${fixtureKey}:${finding.fingerprint}`;
+      const priorIgnored = ignoredFixtureCounts.get(occurrenceKey) ?? 0;
+      if (allowedFingerprints?.has(finding.fingerprint) && priorIgnored === 0) {
+        ignoredFixtureCounts.set(occurrenceKey, 1);
+        ignoredFixtureFindings.push({ path: finding.path, line: finding.line, ruleId: finding.ruleId, fingerprint: finding.fingerprint });
       } else {
         findings.push(finding);
       }
@@ -460,7 +468,7 @@ export async function scanSourceForHighPrecisionSecrets(root, sourceManifest) {
     findingCount: findings.length,
     ignoredFixtureFindingCount: ignoredFixtureFindings.length,
     ignoredFixtureFindings,
-    fixturePolicy: "EXACT_PATH_PLUS_RULE_ID_ONLY",
+    fixturePolicy: "EXACT_PATH_RULE_FINGERPRINT_SINGLE_OCCURRENCE",
     status: findings.length ? "FAIL" : "PASS_OFFLINE_SCOPE_ONLY",
     findings,
   };

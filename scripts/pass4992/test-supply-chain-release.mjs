@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import {
   EXTERNAL_RECEIPT_SCHEMA,
@@ -170,15 +171,39 @@ await check("current source has no high-precision secret finding outside exact f
   assert.equal(scan.status, "PASS_OFFLINE_SCOPE_ONLY");
   assert.equal(scan.findingCount, 0);
   assert.equal(scan.historicalGitScanExecuted, false);
-  assert.equal(scan.fixturePolicy, "EXACT_PATH_PLUS_RULE_ID_ONLY");
+  assert.equal(scan.fixturePolicy, "EXACT_PATH_RULE_FINGERPRINT_SINGLE_OCCURRENCE");
   const fixturePairs = new Set(scan.ignoredFixtureFindings.map((finding) => `${finding.path}:${finding.ruleId}`));
-  assert.deepEqual([...fixturePairs].sort(), [
-    "scripts/security/scan-all-secrets.mjs:stripe-live-secret",
-    "tests/unit/ai-vlm-security.test.ts:stripe-live-secret",
-    "tests/unit/security-api-error-envelope.test.ts:stripe-live-secret",
-  ]);
+  assert.deepEqual([...fixturePairs].sort(), []);
   const adversarialOutsideFixture = scanTextForHighPrecisionSecrets(["sk", "_live_", "A1B2C3D4E5F6G7H8I9"].join(""), "app/adversarial-real-source.ts");
   assert.equal(adversarialOutsideFixture.some((finding) => finding.ruleId === "stripe-live-secret"), true);
+});
+
+await check("fixture fingerprint is exact and env files are scanned", async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), "velmere-f10-"));
+  try {
+    const fixturePath = "synthetic/pass4992-secret-fingerprint.fixture";
+    const envPath = ".env";
+    const envLocalPath = ".env.local";
+    await mkdir(path.join(tmp, "synthetic"), { recursive: true });
+    const allowed = ["sk", "_live_", "51H2xK2eZvKYlo2CcF7xNgABC123"].join("");
+    const different = ["sk", "_live_", "ZZZZZZZZZZZZZZZZZZZZZZZZ"].join("");
+    await writeFile(path.join(tmp, fixturePath), `${allowed}\n${different}\n`);
+    await writeFile(path.join(tmp, envPath), `STRIPE_SECRET=${different}\n`);
+    await writeFile(path.join(tmp, envLocalPath), `STRIPE_SECRET=${different}\n`);
+    const syntheticManifest = { entries: [
+      { type: "file", path: fixturePath },
+      { type: "file", path: envPath },
+      { type: "file", path: envLocalPath },
+    ] };
+    const result = await scanSourceForHighPrecisionSecrets(tmp, syntheticManifest);
+    assert.equal(result.ignoredFixtureFindingCount, 1);
+    assert.equal(result.findingCount, 3);
+    assert.equal(result.findings.filter((f) => f.path === fixturePath).length, 1);
+    assert.equal(result.findings.some((f) => f.path === envPath), true);
+    assert.equal(result.findings.some((f) => f.path === envLocalPath), true);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
 });
 
 const baseGateArguments = {

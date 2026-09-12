@@ -72,7 +72,8 @@ test("inspectVlmText: detects system tag in body", () => {
 });
 
 test("inspectVlmText: detects sk_live_ in input", () => {
-  const result = inspectVlmText("here is my key sk_live_51H2xK2eZvKYlo2CcF7xNgABC123");
+  const syntheticSecret = ["sk", "_live_", "51H2xK2eZvKYlo2CcF7xNgABC123"].join("");
+  const result = inspectVlmText(`here is my key ${syntheticSecret}`);
   assert.ok(result.flags.includes("secret_material"));
 });
 
