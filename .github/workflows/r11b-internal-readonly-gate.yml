@@ -2,6 +2,8 @@ name: R11B Internal Read-Only Gate
 
 on:
   push:
+    branches: [r11b-internal-hardening, r11b-audit-hardening-v6]
+  pull_request:
     branches: [r11b-internal-hardening]
   workflow_dispatch:
 
@@ -56,8 +58,14 @@ jobs:
           NODE
       - name: F14 finding-level local benchmark semantics
         run: ./node_modules/.bin/tsx scripts/r11/run-finding-level-local-benchmark.ts --output /tmp/r11b/FINDING_LEVEL_LOCAL_BENCHMARK.json
+      - name: F15 local instrument identity denominator (supporting evidence)
+        run: ./node_modules/.bin/tsx scripts/r11/verify-real-market-master.ts --output /tmp/r11b/REAL_MARKET_IDENTITY.json
+      - name: F17 static payment/browser authority boundary (supporting evidence only)
+        run: node scripts/r11/verify-paid-browser-authority.mjs --output /tmp/r11b/PAID_BROWSER_AUTHORITY.json
       - name: Direct TypeScript
         run: npm run typecheck:direct
+      - name: Production build
+        run: npm run build
       - name: Security regression
         run: npm run security:regression
       - name: Source truth scan
