@@ -246,20 +246,9 @@ export default function AnalysisCardsSection({
     [asset.symbol, asset.price, isTraditional]
   );
 
-  // Paid gating: Basic is unlocked by default, Pro and Advanced synced on client mount
+  // Paid entitlement is memory-only here. Browser storage is never authorization evidence.
+  // A paid tier is unlocked only after the server confirms the active checkout session.
   const [unlockedTiers, setUnlockedTiers] = useState<Set<string>>(() => new Set(["basic"]));
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("velmere_unlocked_tiers");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setUnlockedTiers(new Set(["basic", ...parsed]));
-        }
-      }
-    } catch {}
-  }, []);
 
   // Stripe checkout states (with popup mode support)
   const [isStripeLoading, setIsStripeLoading] = useState(false);
@@ -334,17 +323,9 @@ export default function AnalysisCardsSection({
     }
   };
 
-  // Helper to permanently unlock and persist a tier
-  const unlockAndSave = (tier: string) => {
-    setUnlockedTiers((prev) => {
-      const next = new Set([...prev, tier]);
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("velmere_unlocked_tiers", JSON.stringify([...next]));
-        } catch {}
-      }
-      return next;
-    });
+  // Current-session UX state only. Server verification remains the authority.
+  const unlockCurrentSession = (tier: string) => {
+    setUnlockedTiers((prev) => new Set([...prev, tier]));
   };
 
   // Trigger analysis with authentic VShieldPulse waiting screen
@@ -367,7 +348,7 @@ export default function AnalysisCardsSection({
             ? "Agregacja 14 sygnałów technicznych i profilu on-chain..."
             : "Skanowanie 20 sygnałów audytorskich, modeli AI i smart kontraktów...",
       },
-      { at: 70, msg: "Weryfikacja sumy kontrolnej i dowodu kryptograficznego RFC 3161..." },
+      { at: 70, msg: "Weryfikacja lokalnej integralności pliku i skrótu SHA-256..." },
       { at: 90, msg: "Finalizacja raportu i stemplowanie dowodu SHA-256..." },
     ];
 
@@ -403,17 +384,10 @@ export default function AnalysisCardsSection({
     const tierParam = urlParams.get("tier");
 
     if (paymentStatus === "success" && (tierParam === "pro" || tierParam === "advanced")) {
-      unlockAndSave(tierParam);
-      setStripeSuccessNotification(
-        `🎉 Płatność Stripe powiodła się! Licencja analityczna ${tierParam.toUpperCase()} (${tierParam === "pro" ? "14.99 €" : "149.99 €"}) została pomyślnie aktywowana.`
-      );
-      // Clean query params so refresh doesn't replay
+      // A URL query parameter is not payment evidence. Do not unlock from it.
+      setStripeSuccessNotification("Powrót z płatności odebrany. Dostęp zostanie aktywowany wyłącznie po serwerowej weryfikacji sesji Stripe.");
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, "", cleanUrl);
-      // Automatically trigger the authentic shield analysis
-      setTimeout(() => {
-        triggerAnalysis(tierParam);
-      }, 100);
     } else if (paymentStatus === "cancelled") {
       setStripeError("Płatność w bramce Stripe została anulowana. Twoje konto nie zostało obciążone.");
       const cleanUrl = window.location.pathname;
@@ -467,11 +441,9 @@ export default function AnalysisCardsSection({
     }
   };
 
-  // Instant unlock for BETA / demo testing
-  const handleUnlockTierBeta = (tier: "pro" | "advanced") => {
-    unlockAndSave(tier);
-    setPaywallModal(null);
-    triggerAnalysis(tier);
+  // Production fail-closed boundary: no client-only beta unlock for paid tiers.
+  const handleUnlockTierBeta = (_tier: "pro" | "advanced") => {
+    setStripeError("Bezpośrednie odblokowanie testowe jest wyłączone. Wymagana jest zweryfikowana sesja płatności.");
   };
 
   // Real Stripe Checkout initiation with in-page popup modal window
@@ -527,10 +499,10 @@ export default function AnalysisCardsSection({
     if (stripePopupState?.popupWindow && !stripePopupState.popupWindow.closed) {
       try {
         stripePopupState.popupWindow.close();
-      } catch {}
+      } catch { /* best-effort UI cleanup/polling failure is intentionally non-authoritative */ }
     }
     setStripePopupState(null);
-    unlockAndSave(tier);
+    unlockCurrentSession(tier);
     setPaywallModal(null);
     setStripeSuccessNotification(
       `🎉 Płatność Stripe powiodła się! Licencja analityczna ${tier.toUpperCase()} (${tier === "pro" ? "14.99 €" : "149.99 €"}) została pomyślnie aktywowana.`
@@ -552,7 +524,7 @@ export default function AnalysisCardsSection({
           return;
         }
       }
-    } catch {}
+    } catch { /* best-effort UI cleanup/polling failure is intentionally non-authoritative */ }
     setIsStripeLoading(false);
   };
 
@@ -577,10 +549,10 @@ export default function AnalysisCardsSection({
     const { sessionId, tier, popupWindow } = stripePopupState;
 
     const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== popupWindow) return;
+      if (event.data?.sessionId !== sessionId) return;
       if (event.data?.type === "VELMERE_STRIPE_PAYMENT_SUCCESS") {
-        if (!event.data.sessionId || event.data.sessionId === sessionId) {
-          completePaymentSuccess(tier);
-        }
+        completePaymentSuccess(tier);
       } else if (event.data?.type === "VELMERE_STRIPE_PAYMENT_CANCELLED") {
         setStripeError("Płatność została anulowana.");
         setStripePopupState(null);
@@ -599,7 +571,7 @@ export default function AnalysisCardsSection({
             completePaymentSuccess(tier);
           }
         }
-      } catch {}
+      } catch { /* best-effort UI cleanup/polling failure is intentionally non-authoritative */ }
 
       // If user closed popup window manually
       if (popupWindow && popupWindow.closed) {
@@ -610,7 +582,7 @@ export default function AnalysisCardsSection({
             if (checkData.ok && checkData.paid) {
               completePaymentSuccess(tier);
             }
-          } catch {}
+          } catch { /* best-effort UI cleanup/polling failure is intentionally non-authoritative */ }
         }, 600);
       }
     }, 1500);
@@ -1072,7 +1044,7 @@ export default function AnalysisCardsSection({
                     </div>
                     <div className="flex items-center gap-2.5 text-white/90">
                       <CheckCircle2 className="h-4 w-4 text-[#a78bfa] shrink-0" />
-                      <span><strong>Certyfikat Instytucjonalny RFC 3161</strong> z unikalnym SHA-256 Hash</span>
+                      <span><strong>Lokalny rekord integralności SHA-256</strong> (bez zewnętrznego TSA)</span>
                     </div>
                   </>
                 )}
@@ -1783,7 +1755,7 @@ export default function AnalysisCardsSection({
             {/* Modal Actions Footer */}
             <div className="mt-6 flex items-center justify-between border-t border-[#183442] pt-4">
               <div className="text-xs text-[#638494]">
-                Velmère RegTech Platform • Certyfikacja RFC 3161
+                Velmère RegTech Platform • Lokalna integralność pliku SHA-256
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -1874,7 +1846,7 @@ export default function AnalysisCardsSection({
                       </span>
                     </div>
                     <p className="text-[11px] text-white/50">
-                      Publikacja ze stemplem RFC 3161 i wykazem sygnałów
+                      Publikacja z lokalnym skrótem SHA-256 i wykazem sygnałów
                     </p>
                   </div>
                 </div>
