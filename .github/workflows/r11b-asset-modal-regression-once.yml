@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/r11b/asset-modal-regression
-          npx next start -H 127.0.0.1 -p 3102 > artifacts/r11b/asset-modal-regression/NEXT_START.log 2>&1 &
+          npx next start -H 127.0.0.1 -p 3102 > artifacts/r11b/asset-modal-regression/NEXT_START_MODAL.log 2>&1 &
           echo $! > /tmp/asset-modal-next.pid
           cleanup(){ kill "$(cat /tmp/asset-modal-next.pid)" 2>/dev/null || true; }
           trap cleanup EXIT
@@ -47,10 +47,31 @@ jobs:
             case "$code" in 200|307|308) ready=1; break;; esac
             sleep 1
           done
-          if [ "$ready" != "1" ]; then cat artifacts/r11b/asset-modal-regression/NEXT_START.log; exit 1; fi
+          if [ "$ready" != "1" ]; then cat artifacts/r11b/asset-modal-regression/NEXT_START_MODAL.log; exit 1; fi
           VELMERE_BASE_URL=http://127.0.0.1:3102 \
           VELMERE_EVIDENCE_DIR=artifacts/r11b/asset-modal-regression \
           node scripts/r11/test-asset-modal-browser-contract.mjs
+          trap - EXIT
+          cleanup
+      - name: Execute asset-detail query-authority adversarial test
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/r11b/asset-modal-regression/query-authority
+          npx next start -H 127.0.0.1 -p 3102 > artifacts/r11b/asset-modal-regression/NEXT_START_QUERY_AUTHORITY.log 2>&1 &
+          echo $! > /tmp/asset-query-next.pid
+          cleanup(){ kill "$(cat /tmp/asset-query-next.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/asset-query-home.html -w '%{http_code}' http://127.0.0.1:3102/en/real-markets/assets/aapl || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat artifacts/r11b/asset-modal-regression/NEXT_START_QUERY_AUTHORITY.log; exit 1; fi
+          VELMERE_BASE_URL=http://127.0.0.1:3102 \
+          VELMERE_EVIDENCE_DIR=artifacts/r11b/asset-modal-regression/query-authority \
+          node scripts/r11/test-asset-detail-query-authority.mjs
           trap - EXIT
           cleanup
       - name: Upload regression evidence
