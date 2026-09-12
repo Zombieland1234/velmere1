@@ -10,6 +10,7 @@ try {
   fs.mkdirSync(path.join(tmp, "docs", "audit"), { recursive: true });
   fs.mkdirSync(path.join(tmp, "dowody9"), { recursive: true });
   fs.mkdirSync(path.join(tmp, "scripts"), { recursive: true });
+  fs.mkdirSync(path.join(tmp, "components", "market-integrity"), { recursive: true });
   fs.mkdirSync(path.join(tmp, "config", "pass24"), { recursive: true });
 
   fs.writeFileSync(path.join(tmp, ".nvmrc"), "24.18.0\n");
@@ -22,6 +23,10 @@ try {
   fs.writeFileSync(
     path.join(tmp, "docs", "audit", "active.md"),
     "Full SMT Z3 Solver Verification\n72 Automated Static Detectors\nOfficially certified for production\nZAUTOMATYZOWANA WERYFIKACJA STATYCZNA & FORMALNA\n"
+  );
+  fs.writeFileSync(
+    path.join(tmp, "components", "market-integrity", "CustomerPanel.tsx"),
+    '<div>Certyfikat Instytucjonalny RFC 3161 z unikalnym SHA-256 Hash</div>\n'
   );
   fs.writeFileSync(
     path.join(tmp, "dowody9", "123_real_markets_xau_advanced_pl.json"),
@@ -51,11 +56,13 @@ try {
   assert(ids.has("REAL_MARKETS_GENERIC_REGULATOR_TRIAD"));
   assert(ids.has("REAL_MARKETS_XAU_PHYSICAL_VS_GC_FUTURE"));
   assert(ids.has("PSEUDO_RFC3161_LOCAL_TSA"));
+  assert(ids.has("CLAIM_CUSTOMER_RFC3161_CERTIFICATION"));
   assert(ids.has("PSEUDO_ROOT_CA_LOCAL_SIGNER"));
   assert(ids.has("PLACEHOLDER_PROVENANCE_HASH"));
 
   fs.writeFileSync(path.join(tmp, "next.config.mjs"), "export default { reactStrictMode: true };\n");
   fs.writeFileSync(path.join(tmp, "docs", "audit", "active.md"), "AUDIT CONTENT: INSUFFICIENT EVIDENCE\n");
+  fs.writeFileSync(path.join(tmp, "components", "market-integrity", "CustomerPanel.tsx"), '<div>Lokalna integralność pliku SHA-256 — zewnętrzny TSA niezweryfikowany</div>\n');
   fs.writeFileSync(
     path.join(tmp, "dowody9", "123_real_markets_xau_advanced_pl.json"),
     JSON.stringify({

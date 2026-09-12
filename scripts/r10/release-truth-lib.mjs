@@ -141,6 +141,7 @@ export function scanTextForReleaseTruth(relativePath, text) {
     ["CLAIM_HUMAN_DEFAULT", /\b(?:HUMAN\s+AUDITED|HUMAN\s+REVIEWED|certified\s+human\s+auditor)\b/i, "P0", "Human-review claims require a confirmed human-review receipt."],
     ["HARDCODED_DETECTOR_72", /(?:totalDetectors\s*[:=]\s*72\b|\b72\s+Automated\s+Static\s+Detectors\b)/i, "P0", "Detector counts must be derived from the current detector registry, never hardcoded."],
     ["PSEUDO_RFC3161_LOCAL_TSA", /"tsaName"\s*:\s*"Velm[èe]re\s+RFC\s*3161\s+Trusted\s+Authority"/i, "P0", "A locally synthesized JSON timestamp must not be represented as an RFC 3161 trusted TSA token."],
+    ["CLAIM_CUSTOMER_RFC3161_CERTIFICATION", /(?:Certyfikat|Certyfikacja|stemplem|dowodu\s+kryptograficznego)[^\n]{0,120}RFC\s*3161|RFC\s*3161[^\n]{0,120}(?:Trusted\s+Authority|certyf|certif|stempel)/i, "P0", "Customer-facing RFC 3161 certification/TSA wording requires an externally verified exact-scope TSA token; local SHA-256 integrity is not sufficient."],
     ["PSEUDO_ROOT_CA_LOCAL_SIGNER", /"signerIdentity"\s*:\s*"Velm[èe]re\s+Cryptographic\s+Root\s+CA[^\"]*"/i, "P0", "An embedded/local report signer must not be represented as a trusted root CA."],
     ["PLACEHOLDER_PROVENANCE_HASH", /"provenanceHash"\s*:\s*"0xprovenance_root"/i, "P0", "Placeholder provenance is not observed provenance and must be null/NOT_OBSERVED until exact-scope evidence exists."],
   ];
@@ -199,7 +200,7 @@ export function verifyBuildTruth(root) {
 }
 
 export function runReleaseTruthScan(root) {
-  const scanRoots = ["dowody9", "dowody4", "docs/audit", "reports", "app", "public", "scripts"];
+  const scanRoots = ["dowody9", "dowody4", "docs/audit", "reports", "app", "components", "public", "scripts"];
   const findings = [...verifyBuildTruth(root)];
   for (const file of walkTextFiles(root, scanRoots)) {
     const relativePath = path.relative(root, file).replaceAll(path.sep, "/");
