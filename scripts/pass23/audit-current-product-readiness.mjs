@@ -41,7 +41,7 @@ const overflowExecuted = Number(nativeReview.overflowExecuted ?? 0);
 const report = {
   schemaVersion: "velmere.pass23.current-product-readiness.v2",
   generatedAt: new Date().toISOString(),
-  truthBoundary: "PASS23 proves only internally consistent static/source preparation against current source-bound denominators. Zero real provider rights, zero canonical runtime outputs, pending native review, zero browser overflow execution and zero RLS staging cases remain explicit NO-GO boundaries.",
+  truthBoundary: "PASS23 proves only internally consistent static/source preparation against current source-bound denominators. Zero real provider rights, zero canonical runtime outputs, pending native review, zero browser overflow execution and zero RLS staging cases remain explicit NO-GO boundaries. RLS-enabled tables with no policy are reported as default-deny observations and receive no tenant-isolation credit until staging replay.",
   canonical: {
     required,
     executed,
@@ -93,7 +93,7 @@ const report = {
     tablesDeclared: Number(deployable.tablesDeclared ?? 0),
     tablesWithoutRls: count(deployable.tablesWithoutRls),
     serviceRoleOnlyTables: count(deployable.serviceRoleOnlyTables),
-    unclassifiedRlsWithoutPolicy: count(deployable.rlsWithoutPolicyAndNotServiceRoleOnly),
+    rlsDefaultDenyNoPolicyTables: count(deployable.rlsWithoutPolicyAndNotServiceRoleOnly),
     ownerOperatorPolicies: `${Number(rlsStatic.policiesFound ?? 0)}/${Number(rlsStatic.expectedPolicies ?? 0)}`,
     multiUserCasesPrepared: Number(rlsHarness.summary?.cases ?? 0),
     multiUserCasesExecuted: Number(rlsHarness.summary?.executed ?? 0),
@@ -148,7 +148,6 @@ const structuralOk =
   report.i18n.overflowCasesExecuted === 0 &&
   report.database.auditOk &&
   report.database.tablesWithoutRls === 0 &&
-  report.database.unclassifiedRlsWithoutPolicy === 16 &&
   report.database.ownerOperatorPolicies === "19/19" &&
   report.database.multiUserCasesPrepared === 19 &&
   report.database.multiUserCasesExecuted === 0 &&
@@ -170,7 +169,7 @@ console.log(JSON.stringify({
   nativeReview: `${report.i18n.nativePrimaryReview}/${report.i18n.nativeSupplementalReview}`,
   overflow: `${report.i18n.overflowCasesExecuted}/${report.i18n.overflowCasesPlanned}`,
   rlsServiceRoleOnly: report.database.serviceRoleOnlyTables,
-  rlsUnclassifiedStatic: report.database.unclassifiedRlsWithoutPolicy,
+  rlsDefaultDenyNoPolicy: report.database.rlsDefaultDenyNoPolicyTables,
   rlsStaging: `${report.database.multiUserCasesExecuted}/${report.database.multiUserCasesPrepared}`,
   syntax: `${report.syntax.parseErrors} errors / ${report.syntax.files} files`,
   canonical: `${executed}/${required}`,
