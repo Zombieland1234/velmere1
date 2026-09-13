@@ -68,9 +68,10 @@ function parseImports(source) {
   const stripped = stripComments(source);
   const imports = [];
   const patterns = [
-    /(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']/gu,
-    /import\(\s*["']([^"']+)["']\s*\)/gu,
-    /require\(\s*["']([^"']+)["']\s*\)/gu
+    /\bimport\s*["']([^"'\r\n]+)["']/gu,
+    /\b(?:import|export)\s+(?:type\s+)?[^;"'`]{0,4096}?\bfrom\s*["']([^"'\r\n]+)["']/gu,
+    /\bimport\s*\(\s*["']([^"'\r\n]+)["']\s*\)/gu,
+    /\brequire\s*\(\s*["']([^"'\r\n]+)["']\s*\)/gu
   ];
   for (const pattern of patterns) {
     for (const match of stripped.matchAll(pattern)) imports.push(match[1]);
