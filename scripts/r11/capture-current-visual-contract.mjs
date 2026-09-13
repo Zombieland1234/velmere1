@@ -23,11 +23,22 @@ const variants = [
 const expectedCaptureSlugs = surfaces.flatMap((surface) => variants.map((variant) => `${surface.id}-${variant.id}`));
 const sourcePaths = [
   "app/globals.css",
+  "tailwind.config.ts",
+  "app/styles/audit-account-handoff.css",
+  "app/styles/audit-one-screen.css",
   "app/styles/global-header.css",
+  "app/styles/markets-cleanup.css",
   "app/styles/shield-pro-terminal.css",
+  "app/styles/shield-risk-surface.css",
   "components/market-integrity/AssetDetailTruthWithheldPage.tsx",
   "app/[locale]/real-markets/assets/[assetId]/page.tsx",
   "app/[locale]/shield/assets/[assetId]/page.tsx",
+];
+const legacyRetiredPaths = [
+  "app/styles/asset-popup-foundation.css",
+  "app/styles/asset-popup-geometry.css",
+  "app/styles/asset-popup-ownership.css",
+  "app/styles/asset-popup-resize.css",
 ];
 
 function sha256File(filePath) {
@@ -138,6 +149,7 @@ const automatedPreconditionsPassed =
   capturedSlugs.length === expectedCaptureSlugs.length &&
   missingCaptureSlugs.length === 0 &&
   captureErrors.length === 0 &&
+  Object.values(sourceHashes).every(Boolean) &&
   results.every((row) => row.passed === true);
 
 const receipt = {
@@ -152,6 +164,7 @@ const receipt = {
   missingCaptureSlugs,
   denominatorConserved,
   sourceHashes,
+  legacyRetiredPaths,
   results,
   captureErrors,
   automatedPreconditionsPassed,
