@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
+import { mergeMessages } from "../../lib/i18n/merge-messages.mjs";
 
 const root = process.cwd();
 const locales = ["pl", "en", "de"];
@@ -41,7 +43,22 @@ function neutral(value, key = "") {
   return false;
 }
 const flat = {};
-for (const locale of locales) flat[locale] = flatten(JSON.parse(fs.readFileSync(path.join(root, `messages/${locale}.json`), "utf8")));
+const effectiveCatalogSources = {};
+for (const locale of locales) {
+  const basePath = path.join(root, `messages/${locale}.json`);
+  const overridePath = path.join(root, `messages/release-overrides/${locale}.json`);
+  const baseRaw = fs.readFileSync(basePath, "utf8");
+  const overrideRaw = fs.existsSync(overridePath) ? fs.readFileSync(overridePath, "utf8") : null;
+  const base = JSON.parse(baseRaw);
+  const overrides = overrideRaw ? JSON.parse(overrideRaw) : undefined;
+  flat[locale] = flatten(mergeMessages(base, overrides));
+  effectiveCatalogSources[locale] = {
+    basePath: path.relative(root, basePath).replaceAll("\\", "/"),
+    baseSha256: crypto.createHash("sha256").update(baseRaw).digest("hex"),
+    overridePath: overrideRaw ? path.relative(root, overridePath).replaceAll("\\", "/") : null,
+    overrideSha256: overrideRaw ? crypto.createHash("sha256").update(overrideRaw).digest("hex") : null,
+  };
+}
 const keys = [...new Set(locales.flatMap((locale) => Object.keys(flat[locale])))].sort();
 const missingByLocale = Object.fromEntries(locales.map((locale) => [locale, keys.filter((key) => !(key in flat[locale]))]));
 const identicalNonNeutral = [];
@@ -80,7 +97,7 @@ const criticalStaticPass = criticalIdenticalNonNeutral.length === 0 && leakage.p
 const result = {
   schemaVersion: "velmere.pass23.i18n-release-readiness.v1",
   generatedAt: "2026-07-20T18:00:00.000Z",
-  truthBoundary: "Static per-value locale audit with an explicit language-neutral allowlist. It does not replace native-speaker review, browser overflow checks or final legal review.",
+  truthBoundary: "Static per-value audit of the effective runtime locale catalog (base messages plus release overrides) with an explicit language-neutral allowlist. It does not replace native-speaker review, browser overflow checks, merchant readiness or final legal review.",
   summary: {
     locales,
     flattenedValues: keys.length,
@@ -92,6 +109,7 @@ const result = {
     criticalStaticPass,
     commercialLaunchLanguageStatus: criticalStaticPass && legalPlaceholders.length === 0 ? "PASS_STATIC" : "NO_GO"
   },
+  effectiveCatalogSources,
   criticalNamespaces: namespaceRows,
   missingByLocale,
   criticalIdenticalNonNeutral,
