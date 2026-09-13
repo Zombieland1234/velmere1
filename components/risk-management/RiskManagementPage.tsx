@@ -621,7 +621,7 @@ export default function RiskManagementPage({ locale }: RiskManagementPageProps) 
                     <td className="py-4 px-6 font-semibold text-[#e6ca85]">{isEn ? "Continuous real-time telemetry (< 12ms)" : "Ciągła telemetria w czasie rzeczywistym (< 12ms)"}</td>
                   </tr>
                   <tr className="hover:bg-white/[0.02]">
-                    <td className="py-4 px-6 font-bold text-white">{isEn ? "On-Chain Code Mutation Response" : "Reakcja na zmianę kodu on-chain"}</td>
+                    <td className="py-4 px-6 font-bold text-white">{isEn ? "Deployed Bytecode Mutation Response" : "Reakcja na zmianę wdrożonego kodu bajtowego"}</td>
                     <td className="py-4 px-6 text-white/60">{isEn ? "None. Green badge persists despite proxy bytecode changes" : "Brak. Znaczek wisi pomimo podmiany implementacji proxy"}</td>
                     <td className="py-4 px-6 font-semibold text-[#e6ca85]">{isEn ? "Instant badge revocation replaced with red alert 'X'" : "Natychmiastowe unieważnienie odznaki i zamiana na ostrzeżenie 'X'"}</td>
                   </tr>
