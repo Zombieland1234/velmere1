@@ -1,0 +1,231 @@
+name: EXP Bolyra Produced Corpus Claim Sufficiency E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - exp/bolyra-corpus-test-5
+    paths:
+      - '.github/workflows/exp-bolyra-corpus-claim-sufficiency-e2e.yml'
+      - 'scripts/experiments/claim-sufficiency-v0.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  bolyra-produced-corpus-to-velmere:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BOLYRA_SHA: 5b68cd3316fcfcc8fd7a4bd8729425d89038346d
+      FIXTURE: spec/fixtures/receipt-conformance/chained-one-forged.jsonl
+    steps:
+      - name: Checkout Velmere experiment
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Checkout pinned public Bolyra source
+        uses: actions/checkout@v4
+        with:
+          repository: bolyra/bolyra
+          ref: ${{ env.BOLYRA_SHA }}
+          path: _external/bolyra
+          persist-credentials: false
+
+      - name: Record exact source identities and fixture hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/experiments/bolyra-corpus-e2e
+          printf '%s\n' "${GITHUB_SHA}" > artifacts/experiments/bolyra-corpus-e2e/velmere-experiment-sha.txt
+          git -C _external/bolyra rev-parse HEAD > artifacts/experiments/bolyra-corpus-e2e/bolyra-source-sha.txt
+          test "$(cat artifacts/experiments/bolyra-corpus-e2e/bolyra-source-sha.txt)" = "${BOLYRA_SHA}"
+          sha256sum "_external/bolyra/${FIXTURE}" > artifacts/experiments/bolyra-corpus-e2e/fixture.sha256
+          sha256sum _external/bolyra/integrations/receipts/src/chain.ts > artifacts/experiments/bolyra-corpus-e2e/bolyra-chain-source.sha256
+          sha256sum _external/bolyra/integrations/receipts/src/instance.ts > artifacts/experiments/bolyra-corpus-e2e/bolyra-instance-source.sha256
+          sha256sum _external/bolyra/integrations/receipts/src/sign.ts > artifacts/experiments/bolyra-corpus-e2e/bolyra-sign-source.sha256
+
+      - name: Build pinned Bolyra receipts library
+        working-directory: _external/bolyra/integrations/receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -f dist/index.js
+
+      - name: Execute Bolyra-produced forged-binding fixture through official library
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const lib = require('./_external/bolyra/integrations/receipts/dist/index.js');
+          const fixturePath = `_external/bolyra/${process.env.FIXTURE}`;
+          const raw = fs.readFileSync(fixturePath, 'utf8');
+          const rows = raw.trim().split('\n').filter(Boolean).map(JSON.parse);
+          const chain = lib.verifyReceiptChain(rows, {});
+          const signatures = rows.map((r, index) => ({ index, valid: lib.verifyReceipt(r), signer: r?.signature?.signer ?? null }));
+          const bindings = rows.map((r, index) => {
+            const v = lib.verifyInstanceBinding(r);
+            return { index, ok: v.ok, code: v.code, detail: v.detail ?? null };
+          });
+          const evidence = {
+            schema: 'velmere.bolyra-produced-corpus-upstream-evidence.v1',
+            upstream: {
+              repository: 'bolyra/bolyra',
+              commitSha: process.env.BOLYRA_SHA,
+              fixture: process.env.FIXTURE,
+              library: '@bolyra/receipts',
+              execution: 'Pinned Bolyra-produced JSONL fixture executed through the pinned @bolyra/receipts build using verifyReceipt(), verifyReceiptChain(), and verifyInstanceBinding().'
+            },
+            fixture: {
+              receiptCount: rows.length,
+              sha256: crypto.createHash('sha256').update(raw).digest('hex')
+            },
+            chain: {
+              ok: chain.ok,
+              total: chain.total,
+              chained: chain.chained,
+              unchained: chain.unchained,
+              issueCodes: (chain.issues || []).map(x => x.code),
+              headHash: chain.headHash ?? null
+            },
+            signatures,
+            instanceBindings: bindings,
+            truthBoundary: 'Public Bolyra-produced conformance fixture on pinned source. This verifies behavior of the pinned receipt library over that fixture; it is not a production/customer receipt audit, certification, endorsement, or partnership claim.'
+          };
+          if (rows.length !== 3) throw new Error(`expected 3 fixture receipts, got ${rows.length}`);
+          if (chain.ok !== true) throw new Error(`expected chain.ok=true, got ${chain.ok}`);
+          if (!signatures.every(x => x.valid === true)) throw new Error(`expected all signatures valid: ${JSON.stringify(signatures)}`);
+          const failedBindings = bindings.filter(x => !x.ok);
+          if (failedBindings.length !== 1) throw new Error(`expected exactly one failed instance binding: ${JSON.stringify(bindings)}`);
+          if (failedBindings[0].index !== 1 || failedBindings[0].code !== 'ref_mismatch') {
+            throw new Error(`expected index 1 ref_mismatch: ${JSON.stringify(failedBindings[0])}`);
+          }
+          fs.writeFileSync('artifacts/experiments/bolyra-corpus-e2e/bolyra-produced-corpus-upstream-evidence.json', JSON.stringify(evidence, null, 2) + '\n');
+          console.log(JSON.stringify(evidence, null, 2));
+          NODE
+
+      - name: Build Velmere claims from actual Bolyra library evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const upstream = JSON.parse(fs.readFileSync('artifacts/experiments/bolyra-corpus-e2e/bolyra-produced-corpus-upstream-evidence.json', 'utf8'));
+          const allSignaturesValid = upstream.signatures.every(x => x.valid === true);
+          const allBindingsValid = upstream.instanceBindings.every(x => x.ok === true);
+          const middleBinding = upstream.instanceBindings.find(x => x.index === 1);
+          const c = {
+            caseId: 'bolyra-produced-chained-one-forged-instance-binding-e2e-v1',
+            subject: {
+              vendor: 'Bolyra',
+              repository: upstream.upstream.repository,
+              upstreamCommitSha: upstream.upstream.commitSha,
+              fixture: upstream.upstream.fixture,
+              receiptLibrary: upstream.upstream.library,
+              velmereExperimentSha: process.env.GITHUB_SHA,
+              boundary: 'Bolyra-produced conformance fixture is verified by the pinned Bolyra receipt library. Velmere evaluates claim sufficiency over the resulting machine evidence.'
+            },
+            evidence: [
+              { id: 'bolyra_chain_integrity_valid', state: upstream.chain.ok ? 'VERIFIED_TRUE' : 'VERIFIED_FALSE', provenance: 'Pinned @bolyra/receipts verifyReceiptChain() result over Bolyra-produced fixture.' },
+              { id: 'all_receipt_signatures_valid', state: allSignaturesValid ? 'VERIFIED_TRUE' : 'VERIFIED_FALSE', provenance: 'Pinned @bolyra/receipts verifyReceipt() result for every fixture row.' },
+              { id: 'middle_receipt_instance_binding_valid', state: middleBinding?.ok ? 'VERIFIED_TRUE' : 'VERIFIED_FALSE', provenance: `Pinned @bolyra/receipts verifyInstanceBinding() result for fixture index 1; code=${middleBinding?.code ?? 'unknown'}.` },
+              { id: 'all_receipt_instance_bindings_valid', state: allBindingsValid ? 'VERIFIED_TRUE' : 'VERIFIED_FALSE', provenance: 'Aggregate of pinned verifyInstanceBinding() results across every fixture row.' }
+            ],
+            claims: [
+              {
+                id: 'claim-receipt-chain-is-internally-valid',
+                text: 'The presented three-receipt log has valid receipt signatures and an internally valid receipt chain.',
+                scopeCovered: true,
+                requirements: [
+                  { id: 'chain-integrity', mode: 'all', critical: true, evidence: ['bolyra_chain_integrity_valid'] },
+                  { id: 'signature-integrity', mode: 'all', critical: true, evidence: ['all_receipt_signatures_valid'] }
+                ]
+              },
+              {
+                id: 'claim-all-instance-bindings-are-valid',
+                text: 'Every receipt in the presented chain has a valid semantic instance binding.',
+                scopeCovered: true,
+                requirements: [
+                  { id: 'all-instance-bindings', mode: 'all', critical: true, evidence: ['all_receipt_instance_bindings_valid'] }
+                ]
+              },
+              {
+                id: 'claim-chain-validity-is-sufficient-for-middle-instance-validity',
+                text: 'Because the receipt chain is internally valid, the middle receipt also has a valid semantic instance binding.',
+                scopeCovered: true,
+                requirements: [
+                  { id: 'chain-validity', mode: 'all', critical: true, evidence: ['bolyra_chain_integrity_valid', 'all_receipt_signatures_valid'] },
+                  { id: 'middle-instance-binding', mode: 'all', critical: true, evidence: ['middle_receipt_instance_binding_valid'] }
+                ]
+              }
+            ]
+          };
+          fs.writeFileSync('artifacts/experiments/bolyra-corpus-e2e/velmere-bolyra-produced-corpus.case.json', JSON.stringify(c, null, 2) + '\n');
+          NODE
+
+      - name: Run Velmere Claim Sufficiency Prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/experiments/claim-sufficiency-v0.mjs \
+            artifacts/experiments/bolyra-corpus-e2e/velmere-bolyra-produced-corpus.case.json \
+            artifacts/experiments/bolyra-corpus-e2e/velmere-bolyra-produced-corpus.result.json
+
+      - name: Assert cross-system verdicts and hash evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const dir = 'artifacts/experiments/bolyra-corpus-e2e';
+          const result = JSON.parse(fs.readFileSync(`${dir}/velmere-bolyra-produced-corpus.result.json`, 'utf8'));
+          const byId = Object.fromEntries(result.claims.map(c => [c.id, c]));
+          const chainClaim = byId['claim-receipt-chain-is-internally-valid'];
+          const allBindingsClaim = byId['claim-all-instance-bindings-are-valid'];
+          const implicationClaim = byId['claim-chain-validity-is-sufficient-for-middle-instance-validity'];
+          if (chainClaim?.verdict !== 'SUPPORTED') throw new Error(`expected chain claim SUPPORTED, got ${chainClaim?.verdict}`);
+          if (allBindingsClaim?.verdict !== 'CONTRADICTED') throw new Error(`expected all-bindings claim CONTRADICTED, got ${allBindingsClaim?.verdict}`);
+          if (implicationClaim?.verdict !== 'CONTRADICTED') throw new Error(`expected implication claim CONTRADICTED, got ${implicationClaim?.verdict}`);
+          const hash = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+          const report = {
+            schema: 'velmere.bolyra-produced-corpus-cross-system-e2e-report.v1',
+            velmereExperimentSha: process.env.GITHUB_SHA,
+            bolyraSourceSha: process.env.BOLYRA_SHA,
+            bolyraProducedFixture: process.env.FIXTURE,
+            upstreamLibraryFunctions: ['verifyReceipt', 'verifyReceiptChain', 'verifyInstanceBinding'],
+            upstreamObservation: {
+              chainIntegrity: 'VALID',
+              allSignatures: 'VALID',
+              instanceBindingFailures: [{ index: 1, code: 'ref_mismatch' }]
+            },
+            velmereClaimSufficiency: {
+              chainIntegrityClaim: chainClaim.verdict,
+              allInstanceBindingsClaim: allBindingsClaim.verdict,
+              chainImpliesMiddleInstanceClaim: implicationClaim.verdict
+            },
+            truthBoundary: 'Public cross-system methodology test on pinned source and a Bolyra-produced conformance fixture. It is not a production/customer receipt audit, vulnerability claim, certification, endorsement, or partnership claim.',
+            sha256: {
+              upstreamEvidence: hash(`${dir}/bolyra-produced-corpus-upstream-evidence.json`),
+              velmereCase: hash(`${dir}/velmere-bolyra-produced-corpus.case.json`),
+              velmereResult: hash(`${dir}/velmere-bolyra-produced-corpus.result.json`)
+            }
+          };
+          fs.writeFileSync(`${dir}/VELMERE_BOLYRA_PRODUCED_CORPUS_CROSS_SYSTEM_E2E_REPORT_v1.json`, JSON.stringify(report, null, 2) + '\n');
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+
+      - name: Upload Bolyra-produced corpus evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-bolyra-produced-corpus-cross-system-e2e
+          path: artifacts/experiments/bolyra-corpus-e2e/
+          if-no-files-found: error
