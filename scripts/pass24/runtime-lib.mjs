@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 export const ROOT = process.cwd();
 export const POLICY_PATH = path.join(ROOT, "config", "pass24", "runtime-policy.json");
 export const REQUIREMENTS_PATH = path.join(ROOT, "config", "pass24", "lockfile-target-manifest.json");
+export const SEAL_PATH = path.join(ROOT, "config", "pass24", "lockfile-target-seal.json");
 export const DIAGNOSTICS_DIR = path.join(ROOT, ".velmere", "pass24-diagnostics");
 
 export function readJson(filePath) { return JSON.parse(fs.readFileSync(filePath, "utf8")); }
@@ -143,6 +144,26 @@ export function buildRequirementsDocument() {
     targetEligible: eligible,
     targetExcluded: excluded.map(({ url, integrity, packagePaths }) => ({ url, integrity, packagePaths }))
   };
+}
+
+export function encodeRequirementsDocument(document) {
+  return `${JSON.stringify(document, null, 2)}\n`;
+}
+
+export function buildRequirementsSeal(document = buildRequirementsDocument()) {
+  const encoded = encodeRequirementsDocument(document);
+  return {
+    schemaVersion: "velmere.pass24.lockfile-target-seal.v1",
+    target: document.target,
+    npmRegistry: document.npmRegistry,
+    lockfileSha256: document.lockfileSha256,
+    counts: document.counts,
+    generatedManifestSha256: sha256Bytes(encoded)
+  };
+}
+
+export function requirementsSealMatches(document, seal) {
+  return JSON.stringify(buildRequirementsSeal(document)) === JSON.stringify(seal);
 }
 
 export function parseCacheIndex(cacheRoot) {

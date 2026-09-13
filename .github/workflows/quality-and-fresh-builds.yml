@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - r11b-integration-v8-clean
   workflow_dispatch:
 
 permissions:
@@ -42,7 +43,10 @@ jobs:
           test "$(npm --version)" = "11.16.0"
           node scripts/verify-runtime-contract.mjs
 
-      - name: Run lightweight PASS26 gate only
+      - name: Install exact lockfile for PASS15 AST reparse
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run PASS26 quick contracts
         run: node scripts/pass26/run-gate.mjs --level quick
 
       - name: Upload lightweight receipts
@@ -53,5 +57,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
+            .velmere/pass12-diagnostics/**
+            .velmere/pass16-diagnostics/**
+            .velmere/pass19-diagnostics/**
+            .velmere/pass23-diagnostics/**
+            .velmere/pass24-diagnostics/**
             .velmere/pass26-diagnostics/**
-            config/pass26/ci-contract.json

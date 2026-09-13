@@ -1,8 +1,8 @@
 {
   "schemaVersion": "velmere.pass4992.supply-chain-release-policy.v2",
-  "policyId": "pass4992-r10-dynamic-active-workflow-policy-v4",
+  "policyId": "pass4992-r11b-active-core-workflow-policy-v5",
   "mode": "OFFLINE_PREPARATION_ONLY",
-  "candidateNote": "R10 closure: active workflow inventory is discovery-derived. requiredWorkflowFiles is a minimum baseline only; every active YAML is audited, additional files are not rejected merely for changing the inventory size, and action-reference totals are observed rather than statically hardcoded. Secret-scan fixture suppression is exact path+rule only and adversarially tested outside fixtures.",
+  "candidateNote": "R11B governance: requiredWorkflowFiles is the five-workflow active core baseline after historical workflow retirement. Every active YAML is still discovered and audited for full-SHA action pinning, action allowlisting, permissions, checkout credential persistence and PASS4992-specific CodeQL/dependency-review controls. Additional active workflows are not silently trusted: PASS26 CI governance independently requires the exact five-workflow active set, while this supply-chain layer audits every discovered active YAML.",
   "toolchain": {
     "node": "24.18.0",
     "npm": "11.16.0",
@@ -43,19 +43,14 @@
       ]
     },
     "requiredWorkflowFiles": [
-      "p41-exact-windows-node24-current-root-closure.yml",
-      "p42-exact-windows-node24-lifecycle-quarantine.yml",
-      "p42-exact-windows-semantic-dual-build.yml",
-      "p47-windows-build-relevant-projection.yml",
-      "p65-current-free-legal-source-receipts.yml",
       "pass26-exact-runtime-bridge.yml",
       "pass4992-supply-chain-security.yml",
       "quality-and-fresh-builds.yml",
-      "r10-candidate-truth-gate.yml",
-      "r6-exact-windows-current-byte-closure.yml"
+      "r11b-integration-v8-browser-gate.yml",
+      "r11b-internal-readonly-gate.yml"
     ],
     "workflowInventoryMode": "DISCOVER_ACTIVE",
-    "requiredWorkflowFilesSemantics": "MINIMUM_BASELINE"
+    "requiredWorkflowFilesSemantics": "CURRENT_CORE_MINIMUM_BASELINE_PASS26_ENFORCES_EXACT_SET"
   },
   "codeql": {
     "requiredLanguages": [

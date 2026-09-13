@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -9,11 +10,17 @@ const outputPath = outputIndex >= 0 && args[outputIndex + 1]
   ? args[outputIndex + 1]
   : "/tmp/r11b/PAID_BROWSER_AUTHORITY.json";
 
+const sourceSha = (process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" })).trim();
+assert.match(sourceSha, /^[a-f0-9]{40}$/u, "source SHA must be an exact 40-character Git commit");
+
 const callbackPath = "app/[locale]/checkout/stripe-popup-callback/page.tsx";
-const openerPath = "components/security/SecurityAuditsCleanPage.tsx";
+const auditOpenerPath = "components/security/SecurityAuditsCleanPage.tsx";
+const marketOpenerPath = "components/market-integrity/AnalysisCardsSection.tsx";
 const checkoutRoutePath = "app/api/checkout/stripe-analysis/route.ts";
+
 const callback = fs.readFileSync(callbackPath, "utf8");
-const opener = fs.readFileSync(openerPath, "utf8");
+const auditOpener = fs.readFileSync(auditOpenerPath, "utf8");
+const marketOpener = fs.readFileSync(marketOpenerPath, "utf8");
 const checkoutRoute = fs.readFileSync(checkoutRoutePath, "utf8");
 
 assert.match(callback, /VELMERE_STRIPE_CHECKOUT_RETURNED/);
@@ -22,22 +29,46 @@ assert.match(callback, /entitlementGranted:\s*false/);
 assert.doesNotMatch(callback, /VELMERE_STRIPE_PAYMENT_SUCCESS/);
 assert.match(callback, /window\.location\.origin/);
 
-assert.match(opener, /event\.origin\s*!==\s*window\.location\.origin/);
-assert.match(opener, /event\.source\s*!==\s*popupWindow/);
-assert.match(opener, /event\.data\?\.sessionId\s*!==\s*sessionId/);
-assert.doesNotMatch(opener, /VELMERE_STRIPE_PAYMENT_SUCCESS/);
-assert.match(opener, /VELMERE_STRIPE_CHECKOUT_RETURNED/);
+function verifyOpenerAuthority(source, { path: sourcePath, unlockFunction }) {
+  assert.match(source, /event\.origin\s*!==\s*window\.location\.origin/, `${sourcePath}: exact origin check missing`);
+  assert.match(source, /event\.source\s*!==\s*popupWindow/, `${sourcePath}: exact popup source check missing`);
+  assert.match(source, /event\.data\?\.sessionId\s*!==\s*sessionId/, `${sourcePath}: exact session check missing`);
+  assert.doesNotMatch(source, /VELMERE_STRIPE_PAYMENT_SUCCESS/, `${sourcePath}: legacy browser payment-success authority remains`);
+  assert.match(source, /VELMERE_STRIPE_CHECKOUT_RETURNED/, `${sourcePath}: checkout-return signal missing`);
 
-const unlockCalls = [...opener.matchAll(/completeAuditPaymentSuccess\(/g)].length;
-const paidChecks = [...opener.matchAll(/(?:data|checkData)\.ok\s*&&\s*(?:data|checkData)\.paid/g)].length;
-assert.ok(unlockCalls >= 1, "expected server-confirmed unlock function to remain reachable");
-assert.ok(paidChecks >= unlockCalls - 1, "every non-definition unlock call must be dominated by server paid check");
+  const unlockPattern = new RegExp(`${unlockFunction}\\(`, "g");
+  const unlockCalls = [...source.matchAll(unlockPattern)].length;
+  const paidChecks = [...source.matchAll(/(?:data|checkData)\.ok\s*&&\s*(?:data|checkData)\.paid/g)].length;
+  assert.ok(unlockCalls >= 1, `${sourcePath}: expected server-confirmed unlock function to remain reachable`);
+  assert.ok(
+    paidChecks >= unlockCalls - 1,
+    `${sourcePath}: every non-definition unlock call must be dominated by a server paid check`,
+  );
+
+  return {
+    path: sourcePath,
+    unlockFunction,
+    serverPaidChecksObserved: paidChecks,
+    clientUnlockCallSitesObserved: Math.max(0, unlockCalls - 1),
+    directPaymentSuccessMessageAccepted: false,
+    checkoutReturnedSignalObserved: true,
+    sameOriginRequired: true,
+    exactPopupSourceRequired: true,
+    exactSessionIdRequired: true,
+  };
+}
+
+const surfaces = [
+  verifyOpenerAuthority(auditOpener, { path: auditOpenerPath, unlockFunction: "completeAuditPaymentSuccess" }),
+  verifyOpenerAuthority(marketOpener, { path: marketOpenerPath, unlockFunction: "completePaymentSuccess" }),
+];
 
 assert.match(checkoutRoute, /WITHHELD|withheld/i);
 assert.match(checkoutRoute, /503/);
 
 const receipt = {
-  schemaVersion: "velmere.r11.paid-browser-authority.v1",
+  schemaVersion: "velmere.r11.paid-browser-authority.v2",
+  sourceSha,
   evidenceClass: "CURRENT_GIT_STATIC_AUTHORITY_BOUNDARY",
   callbackAuthoritative: false,
   callbackEntitlementGranted: false,
@@ -45,8 +76,11 @@ const receipt = {
   exactPopupSourceRequired: true,
   exactSessionIdRequired: true,
   directPaymentSuccessMessageAccepted: false,
-  serverPaidChecksObserved: paidChecks,
-  clientUnlockCallSitesObserved: Math.max(0, unlockCalls - 1),
+  coveredOpenerCount: surfaces.length,
+  coveredOpeners: surfaces.map((surface) => surface.path),
+  serverPaidChecksObserved: surfaces.reduce((sum, surface) => sum + surface.serverPaidChecksObserved, 0),
+  clientUnlockCallSitesObserved: surfaces.reduce((sum, surface) => sum + surface.clientUnlockCallSitesObserved, 0),
+  surfaces,
   legacyCheckoutRouteWithheld: true,
   browserE2ERequiredForClosure: true,
   productionPaymentCredit: false,

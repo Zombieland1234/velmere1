@@ -1,0 +1,131 @@
+name: R11B Integration v8 Browser Gate
+
+on:
+  push:
+    branches: [r11b-integration-v8-clean]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  browser-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install exact lockfile
+        run: npm ci --ignore-scripts
+      - name: Build exact source
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Asset-detail truth containment browser regression
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/r11b-browser/asset-detail"
+          pidfile="$RUNNER_TEMP/r11b-asset-detail.pid"
+          mkdir -p "$evidence"
+          npx next start -H localhost -p 3103 > "$evidence/NEXT_START.log" 2>&1 &
+          echo $! > "$pidfile"
+          cleanup(){ kill "$(cat "$pidfile")" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o "$RUNNER_TEMP/r11b-asset-detail.html" -w '%{http_code}' http://localhost:3103/en/real-markets/assets/aapl || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat "$evidence/NEXT_START.log"; exit 1; fi
+          VELMERE_BASE_URL=http://localhost:3103 \
+          VELMERE_EVIDENCE_DIR="$evidence" \
+          node scripts/r11/test-asset-detail-truth-containment.mjs
+          trap - EXIT
+          cleanup
+      - name: Dedicated asset-route product contract
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/r11b-browser/asset-navigation"
+          pidfile="$RUNNER_TEMP/r11b-asset-navigation.pid"
+          mkdir -p "$evidence"
+          npx next start -H localhost -p 3104 > "$evidence/NEXT_START.log" 2>&1 &
+          echo $! > "$pidfile"
+          cleanup(){ kill "$(cat "$pidfile")" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o "$RUNNER_TEMP/r11b-asset-navigation.html" -w '%{http_code}' http://localhost:3104/en/real-markets || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat "$evidence/NEXT_START.log"; exit 1; fi
+          VELMERE_BASE_URL=http://localhost:3104 \
+          VELMERE_EVIDENCE_DIR="$evidence" \
+          node scripts/r11/test-asset-navigation-contract.mjs
+          trap - EXIT
+          cleanup
+      - name: Shield hydration browser regression
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/r11b-browser/shield-hydration"
+          pidfile="$RUNNER_TEMP/r11b-shield.pid"
+          mkdir -p "$evidence"
+          npx next dev -H localhost -p 3101 > "$evidence/NEXT_DEV.log" 2>&1 &
+          echo $! > "$pidfile"
+          cleanup(){ kill "$(cat "$pidfile")" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o "$RUNNER_TEMP/r11b-shield.html" -w '%{http_code}' http://localhost:3101/en/shield || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat "$evidence/NEXT_DEV.log"; exit 1; fi
+          VELMERE_BASE_URL=http://localhost:3101 \
+          VELMERE_EVIDENCE_DIR="$evidence" \
+          node scripts/r11/test-shield-hydration-browser.mjs
+          trap - EXIT
+          cleanup
+      - name: Current visual-contract capture pack
+        shell: bash
+        run: |
+          evidence="$RUNNER_TEMP/r11b-browser/visual-reapproval"
+          pidfile="$RUNNER_TEMP/r11b-visual.pid"
+          mkdir -p "$evidence"
+          npx next start -H localhost -p 3105 > "$evidence/NEXT_START.log" 2>&1 &
+          echo $! > "$pidfile"
+          cleanup(){ kill "$(cat "$pidfile")" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o "$RUNNER_TEMP/r11b-visual.html" -w '%{http_code}' http://localhost:3105/en/security/audits || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat "$evidence/NEXT_START.log"; exit 1; fi
+          VELMERE_BASE_URL=http://localhost:3105 \
+          VELMERE_EVIDENCE_DIR="$evidence" \
+          node scripts/r11/capture-current-visual-contract.mjs
+          trap - EXIT
+          cleanup
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r11b-integration-v8-browser-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/r11b-browser

@@ -616,7 +616,7 @@ function WhaleWatchTabContent({ asset, locale, appearance = "default" }: Intelli
       <div className={styles.telemetryBar}>
         <div className={styles.telemetryLive}>
           <span className={styles.pulseDot} />
-          <strong>{asset.symbol} · {isCrypto ? "ON-CHAIN WHALE FLOW RADAR" : "INSTITUTIONAL OWNERSHIP & FLOW RADAR"}</strong>
+          <strong>{asset.symbol} · {isCrypto ? "NETWORK WHALE FLOW RADAR" : "INSTITUTIONAL OWNERSHIP & FLOW RADAR"}</strong>
           <small>{isCrypto ? "NODE CLUSTERS · RESERVE SENTINEL · COLD STORAGE" : "SEC FORM 13F · FINRA ATS TRF · REGISTRAR"}</small>
         </div>
         <div className={styles.telemetryBadges}>
@@ -632,7 +632,7 @@ function WhaleWatchTabContent({ asset, locale, appearance = "default" }: Intelli
           <div className={styles.whaleStatusCopy}>
             <strong>ACTIVE RADAR</strong>
             <em>{whale?.advancedReady ? "EVIDENCE COMPLETE" : "EVIDENCE VERIFIED"}</em>
-            <p>{isCrypto ? "Weryfikacja skupień portfeli wielorybniczych i przepływów giełdowych w oparciu o kworum węzłów on-chain." : "Weryfikacja koncentracji instytucjonalnej i wolumenów dark-pool w oparciu o zgłoszenia SEC 13F oraz FINRA."}</p>
+            <p>{isCrypto ? "Weryfikacja skupień portfeli wielorybniczych i przepływów giełdowych w oparciu o kworum zweryfikowanych węzłów sieci." : "Weryfikacja koncentracji instytucjonalnej i wolumenów dark-pool w oparciu o zgłoszenia SEC 13F oraz FINRA."}</p>
             <small>{c.coverage}</small>
             <b>{percent(whale?.holderCoveragePercent)} ({compactNumber(whale?.holderCount ?? 0, locale)} podmiotów)</b>
           </div>

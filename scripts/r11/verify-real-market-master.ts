@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -11,6 +12,9 @@ const outputIndex = args.indexOf("--output");
 const outputPath = outputIndex >= 0 && args[outputIndex + 1]
   ? args[outputIndex + 1]
   : "/tmp/r11b/REAL_MARKET_IDENTITY.json";
+
+const sourceSha = (process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" })).trim();
+assert.match(sourceSha, /^[a-f0-9]{40}$/u, "source SHA must be an exact 40-character Git commit");
 
 const expected = new Map<string, string>([
   ["equity-us-aapl", "AAPL"],
@@ -106,6 +110,7 @@ for (const ambiguous of ["gold", "silver", "sp500", "nasdaq", "volatility", "for
 
 const receipt = {
   schemaVersion: "velmere.r11.real-market-master-verification.v1",
+  sourceSha,
   evidenceClass: "CURRENT_GIT_LOCAL_MASTER_VERIFICATION",
   denominator: REAL_MARKET_INSTRUMENT_MASTER.length,
   expectedDenominator: 20,

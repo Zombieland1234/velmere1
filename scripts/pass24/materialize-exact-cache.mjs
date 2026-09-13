@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { cacheContentPath, parseCacheIndex, readJson, REQUIREMENTS_PATH, verifyCacheCoverage, writeJson } from "./runtime-lib.mjs";
+import { buildRequirementsDocument, cacheContentPath, parseCacheIndex, verifyCacheCoverage, writeJson } from "./runtime-lib.mjs";
 
 function requiredValue(name) {
   const index = process.argv.indexOf(name);
@@ -18,7 +18,7 @@ const npmPackageJson = path.join(npmRoot, "package.json");
 if (!fs.existsSync(npmPackageJson)) throw new Error(`npm root missing package.json: ${npmPackageJson}`);
 const requireFromNpm = createRequire(npmPackageJson);
 const cacache = requireFromNpm("cacache");
-const requirements = readJson(REQUIREMENTS_PATH);
+const requirements = buildRequirementsDocument();
 const outputCacache = path.join(outputCache, "_cacache");
 const sourceIndex = parseCacheIndex(sourceCache);
 const byIntegrity = new Map();
@@ -74,6 +74,7 @@ const report = {
   sourceCache: path.resolve(sourceCache),
   outputCache: path.resolve(outputCache),
   npmRoot: path.resolve(npmRoot),
+  requirementsSource: "CURRENT_PACKAGE_LOCK_DETERMINISTIC_GENERATION_BOUND_BY_PASS24_SEAL",
   required: requirements.counts.targetEligibleArchives,
   materialized: materialized.length,
   indexEntries,

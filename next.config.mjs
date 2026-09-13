@@ -1,6 +1,4 @@
 import createNextIntlPlugin from "next-intl/plugin";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { buildSecurityHeaders } from "./lib/security/http-security.mjs";
 import { PASS4666_ACCOUNT_OPERATION_REDIRECTS } from "./lib/security/account-operation-redirects.mjs";
 import { PASS4666_PAGE_ALIAS_REDIRECTS } from "./lib/security/page-alias-redirects.mjs";
@@ -8,18 +6,44 @@ import { resolveBuildSettings } from "./lib/build/build-profile.mjs";
 
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 const isDev = process.env.NODE_ENV !== "production";
-const turbopackDevCacheEnabled = process.env.VELMERE_TURBOPACK_DEV_CACHE === "1";
 const buildSettings = resolveBuildSettings(process.env);
-const { profile, runtimeBuildScope, runtimeDistDir, runtimeBuildId, outputStandalone, turbopackMemoryLimit } = buildSettings;
+const {
+  profile,
+  runtimeBuildScope,
+  runtimeDistDir,
+  runtimeBuildId,
+  outputStandalone,
+  turbopackMemoryEviction,
+} = buildSettings;
 const webpackPersistentCacheEnabled = process.env.VELMERE_BUILD_WEBPACK_PERSISTENT_CACHE === "1";
-const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const a60RuntimeProbeSha256 = /^[a-f0-9]{64}$/u.test(process.env.VELMERE_A60_RUNTIME_PROBE_SHA256 ?? "")
   ? process.env.VELMERE_A60_RUNTIME_PROBE_SHA256
   : null;
 
+const scopedBuildExperimental = runtimeBuildScope
+  ? {
+      cpus: profile.cpus,
+      memoryBasedWorkersCount: false,
+      workerThreads: profile.workerThreads,
+      webpackBuildWorker: profile.webpackBuildWorker,
+      webpackMemoryOptimizations: profile.webpackMemoryOptimizations,
+      parallelServerCompiles: profile.parallelServerCompiles,
+      parallelServerBuildTraces: profile.parallelServerBuildTraces,
+      ...(runtimeBuildScope === "turbopack" ? { turbopackMemoryEviction } : {}),
+    }
+  : {};
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  ...(runtimeBuildScope
+    ? {
+        distDir: runtimeDistDir,
+        output: outputStandalone ? "standalone" : undefined,
+      }
+    : {}),
+  ...(runtimeBuildId ? { generateBuildId: async () => runtimeBuildId } : {}),
+  typescript: { ignoreBuildErrors: false },
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   enablePrerenderSourceMaps: false,
@@ -37,6 +61,8 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["@wagmi/connectors", "framer-motion", "lucide-react"],
+    serverSourceMaps: false,
+    ...scopedBuildExperimental,
   },
   images: {
     remotePatterns: [

@@ -17,12 +17,25 @@ function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
+function writeAtomicCandidate(targetPath, bytes) {
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  const temporaryPath = `${targetPath}.tmp-${process.pid}`;
+  try {
+    fs.writeFileSync(temporaryPath, bytes, { flag: "wx", mode: 0o600 });
+    fs.renameSync(temporaryPath, targetPath);
+  } finally {
+    if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath);
+  }
+}
+
 const { ts, provenance: parserProvenance } = await loadTypeScriptForRouteAst({ root });
 
 const manifestPath = path.resolve(
   root,
   argumentValue("--manifest") ?? "config/pass15/route-dispatch-manifest.json",
 );
+const candidateOutputArg = argumentValue("--candidate-output");
+const candidateOutputPath = candidateOutputArg ? path.resolve(root, candidateOutputArg) : null;
 const beforeBytes = fs.readFileSync(manifestPath);
 const manifest = JSON.parse(beforeBytes.toString("utf8"));
 const changes = [];
@@ -77,6 +90,9 @@ if (routeCount !== manifest.summary?.oldEntrypointsRemoved) {
 
 const afterBytes = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 const write = process.argv.includes("--write");
+if (candidateOutputPath) {
+  writeAtomicCandidate(candidateOutputPath, afterBytes);
+}
 if (write && !beforeBytes.equals(afterBytes)) {
   const temporaryPath = `${manifestPath}.tmp-${process.pid}`;
   try {
@@ -88,9 +104,10 @@ if (write && !beforeBytes.equals(afterBytes)) {
 }
 
 const result = {
-  schemaVersion: "velmere.pass15.route-dispatch-manifest-rebaseline.v1",
+  schemaVersion: "velmere.pass15.route-dispatch-manifest-rebaseline.v2",
   mode: write ? "write" : "dry_run",
   manifestPath: path.relative(root, manifestPath),
+  candidateOutputPath: candidateOutputPath ? path.relative(root, candidateOutputPath) : null,
   routeDenominator: routeCount,
   changedRoutes: changes.length,
   changedFields: changes.reduce((sum, row) => sum + row.changedFields.length, 0),

@@ -12,6 +12,8 @@ function arg(name, fallback) {
 
 const outputPath = arg("--output", "artifacts/r10/integration/build/RELEASE_LINT.json");
 const summaryPath = arg("--summary", "artifacts/r10/integration/build/RELEASE_LINT_SUMMARY.json");
+const sourceSha = String(process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" })).trim().toLowerCase();
+if (!/^[0-9a-f]{40}$/u.test(sourceSha)) throw new Error("release_lint_source_sha_invalid");
 const patterns = [
   "app/**",
   "components/**",
@@ -55,6 +57,8 @@ const summary = results.reduce((acc, result) => {
   acc.fatalErrors += result.fatalErrorCount || 0;
   return acc;
 }, { errors: 0, warnings: 0, fatalErrors: 0 });
+summary.schemaVersion = "velmere.r10.release-source-lint-summary.v2";
+summary.sourceSha = sourceSha;
 summary.scope = patterns;
 summary.exclusions = exclusions;
 summary.runtimeReleaseGate = true;
@@ -72,6 +76,7 @@ summary.denominatorConserved = summary.eligibleFileCount === summary.checkedFile
 summary.checkedCandidateCountMatched = checkedCandidates.length === results.length;
 summary.sourceFileCount = eligibleFiles.length;
 summary.files = results.length;
+summary.truthBoundary = "This summary binds the conserved ESLint denominator and result counts to sourceSha. It does not mean ignored eligible files were linted and must not be transferred to another Git subject.";
 
 fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2) + "\n");
 console.log(JSON.stringify(summary, null, 2));
