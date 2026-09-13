@@ -1,13 +1,20 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.VELMERE_BASE_URL || "http://127.0.0.1:3105";
-const evidenceDir = process.env.VELMERE_EVIDENCE_DIR || "/tmp/r11b-browser/visual-reapproval";
+const baseUrl = process.env.VELMERE_BASE_URL || "http://localhost:3105";
+const evidenceDir = process.env.VELMERE_EVIDENCE_DIR
+  ? path.resolve(process.env.VELMERE_EVIDENCE_DIR)
+  : fs.mkdtempSync(path.join(os.tmpdir(), "velmere-visual-contract-"));
 const subjectSha = process.env.GITHUB_SHA || null;
-fs.mkdirSync(evidenceDir, { recursive: true });
+fs.mkdirSync(evidenceDir, { recursive: true, mode: 0o700 });
+const evidenceDirMetadata = fs.lstatSync(evidenceDir);
+if (evidenceDirMetadata.isSymbolicLink() || !evidenceDirMetadata.isDirectory()) {
+  throw new Error("visual_contract_evidence_dir_must_be_real_directory");
+}
 
 const surfaces = [
   { id: "audits", route: "/en/security/audits", requiresWithheld: false },
@@ -125,9 +132,7 @@ for (const surface of surfaces) {
         consoleErrors,
         passed,
       });
-      if (!passed) {
-        captureErrors.push({ slug, reason: "automated_precondition_failed" });
-      }
+      if (!passed) captureErrors.push({ slug, reason: "automated_precondition_failed" });
     } catch (error) {
       captureErrors.push({ slug, reason: String(error?.stack || error?.message || error) });
     } finally {
@@ -176,6 +181,6 @@ const receipt = {
 };
 
 const receiptPath = path.join(evidenceDir, "RECEIPT.json");
-fs.writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
+fs.writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 console.log(JSON.stringify(receipt, null, 2));
 if (!automatedPreconditionsPassed) process.exit(1);
