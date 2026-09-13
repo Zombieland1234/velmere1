@@ -15,7 +15,7 @@ env:
 jobs:
   browser-regressions:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - name: Checkout exact subject
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -91,6 +91,26 @@ jobs:
           VELMERE_BASE_URL=http://127.0.0.1:3101 \
           VELMERE_EVIDENCE_DIR=/tmp/r11b-browser/shield-hydration \
           node scripts/r11/test-shield-hydration-browser.mjs
+          trap - EXIT
+          cleanup
+      - name: Current visual-contract capture pack
+        shell: bash
+        run: |
+          mkdir -p /tmp/r11b-browser/visual-reapproval
+          npx next start -H 127.0.0.1 -p 3105 > /tmp/r11b-browser/visual-reapproval/NEXT_START.log 2>&1 &
+          echo $! > /tmp/r11b-visual.pid
+          cleanup(){ kill "$(cat /tmp/r11b-visual.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/r11b-visual.html -w '%{http_code}' http://127.0.0.1:3105/en/security/audits || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then cat /tmp/r11b-browser/visual-reapproval/NEXT_START.log; exit 1; fi
+          VELMERE_BASE_URL=http://127.0.0.1:3105 \
+          VELMERE_EVIDENCE_DIR=/tmp/r11b-browser/visual-reapproval \
+          node scripts/r11/capture-current-visual-contract.mjs
           trap - EXIT
           cleanup
       - name: Upload browser evidence
