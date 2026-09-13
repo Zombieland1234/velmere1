@@ -1,0 +1,301 @@
+name: EXP Bolyra Scoring Corpus Anchor Transition E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - exp/bolyra-scoring-corpus-test-6
+    paths:
+      - '.github/workflows/exp-bolyra-scoring-corpus-anchor-transition-e2e.yml'
+      - 'scripts/experiments/claim-sufficiency-v0.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  bolyra-scoring-corpus-anchor-transition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BOLYRA_SHA: 5b68cd3316fcfcc8fd7a4bd8729425d89038346d
+      CORPUS_DIR: examples/receipt-scoring-kit/corpus
+      CLEAN_LOG: receipts.jsonl
+      TAMPERED_LOG: tampered.jsonl
+      CLI_VERSION: 0.5.0
+    steps:
+      - name: Checkout Velmere experiment
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Checkout pinned public Bolyra source
+        uses: actions/checkout@v4
+        with:
+          repository: bolyra/bolyra
+          ref: ${{ env.BOLYRA_SHA }}
+          path: _external/bolyra
+          persist-credentials: false
+
+      - name: Record exact source identities and corpus hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=artifacts/experiments/bolyra-scoring-corpus-anchor-e2e
+          mkdir -p "$out"
+          printf '%s\n' "${GITHUB_SHA}" > "$out/velmere-experiment-sha.txt"
+          git -C _external/bolyra rev-parse HEAD > "$out/bolyra-source-sha.txt"
+          test "$(cat "$out/bolyra-source-sha.txt")" = "${BOLYRA_SHA}"
+          sha256sum "_external/bolyra/${CORPUS_DIR}/manifest.json" > "$out/manifest.sha256"
+          sha256sum "_external/bolyra/${CORPUS_DIR}/${CLEAN_LOG}" > "$out/receipts.sha256"
+          sha256sum "_external/bolyra/${CORPUS_DIR}/${TAMPERED_LOG}" > "$out/tampered.sha256"
+          sha256sum "_external/bolyra/${CORPUS_DIR}/signer.json" > "$out/signer.sha256"
+          sha256sum "_external/bolyra/examples/receipt-scoring-kit/README.md" > "$out/readme.sha256"
+
+      - name: Parse and assert Bolyra-published anchors
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const path = `_external/bolyra/${process.env.CORPUS_DIR}/manifest.json`;
+          const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const clean = manifest?.chains?.[process.env.CLEAN_LOG];
+          if (!clean) throw new Error('manifest is missing receipts.jsonl anchors');
+          if (clean.signer !== '0x17c5185167401ed00cf5f5b2fc97d9bbfdb7d025') throw new Error(`unexpected signer ${clean.signer}`);
+          if (clean.count !== 8) throw new Error(`unexpected count ${clean.count}`);
+          if (clean.head !== '0x8150d2464e2f17dd1bfa921283ae8622d912160bfa7e24ffefd930fc06e31d92') throw new Error(`unexpected head ${clean.head}`);
+          const anchors = {
+            schema: 'velmere.bolyra-scoring-corpus-published-anchors.v1',
+            sourceRepository: 'bolyra/bolyra',
+            sourceCommitSha: process.env.BOLYRA_SHA,
+            sourceFile: `${process.env.CORPUS_DIR}/manifest.json`,
+            cleanLog: process.env.CLEAN_LOG,
+            signer: clean.signer,
+            expectedCount: clean.count,
+            expectedHeadHash: clean.head,
+            trustBoundary: 'These are Bolyra-published public test-kit anchors. They are treated as the declared trust anchors for this public methodology test only; this does not establish production signer trust.'
+          };
+          fs.writeFileSync('artifacts/experiments/bolyra-scoring-corpus-anchor-e2e/published-anchors.json', JSON.stringify(anchors, null, 2) + '\n');
+          console.log(JSON.stringify(anchors, null, 2));
+          NODE
+
+      - name: Execute published Bolyra CLI path for unanchored, anchored, and tampered cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=artifacts/experiments/bolyra-scoring-corpus-anchor-e2e
+          corpus="_external/bolyra/${CORPUS_DIR}"
+          signer='0x17c5185167401ed00cf5f5b2fc97d9bbfdb7d025'
+          count='8'
+          head='0x8150d2464e2f17dd1bfa921283ae8622d912160bfa7e24ffefd930fc06e31d92'
+
+          set +e
+          npx -y -p "@bolyra/cli@${CLI_VERSION}" bolyra receipt verify-chain "$corpus/$CLEAN_LOG" \
+            --signer "$signer" >"$out/clean-unanchored.stdout.txt" 2>"$out/clean-unanchored.stderr.txt"
+          clean_unanchored_code=$?
+
+          npx -y -p "@bolyra/cli@${CLI_VERSION}" bolyra receipt verify-chain "$corpus/$CLEAN_LOG" \
+            --signer "$signer" --expect-count "$count" --expect-head "$head" \
+            >"$out/clean-anchored.stdout.txt" 2>"$out/clean-anchored.stderr.txt"
+          clean_anchored_code=$?
+
+          npx -y -p "@bolyra/cli@${CLI_VERSION}" bolyra receipt verify-chain "$corpus/$TAMPERED_LOG" \
+            --signer "$signer" --expect-count "$count" --expect-head "$head" \
+            >"$out/tampered-anchored.stdout.txt" 2>"$out/tampered-anchored.stderr.txt"
+          tampered_anchored_code=$?
+          set -e
+
+          printf '%s\n' "$clean_unanchored_code" > "$out/clean-unanchored.exit-code.txt"
+          printf '%s\n' "$clean_anchored_code" > "$out/clean-anchored.exit-code.txt"
+          printf '%s\n' "$tampered_anchored_code" > "$out/tampered-anchored.exit-code.txt"
+
+          test "$clean_unanchored_code" -eq 0
+          test "$clean_anchored_code" -eq 0
+          test "$tampered_anchored_code" -ne 0
+
+          grep -q 'PASS: all signatures valid, chain intact' "$out/clean-unanchored.stdout.txt"
+          grep -q 'PASS: all signatures valid, chain intact' "$out/clean-anchored.stdout.txt"
+          grep -Eq 'tail.*NOT detectable|NOT detectable.*tail|pin the head hash|expect-head|expect-count' "$out/clean-unanchored.stdout.txt"
+          cat "$out/tampered-anchored.stdout.txt" "$out/tampered-anchored.stderr.txt" | grep -Eq 'FAIL|signature-invalid|receipt-hash-mismatch|prev-hash-mismatch'
+
+      - name: Normalize actual upstream machine evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const dir = 'artifacts/experiments/bolyra-scoring-corpus-anchor-e2e';
+          const anchors = JSON.parse(fs.readFileSync(`${dir}/published-anchors.json`, 'utf8'));
+          const read = (f) => fs.readFileSync(`${dir}/${f}`, 'utf8');
+          const code = (f) => Number(read(f).trim());
+          const cleanUnanchoredOut = read('clean-unanchored.stdout.txt') + read('clean-unanchored.stderr.txt');
+          const cleanAnchoredOut = read('clean-anchored.stdout.txt') + read('clean-anchored.stderr.txt');
+          const tamperedAnchoredOut = read('tampered-anchored.stdout.txt') + read('tampered-anchored.stderr.txt');
+          const sha256File = (path) => crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex');
+          const evidence = {
+            schema: 'velmere.bolyra-scoring-corpus-upstream-evidence.v1',
+            upstream: {
+              repository: 'bolyra/bolyra',
+              commitSha: process.env.BOLYRA_SHA,
+              corpusDir: process.env.CORPUS_DIR,
+              publishedCliPackage: `@bolyra/cli@${process.env.CLI_VERSION}`,
+              execution: 'The published Bolyra CLI package was invoked as an external process following the receipt-scoring-kit README pattern.'
+            },
+            anchors,
+            presentations: {
+              cleanUnanchored: {
+                file: process.env.CLEAN_LOG,
+                exitCode: code('clean-unanchored.exit-code.txt'),
+                verifierPassed: code('clean-unanchored.exit-code.txt') === 0,
+                externalCountSupplied: false,
+                externalHeadSupplied: false,
+                signerSupplied: true,
+                tailCaveatObserved: /tail.*NOT detectable|NOT detectable.*tail|pin the head hash|expect-head|expect-count/i.test(cleanUnanchoredOut)
+              },
+              cleanAnchored: {
+                file: process.env.CLEAN_LOG,
+                exitCode: code('clean-anchored.exit-code.txt'),
+                verifierPassed: code('clean-anchored.exit-code.txt') === 0,
+                externalCountSupplied: true,
+                externalHeadSupplied: true,
+                signerSupplied: true
+              },
+              tamperedAnchored: {
+                file: process.env.TAMPERED_LOG,
+                exitCode: code('tampered-anchored.exit-code.txt'),
+                verifierPassed: code('tampered-anchored.exit-code.txt') === 0,
+                externalCountSupplied: true,
+                externalHeadSupplied: true,
+                signerSupplied: true,
+                failureObserved: /FAIL|signature-invalid|receipt-hash-mismatch|prev-hash-mismatch/i.test(tamperedAnchoredOut)
+              }
+            },
+            sourceHashes: {
+              cleanLogSha256: sha256File(`_external/bolyra/${process.env.CORPUS_DIR}/${process.env.CLEAN_LOG}`),
+              tamperedLogSha256: sha256File(`_external/bolyra/${process.env.CORPUS_DIR}/${process.env.TAMPERED_LOG}`),
+              manifestSha256: sha256File(`_external/bolyra/${process.env.CORPUS_DIR}/manifest.json`)
+            },
+            truthBoundary: 'Public deterministic Bolyra test corpus and Bolyra-published test anchors. This is an interoperability/methodology test, not production signer trust, a customer workflow audit, certification, endorsement, or partnership claim.'
+          };
+          if (!evidence.presentations.cleanUnanchored.verifierPassed) throw new Error('clean unanchored verifier unexpectedly failed');
+          if (!evidence.presentations.cleanUnanchored.tailCaveatObserved) throw new Error('clean unanchored tail-truncation caveat was not observed');
+          if (!evidence.presentations.cleanAnchored.verifierPassed) throw new Error('clean anchored verifier unexpectedly failed');
+          if (evidence.presentations.tamperedAnchored.verifierPassed) throw new Error('tampered anchored verifier unexpectedly passed');
+          if (!evidence.presentations.tamperedAnchored.failureObserved) throw new Error('tampered failure evidence not observed');
+          fs.writeFileSync(`${dir}/bolyra-scoring-corpus-upstream-evidence.json`, JSON.stringify(evidence, null, 2) + '\n');
+          console.log(JSON.stringify(evidence, null, 2));
+          NODE
+
+      - name: Build three Velmere claim presentations from actual CLI evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const dir = 'artifacts/experiments/bolyra-scoring-corpus-anchor-e2e';
+          const upstream = JSON.parse(fs.readFileSync(`${dir}/bolyra-scoring-corpus-upstream-evidence.json`, 'utf8'));
+          const commonSubject = {
+            vendor: 'Bolyra',
+            repository: upstream.upstream.repository,
+            upstreamCommitSha: upstream.upstream.commitSha,
+            corpusDir: upstream.upstream.corpusDir,
+            cleanLog: process.env.CLEAN_LOG,
+            tamperedLog: process.env.TAMPERED_LOG,
+            publishedCliPackage: upstream.upstream.publishedCliPackage,
+            velmereExperimentSha: process.env.GITHUB_SHA,
+            boundary: 'Velmere evaluates claim sufficiency over machine results produced by the published Bolyra CLI against the pinned public receipt-scoring corpus and its published test anchors.'
+          };
+          const claim = {
+            id: 'claim-log-complete-through-declared-checkpoint',
+            text: 'The presented receipt log is authentic, internally intact, and complete through the declared Bolyra corpus checkpoint under the declared signer.',
+            scopeCovered: true,
+            requirements: [
+              { id: 'upstream-verification', mode: 'all', critical: true, evidence: ['upstream_verifier_passed'] },
+              { id: 'trusted-signer-anchor', mode: 'all', critical: true, evidence: ['declared_signer_anchor'] },
+              { id: 'external-completeness-anchor', mode: 'all', critical: true, evidence: ['expected_count_anchor', 'expected_head_anchor'] }
+            ]
+          };
+          const mk = (caseId, verifierState, countState, headState, presentation) => ({
+            caseId,
+            subject: { ...commonSubject, presentation },
+            evidence: [
+              { id: 'upstream_verifier_passed', state: verifierState, provenance: `Published ${upstream.upstream.publishedCliPackage} verify-chain process result for ${presentation}.` },
+              { id: 'declared_signer_anchor', state: 'VERIFIED_TRUE', provenance: `Bolyra public scoring-kit manifest signer ${upstream.anchors.signer}; trusted only for this public test fixture.` },
+              { id: 'expected_count_anchor', state: countState, provenance: countState === 'MISSING' ? 'No expected count was supplied to this presentation.' : `Bolyra public scoring-kit manifest expected count ${upstream.anchors.expectedCount}.` },
+              { id: 'expected_head_anchor', state: headState, provenance: headState === 'MISSING' ? 'No expected head hash was supplied to this presentation.' : `Bolyra public scoring-kit manifest expected head ${upstream.anchors.expectedHeadHash}.` }
+            ],
+            claims: [claim]
+          });
+          const unanchored = mk('bolyra-scoring-corpus-clean-unanchored-v1', 'VERIFIED_TRUE', 'MISSING', 'MISSING', 'clean-unanchored');
+          const anchored = mk('bolyra-scoring-corpus-clean-anchored-v1', 'VERIFIED_TRUE', 'VERIFIED_TRUE', 'VERIFIED_TRUE', 'clean-anchored');
+          const tampered = mk('bolyra-scoring-corpus-tampered-anchored-v1', 'VERIFIED_FALSE', 'VERIFIED_TRUE', 'VERIFIED_TRUE', 'tampered-anchored');
+          fs.writeFileSync(`${dir}/velmere-clean-unanchored.case.json`, JSON.stringify(unanchored, null, 2) + '\n');
+          fs.writeFileSync(`${dir}/velmere-clean-anchored.case.json`, JSON.stringify(anchored, null, 2) + '\n');
+          fs.writeFileSync(`${dir}/velmere-tampered-anchored.case.json`, JSON.stringify(tampered, null, 2) + '\n');
+          NODE
+
+      - name: Run Velmere Claim Sufficiency for all three presentations
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir=artifacts/experiments/bolyra-scoring-corpus-anchor-e2e
+          node scripts/experiments/claim-sufficiency-v0.mjs "$dir/velmere-clean-unanchored.case.json" "$dir/velmere-clean-unanchored.result.json"
+          node scripts/experiments/claim-sufficiency-v0.mjs "$dir/velmere-clean-anchored.case.json" "$dir/velmere-clean-anchored.result.json"
+          node scripts/experiments/claim-sufficiency-v0.mjs "$dir/velmere-tampered-anchored.case.json" "$dir/velmere-tampered-anchored.result.json"
+
+      - name: Assert UNKNOWN to SUPPORTED and negative CONTRADICTED transition
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const dir = 'artifacts/experiments/bolyra-scoring-corpus-anchor-e2e';
+          const read = (name) => JSON.parse(fs.readFileSync(`${dir}/${name}`, 'utf8'));
+          const verdict = (name) => read(name).claims[0]?.verdict;
+          const unanchoredVerdict = verdict('velmere-clean-unanchored.result.json');
+          const anchoredVerdict = verdict('velmere-clean-anchored.result.json');
+          const tamperedVerdict = verdict('velmere-tampered-anchored.result.json');
+          if (unanchoredVerdict !== 'UNKNOWN') throw new Error(`expected unanchored UNKNOWN, got ${unanchoredVerdict}`);
+          if (anchoredVerdict !== 'SUPPORTED') throw new Error(`expected anchored SUPPORTED, got ${anchoredVerdict}`);
+          if (tamperedVerdict !== 'CONTRADICTED') throw new Error(`expected tampered CONTRADICTED, got ${tamperedVerdict}`);
+          const hash = (file) => crypto.createHash('sha256').update(fs.readFileSync(`${dir}/${file}`)).digest('hex');
+          const report = {
+            schema: 'velmere.bolyra-scoring-corpus-anchor-transition-e2e-report.v1',
+            velmereExperimentSha: process.env.GITHUB_SHA,
+            bolyraSourceSha: process.env.BOLYRA_SHA,
+            publishedCliPackage: `@bolyra/cli@${process.env.CLI_VERSION}`,
+            sourceCorpus: `${process.env.CORPUS_DIR}/${process.env.CLEAN_LOG}`,
+            negativeCorpus: `${process.env.CORPUS_DIR}/${process.env.TAMPERED_LOG}`,
+            publishedAnchors: read('published-anchors.json'),
+            transitions: {
+              cleanWithoutCompletenessAnchors: unanchoredVerdict,
+              sameCleanLogWithPublishedManifestAnchors: anchoredVerdict,
+              tamperedLogWithPublishedManifestAnchors: tamperedVerdict
+            },
+            interpretation: 'The same clean Bolyra corpus presentation moves from UNKNOWN to SUPPORTED when Bolyra-published count/head anchors are supplied; the intentionally tampered corpus is CONTRADICTED under the anchored verification policy.',
+            truthBoundary: 'Public deterministic cross-system methodology test using Bolyra-published test corpus, test signer and manifest anchors. It does not establish production signer trust, audit a customer workflow, certify Bolyra or Velmere, or imply endorsement/partnership.',
+            sha256: {
+              upstreamEvidence: hash('bolyra-scoring-corpus-upstream-evidence.json'),
+              unanchoredCase: hash('velmere-clean-unanchored.case.json'),
+              unanchoredResult: hash('velmere-clean-unanchored.result.json'),
+              anchoredCase: hash('velmere-clean-anchored.case.json'),
+              anchoredResult: hash('velmere-clean-anchored.result.json'),
+              tamperedCase: hash('velmere-tampered-anchored.case.json'),
+              tamperedResult: hash('velmere-tampered-anchored.result.json')
+            }
+          };
+          fs.writeFileSync(`${dir}/VELMERE_BOLYRA_SCORING_CORPUS_ANCHOR_TRANSITION_E2E_REPORT_v1.json`, JSON.stringify(report, null, 2) + '\n');
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+
+      - name: Upload Bolyra scoring corpus anchor transition evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-bolyra-scoring-corpus-anchor-transition-e2e
+          path: artifacts/experiments/bolyra-scoring-corpus-anchor-e2e/
+          if-no-files-found: error
