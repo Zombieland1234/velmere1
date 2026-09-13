@@ -146,7 +146,24 @@ function one(line: string, records: EvidenceRecord[], scope?: ClaimAuditScope) {
   assert.equal(result.findings[0]?.action, "REWRITTEN");
 }
 
-// An observed external TSA token can support RFC 3161 wording only in exact scope.
+// A textual TSA label without cryptographically validated token fields remains insufficient.
+{
+  const result = one("RFC 3161 Trusted Timestamp", [
+    evidence({
+      id: "EV-CRYPTO-TSA-LABEL-ONLY",
+      category: "CRYPTOGRAPHIC",
+      status: "PASS",
+      method: "OBSERVED",
+      tool: "RFC3161 verifier",
+      source: "external TSA TimeStampToken",
+    }),
+  ], exactScope);
+  assert.equal(result.findings[0]?.action, "REWRITTEN");
+}
+
+// An observed external TSA token may support RFC 3161 wording only when the exact-scope
+// evidence includes a bound token digest, message imprint, validated signature/certificate
+// chain and a policy OID. Labels alone are intentionally insufficient.
 {
   const result = one("RFC 3161 Trusted Timestamp", [
     evidence({
@@ -156,9 +173,18 @@ function one(line: string, records: EvidenceRecord[], scope?: ClaimAuditScope) {
       method: "OBSERVED",
       tool: "RFC3161 verifier",
       source: "external TSA TimeStampToken",
+      normalizedArtifact: {
+        timeStampTokenPresent: true,
+        timeStampTokenSha256: "c".repeat(64),
+        messageImprintSha256: "d".repeat(64),
+        cmsSignatureVerified: true,
+        certificateChainVerified: true,
+        policyOid: "1.2.3.4.5",
+      },
     }),
   ], exactScope);
   assert.equal(result.findings[0]?.action, "VERIFIED");
+  assert.equal(result.findings[0]?.evidenceId, "EV-CRYPTO-TSA");
 }
 
 // Absolute safety claims are never authorized by a generic evidence record.
