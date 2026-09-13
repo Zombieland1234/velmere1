@@ -1,6 +1,6 @@
 import { getRequestConfig } from "next-intl/server";
 import finalTranslations from "./config/pass23/i18n-final-translations.json";
-import supplementalTranslations from "./config/pass23/i18n-supplemental-value-map.json";
+import { supplementalTranslations } from "./lib/i18n/supplemental-translations.mjs";
 import deMessages from "./messages/de.json";
 import deReleaseOverrides from "./messages/release-overrides/de.json";
 import enMessages from "./messages/en.json";

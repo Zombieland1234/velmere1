@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { applyTranslationKeyValueMap, applyTranslationWave } from "../../lib/i18n/merge-messages.mjs";
+import { supplementalTranslationMeta, supplementalTranslations } from "../../lib/i18n/supplemental-translations.mjs";
 
 const root = process.cwd();
 const results = [];
@@ -40,12 +41,18 @@ expectThrows("supplemental_duplicate_key_fails_closed", "translation_key_duplica
 
 expect("primary_300_and_supplemental_359_bind_to_current_catalogs", () => {
   const primary = readJson("config/pass23/i18n-final-translations.json");
-  const supplemental = readJson("config/pass23/i18n-supplemental-value-map.json");
+  const supplemental = supplementalTranslations;
+  const manifest = readJson("config/pass23/i18n-supplemental-value-map.json");
   if (!Array.isArray(primary.translations) || primary.translations.length !== 300) throw new Error("primary_translation_denominator_mismatch");
   if (!Array.isArray(supplemental.keys) || supplemental.keys.length !== 359) throw new Error("supplemental_translation_denominator_mismatch");
   if (Object.keys(supplemental.valueMap ?? {}).length !== 211) throw new Error("supplemental_source_value_denominator_mismatch");
   if (supplemental.sourceSubjectSha !== "c9e194e21804c55c27ccecfac537814d62a66493") throw new Error("supplemental_source_subject_mismatch");
   if (supplemental.reviewStatus !== "PENDING_NATIVE_REVIEW") throw new Error("supplemental_false_review_status");
+  for (const field of ["sourceSubjectSha","sourceReceiptMergeSha","reviewStatus","expectedKeyCount","expectedSourceValueCount","sortedKeySha256","sourceRowsSha256"]) {
+    if (manifest[field] !== supplementalTranslationMeta[field]) throw new Error(`supplemental_manifest_meta_mismatch:${field}`);
+  }
+  if (!Array.isArray(manifest.keyModules) || manifest.keyModules.length !== 2) throw new Error("supplemental_manifest_key_modules");
+  if (!Array.isArray(manifest.valueModules) || manifest.valueModules.length !== 4) throw new Error("supplemental_manifest_value_modules");
   if (new Set(supplemental.keys).size !== 359) throw new Error("supplemental_duplicate_key");
   if (sortedKeySha256(supplemental.keys) !== supplemental.sortedKeySha256) throw new Error("supplemental_key_digest_mismatch");
   const primaryKeys = new Set(primary.translations.map((row) => row.key));
