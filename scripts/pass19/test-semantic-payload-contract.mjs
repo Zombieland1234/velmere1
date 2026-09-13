@@ -93,7 +93,19 @@ test("self_referential_digest_is_excluded", () => assert.equal(unchanged((copy) 
 test("exact_pdf_digest_is_excluded", () => assert.equal(unchanged((copy) => { copy.exactPdfSha256 = "e".repeat(64); }), true));
 test("exact_pdf_byte_length_is_excluded", () => assert.equal(unchanged((copy) => { copy.pdfByteLength = 999999; }), true));
 test("non_finite_number_fails_closed", () => throws((copy) => { copy.confidence = Number.NaN; }, /semantic_non_finite_number/u));
-test("undefined_fails_closed", () => throws((copy) => { copy.status = undefined; }, /semantic_undefined/u));
+test("undefined_object_property_matches_json_omission", () => {
+  const withUndefined = clone(representative);
+  withUndefined.optionalField = undefined;
+  const withoutField = clone(representative);
+  assert.equal(semanticDigestSha256(withUndefined), semanticDigestSha256(withoutField));
+  assert.equal(buildSemanticPayload(withUndefined).omittedUndefinedPaths.includes("$.optionalField"), true);
+});
+test("undefined_array_entry_fails_closed", () => {
+  const copy = clone(representative);
+  copy.claims.push(undefined);
+  assert.throws(() => semanticDigestSha256(copy), /semantic_undefined/u);
+});
+test("top_level_undefined_fails_closed", () => assert.throws(() => semanticDigestSha256(undefined), /semantic_undefined/u));
 test("bigint_fails_closed", () => {
   const copy = clone(representative);
   copy.confidence = 1n;
@@ -131,11 +143,14 @@ const report = {
     objectKeyOrder: "LEXICOGRAPHIC_ASCENDING",
     arrayOrder: "PRESERVED_AND_SEMANTIC",
     nullEncoding: "EXPLICIT_NULL_PRESERVED",
+    objectUndefined: "OMITTED_AS_JSON_OBJECT_PROPERTY",
+    arrayUndefined: "FAIL_CLOSED",
+    topLevelUndefined: "FAIL_CLOSED",
     numberEncoding: "FINITE_JSON_NUMBER_NEGATIVE_ZERO_NORMALIZED_TO_ZERO",
     exactRenderBytes: "EXCLUDED_FROM_SEMANTIC_DIGEST_REQUIRE_SEPARATE_BYTE_DIGEST",
   },
   results: tests,
-  truthBoundary: "PASS proves deterministic versioned semantic canonicalization, explicit render-byte separation and mutation sensitivity for the governed JSON contract. It does not prove provider truth, human review, PDF rendering correctness, staging, LIVE behavior or external audit independence.",
+  truthBoundary: "PASS proves deterministic versioned semantic canonicalization aligned to JSON object-property omission, explicit render-byte separation and mutation sensitivity for the governed JSON contract. Undefined is never a semantic value: object properties are audibly omitted to match JSON serialization, while array/top-level undefined fail closed. It does not prove provider truth, human review, PDF rendering correctness, staging, LIVE behavior or external audit independence.",
 };
 console.log(JSON.stringify(report, null, 2));
 if (failed) process.exit(1);
