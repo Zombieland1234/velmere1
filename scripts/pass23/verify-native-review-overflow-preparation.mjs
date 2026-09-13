@@ -1,20 +1,50 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 const root=process.cwd();
-const translations=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/i18n-final-translations.json"),"utf8"));
+const primary=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/i18n-final-translations.json"),"utf8"));
+const supplemental=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/i18n-supplemental-value-map.json"),"utf8"));
 const checklist=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/native-language-review-checklist.json"),"utf8"));
+const supplementalChecklist=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/native-language-review-supplemental.json"),"utf8"));
 const overflow=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/browser-overflow-matrix.json"),"utf8"));
+const supplementalOverflow=JSON.parse(fs.readFileSync(path.join(root,"config/pass23/browser-overflow-supplemental-plan.json"),"utf8"));
 const i18n=JSON.parse(fs.readFileSync(path.join(root,".velmere/pass23-diagnostics/i18n-release-readiness.json"),"utf8"));
+const supplementalAudit=JSON.parse(fs.readFileSync(path.join(root,".velmere/pass23-diagnostics/i18n-supplemental-effective-verification.json"),"utf8"));
 const errors=[];
-if(translations.translations?.length!==300)errors.push("translation_count");
+const primaryCount=primary.translations?.length??0;
+const supplementalCount=supplemental.keys?.length??0;
+const totalTranslations=primaryCount+supplementalCount;
+const supplementalKeyDigest=crypto.createHash("sha256").update([...(supplemental.keys??[])].sort().join("\n")).digest("hex");
+if(primaryCount!==300)errors.push("primary_translation_count");
+if(supplementalCount!==359)errors.push("supplemental_translation_count");
+if(Object.keys(supplemental.valueMap??{}).length!==211)errors.push("supplemental_source_value_count");
+if(totalTranslations!==659)errors.push("total_translation_count");
+if(supplemental.sourceSubjectSha!=="c9e194e21804c55c27ccecfac537814d62a66493")errors.push("supplemental_source_subject");
+if(supplemental.reviewStatus!=="PENDING_NATIVE_REVIEW")errors.push("supplemental_review_false_pass");
+if(new Set(supplemental.keys??[]).size!==359)errors.push("supplemental_duplicate_translation_keys");
+if(supplemental.sortedKeySha256!==supplementalKeyDigest)errors.push("supplemental_key_digest");
+const primaryKeys=new Set((primary.translations??[]).map(x=>x.key));
+if((supplemental.keys??[]).some(key=>primaryKeys.has(key)))errors.push("cross_wave_duplicate_translation_keys");
+if(supplementalAudit.ok!==true)errors.push("supplemental_effective_audit_failed");
+if(supplementalAudit.primaryRedDenominator!==359||supplementalAudit.supplementalKeyDenominator!==359||supplementalAudit.postSupplementalIdenticalNonNeutral!==0)errors.push("supplemental_effective_denominator_mismatch");
+if(i18n.summary?.draftTranslationCount!==659)errors.push("audit_translation_count");
+if(i18n.summary?.preSupplementalIdenticalNonNeutral!==359)errors.push("audit_pre_supplemental_denominator");
 if(i18n.summary?.identicalNonNeutral!==0)errors.push("identical_non_neutral_not_zero");
 if(i18n.summary?.criticalEnglishLeakCandidates!==0)errors.push("critical_english_leaks");
-if(checklist.status!=="PENDING_NATIVE_REVIEW")errors.push("native_review_must_remain_pending");
-for(const locale of ["pl","de"]){const row=checklist.locales?.[locale];if(row?.status!=="PENDING"||row?.receiptSha256!==null)errors.push(`${locale}_native_review_false_pass`);}
-if(checklist.translatedValues!==300)errors.push("checklist_translation_count");
-if(overflow.plannedCases!==300||overflow.cases?.length!==300)errors.push("overflow_case_count");
-if(overflow.executedCases!==0||overflow.passedCases!==0)errors.push("overflow_false_execution");
-const unique=new Set((overflow.cases??[]).map(x=>x.caseId));if(unique.size!==300)errors.push("overflow_duplicate_cases");
-const report={schemaVersion:"velmere.pass23.native-review-overflow-preparation.v1",generatedAt:"2026-07-20T18:00:00.000Z",ok:errors.length===0,translations:translations.translations.length,identicalNonNeutral:i18n.summary.identicalNonNeutral,nativeReviewStatus:checklist.status,overflowPlanned:overflow.plannedCases,overflowExecuted:overflow.executedCases,errors,truthBoundary:"Static translation completion and planned browser cases are not native-language or browser proof."};
+for(const [name,row] of [["primary",checklist],["supplemental",supplementalChecklist]]){
+  if(row.status!=="PENDING_NATIVE_REVIEW")errors.push(`${name}_native_review_must_remain_pending`);
+  for(const locale of ["pl","de"]){const localeRow=row.locales?.[locale];if(localeRow?.status!=="PENDING"||localeRow?.receiptSha256!==null)errors.push(`${name}_${locale}_native_review_false_pass`);}
+}
+if(checklist.translatedValues!==300)errors.push("primary_checklist_translation_count");
+if(supplementalChecklist.translatedValues!==359)errors.push("supplemental_checklist_translation_count");
+if(overflow.plannedCases!==300||overflow.cases?.length!==300)errors.push("primary_overflow_case_count");
+if(overflow.executedCases!==0||overflow.passedCases!==0)errors.push("primary_overflow_false_execution");
+if(supplementalOverflow.plannedCases!==359)errors.push("supplemental_overflow_case_count");
+if(supplementalOverflow.executedCases!==0||supplementalOverflow.passedCases!==0)errors.push("supplemental_overflow_false_execution");
+if(supplementalOverflow.caseKeysSource!=="config/pass23/i18n-supplemental-value-map.json#keys")errors.push("supplemental_overflow_key_source");
+if(supplementalOverflow.sortedCaseKeySha256!==supplementalKeyDigest)errors.push("supplemental_overflow_key_digest");
+const totalOverflowPlanned=overflow.plannedCases+supplementalOverflow.plannedCases;
+const totalOverflowExecuted=overflow.executedCases+supplementalOverflow.executedCases;
+const report={schemaVersion:"velmere.pass23.native-review-overflow-preparation.v2",generatedAt:new Date().toISOString(),ok:errors.length===0,primaryTranslations:primaryCount,supplementalTranslations:supplementalCount,totalTranslations,preSupplementalIdenticalNonNeutral:i18n.summary?.preSupplementalIdenticalNonNeutral??null,identicalNonNeutral:i18n.summary?.identicalNonNeutral??null,nativeReviewStatus:{primary:checklist.status,supplemental:supplementalChecklist.status},overflowPlanned:totalOverflowPlanned,overflowExecuted:totalOverflowExecuted,errors,truthBoundary:"Static draft completion across 659 values and 659 planned browser cases is not native-language, legal, brand-voice or browser proof. Both review waves remain PENDING and browser execution remains zero."};
 const out=path.join(root,".velmere/pass23-diagnostics/native-review-overflow-preparation.json");fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(report,null,2)+"\n");console.log(JSON.stringify(report,null,2));if(!report.ok)process.exit(1);
