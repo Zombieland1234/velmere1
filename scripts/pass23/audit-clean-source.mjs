@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { builtinModules } from "node:module";
 
 const root = process.cwd();
+const startedAtMs = Date.now();
 const outputIndex = process.argv.indexOf("--output");
 const outputPath = outputIndex >= 0 ? process.argv[outputIndex + 1] : ".velmere/pass23-diagnostics/clean-source-audit.json";
 const ignoredDirectoryNames = new Set([".git", ".next", "node_modules", "coverage", "dist", "out"]);
@@ -20,6 +21,7 @@ const codeExtensions = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".
 const inactiveAnalysisPrefixes = [".velmere/quarantine/", "_velmere/"];
 const localResolveExtensions = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".json", ".css"];
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)]);
+let indexedFilePaths = new Set();
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -94,9 +96,7 @@ function resolveLocal(fromAbsolute, specifier) {
     candidates.add(path.join(stem, `index${extension}`));
   }
   for (const candidate of candidates) {
-    try {
-      if (fs.statSync(candidate).isFile()) return true;
-    } catch (ignoredError) { void ignoredError; }
+    if (indexedFilePaths.has(path.resolve(candidate))) return true;
   }
   return false;
 }
@@ -108,7 +108,12 @@ const declaredPackages = new Set([
   ...Object.keys(pkg.optionalDependencies ?? {}),
   ...Object.keys(pkg.peerDependencies ?? {})
 ]);
+const walkStartedAtMs = Date.now();
 const { files, symlinks } = walk(root);
+const walkDurationMs = Date.now() - walkStartedAtMs;
+indexedFilePaths = new Set(files.map((row) => path.resolve(row.absolute)));
+console.log(`[clean-source] indexed ${files.length} files in ${walkDurationMs}ms`);
+
 const manifest = [];
 const jsonErrors = [];
 const unresolvedLocalImports = [];
@@ -127,6 +132,7 @@ let textFiles = 0;
 let textLines = 0;
 let jsonFiles = 0;
 let codeFiles = 0;
+let localImportResolutionChecks = 0;
 
 const secretPatterns = [
   ["private_key", /-----BEGIN (?:RSA |EC |OPENSSH |)PRIVATE KEY-----/gu],
@@ -144,7 +150,9 @@ const dangerousPatterns = [
   ["child_process_exec", /(?:^|[^.\w])(?:exec|execSync)\s*\(/gmu]
 ];
 
-for (const { relative, absolute } of files) {
+const scanStartedAtMs = Date.now();
+for (let fileIndex = 0; fileIndex < files.length; fileIndex += 1) {
+  const { relative, absolute } = files[fileIndex];
   const buffer = fs.readFileSync(absolute);
   const digest = sha256(buffer);
   const bytes = buffer.length;
@@ -190,6 +198,7 @@ for (const { relative, absolute } of files) {
       codeFiles += 1;
       for (const specifier of parseImports(source)) {
         if (specifier.startsWith("./") || specifier.startsWith("../") || specifier.startsWith("@/")) {
+          localImportResolutionChecks += 1;
           if (!resolveLocal(absolute, specifier)) {
             if (
               specifier.startsWith("./.next/types/") &&
@@ -218,7 +227,12 @@ for (const { relative, absolute } of files) {
     }
   }
   manifest.push({ path: relative, bytes, sha256: digest, text, lines });
+  const processed = fileIndex + 1;
+  if (processed % 500 === 0 || processed === files.length) {
+    console.log(`[clean-source] progress ${processed}/${files.length} files; ${totalBytes} bytes; ${Date.now() - scanStartedAtMs}ms scan elapsed`);
+  }
 }
+const scanDurationMs = Date.now() - scanStartedAtMs;
 
 const duplicateGroups = [...hashGroups.entries()]
   .filter(([, paths]) => paths.length > 1)
@@ -234,8 +248,15 @@ const productionDangerousSignals = dangerousSignals.filter((row) =>
 const audit = {
   schemaVersion: "velmere.pass23.clean-source-audit.v1",
   generatedAt: new Date().toISOString(),
-  truthBoundary: "Every regular file outside generated .velmere pass diagnostics/gates/builds and the self-referential CLEAN_SAFE_VERIFICATION.json was byte-read and SHA-256 hashed. Text files were line-counted and scanned with conservative static heuristics. JavaScript-family syntax is verified separately with node --check. This is not semantic TypeScript, ESLint, Next build, browser, staging or LIVE evidence.",
+  truthBoundary: "Every regular file outside generated .velmere pass diagnostics/gates/builds and the self-referential CLEAN_SAFE_VERIFICATION.json was byte-read and SHA-256 hashed. Text files were line-counted and scanned with conservative static heuristics. Local import resolution uses an exact pre-index of the same enumerated regular-file set rather than repeated filesystem stats. JavaScript-family syntax is verified separately with node --check. This is not semantic TypeScript, ESLint, Next build, browser, staging or LIVE evidence.",
   runtime: { node: process.version, platform: process.platform, arch: process.arch },
+  timings: {
+    walkDurationMs,
+    scanDurationMs,
+    totalDurationMs: Date.now() - startedAtMs,
+    localImportResolutionChecks,
+    localImportResolutionMode: "INDEXED_REGULAR_FILE_SET"
+  },
   summary: {
     regularFilesRead: files.length,
     selfReferentialFilesExcluded: [...selfExcludedPaths],
@@ -278,5 +299,5 @@ const audit = {
 const absoluteOutput = path.resolve(root, outputPath);
 fs.mkdirSync(path.dirname(absoluteOutput), { recursive: true });
 fs.writeFileSync(absoluteOutput, `${JSON.stringify(audit, null, 2)}\n`, "utf8");
-console.log(JSON.stringify(audit.summary, null, 2));
+console.log(JSON.stringify({ ...audit.summary, timings: audit.timings }, null, 2));
 if (symlinks.length || jsonErrors.length || cleanUnresolved.length || cleanUndeclared.length || secretCandidates.length) process.exit(1);
