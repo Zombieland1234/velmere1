@@ -3,6 +3,14 @@ import path from "node:path";
 
 const TEXT_EXTENSIONS = new Set([".md", ".txt", ".json", ".ts", ".tsx", ".js", ".mjs", ".html"]);
 const SKIP_DIRS = new Set([".git", "node_modules", ".next", ".velmere", "artifacts"]);
+const RELEASE_TRUTH_POLICY_SOURCES = new Set([
+  "scripts/r11/redteam-p0-regressions.mjs",
+  "scripts/r11/verify-truth-scope-v2.mjs",
+]);
+
+export function isReleaseTruthPolicySource(relativePath) {
+  return RELEASE_TRUTH_POLICY_SOURCES.has(String(relativePath).replaceAll(path.sep, "/"));
+}
 
 export function walkTextFiles(root, relativeRoots) {
   const files = [];
@@ -205,7 +213,9 @@ export function runReleaseTruthScan(root) {
   for (const file of walkTextFiles(root, scanRoots)) {
     const relativePath = path.relative(root, file).replaceAll(path.sep, "/");
     // Policy/spec/test fixtures are allowed to contain prohibited phrases as examples.
-    if (/^(?:scripts\/r10\/|.*(?:test|spec|fixture).*)/i.test(relativePath)) continue;
+    // Exact R11 policy-source exclusions prevent detector self-matches without exempting
+    // customer/runtime surfaces or the rest of scripts/r11.
+    if (/^(?:scripts\/r10\/|.*(?:test|spec|fixture).*)/i.test(relativePath) || isReleaseTruthPolicySource(relativePath)) continue;
     const text = fs.readFileSync(file, "utf8");
     findings.push(...scanTextForReleaseTruth(relativePath, text));
   }

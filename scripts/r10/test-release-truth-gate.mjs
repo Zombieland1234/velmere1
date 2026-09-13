@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runReleaseTruthScan, scanTextForReleaseTruth } from "./release-truth-lib.mjs";
+import { isReleaseTruthPolicySource, runReleaseTruthScan, scanTextForReleaseTruth } from "./release-truth-lib.mjs";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "velmere-r10-truth-"));
 try {
   fs.mkdirSync(path.join(tmp, "docs", "audit"), { recursive: true });
   fs.mkdirSync(path.join(tmp, "dowody9"), { recursive: true });
-  fs.mkdirSync(path.join(tmp, "scripts"), { recursive: true });
+  fs.mkdirSync(path.join(tmp, "scripts", "r11"), { recursive: true });
   fs.mkdirSync(path.join(tmp, "components", "market-integrity"), { recursive: true });
   fs.mkdirSync(path.join(tmp, "config", "pass24"), { recursive: true });
 
@@ -29,6 +29,10 @@ try {
     '<div>Certyfikat Instytucjonalny RFC 3161 z unikalnym SHA-256 Hash</div>\n'
   );
   fs.writeFileSync(
+    path.join(tmp, "scripts", "r11", "verify-truth-scope-v2.mjs"),
+    'export const detectorPolicy = "RFC 3161 Trusted Authority certification";\n'
+  );
+  fs.writeFileSync(
     path.join(tmp, "dowody9", "123_real_markets_xau_advanced_pl.json"),
     JSON.stringify({
       target: "XAU Physical Gold Bullion Standard",
@@ -45,6 +49,14 @@ try {
     }, null, 2)
   );
 
+  assert.equal(isReleaseTruthPolicySource("scripts/r11/verify-truth-scope-v2.mjs"), true);
+  assert.equal(isReleaseTruthPolicySource("components/market-integrity/CustomerPanel.tsx"), false);
+  const policyLiteralFindings = scanTextForReleaseTruth(
+    "scripts/r11/verify-truth-scope-v2.mjs",
+    'export const detectorPolicy = "RFC 3161 Trusted Authority certification";',
+  );
+  assert(policyLiteralFindings.some((f) => f.id === "CLAIM_CUSTOMER_RFC3161_CERTIFICATION"));
+
   const findings = runReleaseTruthScan(tmp);
   const ids = new Set(findings.map((f) => f.id));
   assert(ids.has("BUILD_IGNORE_TYPESCRIPT_ERRORS"));
@@ -59,6 +71,8 @@ try {
   assert(ids.has("CLAIM_CUSTOMER_RFC3161_CERTIFICATION"));
   assert(ids.has("PSEUDO_ROOT_CA_LOCAL_SIGNER"));
   assert(ids.has("PLACEHOLDER_PROVENANCE_HASH"));
+  assert(!findings.some((f) => f.path === "scripts/r11/verify-truth-scope-v2.mjs"));
+  assert(findings.some((f) => f.path === "components/market-integrity/CustomerPanel.tsx" && f.id === "CLAIM_CUSTOMER_RFC3161_CERTIFICATION"));
 
   fs.writeFileSync(path.join(tmp, "next.config.mjs"), "export default { reactStrictMode: true };\n");
   fs.writeFileSync(path.join(tmp, "docs", "audit", "active.md"), "AUDIT CONTENT: INSUFFICIENT EVIDENCE\n");
