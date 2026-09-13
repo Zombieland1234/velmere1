@@ -71,3 +71,6 @@ fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, `${JSON.stringify(result, null, 2)}\n`, "utf8");
 console.log(JSON.stringify(result.summary, null, 2));
 if (!result.ok) { console.error(JSON.stringify(failed, null, 2)); process.exit(1); }
+
+await import("../pass19/test-semantic-payload-contract.mjs");
+await import("../pass19/test-semantic-payload-adapter-outputs.mjs");
