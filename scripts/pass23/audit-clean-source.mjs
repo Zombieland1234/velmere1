@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import "./audit-clean-source-v3.mjs";
+import "./audit-clean-source-v4.mjs";
