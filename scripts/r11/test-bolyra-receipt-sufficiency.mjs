@@ -168,6 +168,7 @@ const report = {
   schemaVersion: 'velmere.bolyra.claim-sufficiency-test.v1',
   implementation: {
     engineSchema: 'velmere.claim-sufficiency.v0.1',
+    commitSha: process.env.VELMERE_IMPLEMENTATION_SHA || null,
     engineSha256: sha256(fs.readFileSync(enginePath)),
     testSha256: sha256(fs.readFileSync(testPath)),
   },
