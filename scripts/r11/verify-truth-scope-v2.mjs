@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { scanTextForReleaseTruth, verifyBuildTruth, walkTextFiles } from "../r10/release-truth-lib.mjs";
 
@@ -103,6 +104,8 @@ export function runTruthScopeV2(root = ROOT) {
   const safeNegatedFindings = [];
   const scanned = [];
   const skippedFixtures = [];
+  const sourceSha = String(process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" })).trim().toLowerCase();
+  if (!/^[0-9a-f]{40}$/u.test(sourceSha)) throw new Error("truth_scope_source_sha_invalid");
 
   for (const file of walkTextFiles(root, SCAN_ROOTS)) {
     const rel = normalized(path.relative(root, file));
@@ -121,8 +124,8 @@ export function runTruthScopeV2(root = ROOT) {
   const p0 = findings.filter((f) => f.severity === "P0").length;
   const p1 = findings.filter((f) => f.severity === "P1").length;
   return {
-    schemaVersion: "velmere.r11.truth-scope.v3",
-    sourceSha: process.env.GITHUB_SHA || null,
+    schemaVersion: "velmere.r11.truth-scope.v4",
+    sourceSha,
     scanRoots: SCAN_ROOTS,
     scannedFiles: scanned.length,
     skippedFixtureFiles: skippedFixtures.length,
@@ -132,7 +135,7 @@ export function runTruthScopeV2(root = ROOT) {
     p1,
     passed: p0 === 0,
     truthBoundary:
-      "Release truth scope includes lib plus customer/runtime surfaces. Fixture exclusion is segment/basename-based. Explicit negated customer-safe statements are recorded separately and never counted as positive claims. Positive claim wording remains blocking.",
+      "Release truth scope includes lib plus customer/runtime surfaces. Fixture exclusion is segment/basename-based. Explicit negated customer-safe statements are recorded separately and never counted as positive claims. Positive claim wording remains blocking. sourceSha binds this receipt to the exact executed Git subject.",
   };
 }
 
@@ -141,8 +144,9 @@ function main() {
   const output = process.argv.includes("--output")
     ? process.argv[process.argv.indexOf("--output") + 1]
     : "artifacts/r11/TRUTH_SCOPE_V2.json";
-  fs.mkdirSync(path.dirname(path.join(ROOT, output)), { recursive: true });
-  fs.writeFileSync(path.join(ROOT, output), `${JSON.stringify(receipt, null, 2)}\n`);
+  const outputPath = path.isAbsolute(output) ? output : path.join(ROOT, output);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, `${JSON.stringify(receipt, null, 2)}\n`);
   console.log(JSON.stringify(receipt, null, 2));
   if (!receipt.passed) process.exit(1);
 }
