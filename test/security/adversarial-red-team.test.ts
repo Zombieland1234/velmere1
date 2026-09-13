@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { evaluateAuditValidity } from "../../lib/security/audit-validity-engine";
 import { isFieldApplicableToAsset, diagnoseFieldCompleteness } from "../../lib/data/completeness-root-cause-engine";
 import { verifyQuorumConsensus } from "../../lib/data/multi-provider-failover";
 
 describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
-  // P1: Impatient VIP (Rapid re-clicks / Double spend / Invariant checks)
   describe("Persona 1: Impatient VIP & Double-Click Invariance", () => {
     it("should deterministically produce identical audit validity hashes on repeated rapid calls", () => {
       const input = {
@@ -12,15 +12,13 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         bytecodeHashAtAssessment: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
         bytecodeHashCurrent: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
       };
-
       const eval1 = evaluateAuditValidity(input);
       const eval2 = evaluateAuditValidity(input);
-      expect(eval1.validity).toBe(eval2.validity);
-      expect(eval1.validity).toBe("CURRENT");
+      assert.equal(eval1.validity, eval2.validity);
+      assert.equal(eval1.validity, "CURRENT");
     });
   });
 
-  // P2: Script Kiddie (Boundary & Fuzzing Invariance)
   describe("Persona 2: Script Kiddie & Payload Fuzzing", () => {
     it("should reject malicious or corrupted bytecode mutations immediately", () => {
       const input = {
@@ -28,25 +26,20 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         bytecodeHashAtAssessment: "0x1111111111111111111111111111111111111111111111111111111111111111",
         bytecodeHashCurrent: "0x2222222222222222222222222222222222222222222222222222222222222222",
       };
-
       const auditEval = evaluateAuditValidity(input);
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("IMPLEMENTATION_UPGRADED");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "IMPLEMENTATION_UPGRADED");
     });
   });
 
-  // P3: Sophisticated Attacker (HMAC & Consensus Manipulation)
   describe("Persona 3: Sophisticated Attacker & Divergence Exploit", () => {
     it("should detect and reject cross-provider divergence exceeding 2%", () => {
-      const coinbasePrice = 64200.0;
-      const manipulatedPrice = 66000.0; // 2.8% divergence
-      const quorum = verifyQuorumConsensus(coinbasePrice, manipulatedPrice, 0.02);
-      expect(quorum.consensus).toBe(false);
-      expect(quorum.divergencePct).toBeGreaterThan(0.02);
+      const quorum = verifyQuorumConsensus(64200.0, 66000.0, 0.02);
+      assert.equal(quorum.consensus, false);
+      assert.ok(quorum.divergencePct > 0.02);
     });
   });
 
-  // P4: Compliance Auditor (Data Integrity & Ground Truth)
   describe("Persona 4: Compliance Auditor & Truth Over Coverage", () => {
     it("should never fabricate missing data and correctly flag genuinely unavailable fields", () => {
       const diagnosis = diagnoseFieldCompleteness({
@@ -60,37 +53,31 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
           { provider: "InsurAce", timestamp: new Date().toISOString(), status: "FAILED" },
         ],
       });
-
-      expect(diagnosis.state).toBe("GENUINELY_UNAVAILABLE");
-      expect(diagnosis.resolvedValue).toBeNull();
-      expect(diagnosis.attempts.length).toBe(2);
+      assert.equal(diagnosis.state, "GENUINELY_UNAVAILABLE");
+      assert.equal(diagnosis.resolvedValue, null);
+      assert.equal(diagnosis.attempts.length, 2);
     });
   });
 
-  // P5: Intermittent Connectivity & Stale Cache Protection
   describe("Persona 5: Offline User & Freshness Enforcement", () => {
     it("should mark values exceeding freshness tolerance as STALE_SNAPSHOT", () => {
-      const staleTimestamp = new Date(Date.now() - 3600 * 1000).toISOString(); // 1 hour old
       const diagnosis = diagnoseFieldCompleteness({
         fieldKey: "spot_price",
         fieldLabel: "Spot Price",
         category: "market",
         assetClass: "market_asset",
         value: 100.5,
-        observedAt: staleTimestamp,
-        maxFreshnessSeconds: 300, // 5 min tolerance
+        observedAt: new Date(Date.now() - 3600 * 1000).toISOString(),
+        maxFreshnessSeconds: 300,
       });
-
-      expect(diagnosis.state).toBe("STALE_SNAPSHOT");
+      assert.equal(diagnosis.state, "STALE_SNAPSHOT");
     });
   });
 
-  // P6: Non-Contract Asset Architecture Integrity
   describe("Persona 6: Native Asset Architectural Verification", () => {
     it("should exclude smart contract fields for native chains without flagging them as missing", () => {
       const applicability = isFieldApplicableToAsset("is_proxy", "native_chain");
-      expect(applicability.isApplicable).toBe(false);
-
+      assert.equal(applicability.isApplicable, false);
       const diagnosis = diagnoseFieldCompleteness({
         fieldKey: "is_proxy",
         fieldLabel: "Upgradeable Proxy Contract",
@@ -98,25 +85,21 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         assetClass: "native_chain",
         value: null,
       });
-
-      expect(diagnosis.state).toBe("UNSUPPORTED_BY_CONTRACT");
+      assert.equal(diagnosis.state, "UNSUPPORTED_BY_CONTRACT");
     });
   });
 
-  // P7: Invalidation Lifecycle (90-Day Freshness Expiration)
   describe("Persona 7: Audit Freshness Expiry", () => {
     it("should invalidate audit snapshots older than 90 days", () => {
-      const oldDate = new Date(Date.now() - 95 * 86400 * 1000).toISOString();
       const auditEval = evaluateAuditValidity({
-        assessmentDate: oldDate,
+        assessmentDate: new Date(Date.now() - 95 * 86400 * 1000).toISOString(),
         maxValidityDays: 90,
       });
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("FRESHNESS_WINDOW_ELAPSED");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "FRESHNESS_WINDOW_ELAPSED");
     });
   });
 
-  // P8: Rate Limit Throttling Detection
   describe("Persona 8: Upstream Rate Limit Protection", () => {
     it("should classify HTTP 429 response as RATE_LIMIT_THROTTLED", () => {
       const diagnosis = diagnoseFieldCompleteness({
@@ -125,53 +108,45 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         category: "liquidity",
         assetClass: "market_asset",
         value: null,
-        attempts: [
-          {
-            provider: "KrakenL2",
-            timestamp: new Date().toISOString(),
-            status: "RATE_LIMITED",
-            httpStatus: 429,
-          },
-        ],
+        attempts: [{
+          provider: "KrakenL2",
+          timestamp: new Date().toISOString(),
+          status: "RATE_LIMITED",
+          httpStatus: 429,
+        }],
       });
-
-      expect(diagnosis.state).toBe("RATE_LIMIT_THROTTLED");
+      assert.equal(diagnosis.state, "RATE_LIMIT_THROTTLED");
     });
   });
 
-  // P9: Dependency CVE Disclosure Invalidation
   describe("Persona 9: Dependency Vulnerability Invalidation", () => {
     it("should mark audit outdated when high/critical dependency CVE is disclosed", () => {
       const auditEval = evaluateAuditValidity({
         assessmentDate: new Date().toISOString(),
         knownCVEs: true,
       });
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("CVE_DEPENDENCY_DISCLOSED");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "CVE_DEPENDENCY_DISCLOSED");
     });
   });
 
-  // P10: Quorum Tolerance on Matching Observations
   describe("Persona 10: Multi-Venue Quorum Agreement", () => {
     it("should pass consensus when providers report values within 1.5%", () => {
-      const venueA = 100.0;
-      const venueB = 101.2; // 1.19% difference
-      const quorum = verifyQuorumConsensus(venueA, venueB, 0.02);
-      expect(quorum.consensus).toBe(true);
-      expect(quorum.divergencePct).toBeLessThan(0.02);
+      const quorum = verifyQuorumConsensus(100.0, 101.2, 0.02);
+      assert.equal(quorum.consensus, true);
+      assert.ok(quorum.divergencePct < 0.02);
     });
   });
 
-  // P11: Forensic Tamper Detection
   describe("Persona 11: Forensic State Tampering Resistance", () => {
     it("should detect supersession by newer audit snapshot", () => {
       const auditEval = evaluateAuditValidity({
         assessmentDate: new Date().toISOString(),
         supersededBySnapshotId: "SNAP_V2_AUDIT",
       });
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("METHODOLOGY_SUPERSEDED");
-      expect(auditEval.supersededBy).toBe("SNAP_V2_AUDIT");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "METHODOLOGY_SUPERSEDED");
+      assert.equal(auditEval.supersededBy, "SNAP_V2_AUDIT");
     });
   });
 });
