@@ -46,14 +46,6 @@ jobs:
       - name: Install exact lockfile for PASS15 AST reparse
         run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Capture generated PASS24 lockfile manifest without changing gate input
-        run: |
-          node scripts/pass24/build-runtime-requirements.mjs
-          mkdir -p .velmere/pass24-diagnostics
-          cp config/pass24/lockfile-target-manifest.json .velmere/pass24-diagnostics/generated-lockfile-target-manifest.json
-          git checkout -- config/pass24/lockfile-target-manifest.json
-          git diff --exit-code -- config/pass24/lockfile-target-manifest.json
-
       - name: Run PASS26 quick contracts
         run: node scripts/pass26/run-gate.mjs --level quick
 

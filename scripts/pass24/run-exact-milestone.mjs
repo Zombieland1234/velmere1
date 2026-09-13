@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { DIAGNOSTICS_DIR, ROOT, readJson, REQUIREMENTS_PATH, run, sourceTreeDigest, verifyCacheCoverage, writeJson } from "./runtime-lib.mjs";
+import { DIAGNOSTICS_DIR, ROOT, buildRequirementsDocument, run, sourceTreeDigest, verifyCacheCoverage, writeJson } from "./runtime-lib.mjs";
 
 if (!process.argv.includes("--allow-heavy")) {
   console.error("PASS24 exact milestone is blocked without --allow-heavy.");
@@ -21,9 +21,9 @@ if (runtimeCheck.status !== 0) {
   process.stderr.write(runtimeCheck.stderr ?? "");
   process.exit(1);
 }
-const requirements = readJson(REQUIREMENTS_PATH);
+const requirements = buildRequirementsDocument();
 const cache = verifyCacheCoverage(cacheRoot, requirements);
-writeJson(path.join(DIAGNOSTICS_DIR, "cache-coverage.json"), { ...cache, status: cache.ok ? "PASS_EXACT_CACHE" : "BLOCKED_INCOMPLETE_CACHE" });
+writeJson(path.join(DIAGNOSTICS_DIR, "cache-coverage.json"), { ...cache, requirementsSource: "CURRENT_PACKAGE_LOCK_DETERMINISTIC_GENERATION", status: cache.ok ? "PASS_EXACT_CACHE" : "BLOCKED_INCOMPLETE_CACHE" });
 if (!cache.ok) {
   console.error(`PASS24 milestone blocked: cache ${cache.passed}/${cache.required}.`);
   process.exit(1);
@@ -89,11 +89,12 @@ const receipt = {
   status: ok ? "PASS_EXACT_RUNTIME_TYPESCRIPT_LINT_TEST" : "FAIL_EXACT_MILESTONE",
   runtime: { path: path.relative(ROOT, runtime).replaceAll(path.sep, "/"), node: "v24.18.0", npm: "11.16.0" },
   cache: { root: path.relative(ROOT, cacheRoot).replaceAll(path.sep, "/"), passed: cache.passed, required: cache.required },
+  requirementsSource: "CURRENT_PACKAGE_LOCK_DETERMINISTIC_GENERATION_BOUND_BY_COMMITTED_SEAL",
   sourceBefore: before,
   sourceAfter: after,
   sourceImmutable,
   commands: results,
-  truthBoundary: "This receipt covers install, dependency tree, semantic TypeScript, ESLint and npm test only. It does not prove Webpack, Turbopack, browser, PDF, staging or LIVE."
+  truthBoundary: "This receipt covers install, dependency tree, semantic TypeScript, ESLint and npm test only. Requirements are regenerated from the exact package-lock and bound by the PASS24 seal. It does not prove Webpack, Turbopack, browser, PDF, staging or LIVE."
 };
 writeJson(path.join(DIAGNOSTICS_DIR, "exact-milestone.json"), receipt);
 if (!ok) process.exit(1);
