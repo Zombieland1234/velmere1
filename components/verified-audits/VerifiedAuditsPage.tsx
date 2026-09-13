@@ -450,7 +450,7 @@ export default function VerifiedAuditsPage({ locale }: { locale: string }) {
         <div className="border-b border-white/[0.08] pb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#c5a059]/30 bg-[#c5a059]/10 px-3 py-1 text-xs font-semibold text-[#e6ca85]">
             <Fingerprint className="h-3.5 w-3.5 text-[#c5a059]" />
-            <span>DYNAMIC IMMUTABILITY ENGINE — ON-CHAIN VERIFICATION REGISTRY</span>
+            <span>DYNAMIC IMMUTABILITY ENGINE — NETWORK VERIFICATION REGISTRY</span>
           </div>
 
           <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
@@ -461,7 +461,7 @@ export default function VerifiedAuditsPage({ locale }: { locale: string }) {
             {isEn ? (
               <>
                 In Web3, a static PDF audit issued months ago provides zero security if an unverified proxy upgrade
-                mutates on-chain bytecode. Our Dynamic Immutability Registry monitors every verified contract 24/7:{" "}
+                mutates deployed bytecode. Our Dynamic Immutability Registry monitors every verified contract 24/7:{" "}
                 <strong className="text-white font-semibold">
                   upon detecting unauthorized bytecode alterations, the green verified badge (✓) instantly flips into a defensive red alert (✗)
                 </strong>.
@@ -511,8 +511,8 @@ export default function VerifiedAuditsPage({ locale }: { locale: string }) {
                 </h2>
                 <p className="mt-0.5 text-xs text-white/50">
                   {isEn
-                    ? "Dynamic badge engine: green check flips to defensive red 'X' upon unauthorized on-chain mutation."
-                    : "Dynamiczny system badgy: zielony ptaszek zmienia się w czerwony 'X' przy modyfikacji on-chain."}
+                    ? "Dynamic badge engine: green check flips to defensive red 'X' upon unauthorized deployed-bytecode mutation."
+                    : "Dynamiczny system badgy: zielony ptaszek zmienia się w czerwony 'X' przy modyfikacji wdrożonego kodu."}
                 </p>
               </div>
 
@@ -651,7 +651,7 @@ export default function VerifiedAuditsPage({ locale }: { locale: string }) {
                             </p>
                           </div>
 
-                          {/* Interactive toggle to simulate live on-chain change */}
+                          {/* Interactive toggle to simulate live deployed-bytecode change */}
                           <button
                             data-testid="simulate-tamper-btn"
                             onClick={() => toggleTamper(audit.id)}
@@ -662,7 +662,7 @@ export default function VerifiedAuditsPage({ locale }: { locale: string }) {
                             }`}
                             title={
                               isEn
-                                ? "Click to simulate real-time badge flipping (✓ <-> ✗) upon on-chain mutation"
+                                ? "Click to simulate real-time badge flipping (✓ <-> ✗) upon deployed-bytecode mutation"
                                 : "Kliknij, aby przetestować automatyczną zamianę odznaki (ptaszek <-> X) przy wykryciu modyfikacji"
                             }
                           >
