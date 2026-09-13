@@ -45,6 +45,15 @@ jobs:
           test "$(cat artifacts/experiments/bolyra-cli-e2e/bolyra-source-sha.txt)" = "${BOLYRA_SHA}"
           sha256sum _external/bolyra/integrations/cli/test/receipt-verify-chain.test.ts > artifacts/experiments/bolyra-cli-e2e/bolyra-cli-chain-test.sha256
 
+      - name: Build local Bolyra receipts package required by CLI Jest mapping
+        working-directory: _external/bolyra/integrations/receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -f dist/index.js
+
       - name: Install Bolyra CLI test dependencies
         working-directory: _external/bolyra/integrations/cli
         run: npm ci
@@ -112,40 +121,18 @@ jobs:
               boundary: 'Official Bolyra CLI path over signed receipt-chain JSONL is upstream machine evidence. Velmere performs downstream claim-sufficiency evaluation.'
             },
             evidence: [
-              {
-                id: 'official_cli_truncated_log_passes_without_external_expectation',
-                state: passState(upstream.assertions.truncatedLogPassesWithoutExternalExpectation),
-                provenance: 'Pinned official Bolyra receipt verify-chain CLI test result.'
-              },
-              {
-                id: 'official_cli_expected_count_detects_tail_truncation',
-                state: passState(upstream.assertions.truncatedLogFailsWithExpectedCount),
-                provenance: 'Pinned official Bolyra receipt verify-chain --expect-count test result.'
-              },
-              {
-                id: 'official_cli_expected_head_detects_tail_truncation',
-                state: passState(upstream.assertions.truncatedLogFailsWithExpectedHeadHash),
-                provenance: 'Pinned official Bolyra receipt verify-chain --expect-head test result.'
-              },
-              {
-                id: 'trusted_expected_count_for_presented_checkpoint',
-                state: 'MISSING',
-                provenance: 'The evaluated no-expectation presentation supplies no independently trusted expectedCount.'
-              },
-              {
-                id: 'trusted_expected_head_hash_for_presented_checkpoint',
-                state: 'MISSING',
-                provenance: 'The evaluated no-expectation presentation supplies no independently trusted expectedHeadHash/checkpoint anchor.'
-              }
+              { id: 'official_cli_truncated_log_passes_without_external_expectation', state: passState(upstream.assertions.truncatedLogPassesWithoutExternalExpectation), provenance: 'Pinned official Bolyra receipt verify-chain CLI test result.' },
+              { id: 'official_cli_expected_count_detects_tail_truncation', state: passState(upstream.assertions.truncatedLogFailsWithExpectedCount), provenance: 'Pinned official Bolyra receipt verify-chain --expect-count test result.' },
+              { id: 'official_cli_expected_head_detects_tail_truncation', state: passState(upstream.assertions.truncatedLogFailsWithExpectedHeadHash), provenance: 'Pinned official Bolyra receipt verify-chain --expect-head test result.' },
+              { id: 'trusted_expected_count_for_presented_checkpoint', state: 'MISSING', provenance: 'The evaluated no-expectation presentation supplies no independently trusted expectedCount.' },
+              { id: 'trusted_expected_head_hash_for_presented_checkpoint', state: 'MISSING', provenance: 'The evaluated no-expectation presentation supplies no independently trusted expectedHeadHash/checkpoint anchor.' }
             ],
             claims: [
               {
                 id: 'claim-truncated-prefix-can-pass-cli-internal-verification',
                 text: 'A tail-truncated signed receipt-chain prefix can PASS Bolyra receipt verify-chain when no external tail expectation is supplied.',
                 scopeCovered: true,
-                requirements: [
-                  { id: 'official-cli-observation', mode: 'all', critical: true, evidence: ['official_cli_truncated_log_passes_without_external_expectation'] }
-                ]
+                requirements: [{ id: 'official-cli-observation', mode: 'all', critical: true, evidence: ['official_cli_truncated_log_passes_without_external_expectation'] }]
               },
               {
                 id: 'claim-presented-log-is-complete-through-checkpoint',
