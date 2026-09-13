@@ -74,3 +74,4 @@ if (!result.ok) { console.error(JSON.stringify(failed, null, 2)); process.exit(1
 
 await import("../pass19/test-semantic-payload-contract.mjs");
 await import("../pass19/test-semantic-payload-adapter-outputs.mjs");
+await import("../pass12/verify-final-180-freeze.mjs");
