@@ -14,28 +14,65 @@ async function loadTypeScript() {
   for (const candidate of candidates) if (fs.existsSync(candidate)) return import(pathToFileURL(candidate).href);
   throw new Error('TypeScript parser unavailable; exact dependencies are required for semantic proof.');
 }
-const mod=await loadTypeScript(); const ts=mod.default??mod;
+
+const mod=await loadTypeScript();
+const ts=mod.default??mod;
 const extensions=new Set(['.ts','.tsx','.mts','.cts']);
-const excludedDirs=new Set(['node_modules','.next','.git','.velmere','artifacts','coverage','dist','out','build']);
-const files=[];
-function walk(dir){
-  for(const entry of fs.readdirSync(dir,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))){
-    const relativeParent=path.relative(root,dir).replaceAll(path.sep,'/');
-    if(entry.isDirectory()&&(relativeParent===''||relativeParent==='.')&&excludedDirs.has(entry.name))continue;
-    const full=path.join(dir,entry.name);
-    if(entry.isDirectory())walk(full);
-    else if(entry.isFile()&&extensions.has(path.extname(entry.name)))files.push(full);
+const excludedTopLevel=new Set(['node_modules','.next','.git','.velmere','artifacts','coverage','dist','out','build']);
+
+// Scan the immutable Git subject, not the mutable working directory. The old
+// recursive filesystem walk could ingest npm/generated files created by earlier
+// gate steps and then misclassify those untracked files as release source.
+const tracked = execFileSync('git',['ls-files','-z'],{cwd:root,encoding:'utf8',maxBuffer:64*1024*1024})
+  .split('\0')
+  .filter(Boolean)
+  .map((relative)=>relative.replaceAll('\\','/'))
+  .filter((relative)=>extensions.has(path.extname(relative)))
+  .filter((relative)=>!excludedTopLevel.has(relative.split('/')[0]))
+  .filter((relative)=>fs.existsSync(path.join(root,relative)))
+  .sort();
+
+const errors=[];
+const digest=createHash('sha256');
+for(const relative of tracked){
+  const file=path.join(root,relative);
+  const text=fs.readFileSync(file,'utf8');
+  digest.update(relative).update('\0').update(text).update('\0');
+  const kind=relative.endsWith('.tsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS;
+  const source=ts.createSourceFile(relative,text,ts.ScriptTarget.Latest,true,kind);
+  for(const diagnostic of source.parseDiagnostics??[]){
+    const p=source.getLineAndCharacterOfPosition(diagnostic.start??0);
+    errors.push({
+      file:relative,
+      line:p.line+1,
+      column:p.character+1,
+      code:diagnostic.code,
+      message:ts.flattenDiagnosticMessageText(diagnostic.messageText,' ')
+    });
   }
 }
-walk(root); files.sort();
-const errors=[]; const digest=createHash('sha256');
-for(const file of files){
- const text=fs.readFileSync(file,'utf8'); const relative=path.relative(root,file).replaceAll(path.sep,'/');
- digest.update(relative).update('\0').update(text).update('\0');
- const kind=file.endsWith('.tsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS;
- const source=ts.createSourceFile(relative,text,ts.ScriptTarget.Latest,true,kind);
- for(const diagnostic of source.parseDiagnostics??[]){const p=source.getLineAndCharacterOfPosition(diagnostic.start??0); errors.push({file:relative,line:p.line+1,column:p.character+1,code:diagnostic.code,message:ts.flattenDiagnosticMessageText(diagnostic.messageText,' ')});}
-}
-const result={schemaVersion:'velmere.pass23.typescript-syntax-scan.v1',generatedAt:'2026-07-20T16:00:00.000Z',typescriptVersion:ts.version,files:files.length,parseErrors:errors.length,errors,sourceSha256:digest.digest('hex'),truthBoundary:'Deterministic syntax-only scan of manifestable clean-source TypeScript files. Excludes generated .velmere outputs; not semantic typecheck, lint, dependency resolution or build proof.'};
-fs.writeFileSync(path.join(root,'config/pass23/typescript-syntax-scan.json'),`${JSON.stringify(result,null,2)}\n`,'utf8');
-console.log(JSON.stringify({typescriptVersion:result.typescriptVersion,files:result.files,parseErrors:result.parseErrors},null,2)); if(errors.length)process.exit(1);
+
+const result={
+  schemaVersion:'velmere.pass23.typescript-syntax-scan.v2',
+  generatedAt:new Date().toISOString(),
+  scope:'GIT_TRACKED_TYPESCRIPT_RELEASE_SOURCE',
+  typescriptVersion:ts.version,
+  files:tracked.length,
+  parseErrors:errors.length,
+  errors,
+  sourceSha256:digest.digest('hex'),
+  truthBoundary:'Deterministic syntax-only scan of Git-tracked TypeScript-family release source. It intentionally ignores untracked/generated working-tree files created by npm/build/gate steps. This is not semantic typecheck, lint, dependency resolution or build proof.'
+};
+
+const diagnosticsDir=path.join(root,'.velmere','pass23-diagnostics');
+fs.mkdirSync(diagnosticsDir,{recursive:true});
+fs.writeFileSync(path.join(diagnosticsDir,'typescript-syntax-scan.json'),`${JSON.stringify(result,null,2)}\n`,'utf8');
+console.log(JSON.stringify({
+  schemaVersion:result.schemaVersion,
+  scope:result.scope,
+  typescriptVersion:result.typescriptVersion,
+  files:result.files,
+  parseErrors:result.parseErrors,
+  errors:result.errors
+},null,2));
+if(errors.length)process.exit(1);
