@@ -1,0 +1,65 @@
+{
+  "caseId": "bolyra-receipt-chain-tail-truncation-v1",
+  "subject": {
+    "vendor": "Bolyra",
+    "artifact": "@bolyra/receipts hash-chained log model",
+    "publicSource": "integrations/receipts/README.md",
+    "publicSourceBlobSha": "dd1e40ee46e4de0bb0b7fa9349ca15a78b7b0e46",
+    "publicSourceRef": "bolyra/bolyra@main",
+    "testBoundary": "synthetic claim-sufficiency case using Bolyra's documented verifier semantics; Velmere does not independently rerun Bolyra cryptography in this prototype"
+  },
+  "evidence": [
+    {
+      "id": "presented_chain_internal_verification_ok",
+      "state": "VERIFIED_TRUE",
+      "provenance": "Synthetic upstream verifier outcome used as an input to the Velmere sufficiency test. This v0 prototype evaluates what may be claimed from the outcome; it does not reimplement or independently attest Bolyra signature verification."
+    },
+    {
+      "id": "trusted_expected_count_matches",
+      "state": "MISSING",
+      "provenance": "No independently trusted expected receipt count is supplied in the test case."
+    },
+    {
+      "id": "trusted_expected_head_hash_matches",
+      "state": "MISSING",
+      "provenance": "No independently trusted expected terminal/head receipt hash or anchored checkpoint is supplied in the test case."
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-presented-prefix-internally-valid",
+      "text": "The presented receipts form an internally valid receipt-chain prefix under the supplied upstream verification outcome.",
+      "scopeCovered": true,
+      "requirements": [
+        {
+          "id": "internal-chain-validity",
+          "mode": "all",
+          "critical": true,
+          "evidence": ["presented_chain_internal_verification_ok"]
+        }
+      ]
+    },
+    {
+      "id": "claim-complete-through-checkpoint",
+      "text": "The presented receipts are the complete receipt history through the claimed checkpoint.",
+      "scopeCovered": true,
+      "requirements": [
+        {
+          "id": "internal-chain-validity",
+          "mode": "all",
+          "critical": true,
+          "evidence": ["presented_chain_internal_verification_ok"]
+        },
+        {
+          "id": "external-tail-completeness-anchor",
+          "mode": "any",
+          "critical": true,
+          "evidence": [
+            "trusted_expected_count_matches",
+            "trusted_expected_head_hash_matches"
+          ]
+        }
+      ]
+    }
+  ]
+}
