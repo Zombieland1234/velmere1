@@ -1,0 +1,66 @@
+name: PASS26 Visual Contract v3 Controlled Capture
+
+on:
+  push:
+    branches: [r11b-pass26-visual-contract-v3]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup exact Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Install exact lockfile
+        run: npm ci --ignore-scripts
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Capture active-surface visual contract
+        shell: bash
+        run: |
+          mkdir -p artifacts/pass26/visual-contract-v3
+          npx next start -H 127.0.0.1 -p 3110 > artifacts/pass26/visual-contract-v3/NEXT_START.log 2>&1 &
+          echo $! > /tmp/pass26-v3-next.pid
+          cleanup(){ kill "$(cat /tmp/pass26-v3-next.pid)" 2>/dev/null || true; }
+          trap cleanup EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            code="$(curl -sS -o /tmp/pass26-v3-home.html -w '%{http_code}' http://127.0.0.1:3110/en/real-markets || true)"
+            case "$code" in 200|307|308) ready=1; break;; esac
+            sleep 1
+          done
+          if [ "$ready" != "1" ]; then
+            cat artifacts/pass26/visual-contract-v3/NEXT_START.log
+            exit 1
+          fi
+          VELMERE_BASE_URL=http://127.0.0.1:3110 \
+          VELMERE_EVIDENCE_DIR=artifacts/pass26/visual-contract-v3 \
+          node scripts/pass26/capture-visual-contract-v3.mjs
+          trap - EXIT
+          cleanup
+      - name: Upload visual contract evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pass26-visual-contract-v3-${{ github.sha }}
+          retention-days: 30
+          if-no-files-found: error
+          path: artifacts/pass26/visual-contract-v3/**
