@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -8,6 +9,9 @@ const outputIndex = args.indexOf("--output");
 const outputPath = outputIndex >= 0 && args[outputIndex + 1]
   ? args[outputIndex + 1]
   : "/tmp/r11b/PAID_BROWSER_AUTHORITY.json";
+
+const sourceSha = (process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" })).trim();
+assert.match(sourceSha, /^[a-f0-9]{40}$/u, "source SHA must be an exact 40-character Git commit");
 
 const callbackPath = "app/[locale]/checkout/stripe-popup-callback/page.tsx";
 const auditOpenerPath = "components/security/SecurityAuditsCleanPage.tsx";
@@ -64,6 +68,7 @@ assert.match(checkoutRoute, /503/);
 
 const receipt = {
   schemaVersion: "velmere.r11.paid-browser-authority.v2",
+  sourceSha,
   evidenceClass: "CURRENT_GIT_STATIC_AUTHORITY_BOUNDARY",
   callbackAuthoritative: false,
   callbackEntitlementGranted: false,
