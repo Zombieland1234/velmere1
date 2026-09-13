@@ -18,10 +18,10 @@ concurrency:
 
 jobs:
   dependency-review:
-    name: Dependency diff policy
+    name: Dependency policy and fail-closed lockfile audit
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -31,7 +31,9 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Reject newly introduced high or critical dependency risk
+      - name: Review dependency diff when GitHub Dependency Graph is available
+        id: dependency_review
+        continue-on-error: true
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
@@ -39,6 +41,49 @@ jobs:
           show-openssf-scorecard: true
           warn-on-openssf-scorecard-level: 3
           retry-on-snapshot-warnings: true
+
+      - name: Set up exact Node for authoritative full-lockfile fallback
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+
+      - name: Verify fail-closed audit parser adversarial cases
+        run: |
+          test "$(node --version)" = "v24.18.0"
+          test "$(npm --version)" = "11.16.0"
+          node --check scripts/pass4992/verify-npm-audit.mjs
+          node --check scripts/pass4992/test-npm-audit-verifier.mjs
+          node scripts/pass4992/test-npm-audit-verifier.mjs
+
+      - name: Enforce zero High/Critical across the current npm lockfile
+        env:
+          DEPENDENCY_REVIEW_OUTCOME: ${{ steps.dependency_review.outcome }}
+        run: |
+          mkdir -p artifacts/pass4992
+          set +e
+          npm audit --json > artifacts/pass4992/PASS4992_NPM_AUDIT_RAW.json 2> artifacts/pass4992/PASS4992_NPM_AUDIT_STDERR.txt
+          audit_exit=$?
+          set -e
+          printf '%s\n' "$audit_exit" > artifacts/pass4992/PASS4992_NPM_AUDIT_EXIT_CODE.txt
+          node scripts/pass4992/verify-npm-audit.mjs \
+            --audit artifacts/pass4992/PASS4992_NPM_AUDIT_RAW.json \
+            --exit-code-file artifacts/pass4992/PASS4992_NPM_AUDIT_EXIT_CODE.txt \
+            --dependency-review-outcome "$DEPENDENCY_REVIEW_OUTCOME" \
+            --output artifacts/pass4992/PASS4992_NPM_AUDIT_VERIFICATION.json
+
+      - name: Upload dependency policy evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pass4992-dependency-policy-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            artifacts/pass4992/PASS4992_NPM_AUDIT_RAW.json
+            artifacts/pass4992/PASS4992_NPM_AUDIT_STDERR.txt
+            artifacts/pass4992/PASS4992_NPM_AUDIT_EXIT_CODE.txt
+            artifacts/pass4992/PASS4992_NPM_AUDIT_VERIFICATION.json
 
   codeql:
     name: CodeQL (${{ matrix.language }})
