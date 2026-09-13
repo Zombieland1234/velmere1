@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "velmere.pass25.prebuild-baseline.v1",
+  "baselineId": "R11B_POST_CONSOLIDATION_NO_GROWTH_20260913",
+  "subjectSha": "52495d29b1b6a31a5c17154dbae41aa5d77f2a67",
+  "evidence": {
+    "workflow": "PASS26 Lightweight Quality Gate",
+    "runId": 34786770564,
+    "jobId": 103803561058,
+    "event": "push",
+    "observationStatus": "GRAPH_METRICS_OBSERVED_EXACT_HEAD_GATE_FAILED_ONLY_ON_LEGACY_GRAPH_MAXIMA"
+  },
+  "profiledSourceScope": [
+    "app",
+    "components",
+    "lib",
+    "store",
+    "i18n.ts",
+    "proxy.ts",
+    "next.config.mjs"
+  ],
+  "observed": {
+    "summary": {
+      "analyzedFiles": 2143,
+      "analyzedBytes": 26939258,
+      "entrypoints": 174,
+      "apiRoutes": 98,
+      "pageEntries": 76,
+      "serverRoutesImportingClientCode": 0,
+      "unresolvedLocalImports": 0,
+      "cssFiles": 28,
+      "cssBytes": 2990859
+    },
+    "topEntrypoint": {
+      "entry": "app/api/market-integrity/[operation]/route.ts",
+      "transitiveFiles": 623,
+      "transitiveBytes": 8359830,
+      "dynamicImports": 107,
+      "clientBoundaryFiles": 0
+    }
+  },
+  "historicalMeasuredBaseline": {
+    "path": "config/pass14/build-graph-baseline.json",
+    "generatedAt": "2026-07-20T05:50:23.697Z",
+    "summary": {
+      "analyzedFiles": 1449,
+      "analyzedBytes": 19488067,
+      "entrypoints": 303,
+      "apiRoutes": 237,
+      "pageEntries": 66,
+      "serverRoutesImportingClientCode": 0,
+      "unresolvedLocalImports": 0,
+      "cssFiles": 11,
+      "cssBytes": 3313284
+    },
+    "topEntrypointTransitiveBytes": 6987098
+  },
+  "routeConsolidation": {
+    "path": "config/pass15/route-dispatch-manifest.json",
+    "oldEntrypointsRemoved": 160,
+    "newEntrypointsAdded": 5,
+    "netEntrypointReduction": 155,
+    "routesPreserved": 160
+  },
+  "decision": {
+    "policy": "NO_GROWTH_FROM_EXACT_HEAD_OBSERVED_POST_CONSOLIDATION_GRAPH",
+    "entrypointMaximum": 174,
+    "apiRouteMaximum": 98,
+    "topEntrypointTransitiveBytesMaximum": 8359830,
+    "rationale": "The legacy 148/82/7500000 maxima match neither the measured historical graph (303/237) nor the exact-head post-consolidation graph. PASS15 proves 160 public routes are preserved through five lazy dispatchers with a net 155-entrypoint reduction. This rebaseline grants zero headroom: the three affected maxima equal the exact observed graph, so any future growth fails closed."
+  },
+  "truthBoundary": "This receipt authorizes only a static no-growth graph baseline for PASS25. The exact-head run that supplied the graph metrics still failed the legacy maxima, so this receipt is not a green release receipt. It grants no production-build, browser, provider, human-review, staging, LIVE, payment, PDF/raster, legal or commercial credit."
+}

@@ -1,12 +1,13 @@
 {
-  "schemaVersion": "velmere.pass25.prebuild-budget.v2",
+  "schemaVersion": "velmere.pass25.prebuild-budget.v3",
   "nextVersion": "16.3.5",
+  "baselineReceipt": "config/pass25/prebuild-baseline-r11b.json",
   "maximums": {
-    "entrypoints": 148,
-    "apiRoutes": 82,
+    "entrypoints": 174,
+    "apiRoutes": 98,
     "serverRoutesImportingClientCode": 0,
     "unresolvedLocalImports": 0,
-    "topEntrypointTransitiveBytes": 7500000,
+    "topEntrypointTransitiveBytes": 8359830,
     "cssBytes": 3400000,
     "globalsCssBytes": 3100000
   },
@@ -16,5 +17,5 @@
     ".next-pass25-turbopack/types/**/*.ts",
     ".next-pass25-turbopack/dev/types/**/*.ts"
   ],
-  "truthBoundary": "Static prebuild budgets prevent known graph/config regressions for the exact Next.js 16.3.5 contract. Numeric graph budgets are preserved from v1; this version update does not widen them. They do not replace semantic TypeScript, a production build, browser, PDF, staging or LIVE evidence."
+  "truthBoundary": "Static prebuild no-growth budgets for the exact Next.js 16.3.5 contract. The entrypoint, API-route and top-reachable-graph maxima are exactly the observed exact-head R11B post-consolidation values bound by prebuild-baseline-r11b.json; they provide zero growth headroom. CSS, client-boundary and unresolved-import limits are unchanged. These budgets do not replace semantic TypeScript, a production build, browser, PDF, staging or LIVE evidence."
 }
