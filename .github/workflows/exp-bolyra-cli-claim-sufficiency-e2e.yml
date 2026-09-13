@@ -1,0 +1,224 @@
+name: EXP Bolyra CLI Claim Sufficiency E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - exp/bolyra-claim-sufficiency-v0
+    paths:
+      - '.github/workflows/exp-bolyra-cli-claim-sufficiency-e2e.yml'
+      - 'scripts/experiments/claim-sufficiency-v0.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  bolyra-cli-to-velmere:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BOLYRA_SHA: 5b68cd3316fcfcc8fd7a4bd8729425d89038346d
+    steps:
+      - name: Checkout Velmere experiment
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+
+      - name: Checkout pinned public Bolyra source
+        uses: actions/checkout@v4
+        with:
+          repository: bolyra/bolyra
+          ref: ${{ env.BOLYRA_SHA }}
+          path: _external/bolyra
+          persist-credentials: false
+
+      - name: Record exact source identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/experiments/bolyra-cli-e2e
+          printf '%s\n' "${GITHUB_SHA}" > artifacts/experiments/bolyra-cli-e2e/velmere-experiment-sha.txt
+          git -C _external/bolyra rev-parse HEAD > artifacts/experiments/bolyra-cli-e2e/bolyra-source-sha.txt
+          test "$(cat artifacts/experiments/bolyra-cli-e2e/bolyra-source-sha.txt)" = "${BOLYRA_SHA}"
+          sha256sum _external/bolyra/integrations/cli/test/receipt-verify-chain.test.ts > artifacts/experiments/bolyra-cli-e2e/bolyra-cli-chain-test.sha256
+
+      - name: Install Bolyra CLI test dependencies
+        working-directory: _external/bolyra/integrations/cli
+        run: npm ci
+
+      - name: Run official Bolyra CLI tail-truncation tests unchanged
+        working-directory: _external/bolyra/integrations/cli
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx jest test/receipt-verify-chain.test.ts --runInBand --testNamePattern='tail truncation' --json --outputFile="$GITHUB_WORKSPACE/artifacts/experiments/bolyra-cli-e2e/bolyra-cli-jest-result.json"
+
+      - name: Convert official CLI result into upstream machine evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'artifacts/experiments/bolyra-cli-e2e/bolyra-cli-jest-result.json';
+          const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const assertions = (j.testResults || []).flatMap(t => t.assertionResults || []);
+          const status = (needle) => assertions.find(a => (a.fullName || a.title || '').includes(needle))?.status;
+          const withoutExpectation = status('cannot detect tail truncation without expectations');
+          const withCount = status('detects tail truncation with --expect-count');
+          const withHead = status('detects tail truncation with --expect-head');
+          const required = { withoutExpectation, withCount, withHead };
+          for (const [name, value] of Object.entries(required)) {
+            if (value !== 'passed') throw new Error(`required official Bolyra CLI assertion did not pass: ${name}=${value}`);
+          }
+          const evidence = {
+            schema: 'velmere.bolyra-cli-upstream-evidence.v1',
+            upstream: {
+              repository: 'bolyra/bolyra',
+              commitSha: process.env.BOLYRA_SHA,
+              cliPackage: '@bolyra/cli',
+              testFile: 'integrations/cli/test/receipt-verify-chain.test.ts',
+              execution: 'Official CLI test file executed unchanged. The test creates ES256K-signed ReceiptChain JSONL logs and invokes Bolyra main([receipt, verify-chain, ...args]).'
+            },
+            assertions: {
+              truncatedLogPassesWithoutExternalExpectation: withoutExpectation,
+              truncatedLogFailsWithExpectedCount: withCount,
+              truncatedLogFailsWithExpectedHeadHash: withHead
+            },
+            truthBoundary: 'Pinned public Bolyra CLI behavior used as upstream machine evidence. No claim of a Bolyra defect, audit, certification, endorsement, or partnership.'
+          };
+          fs.writeFileSync('artifacts/experiments/bolyra-cli-e2e/bolyra-cli-upstream-evidence.json', JSON.stringify(evidence, null, 2) + '\n');
+          NODE
+
+      - name: Build Velmere case from actual CLI-path evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const upstream = JSON.parse(fs.readFileSync('artifacts/experiments/bolyra-cli-e2e/bolyra-cli-upstream-evidence.json', 'utf8'));
+          const passState = (v) => v === 'passed' ? 'VERIFIED_TRUE' : 'VERIFIED_FALSE';
+          const c = {
+            caseId: 'bolyra-official-cli-signed-chain-tail-truncation-e2e-v1',
+            subject: {
+              vendor: 'Bolyra',
+              repository: upstream.upstream.repository,
+              upstreamCommitSha: upstream.upstream.commitSha,
+              cliPackage: upstream.upstream.cliPackage,
+              testFile: upstream.upstream.testFile,
+              velmereExperimentSha: process.env.GITHUB_SHA,
+              boundary: 'Official Bolyra CLI path over signed receipt-chain JSONL is upstream machine evidence. Velmere performs downstream claim-sufficiency evaluation.'
+            },
+            evidence: [
+              {
+                id: 'official_cli_truncated_log_passes_without_external_expectation',
+                state: passState(upstream.assertions.truncatedLogPassesWithoutExternalExpectation),
+                provenance: 'Pinned official Bolyra receipt verify-chain CLI test result.'
+              },
+              {
+                id: 'official_cli_expected_count_detects_tail_truncation',
+                state: passState(upstream.assertions.truncatedLogFailsWithExpectedCount),
+                provenance: 'Pinned official Bolyra receipt verify-chain --expect-count test result.'
+              },
+              {
+                id: 'official_cli_expected_head_detects_tail_truncation',
+                state: passState(upstream.assertions.truncatedLogFailsWithExpectedHeadHash),
+                provenance: 'Pinned official Bolyra receipt verify-chain --expect-head test result.'
+              },
+              {
+                id: 'trusted_expected_count_for_presented_checkpoint',
+                state: 'MISSING',
+                provenance: 'The evaluated no-expectation presentation supplies no independently trusted expectedCount.'
+              },
+              {
+                id: 'trusted_expected_head_hash_for_presented_checkpoint',
+                state: 'MISSING',
+                provenance: 'The evaluated no-expectation presentation supplies no independently trusted expectedHeadHash/checkpoint anchor.'
+              }
+            ],
+            claims: [
+              {
+                id: 'claim-truncated-prefix-can-pass-cli-internal-verification',
+                text: 'A tail-truncated signed receipt-chain prefix can PASS Bolyra receipt verify-chain when no external tail expectation is supplied.',
+                scopeCovered: true,
+                requirements: [
+                  { id: 'official-cli-observation', mode: 'all', critical: true, evidence: ['official_cli_truncated_log_passes_without_external_expectation'] }
+                ]
+              },
+              {
+                id: 'claim-presented-log-is-complete-through-checkpoint',
+                text: 'The presented receipts are the complete receipt history through the claimed checkpoint.',
+                scopeCovered: true,
+                requirements: [
+                  { id: 'cli-internal-validity', mode: 'all', critical: true, evidence: ['official_cli_truncated_log_passes_without_external_expectation'] },
+                  { id: 'trusted-tail-completeness-anchor', mode: 'any', critical: true, evidence: ['trusted_expected_count_for_presented_checkpoint', 'trusted_expected_head_hash_for_presented_checkpoint'] }
+                ]
+              }
+            ]
+          };
+          fs.writeFileSync('artifacts/experiments/bolyra-cli-e2e/velmere-bolyra-cli-e2e.case.json', JSON.stringify(c, null, 2) + '\n');
+          NODE
+
+      - name: Run Velmere Claim Sufficiency Prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/experiments/claim-sufficiency-v0.mjs \
+            artifacts/experiments/bolyra-cli-e2e/velmere-bolyra-cli-e2e.case.json \
+            artifacts/experiments/bolyra-cli-e2e/velmere-bolyra-cli-e2e.result.json
+
+      - name: Assert CLI-to-Velmere result and hash evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const dir = 'artifacts/experiments/bolyra-cli-e2e';
+          const result = JSON.parse(fs.readFileSync(`${dir}/velmere-bolyra-cli-e2e.result.json`, 'utf8'));
+          const byId = Object.fromEntries(result.claims.map(c => [c.id, c]));
+          const narrow = byId['claim-truncated-prefix-can-pass-cli-internal-verification'];
+          const broad = byId['claim-presented-log-is-complete-through-checkpoint'];
+          if (narrow?.verdict !== 'SUPPORTED') throw new Error(`expected narrow SUPPORTED, got ${narrow?.verdict}`);
+          if (broad?.verdict !== 'UNKNOWN') throw new Error(`expected broad UNKNOWN, got ${broad?.verdict}`);
+          const missing = new Set((broad.missingEvidence || []).map(x => x.evidenceId));
+          if (!missing.has('trusted_expected_count_for_presented_checkpoint')) throw new Error('expected count anchor missing evidence was not reported');
+          if (!missing.has('trusted_expected_head_hash_for_presented_checkpoint')) throw new Error('expected head anchor missing evidence was not reported');
+          const hash = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+          const report = {
+            schema: 'velmere.bolyra-cli-cross-system-e2e-report.v1',
+            velmereExperimentSha: process.env.GITHUB_SHA,
+            bolyraSourceSha: process.env.BOLYRA_SHA,
+            officialBolyraCliTestsExecutedUnchanged: true,
+            signedReceiptChainCreatedByOfficialBolyraTest: true,
+            cliPathExercised: 'main([receipt, verify-chain, ...args])',
+            upstreamCliBehavior: {
+              truncatedLogWithoutExpectation: 'PASS with explicit tail limitation',
+              truncatedLogWithExpectCount: 'FAIL as expected',
+              truncatedLogWithExpectHead: 'FAIL as expected'
+            },
+            velmereClaimSufficiency: {
+              narrowCliClaim: narrow.verdict,
+              broaderCompletenessClaim: broad.verdict,
+              missingEvidence: [...missing]
+            },
+            truthBoundary: 'Synthetic/public cross-system test on pinned source. It exercises Bolyra official CLI test code and Velmere downstream sufficiency logic; it is not a production audit, certification, endorsement, or partnership claim.',
+            sha256: {
+              bolyraCliJestResult: hash(`${dir}/bolyra-cli-jest-result.json`),
+              upstreamEvidence: hash(`${dir}/bolyra-cli-upstream-evidence.json`),
+              velmereCase: hash(`${dir}/velmere-bolyra-cli-e2e.case.json`),
+              velmereResult: hash(`${dir}/velmere-bolyra-cli-e2e.result.json`)
+            }
+          };
+          fs.writeFileSync(`${dir}/VELMERE_BOLYRA_CLI_CROSS_SYSTEM_E2E_REPORT_v1.json`, JSON.stringify(report, null, 2) + '\n');
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+
+      - name: Upload CLI cross-system evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-bolyra-cli-cross-system-e2e
+          path: artifacts/experiments/bolyra-cli-e2e/
+          if-no-files-found: error
