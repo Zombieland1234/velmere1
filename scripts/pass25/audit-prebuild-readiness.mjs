@@ -55,12 +55,21 @@ for (const glob of budget.requiredTypeGlobs) check(`tsconfig-type-glob:${glob}`,
 const nextConfig = fs.readFileSync(path.join(root, "next.config.mjs"), "utf8");
 check("tdz-prone-selected-profile-removed", !nextConfig.includes("selectedBuildProfile"));
 check("pure-profile-module-used", nextConfig.includes('from "./lib/build/build-profile.mjs"'));
+check("scoped-build-profile-policy", nextConfig.includes("const scopedBuildExperimental = runtimeBuildScope"));
+check("scoped-dist-dir", nextConfig.includes("distDir: runtimeDistDir"));
+check("scoped-build-id", nextConfig.includes("generateBuildId: async () => runtimeBuildId"));
+check("scoped-standalone-output", nextConfig.includes('output: outputStandalone ? "standalone" : undefined'));
 check("profile-bound-worker-setting", nextConfig.includes("webpackBuildWorker: profile.webpackBuildWorker"));
+check("profile-bound-webpack-memory", nextConfig.includes("webpackMemoryOptimizations: profile.webpackMemoryOptimizations"));
 check("profile-bound-parallel-compiles", nextConfig.includes("parallelServerCompiles: profile.parallelServerCompiles"));
 check("profile-bound-parallel-traces", nextConfig.includes("parallelServerBuildTraces: profile.parallelServerBuildTraces"));
+check("scope-bound-turbopack-eviction", nextConfig.includes('runtimeBuildScope === "turbopack" ? { turbopackMemoryEviction } : {}'));
+check("obsolete-turbopack-memory-limit-absent", !nextConfig.includes("turbopackMemoryLimit"));
+check("typescript-build-errors-not-ignored", nextConfig.includes('typescript: { ignoreBuildErrors: false }'));
 check("source-maps-disabled", nextConfig.includes("productionBrowserSourceMaps: false") && nextConfig.includes("serverSourceMaps: false"));
 for (const [name, profile] of Object.entries(BUILD_PROFILE_DEFAULTS)) {
   check(`worker-profile-compatible:${name}`, profile.webpackBuildWorker || (!profile.parallelServerCompiles && !profile.parallelServerBuildTraces), profile);
+  check(`turbopack-eviction-profile-valid:${name}`, new Set([false, "full", "auto"]).has(profile.turbopackMemoryEviction), profile);
 }
 
 for (const relative of [
@@ -85,10 +94,11 @@ const sourceAfter = sourceTreeDigest(root);
 const sourceImmutable = sourceBefore.sha256 === sourceAfter.sha256;
 check("source-immutable", sourceImmutable, { before: sourceBefore.sha256, after: sourceAfter.sha256 });
 const result = {
-  schemaVersion: "velmere.pass25.prebuild-readiness.v1",
+  schemaVersion: "velmere.pass25.prebuild-readiness.v2",
   generatedAt: new Date().toISOString(),
   ok: errors.length === 0,
   status: errors.length === 0 ? "PASS_STATIC_PREBUILD_READY_RUNTIME_BLOCKED" : "FAIL_STATIC_PREBUILD",
+  nextVersionContract: budget.nextVersion,
   sourceBefore,
   sourceAfter,
   sourceImmutable,
@@ -101,8 +111,8 @@ const result = {
   checks,
   errors,
   warnings,
-  truthBoundary: "Static prebuild/configuration/graph readiness only. Semantic TypeScript, ESLint, npm tests and both production builds require exact Node 24.18.0/npm 11.16.0 plus a complete lockfile cache.",
+  truthBoundary: "Static prebuild/configuration/graph readiness against the exact Next.js version contract only. Semantic TypeScript, ESLint, npm tests and both production builds require exact Node 24.18.0/npm 11.16.0 plus a complete lockfile cache. Vercel keeps platform build-setting authority because custom profile knobs are scoped to explicit PASS25 builds."
 };
 writeJson(path.join(DIAGNOSTICS_DIR, "prebuild-readiness.json"), result);
-console.log(JSON.stringify({ status: result.status, checks: checks.length, errors: errors.length, warnings: warnings.length, graph: result.graph.summary, topEntrypoint, sourceImmutable }, null, 2));
+console.log(JSON.stringify({ status: result.status, checks: checks.length, errors: errors.length, warnings: warnings.length, nextVersionContract: result.nextVersionContract, graph: result.graph.summary, topEntrypoint, sourceImmutable }, null, 2));
 if (!result.ok) process.exit(1);
