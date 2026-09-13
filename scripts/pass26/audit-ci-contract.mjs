@@ -36,7 +36,7 @@ const expectedRetired = new Set([
 const errors = [];
 const warnings = [];
 const rows = [];
-const actionPattern = /^\s*uses:\s*([^\s#]+)(?:\s*#.*)?$/gmu;
+const actionPattern = /^\s*(?:-\s*)?uses:\s*([^\s#]+)(?:\s*#.*)?$/gmu;
 const npmRunPattern = /\bnpm\s+run\s+([A-Za-z0-9:_-]+)/gu;
 const npmCiPattern = /\bnpm\s+ci\b[^\r\n]*/gu;
 const pinnedAction = /^(?:[A-Za-z0-9_.-]+\/){1,3}[A-Za-z0-9_.-]+@[a-f0-9]{40}$/u;
@@ -109,7 +109,7 @@ for (const retiredFile of retired) if (expectedActive.has(retiredFile)) errors.p
 if (retired.length > expectedRetired.size) warnings.push(`retired workflow directory contains ${retired.length - expectedRetired.size} additional historical YAML file(s)`);
 
 const report = {
-  schemaVersion: "velmere.pass26.ci-contract.v2",
+  schemaVersion: "velmere.pass26.ci-contract.v3",
   ok: errors.length === 0,
   activeWorkflows: files,
   expectedActiveWorkflows: [...expectedActive].sort(),
@@ -121,10 +121,11 @@ const report = {
   errors,
   warnings,
   workflows: rows,
-  truthBoundary: "This is a static CI-governance contract. Only five current core workflows may remain active; the enumerated historical workflows must live outside .github/workflows. PASS26 lightweight may perform exactly one script-disabled, no-audit, no-fund lockfile install for AST/static verification, while heavy typecheck/test/dual-build execution remains outside that workflow. Missing concurrency is advisory only for the two read-only R11B evidence gates because every evidence artifact and credit decision is bound to the exact Git SHA; it grants no cross-SHA evidence transfer. A GitHub Actions run and downloaded runtime/cache artifact remain required for exact milestone proof.",
+  truthBoundary: "This is a static CI-governance contract. Only five current core workflows may remain active; the enumerated historical workflows must live outside .github/workflows. Both YAML action forms ('uses:' and '- uses:') are audited. PASS26 lightweight may perform exactly one script-disabled, no-audit, no-fund lockfile install for AST/static verification, while heavy typecheck/test/dual-build execution remains outside that workflow. Missing concurrency is advisory only for the two read-only R11B evidence gates because every evidence artifact and credit decision is bound to the exact Git SHA; it grants no cross-SHA evidence transfer. The generated receipt is diagnostics-only and never mutates tracked source. A GitHub Actions run and downloaded runtime/cache artifact remain required for exact milestone proof.",
 };
-fs.mkdirSync(path.join(root, "config", "pass26"), { recursive: true });
-fs.writeFileSync(path.join(root, "config", "pass26", "ci-contract.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
+const diagnosticsDir = path.join(root, ".velmere", "pass26-diagnostics");
+fs.mkdirSync(diagnosticsDir, { recursive: true });
+fs.writeFileSync(path.join(diagnosticsDir, "ci-contract.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
 console.log(`PASS26 CI contract: active=${files.length} retired=${retired.length} errors=${errors.length} warnings=${warnings.length}`);
 if (!report.ok) {
   for (const error of errors) console.error(`- ${error}`);
