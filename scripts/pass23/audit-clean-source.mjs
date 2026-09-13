@@ -59,10 +59,91 @@ function isText(relativePath, buffer) {
   return (sample.match(/\uFFFD/gu) ?? []).length < 4;
 }
 function stripComments(source) {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//gu, " ")
-    .replace(/`(?:\\.|[^`])*`/gsu, " ")
-    .replace(/(^|[^:])\/\/.*$/gmu, "$1 ");
+  const out = [];
+  let state = "code";
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1] ?? "";
+
+    if (state === "line_comment") {
+      if (char === "\n" || char === "\r") {
+        out.push(char);
+        state = "code";
+      } else {
+        out.push(" ");
+      }
+      continue;
+    }
+
+    if (state === "block_comment") {
+      if (char === "*" && next === "/") {
+        out.push(" ", " ");
+        index += 1;
+        state = "code";
+      } else {
+        out.push(char === "\n" || char === "\r" ? char : " ");
+      }
+      continue;
+    }
+
+    if (state === "template") {
+      if (char === "\\") {
+        out.push(" ");
+        if (index + 1 < source.length) {
+          out.push(source[index + 1] === "\n" || source[index + 1] === "\r" ? source[index + 1] : " ");
+          index += 1;
+        }
+      } else if (char === "`") {
+        out.push(" ");
+        state = "code";
+      } else {
+        out.push(char === "\n" || char === "\r" ? char : " ");
+      }
+      continue;
+    }
+
+    if (state === "single_quote" || state === "double_quote") {
+      const quote = state === "single_quote" ? "'" : '"';
+      out.push(char);
+      if (char === "\\" && index + 1 < source.length) {
+        out.push(source[index + 1]);
+        index += 1;
+      } else if (char === quote) {
+        state = "code";
+      }
+      continue;
+    }
+
+    if (char === "/" && next === "/") {
+      out.push(" ", " ");
+      index += 1;
+      state = "line_comment";
+      continue;
+    }
+    if (char === "/" && next === "*") {
+      out.push(" ", " ");
+      index += 1;
+      state = "block_comment";
+      continue;
+    }
+    if (char === "`") {
+      out.push(" ");
+      state = "template";
+      continue;
+    }
+    if (char === "'") {
+      out.push(char);
+      state = "single_quote";
+      continue;
+    }
+    if (char === '"') {
+      out.push(char);
+      state = "double_quote";
+      continue;
+    }
+    out.push(char);
+  }
+  return out.join("");
 }
 function parseImports(source) {
   const stripped = stripComments(source);
@@ -247,16 +328,18 @@ const productionDangerousSignals = dangerousSignals.filter((row) =>
   !row.path.startsWith("scripts/") && !row.path.startsWith("tests/") && !row.path.startsWith("fixtures/") && !row.path.startsWith("evaluation/")
 );
 const audit = {
-  schemaVersion: "velmere.pass23.clean-source-audit.v1",
+  schemaVersion: "velmere.pass23.clean-source-audit.v2",
   generatedAt: new Date().toISOString(),
-  truthBoundary: "Every regular file outside generated .velmere pass diagnostics/gates/builds and the self-referential CLEAN_SAFE_VERIFICATION.json was byte-read and SHA-256 hashed. Text files were line-counted and scanned with conservative static heuristics. Local import resolution uses an exact pre-index of the same enumerated regular-file set rather than repeated filesystem stats. JavaScript-family syntax is verified separately with node --check. This is not semantic TypeScript, ESLint, Next build, browser, staging or LIVE evidence.",
+  truthBoundary: "Every regular file outside generated .velmere pass diagnostics/gates/builds and the self-referential CLEAN_SAFE_VERIFICATION.json was byte-read and SHA-256 hashed. Text files were line-counted and scanned with conservative static heuristics. Comment/template stripping is a deterministic single-pass scanner and import matching is bounded to avoid regex backtracking denial-of-service. Local import resolution uses an exact pre-index of the same enumerated regular-file set rather than repeated filesystem stats. JavaScript-family syntax is verified separately with node --check. This is not semantic TypeScript, ESLint, Next build, browser, staging or LIVE evidence.",
   runtime: { node: process.version, platform: process.platform, arch: process.arch },
   timings: {
     walkDurationMs,
     scanDurationMs,
     totalDurationMs: Date.now() - startedAtMs,
     localImportResolutionChecks,
-    localImportResolutionMode: "INDEXED_REGULAR_FILE_SET"
+    localImportResolutionMode: "INDEXED_REGULAR_FILE_SET",
+    commentStripMode: "LINEAR_STATE_MACHINE",
+    importParseMode: "BOUNDED_STATIC_PATTERNS"
   },
   summary: {
     regularFilesRead: files.length,
