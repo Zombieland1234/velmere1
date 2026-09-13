@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { mergeMessages } from "../../lib/i18n/merge-messages.mjs";
+import { applyTranslationWave, mergeMessages } from "../../lib/i18n/merge-messages.mjs";
 
 const root = process.cwd();
 const locales = ["pl", "en", "de"];
@@ -11,6 +11,13 @@ const allowlist = JSON.parse(fs.readFileSync(path.join(root, "config/pass22/i18n
 const exactNeutral = new Set(allowlist.exact ?? []);
 const regexNeutral = (allowlist.regex ?? []).map((source) => new RegExp(source, "u"));
 const keyNeutral = (allowlist.keyRegex ?? []).map((source) => new RegExp(source, "u"));
+const translationWavePath = path.join(root, "config/pass23/i18n-final-translations.json");
+const translationWaveRaw = fs.readFileSync(translationWavePath, "utf8");
+const translationWave = JSON.parse(translationWaveRaw);
+if (!Array.isArray(translationWave.translations) || translationWave.translations.length !== 300) {
+  throw new Error("translation_wave_denominator_mismatch");
+}
+const translationWaveSha256 = crypto.createHash("sha256").update(translationWaveRaw).digest("hex");
 const legalMarkers = [
   /template copy/iu,
   /replace .* before/iu,
@@ -50,11 +57,17 @@ for (const locale of locales) {
   const baseRaw = fs.readFileSync(basePath, "utf8");
   const overrideRaw = fs.existsSync(overridePath) ? fs.readFileSync(overridePath, "utf8") : null;
   const base = JSON.parse(baseRaw);
+  const draftApplied = locale === "pl" || locale === "de";
+  const withDraft = draftApplied ? applyTranslationWave(base, translationWave.translations, locale) : base;
   const overrides = overrideRaw ? JSON.parse(overrideRaw) : undefined;
-  flat[locale] = flatten(mergeMessages(base, overrides));
+  flat[locale] = flatten(mergeMessages(withDraft, overrides));
   effectiveCatalogSources[locale] = {
     basePath: path.relative(root, basePath).replaceAll("\\", "/"),
     baseSha256: crypto.createHash("sha256").update(baseRaw).digest("hex"),
+    translationWavePath: draftApplied ? path.relative(root, translationWavePath).replaceAll("\\", "/") : null,
+    translationWaveSha256: draftApplied ? translationWaveSha256 : null,
+    translationWaveCount: draftApplied ? translationWave.translations.length : 0,
+    translationWaveReviewStatus: draftApplied ? "PENDING_NATIVE_REVIEW" : null,
     overridePath: overrideRaw ? path.relative(root, overridePath).replaceAll("\\", "/") : null,
     overrideSha256: overrideRaw ? crypto.createHash("sha256").update(overrideRaw).digest("hex") : null,
   };
@@ -97,11 +110,13 @@ const criticalStaticPass = criticalIdenticalNonNeutral.length === 0 && leakage.p
 const result = {
   schemaVersion: "velmere.pass23.i18n-release-readiness.v1",
   generatedAt: "2026-07-20T18:00:00.000Z",
-  truthBoundary: "Static per-value audit of the effective runtime locale catalog (base messages plus release overrides) with an explicit language-neutral allowlist. It does not replace native-speaker review, browser overflow checks, merchant readiness or final legal review.",
+  truthBoundary: "Static per-value audit of the effective runtime locale catalog: base messages, the 300-value model-assisted draft translation wave, then explicit release overrides. Draft application does not replace native-speaker review, browser overflow checks, merchant readiness or final legal review.",
   summary: {
     locales,
     flattenedValues: keys.length,
     keyParity,
+    draftTranslationCount: translationWave.translations.length,
+    draftTranslationReviewStatus: "PENDING_NATIVE_REVIEW",
     identicalNonNeutral: identicalNonNeutral.length,
     criticalIdenticalNonNeutral: criticalIdenticalNonNeutral.length,
     criticalEnglishLeakCandidates: leakage.pl.length + leakage.de.length,
