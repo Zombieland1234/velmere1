@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "velmere.pass26.visual-contract.v3",
+  "contractState": "PENDING_HUMAN_VISUAL_APPROVAL",
+  "sourceCheckpointSha": "f4077ec27d7a97c71b98837691665852292e7955",
+  "captureSemantics": {
+    "mode": "CONTROLLED_HUMAN_REVIEW_CAPTURE",
+    "pixelDeterministic": false,
+    "clockFrozen": false,
+    "providerDataFrozen": false,
+    "screenshotHashesAreApprovalOracles": false
+  },
+  "primaryAssetInteraction": {
+    "realMarkets": "DEDICATED_ASSET_ROUTE",
+    "shield": "DEDICATED_ASSET_ROUTE",
+    "evidenceSubjectSha": "f4077ec27d7a97c71b98837691665852292e7955"
+  },
+  "legacyPrimaryContracts": [
+    {
+      "id": "asset-detail-modal-real-markets-primary",
+      "state": "RETIRED_FROM_PRIMARY_DENOMINATOR",
+      "reason": "Exact-subject browser evidence on f4077ec27d7a97c71b98837691665852292e7955 proves the tested primary Real Markets interaction navigates to /real-markets/assets/... with no modal open."
+    },
+    {
+      "id": "asset-detail-modal-shield-primary",
+      "state": "RETIRED_FROM_PRIMARY_DENOMINATOR",
+      "reason": "Exact-subject browser evidence on f4077ec27d7a97c71b98837691665852292e7955 proves the tested primary Shield interaction navigates to /shield/assets/... with no modal open."
+    }
+  ],
+  "viewports": {
+    "desktop": { "width": 1440, "height": 900 },
+    "mobile": { "width": 390, "height": 844 }
+  },
+  "surfaces": [
+    {
+      "id": "security-audits",
+      "route": "/en/security/audits",
+      "marker": "body",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING"
+    },
+    {
+      "id": "shield-terminal",
+      "route": "/en/shield",
+      "marker": "[data-pass2356-shield-realmarkets-parity=\"true\"]",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING"
+    },
+    {
+      "id": "real-markets-terminal",
+      "route": "/en/real-markets",
+      "marker": "body",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING"
+    },
+    {
+      "id": "shield-asset-detail-withheld",
+      "route": "/en/shield/assets/bitcoin",
+      "marker": "[data-asset-detail-truth-state=\"WITHHELD\"]",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING",
+      "truthState": "WITHHELD"
+    },
+    {
+      "id": "real-markets-asset-detail-withheld",
+      "route": "/en/real-markets/assets/aapl",
+      "marker": "[data-asset-detail-truth-state=\"WITHHELD\"]",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING",
+      "truthState": "WITHHELD"
+    }
+  ],
+  "expectedCaptureCount": 10,
+  "approvalRules": {
+    "automatedCaptureIsApproval": false,
+    "hashRefreshWithoutReviewAllowed": false,
+    "providerBoundAssetDetailInvalidatesWithheldApproval": true,
+    "humanReviewRequired": true
+  }
+}
