@@ -78,7 +78,9 @@ jobs:
           fi
       - name: Dirty source gate
         run: |
+          # Reset only known generated files. Any other source mutation remains blocking.
           git checkout -- artifacts/pass4992/PASS4992_SUPPLY_CHAIN_ADVERSARIAL_TEST.json || true
+          git checkout -- next-env.d.ts || true
           git diff --exit-code
       - name: Upload R11B internal evidence
         if: always()
