@@ -12,12 +12,12 @@ const staticContracts = [
   {
     id: "real-markets",
     source: "components/market-integrity/CrossAssetCollapseRadarPanel.tsx",
-    routePattern: /router\.push\(`\/\$\{locale\}\/real-markets\/assets\//u,
+    routePattern: /router\.push\(\s*`\/real-markets\/assets\/\$\{[^}]+\}[^`]*`\s*\)/u,
   },
   {
     id: "shield",
     source: "components/market-integrity/ShieldRealMarketsParityClient.tsx",
-    routePattern: /router\.push\(`\/\$\{locale\}\/shield\/assets\//u,
+    routePattern: /router\.push\(\s*`\/shield\/assets\/\$\{[^}]+\}[^`]*`\s*\)/u,
   },
 ].map((contract) => {
   const source = fs.readFileSync(contract.source, "utf8");
@@ -38,13 +38,13 @@ const cases = [
     id: "real-markets-aapl",
     startPath: "/en/real-markets",
     expectedPathPrefix: "/en/real-markets/assets/",
-    trigger: /Apple full chart and analysis/i,
+    triggerLabel: "Apple full chart and analysis",
   },
   {
     id: "shield-bitcoin",
     startPath: "/en/shield",
     expectedPathPrefix: "/en/shield/assets/",
-    trigger: /Bitcoin full chart and analysis/i,
+    triggerLabel: "Bitcoin full chart and analysis",
   },
 ];
 
@@ -86,7 +86,7 @@ for (const testCase of cases) {
     await dismissCookie(page);
     beforePath = new URL(page.url()).pathname;
 
-    const trigger = page.getByRole("button", { name: testCase.trigger }).first();
+    const trigger = page.locator(`[aria-label="${testCase.triggerLabel}"]`).first();
     if (!(await trigger.count()) || !(await trigger.isVisible())) throw new Error(`navigation_trigger_missing:${testCase.id}`);
     triggerLabel = await trigger.getAttribute("aria-label");
     await trigger.click({ timeout: 5000 });
