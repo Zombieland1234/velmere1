@@ -22,14 +22,17 @@ const a41Recovery = fs.existsSync(a41RecoveryPath)
 const authorizedDirectRoutes = new Set(a41Recovery.authorizedDirectRoutes ?? []);
 const groups = ["marketIntegrity", "internalWorkers", "security", "search", "admin"];
 const failures = [];
+const advisoryMismatches = [];
 const checks = [];
 
 function sha256(file) {
   return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 }
-function record(name, ok, detail = undefined) {
-  checks.push({ name, ok, ...(detail === undefined ? {} : { detail }) });
-  if (!ok) failures.push({ name, detail });
+function record(name, ok, detail = undefined, { blocking = true, authority = "ROUTE_DISPATCH_CONTRACT" } = {}) {
+  const row = { name, ok, blocking, authority, ...(detail === undefined ? {} : { detail }) };
+  checks.push(row);
+  if (!ok && blocking) failures.push({ name, detail, authority });
+  if (!ok && !blocking) advisoryMismatches.push({ name, detail, authority });
 }
 const { registry: routeAstRegistry, rowsByPath: routeAstRows } = readVerifiedRouteAstFreezeV2({ root });
 function astRow(relativePath) {
@@ -94,16 +97,36 @@ for (const groupName of groups) {
     record(`${route.publicPath}:handler_exists`, fs.existsSync(handler), route.handlerModule);
     if (!fs.existsSync(handler)) continue;
     const text = fs.readFileSync(handler, "utf8");
-    const methods = astRow(route.handlerModule).methods;
-    record(`${route.publicPath}:methods_preserved`, JSON.stringify(methods) === JSON.stringify([...route.methods].sort()), { expected: route.methods, actual: methods });
+    const ast = astRow(route.handlerModule);
+    const methods = ast.methods;
+    record(`${route.publicPath}:methods_preserved`, JSON.stringify(methods) === JSON.stringify([...route.methods].sort()), { expected: route.methods, actual: methods }, { authority: "EXACT_AST_FREEZE_V2" });
     record(`${route.publicPath}:route_config_removed`, !/export\s+const\s+(?:runtime|dynamic|maxDuration|revalidate|preferredRegion|fetchCache|dynamicParams)\s*=/u.test(text));
     record(`${route.publicPath}:registry_loader`, registryText.includes(`import("@/${route.handlerModule.replace(/\.ts$/u, "")}")`));
-    record(`${route.publicPath}:handler_hash`, sha256(handler) === route.handlerSha256, { expected: route.handlerSha256, actual: sha256(handler) });
+
+    const currentHandlerSha256 = sha256(handler);
+    record(
+      `${route.publicPath}:legacy_handler_hash_metadata`,
+      currentHandlerSha256 === route.handlerSha256,
+      {
+        expectedLegacy: route.handlerSha256,
+        actual: currentHandlerSha256,
+        authoritativeAstSha256: ast.sha256,
+        note: "Legacy duplicate metadata is advisory only; exact source integrity is blocking through PASS15 AST freeze v2.",
+      },
+      { blocking: false, authority: "LEGACY_DUPLICATE_METADATA" },
+    );
     const handlerBytes = fs.statSync(handler).size;
-    record(`${route.publicPath}:handler_bytes`, handlerBytes === route.handlerBytes, {
-      expected: route.handlerBytes,
-      actual: handlerBytes,
-    });
+    record(
+      `${route.publicPath}:legacy_handler_bytes_metadata`,
+      handlerBytes === route.handlerBytes,
+      {
+        expectedLegacy: route.handlerBytes,
+        actual: handlerBytes,
+        authoritativeAstByteLength: ast.byteLength,
+        note: "Legacy duplicate metadata is advisory only; exact source integrity is blocking through PASS15 AST freeze v2.",
+      },
+      { blocking: false, authority: "LEGACY_DUPLICATE_METADATA" },
+    );
     record(`${route.publicPath}:no_broken_old_relative_lib_import`, !text.includes('"../../../../lib/') && !text.includes("'../../../../lib/"));
   }
 }
@@ -115,23 +138,28 @@ record("shared_options_helper", fs.readFileSync(path.join(root, "lib/server/lazy
 record("no_undeclared_server_only_import", !fs.readFileSync(path.join(root, "lib/server/lazy-route-dispatch.ts"), "utf8").includes(["server", "only"].join("-")));
 
 const result = {
-  schemaVersion: "velmere.pass15.route-dispatch-verification.v2",
+  schemaVersion: "velmere.pass15.route-dispatch-verification.v3",
   generatedAt: new Date().toISOString(),
-  truthBoundary: "Static source/contract verification with frozen exact-toolchain TypeScript AST aggregate and full current-source reparse. Browser/LIVE/sale credit still requires exact runtime and external evidence beyond this static contract.",
+  truthBoundary: "Blocking route-dispatch verification uses exact current-source TypeScript AST reparse frozen by PASS15 AST freeze v2 for source integrity/methods plus mapping, dispatcher, registry-loader, route-config and fail-closed checks. Historical handlerSha256/handlerBytes fields in route-dispatch-manifest.json are retained only as visible advisory legacy metadata and cannot cause PASS or supply authority. Browser/LIVE/sale credit still requires exact runtime and external evidence beyond this static contract.",
   summary: {
     groups: groups.length,
     routesPreserved: routeCount,
     publicPathsUnique: publicPaths.size,
     checks: checks.length,
-    passed: checks.filter((row) => row.ok).length,
-    failed: failures.length,
+    blockingChecks: checks.filter((row) => row.blocking).length,
+    blockingPassed: checks.filter((row) => row.blocking && row.ok).length,
+    blockingFailed: failures.length,
+    advisoryChecks: checks.filter((row) => !row.blocking).length,
+    advisoryMismatches: advisoryMismatches.length,
     netNextEntrypointReduction: manifest.summary.netEntrypointReduction,
     routeAstRegistryFiles: routeAstRegistry.fileCount,
     routeAstRegistryExactCredit: routeAstRegistry.exactAstReparseCredit,
     routeAstFreezeSchemaVersion: routeAstRegistry.freezeSchemaVersion,
     routeAstFreezeDigestSha256: routeAstRegistry.freezeDigestSha256,
+    legacyMetadataAuthority: false,
   },
   failures,
+  advisoryMismatches,
   checks,
 };
 const writeEvidence = process.argv.includes("--write-evidence") || process.env.VELMERE_WRITE_EVIDENCE === "1";
