@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - r11b-integration-v8-clean
   workflow_dispatch:
 
 permissions:
@@ -56,6 +57,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
+            .velmere/pass12-diagnostics/**
+            .velmere/pass16-diagnostics/**
+            .velmere/pass19-diagnostics/**
             .velmere/pass23-diagnostics/**
             .velmere/pass26-diagnostics/**
             config/pass26/ci-contract.json
