@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +13,8 @@ const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "velmere-r11-f10-"));
 const fixturePath = "synthetic/pass4992-secret-fingerprint.txt";
 const envPath = ".env";
 const envLocalPath = ".env.local";
+const sourceSha = String(process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" })).trim().toLowerCase();
+assert.match(sourceSha, /^[0-9a-f]{40}$/u, "sourceSha must bind the exact executed Git subject");
 
 try {
   await fs.mkdir(path.join(tmp, "synthetic"), { recursive: true });
@@ -34,14 +37,15 @@ try {
   assert.equal(scan.findings.some((item) => item.path === envPath && item.ruleId === "stripe-live-secret"), true);
   assert.equal(scan.findings.some((item) => item.path === envLocalPath && item.ruleId === "stripe-live-secret"), true);
   const receipt = {
-    schemaVersion: "velmere.r11.secret-fixture-boundary.v1",
+    schemaVersion: "velmere.r11.secret-fixture-boundary.v2",
+    sourceSha,
     status: "PASS",
     fixturePolicy: scan.fixturePolicy,
     ignoredFixtureFindingCount: scan.ignoredFixtureFindingCount,
     nonIgnoredFindingCount: scan.findingCount,
     envCoverage: [envPath, envLocalPath],
     exactFingerprintException: true,
-    truthBoundary: "One exact path+rule+fingerprint fixture occurrence is ignored; mutated fixture values and .env/.env.local values remain findings.",
+    truthBoundary: "One exact path+rule+fingerprint fixture occurrence is ignored; mutated fixture values and .env/.env.local values remain findings. sourceSha binds this receipt to the exact executed Git subject and must not be transferred to another SHA.",
   };
   if (outputPath) {
     await fs.mkdir(path.dirname(outputPath), { recursive: true });
