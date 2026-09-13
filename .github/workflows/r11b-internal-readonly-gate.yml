@@ -151,6 +151,10 @@ jobs:
         run: npm run security:regression
       - name: Source truth scan
         run: node scripts/r11/verify-truth-scope-v2.mjs --output /tmp/r11b/R11_TRUTH_SCOPE.json
+      - name: F21 exact-subject evidence ledger
+        run: node scripts/r11/build-evidence-ledger.mjs --evidence-dir /tmp/r11b --output /tmp/r11b/EVIDENCE_LEDGER.json --workflow .github/workflows/r11b-internal-readonly-gate.yml
+      - name: F22 evidence ledger independent recomputation
+        run: node scripts/r11/verify-evidence-ledger.mjs --evidence-dir /tmp/r11b --ledger /tmp/r11b/EVIDENCE_LEDGER.json --output /tmp/r11b/EVIDENCE_LEDGER_VERIFICATION.json --workflow .github/workflows/r11b-internal-readonly-gate.yml
       - name: No write-capable R11B workers remain
         run: |
           if grep -R -n -E 'contents:[[:space:]]*write' .github/workflows/r11b-*.yml; then
