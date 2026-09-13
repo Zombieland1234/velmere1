@@ -1013,7 +1013,7 @@ export default function AnalysisCardsSection({
                   <>
                     <div className="flex items-center gap-2.5 text-white/90">
                       <CheckCircle2 className="h-4 w-4 text-[#38bdf8] shrink-0" />
-                      <span><strong>14 Sygnałów Dowodowych</strong> (w tym wskaźniki techniczne i on-chain)</span>
+                      <span><strong>14 Sygnałów Dowodowych</strong> (w tym wskaźniki techniczne i zweryfikowane przepływy sieciowe)</span>
                     </div>
                     <div className="flex items-center gap-2.5 text-white/90">
                       <CheckCircle2 className="h-4 w-4 text-[#38bdf8] shrink-0" />
