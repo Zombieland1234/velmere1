@@ -103,6 +103,19 @@ jobs:
           console.log(JSON.stringify(summary, null, 2));
           if (!summary.denominatorConserved) process.exit(1);
           NODE
+      - name: PASS15 route dispatch candidate (read-only evidence)
+        run: |
+          node scripts/pass15/rebaseline-route-dispatch-manifest.mjs \
+            --candidate-output /tmp/r11b/ROUTE_DISPATCH_MANIFEST_CANDIDATE.json \
+            > /tmp/r11b/ROUTE_DISPATCH_REBASELINE.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const r = JSON.parse(fs.readFileSync('/tmp/r11b/ROUTE_DISPATCH_REBASELINE.json','utf8'));
+          if (r.routeDenominator !== 160) process.exit(1);
+          if (r.exactAstCreditEligible !== true) process.exit(1);
+          if (!fs.existsSync('/tmp/r11b/ROUTE_DISPATCH_MANIFEST_CANDIDATE.json')) process.exit(1);
+          console.log(JSON.stringify({routeDenominator:r.routeDenominator,changedRoutes:r.changedRoutes,changedFields:r.changedFields,beforeSha256:r.beforeSha256,afterSha256:r.afterSha256,parser:r.parser},null,2));
+          NODE
       - name: F10 supply-chain adversarial tests
         run: node scripts/pass4992/test-supply-chain-release.mjs
       - name: F10 exact secret fixture and env boundary
