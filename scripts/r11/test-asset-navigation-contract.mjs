@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const baseUrl = process.env.VELMERE_BASE_URL || "http://127.0.0.1:3104";
-const evidenceDir = process.env.VELMERE_EVIDENCE_DIR || "/tmp/r11b-browser/asset-navigation";
+const baseUrl = process.env.VELMERE_BASE_URL || "http://localhost:3104";
+const evidenceDir = process.env.VELMERE_EVIDENCE_DIR
+  ? path.resolve(process.env.VELMERE_EVIDENCE_DIR)
+  : fs.mkdtempSync(path.join(os.tmpdir(), "velmere-asset-navigation-"));
 const subjectSha = process.env.GITHUB_SHA || null;
-fs.mkdirSync(evidenceDir, { recursive: true });
+fs.mkdirSync(evidenceDir, { recursive: true, mode: 0o700 });
+const evidenceDirMetadata = fs.lstatSync(evidenceDir);
+if (evidenceDirMetadata.isSymbolicLink() || !evidenceDirMetadata.isDirectory()) {
+  throw new Error("asset_navigation_evidence_dir_must_be_real_directory");
+}
 
 const staticContracts = [
   {
@@ -143,10 +150,10 @@ const receipt = {
   residualLimitations: [
     "Dedicated asset routes currently fail closed with WITHHELD data; provider-bound detail remains unimplemented.",
     "Legacy AssetDetailModal render code and popup CSS may remain in source; this contract proves primary tested row interactions do not open the modal.",
-    "Unrelated provider/API console 400s are recorded but are outside this navigation-contract verdict unless they produce a page error or break navigation.",
+    "Console errors are recorded for adjudication; this contract fails on page errors or broken navigation but does not independently prove provider/API health.",
   ],
-  truthBoundary: "PASS proves the tested primary Real Markets and Shield asset interactions navigate to dedicated fail-closed asset routes and do not open an in-place modal. It does not grant provider-data or final visual-design approval.",
+  truthBoundary: "PASS proves the tested primary Real Markets and Shield asset interactions navigate to dedicated fail-closed asset routes and do not open an in-place modal. It does not grant provider-data, provider/API health, or final visual-design approval.",
 };
-fs.writeFileSync(path.join(evidenceDir, "RECEIPT.json"), `${JSON.stringify(receipt, null, 2)}\n`);
+fs.writeFileSync(path.join(evidenceDir, "RECEIPT.json"), `${JSON.stringify(receipt, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 console.log(JSON.stringify(receipt, null, 2));
 if (!receipt.passed) process.exit(1);
