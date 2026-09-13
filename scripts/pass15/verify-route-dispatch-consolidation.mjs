@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { readVerifiedRouteAstRegistry } from "./route-module-ast.mjs";
+import { readVerifiedRouteAstFreezeV2 } from "./verified-route-ast-freeze-v2.mjs";
 
 const root = process.cwd();
 function argumentValue(name) {
@@ -31,7 +31,7 @@ function record(name, ok, detail = undefined) {
   checks.push({ name, ok, ...(detail === undefined ? {} : { detail }) });
   if (!ok) failures.push({ name, detail });
 }
-const { registry: routeAstRegistry, rowsByPath: routeAstRows } = readVerifiedRouteAstRegistry({ root });
+const { registry: routeAstRegistry, rowsByPath: routeAstRows } = readVerifiedRouteAstFreezeV2({ root });
 function astRow(relativePath) {
   const row = routeAstRows.get(relativePath);
   if (!row) throw new Error(`route_ast_registry_row_missing:${relativePath}`);
@@ -115,9 +115,9 @@ record("shared_options_helper", fs.readFileSync(path.join(root, "lib/server/lazy
 record("no_undeclared_server_only_import", !fs.readFileSync(path.join(root, "lib/server/lazy-route-dispatch.ts"), "utf8").includes(["server", "only"].join("-")));
 
 const result = {
-  schemaVersion: "velmere.pass15.route-dispatch-verification.v1",
+  schemaVersion: "velmere.pass15.route-dispatch-verification.v2",
   generatedAt: new Date().toISOString(),
-  truthBoundary: "Static source/contract verification with hash-bound TypeScript AST route export registry. Exact AST reparse, runtime parity and HTTP behavior still require the exact A78R1/A79R1 toolchain, production builds and browser/E2E replay.",
+  truthBoundary: "Static source/contract verification with frozen exact-toolchain TypeScript AST aggregate and full current-source reparse. Browser/LIVE/sale credit still requires exact runtime and external evidence beyond this static contract.",
   summary: {
     groups: groups.length,
     routesPreserved: routeCount,
@@ -128,6 +128,8 @@ const result = {
     netNextEntrypointReduction: manifest.summary.netEntrypointReduction,
     routeAstRegistryFiles: routeAstRegistry.fileCount,
     routeAstRegistryExactCredit: routeAstRegistry.exactAstReparseCredit,
+    routeAstFreezeSchemaVersion: routeAstRegistry.freezeSchemaVersion,
+    routeAstFreezeDigestSha256: routeAstRegistry.freezeDigestSha256,
   },
   failures,
   checks,
