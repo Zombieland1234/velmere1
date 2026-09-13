@@ -628,7 +628,6 @@ export async function runWorldClassFurnace() {
     };
     cycleSummaries.push(summaryData);
 
-    // Write cycle artifacts
     fs.writeFileSync(
       path.join(cycleDir, "findings.json"),
       JSON.stringify(
@@ -752,7 +751,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
     console.log(`[Cycle ${cyclePad}] Complete: ${passedProbes}/${totalProbes} probes passed (${adversarialResilienceIndex}% resilience).`);
   }
 
-  // 3. Cycle 10 Final Deliverables: Generate 150 Certified PDF Reports & Release Manifests
   console.log("\n================================================================================");
   console.log(">>> COMPILING FINAL 150 CERTIFIED AUDIT REPORTS & SIGNED RELEASE MANIFEST <<<");
   console.log("================================================================================\n");
@@ -786,8 +784,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
       );
 
       const { pdfBytes, pdfDigest, pdfByteLength, pageCount } = renderCanonicalReportToPdf(report);
-
-      // Verify %PDF-1.7 header
       const headerStr = Buffer.from(pdfBytes.slice(0, 8)).toString("utf8");
       if (!headerStr.startsWith("%PDF-")) {
         throw new Error(`CRITICAL: Generated file ${fileName} lacks %PDF header. Received: ${headerStr}`);
@@ -795,7 +791,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
 
       fs.writeFileSync(filePath, Buffer.from(pdfBytes));
 
-      // Extract and count claims and findings
       const allMetrics = report.sections.flatMap((s) => s.data?.metrics || []);
       const allFindings = report.sections.flatMap((s) => s.data?.findings || []);
       const totalClaimsCount = allMetrics.length + allFindings.length;
@@ -847,7 +842,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
 
   const releaseDurationMs = Date.now() - releaseStartTime;
 
-  // 4. Write release-manifest.json
   const releaseManifest = {
     schemaVersion: "velmere.audit.release-manifest.v3-world-class",
     title: "Velmère World-Class Certified Release Manifest (150 Institutional Audit Reports)",
@@ -863,7 +857,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
   fs.writeFileSync(releaseManifestPath, JSON.stringify(releaseManifest, null, 2), "utf8");
   console.log(`\n[RELEASE] Wrote Release Manifest: ${releaseManifestPath}`);
 
-  // 5. Sign the release manifest with Ed25519 PKI
   const manifestRaw = fs.readFileSync(releaseManifestPath);
   const manifestSha256 = crypto.createHash("sha256").update(manifestRaw).digest("hex");
   const { signWithVelmereKey } = await import("../../lib/security/audit-pki-signature");
@@ -877,7 +870,8 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
       algorithm: "Ed25519",
       publicKeySha256: crypto.createHash("sha256").update(publicKeyPem).digest("hex"),
       signature: manifestSignature,
-      external trusted timestamp (not evidenced)TimestampToken: `external trusted timestamp (not evidenced)_MOCK_TOKEN_${Date.now()}_VELMERE_CA`,
+      timestampEvidenceStatus: "NOT_EVIDENCED",
+      localMockTimestampToken: `LOCAL_MOCK_TOKEN_${Date.now()}_VELMERE_CA`,
     },
     manifest: releaseManifest,
   };
@@ -886,7 +880,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
   fs.writeFileSync(signedManifestPath, JSON.stringify(signedManifest, null, 2), "utf8");
   console.log(`[RELEASE] Wrote Signed Manifest: ${signedManifestPath}`);
 
-  // 6. Build verification report across all 150 PDFs
   const verificationPasses: any[] = [];
   let allPdfsValid = true;
 
@@ -935,7 +928,6 @@ ${personas.map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.probesPassed}
   fs.writeFileSync(verificationReportPath, JSON.stringify(verificationReport, null, 2), "utf8");
   console.log(`[RELEASE] Wrote Verification Report: ${verificationReportPath}`);
 
-  // 7. Write Comprehensive Formal Forensic Release Dossier: final-release-report.md
   const totalClaimsAll = releaseManifestItems.reduce((acc, i) => acc + i.totalClaimsCount, 0);
   const totalVerifiedClaims = releaseManifestItems.reduce((acc, i) => acc + i.verifiedClaimsCount, 0);
 
