@@ -1,0 +1,38 @@
+name: Velmere pinned source evidence export
+on:
+  push:
+    branches: [audit/release-evidence-recovery-20260914]
+    paths: [.github/workflows/velmere-forensic-source-export.yml]
+permissions:
+  contents: read
+concurrency:
+  group: velmere-forensic-source-export
+  cancel-in-progress: false
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: 565b1c088cc56062fae7ce56612bd24dfbf6eb66
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Export source bytes without executing application code
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 565b1c088cc56062fae7ce56612bd24dfbf6eb66
+          mkdir -p /tmp/velmere-source-evidence
+          git archive --format=zip --prefix=velmere-source/ HEAD > /tmp/velmere-source-evidence/source-565b1c0.zip
+          git ls-tree -r HEAD > /tmp/velmere-source-evidence/git-tree.txt
+          git rev-parse HEAD HEAD^{tree} > /tmp/velmere-source-evidence/identity.txt
+          sha256sum /tmp/velmere-source-evidence/source-565b1c0.zip > /tmp/velmere-source-evidence/archive.sha256
+          printf '%s\n' 'Pinned public Git source only. NOT the canonical R12A ZIP. No application, security or release tests executed by this workflow. No secrets, dependencies or deployment environment exported.' > /tmp/velmere-source-evidence/BOUNDARY.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: velmere-pinned-source-565b1c0
+          path: /tmp/velmere-source-evidence/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
