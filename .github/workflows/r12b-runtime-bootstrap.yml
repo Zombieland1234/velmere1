@@ -1,0 +1,78 @@
+name: R12B exact offline runtime bootstrap
+on:
+  push:
+    branches: [r12b-runtime-bootstrap-20260914]
+    paths: [.github/workflows/r12b-runtime-bootstrap.yml]
+permissions:
+  contents: read
+concurrency:
+  group: r12b-runtime-bootstrap
+  cancel-in-progress: false
+jobs:
+  bootstrap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Bind R12A dependency bytes and runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bootstrap-receipts bootstrap-bundle
+          test "$(node --version)" = v24.18.0
+          test "$(npm --version)" = 11.16.0
+          echo '67db27457725baab1801e060e3b3d43b5247e2b768f43e16e355243d6a9617ff  package.json' | sha256sum --check
+          echo 'be2c45aa694560061b3e265b2258ab5b0215ad66f22e6ca5d5e15678efa9a751  package-lock.json' | sha256sum --check
+          echo 'a134d45fb2d7291fcd19f4283fe737fe4193bf0085f63ef295ddabbc27fa88a3  .npmrc' | sha256sum --check
+          node --version > bootstrap-receipts/node-version.txt
+          npm --version > bootstrap-receipts/npm-version.txt
+          sha256sum package.json package-lock.json .npmrc > bootstrap-receipts/dependency-inputs.sha256
+      - name: Clean install exact locked dependencies without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts 2>&1 | tee bootstrap-receipts/npm-ci.log
+          npm ls --all --json > bootstrap-receipts/npm-ls.json || true
+      - name: Package offline runtime, installed dependencies and frozen test fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          node_root="$(dirname "$(dirname "$(command -v node)")")"
+          tar -czf bootstrap-bundle/node24.tar.gz -C "$node_root" .
+          tar -czf bootstrap-bundle/node_modules.tar.gz node_modules
+          dirs=()
+          for d in evaluation fixtures; do
+            if test -d "$d"; then dirs+=("$d"); fi
+          done
+          if test "${#dirs[@]}" -gt 0; then tar -czf bootstrap-bundle/historical-fixtures.tar.gz "${dirs[@]}"; fi
+          sha256sum bootstrap-bundle/* > bootstrap-receipts/bundle.sha256
+          node - <<'NODE' > bootstrap-receipts/BOOTSTRAP_RECEIPT.json
+          const fs=require('node:fs');
+          console.log(JSON.stringify({schemaVersion:'velmere.r12b.runtime-bootstrap.v1',generatedAt:new Date().toISOString(),workflowSha:process.env.GITHUB_SHA,baseSourceSha:'565b1c088cc56062fae7ce56612bd24dfbf6eb66',r12aArchiveSha256:'4bca236725befdd03664f21a86056e8ee8119a05b88bf864c70cd28b3bd5ca74',runtime:{node:process.version,npm:'11.16.0'},cleanLockedInstallExecuted:true,lifecycleScriptsExecuted:false,fullR12aProjectExecuted:false,productionReady:false,truthBoundary:'Dependency/runtime bootstrap only. Git subject is not the R12A application archive. No full application or release claim.'},null,2));
+          NODE
+      - name: Preserve receipts including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r12b-runtime-bootstrap-receipts
+          path: bootstrap-receipts/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Export reusable offline runtime
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r12b-exact-runtime-and-dependencies
+          path: bootstrap-bundle/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
