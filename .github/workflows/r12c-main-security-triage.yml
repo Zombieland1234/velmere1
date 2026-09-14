@@ -1,0 +1,43 @@
+name: R12C redacted main security triage
+on:
+  push:
+    branches: [audit/release-evidence-recovery-20260914]
+    paths: [.github/workflows/r12c-main-security-triage.yml]
+permissions:
+  contents: read
+jobs:
+  triage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: 76fbcdf104345338eac60c867602b28d1dbef754
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+      - name: Run exact main scanner and retain only redacted observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 76fbcdf104345338eac60c867602b28d1dbef754
+          mkdir -p /tmp/r12c-triage
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          import {execFileSync} from 'node:child_process';
+          import {buildSourceManifest,scanSourceForHighPrecisionSecrets} from './scripts/pass4992/supply-chain-release.mjs';
+          const manifest=await buildSourceManifest(process.cwd());
+          const scan=await scanSourceForHighPrecisionSecrets(process.cwd(),manifest);
+          const result={schema:'velmere.r12c.main-security-triage.v1',gitSha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),node:process.version,sourceDigest:manifest.sourceDigest,sourceFiles:manifest.fileCount,scan,matchingSourceEntries:manifest.entries.filter(e=>scan.findings.some(f=>f.path===e.path)),scope:'Exact main current-source scan. Matched token values are never emitted. This diagnostic does not repair main, rotate secrets, scan complete Git history or grant release approval.'};
+          await fs.writeFile('/tmp/r12c-triage/MAIN_SECURITY_TRIAGE.json',JSON.stringify(result,null,2));
+          console.log(JSON.stringify({status:scan.status,findings:scan.findings}));
+          NODE
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: r12c-redacted-main-security-triage
+          path: /tmp/r12c-triage/
+          retention-days: 7
+          if-no-files-found: error
