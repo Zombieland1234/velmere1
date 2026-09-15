@@ -36,6 +36,9 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           R13_PROBE_OUTPUT: r13-infrastructure-probe.json
         run: node scripts/r13/infrastructure-probe.mjs
+      - name: Bounded negative requests to reviewed legacy edge handler
+        if: always()
+        run: node scripts/r13/legacy-edge-boundaries.mjs
       - name: Preserve failures and redacted evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -44,5 +47,6 @@ jobs:
           path: |
             r13-component-tests.tap
             r13-infrastructure-probe.json
+            r13-legacy-edge-boundaries.json
           if-no-files-found: error
           retention-days: 7
