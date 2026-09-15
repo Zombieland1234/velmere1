@@ -1,0 +1,130 @@
+name: R13 connected preflight (read only)
+on:
+  push:
+    branches: [r13-backend-integration-20260915]
+    paths: [.github/workflows/r13-connected-preflight.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13-connected-preflight
+  cancel-in-progress: false
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: 76fbcdf104345338eac60c867602b28d1dbef754
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Observe existing credentials without disclosing them
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, json, hashlib, pathlib, subprocess, datetime, urllib.request, urllib.error, urllib.parse, time, zipfile, re
+          out=pathlib.Path('r13-observation'); out.mkdir()
+          names=['VERCEL_TOKEN','VERCEL_ORG_ID','VERCEL_PROJECT_ID','SUPABASE_URL','NEXT_PUBLIC_SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_ACCESS_TOKEN','STRIPE_TEST_SECRET_KEY','STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET','POSTHOG_API_KEY','POSTHOG_PERSONAL_API_KEY','POSTHOG_HOST']
+          def write(name,data): (out/name).write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n')
+          env=[{'name':n,'present':bool(os.getenv(n)),'value':'[REDACTED]' if os.getenv(n) else None} for n in names]
+          write('ENVIRONMENT_ACCESS.json',{'scope':'repository secrets exposed to this nonproduction read-only job; not all GitHub environments','variables':env})
+          observations=[]
+          def get(label,url,headers=None):
+              start=time.monotonic(); status=None; data=None; error=None
+              try:
+                  req=urllib.request.Request(url,headers=headers or {},method='GET')
+                  with urllib.request.urlopen(req,timeout=15) as res:
+                      status=res.status; body=res.read(2_000_001)
+                      if len(body)>2_000_000: error='RESPONSE_TOO_LARGE'
+                      else:
+                          try: data=json.loads(body)
+                          except Exception: error='NON_JSON_RESPONSE'
+              except urllib.error.HTTPError as e: status=e.code; error='HTTP_ERROR'
+              except Exception as e: error=type(e).__name__
+              observations.append({'id':label,'method':'GET','host':urllib.parse.urlsplit(url).hostname,'httpStatus':status,'durationMs':round((time.monotonic()-start)*1000,2),'error':error})
+              return data if status==200 and isinstance(data,(dict,list)) else None
+          token=os.getenv('VERCEL_TOKEN','')
+          if token:
+              h={'Authorization':'Bearer '+token}; team=os.getenv('VERCEL_ORG_ID',''); suffix='?teamId='+urllib.parse.quote(team) if team else ''
+              d=get('vercel-projects','https://api.vercel.com/v9/projects'+suffix,h)
+              if isinstance(d,dict): write('VERCEL_PROJECTS.json',[{k:p.get(k) for k in ['id','name','framework','nodeVersion','buildCommand','installCommand','outputDirectory','rootDirectory']} for p in d.get('projects',[])])
+              pid=os.getenv('VERCEL_PROJECT_ID','')
+              if pid:
+                  d=get('vercel-environment-names','https://api.vercel.com/v9/projects/'+urllib.parse.quote(pid,safe='')+'/env'+suffix,h)
+                  if isinstance(d,dict): write('VERCEL_ENVIRONMENT_NAMES.json',[{k:p.get(k) for k in ['key','target','type','gitBranch','createdAt','updatedAt']} for p in d.get('envs',[])])
+          url=os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL','')
+          parsed=urllib.parse.urlsplit(url)
+          if parsed.scheme=='https' and parsed.hostname and parsed.hostname.endswith('.supabase.co') and not parsed.username and not parsed.password and parsed.path in ('','/') and not parsed.query:
+              url=url.rstrip('/'); key=os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY','')
+              if key:
+                  h={'apikey':key}
+                  if key.count('.')==2: h['Authorization']='Bearer '+key
+                  d=get('supabase-postgrest-schema',url+'/rest/v1/',h)
+                  if isinstance(d,dict): write('SUPABASE_REST_SCHEMA.json',{'paths':sorted(d.get('paths',{})),'definitions':d.get('definitions',{}),'host':parsed.hostname})
+                  d=get('supabase-auth-settings',url+'/auth/v1/settings',h)
+                  if isinstance(d,dict): write('SUPABASE_AUTH_SETTINGS.json',{k:d.get(k) for k in ['disable_signup','mailer_autoconfirm','phone_autoconfirm','external']})
+          token=os.getenv('SUPABASE_ACCESS_TOKEN','')
+          if token:
+              d=get('supabase-projects','https://api.supabase.com/v1/projects',{'Authorization':'Bearer '+token})
+              if isinstance(d,list): write('SUPABASE_PROJECTS.json',[{k:p.get(k) for k in ['id','name','region','status','organization_id']} for p in d])
+          stripe=os.getenv('STRIPE_TEST_SECRET_KEY') or os.getenv('STRIPE_SECRET_KEY','')
+          stripe_test=stripe.startswith(('sk_test_','rk_test_'))
+          write('STRIPE_MODE_GUARD.json',{'keyPresent':bool(stripe),'testKey':stripe_test,'liveCallsAllowed':False,'financialWrites':0})
+          if stripe_test:
+              d=get('stripe-test-account','https://api.stripe.com/v1/account',{'Authorization':'Bearer '+stripe})
+              if isinstance(d,dict): write('STRIPE_ACCOUNT.json',{k:d.get(k) for k in ['id','country','default_currency','charges_enabled','payouts_enabled']})
+              for resource in ['products','prices','webhook_endpoints']:
+                  d=get('stripe-test-'+resource,'https://api.stripe.com/v1/'+resource+'?limit=100',{'Authorization':'Bearer '+stripe})
+                  if isinstance(d,dict): write('STRIPE_'+resource.upper()+'.json',{'has_more':d.get('has_more'),'data':[{k:p.get(k) for k in ['id','livemode','active','currency','unit_amount','product','recurring','type','status','enabled_events']} for p in d.get('data',[])]})
+          ph=os.getenv('POSTHOG_PERSONAL_API_KEY',''); phhost=os.getenv('POSTHOG_HOST','').rstrip('/')
+          if ph and phhost in ['https://eu.posthog.com','https://us.posthog.com','https://app.posthog.com']:
+              d=get('posthog-projects',phhost+'/api/projects/',{'Authorization':'Bearer '+ph})
+              if isinstance(d,dict): write('POSTHOG_PROJECTS.json',[{k:p.get(k) for k in ['id','name','timezone','ingested_event']} for p in d.get('results',[])])
+          write('OBSERVATIONS.json',{'observedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'workflowSha':os.getenv('GITHUB_SHA'),'applicationReferenceSha':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sourceRole':'REMOTE_REFERENCE_NOT_R12G_NOT_RELEASE','runId':os.getenv('GITHUB_RUN_ID'),'observations':observations,'mutations':0,'checkoutOrPaymentExecuted':False})
+          # A bounded source reference for reconciling the existing public Git tree.
+          # No fonts, credentials, logs, generated evidence or dependency directories are exported.
+          records=[]; skipped=[]
+          secret=re.compile(rb'(?:-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\b(?:sk|rk)_live_[A-Za-z0-9]{16,}|\bgh[pousr]_[A-Za-z0-9]{36,}|\bgithub_pat_[A-Za-z0-9_]{40,}|\bAKIA[A-Z0-9]{16}\b)')
+          excluded={'artifacts','node_modules','.next','.git','coverage','test-results','playwright-report'}
+          font_ext={'.ttf','.otf','.woff','.woff2','.eot'}
+          with zipfile.ZipFile(out/'REMOTE_SOURCE_REFERENCE.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for raw in subprocess.check_output(['git','ls-tree','-rz','HEAD']).split(b'\0'):
+                  if not raw: continue
+                  meta,bpath=raw.split(b'\t',1); mode,kind,blob=meta.decode().split(); path=bpath.decode('utf-8'); p=pathlib.Path(path)
+                  if kind!='blob': continue
+                  b=subprocess.check_output(['git','cat-file','blob',blob]); reason=None
+                  if p.parts[0] in excluded: reason='generated_or_historical_evidence'
+                  elif p.suffix.lower() in font_ext or 'embedded-font-data' in path: reason='font_resource'
+                  elif p.name.startswith('.env') or p.suffix.lower() in {'.pem','.key','.p12','.pfx','.log'}: reason='sensitive_or_runtime_path'
+                  elif len(b)>5_000_000: reason='oversized_reference'
+                  elif secret.search(b): reason='secret_pattern_quarantined'
+                  records.append({'path':path,'mode':mode,'gitBlob':blob,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest(),'exported':reason is None,'exclusion':reason})
+                  if reason: skipped.append({'path':path,'reason':reason})
+                  else: z.writestr(path,b)
+          write('REMOTE_SOURCE_INDEX.json',{'subject':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':records,'excluded':skipped,'historyScanned':False})
+          print('Read-only observations recorded. No secret values or personal records emitted. This job is not R13 release qualification.')
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: r13-connected-preflight-${{ github.run_id }}
+          path: r13-observation/
+          retention-days: 7
+          if-no-files-found: error
