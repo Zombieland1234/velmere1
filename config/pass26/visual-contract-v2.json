@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "velmere.pass26.visual-contract.v2",
+  "contractState": "PENDING_HUMAN_VISUAL_APPROVAL",
+  "sourceCheckpointSha": "c46479d4fcdaff8a22234587c26bd8c352db9991",
+  "primaryAssetInteraction": {
+    "realMarkets": "DEDICATED_ASSET_ROUTE",
+    "shield": "DEDICATED_ASSET_ROUTE"
+  },
+  "legacyPrimaryContracts": [
+    {
+      "id": "asset-detail-modal-real-markets-primary",
+      "state": "RETIRED_FROM_PRIMARY_DENOMINATOR",
+      "reason": "Current primary Real Markets interaction routes to /real-markets/assets/... and has no active setSelected(non-null) path."
+    },
+    {
+      "id": "asset-detail-modal-shield-primary",
+      "state": "RETIRED_FROM_PRIMARY_DENOMINATOR",
+      "reason": "Current primary Shield interaction routes to /shield/assets/... and has no active setSelected(non-null) path."
+    }
+  ],
+  "viewports": {
+    "desktop": { "width": 1440, "height": 900 },
+    "mobile": { "width": 390, "height": 844 }
+  },
+  "surfaces": [
+    {
+      "id": "security-audits",
+      "route": "/en/security/audits",
+      "marker": "body",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING"
+    },
+    {
+      "id": "shield-terminal",
+      "route": "/en/shield",
+      "marker": "[data-pass2356-shield-realmarkets-parity=\"true\"]",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING"
+    },
+    {
+      "id": "real-markets-terminal",
+      "route": "/en/real-markets",
+      "marker": "body",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING"
+    },
+    {
+      "id": "shield-asset-detail-withheld",
+      "route": "/en/shield/assets/bitcoin",
+      "marker": "[data-asset-detail-truth-state=\"WITHHELD\"]",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING",
+      "truthState": "WITHHELD"
+    },
+    {
+      "id": "real-markets-asset-detail-withheld",
+      "route": "/en/real-markets/assets/aapl",
+      "marker": "[data-asset-detail-truth-state=\"WITHHELD\"]",
+      "viewports": ["desktop", "mobile"],
+      "approvalState": "PENDING",
+      "truthState": "WITHHELD"
+    }
+  ],
+  "expectedCaptureCount": 10,
+  "approvalRules": {
+    "automatedCaptureIsApproval": false,
+    "hashRefreshWithoutReviewAllowed": false,
+    "providerBoundAssetDetailInvalidatesWithheldApproval": true,
+    "humanReviewRequired": true
+  }
+}
