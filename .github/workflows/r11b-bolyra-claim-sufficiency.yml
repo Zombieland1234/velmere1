@@ -1,0 +1,65 @@
+name: R11B Bolyra Claim Sufficiency Interop
+
+on:
+  push:
+    branches:
+      - r11b-claim-sufficiency-bolyra-v1
+    paths:
+      - scripts/r11/claim-sufficiency-engine.mjs
+      - scripts/r11/test-bolyra-claim-sufficiency.mjs
+      - .github/workflows/r11b-bolyra-claim-sufficiency.yml
+  pull_request:
+    branches:
+      - r11b-integration-v8-clean
+    paths:
+      - scripts/r11/claim-sufficiency-engine.mjs
+      - scripts/r11/test-bolyra-claim-sufficiency.mjs
+      - .github/workflows/r11b-bolyra-claim-sufficiency.yml
+
+permissions:
+  contents: read
+
+jobs:
+  bolyra-public-boundary-and-velmere-sufficiency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Velmere feature branch
+        uses: actions/checkout@v4
+
+      - name: Checkout exact Bolyra public source
+        uses: actions/checkout@v4
+        with:
+          repository: bolyra/bolyra
+          ref: 9e076ba105b1d75ad4182d4ce0b302e42899a4dd
+          path: .external/bolyra
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: .external/bolyra/integrations/receipts/package-lock.json
+
+      - name: Install Bolyra receipts test dependencies
+        working-directory: .external/bolyra/integrations/receipts
+        run: npm ci --ignore-scripts
+
+      - name: Execute Bolyra tail-truncation boundary tests
+        working-directory: .external/bolyra/integrations/receipts
+        run: >-
+          npm test -- --runInBand test/chain.test.ts
+          -t "cannot detect tail truncation without external expectations|detects tail truncation when expectedCount is provided|detects tail truncation when expectedHeadHash is provided|accepts the full log when expectedCount and expectedHeadHash match"
+
+      - name: Execute Velmere claim-sufficiency evaluator
+        run: node scripts/r11/test-bolyra-claim-sufficiency.mjs --out "$RUNNER_TEMP/VELMERE_BOLYRA_ENGINE_RUN_v1.json"
+
+      - name: Show machine result
+        run: cat "$RUNNER_TEMP/VELMERE_BOLYRA_ENGINE_RUN_v1.json"
+
+      - name: Upload machine result
+        uses: actions/upload-artifact@v4
+        with:
+          name: velmere-bolyra-claim-sufficiency-${{ github.sha }}
+          path: ${{ runner.temp }}/VELMERE_BOLYRA_ENGINE_RUN_v1.json
+          if-no-files-found: error
