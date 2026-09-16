@@ -21,34 +21,36 @@ jobs:
         with:
           node-version: '24.18.0'
           cache: npm
-      - name: Normalize exactly two backend TypeScript import specifiers
+      - name: Normalize backend security TypeScript relative imports
         shell: python
         run: |
           from pathlib import Path
-          p=Path('lib/security/analyzer/contract-analyzer.ts')
-          s=p.read_text(encoding='utf-8')
-          pairs=[
-            ('../evidence/evidence-record.ts','../evidence/evidence-record'),
-            ('./vlm-top5-detectors.ts','./vlm-top5-detectors'),
-          ]
-          changed=False
-          for old,new in pairs:
-              if old in s:
-                  s=s.replace(old,new,1); changed=True
-              elif new not in s:
-                  raise SystemExit(f'expected import contract missing: {old} / {new}')
-          if changed:
-              p.write_text(s,encoding='utf-8')
-      - name: Persist exact backend-only TypeScript correction on R13C branch
+          import re
+          pattern=re.compile(r'(?P<prefix>(?:from\\s+|import\\s*\\()\\s*["\\\'])(?P<path>\\.{1,2}/[^"\\\']+)\\.ts(?P<quote>["\\\'])')
+          changed=[]
+          for p in Path('lib/security').rglob('*.ts'):
+              s=p.read_text(encoding='utf-8')
+              ns,n=pattern.subn(lambda m: f"{m.group('prefix')}{m.group('path')}{m.group('quote')}",s)
+              if n:
+                  p.write_text(ns,encoding='utf-8')
+                  changed.append((str(p),n))
+          remaining=[]
+          for p in Path('lib/security').rglob('*.ts'):
+              s=p.read_text(encoding='utf-8')
+              if pattern.search(s): remaining.append(str(p))
+          if remaining:
+              raise SystemExit(f'unresolved relative .ts imports remain: {remaining}')
+          print(f'normalized_files={len(changed)} normalized_imports={sum(n for _,n in changed)}')
+      - name: Persist backend-only TypeScript import normalization on R13C branch
         shell: bash
         run: |
-          if git diff --quiet -- lib/security/analyzer/contract-analyzer.ts; then
-            echo "backend import contract already normalized"
+          if git diff --quiet -- lib/security; then
+            echo "backend security import contracts already normalized"
           else
             git config user.name "Zombieland1234"
             git config user.email "velmere141@gmail.com"
-            git add lib/security/analyzer/contract-analyzer.ts
-            git commit -m "fix(r13c): normalize analyzer TypeScript import specifiers"
+            git add lib/security
+            git commit -m "fix(r13c): normalize security TypeScript import specifiers"
             git push origin HEAD:r13c/backend-hardening-20260916
           fi
       - name: Install lockfile dependencies
