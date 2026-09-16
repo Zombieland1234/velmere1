@@ -1,0 +1,59 @@
+name: R13D package exact verified source
+on:
+  push:
+    branches: [r13d/backend-hardening-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13d-package-exact-source
+  cancel-in-progress: true
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 1fa04fa951f8205942c8e66323f2e097717c2fc1
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify exact commit
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "1fa04fa951f8205942c8e66323f2e097717c2fc1"
+          echo "sha=1fa04fa951f8205942c8e66323f2e097717c2fc1" > R13D_SOURCE_SHA.txt
+      - name: Package complete source tree
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,zipfile,hashlib
+          root='.'
+          out='/tmp/VELMERE_R13D_VERIFIED_SOURCE_1fa04fa.zip'
+          skip={'.git','node_modules','.next'}
+          files=[]
+          for base,dirs,names in os.walk(root):
+            dirs[:]=[d for d in dirs if d not in skip]
+            for n in names:
+              p=os.path.join(base,n)
+              rel=os.path.relpath(p,root).replace(os.sep,'/')
+              files.append((rel,p))
+          files.sort()
+          with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+            for rel,p in files:z.write(p,rel)
+          h=hashlib.sha256()
+          with open(out,'rb') as f:
+            for b in iter(lambda:f.read(1024*1024),b''):h.update(b)
+          digest=h.hexdigest()
+          open('R13D_SOURCE_ZIP_SHA256.txt','w').write(digest+'  VELMERE_R13D_VERIFIED_SOURCE_1fa04fa.zip\n')
+          print({'files':len(files),'sha256':digest,'zip':out})
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: VELMERE_R13D_VERIFIED_SOURCE_1fa04fa
+          path: |
+            /tmp/VELMERE_R13D_VERIFIED_SOURCE_1fa04fa.zip
+            R13D_SOURCE_SHA.txt
+            R13D_SOURCE_ZIP_SHA256.txt
+          if-no-files-found: error
+          retention-days: 30
