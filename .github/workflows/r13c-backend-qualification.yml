@@ -21,18 +21,6 @@ jobs:
         with:
           node-version: '24.18.0'
           cache: npm
-      - name: Apply exact R13C backend-only furnace syntax patch in qualification workspace
-        shell: python
-        run: |
-          from pathlib import Path
-          p=Path('scripts/furnace/run-world-class-furnace.ts')
-          s=p.read_text(encoding='utf-8')
-          old='external trusted timestamp (not evidenced)TimestampToken:'
-          new='externalTrustedTimestampToken:'
-          count=s.count(old)
-          if count != 1:
-              raise SystemExit(f'expected exactly one known furnace syntax defect, found {count}')
-          p.write_text(s.replace(old,new), encoding='utf-8')
       - name: Install lockfile dependencies
         run: npm ci
       - name: Full TypeScript gate
