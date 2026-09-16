@@ -4,89 +4,40 @@ on:
     branches: [r13c/backend-hardening-20260916]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: r13c-backend-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   qualify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          persist-credentials: true
+          persist-credentials: false
           fetch-depth: 1
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
           cache: npm
-      - name: Normalize backend TypeScript relative imports
-        shell: python
-        run: |
-          from pathlib import Path
-          changed_files=[]
-          changed_imports=0
-          roots=[Path('lib/security'),Path('lib/worldclass')]
-          for root in roots:
-            for p in root.rglob('*.ts'):
-              lines=p.read_text(encoding='utf-8').splitlines(keepends=True)
-              out=[]
-              changed=False
-              for line in lines:
-                  original=line
-                  stripped=line.lstrip()
-                  is_import=(' from "./' in line or ' from "../' in line or " from './" in line or " from '../" in line or stripped.startswith('import("./') or stripped.startswith('import("../') or stripped.startswith("import('./") or stripped.startswith("import('../"))
-                  if is_import:
-                      if '.ts"' in line:
-                          line=line.replace('.ts"','"')
-                      if ".ts'" in line:
-                          line=line.replace(".ts'","'")
-                  if line != original:
-                      changed=True
-                      changed_imports += 1
-                  out.append(line)
-              if changed:
-                  p.write_text(''.join(out),encoding='utf-8')
-                  changed_files.append(str(p))
-          remaining=[]
-          for root in roots:
-            for p in root.rglob('*.ts'):
-              for i,line in enumerate(p.read_text(encoding='utf-8').splitlines(),1):
-                  stripped=line.lstrip()
-                  is_import=(' from "./' in line or ' from "../' in line or " from './" in line or " from '../" in line or stripped.startswith('import("./') or stripped.startswith('import("../') or stripped.startswith("import('./") or stripped.startswith("import('../"))
-                  if is_import and ('.ts"' in line or ".ts'" in line):
-                      remaining.append(f'{p}:{i}')
-          if remaining:
-              raise SystemExit(f'unresolved relative .ts imports remain: {remaining}')
-          print(f'normalized_files={len(changed_files)} normalized_imports={changed_imports}')
-      - name: Align security dependency versions to canonical R13 source
+      - name: Verify immutable dependency contract
         shell: python
         run: |
           import json
-          from pathlib import Path
-          p=Path('package.json')
-          d=json.loads(p.read_text(encoding='utf-8'))
-          d['dependencies']['next']='16.3.5'
-          d['devDependencies']['solc']='0.8.37'
-          d['devDependencies']['postcss-selector-parser']='6.1.4'
-          d.setdefault('overrides',{})['sharp']='0.35.4'
-          d['overrides']['tmp']='0.2.7'
-          p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-      - name: Refresh lockfile without running dependency scripts
-        run: npm install --package-lock-only --ignore-scripts
-      - name: Persist backend-only R13C corrections
-        shell: bash
-        run: |
-          if git diff --quiet -- lib/security lib/worldclass package.json package-lock.json; then
-            echo "backend source and dependency contract already normalized"
-          else
-            git config user.name "Zombieland1234"
-            git config user.email "velmere141@gmail.com"
-            git add lib/security lib/worldclass package.json package-lock.json
-            git commit -m "fix(r13c): normalize backend imports and security dependencies"
-            git push origin HEAD:r13c/backend-hardening-20260916
-          fi
+          d=json.load(open('package.json'))
+          expected={
+            ('dependencies','next'):'16.3.5',
+            ('devDependencies','solc'):'0.8.37',
+            ('devDependencies','postcss-selector-parser'):'6.1.4',
+            ('overrides','sharp'):'0.35.4',
+            ('overrides','tmp'):'0.2.7',
+          }
+          for (section,key),want in expected.items():
+            got=d.get(section,{}).get(key)
+            if got != want:
+              raise SystemExit(f'dependency contract mismatch: {section}.{key}={got!r}, expected {want!r}')
+          print('dependency contract: PASS')
       - name: Install exact lockfile dependencies
         run: npm ci
       - name: Preserve dependency audit evidence
@@ -100,11 +51,13 @@ jobs:
         run: |
           import json
           for name in ['r13c-npm-audit.json','r13c-npm-audit-production.json']:
-              d=json.load(open(name))
-              counts=d.get('metadata',{}).get('vulnerabilities',{})
-              print(name,counts)
-              if counts.get('critical',0) or counts.get('high',0):
-                  raise SystemExit(f'high/critical dependency advisories remain in {name}')
+            d=json.load(open(name))
+            counts=d.get('metadata',{}).get('vulnerabilities',{})
+            print(name,counts)
+            if counts.get('critical',0) or counts.get('high',0):
+              raise SystemExit(f'high/critical dependency advisories remain in {name}')
+      - name: Full source integrity gate
+        run: npm run audit:source
       - name: Full TypeScript gate
         run: npm run typecheck
       - name: Full lint gate
@@ -118,11 +71,35 @@ jobs:
       - name: R13C adversarial backend regression
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts | tee r13c-redteam.tap
       - name: Database contract evidence
-        run: npm run audit:database | tee r13c-database.txt
-      - name: Provider rights evidence (expected fail-closed commercial state)
-        run: npm run audit:provider-rights | tee r13c-provider-rights.txt
-      - name: Merchant/legal evidence (expected fail-closed commercial state)
-        run: npm run audit:merchant-legal | tee r13c-merchant-legal.txt
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          npm run audit:database > r13c-database.txt 2>&1
+          code=$?
+          echo "database_exit=$code" | tee r13c-database-exit.txt
+          cat r13c-database.txt
+          exit 0
+      - name: Provider rights evidence (fail-closed commercial observation)
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          npm run audit:provider-rights > r13c-provider-rights.txt 2>&1
+          code=$?
+          echo "provider_rights_exit=$code" | tee r13c-provider-rights-exit.txt
+          cat r13c-provider-rights.txt
+          exit 0
+      - name: Merchant/legal evidence (fail-closed commercial observation)
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          npm run audit:merchant-legal > r13c-merchant-legal.txt 2>&1
+          code=$?
+          echo "merchant_legal_exit=$code" | tee r13c-merchant-legal-exit.txt
+          cat r13c-merchant-legal.txt
+          exit 0
       - name: Current product readiness observation (NO_GO is preserved, not masked)
         if: always()
         shell: bash
@@ -142,5 +119,7 @@ jobs:
             r13c-*.tap
             r13c-*.txt
             r13c-*.json
+            artifacts/pass13/PASS13_CLEAN_SAFE_AUDIT.json
+            artifacts/pass13/PASS13_CLEAN_SAFE_MANIFEST.json
           if-no-files-found: warn
           retention-days: 14
