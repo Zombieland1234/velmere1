@@ -11,7 +11,7 @@ concurrency:
 jobs:
   qualify:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: '24.18.0'
           cache: npm
+
       - name: Verify immutable dependency contract
         shell: python
         run: |
@@ -33,11 +34,14 @@ jobs:
             ('overrides','sharp'):'0.35.4',
             ('overrides','tmp'):'0.2.7',
           }
+          bad=[]
           for (section,key),want in expected.items():
             got=d.get(section,{}).get(key)
-            if got != want:
-              raise SystemExit(f'dependency contract mismatch: {section}.{key}={got!r}, expected {want!r}')
+            if got != want: bad.append(f'{section}.{key}={got!r}, expected {want!r}')
+          open('r13c-dependency-contract-exit.txt','w').write(f'dependency_contract_exit={1 if bad else 0}\n')
+          if bad: raise SystemExit('; '.join(bad))
           print('dependency contract: PASS')
+
       - name: Enforce R13C UI-immutable boundary
         shell: python
         run: |
@@ -47,96 +51,221 @@ jobs:
           forbidden=[]
           for p in paths:
             low=p.lower()
-            if p.startswith(('components/','public/','styles/')):
-              forbidden.append(p); continue
-            if p.startswith('app/') and not p.startswith('app/api/'):
-              forbidden.append(p); continue
-            if low.endswith(('.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf')):
-              forbidden.append(p); continue
+            if p.startswith(('components/','public/','styles/')): forbidden.append(p); continue
+            if p.startswith('app/') and not p.startswith('app/api/'): forbidden.append(p); continue
+            if low.endswith(('.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf')): forbidden.append(p); continue
+          open('r13c-ui-boundary.txt','w').write('\n'.join(paths)+'\n')
+          open('r13c-ui-boundary-exit.txt','w').write(f'ui_boundary_exit={1 if forbidden else 0}\n')
           print('r13c_changed_paths=',len(paths))
-          if forbidden:
-            raise SystemExit('UI_IMMUTABLE_VIOLATION: '+', '.join(forbidden))
+          if forbidden: raise SystemExit('UI_IMMUTABLE_VIOLATION: '+', '.join(forbidden))
           print('UI immutable boundary: PASS')
+
       - name: Install exact lockfile dependencies
         run: npm ci
-      - name: Preserve dependency audit evidence
-        if: always()
+
+      - name: Dependency vulnerability audits
         shell: bash
         run: |
-          npm audit --json > r13c-npm-audit.json || true
-          npm audit --omit=dev --json > r13c-npm-audit-production.json || true
-      - name: Enforce zero high or critical dependency advisories
-        shell: python
-        run: |
+          set +e
+          npm audit --json > r13c-npm-audit.json
+          npm audit --omit=dev --json > r13c-npm-audit-production.json
+          python - <<'PY'
           import json
+          bad=[]
           for name in ['r13c-npm-audit.json','r13c-npm-audit-production.json']:
-            d=json.load(open(name))
-            counts=d.get('metadata',{}).get('vulnerabilities',{})
-            print(name,counts)
-            if counts.get('critical',0) or counts.get('high',0):
-              raise SystemExit(f'high/critical dependency advisories remain in {name}')
-      - name: Full source integrity gate
-        run: npm run audit:source
-      - name: Tracked-tree and git-history secret hygiene gate
-        run: node scripts/security/scan-all-secrets.mjs | tee r13c-secret-hygiene.txt
-      - name: Full TypeScript gate
-        run: npm run typecheck
-      - name: Full lint gate
-        run: npm run lint
-      - name: Production build gate
+            d=json.load(open(name)); c=d.get('metadata',{}).get('vulnerabilities',{})
+            print(name,c)
+            if c.get('critical',0) or c.get('high',0): bad.append(name)
+          open('r13c-dependency-audit-exit.txt','w').write(f'dependency_audit_exit={1 if bad else 0}\n')
+          PY
+          exit 0
+
+      - name: Full source integrity observation
+        shell: bash
+        run: |
+          set +e
+          npm run audit:source > r13c-source-integrity.txt 2>&1
+          code=$?
+          echo "source_integrity_exit=$code" > r13c-source-integrity-exit.txt
+          cat r13c-source-integrity.txt
+          exit 0
+
+      - name: Tracked-tree and git-history secret hygiene observation
+        shell: bash
+        run: |
+          set +e
+          node scripts/security/scan-all-secrets.mjs > r13c-secret-hygiene.txt 2>&1
+          code=$?
+          echo "secret_hygiene_exit=$code" > r13c-secret-hygiene-exit.txt
+          cat r13c-secret-hygiene.txt
+          exit 0
+
+      - name: Full TypeScript observation
+        shell: bash
+        run: |
+          set +e
+          npm run typecheck > r13c-typecheck.txt 2>&1
+          code=$?
+          echo "typecheck_exit=$code" > r13c-typecheck-exit.txt
+          cat r13c-typecheck.txt
+          exit 0
+
+      - name: Full lint observation
+        shell: bash
+        run: |
+          set +e
+          npm run lint > r13c-lint.txt 2>&1
+          code=$?
+          echo "lint_exit=$code" > r13c-lint-exit.txt
+          cat r13c-lint.txt
+          exit 0
+
+      - name: Production build observation
+        shell: bash
         env:
           NEXT_TELEMETRY_DISABLED: '1'
-        run: npm run build
-      - name: R13/R13B entitlement component regression
-        run: node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs | tee r13c-entitlement.tap
-      - name: Deployed entitlement negative HTTP regression
+        run: |
+          set +e
+          npm run build > r13c-build.txt 2>&1
+          code=$?
+          echo "build_exit=$code" > r13c-build-exit.txt
+          cat r13c-build.txt
+          exit 0
+
+      - name: R13/R13B entitlement component regression observation
         shell: bash
         run: |
-          node scripts/r13b/remote-boundaries.mjs | tee r13c-preview-boundaries.txt
-          R13B_LEGACY=1 node scripts/r13b/remote-boundaries.mjs | tee r13c-legacy-boundaries.txt
-      - name: R13C adversarial backend regression
-        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts | tee r13c-redteam.tap
+          set +e
+          node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs > r13c-entitlement.tap 2>&1
+          code=$?
+          echo "entitlement_component_exit=$code" > r13c-entitlement-component-exit.txt
+          cat r13c-entitlement.tap
+          exit 0
+
+      - name: Deployed entitlement negative HTTP regression observation
+        shell: bash
+        run: |
+          set +e
+          node scripts/r13b/remote-boundaries.mjs > r13c-preview-boundaries.txt 2>&1
+          p=$?
+          R13B_LEGACY=1 node scripts/r13b/remote-boundaries.mjs > r13c-legacy-boundaries.txt 2>&1
+          l=$?
+          code=0; if [ "$p" -ne 0 ] || [ "$l" -ne 0 ]; then code=1; fi
+          echo "deployed_entitlement_exit=$code" > r13c-deployed-entitlement-exit.txt
+          cat r13c-preview-boundaries.txt
+          cat r13c-legacy-boundaries.txt
+          exit 0
+
+      - name: R13C adversarial backend regression observation
+        shell: bash
+        run: |
+          set +e
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts > r13c-redteam.tap 2>&1
+          code=$?
+          echo "redteam_exit=$code" > r13c-redteam-exit.txt
+          cat r13c-redteam.tap
+          exit 0
+
       - name: Database contract evidence
-        if: always()
         shell: bash
         run: |
           set +e
           npm run audit:database > r13c-database.txt 2>&1
           code=$?
-          echo "database_exit=$code" | tee r13c-database-exit.txt
+          echo "database_exit=$code" > r13c-database-exit.txt
           cat r13c-database.txt
           exit 0
+
       - name: Provider rights evidence (fail-closed commercial observation)
-        if: always()
         shell: bash
         run: |
           set +e
           npm run audit:provider-rights > r13c-provider-rights.txt 2>&1
           code=$?
-          echo "provider_rights_exit=$code" | tee r13c-provider-rights-exit.txt
+          echo "provider_rights_exit=$code" > r13c-provider-rights-exit.txt
           cat r13c-provider-rights.txt
           exit 0
+
       - name: Merchant/legal evidence (fail-closed commercial observation)
-        if: always()
         shell: bash
         run: |
           set +e
           npm run audit:merchant-legal > r13c-merchant-legal.txt 2>&1
           code=$?
-          echo "merchant_legal_exit=$code" | tee r13c-merchant-legal-exit.txt
+          echo "merchant_legal_exit=$code" > r13c-merchant-legal-exit.txt
           cat r13c-merchant-legal.txt
           exit 0
-      - name: Current product readiness observation (NO_GO is preserved, not masked)
-        if: always()
+
+      - name: Current product readiness observation
         shell: bash
         run: |
           set +e
           npm run audit:product-readiness > r13c-product-readiness.txt 2>&1
           code=$?
-          echo "product_readiness_exit=$code" | tee r13c-product-readiness-exit.txt
+          echo "product_readiness_exit=$code" > r13c-product-readiness-exit.txt
           cat r13c-product-readiness.txt
           exit 0
-      - name: Preserve exact qualification evidence
+
+      - name: Build backend delta patch and safe full tracked source archive
+        if: always()
+        shell: python
+        run: |
+          import hashlib, json, pathlib, subprocess, zipfile
+          root=pathlib.Path('.')
+          base='5f34757b9ab9ecb6f499e4fa8ad17391e44e9241'
+          patch=subprocess.check_output(['git','diff','--binary',f'{base}...HEAD'])
+          pathlib.Path('VELMERE_R13C_BACKEND_ONLY.patch').write_bytes(patch)
+          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          skip_ext={'.woff','.woff2','.ttf','.otf','.pem','.key','.p12','.pfx'}
+          skip_names={'.env.local','.env.production','.env.preview','.env.test'}
+          rows=[]
+          with zipfile.ZipFile('VELMERE_R13C_FULL_TRACKED_SOURCE_NO_FONTS.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+            for name in sorted(x for x in tracked if x):
+              p=root/name
+              if not p.is_file() or p.is_symlink(): continue
+              if p.suffix.lower() in skip_ext or p.name in skip_names: continue
+              data=p.read_bytes()
+              z.writestr(name,data)
+              rows.append({'path':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+          manifest={
+            'schema':'velmere.r13c.safe-source-manifest.v1',
+            'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+            'base':base,
+            'uiImmutable':True,
+            'fontBinariesExcluded':True,
+            'privateKeyAndEnvFilesExcluded':True,
+            'files':rows,
+          }
+          pathlib.Path('VELMERE_R13C_SOURCE_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          for f in ['VELMERE_R13C_BACKEND_ONLY.patch','VELMERE_R13C_FULL_TRACKED_SOURCE_NO_FONTS.zip','VELMERE_R13C_SOURCE_MANIFEST.json']:
+            data=pathlib.Path(f).read_bytes()
+            print(f, len(data), hashlib.sha256(data).hexdigest())
+
+      - name: Technical qualification verdict
+        if: always()
+        shell: python
+        run: |
+          import pathlib, re
+          expected=[
+            'r13c-dependency-contract-exit.txt','r13c-ui-boundary-exit.txt','r13c-dependency-audit-exit.txt',
+            'r13c-source-integrity-exit.txt','r13c-secret-hygiene-exit.txt','r13c-typecheck-exit.txt',
+            'r13c-lint-exit.txt','r13c-build-exit.txt','r13c-entitlement-component-exit.txt',
+            'r13c-deployed-entitlement-exit.txt','r13c-redteam-exit.txt','r13c-database-exit.txt'
+          ]
+          failures=[]; rows={}
+          for name in expected:
+            p=pathlib.Path(name)
+            if not p.exists(): failures.append(name+':missing'); continue
+            text=p.read_text().strip(); m=re.search(r'=(-?\d+)',text)
+            code=int(m.group(1)) if m else 999
+            rows[name]=code
+            if code != 0: failures.append(f'{name}:{code}')
+          pathlib.Path('r13c-technical-verdict.json').write_text(__import__('json').dumps({'technicalGo':not failures,'gates':rows,'failures':failures},indent=2)+'\n')
+          print(rows)
+          if failures: raise SystemExit('TECHNICAL_GATES_FAILED: '+', '.join(failures))
+          print('TECHNICAL_GATES: PASS')
+
+      - name: Preserve exact qualification and source evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -149,5 +278,9 @@ jobs:
             reports/SECRET_HYGIENE_REPORT.md
             artifacts/pass13/PASS13_CLEAN_SAFE_AUDIT.json
             artifacts/pass13/PASS13_CLEAN_SAFE_MANIFEST.json
+            .velmere/pass13/PASS13_PARTITIONED_ESLINT.json
+            VELMERE_R13C_BACKEND_ONLY.patch
+            VELMERE_R13C_FULL_TRACKED_SOURCE_NO_FONTS.zip
+            VELMERE_R13C_SOURCE_MANIFEST.json
           if-no-files-found: warn
           retention-days: 14
