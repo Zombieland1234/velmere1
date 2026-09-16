@@ -7,7 +7,7 @@ import {
   type Pass35CanonicalClaim,
   type Pass35CanonicalPacket,
   type Pass35CanonicalPacketInput,
-} from "./pass35-canonical-packet.ts";
+} from "./pass35-canonical-packet";
 
 export const A81_REVISION = "VELMERE_PASS36_A81R0_CANONICAL_BASIC_PRO_ADVANCED_MEGA_MATRIX_ORCHESTRATOR" as const;
 const POLICY_SCHEMA = "velmere.pass36.a81.canonical-mega-matrix-orchestrator.v1" as const;

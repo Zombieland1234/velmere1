@@ -7,18 +7,18 @@ import {
   runA84FixtureHarness,
   verifyA84Runtime,
   type A84TierPacket,
-} from "./pass36-a84-shield-full-catalog-tier-matrix-runtime.ts";
+} from "./pass36-a84-shield-full-catalog-tier-matrix-runtime";
 import {
   fetchShieldProFullCatalog,
   SHIELD_PRO_MARKET_PAGE_SIZE,
-} from "../market-integrity/shield-pro-full-catalog-client.ts";
+} from "../market-integrity/shield-pro-full-catalog-client";
 import {
   parseShieldMapQuery,
   shieldMapTierState,
   verifyShieldMapResolvedIdentity,
-} from "../market-integrity/shield-map-query-boundary.ts";
-import { createPass4644ProviderEvidenceReceipt } from "../market-integrity/provider-evidence-receipt.ts";
-import type { TokenRiskResult } from "../market-integrity/risk-types.ts";
+} from "../market-integrity/shield-map-query-boundary";
+import { createPass4644ProviderEvidenceReceipt } from "../market-integrity/provider-evidence-receipt";
+import type { TokenRiskResult } from "../market-integrity/risk-types";
 
 export const A85_REVISION = "VELMERE_PASS36_A85R0_SHIELD_PRO_AND_SHIELD_MAP_FULL_DEPTH_IDENTITY_ENTITLEMENT_MATRIX" as const;
 const POLICY_SCHEMA = "velmere.pass36.a85.shield-pro-map-full-depth-policy.v1" as const;
