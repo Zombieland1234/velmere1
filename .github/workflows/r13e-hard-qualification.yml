@@ -1,0 +1,122 @@
+name: R13E hard qualification
+on:
+  push:
+    branches: [r13e/backend-hardening-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13e-hard-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Dependency audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --json > r13e-npm-audit.json || true
+          npm audit --omit=dev --json > r13e-npm-audit-production.json || true
+          python - <<'PY'
+          import json
+          for p in ['r13e-npm-audit.json','r13e-npm-audit-production.json']:
+            d=json.load(open(p)); c=d.get('metadata',{}).get('vulnerabilities',{})
+            print(p,c)
+            if c.get('high',0) or c.get('critical',0): raise SystemExit(f'high/critical advisories in {p}')
+          PY
+      - name: Source integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run audit:source | tee r13e-source-integrity.txt
+      - name: Backend ESLint
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx eslint lib scripts test tests app/api .agents --format json > r13e-backend-eslint.json || true
+          python - <<'PY'
+          import json,collections
+          rows=json.load(open('r13e-backend-eslint.json')); errors=[]; warnings=[]
+          for r in rows:
+            for m in r.get('messages',[]):
+              (errors if m.get('severity')==2 else warnings).append({'file':r['filePath'],'line':m.get('line'),'rule':m.get('ruleId'),'message':m.get('message')})
+          out={'hardErrors':len(errors),'warnings':len(warnings),'errorRules':dict(collections.Counter(x['rule'] for x in errors)),'errors':errors}
+          json.dump(out,open('r13e-backend-eslint-summary.json','w'),indent=2)
+          print({k:v for k,v in out.items() if k!='errors'})
+          if errors: raise SystemExit(f'{len(errors)} backend hard lint errors')
+          PY
+      - name: Full TypeScript hard gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run typecheck | tee r13e-typecheck.txt
+      - name: Production build hard gate
+        shell: bash
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          set -euo pipefail
+          npm run build | tee r13e-build.txt
+      - name: Entitlement hard regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs | tee r13e-entitlement.tap
+      - name: Red-team hard regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts | tee r13e-redteam.tap
+      - name: Precise current-tree secret scan observation
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          node scripts/security/scan-all-secrets.mjs > r13e-secret-scan.txt 2>&1
+          code=$?
+          echo "secret_scan_exit=$code" > r13e-secret-scan-exit.txt
+          cat r13e-secret-scan.txt
+          exit 0
+      - name: Database observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:database > r13e-database.txt 2>&1; c=$?; echo "exit=$c" > r13e-database-exit.txt; cat r13e-database.txt; exit 0
+      - name: Provider rights observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:provider-rights > r13e-provider-rights.txt 2>&1; c=$?; echo "exit=$c" > r13e-provider-rights-exit.txt; cat r13e-provider-rights.txt; exit 0
+      - name: Merchant legal observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:merchant-legal > r13e-merchant-legal.txt 2>&1; c=$?; echo "exit=$c" > r13e-merchant-legal-exit.txt; cat r13e-merchant-legal.txt; exit 0
+      - name: Product readiness observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:product-readiness > r13e-product-readiness.txt 2>&1; c=$?; echo "exit=$c" > r13e-product-readiness-exit.txt; cat r13e-product-readiness.txt; exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13e-hard-qualification-${{ github.sha }}
+          path: |
+            r13e-*.json
+            r13e-*.txt
+            r13e-*.tap
+            artifacts/pass13/PASS13_CLEAN_SAFE_AUDIT.json
+            artifacts/pass13/PASS13_CLEAN_SAFE_MANIFEST.json
+          if-no-files-found: warn
+          retention-days: 30
