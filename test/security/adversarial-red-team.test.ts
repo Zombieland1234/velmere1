@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { evaluateAuditValidity } from "../../lib/security/audit-validity-engine";
 import { isFieldApplicableToAsset, diagnoseFieldCompleteness } from "../../lib/data/completeness-root-cause-engine";
 import { verifyQuorumConsensus } from "../../lib/data/multi-provider-failover";
@@ -15,8 +16,8 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
 
       const eval1 = evaluateAuditValidity(input);
       const eval2 = evaluateAuditValidity(input);
-      expect(eval1.validity).toBe(eval2.validity);
-      expect(eval1.validity).toBe("CURRENT");
+      assert.equal(eval1.validity, eval2.validity);
+      assert.equal(eval1.validity, "CURRENT");
     });
   });
 
@@ -30,8 +31,8 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
       };
 
       const auditEval = evaluateAuditValidity(input);
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("IMPLEMENTATION_UPGRADED");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "IMPLEMENTATION_UPGRADED");
     });
   });
 
@@ -41,8 +42,8 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
       const coinbasePrice = 64200.0;
       const manipulatedPrice = 66000.0; // 2.8% divergence
       const quorum = verifyQuorumConsensus(coinbasePrice, manipulatedPrice, 0.02);
-      expect(quorum.consensus).toBe(false);
-      expect(quorum.divergencePct).toBeGreaterThan(0.02);
+      assert.equal(quorum.consensus, false);
+      assert.ok(quorum.divergencePct > 0.02);
     });
   });
 
@@ -61,9 +62,9 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         ],
       });
 
-      expect(diagnosis.state).toBe("GENUINELY_UNAVAILABLE");
-      expect(diagnosis.resolvedValue).toBeNull();
-      expect(diagnosis.attempts.length).toBe(2);
+      assert.equal(diagnosis.state, "GENUINELY_UNAVAILABLE");
+      assert.equal(diagnosis.resolvedValue, null);
+      assert.equal(diagnosis.attempts.length, 2);
     });
   });
 
@@ -81,7 +82,7 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         maxFreshnessSeconds: 300, // 5 min tolerance
       });
 
-      expect(diagnosis.state).toBe("STALE_SNAPSHOT");
+      assert.equal(diagnosis.state, "STALE_SNAPSHOT");
     });
   });
 
@@ -89,7 +90,7 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
   describe("Persona 6: Native Asset Architectural Verification", () => {
     it("should exclude smart contract fields for native chains without flagging them as missing", () => {
       const applicability = isFieldApplicableToAsset("is_proxy", "native_chain");
-      expect(applicability.isApplicable).toBe(false);
+      assert.equal(applicability.isApplicable, false);
 
       const diagnosis = diagnoseFieldCompleteness({
         fieldKey: "is_proxy",
@@ -99,7 +100,7 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         value: null,
       });
 
-      expect(diagnosis.state).toBe("UNSUPPORTED_BY_CONTRACT");
+      assert.equal(diagnosis.state, "UNSUPPORTED_BY_CONTRACT");
     });
   });
 
@@ -111,8 +112,8 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         assessmentDate: oldDate,
         maxValidityDays: 90,
       });
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("FRESHNESS_WINDOW_ELAPSED");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "FRESHNESS_WINDOW_ELAPSED");
     });
   });
 
@@ -135,7 +136,7 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         ],
       });
 
-      expect(diagnosis.state).toBe("RATE_LIMIT_THROTTLED");
+      assert.equal(diagnosis.state, "RATE_LIMIT_THROTTLED");
     });
   });
 
@@ -146,8 +147,8 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         assessmentDate: new Date().toISOString(),
         knownCVEs: true,
       });
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("CVE_DEPENDENCY_DISCLOSED");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "CVE_DEPENDENCY_DISCLOSED");
     });
   });
 
@@ -157,8 +158,8 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
       const venueA = 100.0;
       const venueB = 101.2; // 1.19% difference
       const quorum = verifyQuorumConsensus(venueA, venueB, 0.02);
-      expect(quorum.consensus).toBe(true);
-      expect(quorum.divergencePct).toBeLessThan(0.02);
+      assert.equal(quorum.consensus, true);
+      assert.ok(quorum.divergencePct < 0.02);
     });
   });
 
@@ -169,9 +170,9 @@ describe("Velmère Furnace V3 - Adversarial Red Team Suite", () => {
         assessmentDate: new Date().toISOString(),
         supersededBySnapshotId: "SNAP_V2_AUDIT",
       });
-      expect(auditEval.validity).toBe("OUTDATED");
-      expect(auditEval.reason).toBe("METHODOLOGY_SUPERSEDED");
-      expect(auditEval.supersededBy).toBe("SNAP_V2_AUDIT");
+      assert.equal(auditEval.validity, "OUTDATED");
+      assert.equal(auditEval.reason, "METHODOLOGY_SUPERSEDED");
+      assert.equal(auditEval.supersededBy, "SNAP_V2_AUDIT");
     });
   });
 });
