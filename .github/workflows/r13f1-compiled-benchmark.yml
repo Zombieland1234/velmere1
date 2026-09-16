@@ -1,0 +1,59 @@
+name: R13F1 compiled golden diagnostic
+on:
+  push:
+    branches: ['r13f1/compiled-benchmark-20260916']
+    paths: ['.github/workflows/r13f1-compiled-benchmark.yml', 'scripts/r13f1/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13f1-compiled-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 5
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - name: Prove all baseline files unchanged
+        run: |
+          set -euo pipefail
+          mkdir -p r13f1-evidence
+          git diff --name-status 671132a95a497e45c128a4dc364d6823edaf4168 HEAD > r13f1-evidence/DIAGNOSTIC_DIFF.txt
+          python3 - <<'PY'
+          import subprocess,json,pathlib
+          base='671132a95a497e45c128a4dc364d6823edaf4168'
+          changed=subprocess.check_output(['git','diff','--name-only',base,'HEAD']).decode().splitlines()
+          allowed=['.github/workflows/r13f1-compiled-benchmark.yml','scripts/r13f1/compiled-golden-benchmark.mjs']
+          assert all(p in allowed for p in changed),changed
+          pathlib.Path('r13f1-evidence/UNCHANGED_RUNTIME.json').write_text(json.dumps({'runtimeBaseCommit':base,'harnessCommit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'changedPaths':changed,'runtimeChanged':False,'uiChanged':False},indent=2)+'\n')
+          PY
+      - name: Install exact dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit
+      - name: Compile source fixtures and measure three tiers
+        run: |
+          set -euo pipefail
+          node --import tsx scripts/r13f1/compiled-golden-benchmark.mjs | tee r13f1-evidence/COMPILED_BENCHMARK.log
+      - name: Export benchmark harness
+        if: always()
+        run: |
+          cp scripts/r13f1/compiled-golden-benchmark.mjs r13f1-evidence/
+          cp .github/workflows/r13f1-compiled-benchmark.yml r13f1-evidence/
+      - name: Preserve evidence including quality failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13f1-compiled-benchmark-${{ github.sha }}
+          path: r13f1-evidence/
+          retention-days: 30
+          if-no-files-found: error
