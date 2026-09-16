@@ -167,7 +167,7 @@ async function runFurnace() {
         let surfaceVerifiedFields = 0;
         let surfaceFailedFields = 0;
         let surfaceMissingFields = 0;
-        let surfaceUncertainFields = 0;
+        const surfaceUncertainFields = 0;
 
         // Freshness determination
         let freshness: DataFreshness = "FRESH";
@@ -179,9 +179,9 @@ async function runFurnace() {
         for (const fDef of fieldDefs) {
           totalFieldAudits++;
           let val = "N/A";
-          let unit = fDef.defaultUnit;
+          const unit = fDef.defaultUnit;
           let classification: FieldClassification = fDef.classification;
-          let method = "CANONICAL_ENGINE_INSPECTION";
+          const method = "CANONICAL_ENGINE_INSPECTION";
           let extMatch = true;
           let extDelta = "0";
 

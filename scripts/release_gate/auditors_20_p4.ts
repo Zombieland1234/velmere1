@@ -50,7 +50,7 @@ export async function runAuditors16To20(): Promise<Auditor20Result[]> {
   });
 
   // Auditor 19: Customer Value
-  let a19Passed = true;
+  const a19Passed = true;
   const a19Findings: string[] = [];
   results.push({
     id: 19, role: "Customer Value Auditor", checks: 1, passed: a19Passed, criticalCount: 0, highCount: a19Findings.length,

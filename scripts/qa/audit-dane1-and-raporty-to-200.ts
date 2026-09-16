@@ -28,7 +28,7 @@ console.log(`Auditing ${targetDirs.length} archive partitions...`);
 
 let totalDirectoriesChecked = 0;
 let totalFilesCount = 0;
-let totalBytesCount = 0;
+const totalBytesCount = 0;
 const directoryDigests: string[] = [];
 
 for (let idx = 0; idx < targetDirs.length; idx++) {
