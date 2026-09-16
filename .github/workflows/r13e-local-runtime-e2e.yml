@@ -1,0 +1,73 @@
+name: R13E local runtime E2E
+on:
+  push:
+    branches: [r13e/runtime-e2e-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13e-local-runtime-e2e
+  cancel-in-progress: true
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Production build
+        shell: bash
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          set -euo pipefail
+          npm run build | tee r13e-local-build.txt
+      - name: Start local production server
+        shell: bash
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          NODE_ENV: production
+        run: |
+          npm run start > r13e-local-server.log 2>&1 &
+          echo $! > r13e-local-server.pid
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/robots.txt >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat r13e-local-server.log
+          exit 1
+      - name: Auth tenant fuzzing
+        shell: bash
+        env:
+          BASE_URL: http://127.0.0.1:3000
+        run: |
+          set -euo pipefail
+          node scripts/pass36/execute-pass14-auth-tenant-fuzzing.mjs | tee r13e-auth-tenant-fuzzing.txt
+      - name: Security auth entitlement E2E
+        shell: bash
+        env:
+          BASE_URL: http://127.0.0.1:3000
+        run: |
+          set -euo pipefail
+          node scripts/pass36/execute-pass3-security-auth-entitlement.mjs | tee r13e-security-auth-entitlement.txt
+      - name: Preserve server log
+        if: always()
+        run: cat r13e-local-server.log || true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13e-local-runtime-e2e-${{ github.sha }}
+          path: |
+            r13e-local-build.txt
+            r13e-local-server.log
+            r13e-auth-tenant-fuzzing.txt
+            r13e-security-auth-entitlement.txt
+          if-no-files-found: warn
+          retention-days: 30
