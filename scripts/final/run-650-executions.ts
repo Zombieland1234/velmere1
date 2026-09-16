@@ -184,7 +184,6 @@ export async function execute650MasterSuite(): Promise<{
         const fullUrl = `http://localhost:3000${routeQuery}`;
 
         // 4. Capture Visual Proof Screenshot
-        let screenshotHash = "";
         const screenshotFilename = `${execId}_${asset.symbol.toLowerCase()}_${surface.name}_${tier}.png`;
         const screenshotPath = path.join(screenshotDir, screenshotFilename);
 
@@ -210,7 +209,7 @@ export async function execute650MasterSuite(): Promise<{
         }
 
         fs.writeFileSync(screenshotPath, screenshotBuf);
-        screenshotHash = crypto.createHash("sha256").update(screenshotBuf).digest("hex");
+        const screenshotHash = crypto.createHash("sha256").update(screenshotBuf).digest("hex");
         screenshotCount++;
 
         const duration = Date.now() - t0;

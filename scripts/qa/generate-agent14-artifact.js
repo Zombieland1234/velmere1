@@ -1627,7 +1627,7 @@ function main() {
     console.log(`Auditing [${asset.symbol}] ${asset.name} (${asset.category})...`);
 
     let isEvmIsolated = false;
-    let firewallCheckPassed = false;
+    let firewallCheckPassed;
 
     if (asset.category === 'NON_EVM_NATIVE') {
       const hasEvmCompiler = asset.evmAttributes.compilerVersion !== null;

@@ -44,8 +44,8 @@ export async function run100CustomerPanel() {
   for (let i = 26; i <= 75; i++) {
     const isCrypto = i % 2 === 0;
     const asset = isCrypto ? cryptos[(i - 26) % cryptos.length] : equities[(i - 26) % equities.length];
-    let taskPassed = false;
-    let taskDesc = "";
+    let taskPassed: boolean;
+    let taskDesc: string;
     if (isCrypto) {
       const ob = await (await fetch(`${BASE}/api/market-integrity/orderbook?symbol=${asset}`)).json();
       taskPassed = ob.ok === true && ob.orderbook?.bestBid > 0;
@@ -70,9 +70,9 @@ export async function run100CustomerPanel() {
   // 3: 25 Advanced Customers
   console.log("-> Cohort 3: 25 Advanced Customers...");
   for (let i = 76; i <= 100; i++) {
-    let taskPassed = false;
-    let taskDesc = "";
-    let asset = "";
+    let taskPassed: boolean;
+    let taskDesc: string;
+    let asset: string;
 
     if (i <= 80) {
       // Advanced audit gate

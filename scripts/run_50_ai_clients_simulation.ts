@@ -55,7 +55,7 @@ for (let i = 1; i <= 50; i++) {
   const confPct = Math.round(riskRes.confidence * 100);
 
   let decision = "APPROVED_BY_SHIELD";
-  let reason = "";
+  let reason: string;
 
   if (confPct < profile.minConf) {
     decision = "ESCALATED_MISSING_PROOF";

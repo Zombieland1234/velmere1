@@ -181,6 +181,8 @@ async function main() {
     testsFilesCount++;
   }
 
+  void testsFilesCount;
+
   // 3. Package SCRIPTS
   console.log("--> [3/11] Packaging /velmere-final/scripts/ ...");
   let scriptsFilesCount = 0;
@@ -291,6 +293,8 @@ async function main() {
     );
   }
 
+  void scReportsCount;
+
   // 7. Package REPORTS - SHIELD
   console.log("--> [7/11] Packaging /velmere-final/reports/shield/ ...");
   let shieldReportsCount = 0;
@@ -319,6 +323,8 @@ async function main() {
   if (copyFile(path.join(repoRoot, "reports/SECRET_HYGIENE_REPORT.md"), path.join(targetRoot, "reports/shield/SECRET_HYGIENE_REPORT.md"))) shieldReportsCount++;
   if (copyFile(path.join(repoRoot, "reports/SECRET_HYGIENE_REPORT.json"), path.join(targetRoot, "reports/shield/SECRET_HYGIENE_REPORT.json"))) shieldReportsCount++;
 
+  void shieldReportsCount;
+
   // 8. Package REPORTS - REAL MARKETS
   console.log("--> [8/11] Packaging /velmere-final/reports/real-markets/ ...");
   let rmReportsCount = 0;
@@ -341,6 +347,8 @@ async function main() {
     );
   }
 
+  void rmReportsCount;
+
   // 9. Package VERIFIER
   console.log("--> [9/11] Packaging /velmere-final/verifier/ ...");
   let verifierCount = 0;
@@ -362,6 +370,8 @@ async function main() {
   if (copyFile(path.join(repoRoot, "scripts/master-world-class-verification-suite.mjs"), path.join(targetRoot, "verifier/master-world-class-verification-suite.mjs"))) verifierCount++;
   if (copyFile(path.join(repoRoot, "scripts/security/scan-all-secrets.mjs"), path.join(targetRoot, "verifier/scan-all-secrets.mjs"))) verifierCount++;
   if (copyFile(path.join(repoRoot, "scripts/qa/verify-audit-artifact.ts"), path.join(targetRoot, "verifier/verify-audit-artifact.ts"))) verifierCount++;
+
+  void verifierCount;
 
   // 10. Package BENCHMARKS
   console.log("--> [10/11] Packaging /velmere-final/benchmarks/ ...");

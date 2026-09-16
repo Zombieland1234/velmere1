@@ -26,7 +26,7 @@ function recordMutation(
   testAssertionFn: (fn: any) => void,
   killingAssertionName: string
 ) {
-  let survived = false;
+  let survived: boolean;
   try {
     // Run the test assertion against the mutated function
     // If the test assertion throws, the mutation is KILLED.

@@ -195,7 +195,7 @@ async function runPass02() {
   const discrepancies: any[] = [];
 
   console.log("2. Querying Velmere Market Pipelines & Fallbacks...");
-  let binanceData: any = null;
+  let binanceData: any;
   try {
     binanceData = await fetchBinanceMarketFallback({ page: 1, perPage: 50 });
     console.log("   Binance Market Fallback returned", binanceData.rows.length, "rows.");

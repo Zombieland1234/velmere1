@@ -137,7 +137,7 @@ export async function runTotalAuditFurnace() {
 
   // 2. Playwright Visual QA & Screen Evidence Capture
   console.log("\n[FURNACE-VISUAL] Initializing Playwright Chromium for Desktop & Mobile QA...");
-  let browser: Browser | null = null;
+  let browser: Browser;
   const screenshots: ScreenshotEvidence[] = [];
 
   try {

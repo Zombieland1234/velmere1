@@ -360,9 +360,9 @@ async function executeSecurityRedTeamJourney(page, persona) {
   const actions = [];
   const start = Date.now();
   const testType = persona.redTeamType || "idor";
-  let status = 0;
-  let blocked = false;
-  let details = "";
+  let status;
+  let blocked;
+  let details;
 
   if (testType === "idor") {
     const targetUrl = `${BASE_URL}/api/account/customer-artifact?caseRef=AUD-FORGED-9999-IDOR`;

@@ -87,7 +87,7 @@ async function main() {
     let bodyJson = null;
     try { bodyJson = JSON.parse(bodyText); } catch { /* empty */ }
 
-    let passed = false;
+    let passed;
     if (c.validator) {
       passed = c.validator(res.status, bodyJson || bodyText);
     } else if (c.expectedErrorCode) {
