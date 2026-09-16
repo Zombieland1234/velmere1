@@ -24,7 +24,7 @@ async function run() {
         serverRecorded: false
       };
       localStorage.setItem("velmere_cookie_consent_v2", JSON.stringify(consent));
-    } catch {}
+    } catch { /* empty */ }
   });
 
   const cookieBtn = page.locator('button:has-text("TYLKO NIEZBĘDNE"), button:has-text("AKCEPTUJĘ")').first();

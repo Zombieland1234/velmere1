@@ -20,7 +20,7 @@ async function inspectScreen() {
   page.on('response', async res => {
     if (res.url().includes('/api/')) {
       let bodyText = '';
-      try { bodyText = (await res.text()).slice(0, 300); } catch (e) {}
+      try { bodyText = (await res.text()).slice(0, 300); } catch (e) { /* empty */ }
       networkLog.push({ type: 'RES', status: res.status(), url: res.url(), body: bodyText });
       console.log(`[API ${res.status()}] ${res.request().method()} ${res.url()} -> ${bodyText.slice(0, 120)}`);
     }

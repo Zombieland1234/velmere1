@@ -18,7 +18,7 @@ async function run() {
   try {
     const btn = page.locator('button:has-text("Akceptuję"), button:has-text("Tylko niezbędne")').first();
     if (await btn.isVisible({ timeout: 2000 })) await btn.click();
-  } catch {}
+  } catch { /* empty */ }
 
   await page.waitForSelector('tr:has-text("Bitcoin")', { timeout: 30000 });
   await page.waitForTimeout(2000);
@@ -43,7 +43,7 @@ async function run() {
   try {
     const btn = page.locator('button:has-text("Akceptuję"), button:has-text("Tylko niezbędne")').first();
     if (await btn.isVisible({ timeout: 2000 })) await btn.click();
-  } catch {}
+  } catch { /* empty */ }
 
   await page.waitForSelector('tr:has-text("Bitcoin")', { timeout: 30000 });
   await page.waitForTimeout(2000);

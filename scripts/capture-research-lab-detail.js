@@ -25,7 +25,7 @@ async function main() {
     const btn = await mobilePage.$("button:has-text('AKCEPTUJ'), button:has-text('TYLKO NIEZBĘDNE')");
     if (btn) await btn.click();
     await mobilePage.waitForTimeout(500);
-  } catch (e) {}
+  } catch (e) { /* empty */ }
   await mobilePage.evaluate(() => window.scrollBy(0, 1400));
   await mobilePage.waitForTimeout(1000);
   await mobilePage.screenshot({ path: "artifacts/screenshot-research-lab-card-mobile.png" });

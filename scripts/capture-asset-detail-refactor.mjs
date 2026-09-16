@@ -69,7 +69,7 @@ async function run() {
   await page.goto(`${BASE_URL}/en/shield/assets/usdt`, { waitUntil: "domcontentloaded", timeout: 30000 });
   try {
     await page.waitForSelector("text='Loading verified OHLC klines...'", { state: "detached", timeout: 4000 });
-  } catch {}
+  } catch { /* empty */ }
   await page.waitForTimeout(1000);
   await page.screenshot({ path: path.join(OUT_DIR, "03_shield_asset_detail.png"), fullPage: false });
   console.log("Saved 03_shield_asset_detail.png");
@@ -79,7 +79,7 @@ async function run() {
   await page.goto(`${BASE_URL}/en/real-markets/assets/nasdaq:aapl`, { waitUntil: "domcontentloaded", timeout: 30000 });
   try {
     await page.waitForSelector("text='Loading verified OHLC klines...'", { state: "detached", timeout: 4000 });
-  } catch {}
+  } catch { /* empty */ }
   await page.waitForTimeout(1000);
   await page.screenshot({ path: path.join(OUT_DIR, "04_real_markets_asset_detail.png"), fullPage: false });
   console.log("Saved 04_real_markets_asset_detail.png");
@@ -92,7 +92,7 @@ async function run() {
     await chartSection.scrollIntoViewIfNeeded();
     try {
       await page.waitForSelector("text='Loading verified OHLC klines...'", { state: "detached", timeout: 4000 });
-    } catch {}
+    } catch { /* empty */ }
     await page.waitForTimeout(800);
     const resetBtn = await page.$("button[title='Reset Zoom']");
     if (resetBtn) {
@@ -149,7 +149,7 @@ async function run() {
   await mobilePage1.goto(`${BASE_URL}/en/shield/assets/usdt`, { waitUntil: "domcontentloaded", timeout: 30000 });
   try {
     await mobilePage1.waitForSelector("text='Loading verified OHLC klines...'", { state: "detached", timeout: 4000 });
-  } catch {}
+  } catch { /* empty */ }
   await mobilePage1.waitForTimeout(1000);
   await mobilePage1.screenshot({ path: path.join(OUT_DIR, "11_shield_mobile.png"), fullPage: false });
   console.log("Saved 11_shield_mobile.png");
@@ -160,7 +160,7 @@ async function run() {
   await mobilePage2.goto(`${BASE_URL}/en/real-markets/assets/nasdaq:aapl`, { waitUntil: "domcontentloaded", timeout: 30000 });
   try {
     await mobilePage2.waitForSelector("text='Loading verified OHLC klines...'", { state: "detached", timeout: 4000 });
-  } catch {}
+  } catch { /* empty */ }
   await mobilePage2.waitForTimeout(1000);
   await mobilePage2.screenshot({ path: path.join(OUT_DIR, "12_markets_mobile.png"), fullPage: false });
   console.log("Saved 12_markets_mobile.png");

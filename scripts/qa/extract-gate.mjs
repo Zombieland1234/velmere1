@@ -8,7 +8,7 @@ const p2 = data.phase4ContinuationPipelinePart2AndReleaseGateScript;
 const p1Start = p1.indexOf("/**\n\nVELMÈRE — Unified Institutional Audit Pipeline");
 const p1Trunc = p1.indexOf("Tricentis Americas, Inc.");
 let p1Code = p1.slice(p1Start, p1Trunc !== -1 ? p1Trunc : undefined);
-p1Code = p1Code.replace(/throw new Error\(\s*\"Evidence bundle generation aborted:[\s\S]*$/, "");
+p1Code = p1Code.replace(/throw new Error\(\s*"Evidence bundle generation aborted:[\s\S]*$/, "");
 
 // 2. Extract Part 2 pipeline code
 const p2Start = p2.indexOf("  \"Evidence bundle generation aborted: no evidence was produced.\",");

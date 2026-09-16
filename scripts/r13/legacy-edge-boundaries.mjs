@@ -26,7 +26,7 @@ for(const c of cases){
     const r=await fetch(target,{method:c.method,body:c.body,headers:{'content-type':'application/json',...c.headers},redirect:'error',signal:AbortSignal.timeout(8000)});
     const chunks=[];let size=0;
     if(r.body)for await(const chunk of r.body){size+=chunk.length;if(size>65536)throw new Error('bounded_response_exceeded');chunks.push(chunk);}
-    const body=Buffer.concat(chunks);let json;try{json=JSON.parse(body.toString('utf8'));}catch{}
+    const body=Buffer.concat(chunks);let json;try{json=JSON.parse(body.toString('utf8'));}catch{ /* empty */ }
     const expectedError=json?.error===c.error;
     const bodyShape=json&&typeof json==='object'&&!Array.isArray(json)&&json.ok===false;
     // Never retain raw upstream bodies or headers. Record bounded expected-code matches.

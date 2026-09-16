@@ -42,7 +42,7 @@ function scanForHardcodedSecrets() {
               leaks.push({ file: full, pattern: p.name });
             }
           }
-        } catch {}
+        } catch { /* empty */ }
       }
     }
   }

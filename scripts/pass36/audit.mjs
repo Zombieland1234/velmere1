@@ -70,7 +70,7 @@ async function main() {
       const shieldText = await page.locator('main').first().innerText();
       auditReport.products.shield.interactionResult = shieldText.slice(0, 1500);
     }
-  } catch (e) {}
+  } catch (e) { /* empty */ }
 
   // 3. Shield Pro
   auditReport.products.shieldPro = await getPageInfo(`${BASE}/en/shield-pro`, 'Shield Pro');

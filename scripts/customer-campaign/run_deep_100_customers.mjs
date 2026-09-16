@@ -75,7 +75,7 @@ async function executeCustomerJourney(browser, persona) {
       try {
         await cookieDismiss.first().click({ timeout: 2000 });
         actions.push({ timestamp: new Date().toISOString(), action: "DISMISS_COOKIE_BANNER", target: "button", result: "CLICKED" });
-      } catch {}
+      } catch { /* empty */ }
     }
 
     // Action 4: Product-Specific Real Interaction
@@ -164,7 +164,7 @@ async function executeCustomerJourney(browser, persona) {
             observed.modalOpened = true;
             actions.push({ timestamp: new Date().toISOString(), action: "OPEN_DETAIL_MODAL", target: "[role=dialog]", result: "MODAL_VISIBLE" });
           }
-        } catch {}
+        } catch { /* empty */ }
       }
     }
 

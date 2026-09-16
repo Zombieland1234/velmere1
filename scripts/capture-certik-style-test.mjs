@@ -23,7 +23,7 @@ async function run() {
         marketing: true,
         region: "DEFAULT"
       }));
-    } catch (e) {}
+    } catch (e) { /* empty */ }
   };
 
   const context = await browser.newContext({

@@ -37,7 +37,7 @@ async function main() {
     const durationMs = Date.now() - t0;
     const bodyText = await res.text().catch(() => "");
     let bodyJson = null;
-    try { bodyJson = JSON.parse(bodyText); } catch {}
+    try { bodyJson = JSON.parse(bodyText); } catch { /* empty */ }
     const passed = await t.validator(res.status, bodyJson, bodyText);
     console.log(`[${passed ? "PASS" : "FAIL"}] ${t.name}: HTTP ${res.status} (${durationMs}ms)`);
     results.push({ name: t.name, status: res.status, durationMs, passed, sample: bodyText.slice(0, 160) });

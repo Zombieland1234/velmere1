@@ -85,7 +85,7 @@ async function main() {
     const durationMs = Date.now() - t0;
     const bodyText = await res.text().catch(() => "");
     let bodyJson = null;
-    try { bodyJson = JSON.parse(bodyText); } catch {}
+    try { bodyJson = JSON.parse(bodyText); } catch { /* empty */ }
 
     let passed = false;
     if (c.validator) {

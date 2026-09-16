@@ -10,7 +10,7 @@ async function probe(name, url, options, validator) {
     const durationMs = Date.now() - t0;
     const bodyText = await res.text().catch(() => "");
     let bodyJson = null;
-    try { bodyJson = JSON.parse(bodyText); } catch {}
+    try { bodyJson = JSON.parse(bodyText); } catch { /* empty */ }
     const passed = validator(res.status, bodyJson, bodyText);
     return { name, url, method: options.method || "GET", status: res.status, durationMs, passed, evidenceSnippet: bodyText.slice(0, 160) };
   } catch (err) {

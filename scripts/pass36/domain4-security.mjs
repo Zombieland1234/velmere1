@@ -14,7 +14,7 @@ async function run() {
   await test('Admin Access (No Auth)', { url: API + '/admin/products/publish', method: 'POST', headers: {'content-type': 'application/json'}, body: '{}' }, 503);
   await test('IDOR (Customer Artifact)', { url: API + '/account/customer-artifact?caseRef=AUD-FORGED-1234', method: 'GET' }, 401, 'account_session_required');
   await test('SSRF (Basic Case)', { url: API + '/audit/basic/case', method: 'POST', headers: {'content-type': 'application/json'}, body: '{\
-contractAddress\:\http://169.254.169.254/\}' }, 400);
+contractAddress:http://169.254.169.254/}' }, 400);
   await test('CORS (Market Analyzer)', { url: API + '/market-integrity/analyze', method: 'POST', headers: {'origin': 'https://evil.com'} }, 403);
 }
 run();

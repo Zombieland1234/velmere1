@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS compatibility boundary intentionally executed by Node/test harness
 const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS compatibility boundary intentionally executed by Node/test harness
 const path = require('path');
 
 const MAX_PASSES = 8;

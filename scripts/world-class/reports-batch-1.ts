@@ -301,7 +301,7 @@ This audit evaluated all **96 API route handlers** located in \`app/api/\`. Each
 | **API2:2023 Broken Authentication** | PASS | Supabase Auth JWTs validated on every non-public endpoint. Strict session expiration and revocation. |
 | **API3:2023 Broken Object Property Level Auth (BOPLA)** | PASS | Explicit DTO projection. Sensitive database columns (e.g. \`stripe_customer_id\`, \`internal_flags\`) never serialized to client. |
 | **API4:2023 Unrestricted Resource Consumption** | PASS | Bounded body parsing (\`readBoundedBodyBytes\` max 1MB), strict payload limits, and IP token-bucket rate limiting. |
-| **API5:2023 Broken Function Level Authorization (BFLA)** | PASS | Admin endpoints under \`app/api/admin/\` enforce strict role verification (\`role === 'operator' \|\| 'supervisor'\`). |
+| **API5:2023 Broken Function Level Authorization (BFLA)** | PASS | Admin endpoints under \`app/api/admin/\` enforce strict role verification (\`role === 'operator' || 'supervisor'\`). |
 | **API6:2023 Unrestricted Access to Sensitive Business Flows** | PASS | Anti-automation guards on audit generation and checkout session creation. Idempotency keys enforced. |
 | **API7:2023 Server Side Request Forgery (SSRF)** | PASS | Outbound HTTP requests restricted to hardcoded, verified RPC and market data provider hostnames. |
 | **API8:2023 Security Misconfiguration** | PASS | Debug endpoints disabled in production. Stack traces stripped from API responses. Universal JSON error envelope. |

@@ -95,7 +95,7 @@ let readinessData: any = {};
 if (fs.existsSync(readinessJsonPath)) {
   try {
     readinessData = JSON.parse(fs.readFileSync(readinessJsonPath, 'utf8'));
-  } catch (e) {}
+  } catch (e) { /* empty */ }
 }
 
 readinessData.version = "8.0.0";

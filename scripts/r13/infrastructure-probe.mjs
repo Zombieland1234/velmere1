@@ -20,7 +20,7 @@ async function request(label,url,headers={}) {
       chunks.push(chunk);
     }
     const bytes=Buffer.concat(chunks);let json=null;
-    try {json=JSON.parse(bytes.toString('utf8'));} catch {}
+    try {json=JSON.parse(bytes.toString('utf8'));} catch { /* empty */ }
     // No raw response body, URL parameters, request headers or exception messages are logged.
     const observation={label,status:res.ok?'PASS':'BLOCKED',httpStatus:res.status,
       elapsedMs:Math.round(performance.now()-start),responseBytes:total,responseSha256:sha(bytes)};

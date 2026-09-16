@@ -625,8 +625,8 @@ ${TARGET_15_CONTRACTS.map((c, i) => `| ${i + 1} | **${c.symbol}** | ${c.name} | 
 ---
 
 ### 3. ADVANCED FORENSICS: KYLE'S LAMBDA SLIPPAGE & MEV EXPOSURE
-* **\$100,000 Dump Shock Slippage:** \`${s.dump100kSlippageBps} bps\`
-* **\$1,000,000 Dump Shock Slippage:** \`${s.dump1MSlippageBps} bps\`
+* **$100,000 Dump Shock Slippage:** \`${s.dump100kSlippageBps} bps\`
+* **$1,000,000 Dump Shock Slippage:** \`${s.dump1MSlippageBps} bps\`
 * **MEV Vulnerability Profile:** ${s.mevExposure}
 * **Cross-Chain Bridge Vulnerability:** ${s.bridgeRisk}
 `;
@@ -635,7 +635,7 @@ ${TARGET_15_CONTRACTS.map((c, i) => `| ${i + 1} | **${c.symbol}** | ${c.name} | 
 
   // Index for Shield
   const shieldIndexMd = `# INDEX OF 20 SHIELD THREAT DOSSIERS (${iterationId})
-| # | Symbol | Name | Network | Threat Score | Buy/Sell Tax | Gini Top 10 | \$1M Dump Slippage |
+| # | Symbol | Name | Network | Threat Score | Buy/Sell Tax | Gini Top 10 | $1M Dump Slippage |
 |---|---|---|---|:---:|:---:|:---:|:---:|
 ${SHIELD_20_ASSETS.map((s, i) => `| ${i + 1} | **${s.symbol}** | ${s.name} | ${s.network} | ${s.riskScore}/100 | ${s.buyTaxPct}% / ${s.sellTaxPct}% | ${s.giniTop10} | ${s.dump1MSlippageBps} bps |`).join("\n")}
 `;
@@ -686,12 +686,12 @@ ${SHIELD_20_ASSETS.map((s, i) => `| ${i + 1} | **${s.symbol}** | ${s.name} | ${s
     const mdMarket = `# REAL MARKETS INSTITUTIONAL DOSSIER: ${m.name} (${m.symbol})
 **Asset Class:** ${m.assetClass}  
 **Evaluation Cycle:** \`${iterationId}\`  
-**Current Spot Valuation:** **\$${m.spotPriceUsd.toLocaleString()}** (${m.delta24hPct >= 0 ? "+" : ""}${m.delta24hPct}%)  
+**Current Spot Valuation:** **$${m.spotPriceUsd.toLocaleString()}** (${m.delta24hPct >= 0 ? "+" : ""}${m.delta24hPct}%)  
 
 ---
 
 ### 1. BASIC LIQUIDITY & PRICE FORMATION
-* **52-Week Price Boundary:** \$${m.range52wLow} – \$${m.range52wHigh}
+* **52-Week Price Boundary:** $${m.range52wLow} – $${m.range52wHigh}
 * **24-Hour Trading Volume:** ${m.volume24hUsd}
 * **Market Capitalization / AUM:** ${m.marketCapUsd}
 * **30-Day Realized Annualized Volatility:** ${m.realizedVol30dPct}%
@@ -700,9 +700,9 @@ ${SHIELD_20_ASSETS.map((s, i) => `| ${i + 1} | **${s.symbol}** | ${s.name} | ${s
 
 ### 2. PRO MICROSTRUCTURE: ORDERBOOK DEPTH & KYLE'S LAMBDA SLIPPAGE
 * **Kyle's Lambda Microstructure Constant:** \`${m.kylesLambda}\`
-* **Market Impact \$100k:** \`${m.slippage100kBps} bps\`
-* **Market Impact \$1,000,000:** \`${m.slippage1MBps} bps\`
-* **Market Impact \$10,000,000:** \`${m.slippage10MBps} bps\`
+* **Market Impact $100k:** \`${m.slippage100kBps} bps\`
+* **Market Impact $1,000,000:** \`${m.slippage1MBps} bps\`
+* **Market Impact $10,000,000:** \`${m.slippage10MBps} bps\`
 * **Sector Benchmark Beta:** \`${m.sectorBeta}\`
 
 ---
@@ -717,9 +717,9 @@ ${SHIELD_20_ASSETS.map((s, i) => `| ${i + 1} | **${s.symbol}** | ${s.name} | ${s
 
   // Index for Real Markets
   const realIndexMd = `# INDEX OF 20 REAL MARKETS DOSSIERS (${iterationId})
-| # | Symbol | Asset Name | Class | Spot Price | Kyle's Lambda \$1M | 1D 99% VaR | Dark Pool % |
+| # | Symbol | Asset Name | Class | Spot Price | Kyle's Lambda $1M | 1D 99% VaR | Dark Pool % |
 |---|---|---|---|:---:|:---:|:---:|:---:|
-${REAL_20_ASSETS.map((m, i) => `| ${i + 1} | **${m.symbol}** | ${m.name} | ${m.assetClass} | \$${m.spotPriceUsd} | ${m.slippage1MBps} bps | ${m.monteCarloVar99Pct}% | ${m.darkPoolRatioPct}% |`).join("\n")}
+${REAL_20_ASSETS.map((m, i) => `| ${i + 1} | **${m.symbol}** | ${m.name} | ${m.assetClass} | $${m.spotPriceUsd} | ${m.slippage1MBps} bps | ${m.monteCarloVar99Pct}% | ${m.darkPoolRatioPct}% |`).join("\n")}
 `;
   fs.writeFileSync(path.join(subDir03, "00_REAL_MARKETS_INDEX.md"), realIndexMd);
 
@@ -731,7 +731,7 @@ ${REAL_20_ASSETS.map((m, i) => `| ${i + 1} | **${m.symbol}** | ${m.name} | ${m.a
 | :--- | :--- | :--- | :--- | :--- |
 | **Audit Delivery Latency** | **< 50 milliseconds (Instant Real-Time)** | 2 – 4 weeks | 4 – 8 weeks | 6 – 12 weeks |
 | **Verification Basis** | **SMT-LIB2 Z3 Solver (Formal Math Invariants)** | SAST + Manual Line Review | Manual Threat Modeling | Custom Fuzzing (Echidna) |
-| **Cost Per Deployment** | **\$0 – \$499 (Tiered Digital Model)** | \$30,000 – \$80,000 | \$90,000 – \$250,000 | \$120,000 – \$350,000 |
+| **Cost Per Deployment** | **$0 – $499 (Tiered Digital Model)** | $30,000 – $80,000 | $90,000 – $250,000 | $120,000 – $350,000 |
 | **Continuous Bytecode Tracking** | **Dynamic Checkmark/Cross (✓ -> ✗)** | Static PDF (Single Point in Time) | Static PDF | Static PDF |
 | **Market Microstructure Modeling** | **Native Kyle's Lambda + Orderbook L3 Depth** | None (Code only) | None | None |
 | **Historic Exploit Detection Rate** | **100% (5/5 Historical Exploits Caught)** | Failed on SafeMoon LP Burn | Failed on Euler Reserves | High Catch Rate |
@@ -905,12 +905,12 @@ export async function executeStrictSequentialWorkflow() {
 Between \`ana1\` and \`ana2\`, the following 12 critical subsystems were scrutinized and hardened:
 1. **Z3 SMT Invariant Solver Integration:** Verified UNSAT termination on all 15 smart contract safety invariants.
 2. **Dynamic Tax & Honeypot Forensics:** Verified AST parser detection of hidden mint and transfer fee overrides across all 20 tokens.
-3. **Kyle's Lambda Microstructure Precision:** Calibrated orderbook slippage calculations for \$100k, \$1M, and \$10M shock orders.
+3. **Kyle's Lambda Microstructure Precision:** Calibrated orderbook slippage calculations for $100k, $1M, and $10M shock orders.
 4. **EU MiCA & AI Act Non-Advisory Safe Harbor:** Formulated official legal opinion under Article 88 with zero custody of funds.
 5. **UI & Canvas Elevation:** Verified 20.5% height expansion on asset charts and smooth polyline sweep animation.
 6. **Multi-Wallet Connector Matrix:** Verified 19 distinct wallet connectors with SVG vector marks and dynamic window detection.
 7. **TypeScript Zero-Tolerance Compilation:** Verified exit code 0 on \`npx tsc --noEmit\`.
-8. **Export Modal Resilience:** Implemented adaptive decimals for micro-priced assets (< \$1.00) across PDF, JSON, TXT.
+8. **Export Modal Resilience:** Implemented adaptive decimals for micro-priced assets (< $1.00) across PDF, JSON, TXT.
 9. **Multi-Provider Failover:** Validated RPC fallback cascade and Quorum Consensus with threshold <= 2%.
 10. **Vector Barcode & QR Code Engine:** Verified native Type1 and vector drawing in PDF 1.7 binary stream.
 11. **Anti-Hallucination Firewall:** Enforced "Truth Over Coverage" returning null instead of synthetic numbers during outages.

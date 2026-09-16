@@ -14,7 +14,7 @@ async function postJson(url, body, headers = {}) {
     const durationMs = Date.now() - t0;
     const text = await res.text();
     let json = null;
-    try { json = JSON.parse(text); } catch {}
+    try { json = JSON.parse(text); } catch { /* empty */ }
     return { ok: true, status: res.status, durationMs, json, text };
   } catch (err) {
     return { ok: false, status: 0, durationMs: Date.now() - t0, error: err.message };
@@ -31,7 +31,7 @@ async function getJson(url, headers = {}) {
     const durationMs = Date.now() - t0;
     const text = await res.text();
     let json = null;
-    try { json = JSON.parse(text); } catch {}
+    try { json = JSON.parse(text); } catch { /* empty */ }
     return { ok: true, status: res.status, durationMs, json, text };
   } catch (err) {
     return { ok: false, status: 0, durationMs: Date.now() - t0, error: err.message };

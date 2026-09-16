@@ -668,8 +668,8 @@ ${contract.formalInvariant}
 * **Privileged Backdoors:** Mintable: \`${asset.mintable}\` | Pausable: \`${asset.pausable}\`
 
 ### 3. Advanced Market Stress & MEV Simulation
-* **Simulated \$100k Sell Dump:** Slippage = \`${asset.dumpShock100k}\`
-* **Simulated \$1M Sell Dump:** Slippage = \`${asset.dumpShock1M}\`
+* **Simulated $100k Sell Dump:** Slippage = \`${asset.dumpShock100k}\`
+* **Simulated $1M Sell Dump:** Slippage = \`${asset.dumpShock1M}\`
 * **MEV & Sandwich Attack Exposure:** ${asset.mevExposure}
 * **Cross-Chain Bridge Vulnerability:** ${asset.bridgeRisk}
 `;
@@ -759,9 +759,9 @@ ${contract.formalInvariant}
 
 ### 2. Pro Microstructure & Kyle's Lambda Slippage
 * **Kyle's Lambda Slippage Invariant:** \`${market.kylesLambda}\`
-* **Market Impact for \$100,000 Order:** \`${market.slippage100k}\`
-* **Market Impact for \$1,000,000 Order:** \`${market.slippage1M}\`
-* **Market Impact for \$10,000,000 Order:** \`${market.slippage10M}\`
+* **Market Impact for $100,000 Order:** \`${market.slippage100k}\`
+* **Market Impact for $1,000,000 Order:** \`${market.slippage1M}\`
+* **Market Impact for $10,000,000 Order:** \`${market.slippage10M}\`
 * **Sector Beta:** \`${market.sectorBeta}\`
 
 ### 3. Advanced Quantitative & Dark Pool Attribution
@@ -802,23 +802,23 @@ ${contract.formalInvariant}
 
 ### 2. REPLAY ANALYSIS: 5 HISTORICAL CATASTROPHIC EXPLOITS
 
-#### A. SafeMoon Arbitrary Burn Exploit (\$8.9M Drained)
+#### A. SafeMoon Arbitrary Burn Exploit ($8.9M Drained)
 * **What Traditional Auditor Missed:** CertiK audited SafeMoon in May 2021, noted centralized burn parameter but issued security badge without classifying it as an existential defect.
 * **How Velmère Detects It:** \`VLM-SEC-AUTH-01\` flags any external burn function targeting liquidity pool addresses as a **CRITICAL 94/100 risk**, immediately failing the production gate.
 
-#### B. Euler Finance Donation Attack (\$197M Drained)
+#### B. Euler Finance Donation Attack ($197M Drained)
 * **What Traditional Auditor Missed:** Multiple manual reviews overlooked the newly added \`donateToReserves\` function which omitted healthy collateral ratio checks.
 * **How Velmère Detects It:** \`VLM-SEC-DEFI-4626-01\` runs symbolic execution asserting that every user interaction preserves \`collateral >= borrowedDebt\`. The missing invariant check is flagged as **UNSAT counterexample** in 1 millisecond.
 
-#### C. The DAO Recursive Reentrancy (\$60M Drained)
+#### C. The DAO Recursive Reentrancy ($60M Drained)
 * **What Traditional Auditor Missed:** Early manual review missed state write occurring after external call.
 * **How Velmère Detects It:** \`VLM-SEC-REENTRANCY-01\` inspects control flow graph, tracking SSTORE instructions following CALL/STATICCALL.
 
-#### D. Cream Finance Oracle Flash Loan (\$130M Drained)
+#### D. Cream Finance Oracle Flash Loan ($130M Drained)
 * **What Traditional Auditor Missed:** Relied on spot pool balances for collateral pricing.
 * **How Velmère Detects It:** \`VLM-SEC-ORACLE-01\` identifies spot AMM reserves without TWAP or Chainlink heartbeat validation as an automatic critical failure.
 
-#### E. Nomad Token Bridge Bypass (\$190M Drained)
+#### E. Nomad Token Bridge Bypass ($190M Drained)
 * **What Traditional Auditor Missed:** Upgrade initialized root to \`0x00\`, treating empty messages as verified proofs.
 * **How Velmère Detects It:** \`VLM-SEC-BRIDGE-01\` enforces non-zero initialization assertions on all cryptographic root accumulators.
 

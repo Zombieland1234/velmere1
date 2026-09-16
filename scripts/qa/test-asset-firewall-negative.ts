@@ -111,6 +111,7 @@ test("Independent resolution of colliding symbols (BTC native vs WBTC EVM vs BTC
 });
 
 test("Symbol variant normalization (BRK.A / BRK-A / BRK/A / BRKA and XBT / BTC / BTC-USD)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS compatibility boundary intentionally executed by Node/test harness
   const { normalizeAssetSymbol } = require("../../lib/security/asset-class-firewall");
   const brkVariants = ["BRK.A", "BRK-A", "BRK/A", "BRKA"];
   for (const v of brkVariants) {
@@ -126,6 +127,7 @@ test("Symbol variant normalization (BRK.A / BRK-A / BRK/A / BRKA and XBT / BTC /
 });
 
 test("Venue collision isolation (BTC/USD @ Coinbase vs Kraken vs CME)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS compatibility boundary intentionally executed by Node/test harness
   const { resolveVenueMarketIdentity } = require("../../lib/security/asset-class-firewall");
   const cb = resolveVenueMarketIdentity("BTC/USD", "Coinbase");
   const kr = resolveVenueMarketIdentity("XBT/USD", "Kraken");

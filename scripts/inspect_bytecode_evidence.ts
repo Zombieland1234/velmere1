@@ -27,7 +27,7 @@ dirs.forEach(d => {
     if (mFiles.length > 0) {
       try {
         manifestData = JSON.parse(fs.readFileSync(path.join(manifestDir, mFiles[0]), "utf8"));
-      } catch (e) {}
+      } catch (e) { /* empty */ }
     }
   }
 

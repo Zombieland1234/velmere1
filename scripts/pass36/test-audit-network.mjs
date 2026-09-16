@@ -48,7 +48,7 @@ async function run() {
       try {
         const text = await res.text();
         console.log('   BODY:', text.slice(0, 300));
-      } catch {}
+      } catch { /* empty */ }
     }
   });
   

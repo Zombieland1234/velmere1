@@ -8,7 +8,7 @@ export async function dismissCookie(page: any) {
   try {
     const btn = page.locator('button:has-text("Allow all"), button:has-text("Necessary only"), button:has-text("NECESSARY ONLY"), button:has-text("TYLKO NIEZBĘDNE")').first();
     if (await btn.isVisible({ timeout: 1500 })) await btn.click();
-  } catch {}
+  } catch { /* empty */ }
 }
 
 export async function captureRgAuditAndBrowser(browser: any) {

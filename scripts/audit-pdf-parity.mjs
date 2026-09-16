@@ -57,7 +57,7 @@ async function main() {
         try {
           const txt = Buffer.from(hex, "hex").toString("latin1");
           if (txt.length > 0) decodedPdfLines.push(txt);
-        } catch {}
+        } catch { /* empty */ }
       }
       const fullPdfDecodedText = decodedPdfLines.join("\n");
 

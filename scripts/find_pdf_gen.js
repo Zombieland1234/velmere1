@@ -6,7 +6,7 @@ function walk(dir) {
     try {
       if (fs.statSync(full).isDirectory()) walk(full);
       else if (f.toLowerCase().includes('pdf') || f.toLowerCase().includes('audit-report')) files.push(full);
-    } catch {}
+    } catch { /* empty */ }
   }
 }
 walk('C:/Users/marci/Desktop/Nowy folder/app');

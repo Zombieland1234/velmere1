@@ -76,6 +76,7 @@ test("PASS 27 — Security: Input sanitization protects against XSS and control 
     const sanitized = sanitizeContractInput(payload);
     assert.ok(!sanitized.includes("<script>"), "Must strip script tags");
     assert.ok(!sanitized.includes("onerror="), "Must strip onerror handlers");
+    // eslint-disable-next-line no-control-regex -- Intentional control-character sanitization or adversarial-test range
     assert.ok(!/[\x00-\x1f\x7f]/.test(sanitized), "Must strip control characters");
   }
 });

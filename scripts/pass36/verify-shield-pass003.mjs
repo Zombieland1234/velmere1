@@ -18,7 +18,7 @@ async function run() {
       await btn.click();
       console.log("Dismissed cookie banner");
     }
-  } catch {}
+  } catch { /* empty */ }
 
   await page.waitForTimeout(1000);
 

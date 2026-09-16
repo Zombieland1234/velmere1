@@ -22,7 +22,7 @@ async function executeShieldJourney(page, persona) {
       await cookieBtn.click();
       actions.push({ step: "dismiss_cookie_banner", success: true });
     }
-  } catch {}
+  } catch { /* empty */ }
 
   await page.waitForSelector("input", { timeout: 4000 }).catch(() => null);
   const searchInput = page.locator("input.shield-search-input-pass2382, input[placeholder*='BTC'], input[placeholder*='Search'], input[placeholder*='Szukaj'], input[placeholder*='Suchen'], input[type='text']").first();
@@ -116,7 +116,7 @@ async function executeAuditJourney(page, persona) {
       await cookieBtn.click();
       actions.push({ step: "dismiss_cookie_banner", success: true });
     }
-  } catch {}
+  } catch { /* empty */ }
 
   const targetTier = persona.targetTier || "pro";
   const tierBtn = page.locator(`button:has-text('${targetTier.toUpperCase()}'), button:has-text('${targetTier}')`).first();
@@ -199,7 +199,7 @@ async function executeAngelJourney(page, persona) {
       actions.push({ step: "dismiss_cookie_banner", success: true });
       await page.waitForTimeout(400);
     }
-  } catch {}
+  } catch { /* empty */ }
 
   const angelBtn = page.locator("button.velmere-floating-utility--angel, button:has-text('Angel')").first();
   const angelBtnVisible = await angelBtn.isVisible({ timeout: 2500 }).catch(() => false);

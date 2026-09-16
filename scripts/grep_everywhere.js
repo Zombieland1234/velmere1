@@ -13,7 +13,7 @@ function search(dir) {
           console.log('MATCH:', full);
         }
       }
-    } catch {}
+    } catch { /* empty */ }
   }
 }
 search('C:/Users/marci/Desktop/Nowy folder');

@@ -194,7 +194,7 @@ sequenceDiagram
 
 ## 4. Currency & Locale Matrix
 Velmère dynamically supports multi-currency billing:
-- **USD (\$)**: Default global pricing (\$299 Pro / \$999 Advanced).
+- **USD ($)**: Default global pricing ($299 Pro / $999 Advanced).
 - **EUR (€)**: European Union localized pricing (€279 Pro / €949 Advanced).
 - **PLN (zł)**: Localized Polish zloty pricing with native BLIK one-click payment.
 

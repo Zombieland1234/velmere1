@@ -9,6 +9,7 @@
  */
 
 const DANGEROUS_HTML_PATTERNS = /<[^>]*>|javascript:|data:|vbscript:/gi;
+// eslint-disable-next-line no-control-regex -- Intentional control-character sanitization or adversarial-test range
 const CONTROL_CHARACTERS = /[\x00-\x1f\x7f]/g;
 const PATH_TRAVERSAL_PATTERNS = /(\.\.[/\\]|[/\\]\.\.|^\/|^\\)/;
 

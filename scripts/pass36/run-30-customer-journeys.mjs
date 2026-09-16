@@ -11,7 +11,7 @@ async function dismissCookie(page) {
       await cookieBtn.click();
       await page.waitForTimeout(400);
     }
-  } catch {}
+  } catch { /* empty */ }
 }
 
 const JOURNEYS = [

@@ -144,7 +144,7 @@ function scanPatternsInCode(files: FileInfo[]): Record<string, { count: number; 
           results[pat].files.push(f.relativePath);
         }
       }
-    } catch {}
+    } catch { /* empty */ }
   }
 
   return results;
@@ -168,7 +168,7 @@ function detectHardcodedAddresses(files: FileInfo[]): { totalMatches: number; sa
         totalMatches += matches.length;
         sampleAddresses[f.relativePath] = Array.from(new Set(matches)).slice(0, 5);
       }
-    } catch {}
+    } catch { /* empty */ }
   }
 
   return { totalMatches, sampleAddresses };

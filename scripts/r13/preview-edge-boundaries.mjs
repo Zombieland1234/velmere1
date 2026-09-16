@@ -33,7 +33,7 @@ for(const c of cases){const start=performance.now();
   const response=await fetch(target,{method:c.method??'POST',headers:{'content-type':'application/json',...(c.headers??auth)},body:c.body,redirect:'error',signal:AbortSignal.timeout(8000)});
   const chunks=[];let length=0;
   if(response.body)for await(const chunk of response.body){length+=chunk.length;if(length>65536)throw new Error('response_limit');chunks.push(chunk);}
-  const bytes=Buffer.concat(chunks);let data;try{data=JSON.parse(bytes.toString('utf8'));}catch{}
+  const bytes=Buffer.concat(chunks);let data;try{data=JSON.parse(bytes.toString('utf8'));}catch{ /* empty */ }
   const exactBody=JSON.stringify(data)===JSON.stringify({ok:false,error:c.error});
   const scope=response.headers.get('x-velmere-r13-scope')==='legacy-browser-boundary-preview-v1';
   const noStore=(response.headers.get('cache-control')??'').includes('no-store');

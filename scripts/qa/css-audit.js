@@ -25,7 +25,7 @@ const { chromium } = require('playwright');
               });
             }
           }
-        } catch (e) {}
+        } catch (e) { /* empty */ }
       }
       return matched;
     }

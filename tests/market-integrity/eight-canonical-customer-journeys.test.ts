@@ -35,7 +35,7 @@ async function dismissCookie(page: Page) {
       await cookieBtn.click();
       await page.waitForTimeout(300);
     }
-  } catch {}
+  } catch { /* empty */ }
 }
 
 async function runEightJourneysAndReleaseGate() {

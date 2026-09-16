@@ -485,14 +485,14 @@ async function runAuditJourney(page, persona, t0) {
       // Read status
       const statusEl = page.locator(".audit-v4611-intake-status").first();
       const statusText = await statusEl.innerText({ timeout: 2000 }).catch(() => "");
-      const hasCaseRef = statusText.match(/AUD-[A-Z0-9\-]+/) !== null;
+      const hasCaseRef = statusText.match(/AUD-[A-Z0-9-]+/) !== null;
       const hasQueueMessage = statusText.toLowerCase().includes("queue") || statusText.includes("kolejce") || statusText.includes("Warteschlange");
 
       const isStopSell = statusText.includes("Pro beta") || statusText.includes("not for sale") || statusText.includes("nie są sprzedawane") || statusText.includes("nicht verkauft");
       if (hasCaseRef || hasQueueMessage) {
         obs.reachedTerminalState = true;
         obs.terminalStateEvidence = statusText.slice(0, 100);
-        obs.caseRef = statusText.match(/AUD-[A-Z0-9\-]+/)?.[0] || null;
+        obs.caseRef = statusText.match(/AUD-[A-Z0-9-]+/)?.[0] || null;
         obs.intakeOutcome = hasCaseRef ? "case_ref_returned" : "queued_without_ref";
         obs.errorText = null;
       } else if (isStopSell) {

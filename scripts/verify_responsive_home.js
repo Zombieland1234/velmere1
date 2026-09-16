@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
   try {
     const btn = await page.getByRole('button', { name: /akceptuj/i }).first();
     if (await btn.isVisible()) await btn.click();
-  } catch (e) {}
+  } catch (e) { /* empty */ }
   await page.waitForTimeout(400);
 
   // 1. Clean hero before mouse movement (no grid, pure clean luxury)

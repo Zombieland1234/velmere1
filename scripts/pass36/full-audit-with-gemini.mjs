@@ -64,7 +64,7 @@ async function main() {
         console.log(`  After-submit excerpt: ${afterText.replace(/\s+/g, ' ').trim().slice(0, 300)}`);
       }
     }
-  } catch {}
+  } catch { /* empty */ }
 
   // ── 2. Shield ──────────────────────────────────────────────────────────────
   report.products.shield = await scanPage(`${BASE}/en/shield`, 'Shield');
@@ -77,7 +77,7 @@ async function main() {
       report.products.shield.searchResult = shieldText.trim().slice(0, 1500);
       console.log(`  Shield search result: ${shieldText.replace(/\s+/g, ' ').trim().slice(0, 300)}`);
     }
-  } catch {}
+  } catch { /* empty */ }
 
   // ── 3. Shield Pro ──────────────────────────────────────────────────────────
   report.products.shieldPro = await scanPage(`${BASE}/en/shield-pro`, 'Shield Pro');
