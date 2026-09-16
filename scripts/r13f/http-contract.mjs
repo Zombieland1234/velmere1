@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync } from 'node:fs';
-const base = process.env.BASE_URL || 'http://127.0.0.1:3000';
+const base = process.env.BASE_URL || 'http://localhost:3000';
 assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(base).hostname), 'Local isolated server only');
 const path = '/api/account/customer-artifact?id=test-snapshot-123';
 const cases = [

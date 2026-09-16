@@ -1,5 +1,5 @@
 from pathlib import Path
-import subprocess, os, json, time, signal, urllib.request
+import subprocess, os, json, time, signal, urllib.request, tempfile, shutil
 from datetime import datetime, timezone
 
 out = Path('r13f-evidence'); out.mkdir(exist_ok=True)
@@ -8,12 +8,14 @@ env = {**os.environ, 'NEXT_TELEMETRY_DISABLED':'1', 'R13F_SOURCE_SHA':sha}
 results=[]
 def run(name, command, timeout=300, required=True, expected=0, extra_env=None):
  started=time.monotonic(); status='FAIL'; code=None
- with (out/(name+'.log')).open('w') as log:
+ with tempfile.NamedTemporaryFile(mode='w', prefix='velmere-r13f-', suffix='.log', delete=False) as log:
   try:
    result=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,env={**env,**(extra_env or {})},timeout=timeout)
    code=result.returncode;status='PASS' if code==expected else 'FAIL'
   except subprocess.TimeoutExpired: status='TIMEOUT'
   except Exception as e: log.write('\nRunner exception: '+type(e).__name__+'\n')
+ shutil.copyfile(log.name, out/(name+'.log'))
+ os.unlink(log.name)
  row={'name':name,'command':command,'exitCode':code,'expectedExitCode':expected,'status':status,'required':required,'seconds':round(time.monotonic()-started,3),'log':name+'.log'}
  results.append(row)
  print(json.dumps(row),flush=True)
@@ -38,6 +40,8 @@ try:
 except Exception as e:
  results.append({'name':'eslint-result-parse','status':'FAIL','required':True,'error':type(e).__name__})
 run('typescript-all-partitions',['npm','run','typecheck'],timeout=900)
+ts_receipt=Path('artifacts/pass13/PASS13_PARTITIONED_TYPESCRIPT.json')
+if ts_receipt.exists(): shutil.copyfile(ts_receipt, out/'TYPESCRIPT_RECEIPT.json')
 run('dependency-audit-all',['npm','audit','--json'])
 run('dependency-audit-production',['npm','audit','--omit=dev','--json'])
 run('source-integrity',['npm','run','audit:source'],required=True)
@@ -53,7 +57,7 @@ if built:
     with urllib.request.urlopen('http://127.0.0.1:3000/robots.txt',timeout=1) as response: ready=response.status==200
     if ready: break
    except Exception: time.sleep(0.5)
-  if ready: run('local-production-http',['node','scripts/r13f/http-contract.mjs'],extra_env={'BASE_URL':'http://127.0.0.1:3000'})
+  if ready: run('local-production-http',['node','scripts/r13f/http-contract.mjs'],extra_env={'BASE_URL':'http://localhost:3000'})
   else: results.append({'name':'local-production-http','status':'FAIL_SERVER_START','required':True})
  finally:
   try: os.killpg(server.pid,signal.SIGTERM)

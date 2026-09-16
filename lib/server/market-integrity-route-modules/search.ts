@@ -1,4 +1,3 @@
-import { publicApiError } from "@/lib/security/api-error-envelope";
 import { fetchCoinGeckoSuggestions } from "@/lib/market-integrity/coingecko";
 import { abuseShieldResponseMeta, applyApiAbuseShield } from "@/lib/security/api-abuse-shield";
 import { securityJson } from "@/lib/security/api-guard";
@@ -13,27 +12,11 @@ export async function GET(request: Request) {
   if (!shield.ok) return shield.response;
 
   const rightsPreflight = buildShieldBasicDeliveryPreflight("search");
-  const url = new URL(request.url);
-  const isDevRequest = request.headers.get("x-velmere-dev") === "true" || url.searchParams.get("dev") === "true" || process.env.NODE_ENV !== "production";
-  const isReferenceDelivery = (!rightsPreflight.customerDeliveryAllowed || !rightsPreflight.providerNetworkAllowed) && isDevRequest;
-
-  if ((!rightsPreflight.customerDeliveryAllowed || !rightsPreflight.providerNetworkAllowed) && !isDevRequest) {
+  if (!rightsPreflight.customerDeliveryAllowed || !rightsPreflight.providerNetworkAllowed) {
     return securityJson(toShieldBasicCustomerSafeWithheld("search"), { status: 503 });
   }
 
   const customerJson = (payload: unknown, status = 200) => {
-    if (isReferenceDelivery) {
-      const rec = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-      return securityJson({
-        ...rec,
-        mode: "reference",
-        publication: {
-          scope: "reference_identity_lookup",
-          liveMarketClaimed: false,
-          referenceSource: "CoinGecko reference search",
-        },
-      }, { status: 200 });
-    }
     const projected = projectShieldBasicCustomerDelivery({ decision: rightsPreflight, payload, status });
     return securityJson(projected.payload, { status: projected.status });
   };
@@ -59,7 +42,7 @@ export async function GET(request: Request) {
       generatedAt: new Date().toISOString(),
       ...abuseShieldResponseMeta(shield),
     });
-  } catch (error) {
+  } catch {
     const { PASS481_ASSET_IDENTITIES } = await import("@/lib/market-integrity/asset-identity-registry");
     const q = query.trim().toLowerCase();
     const matches = PASS481_ASSET_IDENTITIES.filter(
