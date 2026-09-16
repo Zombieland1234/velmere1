@@ -1,0 +1,47 @@
+name: R13B security checkpoint (not product release)
+on:
+  push:
+    branches: [r13b/security-boundary-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13b-security-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+      - name: Actual handler source with synthetic SDK - not real tenant E2E
+        run: node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs > r13b-component-tests.tap 2>&1
+      - name: Preview live negative HTTP checks
+        if: always()
+        run: node scripts/r13b/remote-boundaries.mjs
+      - name: Legacy observation - preserve failure until deployment is authorized
+        if: always()
+        env:
+          R13B_LEGACY: '1'
+        run: node scripts/r13b/remote-boundaries.mjs
+      - name: Archive exact reviewed sources
+        if: always()
+        run: python scripts/r13b/archive-checkpoint.py
+      - name: Preserve redacted results including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13b-security-${{ github.sha }}
+          path: |
+            r13b-component-tests.tap
+            r13b-*-boundaries.json
+            r13b-backend-sources.zip
+            r13b-backend-manifest.json
+          if-no-files-found: error
+          retention-days: 14

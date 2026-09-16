@@ -1,12 +1,12 @@
-// R13 non-production validation preview of the existing browser entitlement protocol.
-// This is NOT Audit/Shield/Real Markets purchase E2E and does not create entitlements.
+// R13B compatibility hardening of the existing browser entitlement bridge.
+// No entitlement grants, purchase flow or commercial authority are added.
 import "jsr:@supabase/functions-js@2.4.4/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.108.1";
 import { readRequestObject } from "./request-body.ts";
 
 const JWT_SHAPE=/^[A-Za-z0-9_-]{8,2048}\.[A-Za-z0-9_-]{8,4096}\.[A-Za-z0-9_-]{8,2048}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store, max-age=0",pragma:"no-cache","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-velmere-r13-scope":"legacy-browser-boundary-preview-v1","x-velmere-boundary-revision":"r13b1"};
+const HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store, max-age=0",pragma:"no-cache","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-velmere-boundary-revision":"r13b1"};
 const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers:HEADERS});
 function bearer(req:Request){const m=(req.headers.get("authorization")??"").match(/^Bearer\s+([^\s]+)$/i);return m&&JWT_SHAPE.test(m[1]!)?m[1]!:null;}
 

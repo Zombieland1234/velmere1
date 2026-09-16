@@ -1,0 +1,43 @@
+{
+  "schema": "velmere.r13b.database-security-observation.v1",
+  "provenance": "Structured transcription of connected Supabase tool results, not fabricated runtime telemetry",
+  "project": "yljjyowcvjgjcamffnvd",
+  "observedAt": "2026-09-16T01:09:51.604356Z",
+  "migration": {
+    "version": "20260916010416",
+    "name": "r13b_restrict_finalizer_and_pin_methodology_search_path",
+    "applied": true
+  },
+  "finalizer": {
+    "signature": "public.velmere_r7_finalize_angel_v1(text,text,text,jsonb)",
+    "before": {
+      "anonExecute": true,
+      "authenticatedExecute": true,
+      "serviceExecute": true
+    },
+    "after": {
+      "anonExecute": false,
+      "authenticatedExecute": false,
+      "serviceExecute": true
+    },
+    "definitionMd5BeforeAndAfter": "3e1f6188a93c9ea72676c4984cec59c2",
+    "bodyUnchanged": true
+  },
+  "methodologyFunction": {
+    "signature": "velmere_private.r7_chain_surface_methodology_sha_v1()",
+    "searchPathBefore": null,
+    "searchPathAfter": "pg_catalog, pg_temp"
+  },
+  "publicAnonExecutableSecurityDefinersAfter": 0,
+  "tables": {
+    "scope": "public velmere_* and all velmere_private base/partitioned tables",
+    "total": 54,
+    "rlsEnabled": 37,
+    "rlsDisabled": 17,
+    "all17DisabledTablesPrivate": true,
+    "all17AnonAndAuthenticatedSchemaUsageAndDmlFalse": true
+  },
+  "businessRowsWrittenByRemediation": 0,
+  "existingLedgerIntegrityRequalified": false,
+  "twoRealTenantE2E": false
+}
