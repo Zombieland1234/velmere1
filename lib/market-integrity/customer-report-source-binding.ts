@@ -150,7 +150,13 @@ export function pass4993SourceReceiptMatchesCanonicalIdentity(
   }
   if (expected.startsWith("market:")) {
     const expectedMarket = expected.slice("market:".length);
-    return requested === expected || resolved === expected || normalizedIdentity(receipt.resolvedIdentity?.marketId) === expectedMarket;
+    const resolvedMarket = normalizedIdentity(receipt.resolvedIdentity?.marketId);
+    const resolvedSymbol = normalizedSymbol(receipt.resolvedIdentity?.symbol);
+    const requestedMatches = requested === expected || requested === expectedMarket
+      || (!requested.startsWith("market:") && Boolean(resolvedSymbol)
+        && normalizedSymbol(requested.replace(/^symbol:/, "")) === resolvedSymbol);
+    // A correct resolved label does not cure a contradictory requested asset.
+    return requestedMatches && resolved === expected && resolvedMarket === expectedMarket;
   }
   if (expected.startsWith("symbol:")) {
     const expectedSymbol = normalizedSymbol(expected.slice("symbol:".length));

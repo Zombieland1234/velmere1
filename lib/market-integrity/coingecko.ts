@@ -171,11 +171,13 @@ export async function fetchCoinGeckoMarkets({
   perPage = 250,
   vsCurrency = "usd",
   ids,
+  queryIdentity,
 }: {
   page?: number;
   perPage?: number;
   vsCurrency?: string;
   ids?: string[];
+  queryIdentity?: string;
 } = {}) {
   const params = new URLSearchParams({
     vs_currency: vsCurrency,
@@ -201,10 +203,10 @@ export async function fetchCoinGeckoMarkets({
       providerFamily: "market_data",
       surface: "crypto",
       verification: "normalized_response",
-      requestedIdentity: row.id,
+      requestedIdentity: queryIdentity ?? row.id,
       resolvedSymbol: row.symbol,
       resolvedMarketId: row.id,
-      identityMatched: true,
+      identityMatched: !queryIdentity || (ids?.length === 1 && row.id.toLowerCase() === ids[0].toLowerCase()),
       capabilities: ["identity", "price", "market_cap", "volume", "history", "supply"],
       timestampProvenance: "provider",
       observedAt: row.observedAt ?? null,
@@ -212,7 +214,12 @@ export async function fetchCoinGeckoMarkets({
       ttlMs: 3 * 60_000,
       httpStatus: 200,
       latencyMs,
-      normalizedPayload: buildMarketRowEvidencePayload(row),
+      normalizedPayload: {
+        ...buildMarketRowEvidencePayload(row),
+        // Bind a search to the actual fetched bytes, in the same receipt and
+        // with the original provider timestamp; never mint it from a fallback.
+        ...(queryIdentity ? { id: row.id, symbol: row.symbol, price: row.price } : {}),
+      },
     })]);
     applyMarketRowRiskDeliveryFirewall({
       row,
@@ -350,7 +357,7 @@ export async function searchCoinGeckoMarket(query: string) {
   if (!id) return null;
   let rows: MarketIntegrityRow[];
   try {
-    rows = await fetchCoinGeckoMarkets({ ids: [id], perPage: 10 });
+    rows = await fetchCoinGeckoMarkets({ ids: [id], perPage: 10, queryIdentity: clean });
   } catch {
     // Preserve the actual fallback provider's receipts. Never relabel a
     // Binance response as CoinGecko or manufacture a successful HTTP receipt.
