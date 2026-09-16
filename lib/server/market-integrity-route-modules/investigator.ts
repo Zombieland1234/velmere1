@@ -1,4 +1,3 @@
-import { publicApiError } from "@/lib/security/api-error-envelope";
 import { NextResponse } from "next/server";
 import { searchCoinGeckoMarket } from "@/lib/market-integrity/coingecko";
 import { analyzeDexScreenerToken } from "@/lib/market-integrity/dexscreener";
@@ -118,111 +117,108 @@ export async function buildShieldMapIdentityBoundResponse(args: {
       mode: "withheld" as const,
       error: "shield_map_publication_withheld",
       publication,
-    }, { status: 409, headers: args.headers });
+      generatedAt,
+      identityBinding,
+      tierState: shieldMapTierState(),
+      engine: {
+        marketData: "withheld", riskEngine: "withheld", generativeNarrative: "withheld",
+        webOsint: "not_connected", locale: args.locale,
+      },
+      guardrails: { remaining: args.rateLimit.remaining, resetAt: args.rateLimit.resetAt },
+    }, { status: 424, headers: args.headers });
   }
 
-  const history = effects.getHistory(args.result.marketId);
-  const investigator = effects.buildInvestigator({
-    assetId: args.result.marketId,
-    symbol: args.result.symbol,
-    name: args.result.name,
-    result: args.result,
-    history,
-    locale: args.locale,
-  });
-  const evidenceReport = effects.buildEvidenceReport({
-    assetId: args.result.marketId,
-    symbol: args.result.symbol,
-    name: args.result.name,
-    result: args.result,
-    history,
-    locale: args.locale,
-  });
-  const snapshot = effects.persistSnapshot({
-    kind: "shield-map",
-    assetId: args.result.marketId,
-    generatedAt,
-    payload: {
-      investigator,
-      evidenceReport,
-      publication,
-    },
-  });
-  const preflight = buildShieldBasicDeliveryPreflight({
-    result: args.result,
-    publication,
-    snapshot,
-    generatedAt,
-  });
-  const customerDelivery = projectShieldBasicCustomerDelivery({
-    result: args.result,
-    publication,
-    snapshot,
-    preflight,
-    generatedAt,
-  });
+  const id = args.result.token.marketId
+    ?? args.result.token.tokenAddress
+    ?? args.result.token.symbol;
+  const history = await effects.getHistory(id, 144);
+  const investigator = effects.buildInvestigator(args.result);
+  const evidenceReport = effects.buildEvidenceReport(args.result, investigator);
+  const sourceSnapshot = await effects.persistSnapshot(args.result, investigator, evidenceReport);
 
   return NextResponse.json({
-    mode: "live" as const,
-    query: args.query,
-    tier: shieldMapTierState("basic"),
-    result: args.result,
+    mode: publication.mode,
+    publication,
     investigator,
     evidenceReport,
-    publication,
-    snapshot,
-    customerDelivery,
-    rateLimit: {
-      remaining: args.rateLimit.remaining,
-      resetAt: args.rateLimit.resetAt,
+    sourceSnapshot,
+    result: args.result,
+    history,
+    generatedAt,
+    identityBinding,
+    tierState: shieldMapTierState(),
+    engine: {
+      marketData: publication.evidenceState,
+      riskEngine: "connected",
+      generativeNarrative: process.env.VELMERE_ANGEL_PROVIDER ? "configured" : "not_configured",
+      webOsint: "not_connected",
+      locale: args.locale,
     },
-  }, {
-    status: 200,
-    headers: args.headers,
-  });
+    note: "This endpoint prepares the VLM Shield Investigator protocol and current market-data context. Full OSINT verdict still requires current web search against the provided queries.",
+    guardrails: { remaining: args.rateLimit.remaining, resetAt: args.rateLimit.resetAt },
+  }, { headers: args.headers });
 }
 
-export async function handleMarketIntegrityShieldMapAction(request: Request) {
-  const headers = guardrailHeaders();
-  const rateLimit = await checkRateLimit(request, "market_integrity_shield_map");
-  if (!rateLimit.allowed) {
-    return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: "rate_limited" },
-      { status: 429, headers },
-    );
-  }
+export type ShieldMapRouteDependencies = {
+  checkRequestRateLimit?: typeof checkRateLimit;
+  resolveResult?: typeof resolveShieldMapResult;
+  buildResponse?: typeof buildShieldMapIdentityBoundResponse;
+};
 
-  let payload: unknown;
+export async function executeShieldMapGetRequest(
+  request: Request,
+  dependencies: ShieldMapRouteDependencies = {},
+) {
+  if (request.method !== "GET") {
+    return NextResponse.json({ mode: "error", error: "method_not_allowed" }, {
+      status: 405, headers: { allow: "GET", "cache-control": "no-store" },
+    });
+  }
+  const checkRequestRateLimit = dependencies.checkRequestRateLimit ?? checkRateLimit;
+  const resolveResult = dependencies.resolveResult ?? resolveShieldMapResult;
+  const buildResponse = dependencies.buildResponse ?? buildShieldMapIdentityBoundResponse;
+  const rateLimit = await checkRequestRateLimit(request, "investigator");
+  const headers = guardrailHeaders(rateLimit);
+  if (!rateLimit.ok) {
+    return rateLimit.response ?? NextResponse.json({ mode: "error", error: "rate_limit_unavailable" }, {
+      status: 503, headers,
+    });
+  }
+  const parsedQuery = parseShieldMapQuery(new URL(request.url));
+  if (!parsedQuery.ok) {
+    return NextResponse.json<ErrorPayload>({ mode: "error", error: parsedQuery.code }, {
+      status: parsedQuery.status, headers,
+    });
+  }
+  const rightsPreflight = buildShieldBasicDeliveryPreflight("investigator");
+  // Request headers, query parameters and NODE_ENV cannot grant data rights.
+  if (!rightsPreflight.customerDeliveryAllowed || !rightsPreflight.providerNetworkAllowed) {
+    const projected = projectShieldBasicCustomerDelivery({ decision: rightsPreflight, payload: null, status: 503 });
+    return NextResponse.json(projected.payload, { status: projected.status, headers });
+  }
   try {
-    payload = await request.json();
+    const resolved = await resolveResult({ query: parsedQuery.value });
+    if (!resolved.ok) {
+      return NextResponse.json<ErrorPayload>({ mode: "error", error: resolved.code }, {
+        status: resolved.code === "shield_map_provider_unavailable" ? 503 : 409, headers,
+      });
+    }
+    const response = await buildResponse({
+      query: parsedQuery.value, locale: parsedQuery.value.locale,
+      result: resolved.result, headers, rateLimit,
+    });
+    // Re-check the immutable rights authority at final customer egress.
+    const projected = projectShieldBasicCustomerDelivery({
+      decision: rightsPreflight, payload: await response.json(), status: response.status,
+    });
+    return NextResponse.json(projected.payload, { status: projected.status, headers });
   } catch {
-    return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: "invalid_json" },
-      { status: 400, headers },
-    );
+    return NextResponse.json<ErrorPayload>({ mode: "error", error: "shield_map_provider_unavailable" }, {
+      status: 503, headers,
+    });
   }
+}
 
-  const parsed = parseShieldMapQuery(payload);
-  if (!parsed.ok) {
-    return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: parsed.code },
-      { status: 400, headers },
-    );
-  }
-
-  const resolved = await resolveShieldMapResult({ query: parsed.query });
-  if (!resolved.ok) {
-    return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: resolved.code },
-      { status: resolved.code === "shield_map_provider_unavailable" ? 503 : 404, headers },
-    );
-  }
-
-  return buildShieldMapIdentityBoundResponse({
-    query: parsed.query,
-    locale: parsed.query.locale,
-    result: resolved.result,
-    headers,
-    rateLimit,
-  });
+export async function GET(request: Request) {
+  return executeShieldMapGetRequest(request);
 }
