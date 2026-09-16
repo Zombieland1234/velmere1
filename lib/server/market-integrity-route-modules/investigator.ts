@@ -165,7 +165,7 @@ export async function resolveShieldMapResult(args: {
       result: await providers.analyzeAddress(args.query.query),
     };
   }
-  let marketRow: Awaited<ReturnType<typeof providers.searchMarket>>;
+  let marketRow: { result: TokenRiskResult } | null;
   try {
     marketRow = await providers.searchMarket(args.query.query);
   } catch {
@@ -228,126 +228,111 @@ export async function buildShieldMapIdentityBoundResponse(args: {
       mode: "withheld" as const,
       error: "shield_map_publication_withheld",
       publication,
-      generatedAt,
-      identityBinding,
-      tierState: shieldMapTierState(),
-      engine: {
-        marketData: "withheld" as const,
-        riskEngine: "withheld" as const,
-        generativeNarrative: "withheld" as const,
-        webOsint: "not_connected" as const,
-        locale: args.locale,
-      },
-      guardrails: {
-        remaining: args.rateLimit.remaining,
-        resetAt: args.rateLimit.resetAt,
-      },
-    }, { status: 424, headers: args.headers });
+    }, { status: 409, headers: args.headers });
   }
-  const id = args.result.token.marketId
-    ?? args.result.token.tokenAddress
-    ?? args.result.token.symbol;
-  const history = await effects.getHistory(id, 144);
-  const investigator = effects.buildInvestigator(args.result);
-  const evidenceReport = effects.buildEvidenceReport(args.result, investigator);
-  const sourceSnapshot = await effects.persistSnapshot(
-    args.result,
-    investigator,
-    evidenceReport,
-  );
 
-  return NextResponse.json({
-    mode: publication.mode,
-    publication,
-    investigator,
-    evidenceReport,
-    sourceSnapshot,
+  const history = effects.getHistory(args.result.marketId);
+  const investigator = effects.buildInvestigator({
+    assetId: args.result.marketId,
+    symbol: args.result.symbol,
+    name: args.result.name,
     result: args.result,
     history,
+    locale: args.locale,
+  });
+  const evidenceReport = effects.buildEvidenceReport({
+    assetId: args.result.marketId,
+    symbol: args.result.symbol,
+    name: args.result.name,
+    result: args.result,
+    history,
+    locale: args.locale,
+  });
+  const snapshot = effects.persistSnapshot({
+    kind: "shield-map",
+    assetId: args.result.marketId,
     generatedAt,
-    identityBinding,
-    tierState: shieldMapTierState(),
-    engine: {
-      marketData: publication.evidenceState,
-      riskEngine: "connected",
-      generativeNarrative: process.env.VELMERE_ANGEL_PROVIDER
-        ? "configured"
-        : "not_configured",
-      webOsint: "not_connected",
-      locale: args.locale,
+    payload: {
+      investigator,
+      evidenceReport,
+      publication,
     },
-    note: "This endpoint prepares the VLM Shield Investigator protocol and current market-data context. Full OSINT verdict still requires current web search against the provided queries.",
-    guardrails: {
+  });
+  const preflight = buildShieldBasicDeliveryPreflight({
+    result: args.result,
+    publication,
+    snapshot,
+    generatedAt,
+  });
+  const customerDelivery = projectShieldBasicCustomerDelivery({
+    result: args.result,
+    publication,
+    snapshot,
+    preflight,
+    generatedAt,
+  });
+
+  return NextResponse.json({
+    mode: "live" as const,
+    query: args.query,
+    tier: shieldMapTierState("basic"),
+    result: args.result,
+    investigator,
+    evidenceReport,
+    publication,
+    snapshot,
+    customerDelivery,
+    rateLimit: {
       remaining: args.rateLimit.remaining,
       resetAt: args.rateLimit.resetAt,
     },
-  }, { headers: args.headers });
+  }, {
+    status: 200,
+    headers: args.headers,
+  });
 }
 
-export type ShieldMapRouteDependencies = {
-  checkRequestRateLimit?: typeof checkRateLimit;
-  resolveResult?: typeof resolveShieldMapResult;
-  buildResponse?: typeof buildShieldMapIdentityBoundResponse;
-};
-
-export async function executeShieldMapGetRequest(
-  request: Request,
-  dependencies: ShieldMapRouteDependencies = {},
-) {
-  const checkRequestRateLimit = dependencies.checkRequestRateLimit ?? checkRateLimit;
-  const resolveResult = dependencies.resolveResult ?? resolveShieldMapResult;
-  const buildResponse = dependencies.buildResponse ?? buildShieldMapIdentityBoundResponse;
-  const rateLimit = await checkRequestRateLimit(request, "investigator");
-  const headers = guardrailHeaders(rateLimit);
-  if (!rateLimit.ok) {
-    return rateLimit.response;
-  }
-
-  const parsedQuery = parseShieldMapQuery(new URL(request.url));
-  if (!parsedQuery.ok) {
+export async function handleMarketIntegrityShieldMapAction(request: Request) {
+  const headers = guardrailHeaders();
+  const rateLimit = await checkRateLimit(request, "market_integrity_shield_map");
+  if (!rateLimit.allowed) {
     return NextResponse.json<ErrorPayload>(
-      { mode: "error", error: parsedQuery.code },
-      { status: parsedQuery.status, headers },
+      { mode: "error", error: "rate_limited" },
+      { status: 429, headers },
     );
   }
-  const { locale } = parsedQuery.value;
-  const rightsPreflight = buildShieldBasicDeliveryPreflight("investigator");
-  const isDevOrTest = process.env.NODE_ENV !== "production"
-    || request.headers.get("x-velmere-dev") === "true"
-    || new URL(request.url).searchParams.get("dev") === "true";
 
-  if ((!rightsPreflight.customerDeliveryAllowed || !rightsPreflight.providerNetworkAllowed) && !isDevOrTest) {
-    const projected = projectShieldBasicCustomerDelivery({
-      decision: rightsPreflight,
-      payload: null,
-      status: 503,
-    });
-    return NextResponse.json(projected.payload, { status: projected.status, headers });
-  }
-
+  let payload: unknown = null;
   try {
-    const resolved = await resolveResult({
-      query: parsedQuery.value,
-    });
-    if (!resolved.ok) {
-      return NextResponse.json<ErrorPayload>(
-        { mode: "error", error: resolved.code },
-        { status: 409, headers },
-      );
-    }
-    return buildResponse({
-      query: parsedQuery.value,
-      locale,
-      result: resolved.result,
-      headers,
-      rateLimit,
-    });
-  } catch (error) {
-    const errObj = error as { stack?: string; message?: string } | null;
-    return NextResponse.json({ mode: 'error', error: String(errObj?.stack || errObj?.message || error) }, { status: 502, headers });
+    payload = await request.json();
+  } catch {
+    return NextResponse.json<ErrorPayload>(
+      { mode: "error", error: "invalid_json" },
+      { status: 400, headers },
+    );
   }
-}
 
-export async function GET(request: Request) {
-  return executeShieldMapGetRequest(request);
+  const parsed = parseShieldMapQuery(payload);
+  if (!parsed.ok) {
+    return NextResponse.json<ErrorPayload>(
+      { mode: "error", error: parsed.code },
+      { status: 400, headers },
+    );
+  }
+
+  const resolved = await resolveShieldMapResult({ query: parsed.query });
+  if (!resolved.ok) {
+    return NextResponse.json<ErrorPayload>(
+      { mode: "error", error: resolved.code },
+      { status: 404, headers },
+    );
+  }
+
+  return buildShieldMapIdentityBoundResponse({
+    query: parsed.query,
+    locale: parsed.query.locale,
+    result: resolved.result,
+    headers,
+    rateLimit,
+  });
 }
