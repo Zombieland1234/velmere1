@@ -139,8 +139,8 @@ export function analyzeContextualReentrancy(
          require(s, "Transfer failed");
 -        balances[msg.sender] -= amount;
      }`,
-          appliedSuccessfully: true,
-          regressionPassed: true,
+          appliedSuccessfully: false,
+          regressionPassed: false,
         },
         verificationState: "AUTOMATED",
       });
@@ -213,8 +213,8 @@ export function analyzeContextualReentrancy(
 +    // Assert pool reentrancy lock before reading virtual price
 +    ICurvePool(pool).claim_admin_fees(); // Reverts if pool is mid-reentrant
      uint256 price = ICurvePool(pool).get_virtual_price();`,
-          appliedSuccessfully: true,
-          regressionPassed: true,
+          appliedSuccessfully: false,
+          regressionPassed: false,
         },
         verificationState: "AUTOMATED",
       });

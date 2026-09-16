@@ -112,8 +112,8 @@ export function analyzeContextualAccessControl(
 @@ -5,3 +5,3 @@
 -    require(tx.origin == owner, "Not owner");
 +    require(msg.sender == owner, "Not owner");`,
-        appliedSuccessfully: true,
-        regressionPassed: true,
+        appliedSuccessfully: false,
+        regressionPassed: false,
       },
       verificationState: "AUTOMATED",
     });
@@ -174,8 +174,8 @@ export function analyzeContextualAccessControl(
 -contract ProtocolToken is Ownable {
 +import "@openzeppelin/contracts/access/Ownable2Step.sol";
 +contract ProtocolToken is Ownable2Step {`,
-        appliedSuccessfully: true,
-        regressionPassed: true,
+        appliedSuccessfully: false,
+        regressionPassed: false,
       },
       verificationState: "AUTOMATED",
     });
@@ -282,8 +282,8 @@ export function analyzeContextualAccessControl(
 @@ -10,2 +10,4 @@
      function burn(address from, uint256 amount) external {
 +        require(from == msg.sender, "Can only burn own tokens");`,
-        appliedSuccessfully: true,
-        regressionPassed: true,
+        appliedSuccessfully: false,
+        regressionPassed: false,
       },
       verificationState: "AUTOMATED",
     });

@@ -169,8 +169,8 @@ export function simulateDefiEconomicAttacks(
 +    function _decimalsOffset() internal view virtual override returns (uint8) {
 +        return 3;
 +    }`,
-          appliedSuccessfully: true,
-          regressionPassed: true,
+          appliedSuccessfully: false,
+          regressionPassed: false,
         },
         verificationState: "SIMULATED",
       });
@@ -224,8 +224,8 @@ export function simulateDefiEconomicAttacks(
 @@ -20,3 +20,4 @@
      function donateToReserves(uint256 amount) external {
 +        require(checkLiquidity(msg.sender), "Insolvent after donation");`,
-        appliedSuccessfully: true,
-        regressionPassed: true,
+        appliedSuccessfully: false,
+        regressionPassed: false,
       },
       verificationState: "SIMULATED",
     });

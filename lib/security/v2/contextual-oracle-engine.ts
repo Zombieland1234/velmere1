@@ -114,8 +114,8 @@ export function analyzeContextualOracles(
 -    uint256 spotPrice = (uint256(r1) * 1e18) / r0;
 +    // Use Uniswap v3 TWAP or Chainlink Decentralized Feed
 +    uint256 securePrice = getChainlinkPrice(token);`,
-          appliedSuccessfully: true,
-          regressionPassed: true,
+          appliedSuccessfully: false,
+          regressionPassed: false,
         },
         verificationState: "AUTOMATED",
       });
@@ -201,8 +201,8 @@ export function analyzeContextualOracles(
 +    require(price > 0, "Invalid price");
 +    require(updatedAt != 0 && block.timestamp - updatedAt <= HEARTBEAT, "Stale price");
 +    require(answeredInRound >= roundId, "Incomplete round");`,
-          appliedSuccessfully: true,
-          regressionPassed: true,
+          appliedSuccessfully: false,
+          regressionPassed: false,
         },
         verificationState: "AUTOMATED",
       });

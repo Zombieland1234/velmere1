@@ -97,8 +97,8 @@ export function analyzeSolidityEvmEdgeCases(
 +import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 -    address signer = ecrecover(hash, v, r, s);
 +    address signer = ECDSA.recover(hash, v, r, s);`,
-          appliedSuccessfully: true,
-          regressionPassed: true,
+          appliedSuccessfully: false,
+          regressionPassed: false,
         },
         verificationState: "AUTOMATED",
       });

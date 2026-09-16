@@ -122,8 +122,8 @@ export function analyzeErcAndTokenQuirks(
 +    using SafeERC20 for IERC20;
 -    IERC20(token).transfer(msg.sender, amount);
 +    IERC20(token).safeTransfer(msg.sender, amount);`,
-        appliedSuccessfully: true,
-        regressionPassed: true,
+        appliedSuccessfully: false,
+        regressionPassed: false,
       },
       verificationState: "AUTOMATED",
     });

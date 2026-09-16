@@ -109,11 +109,10 @@ export function executeFullAuditV2(options: AuditExecutionOptions): FullAuditRes
   const symbolicRes = executeBoundedSymbolicAnalysis(cfgResult.cfg, options.contractAddress);
 
   // Step 6: Automated Patch Validation Lifecycle
-  let totalPatchesTested = 0;
+  const totalPatchesTested = 0; // Text preflight is not an executed patch test.
   let patchesPassingRegression = 0;
   for (const finding of findings) {
     if (finding.remediation && finding.remediation.solidityPatchDiff) {
-      totalPatchesTested++;
       const patchReport = validateRemediationPatch(finding, options.sourceCode);
       if (patchReport.validationStatus === "VERIFIED") {
         patchesPassingRegression++;

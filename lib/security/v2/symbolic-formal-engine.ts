@@ -1,9 +1,9 @@
 /**
  * Velmère Security Engine V2 — Symbolic Execution & SMT Formal Assurance Engine
  *
- * Implements bounded symbolic path exploration and formal assertion checking:
+ * Performs bounded structural CFG traversal; no SMT solver is integrated:
  * - Explores bounded execution paths through the CFG
- * - Proves or disproves specific invariant assertions under explicit specifications
+ * - Reports requested formal properties as NOT_RUN; never fabricates solver success
  * - STRICT COMPLIANCE RULE: Never outputs "100% formally secure".
  * - Formal results must explicitly state: "Property X verified under specification Y".
  */
@@ -68,24 +68,28 @@ export function executeBoundedSymbolicAnalysis(
     }
   }
 
-  // Formal Property Verification Results (Strict Section 15 formulation)
-  formalAssurance.push({
-    propertyId: "FORMAL-PROP-01-TRANSFER-NO-OVERFLOW",
-    specification: "EVM bounded arithmetic in Solidity 0.8+ reverts on uint256 overflow during balance additions",
-    proven: true,
-    status: "FORMALLY_VERIFIED",
-    solver: "Bounded-EVM-SMT-Checker",
-    statement: "FORMALLY VERIFIED: Balance addition overflow safety verified under specification Solidity 0.8+ arithmetic bounds.",
-  });
-
-  formalAssurance.push({
-    propertyId: "FORMAL-PROP-02-REVERT-SAFETY",
-    specification: "All identified revert paths terminate cleanly without state corruption or residual gas traps",
-    proven: true,
-    status: "FORMALLY_VERIFIED",
-    solver: "Bounded-EVM-SMT-Checker",
-    statement: "FORMALLY VERIFIED: Revert path termination safety verified under specification bounded CFG depth 12.",
-  });
+  // CFG reachability is structural analysis, not an SMT proof. No compiler,
+  // target-bound property specification or solver is executed by this module.
+  // Fail closed even for an empty or apparently safe graph: neither the
+  // Solidity version nor arithmetic/revert safety follows from these counters.
+  for (const property of [
+    {
+      propertyId: "FORMAL-PROP-01-TRANSFER-NO-OVERFLOW",
+      specification: "Target-specific balance addition overflow safety",
+    },
+    {
+      propertyId: "FORMAL-PROP-02-REVERT-SAFETY",
+      specification: "Target-specific revert-path safety",
+    },
+  ]) {
+    formalAssurance.push({
+      ...property,
+      proven: false,
+      status: "NOT_RUN",
+      solver: "NOT_EXECUTED",
+      statement: "NOT RUN: bounded structural CFG traversal does not prove this property. A target-bound specification and executed solver with a verifiable result are required.",
+    });
+  }
 
   return {
     totalPathsExplored,

@@ -1,11 +1,10 @@
 /**
- * Velmère Security Engine V2 — Patch Validation Engine
- *
- * Implements automated patch verification lifecycle:
- * Patch -> Apply Diff -> Syntax Verification -> Static Re-check -> Invariant Regression -> Validation Proof
+ * Remediation evidence boundary. This module performs text preflight only.
+ * It does not apply a unified diff, invoke solc, re-run a detector, execute
+ * invariants, or prove that a vulnerability was eliminated.
  */
-
-import { StandardFindingV2 } from "./types";
+import { createHash } from "node:crypto";
+import type { StandardFindingV2 } from "./types";
 
 export interface PatchValidationReport {
   findingId: string;
@@ -15,86 +14,50 @@ export interface PatchValidationReport {
   regressionIntroduced: boolean;
   allInvariantsSatisfied: boolean;
   validationStatus: "VERIFIED" | "FAILED" | "INCONCLUSIVE";
+  /** Integrity digest of this assessment, NOT a proof of patch correctness. */
   validationProofDigest: string;
+  validationScope: "TEXT_PREFLIGHT_ONLY";
+  evidenceMissing: string[];
 }
 
 export function validateRemediationPatch(
   finding: StandardFindingV2,
   originalSource?: string,
 ): PatchValidationReport {
-  const diff = finding.remediation.solidityPatchDiff;
-
-  // 1. Verify diff structure
-  const hasAdditions = diff.includes("+");
-  const hasRemovals = diff.includes("-");
-  const isWellFormed = hasAdditions || hasRemovals;
-
-  if (!isWellFormed) {
-    return {
-      findingId: finding.findingId,
-      patchApplied: false,
-      compilationClean: false,
-      vulnerabilityEliminated: false,
-      regressionIntroduced: false,
-      allInvariantsSatisfied: false,
-      validationStatus: "FAILED",
-      validationProofDigest: "0x0000000000000000000000000000000000000000000000000000000000000000",
-    };
-  }
-
-  // 2. Simulate diff application: check for conflicting tokens
-  let simulatedPatchedSource = originalSource ?? "";
-  if (originalSource) {
-    const diffLines = diff.split("\n");
-    for (const line of diffLines) {
-      if (line.startsWith("-") && !line.startsWith("---")) {
-        const textToRemove = line.slice(1).trim();
-        if (textToRemove && simulatedPatchedSource.includes(textToRemove)) {
-          simulatedPatchedSource = simulatedPatchedSource.replace(textToRemove, "");
-        }
-      } else if (line.startsWith("+") && !line.startsWith("+++")) {
-        const textToAdd = line.slice(1).trim();
-        if (textToAdd) {
-          simulatedPatchedSource += `\n${textToAdd}`;
-        }
-      }
-    }
-  }
-
-  // 3. Confirm target pattern eliminated
-  let vulnerabilityEliminated = true;
-  if (finding.findingId.includes("REENTRANCY")) {
-    vulnerabilityEliminated = diff.includes("nonReentrant") || diff.includes("ReentrancyGuard");
-  } else if (finding.findingId.includes("TXORIGIN")) {
-    vulnerabilityEliminated = diff.includes("msg.sender") && !diff.includes("tx.origin");
-  } else if (finding.findingId.includes("SINGLE-STEP")) {
-    vulnerabilityEliminated = diff.includes("Ownable2Step");
-  } else if (finding.findingId.includes("SELFDESTRUCT")) {
-    vulnerabilityEliminated = diff.includes("-") && diff.includes("selfdestruct");
-  } else if (finding.findingId.includes("ORACLE")) {
-    vulnerabilityEliminated = diff.includes("Chainlink") || diff.includes("TWAP") || diff.includes("updatedAt");
-  } else if (finding.findingId.includes("VAULT-INFLATION")) {
-    vulnerabilityEliminated = diff.includes("_decimalsOffset") || diff.includes("virtualShares");
-  }
-
-  const patchApplied = true;
-  const compilationClean = true;
-  const regressionIntroduced = false;
-  const allInvariantsSatisfied = true;
-
-  const validationStatus: PatchValidationReport["validationStatus"] =
-    vulnerabilityEliminated && compilationClean && !regressionIntroduced ? "VERIFIED" : "FAILED";
-
-  const validationProofDigest = `sha256:${Buffer.from(`${finding.findingId}-${diff.length}-${validationStatus}`).toString("hex")}`;
-
+  const suppliedDiff: unknown = finding.remediation?.solidityPatchDiff;
+  const diff = typeof suppliedDiff === "string" ? suppliedDiff : "";
+  const editPresent = diff.split(/\r?\n/u).some((line) =>
+    ((line.startsWith("+") && !line.startsWith("+++"))
+      || (line.startsWith("-") && !line.startsWith("---")))
+    && line.slice(1).trim().length > 0,
+  );
+  const validationStatus = editPresent ? "INCONCLUSIVE" : "FAILED";
+  const assessment = {
+    schemaVersion: "velmere.r13g.patch-preflight.v1",
+    findingId: finding.findingId,
+    originalSourceSha256: typeof originalSource === "string"
+      ? createHash("sha256").update(originalSource).digest("hex") : null,
+    diffSha256: createHash("sha256").update(diff).digest("hex"),
+    validationStatus,
+    validationScope: "TEXT_PREFLIGHT_ONLY" as const,
+  };
   return {
     findingId: finding.findingId,
-    patchApplied,
-    compilationClean,
-    vulnerabilityEliminated,
-    regressionIntroduced,
-    allInvariantsSatisfied,
+    patchApplied: false,
+    compilationClean: false,
+    vulnerabilityEliminated: false,
+    // False here means no regression was demonstrated, not that its absence
+    // was verified. validationStatus and evidenceMissing are authoritative.
+    regressionIntroduced: false,
+    allInvariantsSatisfied: false,
     validationStatus,
-    validationProofDigest,
+    validationProofDigest: `sha256:${createHash("sha256").update(JSON.stringify(assessment)).digest("hex")}`,
+    validationScope: "TEXT_PREFLIGHT_ONLY",
+    evidenceMissing: [
+      ...(typeof originalSource !== "string" || !originalSource.trim() ? ["original_source"] : []),
+      ...(!editPresent ? ["candidate_diff"] : []),
+      "applied_diff_receipt", "compiler_receipt", "vulnerability_recheck",
+      "executed_regression_tests", "executed_invariant_tests",
+    ],
   };
 }

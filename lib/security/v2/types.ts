@@ -163,8 +163,8 @@ export interface FormalAssuranceResult {
   propertyId: string;
   specification: string;
   proven: boolean;
-  status: "FORMALLY_VERIFIED" | "COUNTEREXAMPLE_FOUND" | "BOUND_EXCEEDED";
-  solver: "Bounded-EVM-SMT-Checker";
+  status: "FORMALLY_VERIFIED" | "COUNTEREXAMPLE_FOUND" | "BOUND_EXCEEDED" | "NOT_RUN";
+  solver: "Bounded-EVM-SMT-Checker" | "NOT_EXECUTED";
   statement: string;
 }
 

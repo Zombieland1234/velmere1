@@ -179,8 +179,8 @@ async function runFullTestSuite() {
   console.log("[Test Group 10] Automated Patch Validation Lifecycle...");
   const sampleFinding = unguardedReentrancy[0];
   const patchReport = validateRemediationPatch(sampleFinding, "contract Bank { function withdraw() external {} }");
-  assert(patchReport.validationStatus === "VERIFIED", "Patch validation succeeded");
-  assert(patchReport.vulnerabilityEliminated === true, "Vulnerability eliminated by patch");
+  assert(patchReport.validationStatus === "INCONCLUSIVE", "Text-only patch cannot claim verified remediation");
+  assert(patchReport.vulnerabilityEliminated === false, "No vulnerability elimination without an executed recheck");
 
   // SECTION 11: Multi-Dimensional Scoring & Cryptographic Snapshot
   console.log("[Test Group 11] Multi-Dimensional Scoring & Snapshot Fingerprint...");
