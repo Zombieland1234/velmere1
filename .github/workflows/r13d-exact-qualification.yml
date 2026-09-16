@@ -1,0 +1,116 @@
+name: R13D exact verified qualification
+on:
+  push:
+    branches: [r13d/backend-hardening-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13d-exact-qualification
+  cancel-in-progress: true
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 1fa04fa951f8205942c8e66323f2e097717c2fc1
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - name: Verify immutable source SHA
+        run: test "$(git rev-parse HEAD)" = "1fa04fa951f8205942c8e66323f2e097717c2fc1"
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Dependency audit evidence
+        shell: bash
+        run: |
+          npm audit --json > r13d-npm-audit.json || true
+          npm audit --omit=dev --json > r13d-npm-audit-production.json || true
+          python - <<'PY'
+          import json
+          for p in ['r13d-npm-audit.json','r13d-npm-audit-production.json']:
+            d=json.load(open(p)); c=d.get('metadata',{}).get('vulnerabilities',{})
+            print(p,c)
+            if c.get('high',0) or c.get('critical',0): raise SystemExit(f'high/critical advisories in {p}')
+          PY
+      - name: Full source integrity
+        run: npm run audit:source | tee r13d-source-integrity.txt
+      - name: Precise repository secret scan
+        run: node scripts/security/scan-all-secrets.mjs | tee r13d-secret-scan.txt
+      - name: Backend scope ESLint
+        shell: bash
+        run: |
+          npx eslint lib scripts test tests app/api .agents --format json > r13d-backend-eslint.json || true
+          python - <<'PY'
+          import json,collections
+          rows=json.load(open('r13d-backend-eslint.json')); errors=[]; warnings=[]
+          for r in rows:
+            for m in r.get('messages',[]):
+              (errors if m.get('severity')==2 else warnings).append({'file':r['filePath'],'line':m.get('line'),'rule':m.get('ruleId'),'message':m.get('message')})
+          out={'hardErrors':len(errors),'warnings':len(warnings),'errorRules':dict(collections.Counter(x['rule'] for x in errors))}
+          json.dump(out,open('r13d-backend-eslint-summary.json','w'),indent=2)
+          print(out)
+          if errors: raise SystemExit(f'{len(errors)} backend lint hard errors')
+          PY
+      - name: Full TypeScript
+        run: npm run typecheck | tee r13d-typecheck.txt
+      - name: Production build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build | tee r13d-build.txt
+      - name: Entitlement regressions
+        run: node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs | tee r13d-entitlement.tap
+      - name: Adversarial red-team
+        run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts | tee r13d-redteam.tap
+      - name: Database contract observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:database > r13d-database.txt 2>&1; c=$?; echo "exit=$c" > r13d-database-exit.txt; cat r13d-database.txt; exit 0
+      - name: Provider rights observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:provider-rights > r13d-provider-rights.txt 2>&1; c=$?; echo "exit=$c" > r13d-provider-rights-exit.txt; cat r13d-provider-rights.txt; exit 0
+      - name: Merchant legal observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:merchant-legal > r13d-merchant-legal.txt 2>&1; c=$?; echo "exit=$c" > r13d-merchant-legal-exit.txt; cat r13d-merchant-legal.txt; exit 0
+      - name: Product readiness observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:product-readiness > r13d-product-readiness.txt 2>&1; c=$?; echo "exit=$c" > r13d-product-readiness-exit.txt; cat r13d-product-readiness.txt; exit 0
+      - name: I18N semantic observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:i18n-semantic > r13d-i18n-semantic.txt 2>&1; c=$?; echo "exit=$c" > r13d-i18n-semantic-exit.txt; tail -200 r13d-i18n-semantic.txt; exit 0
+      - name: I18N release observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:i18n-release > r13d-i18n-release.txt 2>&1; c=$?; echo "exit=$c" > r13d-i18n-release-exit.txt; tail -200 r13d-i18n-release.txt; exit 0
+      - name: Prebuild readiness observation
+        if: always()
+        shell: bash
+        run: |
+          set +e; npm run audit:prebuild > r13d-prebuild.txt 2>&1; c=$?; echo "exit=$c" > r13d-prebuild-exit.txt; tail -250 r13d-prebuild.txt; exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13d-exact-qualification-1fa04fa
+          path: |
+            r13d-*.json
+            r13d-*.txt
+            r13d-*.tap
+            artifacts/pass13/PASS13_CLEAN_SAFE_AUDIT.json
+            artifacts/pass13/PASS13_CLEAN_SAFE_MANIFEST.json
+          if-no-files-found: warn
+          retention-days: 30
