@@ -1,0 +1,106 @@
+name: R13G evidence truth and tier qualification
+on:
+  push:
+    branches: [r13g/knowledge-20260916]
+permissions:
+  contents: write
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 50
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - name: Apply byte-verified nonvisual patch and save isolated candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,gzip,hashlib,pathlib,subprocess,json
+          parts=sorted(pathlib.Path('.github/r13g-transfer').glob('part-*.txt'))
+          assert len(parts)==6
+          patch=gzip.decompress(base64.b64decode(''.join(p.read_text() for p in parts),validate=True))
+          assert hashlib.sha256(patch).hexdigest()=='045289814e7567280914a1f3b6afbace0052fa5fcf26a6633ddb3f833ea810f4'
+          target=pathlib.Path('/tmp/r13g-reviewed.patch');target.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(target)],check=True)
+          subprocess.run(['git','apply',str(target)],check=True)
+          changed=[line[6:] for line in patch.decode().splitlines() if line.startswith('+++ b/')]
+          assert len(changed)==17 and len(set(changed))==17
+          def protected(p):
+            parts=pathlib.PurePosixPath(p).parts
+            return p.endswith(('.tsx','.jsx','.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf','.eot','.ttc')) or parts[0] in ('public','components','messages','locales') or (parts[0]=='app' and len(parts)>1 and parts[1]!='api')
+          assert not any(protected(p) for p in changed)
+          base='671132a95a497e45c128a4dc364d6823edaf4168'
+          diff=subprocess.check_output(['git','diff','--name-only',base]).decode().splitlines()
+          assert not any(protected(p) for p in diff)
+          evidence=pathlib.Path('/tmp/r13g-evidence');evidence.mkdir(exist_ok=True)
+          manifest={p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in changed}
+          (evidence/'EDIT_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          ui={p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in tracked if p and protected(p) and pathlib.Path(p).is_file()}
+          (evidence/'UI_BOUNDARY.json').write_text(json.dumps({'base':base,'changedProtectedFiles':[],'hashes':ui},indent=2)+'\n')
+          subprocess.run(['git','add','--',*changed],check=True)
+          PY
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(r13g): prevent invented formal and remediation proofs; verify evidence bytes'
+          branch="r13g/candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git push origin "HEAD:refs/heads/$branch"
+          printf '{"sourceCommit":"%s","branch":"%s","releaseDecision":"NO_GO"}\n' "$(git rev-parse HEAD)" "$branch" > /tmp/r13g-evidence/SOURCE_IDENTITY.json
+      - name: Install exact lockfile dependencies
+        run: npm ci
+      - name: Actual regression, type, build and tier results
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          R13G_EVIDENCE_DIR: /tmp/r13g-evidence
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import subprocess,pathlib,json,os,time,glob
+          out=pathlib.Path('/tmp/r13g-evidence');out.mkdir(exist_ok=True)
+          loader=['node','--import','./scripts/pass11/register-offline-ts-loader.mjs']
+          checks=[
+            ('assurance-regression',loader+['--test','--test-reporter=tap','scripts/r13g/assurance-boundary.test.ts'],True),
+            ('evidence-file-regression',['node','--test','--test-reporter=tap','scripts/r13g/evidence-file.test.mjs'],True),
+            ('v2-existing-regression',loader+['scripts/qa/test-security-v2-full.ts'],True),
+            ('tier-synthetic-benchmark',loader+['scripts/r13g/tier-benchmark.ts'],True),
+            ('r13f-regression',['node','--experimental-strip-types','--experimental-vm-modules','--test','--test-reporter=tap',*sorted(glob.glob('scripts/r13f/*.test.mjs'))],True),
+            ('entitlement-regression',['node','--experimental-strip-types','--experimental-vm-modules','--test','--test-reporter=tap',*sorted(glob.glob('scripts/r13/*.test.mjs')),*sorted(glob.glob('scripts/r13b/*.test.mjs'))],True),
+            ('existing-redteam',loader+['--test','--test-reporter=tap','test/security/adversarial-red-team.test.ts'],True),
+            ('backend-eslint',['npx','--no-install','eslint','lib','scripts','test','tests','app/api','.agents','--format','json'],True),
+            ('typescript-all-partitions',['npm','run','typecheck'],True),
+            ('production-build-type-validation',['npm','run','build'],True),
+            ('dependency-audit',['npm','audit','--json'],True),
+            ('dependency-audit-production',['npm','audit','--omit=dev','--json'],True),
+            ('source-integrity',['npm','run','audit:source'],True),
+            ('provider-rights-observation',['npm','run','audit:provider-rights'],False),
+            ('merchant-observation',['npm','run','audit:merchant-legal'],False),
+            ('product-readiness-observation',['npm','run','audit:product-readiness'],False)
+          ]
+          results=[]
+          for name,cmd,required in checks:
+            started=time.monotonic()
+            with (out/(name+'.log')).open('w') as log:
+              try:
+                done=subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,timeout=600)
+                code=done.returncode
+              except subprocess.TimeoutExpired:
+                code=124;log.write('\nTIMEOUT\n')
+            result={'name':name,'command':cmd,'exitCode':code,'requiredTechnical':required,'status':'PASS' if code==0 else 'FAIL','seconds':round(time.monotonic()-started,3)}
+            results.append(result);print(json.dumps(result),flush=True)
+          summary={'schemaVersion':'velmere.r13g.qualification.v1','sourceCommit':subprocess.check_output(['git','rev-parse','HEAD']).decode().strip(),'technicalPassed':all(r['exitCode']==0 for r in results if r['requiredTechnical']),'releaseDecision':'NO_GO','commerciallyQualifiedVariants':0,'results':results,'limitations':['Synthetic V2 module benchmark is not target-EVM or independent competitor evaluation.','No nine-product customer E2E, real two-tenant isolation, Stripe purchase lifecycle, restore or external review completed.','Library originals were inaccessible; separate consolidated handoff documents are not licence approval.']}
+          (out/'QUALIFICATION.json').write_text(json.dumps(summary,indent=2)+'\n')
+          print(json.dumps(summary,indent=2),flush=True)
+          raise SystemExit(0 if summary['technicalPassed'] else 1)
+          PY
+      - name: Preserve actual evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13g-evidence-${{ github.run_id }}
+          path: /tmp/r13g-evidence/
+          if-no-files-found: error
+          retention-days: 30
