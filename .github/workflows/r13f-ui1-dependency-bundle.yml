@@ -1,0 +1,40 @@
+name: R13F UI1 exact dependency bundle
+on:
+  push:
+    branches: ["r13f-ui1/dependency-bundle-20260916"]
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - name: Verify canonical dependency identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum package.json package-lock.json | tee DEPENDENCY_IDENTITY.sha256
+          test "$(sha256sum package-lock.json | awk '{print $1}')" = "c6474e73a5b13eb15ed1b5eb43d886a061a5b363f7f90c7b6bc904243a2932b2"
+          test "$(sha256sum package.json | awk '{print $1}')" = "a198e9fab45ad7c428a4dbecf56adcb98b3b9df797e172ae44d18b1bbfbb82f0"
+      - name: Install exact lockfile
+        run: npm ci
+      - name: Package dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --zstd -cf R13F_UI1_NODE_MODULES_NODE24.tar.zst node_modules
+          sha256sum R13F_UI1_NODE_MODULES_NODE24.tar.zst > R13F_UI1_NODE_MODULES_NODE24.tar.zst.sha256
+          du -h R13F_UI1_NODE_MODULES_NODE24.tar.zst
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13f-ui1-node-modules-node24
+          path: |
+            R13F_UI1_NODE_MODULES_NODE24.tar.zst
+            R13F_UI1_NODE_MODULES_NODE24.tar.zst.sha256
+            DEPENDENCY_IDENTITY.sha256
+          retention-days: 7
+          compression-level: 0
