@@ -7,16 +7,16 @@ permissions:
   contents: read
 concurrency:
   group: r13c-backend-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   qualify:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
@@ -38,6 +38,25 @@ jobs:
             if got != want:
               raise SystemExit(f'dependency contract mismatch: {section}.{key}={got!r}, expected {want!r}')
           print('dependency contract: PASS')
+      - name: Enforce R13C UI-immutable boundary
+        shell: python
+        run: |
+          import subprocess
+          base='5f34757b9ab9ecb6f499e4fa8ad17391e44e9241'
+          paths=subprocess.check_output(['git','diff','--name-only',f'{base}...HEAD'],text=True).splitlines()
+          forbidden=[]
+          for p in paths:
+            low=p.lower()
+            if p.startswith(('components/','public/','styles/')):
+              forbidden.append(p); continue
+            if p.startswith('app/') and not p.startswith('app/api/'):
+              forbidden.append(p); continue
+            if low.endswith(('.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf')):
+              forbidden.append(p); continue
+          print('r13c_changed_paths=',len(paths))
+          if forbidden:
+            raise SystemExit('UI_IMMUTABLE_VIOLATION: '+', '.join(forbidden))
+          print('UI immutable boundary: PASS')
       - name: Install exact lockfile dependencies
         run: npm ci
       - name: Preserve dependency audit evidence
@@ -58,6 +77,8 @@ jobs:
               raise SystemExit(f'high/critical dependency advisories remain in {name}')
       - name: Full source integrity gate
         run: npm run audit:source
+      - name: Tracked-tree and git-history secret hygiene gate
+        run: node scripts/security/scan-all-secrets.mjs | tee r13c-secret-hygiene.txt
       - name: Full TypeScript gate
         run: npm run typecheck
       - name: Full lint gate
@@ -68,6 +89,11 @@ jobs:
         run: npm run build
       - name: R13/R13B entitlement component regression
         run: node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs | tee r13c-entitlement.tap
+      - name: Deployed entitlement negative HTTP regression
+        shell: bash
+        run: |
+          node scripts/r13b/remote-boundaries.mjs | tee r13c-preview-boundaries.txt
+          R13B_LEGACY=1 node scripts/r13b/remote-boundaries.mjs | tee r13c-legacy-boundaries.txt
       - name: R13C adversarial backend regression
         run: node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts | tee r13c-redteam.tap
       - name: Database contract evidence
@@ -119,6 +145,8 @@ jobs:
             r13c-*.tap
             r13c-*.txt
             r13c-*.json
+            reports/SECRET_HYGIENE_REPORT.json
+            reports/SECRET_HYGIENE_REPORT.md
             artifacts/pass13/PASS13_CLEAN_SAFE_AUDIT.json
             artifacts/pass13/PASS13_CLEAN_SAFE_MANIFEST.json
           if-no-files-found: warn
