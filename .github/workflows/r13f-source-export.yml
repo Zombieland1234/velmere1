@@ -1,0 +1,67 @@
+name: R13F working source export
+on:
+  push:
+    branches: ['r13f/truth-runtime-20260916']
+    paths: ['.github/workflows/r13f-source-export.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Export tracked working source with explicit exclusions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, subprocess, hashlib, json, zipfile, re
+          root = pathlib.Path.cwd()
+          out = root / 'r13f-export'
+          out.mkdir()
+          sha = subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip()
+          paths = subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          included, excluded = [], []
+          fonts = {'.woff','.woff2','.ttf','.otf','.eot','.ttc'}
+          archives = {'.zip','.gz','.tgz','.tar','.7z','.rar','.bundle','.b64'}
+          proof_roots = {'artifacts','reports','audit_artifacts','_velmere','_VELMERE_BACKUP','_VELMERE_BASE_AUTHORITY','VELMERE_WORLD_CLASS_VERIFICATION','evaluation','receipts'}
+          proof_binary = {'.png','.jpg','.jpeg','.webp','.gif','.pdf','.mp4','.bin','.exe','.sst'}
+          with zipfile.ZipFile(out / 'VELMERE_R13F_WORKING_SOURCE.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+            for rel in sorted(p for p in paths if p):
+              p = root / rel
+              suffix = p.suffix.lower()
+              reason = None
+              if p.is_symlink() or not p.is_file():
+                excluded.append({'path':rel,'reason':'non_regular_file'})
+                continue
+              if suffix in fonts: reason = 'font_file_not_redistributed'
+              elif suffix in archives or re.search(r'\.part[-.]?\d+$',rel): reason = 'historical_archive_or_transport'
+              elif p.name.startswith('.env') and not p.name.endswith(('.example','.template','.sample')): reason = 'environment_secret_file'
+              elif suffix in {'.pem','.key','.p12','.pfx'}: reason = 'key_material_not_exported'
+              elif rel.split('/')[0] in proof_roots and suffix in proof_binary: reason = 'historical_binary_evidence_not_working_source'
+              data = p.read_bytes()
+              if data[:4] in (b'wOFF',b'wOF2',b'OTTO',b'ttcf',b'\x00\x01\x00\x00'): reason = 'font_signature_not_redistributed'
+              row = {'path':rel,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+              if reason:
+                excluded.append({**row,'reason':reason})
+              else:
+                included.append(row)
+                z.writestr(rel,data)
+          manifest = {'schemaVersion':'velmere.r13f.working-source-export.v1','sourceCommit':sha,'includedCount':len(included),'excludedCount':len(excluded),'included':included,'excluded':excluded,'scope':'Tracked working source; no Git history, installed dependencies, fonts, secrets or historical archive/binary-proof payloads. UI source bytes are unchanged; retain your own existing font assets.'}
+          (out / 'SOURCE_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(json.dumps({'sourceCommit':sha,'included':len(included),'excluded':len(excluded),'zipBytes':(out/'VELMERE_R13F_WORKING_SOURCE.zip').stat().st_size}))
+          assert (out/'VELMERE_R13F_WORKING_SOURCE.zip').stat().st_size < 500_000_000
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13f-working-source-${{ github.sha }}
+          path: r13f-export/*
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error
