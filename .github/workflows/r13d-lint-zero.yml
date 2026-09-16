@@ -1,0 +1,65 @@
+name: R13D lint zero diagnostics
+on:
+  push:
+    branches: [r13d/backend-hardening-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r13d-lint-zero-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Capture exact ESLint JSON
+        shell: bash
+        run: |
+          set +e
+          npx eslint . --format json > r13d-eslint.json
+          code=$?
+          echo "eslint_exit=$code" > r13d-eslint-exit.txt
+          exit 0
+      - name: Summarize hard lint errors
+        shell: python
+        run: |
+          import json, collections
+          rows=json.load(open('r13d-eslint.json'))
+          errors=[]; warnings=[]
+          for row in rows:
+            rel=row['filePath'].split('/velmere1/')[-1]
+            for m in row.get('messages',[]):
+              rec={'file':rel,'line':m.get('line'),'column':m.get('column'),'rule':m.get('ruleId'),'message':m.get('message')}
+              (errors if m.get('severity')==2 else warnings).append(rec)
+          by_rule=collections.Counter(x['rule'] for x in errors)
+          by_file=collections.Counter(x['file'] for x in errors)
+          out={'errorCount':len(errors),'warningCount':len(warnings),'errorsByRule':by_rule,'errorsByFile':by_file,'errors':errors,'warnings':warnings}
+          with open('r13d-eslint-summary.json','w') as f: json.dump(out,f,indent=2)
+          print(json.dumps({'errors':len(errors),'warnings':len(warnings),'topRules':by_rule.most_common(20),'topFiles':by_file.most_common(20)},indent=2))
+      - name: Prove visual tree unchanged from checkpoint
+        shell: python
+        run: |
+          import subprocess
+          changed=subprocess.check_output(['git','diff','--name-only','5aeaaecfe1bba31aa42d63160c4f6f940377c8be...HEAD'],text=True).splitlines()
+          product_visual=[p for p in changed if p.startswith(('components/','public/','styles/')) or (p.startswith('app/') and not p.startswith('app/api/')) or p.lower().endswith(('.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf'))]
+          if product_visual: raise SystemExit('VISUAL_CHANGE_FORBIDDEN: '+', '.join(product_visual))
+          print({'changed':changed,'productVisualChanges':0})
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13d-lint-diagnostics-${{ github.sha }}
+          path: |
+            r13d-eslint*.json
+            r13d-eslint*.txt
+          if-no-files-found: error
+          retention-days: 14
