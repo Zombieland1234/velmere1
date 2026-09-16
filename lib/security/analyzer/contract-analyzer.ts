@@ -5,7 +5,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { createEvidenceRecord, type EvidenceRecord } from "../evidence/evidence-record.ts";
+import { createEvidenceRecord, type EvidenceRecord } from "../evidence/evidence-record";
 import {
   attachVelmereTop5Detectors,
   runVelmereTop5Detectors,
@@ -14,7 +14,7 @@ import {
   type NetworkContext,
   type RuleId,
   type FindingStatus as Top5FindingStatus,
-} from "./vlm-top5-detectors.ts";
+} from "./vlm-top5-detectors";
 
 export interface AstFunction {
   name: string;
