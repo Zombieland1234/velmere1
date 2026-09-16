@@ -1,14 +1,13 @@
+import { resolveCoinGeckoRequestConfig } from "./coingecko-runtime-config";
 import { readJsonResponseBounded } from "@/lib/network/fetch-with-deadline";
 import { brokeredEgressFetch } from "@/lib/network/brokered-egress";
 import { analyzeTokenRisk } from "./risk-engine";
 import type { TokenRiskInput } from "./risk-types";
 import type { MarketIntegrityRow } from "./market-row-types";
 export type { MarketIntegrityRow } from "./market-row-types";
-import { attachPass4644ProviderReceipts, createPass4644ProviderEvidenceReceipt, pass4644IdentityMatches, pass4644CanonicalReceiptDigest } from "./provider-evidence-receipt";
+import { attachPass4644ProviderReceipts, createPass4644ProviderEvidenceReceipt } from "./provider-evidence-receipt";
 import { buildMarketRowEvidencePayload } from "./market-row-evidence-payload";
 import { applyMarketRowRiskDeliveryFirewall } from "./market-row-delivery-gate";
-
-const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
 
 export type CoinGeckoMarketCoin = {
   id: string;
@@ -54,18 +53,6 @@ export type CoinSuggestion = {
   image?: string;
   rank?: number | null;
 };
-
-function cgHeaders(): HeadersInit {
-  const headers: Record<string, string> = {
-    accept: "application/json",
-    "user-agent": "Velmere-Market-Integrity/1.0",
-  };
-  if (process.env.COINGECKO_DEMO_API_KEY)
-    headers["x-cg-demo-api-key"] = process.env.COINGECKO_DEMO_API_KEY;
-  if (process.env.COINGECKO_PRO_API_KEY)
-    headers["x-cg-pro-api-key"] = process.env.COINGECKO_PRO_API_KEY;
-  return headers;
-}
 
 function toNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value)
@@ -166,9 +153,11 @@ export function coinToMarketRow(coin: CoinGeckoMarketCoin): MarketIntegrityRow {
   };
 }
 
-async function fetchJson<T>(url: string, revalidate = 90): Promise<T> {
-  const response = await brokeredEgressFetch(url, {
-    headers: cgHeaders(),
+async function fetchJson<T>(endpoint: string, revalidate = 90): Promise<T> {
+  const { baseUrl, headers } = resolveCoinGeckoRequestConfig(process.env);
+  if (!endpoint.startsWith("/") || endpoint.startsWith("//")) throw new Error("invalid_coingecko_endpoint");
+  const response = await brokeredEgressFetch(`${baseUrl}${endpoint}`, {
+    headers,
     signal: AbortSignal.timeout(4_500),
     next: { revalidate },
   } as RequestInit & { next: { revalidate: number } }, { profile: "coingecko", operation: "coingecko_json", timeoutMs: 4_500, maxResponseBytes: 4_194_304 });
@@ -182,11 +171,13 @@ export async function fetchCoinGeckoMarkets({
   perPage = 250,
   vsCurrency = "usd",
   ids,
+  queryIdentity,
 }: {
   page?: number;
   perPage?: number;
   vsCurrency?: string;
   ids?: string[];
+  queryIdentity?: string;
 } = {}) {
   const params = new URLSearchParams({
     vs_currency: vsCurrency,
@@ -200,7 +191,7 @@ export async function fetchCoinGeckoMarkets({
   if (ids?.length) params.set("ids", ids.join(","));
   const startedAt = Date.now();
   const data = await fetchJson<CoinGeckoMarketCoin[]>(
-    `${COINGECKO_BASE}/coins/markets?${params.toString()}`,
+    `/coins/markets?${params.toString()}`,
     120,
   );
   const receivedAt = new Date();
@@ -212,10 +203,10 @@ export async function fetchCoinGeckoMarkets({
       providerFamily: "market_data",
       surface: "crypto",
       verification: "normalized_response",
-      requestedIdentity: row.id,
+      requestedIdentity: queryIdentity ?? row.id,
       resolvedSymbol: row.symbol,
       resolvedMarketId: row.id,
-      identityMatched: true,
+      identityMatched: !queryIdentity || (ids?.length === 1 && row.id.toLowerCase() === ids[0].toLowerCase()),
       capabilities: ["identity", "price", "market_cap", "volume", "history", "supply"],
       timestampProvenance: "provider",
       observedAt: row.observedAt ?? null,
@@ -223,7 +214,12 @@ export async function fetchCoinGeckoMarkets({
       ttlMs: 3 * 60_000,
       httpStatus: 200,
       latencyMs,
-      normalizedPayload: buildMarketRowEvidencePayload(row),
+      normalizedPayload: {
+        ...buildMarketRowEvidencePayload(row),
+        // Bind a search to the actual fetched bytes, in the same receipt and
+        // with the original provider timestamp; never mint it from a fallback.
+        ...(queryIdentity ? { id: row.id, symbol: row.symbol, price: row.price } : {}),
+      },
     })]);
     applyMarketRowRiskDeliveryFirewall({
       row,
@@ -261,7 +257,7 @@ export async function fetchCoinGeckoSuggestions(
       large?: string;
       market_cap_rank?: number | null;
     }>;
-  }>(`${COINGECKO_BASE}/search?${params.toString()}`, 300);
+  }>(`/search?${params.toString()}`, 300);
   const mapped = (data.coins ?? []).map((coin) => ({
     id: coin.id,
     symbol: coin.symbol?.toUpperCase() ?? coin.id.toUpperCase(),
@@ -299,28 +295,19 @@ export async function fetchCoinGeckoSuggestions(
 const CANONICAL_COIN_ID_ALIASES: Record<string, string> = {
   btc: "bitcoin",
   bitcoin: "bitcoin",
-  "btc contract": "bitcoin",
-  "btc-contract": "bitcoin",
-  "bitcoin contract": "bitcoin",
-  "kontrakt btc": "bitcoin",
-  "kontrakt bitcoin": "bitcoin",
-  wbtc: "bitcoin",
-  "wrapped btc": "bitcoin",
-  "wrapped bitcoin": "bitcoin",
+  wbtc: "wrapped-bitcoin",
+  "wrapped btc": "wrapped-bitcoin",
+  "wrapped bitcoin": "wrapped-bitcoin",
   xbt: "bitcoin",
   eth: "ethereum",
   ethereum: "ethereum",
-  "eth contract": "ethereum",
-  "ethereum contract": "ethereum",
-  weth: "ethereum",
+  weth: "weth",
   sol: "solana",
   solana: "solana",
-  "sol contract": "solana",
   bnb: "binancecoin",
   binancecoin: "binancecoin",
   "binance coin": "binancecoin",
-  "bnb contract": "binancecoin",
-  wbnb: "binancecoin",
+  wbnb: "wbnb",
   usdt: "tether",
   tether: "tether",
   usdc: "usd-coin",
@@ -353,13 +340,14 @@ async function resolveCoinId(query: string) {
   const canonical = canonicalCoinIdForQuery(clean);
   if (canonical) return canonical;
   const suggestions = await fetchCoinGeckoSuggestions(clean);
-  const exact = suggestions.find(
-    (coin) =>
-      coin.id.toLowerCase() === clean ||
-      coin.symbol.toLowerCase() === clean ||
-      coin.name.toLowerCase() === clean,
+  const exactId = suggestions.filter((coin) => coin.id.toLowerCase() === clean);
+  if (exactId.length === 1) return exactId[0].id;
+  if (exactId.length > 1) return null;
+  const exact = suggestions.filter(
+    (coin) => coin.symbol.toLowerCase() === clean || coin.name.toLowerCase() === clean,
   );
-  return (exact ?? suggestions[0])?.id ?? null;
+  // A fuzzy first hit or duplicate ticker is not an identity proof.
+  return exact.length === 1 ? exact[0].id : null;
 }
 
 export async function searchCoinGeckoMarket(query: string) {
@@ -367,78 +355,21 @@ export async function searchCoinGeckoMarket(query: string) {
   if (!clean) return null;
   const id = await resolveCoinId(clean);
   if (!id) return null;
-  const startedAt = Date.now();
-  let row: MarketIntegrityRow | null;
+  let rows: MarketIntegrityRow[];
   try {
-    const rows = await fetchCoinGeckoMarkets({ ids: [id], perPage: 10 });
-    row = rows[0] ?? null;
-  } catch (err) {
+    rows = await fetchCoinGeckoMarkets({ ids: [id], perPage: 10, queryIdentity: clean });
+  } catch {
+    // Preserve the actual fallback provider's receipts. Never relabel a
+    // Binance response as CoinGecko or manufacture a successful HTTP receipt.
     const { fetchBinanceMarketFallback } = await import("./binance-market-fallback");
-    const fallback = await fetchBinanceMarketFallback({ perPage: 100 });
-    row = fallback.rows.find(r => r.symbol.toLowerCase() === clean || r.id.toLowerCase() === id) ?? null;
+    rows = (await fetchBinanceMarketFallback({ perPage: 100 })).rows;
   }
-  if (!row) return null;
-  const receipt = createPass4644ProviderEvidenceReceipt({
-    providerId: "coingecko",
-    providerFamily: "market_data",
-    surface: "crypto",
-    verification: "normalized_response",
-    requestedIdentity: clean,
-    resolvedSymbol: row.symbol,
-    resolvedMarketId: row.id,
-    identityMatched: pass4644IdentityMatches(clean, { symbol: row.symbol, marketId: row.id }) || Boolean(canonicalCoinIdForQuery(clean)),
-    capabilities: ["identity", "price", "market_cap", "volume", "history", "supply"],
-    timestampProvenance: "provider",
-    observedAt: row.observedAt ?? null,
-    receivedAt: new Date(),
-    ttlMs: 15 * 60_000,
-    httpStatus: 200,
-    latencyMs: Date.now() - startedAt,
-    normalizedPayload: {
-      id: row.id,
-      symbol: row.symbol,
-      price: row.price,
-      marketCap: row.marketCap,
-      volume24h: row.volume24h,
-      priceChange24h: row.priceChange24h,
-      observedAt: row.observedAt,
-    },
-  });
-  attachPass4644ProviderReceipts(row.result, [receipt]);
-  const receiptDigest = pass4644CanonicalReceiptDigest(receipt);
-  const nowIso = new Date().toISOString();
-  row.result.dataQuality = "live";
-  row.result.providerRiskDelivery = {
-    schemaVersion: "pass6_provider_risk_delivery_v1",
-    state: "verified",
-    scorePublished: true,
-    canonicalIdentity: `market:${row.id.toLowerCase()}`,
-    sourceReceiptRoot: receiptDigest,
-    receiptDigest,
-    completenessBps: 10_000,
-    sourceAsOf: row.observedAt ?? nowIso,
-    blockers: [],
-  };
-  if (typeof row.result.score !== "number" || !Number.isFinite(row.result.score)) {
-    const recalculated = analyzeTokenRisk(coinToRiskInput({
-      id: row.id,
-      symbol: row.symbol,
-      name: row.name,
-      image: row.image,
-      current_price: row.price,
-      market_cap: row.marketCap,
-      market_cap_rank: row.rank,
-      total_volume: row.volume24h,
-      price_change_percentage_24h: row.priceChange24h,
-      price_change_percentage_1h_in_currency: row.priceChange1h,
-      price_change_percentage_7d_in_currency: row.priceChange7d,
-      price_change_percentage_30d_in_currency: row.priceChange30d,
-      sparkline_in_7d: { price: row.sparkline7d },
-    } as unknown as CoinGeckoMarketCoin), "live");
-    row.result.score = Number.isFinite(recalculated.score) ? recalculated.score : 33;
-    row.result.level = recalculated.level ?? "low";
-    row.result.badge = recalculated.badge ?? "VERIFIED";
-  }
+  const matches = rows.filter((row) => row.id.toLowerCase() === id.toLowerCase());
+  if (matches.length !== 1) return null;
+  const row = matches[0];
+  // The evidence firewall remains the only publication authority. Searching
+  // must not reset freshness, completeness, scores, confidence, or provenance.
+  applyMarketRowRiskDeliveryFirewall({ row, generatedAt: new Date().toISOString() });
   return row;
 }
 
@@ -506,7 +437,7 @@ export async function fetchCoinGeckoMarketChart(
     market_caps?: [number, number][];
     total_volumes?: [number, number][];
   }>(
-    `${COINGECKO_BASE}/coins/${encodeURIComponent(clean)}/market_chart?${params.toString()}`,
+    `/coins/${encodeURIComponent(clean)}/market_chart?${params.toString()}`,
     range === "1m" || range === "15m" ? 90 : range === "2y" || range === "5y" || range === "max" ? 900 : 240,
   );
   const prices = (data.prices ?? []).filter(

@@ -512,13 +512,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const isDevOrLive = request.headers.get("x-velmere-dev") === "true"
-    || request.headers.get("x-velmere-live") === "true"
-    || request.headers.get("x-velmere-pro") === "true"
-    || (process.env.NODE_ENV !== "production" && !request.headers.get("x-velmere-firewall-test"));
-  const isProAuthorized = selectedDepth === "pro" || selectedDepth === "advanced" || isDevOrLive;
   const customerOwnedEvidenceMode = selectedEvidenceMode === "customer_owned_attested";
-  const deliveryPreflight = (customerOwnedEvidenceMode || isProAuthorized)
+  const deliveryPreflight = customerOwnedEvidenceMode
     ? null
     : buildMarketImpactDeliveryPreflight("market_intelligence");
   if (deliveryPreflight) {
@@ -543,7 +538,6 @@ export async function POST(request: Request) {
   const publicationPreflight = evaluateMarketIntelligencePublicationPreflight();
   if (
     !customerOwnedEvidenceMode
-    && !isProAuthorized
     && (
       !publicationPreflight.authorized
       || publicationPreflight.mode !== "live"
@@ -912,7 +906,6 @@ export async function POST(request: Request) {
       marketImpact,
       whaleWatch,
     });
-    const isPro = isProAuthorized;
     const publication = selectedEvidenceMode === "customer_owned_attested"
       ? {
           schemaVersion: "pass6_market_intelligence_publication_truth_v1" as const,
@@ -927,15 +920,6 @@ export async function POST(request: Request) {
             "risk_score_publication_not_authorized",
           ],
         }
-      : isPro
-      ? {
-          schemaVersion: "pass6_market_intelligence_publication_truth_v1" as const,
-          mode: "live" as const,
-          evidenceState: "verified" as const,
-          liveClaimed: true,
-          scorePublished: true,
-          blockers: [] as string[],
-        }
       : {
           schemaVersion: "pass6_market_intelligence_publication_truth_v1" as const,
           mode: "partial" as const,
@@ -948,7 +932,7 @@ export async function POST(request: Request) {
             "provider_transport_status_is_not_publication_authority",
           ],
         };
-    if (selectedDepth !== "basic" && !isPro) {
+    if (selectedDepth !== "basic" && !publication.scorePublished) {
       return securityJson({
         ok: false,
         mode: "withheld",
@@ -1120,7 +1104,7 @@ export async function POST(request: Request) {
       "x-velmere-evidence-mode": selectedEvidenceMode,
       "x-velmere-rate-limit-remaining": String(rate.remaining),
     };
-    if (customerOwnedAuthorization || isProAuthorized) {
+    if (customerOwnedAuthorization) {
       return securityJson(customerPayload, { status: 200, headers: responseHeaders });
     }
     if (!deliveryPreflight) {

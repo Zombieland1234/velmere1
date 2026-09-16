@@ -289,6 +289,16 @@ function exactFamilyState(left: AuthSessionFamilyState, right: AuthSessionFamily
     && left.expiresAt === right.expiresAt;
 }
 
+/** Cheap rejection only: this never authenticates a request or grants access.
+ * Recognized signed cookies still require durable rate limiting, family
+ * revocation checks and owner binding. A raw Bearer JWT is not this API's
+ * account-session credential and must not bypass its cookie boundary.
+ */
+export function hasRequestAccountCredential(request: Request): boolean {
+  return Boolean(request.headers.get("x-velmere-account-auth")?.trim())
+    || decodeSession(readUniqueSecurityCookie(request, "account_session")) !== null;
+}
+
 export async function resolveRequestAccount(
   request: Request,
   dependencies: ResolveRequestAccountDependencies = resolveRequestAccountDependencies,

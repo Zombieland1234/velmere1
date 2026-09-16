@@ -1,0 +1,81 @@
+name: R13F corrected contracts qualification
+on:
+  push:
+    branches: ['r13f/contracts-20260916']
+    paths: ['.github/workflows/r13f-contract-qualification.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r13f-contract-qualification-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 40
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - name: Apply reviewed identity and rights corrections
+        run: |
+          set -euo pipefail
+          python3 scripts/r13f/apply-contract-corrections.py
+          git diff --check
+      - name: Preserve UI and commit isolated candidate
+        id: source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess,pathlib,json,hashlib
+          base='7120c9104ede447f436a39dc62a5bbb8ca176924'
+          def protected(p):
+            parts=pathlib.PurePosixPath(p).parts
+            return p.endswith(('.tsx','.jsx','.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf','.eot','.ttc')) or parts[0] in ('public','components','messages','locales') or (parts[0]=='app' and len(parts)>1 and parts[1]!='api')
+          changed=subprocess.check_output(['git','diff','--name-only',base]).decode().splitlines()
+          violations=[p for p in changed if protected(p)]
+          assert not violations, 'Protected UI changes: '+str(violations)
+          tracked=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          hashes=[{'path':p,'sha256':hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()} for p in tracked if p and protected(p) and pathlib.Path(p).is_file()]
+          pathlib.Path('r13f-evidence/UI_BOUNDARY.json').write_text(json.dumps({'baseCommit':base,'protectedFiles':len(hashes),'changedProtectedPaths':violations,'hashes':hashes},indent=2)+'\n')
+          edits=json.loads(pathlib.Path('r13f-evidence/CONTRACT_EDIT_MANIFEST.json').read_text())
+          subprocess.run(['git','add','--',*edits.keys()],check=True)
+          PY
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(r13f): enforce requested identity and non-bypassable provider rights'
+          sha=$(git rev-parse HEAD)
+          branch="r13f/final-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git push origin "HEAD:refs/heads/$branch"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          printf '{"sourceCommit":"%s","sourceBranch":"%s","workflowCommit":"%s","releaseDecision":"NO_GO"}\n' "$sha" "$branch" "$GITHUB_SHA" > r13f-evidence/SOURCE_IDENTITY.json
+      - name: Install lockfile dependencies
+        run: npm ci
+      - name: Run actual hard gates and observations
+        run: python3 scripts/r13f/qualify.py
+      - name: Export immutable source
+        if: ${{ always() && steps.source.outputs.sha != '' }}
+        run: python3 scripts/r13f/package-source.py
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13f-contract-evidence-${{ github.run_id }}
+          path: r13f-evidence/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload source
+        if: ${{ always() && steps.source.outputs.sha != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: r13f-contract-source-${{ steps.source.outputs.sha }}
+          path: r13f-package/
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error

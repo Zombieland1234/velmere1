@@ -42,15 +42,15 @@ export async function dispatchLazyRoute(options: {
   } catch {
     return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
   }
-  const handler = loadedModule[method];
+  const handler = loadedModule?.[method];
   if (typeof handler !== "function") {
     return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
   }
   try {
     return await handler(request);
-  } catch (err) {
-    console.error('[lazy-route-dispatch ERROR]', key, err);
-    return response({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
+  } catch {
+    // Do not expose SDK errors, request data, credentials or stack traces.
+    return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
   }
 }
 
@@ -91,9 +91,13 @@ export async function invokeLazyRouteHandler(options: {
   } catch {
     return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
   }
-  const handler = loadedModule[method];
+  const handler = loadedModule?.[method];
   if (typeof handler !== "function") {
     return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
   }
-  return handler(request);
+  try {
+    return await handler(request);
+  } catch {
+    return response({ ok: false, error: unavailableError }, 503, { "retry-after": "30" });
+  }
 }

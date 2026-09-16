@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveRequestAccount } from "@/lib/auth/account-session";
+import { hasRequestAccountCredential, resolveRequestAccount } from "@/lib/auth/account-session";
 import { applyApiRateLimit, rejectLargeContentLength } from "@/lib/security/api-guard";
 import {
   getPass4822AccountCustomerArtifactSnapshot,
@@ -41,6 +41,11 @@ import {
 export async function GET(request: Request) {
   const lengthGuard = rejectLargeContentLength(request, 16_384);
   if (lengthGuard) return lengthGuard;
+  if (!hasRequestAccountCredential(request)) {
+    return NextResponse.json({ ok: false, error: "account_session_required" }, {
+      status: 401, headers: { "cache-control": "no-store" },
+    });
+  }
   const limiter = await applyApiRateLimit(request, { keyPrefix: "pass4822-account-customer-artifact", limit: 60, windowMs: 60_000 });
   if (!limiter.ok) return limiter.response;
   const account = await resolveRequestAccount(request);

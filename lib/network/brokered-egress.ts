@@ -33,7 +33,7 @@ const PROFILE_POLICY = {
     "api3.binance.com",
     "api4.binance.com",
   ], methods: ["GET", "HEAD"] },
-  coingecko: { hosts: ["api.coingecko.com"], methods: ["GET", "HEAD"] },
+  coingecko: { hosts: ["api.coingecko.com", "pro-api.coingecko.com"], methods: ["GET", "HEAD"] },
   defi_llama: { hosts: ["api.llama.fi", "pro-api.llama.fi"], methods: ["GET", "HEAD"] },
   derivatives: { hosts: ["fapi.binance.com", "api.bybit.com"], methods: ["GET", "HEAD"] },
   ecb_statistics: { hosts: ["data-api.ecb.europa.eu"], methods: ["GET", "HEAD"] },
