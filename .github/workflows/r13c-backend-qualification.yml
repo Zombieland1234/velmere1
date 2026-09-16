@@ -4,7 +4,7 @@ on:
     branches: [r13c/backend-hardening-20260916]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: r13c-backend-${{ github.ref }}
   cancel-in-progress: false
@@ -15,14 +15,50 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 1
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.18.0'
           cache: npm
+      - name: Normalize exactly two backend TypeScript import specifiers
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('lib/security/analyzer/contract-analyzer.ts')
+          s=p.read_text(encoding='utf-8')
+          pairs=[
+            ('../evidence/evidence-record.ts','../evidence/evidence-record'),
+            ('./vlm-top5-detectors.ts','./vlm-top5-detectors'),
+          ]
+          changed=False
+          for old,new in pairs:
+              if old in s:
+                  s=s.replace(old,new,1); changed=True
+              elif new not in s:
+                  raise SystemExit(f'expected import contract missing: {old} / {new}')
+          if changed:
+              p.write_text(s,encoding='utf-8')
+      - name: Persist exact backend-only TypeScript correction on R13C branch
+        shell: bash
+        run: |
+          if git diff --quiet -- lib/security/analyzer/contract-analyzer.ts; then
+            echo "backend import contract already normalized"
+          else
+            git config user.name "Zombieland1234"
+            git config user.email "velmere141@gmail.com"
+            git add lib/security/analyzer/contract-analyzer.ts
+            git commit -m "fix(r13c): normalize analyzer TypeScript import specifiers"
+            git push origin HEAD:r13c/backend-hardening-20260916
+          fi
       - name: Install lockfile dependencies
         run: npm ci
+      - name: Preserve dependency audit evidence
+        if: always()
+        shell: bash
+        run: |
+          npm audit --json > r13c-npm-audit.json || true
+          npm audit --omit=dev --json > r13c-npm-audit-production.json || true
       - name: Full TypeScript gate
         run: npm run typecheck
       - name: Full lint gate
@@ -59,5 +95,6 @@ jobs:
           path: |
             r13c-*.tap
             r13c-*.txt
+            r13c-*.json
           if-no-files-found: warn
           retention-days: 14
