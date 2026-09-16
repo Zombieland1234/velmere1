@@ -4,6 +4,7 @@ on:
     branches: [r13/backend-integration-20260916]
     paths:
       - scripts/r13/**
+      - supabase/functions/r13-entitlement-boundary-preview/**
       - lib/checkout/runtime-payment-authority.ts
       - lib/stripe/server.ts
       - app/api/internal/r13/release/route.ts
@@ -39,6 +40,12 @@ jobs:
       - name: Bounded negative requests to reviewed legacy edge handler
         if: always()
         run: node scripts/r13/legacy-edge-boundaries.mjs
+      - name: Verify separate deployed preview without modifying legacy endpoint
+        if: always()
+        run: node scripts/r13/preview-edge-boundaries.mjs
+      - name: Bind reviewed backend sources and remote blob inventory
+        if: always()
+        run: python scripts/r13/archive-backend-evidence.py
       - name: Preserve failures and redacted evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -48,5 +55,9 @@ jobs:
             r13-component-tests.tap
             r13-infrastructure-probe.json
             r13-legacy-edge-boundaries.json
+            r13-preview-edge-boundaries.json
+            r13-backend-sources.zip
+            r13-backend-manifest.json
+            r13-remote-source-index.json
           if-no-files-found: error
           retention-days: 7
