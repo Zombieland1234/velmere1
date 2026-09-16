@@ -71,6 +71,7 @@ jobs:
           d['devDependencies']['solc']='0.8.37'
           d['devDependencies']['postcss-selector-parser']='6.1.4'
           d.setdefault('overrides',{})['sharp']='0.35.4'
+          d['overrides']['tmp']='0.2.7'
           p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
       - name: Refresh lockfile without running dependency scripts
         run: npm install --package-lock-only --ignore-scripts
@@ -94,15 +95,16 @@ jobs:
         run: |
           npm audit --json > r13c-npm-audit.json || true
           npm audit --omit=dev --json > r13c-npm-audit-production.json || true
-      - name: Enforce zero production high or critical dependency advisories
+      - name: Enforce zero high or critical dependency advisories
         shell: python
         run: |
           import json
-          d=json.load(open('r13c-npm-audit-production.json'))
-          counts=d.get('metadata',{}).get('vulnerabilities',{})
-          print(counts)
-          if counts.get('critical',0) or counts.get('high',0):
-              raise SystemExit('production dependency high/critical advisories remain')
+          for name in ['r13c-npm-audit.json','r13c-npm-audit-production.json']:
+              d=json.load(open(name))
+              counts=d.get('metadata',{}).get('vulnerabilities',{})
+              print(name,counts)
+              if counts.get('critical',0) or counts.get('high',0):
+                  raise SystemExit(f'high/critical dependency advisories remain in {name}')
       - name: Full TypeScript gate
         run: npm run typecheck
       - name: Full lint gate
