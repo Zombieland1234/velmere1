@@ -13,6 +13,19 @@ function enabled(value: string | undefined) {
   return value === "true";
 }
 
+// Runtime configuration is not a release approval. This is only an additional
+// hard boundary preventing copied LIVE credentials from running in previews.
+export function isStripeProductionEnvironment(env: NodeJS.ProcessEnv = process.env) {
+  return env.VERCEL_ENV === "production" && env.NODE_ENV === "production";
+}
+
+export function assertStripeClientEnvironment(env: NodeJS.ProcessEnv = process.env) {
+  const secret = env.STRIPE_SECRET_KEY?.trim() ?? "";
+  if (/^(?:sk|rk)_live_/.test(secret) && !isStripeProductionEnvironment(env)) {
+    throw new Error("stripe_live_credentials_forbidden_outside_production");
+  }
+}
+
 export function detectStripeCredentialMode(
   env: NodeJS.ProcessEnv = process.env,
 ): StripeCredentialMode {
@@ -54,6 +67,9 @@ export function evaluateRuntimePaymentAuthority(
   // Live payment authority is intentionally conjunctive and fail-closed. A
   // single convenience flag cannot promote a release or enable charging.
   const liveGates = {
+    // Preview/development must never inherit live authority from copied env vars.
+    // Unclassified hosting is deliberately not inferred to be production.
+    productionEnvironment: isStripeProductionEnvironment(env),
     releaseDecision: env.VELMERE_RELEASE_DECISION === "GO",
     live: enabled(env.VELMERE_LIVE),
     saleEnabled: enabled(env.VELMERE_SALE_ENABLED),
