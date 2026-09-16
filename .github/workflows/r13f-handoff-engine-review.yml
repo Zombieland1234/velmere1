@@ -1,0 +1,93 @@
+name: R13F handoff engine review
+on:
+  push:
+    branches: ['r13f/handoff-review-20260916']
+    paths: ['.github/workflows/r13f-handoff-engine-review.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 671132a95a497e45c128a4dc364d6823edaf4168
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - name: Install pinned dependencies
+        run: npm ci
+      - name: Review actual compiled fixtures and unsupported assurance claims
+        run: |
+          set -euo pipefail
+          mkdir -p handoff-review-evidence
+          cat > handoff-review-evidence/engine-review.ts <<'TS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { createHash } from 'node:crypto';
+          import solc from 'solc';
+          import { executeFullAuditV2 } from '../lib/security/v2/master-audit-orchestrator';
+          import { validateRemediationPatch } from '../lib/security/v2/patch-validation-engine';
+          import { execFileSync } from 'node:child_process';
+          const root = process.cwd();
+          const sha = execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          if(sha !== '671132a95a497e45c128a4dc364d6823edaf4168') throw Error('Wrong source');
+          const cases = [
+            ['known-clean/CleanERC20.sol','CleanERC20',null,true],
+            ['known-vulnerable/ReentrancyBank.sol','ReentrancyBank','VLM-SEC-REENTRANCY-01',false],
+            ['known-vulnerable/InsecureTxOriginWallet.sol','InsecureTxOriginWallet','VLM-SEC-AUTH-TXORIGIN-01',false],
+            ['known-exploited/EulerExploitModel.sol','EulerExploitModel','VLM-SEC-DEFI-VAULT-INFLATION-01',false],
+            ['known-clean/GuardedVault.sol','GuardedVault',null,true],
+            ['known-vulnerable/SpotReserveLending.sol','SpotReserveLending','VLM-SEC-ORACLE-SPOT-MANIPULATION-01',false],
+            ['known-edge/WeirdUSDTToken.sol','WeirdUSDTToken','VLM-SEC-ERC-NON-STANDARD-RETURN-01',false],
+            ['known-exploited/SafeMoonExploitModel.sol','SafeMoonExploitModel','VLM-SEC-AUTH-UNPROTECTED-MINT-03',false],
+            ['known-edge/FeeOnTransferToken.sol','FeeOnTransferToken',null,true],
+            ['known-vulnerable/VulnerableInflationVault.sol','VulnerableInflationVault','VLM-SEC-DEFI-VAULT-INFLATION-01',false],
+            ['known-upgradeable/Eip1967TransparentProxy.sol','Eip1967TransparentProxy',null,true],
+          ] as const;
+          const rows:any[]=[];
+          for(const [file,name,expected,clean] of cases){
+            const source = fs.readFileSync(path.join(root,'golden',file),'utf8');
+            const input={language:'Solidity',sources:{'case.sol':{content:source}},settings:{optimizer:{enabled:false},outputSelection:{'*':{'*':['evm.deployedBytecode.object']}}}};
+            const compiled = JSON.parse(solc.compile(JSON.stringify(input)));
+            const errors=(compiled.errors??[]).filter((e:any)=>e.severity==='error');
+            const bytecode=compiled.contracts?.['case.sol']?.[name]?.evm?.deployedBytecode?.object;
+            if(errors.length || !bytecode){rows.push({file,name,status:'COMPILE_BLOCKED',errors:errors.map((e:any)=>e.formattedMessage)});continue;}
+            for(const tier of ['BASIC','PRO','ADVANCED'] as const){
+              const t=performance.now();
+              const result=executeFullAuditV2({contractAddress:'0x0000000000000000000000000000000000001234',chainId:'1',blockNumber:1,bytecode:'0x'+bytecode,sourceCode:source,contractName:name,tier});
+              const ids=result.findings.map(f=>f.findingId);
+              const highCritical=result.findings.filter(f=>['high','critical'].includes(f.severity));
+              rows.push({file,name,tier,expectedTarget:expected,expectedClean:clean,sourceSha256:createHash('sha256').update(source).digest('hex'),bytecodeSha256:createHash('sha256').update(bytecode).digest('hex'),bytecodeBytes:bytecode.length/2,status:'EXECUTED',expectedTargetObserved:expected?ids.includes(expected):null,cleanWithoutHighCritical:clean?highCritical.length===0:null,findings:result.findings.map(f=>({id:f.findingId,severity:f.severity})),fuzzIterations:result.fuzzResults.iterationsExecuted,formalClaims:result.formalAssurance,patchValidation:result.patchValidation,measuredWallMs:performance.now()-t});
+            }
+          }
+          const empty=executeFullAuditV2({contractAddress:'0x0000000000000000000000000000000000001234',chainId:'1',bytecode:'0x00',tier:'ADVANCED',blockNumber:1});
+          const malformed=validateRemediationPatch({findingId:'HANDOFF-UNSUPPORTED-PATCH',remediation:{solidityPatchDiff:'+ THIS IS NOT VALID SOLIDITY'}} as any,'contract X {}');
+          const assertions=[
+            {name:'no_formal_proof_without_solver_or_specification_evidence',passed:!empty.formalAssurance.some(x=>x.proven===true || x.status==='FORMALLY_VERIFIED'),observed:empty.formalAssurance},
+            {name:'invalid_solidity_not_claimed_compiled_or_verified',passed:!malformed.compilationClean && malformed.validationStatus!=='VERIFIED',observed:malformed},
+            {name:'claimed_sha256_has_64_hex_digits',passed:/^sha256:[a-f0-9]{64}$/.test(malformed.validationProofDigest),observed:malformed.validationProofDigest},
+          ];
+          const summary=['BASIC','PRO','ADVANCED'].map(tier=>{const r=rows.filter(x=>x.tier===tier);return {tier,executed:r.length,vulnerableCases:r.filter(x=>!x.expectedClean).length,expectedFindingsDetected:r.filter(x=>x.expectedTargetObserved===true).length,expectedFindingsMissed:r.filter(x=>x.expectedTargetObserved===false).length,cleanCases:r.filter(x=>x.expectedClean).length,cleanCasesWithHighCritical:r.filter(x=>x.cleanWithoutHighCritical===false).length,fuzzIterationCounts:[...new Set(r.map(x=>x.fuzzIterations))]};});
+          const report={schemaVersion:'velmere.handoff.engine-review.v1',executedAt:new Date().toISOString(),sourceCommit:sha,node:process.version,solcVersion:solc.version(),scope:'Internal hand-labeled known golden corpus, actual solc deployed bytecode, direct V2 module calls. Not blind, not live deployed-contract testing, not customer tier E2E, no CertiK run.',summary,compileBlocked:rows.filter(x=>x.status==='COMPILE_BLOCKED').length,assertions,rows,releaseDecision:'NO_GO',independentBenchmark:false};
+          fs.writeFileSync('handoff-review-evidence/ENGINE_REVIEW.json',JSON.stringify(report,null,2)+'\n');
+          console.log(JSON.stringify({summary,compileBlocked:report.compileBlocked,assertions:assertions.map(x=>({name:x.name,passed:x.passed})),releaseDecision:'NO_GO'},null,2));
+          execFileSync('git',['diff','--exit-code']);
+          if(assertions.some(x=>!x.passed) || report.compileBlocked || rows.some(x=>x.expectedTargetObserved===false || x.cleanWithoutHighCritical===false)) process.exitCode=1;
+          TS
+          npx --no-install tsx handoff-review-evidence/engine-review.ts 2>&1 | tee handoff-review-evidence/engine-review.log
+      - name: Preserve diagnostic evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: velmere-handoff-engine-review-${{ github.run_id }}
+          path: handoff-review-evidence/
+          retention-days: 30
+          if-no-files-found: error
