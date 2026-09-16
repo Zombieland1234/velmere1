@@ -21,13 +21,15 @@ jobs:
         with:
           node-version: '24.18.0'
           cache: npm
-      - name: Normalize backend security TypeScript relative imports
+      - name: Normalize backend TypeScript relative imports
         shell: python
         run: |
           from pathlib import Path
           changed_files=[]
           changed_imports=0
-          for p in Path('lib/security').rglob('*.ts'):
+          roots=[Path('lib/security'),Path('lib/worldclass')]
+          for root in roots:
+            for p in root.rglob('*.ts'):
               lines=p.read_text(encoding='utf-8').splitlines(keepends=True)
               out=[]
               changed=False
@@ -48,7 +50,8 @@ jobs:
                   p.write_text(''.join(out),encoding='utf-8')
                   changed_files.append(str(p))
           remaining=[]
-          for p in Path('lib/security').rglob('*.ts'):
+          for root in roots:
+            for p in root.rglob('*.ts'):
               for i,line in enumerate(p.read_text(encoding='utf-8').splitlines(),1):
                   stripped=line.lstrip()
                   is_import=(' from "./' in line or ' from "../' in line or " from './" in line or " from '../" in line or stripped.startswith('import("./') or stripped.startswith('import("../') or stripped.startswith("import('./") or stripped.startswith("import('../"))
@@ -74,12 +77,12 @@ jobs:
       - name: Persist backend-only R13C corrections
         shell: bash
         run: |
-          if git diff --quiet -- lib/security package.json package-lock.json; then
+          if git diff --quiet -- lib/security lib/worldclass package.json package-lock.json; then
             echo "backend source and dependency contract already normalized"
           else
             git config user.name "Zombieland1234"
             git config user.email "velmere141@gmail.com"
-            git add lib/security package.json package-lock.json
+            git add lib/security lib/worldclass package.json package-lock.json
             git commit -m "fix(r13c): normalize backend imports and security dependencies"
             git push origin HEAD:r13c/backend-hardening-20260916
           fi
