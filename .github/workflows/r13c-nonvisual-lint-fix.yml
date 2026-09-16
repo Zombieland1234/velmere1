@@ -1,0 +1,95 @@
+name: R13C nonvisual ESLint autofix
+on:
+  push:
+    branches: [r13c/nonvisual-lint-fix-20260916]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: r13c-nonvisual-lint-fix
+  cancel-in-progress: true
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Validate target boundary
+        shell: python
+        run: |
+          from pathlib import Path
+          paths=[x.strip() for x in Path('config/r13c/nonvisual-lint-error-files.txt').read_text().splitlines() if x.strip()]
+          bad=[]
+          for p in paths:
+            low=p.lower()
+            if p.startswith(('components/','public/','styles/')): bad.append(p)
+            elif p.startswith('app/') and not p.startswith('app/api/'): bad.append(p)
+            elif low.endswith(('.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf')): bad.append(p)
+          if bad: raise SystemExit('visual targets forbidden: '+', '.join(bad))
+          print('nonvisual targets=',len(paths))
+      - name: Apply ESLint autofix to pinned nonvisual error files
+        shell: bash
+        run: |
+          mapfile -t files < config/r13c/nonvisual-lint-error-files.txt
+          npx eslint --fix "${files[@]}" || true
+          git diff --check
+      - name: Prove no visual file changed
+        shell: python
+        run: |
+          import subprocess
+          paths=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          forbidden=[]
+          for p in paths:
+            low=p.lower()
+            if p.startswith(('components/','public/','styles/')): forbidden.append(p)
+            elif p.startswith('app/') and not p.startswith('app/api/'): forbidden.append(p)
+            elif low.endswith(('.css','.scss','.sass','.less','.woff','.woff2','.ttf','.otf')): forbidden.append(p)
+          print('changed=',len(paths))
+          if forbidden: raise SystemExit('VISUAL_CHANGE_FORBIDDEN: '+', '.join(forbidden))
+      - name: Target lint observation after autofix
+        shell: bash
+        run: |
+          set +e
+          mapfile -t files < config/r13c/nonvisual-lint-error-files.txt
+          npx eslint --format json "${files[@]}" > r13c-nonvisual-lint-after.json
+          echo "target_lint_exit=$?" > r13c-nonvisual-lint-after-exit.txt
+          exit 0
+      - name: TypeScript regression
+        shell: bash
+        run: |
+          set +e
+          npm run typecheck > r13c-nonvisual-typecheck.txt 2>&1
+          echo "typecheck_exit=$?" > r13c-nonvisual-typecheck-exit.txt
+          exit 0
+      - name: Commit only autofixed product/control/test files
+        shell: bash
+        run: |
+          git config user.name "Zombieland1234"
+          git config user.email "velmere141@gmail.com"
+          mapfile -t files < config/r13c/nonvisual-lint-error-files.txt
+          git add -- "${files[@]}"
+          if git diff --cached --quiet; then
+            echo "no autofix changes"
+          else
+            git commit -m "fix(r13c): apply nonvisual ESLint-safe autofixes"
+          fi
+          git rm .github/workflows/r13c-nonvisual-lint-fix.yml config/r13c/nonvisual-lint-error-files.txt
+          git commit -m "chore(r13c): remove temporary lint autofix harness"
+          git push origin HEAD:r13c/nonvisual-lint-fix-20260916
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13c-nonvisual-lint-fix-evidence
+          path: |
+            r13c-nonvisual-*.txt
+            r13c-nonvisual-*.json
+          if-no-files-found: warn
+          retention-days: 7
