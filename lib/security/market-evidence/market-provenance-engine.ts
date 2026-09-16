@@ -4,7 +4,7 @@
  * ZERO-BULLSHIT / ZERO-FABRICATION / REPRODUCIBLE
  */
 
-import { createEvidenceRecord, type EvidenceRecord } from "../evidence/evidence-record.ts";
+import { createEvidenceRecord, type EvidenceRecord } from "../evidence/evidence-record";
 
 export type DataFreshness = "FRESH" | "STALE" | "EXPIRED";
 export type MarketPriceType = "OBSERVED_PRICE" | "ESTIMATED_PRICE" | "CACHED_PRICE" | "SIMULATED_PRICE";

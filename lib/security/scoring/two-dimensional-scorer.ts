@@ -9,8 +9,8 @@
  * 3. Confidence (0-100, mathematical degree of certainty based on verified claims)
  */
 
-import type { EvidenceRecord } from "../evidence/evidence-record.ts";
-import type { FindingRecord } from "../analyzer/contract-analyzer.ts";
+import type { EvidenceRecord } from "../evidence/evidence-record";
+import type { FindingRecord } from "../analyzer/contract-analyzer";
 
 export interface ScoreBreakdown {
   riskScore: number; // 0 to 100

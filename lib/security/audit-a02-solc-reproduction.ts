@@ -6,7 +6,7 @@ import {
   externalCommandArgsSha256,
   PASS36_EXTERNAL_COMMAND_BOUNDARY_ID,
   runBoundExternalCommand,
-} from "./external-command-boundary.ts";
+} from "./external-command-boundary";
 
 export const PASS35_A4_SOLC_REPRODUCTION_ID = "pass35-a4-pinned-solc-reproduction" as const;
 

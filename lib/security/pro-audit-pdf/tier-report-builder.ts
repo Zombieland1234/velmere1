@@ -9,12 +9,12 @@
  * - Advanced: 4–8 pages
  */
 
-import { auditAndSanitizeReportLines } from "../evidence/claim-audit-blocker.ts";
-import type { EvidenceRecord } from "../evidence/evidence-record.ts";
-import type { ContractAnalysisResult, FindingRecord } from "../analyzer/contract-analyzer.ts";
-import type { FormalEngineReport } from "../formal/formal-engine.ts";
-import type { ScoreBreakdown } from "../scoring/two-dimensional-scorer.ts";
-import type { CryptoShieldMetrics, TraditionalMarketMetrics } from "../market-evidence/market-provenance-engine.ts";
+import { auditAndSanitizeReportLines } from "../evidence/claim-audit-blocker";
+import type { EvidenceRecord } from "../evidence/evidence-record";
+import type { ContractAnalysisResult, FindingRecord } from "../analyzer/contract-analyzer";
+import type { FormalEngineReport } from "../formal/formal-engine";
+import type { ScoreBreakdown } from "../scoring/two-dimensional-scorer";
+import type { CryptoShieldMetrics, TraditionalMarketMetrics } from "../market-evidence/market-provenance-engine";
 
 export interface TierReportInput {
   auditId: string;

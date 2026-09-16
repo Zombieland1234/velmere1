@@ -9,10 +9,10 @@
  * - manifest.json
  */
 
-import type { EvidenceRecord } from "../evidence/evidence-record.ts";
-import type { FindingRecord } from "../analyzer/contract-analyzer.ts";
-import type { ScoreBreakdown } from "../scoring/two-dimensional-scorer.ts";
-import type { ReproducibilityManifest } from "./evidence-vault.ts";
+import type { EvidenceRecord } from "../evidence/evidence-record";
+import type { FindingRecord } from "../analyzer/contract-analyzer";
+import type { ScoreBreakdown } from "../scoring/two-dimensional-scorer";
+import type { ReproducibilityManifest } from "./evidence-vault";
 
 export interface CanonicalJsonSuite {
   reportJson: Record<string, unknown>;

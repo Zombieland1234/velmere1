@@ -3,8 +3,8 @@ import { analyzeSolidityStructuredSignals } from "./solidity-structured-signal.m
 import type { SolidityCompilerAstEvidence } from "./solidity-compiler-ast-runtime.mjs";
 import { buildAuditCompilerAstReviewLayer } from "./audit-compiler-ast-review-layer.mjs";
 import type { AuditCompilerDeploymentBinding, AuditEip1967ProxyBinding } from "./audit-compiler-deployment-binding.mjs";
-import { STRUCTURED_SIGNAL_CATALOG } from "./solidity-structured-finding-catalog.ts";
-import { detectP78Erc2771MulticallContext } from "./erc2771-multicall-context-detector.ts";
+import { STRUCTURED_SIGNAL_CATALOG } from "./solidity-structured-finding-catalog";
+import { detectP78Erc2771MulticallContext } from "./erc2771-multicall-context-detector";
 
 export const PASS35_AUDIT_A01_A05_ENGINE_ID = "pass35-audit-a01-a05-engine" as const;
 

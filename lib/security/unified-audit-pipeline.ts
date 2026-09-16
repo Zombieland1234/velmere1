@@ -12,7 +12,7 @@
  * 6. High-Density Budget-Safe Customer PDF Generation
  */
 
-import { SmartContractAnalyzer, type ContractAnalysisResult, type FindingRecord } from "./analyzer/contract-analyzer.ts";
+import { SmartContractAnalyzer, type ContractAnalysisResult, type FindingRecord } from "./analyzer/contract-analyzer";
 import {
   runSmtSolver,
   buildFormalProof,
@@ -25,13 +25,13 @@ import {
   type FormalProof,
   type SmtLemma,
   type EvidenceRef,
-} from "./formal/vlm-smt-engine.ts";
-import { FormalVerificationEngine, type FormalEngineReport, type FormalInvariantRecord } from "./formal/formal-engine.ts";
-import { TwoDimensionalScorer, type ScoreBreakdown } from "./scoring/two-dimensional-scorer.ts";
-import { TierReportBuilder } from "./pro-audit-pdf/tier-report-builder.ts";
-import { buildCustomerSafeMinimalPdf, planCustomerSafePdf } from "./pro-audit-pdf/customer-safe-renderer.ts";
-import type { EvidenceRecord } from "./evidence/evidence-record.ts";
-import { createEvidenceRecord } from "./evidence/evidence-record.ts";
+} from "./formal/vlm-smt-engine";
+import { FormalVerificationEngine, type FormalEngineReport, type FormalInvariantRecord } from "./formal/formal-engine";
+import { TwoDimensionalScorer, type ScoreBreakdown } from "./scoring/two-dimensional-scorer";
+import { TierReportBuilder } from "./pro-audit-pdf/tier-report-builder";
+import { buildCustomerSafeMinimalPdf, planCustomerSafePdf } from "./pro-audit-pdf/customer-safe-renderer";
+import type { EvidenceRecord } from "./evidence/evidence-record";
+import { createEvidenceRecord } from "./evidence/evidence-record";
 
 export interface UnifiedAuditOptions {
   auditId: string;

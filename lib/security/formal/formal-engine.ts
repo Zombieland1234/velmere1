@@ -9,7 +9,7 @@
  * NEVER CONVERT UNKNOWN OR TIMEOUT TO PASS.
  */
 
-import { createEvidenceRecord, type EvidenceRecord } from "../evidence/evidence-record.ts";
+import { createEvidenceRecord, type EvidenceRecord } from "../evidence/evidence-record";
 
 export type InvariantStatus =
   | "PROVEN"

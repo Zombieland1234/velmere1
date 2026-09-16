@@ -8,8 +8,8 @@
 
 import fs from "fs";
 import path from "path";
-import { sha256, computeMerkleRoot } from "./merkle-tree.ts";
-import type { EvidenceRecord } from "../evidence/evidence-record.ts";
+import { sha256, computeMerkleRoot } from "./merkle-tree";
+import type { EvidenceRecord } from "../evidence/evidence-record";
 
 export interface EvidenceArtifact {
   category:
