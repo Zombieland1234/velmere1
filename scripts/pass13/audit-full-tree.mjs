@@ -24,6 +24,7 @@ const THIRD_PARTY_PREFIXES = [
   "config/supply-chain-install-script-archive-cas-pass4825/",
 ];
 const SOURCE_ANALYSIS_EXCLUDES = ["artifacts/", ".velmere/quarantine/", ...THIRD_PARTY_PREFIXES];
+const HISTORICAL_RUNTIME_IMPORT_PREFIXES = ["p73-runtime/", "p76-runtime/", "p76r2-runtime/", "p77-runtime/"];
 const builtins = new Set([...builtinModules, ...builtinModules.map((value) => `node:${value}`)]);
 
 function sha256(value) {
@@ -186,16 +187,25 @@ for (const { relative, absolute } of files) {
             if (!await resolveLocalImport(relative, specifier)) {
               const buildGenerated = relative === "next-env.d.ts" && /^\.\/.next(?:-[^/]+)?\/types\//u.test(specifier);
               const optionalTypescriptFallback = specifier.includes("node_modules/typescript") && source.includes(".velmere/offline-toolchain/node_modules/typescript");
-              if (buildGenerated || optionalTypescriptFallback) optionalFallbackImports.push({ path: relative, specifier, reason: buildGenerated ? "next_build_generated" : "typescript_runtime_fallback" });
-              else unresolvedLocalImports.push({ path: relative, specifier });
+              const historicalSnapshotReference = HISTORICAL_RUNTIME_IMPORT_PREFIXES.some((prefix) => relative.startsWith(prefix)) && /\.\.\/p(?:73|73r4|73r7|75)-work\/source\//u.test(specifier);
+              if (buildGenerated || optionalTypescriptFallback || historicalSnapshotReference) {
+                optionalFallbackImports.push({
+                  path: relative,
+                  specifier,
+                  reason: buildGenerated ? "next_build_generated" : optionalTypescriptFallback ? "typescript_runtime_fallback" : "historical_snapshot_reference_not_release_source",
+                });
+              } else unresolvedLocalImports.push({ path: relative, specifier });
             }
           } else if (specifier.startsWith("/")) {
             optionalFallbackImports.push({ path: relative, specifier, reason: "absolute_environment_fallback" });
+          } else if (specifier.startsWith("jsr:")) {
+            optionalFallbackImports.push({ path: relative, specifier, reason: "deno_jsr_runtime_import" });
           } else if (!specifier.startsWith("node:") && !builtins.has(specifier) && !specifier.startsWith("#")) {
             const name = packageName(specifier);
             if (name && !declaredPackages.has(name)) {
               const externalToolchainReason = EXTERNAL_TOOLCHAIN_PACKAGE_IMPORTS.get(`${relative}\0${specifier}`);
-              if (externalToolchainReason) optionalFallbackImports.push({ path: relative, specifier, reason: externalToolchainReason });
+              const frameworkMarkerReason = specifier === "server-only" ? "next_server_only_framework_marker" : null;
+              if (externalToolchainReason || frameworkMarkerReason) optionalFallbackImports.push({ path: relative, specifier, reason: externalToolchainReason ?? frameworkMarkerReason });
               else undeclaredPackageImports.push({ path: relative, specifier, package: name });
             }
           }
