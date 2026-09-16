@@ -1,0 +1,139 @@
+name: R13C parallel runtime diagnostics
+on:
+  push:
+    branches: [r13c/runtime-diagnostics-20260916]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Production build
+        shell: bash
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          set +e
+          npm run build > runtime-build.txt 2>&1
+          code=$?
+          echo "build_exit=$code" > runtime-build-exit.txt
+          cat runtime-build.txt
+          exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13c-runtime-build
+          path: runtime-build*.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  entitlement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+      - name: Component regression
+        shell: bash
+        run: |
+          set +e
+          node --experimental-vm-modules --experimental-strip-types --test scripts/r13/*.test.mjs scripts/r13b/*.test.mjs > entitlement-component.tap 2>&1
+          echo "component_exit=$?" > entitlement-component-exit.txt
+          exit 0
+      - name: Deployed preview and legacy negative HTTP
+        shell: bash
+        run: |
+          set +e
+          node scripts/r13b/remote-boundaries.mjs > entitlement-preview.txt 2>&1
+          p=$?
+          R13B_LEGACY=1 node scripts/r13b/remote-boundaries.mjs > entitlement-legacy.txt 2>&1
+          l=$?
+          echo "preview_exit=$p" > entitlement-preview-exit.txt
+          echo "legacy_exit=$l" > entitlement-legacy-exit.txt
+          exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13c-runtime-entitlement
+          path: |
+            entitlement-*.txt
+            entitlement-*.tap
+          if-no-files-found: error
+          retention-days: 7
+
+  redteam:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+          cache: npm
+      - run: npm ci
+      - name: Adversarial backend regression
+        shell: bash
+        run: |
+          set +e
+          node --import ./scripts/pass11/register-offline-ts-loader.mjs --test test/security/adversarial-red-team.test.ts > redteam.tap 2>&1
+          echo "redteam_exit=$?" > redteam-exit.txt
+          cat redteam.tap
+          exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13c-runtime-redteam
+          path: |
+            redteam.tap
+            redteam-exit.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  secret-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+      - name: Tracked tree and history secret hygiene
+        shell: bash
+        run: |
+          set +e
+          node scripts/security/scan-all-secrets.mjs > secret-history.txt 2>&1
+          echo "secret_history_exit=$?" > secret-history-exit.txt
+          cat secret-history.txt
+          exit 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: r13c-runtime-secret-history
+          path: |
+            secret-history*.txt
+            reports/SECRET_HYGIENE_REPORT.json
+            reports/SECRET_HYGIENE_REPORT.md
+          if-no-files-found: warn
+          retention-days: 7
