@@ -258,7 +258,7 @@ function scanGitHistoryTargeted() {
 
   for (const probe of realKeyProbes) {
     try {
-      const output = execSync(`git log -S "${probe}" --oneline -n 10`, {
+      const output = execSync(`git log -S "${probe}" --oneline -n 10 -- . ":(exclude)scripts/security/scan-all-secrets.mjs"`, {
         cwd: repoRoot,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
