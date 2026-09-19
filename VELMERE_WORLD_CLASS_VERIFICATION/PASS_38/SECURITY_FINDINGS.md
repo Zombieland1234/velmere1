@@ -1,3 +1,0 @@
-# PASS_38 SECURITY FINDINGS
-
-Verified finding `VLM-REL-CHAOS-RECOVERY-01` with severity `MEDIUM`.
