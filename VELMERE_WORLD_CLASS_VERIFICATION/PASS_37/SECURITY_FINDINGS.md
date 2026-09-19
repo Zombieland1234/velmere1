@@ -1,3 +1,0 @@
-# PASS_37 SECURITY FINDINGS
-
-Verified finding `VLM-LEG-PROVIDER-RIGHTS-01` with severity `MEDIUM`.
