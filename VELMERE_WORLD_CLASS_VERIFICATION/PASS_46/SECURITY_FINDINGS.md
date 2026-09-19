@@ -1,3 +1,0 @@
-# PASS_46 SECURITY FINDINGS
-
-Verified finding `VLM-BENCH-CERTORA-GAP-01` with severity `MEDIUM`.
