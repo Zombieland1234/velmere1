@@ -1,3 +1,0 @@
-# PASS_34 SECURITY FINDINGS
-
-Verified finding `VLM-SEC-ENTITLEMENT-BYPASS-01` with severity `CRITICAL`.
