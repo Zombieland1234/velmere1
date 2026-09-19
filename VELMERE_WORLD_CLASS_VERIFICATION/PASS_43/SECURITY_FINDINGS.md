@@ -1,3 +1,0 @@
-# PASS_43 SECURITY FINDINGS
-
-Verified finding `VLM-AI-EXPLAINABILITY-01` with severity `MEDIUM`.
