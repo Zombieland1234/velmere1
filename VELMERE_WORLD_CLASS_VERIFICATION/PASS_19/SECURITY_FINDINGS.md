@@ -1,3 +1,0 @@
-# PASS_19 SECURITY FINDINGS
-
-Verified finding `VLM-SEC-ZK-NULLIFIER-01` with severity `CRITICAL`.
