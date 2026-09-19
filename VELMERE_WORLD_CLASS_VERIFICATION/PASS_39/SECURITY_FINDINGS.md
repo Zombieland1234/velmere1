@@ -1,3 +1,0 @@
-# PASS_39 SECURITY FINDINGS
-
-Verified finding `VLM-LEG-MICA-DISCLAIMER-01` with severity `MEDIUM`.
