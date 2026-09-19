@@ -1,3 +1,0 @@
-# PASS_47 SECURITY FINDINGS
-
-Verified finding `VLM-BENCH-ECHIDNA-GAP-01` with severity `MEDIUM`.
